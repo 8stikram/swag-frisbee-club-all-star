@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp \"C:/Users/Nono/Downloads/deepseek_html_20260813_52f0a1.html\" \"C:/Jeu mata label/Jeu frisbee/claude local/_source_original.html\")",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git config *)"
+    ]
+  }
+}

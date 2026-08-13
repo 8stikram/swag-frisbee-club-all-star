@@ -1,0 +1,95 @@
+import { W, H } from '../core/dom.js';
+import { COURT, CX, CY, DIFFS } from '../core/constants.js';
+import { TAU, rand } from '../core/utils.js';
+import { CHARS } from '../data/characters.js';
+import { getMap } from '../data/maps.js';
+import { sfx } from '../audio/audio.js';
+import { setupServe } from './actions.js';
+
+export const Mouse = { x: COURT.left + 120, y: CY, down: false, locked: false };
+
+export const G = {
+  state: 'menu', demo: true, now: 0,
+  p1: null, p2: null, disc: null,
+  decoys: [], particles: [], popups: [], trail: [],
+  banner: null, timescale: 1, tsTimer: 0, shake: 0,
+  goalT: 0, cdT: 0, cdN: -1, serveTo: 1, winner: null, goalFlash: [0, 0],
+  matchChar: 'naruto', matchCPU: 'leon', matchDiff: 1,
+  crowd: [], stars: [], rally: 0, maxRally: 0,
+  cine: null, leg: null, rec: [], replay: null, comment: null,
+  idleT: 0, waveX: -200, mem: { t: 0, m: 0, b: 0 }, startCom: false,
+  lungeBonus: false, lungeBonusTimer: 0, adminMode: false, isJ2J: false,
+  pendingServe: 1
+};
+
+(function initBackground() {
+  const cols = getMap().theme.crowdColors;
+  for (let i = 0; i < 230; i++) {
+    const side = rand(4) | 0;
+    let x, y;
+    if (side === 0) { x = rand(W); y = rand(8, COURT.top - 18); }
+    else if (side === 1) { x = rand(W); y = rand(COURT.bottom + 16, H - 8); }
+    else if (side === 2) { x = rand(6, COURT.left - 16); y = rand(COURT.top - 10, COURT.bottom + 10); }
+    else { x = rand(COURT.right + 16, W - 6); y = rand(COURT.top - 10, COURT.bottom + 10); }
+    G.crowd.push({ x, y, c: cols[(Math.random() * cols.length) | 0], ph: rand(TAU), s: rand(2, 4) });
+  }
+  for (let i = 0; i < 300; i++) {
+    G.stars.push({ x: rand(W), y: rand(H), size: rand(1, 3), twinkle: rand(TAU), speed: rand(0.5, 2), color: getMap().theme.starColor });
+  }
+})();
+
+export function makePlayer(ck, side, human, diffIdx) {
+  const c = CHARS[ck];
+  const p = {
+    ck, char: c, side, human,
+    x: side === 1 ? COURT.left + 120 : COURT.right - 120, y: CY,
+    vx: 0, vy: 0, face: side === 1 ? 1 : -1,
+    holding: false, charging: false, wasCharging: false, charge: 0, fullFlash: false,
+    throwCd: 0, throwPoseT: 0, lunge: 0, lungeCd: 0, dashCd: 0, dashV: { x: 0, y: 0 },
+    walk: 0, moving: false, meter: 0, score: 0, speed: c.speed, stun: 0,
+    ghosts: [], ghostT: 0, forceFr: null,
+    stats: { catches: 0, specials: 0, thrown: 0 },
+    ai: null, foe: null,
+    home: { x: side === 1 ? COURT.left + 120 : COURT.right - 120, y: CY },
+    holdTimer: 0
+  };
+  if (!human) {
+    p.ai = {
+      diff: DIFFS[diffIdx], reactAt: 0, plan: null, miss: false, missOff: 0, tracked: null,
+      target: { x: p.home.x, y: p.home.y }, fleeing: false, aggro: 0, hesT: 0, hes: { x: 0, y: 0 },
+      state: 'READY', stateTimer: 0, aimLock: 0, aimCorner: 1, emaTarget: { x: 0, y: 0 },
+      strikeDrive: false, shootTimer: 0, forceShoot: false, lastLog: 0
+    };
+  }
+  return p;
+}
+
+export function resetDisc() {
+  return { x: CX, y: CY, vx: 0, vy: 0, heldBy: null, kind: 'normal', spin: 0, age: 0, thrower: null, thrownAt: -9, bounced: false, stall: 0, free: false, big: false, kSpeed: 0, super: false };
+}
+
+export function initMatch(demo, ck, cpu, diffIdx, j2j) {
+  G.demo = demo; G.now = 0; G.winner = null; G.banner = null; G.cine = null; G.leg = null; G.replay = null;
+  G.particles.length = 0; G.popups.length = 0; G.trail.length = 0; G.decoys.length = 0; G.rec.length = 0;
+  G.timescale = 1; G.shake = 0; G.rally = 0; G.maxRally = 0; G.comment = null; G.idleT = 0;
+  G.mem = { t: 0, m: 0, b: 0 }; G.startCom = false; G.lungeBonus = false; G.lungeBonusTimer = 0;
+  G.isJ2J = j2j || false;
+  if (demo) {
+    G.p1 = makePlayer('naruto', 1, false, 0);
+    G.p2 = makePlayer('leon', 2, false, 1);
+    G.p1.foe = G.p2; G.p2.foe = G.p1;
+    G.disc = resetDisc(); G.disc.heldBy = G.p1; G.p1.holding = true;
+    G.state = 'play';
+  } else {
+    G.p1 = makePlayer(ck, 1, true, 0);
+    G.p2 = makePlayer(cpu, 2, !G.isJ2J ? false : true, diffIdx);
+    G.p1.foe = G.p2; G.p2.foe = G.p1;
+    G.disc = resetDisc();
+    G.matchChar = ck; G.matchCPU = cpu; G.matchDiff = diffIdx;
+    Mouse.x = COURT.left + 120; Mouse.y = CY;
+    setupServe(1);
+    G.state = 'countdown'; G.cdT = 3.7; G.cdN = 4;
+  }
+}
+
+export function comment(txt, dur = 2.4) { G.comment = { text: txt, t: 0, dur }; G.idleT = 0; sfx('talk'); }

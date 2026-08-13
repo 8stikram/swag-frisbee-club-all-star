@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swag Frisbee Club All Star</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;600;700&family=Bangers&family=Abril+Fatface&family=Anton&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<h1 class="brand" id="adminTitle">★ Swag Frisbee Club All Star ★</h1>
+<div id="stage">
+  <canvas id="game" width="960" height="600"></canvas>
+
+  <!-- Écran titre -->
+  <div class="screen" id="scr-title">
+    <div class="logo-sbcb"><div class="sbcb">SWAG</div><div class="allstar">FRISBEE CLUB</div><div class="discarena">ALL STAR</div></div>
+    <div class="menu">
+      <button class="mbtn sel" data-act="play">Match vs IA</button>
+      <button class="mbtn" data-act="j2j">Match JcJ</button>
+      <button class="mbtn" data-act="options">⚙️ Options</button>
+    </div>
+    <div class="tag">APPUIE SUR ENTRÉE</div>
+    <div class="small"><kbd>M</kbd> musique · 5× clic sur le titre = Admin</div>
+  </div>
+
+  <!-- Sélection (Match vs IA / JcJ) -->
+  <div class="screen light hidden" id="scr-select">
+    <div class="sub" style="font-size:15px">Choisis ton champion</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;width:100%;max-width:700px;">
+      <div style="flex:1;min-width:200px;background:rgba(10,20,48,.7);border:2px solid #2c4b8f;border-radius:12px;padding:12px;">
+        <h4 style="font-family:'Press Start 2P',monospace;font-size:11px;color:var(--cyan);margin-bottom:10px;">👤 JOUEUR</h4>
+        <div style="cursor:pointer;background:linear-gradient(180deg,var(--panel2),var(--panel));border:3px solid #23407c;border-radius:10px;padding:10px;text-align:center;" id="card-player">
+          <div class="ico" id="player-ico" style="font-size:22px;">🍥</div>
+          <div class="uni" id="player-uni" style="font-size:10px;color:#7d92bd;">KONOHA</div>
+          <img id="player-img" alt="Player" style="width:96px;height:120px;image-rendering:pixelated;">
+          <h3 id="player-name" style="font-family:'Press Start 2P',monospace;font-size:9px;margin:4px 0;">NARUTO<br>UZUMAKI</h3>
+          <div style="display:flex;justify-content:center;gap:12px;margin-top:4px;">
+            <span class="arrow" id="playerLeft" style="cursor:pointer;color:var(--cyan);font-size:20px;">◀</span>
+            <span style="color:#9fb4dd;font-size:11px;">Changer</span>
+            <span class="arrow" id="playerRight" style="cursor:pointer;color:var(--cyan);font-size:20px;">▶</span>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:200px;background:rgba(10,20,48,.7);border:2px solid #2c4b8f;border-radius:12px;padding:12px;">
+        <h4 style="font-family:'Press Start 2P',monospace;font-size:11px;color:var(--cyan);margin-bottom:10px;">🤖 IA / CPU</h4>
+        <div style="cursor:pointer;background:linear-gradient(180deg,var(--panel2),var(--panel));border:3px solid #23407c;border-radius:10px;padding:10px;text-align:center;" id="card-cpu">
+          <div class="ico" id="cpu-ico" style="font-size:22px;">🚔</div>
+          <div class="uni" id="cpu-uni" style="font-size:10px;color:#7d92bd;">RACCOON CITY</div>
+          <img id="cpu-img" alt="CPU" style="width:96px;height:120px;image-rendering:pixelated;">
+          <h3 id="cpu-name" style="font-family:'Press Start 2P',monospace;font-size:9px;margin:4px 0;">LEON S.<br>KENNEDY</h3>
+          <div style="display:flex;justify-content:center;gap:12px;margin-top:4px;">
+            <span class="arrow" id="cpuLeft" style="cursor:pointer;color:var(--cyan);font-size:20px;">◀</span>
+            <span style="color:#9fb4dd;font-size:11px;">Changer</span>
+            <span class="arrow" id="cpuRight" style="cursor:pointer;color:var(--cyan);font-size:20px;">▶</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sélection de skin -->
+    <div style="width:100%;max-width:640px;margin-top:4px;">
+      <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:#9fb4dd;margin-bottom:4px;">🎨 Skin du disque</div>
+      <div class="skin-selector" id="skinSelector"></div>
+    </div>
+
+    <div style="max-width:640px;background:rgba(18,35,71,.9);border:2px dashed #3d5ba6;border-radius:8px;padding:9px 16px;font-size:13px;text-align:center;width:100%;" id="specialInfo"></div>
+    <div style="display:flex;align-items:center;gap:14px;font-family:'Press Start 2P',monospace;font-size:11px;">
+      <span class="arrow" id="diffL" style="cursor:pointer;color:var(--cyan);padding:4px 10px;">◀</span>
+      <span style="color:#9fb4dd;">IA :</span><span id="diffName">NORMAL</span>
+      <span class="arrow" id="diffR" style="cursor:pointer;color:var(--cyan);padding:4px 10px;">▶</span>
+    </div>
+    <button class="mbtn sel" data-act="fight" style="text-align:center;">⚡ Combattre ⚡</button>
+    <div class="small"><kbd>←→</kbd> CPU / <kbd>A</kbd><kbd>D</kbd> Joueur — <kbd>↑↓</kbd> difficulté — Entrée pour combattre</div>
+  </div>
+
+  <!-- Options -->
+  <div class="screen hidden" id="scr-options">
+    <div class="sub" style="font-size:17px;">⚙️ Options</div>
+    <div class="tabs">
+      <span class="tab active" data-tab="audio">🔊 Audio</span>
+      <span class="tab" data-tab="keys">⌨️ Touches</span>
+    </div>
+    <div class="tab-content active" id="tab-audio">
+      <div class="option-row"><label>🎵 Musique</label><input type="range" id="musicVol" min="0" max="100" value="80"><span class="val" id="musicVal">80%</span></div>
+      <div class="option-row"><label>🔊 SFX</label><input type="range" id="sfxVol" min="0" max="100" value="90"><span class="val" id="sfxVal">90%</span></div>
+    </div>
+    <div class="tab-content" id="tab-keys">
+      <div class="keys-grid" id="keysGrid"></div>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button class="mbtn" id="resetKeys" style="text-align:center;font-size:9px;padding:6px 14px;">↺ Réinitialiser</button>
+      </div>
+    </div>
+    <button class="mbtn sel" data-act="back" style="text-align:center;font-size:11px;padding:8px 20px;">Retour</button>
+  </div>
+
+  <!-- Pause, Over -->
+  <div class="screen hidden" id="scr-pause"><div class="sub">PAUSE</div><button class="mbtn sel" data-act="resume">Reprendre</button><button class="mbtn" data-act="restart">Recommencer</button><button class="mbtn" data-act="menu">Menu</button></div>
+  <div class="screen hidden" id="scr-over">
+    <div id="overTitle" style="font-family:'Press Start 2P',monospace;font-size:26px;color:var(--jaune);">VICTOIRE</div>
+    <img id="overImg" alt="" style="width:96px;height:120px;image-rendering:pixelated;">
+    <div id="overScore" style="font-family:'Press Start 2P',monospace;font-size:20px;"></div>
+    <div id="overStats" style="font-size:13px;color:#9fb4dd;line-height:1.6;"></div>
+    <button class="mbtn sel" data-act="rematch">Revanche</button>
+    <button class="mbtn" data-act="menu">Menu</button>
+  </div>
+
+  <div class="crt"></div>
+
+  <!-- Conflict popup -->
+  <div class="conflict-popup" id="conflictPopup">
+    <h3>⚠️ CONFLIT DE TOUCHE</h3>
+    <p id="conflictMsg">La touche est déjà utilisée par <b>ACTION</b>.</p>
+    <div>
+      <button class="cbtn danger" id="conflictReplace">Remplacer</button>
+      <button class="cbtn" id="conflictCancel">Annuler</button>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="admin-panel">
+    <div class="arow"><span class="alabel">🔧 ADMIN</span>
+      <button class="abtn success" id="admin-forceShoot">💥 Forcer tir IA</button>
+      <button class="abtn" id="admin-giveDisc">🎯 Donner disque IA</button>
+    </div>
+    <div class="arow">
+      <button class="abtn danger" id="admin-reset">🔄 Reset match</button>
+      <button class="abtn" id="admin-logs">📋 Logs</button>
+      <button class="abtn" id="admin-stats">📊 Stats</button>
+    </div>
+    <div class="arow">
+      <button class="abtn" id="admin-togglePause">⏸️ Pause</button>
+      <button class="abtn" id="admin-slowmo">🐢 Slowmo</button>
+      <button class="abtn" id="admin-normal">▶️ Normal</button>
+    </div>
+  </div>
+</div>
+<footer>5× clic sur le titre pour activer le Mode Admin · Options → Touches pour personnaliser</footer>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

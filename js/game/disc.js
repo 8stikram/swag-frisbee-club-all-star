@@ -1,0 +1,87 @@
+import { G } from './state.js';
+import { COURT, GOAL_TOP, GOAL_BOTTOM, DISC_RADIUS, DISC_BIG_RADIUS } from '../core/constants.js';
+import { norm, gauss, clamp, rand } from '../core/utils.js';
+import { sfx } from '../audio/audio.js';
+import { burst, dust, addPopup } from './fx.js';
+import { onCatch, scoreGoal, ownFoul, setupServe } from './actions.js';
+
+export const DISC_R = () => G.disc.big ? DISC_BIG_RADIUS : DISC_RADIUS;
+
+export function updateDisc(dt) {
+  const d = G.disc;
+  if (d.heldBy) { d.x = d.heldBy.x + d.heldBy.face * 20; d.y = d.heldBy.y + Math.sin(G.now * 6) * 2; d.spin += dt * 4; return; }
+  if (!d.free) return;
+  d.age += dt;
+  d.spin += Math.hypot(d.vx, d.vy) * dt * .06;
+  if (d.kind === 'kurama') {
+    const s = Math.hypot(d.vx, d.vy) || 1;
+    d.vx *= d.kSpeed / s; d.vy *= d.kSpeed / s;
+    if (Math.random() < .7) G.particles.push({ x: d.x, y: d.y, vx: gauss() * 70, vy: gauss() * 70, life: .35, c: Math.random() < .5 ? '#ff8c1a' : '#ffd23e', s: 3, g: 0 });
+  } else { d.vx *= Math.exp(-.08 * dt); d.vy *= Math.exp(-.08 * dt); }
+  if (d.super && Math.random() < .6) G.particles.push({ x: d.x, y: d.y, vx: gauss() * 50, vy: gauss() * 50, life: .3, c: '#ff5340', s: 2.5, g: 0 });
+  if (d.thrower && d.thrower.ck === 'isaac' && Math.random() < .35) G.particles.push({ x: d.x, y: d.y, vx: gauss() * 30, vy: rand(20, 90), life: .5, c: '#7fd8ff', s: 2, g: 400 });
+  d.x += d.vx * dt; d.y += d.vy * dt;
+  G.trail.push({ x: d.x, y: d.y, c: d.kind === 'kurama' ? '#ff8c1a' : (d.super ? '#ff5340' : (d.kind === 'matilda' ? '#8dff6a' : '#ffd23e')) });
+  if (G.trail.length > 26) G.trail.shift();
+  const sp = Math.hypot(d.vx, d.vy);
+  const rest = d.kind === 'kurama' ? 1 : .99;
+  const dirB = norm(d.vx, d.vy);
+  const r = DISC_R();
+  if (d.y < COURT.top + r) { d.y = COURT.top + r; d.vy = Math.abs(d.vy) * rest; onBounce(d); }
+  if (d.y > COURT.bottom - r) { d.y = COURT.bottom - r; d.vy = -Math.abs(d.vy) * rest; onBounce(d); }
+  const inGoalY = d.y > GOAL_TOP && d.y < GOAL_BOTTOM;
+  if (d.x < COURT.left + r) {
+    if (inGoalY) { if (d.x < COURT.left - r) { scoreGoal(G.p2, d.y); return; } }
+    else {
+      const pre = sp;
+      d.x = COURT.left + r; d.vx = Math.abs(d.vx) * rest; onBounce(d);
+      if (G.state === 'play' && d.thrower === G.p1 && pre > 180) { ownFoul(G.p1); return; }
+    }
+  }
+  if (d.x > COURT.right + r) {
+    if (inGoalY) { if (d.x > COURT.right + r) { scoreGoal(G.p1, d.y); return; } }
+    else {
+      const pre = sp;
+      d.x = COURT.right + r; d.vx = -Math.abs(d.vx) * rest; onBounce(d);
+      if (G.state === 'play' && d.thrower === G.p2 && pre > 180) { ownFoul(G.p2); return; }
+    }
+  }
+  if (sp < 70 && !d.big) {
+    d.stall += dt;
+    if (d.stall > 1.6) { addPopup('DISQUE MORT', '#9fb4dd', 13, 1); setupServe(d.thrower === G.p1 ? 2 : 1); }
+  } else d.stall = 0;
+  for (const p of [G.p1, G.p2]) {
+    if (p.holding || p.throwCd > 0 || p.stun > 0) continue;
+    if (G.now - d.thrownAt < .24 && d.thrower === p && !d.bounced) continue;
+    const r2 = p.char.catchR * (d.kind === 'kurama' ? .5 : 1) * (p.lunge > 0 ? 1.45 : 1) + (d.big ? 8 : 0);
+    if (Math.hypot(d.x - p.x, d.y - p.y) < r2) { onCatch(p, sp, dirB.x, dirB.y); break; }
+  }
+}
+
+export function onBounce(d) {
+  d.bounced = true;
+  if (d.kind === 'kurama') { sfx('bigbounce'); G.shake = Math.max(G.shake, 8); burst(d.x, d.y, '#ff8c1a', 16); }
+  else { sfx('bounce'); dust(d.x, d.y, 6); G.shake = Math.max(G.shake, 3); }
+  if (d.thrower) {
+    const ownSideWall = (d.x <= COURT.left + DISC_R() && d.thrower.side === 1) || (d.x >= COURT.right - DISC_R() && d.thrower.side === 2);
+    if (!ownSideWall) { d.thrower.meter = clamp(d.thrower.meter + 5, 0, 100); }
+  }
+}
+
+export function updateDecoys(dt) {
+  for (let i = G.decoys.length - 1; i >= 0; i--) {
+    const o = G.decoys[i];
+    o.x += o.vx * dt; o.y += o.vy * dt; o.life -= dt;
+    if (o.y < COURT.top + 9 || o.y > COURT.bottom - 9) o.vy *= -1;
+    const inGoalY = o.y > GOAL_TOP && o.y < GOAL_BOTTOM;
+    if (o.x < COURT.left - DISC_R() && inGoalY) { scoreGoal(G.p2, o.y); G.decoys.splice(i, 1); continue; }
+    if (o.x > COURT.right + DISC_R() && inGoalY) { scoreGoal(G.p1, o.y); G.decoys.splice(i, 1); continue; }
+    const foe = o.thrower.foe;
+    if (foe && !foe.holding && Math.hypot(o.x - foe.x, o.y - foe.y) < foe.char.catchR) {
+      sfx('catch');
+      addPopup('DÉCOY DÉTRUIT !', '#9fe8ff', 12, .6, foe.y - 40);
+      G.decoys.splice(i, 1); continue;
+    }
+    if (o.life <= 0 || o.x < COURT.left - 30 || o.x > COURT.right + 30) G.decoys.splice(i, 1);
+  }
+}
