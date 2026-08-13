@@ -42,6 +42,7 @@ function startCapture(action) {
     e.preventDefault(); e.stopPropagation();
     const code = e.code;
     if (code === 'Escape') { stopCapture(); addPopup('Annulé', '#9fb4dd', 11, 0.8); return; }
+    if (!code) { return; } // touche sans code exploitable (ex. événement de composition) : on ignore et on continue d'écouter
     const conflict = setKey(action, code);
     if (conflict) { showConflictPopup(action, conflict, code); stopCapture(); }
     else { stopCapture(); refreshKeysUI(); addPopup('✅ Touche modifiée !', '#7bd66a', 11, 0.8); }

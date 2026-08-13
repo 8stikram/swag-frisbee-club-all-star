@@ -66,6 +66,17 @@ export function sfx(n) {
     case 'talk': beep(920, 700, .05, 'square', .05); beep(700, 940, .05, 'square', .04, .06); break;
     case 'win': [523, 659, 784, 1046, 1318].forEach((f, i) => beep(f, f, .2, 'square', .15, i * .13)); break;
     case 'lose': [392, 330, 262, 196].forEach((f, i) => beep(f, f, .25, 'triangle', .16, i * .18)); break;
+    case 'charge': beep(440, 520, .04, 'square', .05); break;
+    case 'full': beep(700, 1400, .16, 'square', .14); beep(1400, 1400, .08, 'sine', .1, .1); break;
+    case 'superthrow': noise(.2, .2, 2000); beep(200, 900, .16, 'sawtooth', .12); beep(900, 400, .1, 'square', .08, .05); break;
+    case 'perfect': [990, 1320, 1760].forEach((f, i) => beep(f, f, .1, 'square', .13, i * .05)); break;
+    case 'roar': beep(90, 55, .5, 'sawtooth', .22); noise(.5, .16, 300); break;
+    case 'special': [700, 990, 1320, 1760].forEach((f, i) => beep(f, f, .1, 'square', .14, i * .06)); noise(.3, .1, 1200); break;
+    case 'legcast': beep(180, 90, .4, 'sawtooth', .16); break;
+    case 'splat': noise(.18, .22, 400); beep(160, 70, .16, 'sine', .18); break;
+    case 'stun': beep(300, 500, .08, 'square', .1); beep(500, 300, .08, 'square', .1, .1); beep(300, 500, .08, 'square', .1, .2); break;
+    case 'bigbounce': beep(140, 90, .12, 'triangle', .26); noise(.1, .12, 700); break;
+    case 'replay': beep(1200, 400, .3, 'sine', .12); break;
   }
 }
 

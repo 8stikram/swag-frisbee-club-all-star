@@ -18,6 +18,18 @@ function drawStars() {
   ctx.globalAlpha = 1;
 }
 
+function drawCrowd() {
+  for (const p of G.crowd) {
+    // Ola : une vague de lumière qui balaie la foule sur l'axe X, portée par G.waveX.
+    const waveBoost = clamp(1 - Math.abs(p.x - G.waveX) / 90, 0, 1);
+    const bob = Math.sin(G.now * 3 + p.ph) * (p.s * 0.5) - waveBoost * p.s * 1.8;
+    ctx.globalAlpha = 0.55 + waveBoost * 0.45;
+    ctx.fillStyle = p.c;
+    ctx.fillRect(p.x - p.s / 2, p.y + bob - p.s / 2, p.s, p.s);
+  }
+  ctx.globalAlpha = 1;
+}
+
 function drawCourt() {
   const th = getMap().theme;
   const grd = ctx.createRadialGradient(CX, CY, 100, CX, CY, 500);
@@ -26,6 +38,7 @@ function drawCourt() {
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, W, H);
   drawStars();
+  drawCrowd();
   ctx.fillStyle = th.floor;
   ctx.fillRect(COURT.left, COURT.top, COURT.right - COURT.left, COURT.bottom - COURT.top);
   ctx.strokeStyle = th.line;
@@ -72,8 +85,23 @@ function drawShadow(x, y, r) {
   ctx.fill();
 }
 
+function drawGhosts(p) {
+  const c = p.char;
+  for (const g of p.ghosts) {
+    const img = c.frames[g.fr];
+    ctx.save();
+    ctx.globalAlpha = clamp(g.life / .55, 0, 1) * .35;
+    ctx.translate(g.x, g.y - 30 * SCALE);
+    if (g.face < 0) ctx.scale(-1, 1);
+    ctx.drawImage(img, -24 * SCALE, 0, 48 * SCALE, 60 * SCALE);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+}
+
 function drawPlayer(p) {
   const c = p.char;
+  drawGhosts(p);
   drawShadow(p.x, p.y, 17 * SCALE);
   let fr = p.forceFr;
   if (!fr) {
@@ -104,9 +132,23 @@ function drawPlayer(p) {
   }
 }
 
+function drawTrail() {
+  const n = G.trail.length;
+  for (let i = 0; i < n; i++) {
+    const t = G.trail[i];
+    const k = (i + 1) / n;
+    ctx.globalAlpha = k * .5;
+    ctx.fillStyle = t.c;
+    const s = 3 + k * 5;
+    ctx.fillRect(t.x - s / 2, t.y - s / 2, s, s);
+  }
+  ctx.globalAlpha = 1;
+}
+
 function drawDisc() {
   const d = G.disc;
   const r = d.big ? DISC_BIG_RADIUS : DISC_RADIUS;
+  drawTrail();
   if (!d.heldBy) drawShadow(d.x, d.y - 12, r + 2);
   if (d.kind === 'kurama') {
     drawDiscObj(d.x, d.y, d.spin, 1, '#ff8c1a', r);
@@ -142,6 +184,66 @@ function drawDiscObj(x, y, spin, alpha = 1, tint = null, r) {
   ctx.strokeStyle = 'rgba(255,255,255,.7)';
   ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.ellipse(0, 0, r - 3, (r - 3) * Math.max(.3, sq), 0, Math.PI * 1.05, Math.PI * 1.55); ctx.stroke();
+  ctx.restore();
+}
+
+function drawDecoys() {
+  // Même look que le vrai disque Matilda : le leurre doit tromper l'œil.
+  for (const o of G.decoys) {
+    drawShadow(o.x, o.y - 12, DISC_RADIUS + 2);
+    drawDiscObj(o.x, o.y, G.now * 6, 1, '#8dff6a', DISC_RADIUS);
+  }
+}
+
+function drawLeg() {
+  const L = G.leg;
+  if (!L) return;
+  const legW = 46, legH = 130;
+  if (L.phase === 'shadow') {
+    const k = clamp(L.t / .55, 0, 1);
+    const pulse = 0.5 + 0.5 * Math.sin(G.now * 16);
+    ctx.save();
+    ctx.globalAlpha = .35 + k * .4;
+    ctx.fillStyle = '#ff6a7a';
+    ctx.beginPath();
+    ctx.ellipse(L.x, L.yTarget, (legW * .55) * k, (legW * .22) * k, 0, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(255,106,122,${.5 + pulse * .4})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(L.x, L.yTarget, (legW * .55) * k + 4, (legW * .22) * k + 2, 0, 0, TAU);
+    ctx.stroke();
+    ctx.restore();
+  } else if (L.phase === 'fall') {
+    const k = clamp(L.t / .16, 0, 1);
+    const y = lerp(L.yTarget - 420, L.yTarget - legH * .3, k);
+    drawLegSprite(L.x, y, 1);
+    // Traînée de vitesse.
+    for (let i = 1; i <= 3; i++) {
+      const ty = lerp(L.yTarget - 420, L.yTarget - legH * .3, clamp(k - i * .08, 0, 1));
+      drawLegSprite(L.x, ty, .18 / i);
+    }
+  } else if (L.phase === 'impact') {
+    const k = clamp(L.t / .4, 0, 1);
+    drawLegSprite(L.x, L.yTarget - legH * .3 * (1 - k), 1 - k, 1 + k * .3);
+  }
+}
+
+function drawLegSprite(x, y, alpha, squash = 1) {
+  const legW = 46, legH = 130;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+  ctx.scale(1, squash);
+  ctx.fillStyle = '#f0c090';
+  ctx.fillRect(-legW / 2, -legH, legW, legH * .8);
+  ctx.fillStyle = '#e8b8d0';
+  ctx.fillRect(-legW / 2 - 3, -legH * .28, legW + 6, legH * .22);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(-legW / 2 - 5, -legH * .09, legW + 10, legH * .16);
+  ctx.strokeStyle = 'rgba(0,0,0,.25)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-legW / 2, -legH, legW, legH * .8);
   ctx.restore();
 }
 
@@ -288,6 +390,8 @@ export function render() {
   ctx.save();
   if (G.shake > 0.3) ctx.translate(gauss() * G.shake, gauss() * G.shake);
   drawCourt();
+  if (G.leg && G.leg.phase === 'shadow') drawLeg();
+  drawDecoys();
   if (G.p1) {
     const ps = [G.p1, G.p2].sort((a, b) => a.y - b.y);
     let drewDisc = false;
@@ -297,6 +401,7 @@ export function render() {
     }
     if (!drewDisc) drawDisc();
   }
+  if (G.leg && G.leg.phase !== 'shadow') drawLeg();
   drawParticles();
   if (G.p1 && !G.demo) { drawHUD(); drawCrosshair(); }
   drawTexts();

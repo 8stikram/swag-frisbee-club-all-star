@@ -82,6 +82,7 @@ export function onCatch(p, sp, dirx, diry) {
   p.dashV.x += (dirx || 0) * kb; p.dashV.y += (diry || 0) * kb * .4;
   dust(p.x, p.y + 18, Math.min(10, 2 + sp / 200));
   d.heldBy = p; d.free = false; d.vx = 0; d.vy = 0; d.kind = 'normal'; d.big = false; d.super = false;
+  G.trail.length = 0;
   p.holding = true; p.charge = 0; p.stats.catches++;
   p.meter = clamp(p.meter + 12, 0, 100);
   p.holdTimer = 0;

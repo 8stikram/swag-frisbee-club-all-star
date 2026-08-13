@@ -1,7 +1,7 @@
 import { G } from './state.js';
 import { COURT, CY, GOAL_TOP, GOAL_BOTTOM, DASH_SPEED, throwSpeed } from '../core/constants.js';
 import { clamp, norm, gauss, rand, approach } from '../core/utils.js';
-import { dust, addPopup } from './fx.js';
+import { dust } from './fx.js';
 import { onCatch, throwDisc } from './actions.js';
 
 export function predictArrivalAtX(disc, targetX) {
@@ -127,7 +127,6 @@ export function updateAI(p, dt) {
       p.charge += dt / p.char.chargeT * (d.aggro > 3 ? 1.1 : 0.9);
       if (p.charge >= Math.max(0.1, D.smart * 0.25) || p.holdTimer > 1.2) {
         const aimDir = norm(aimTarget.x - p.x, aimTarget.y - p.y);
-        addPopup('💥 TIR IA !', '#ffd23e', 14, 0.6, p.y - 80);
         throwDisc(p, aimDir, throwSpeed(p.charge, p.char.power));
         d.state = 'RECOVER';
         p.holdTimer = 0;
@@ -137,7 +136,6 @@ export function updateAI(p, dt) {
     }
     if (p.holdTimer > 1.8) {
       const aimDir = norm(aimTarget.x - p.x, aimTarget.y - p.y);
-      addPopup('💥 TIR FORCÉ !', '#ff5340', 14, 0.6, p.y - 80);
       throwDisc(p, aimDir, throwSpeed(Math.min(p.charge + 0.3, 1), p.char.power));
       d.state = 'RECOVER';
       p.holdTimer = 0;

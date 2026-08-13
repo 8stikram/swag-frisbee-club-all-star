@@ -43,6 +43,7 @@ export function loadKeyMap() {
 export function saveKeyMap() { try { localStorage.setItem('sbcbKeyMap', JSON.stringify(keyMap)); } catch (e) { } }
 export function getKey(a) { return keyMap[a] || DEFAULT_KEYS[a]; }
 export function setKey(a, c) {
+  if (!c) return null; // pas de code de touche exploitable : on n'écrase rien
   for (const k in keyMap) { if (k !== a && keyMap[k] === c) return k; }
   keyMap[a] = c; saveKeyMap(); return null;
 }
