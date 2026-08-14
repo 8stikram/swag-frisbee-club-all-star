@@ -2,7 +2,7 @@
 // assets/audio/ et ajoute une entrée ici — l'écran de choix du terrain la
 // proposera automatiquement.
 export const MUSIC_TRACKS = [
-  { id: 'menu-ost', name: 'Menu OST', src: 'assets/audio/menu-ost.wav' }
+  { id: 'menu-ost', name: '0 • Menu OST', src: 'assets/audio/0-menu-ost.mp3' }
 ];
 
 // Piste active par défaut : la première du registre. `null` = silence
