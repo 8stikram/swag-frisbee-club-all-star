@@ -9,10 +9,11 @@ import { updateLeg, launchCine } from './specials.js';
 import { updateFX } from './fx.js';
 import { capture, applySnap } from './replay.js';
 import { setupServe, afterGoal, startReplay } from './actions.js';
-import { sfx } from '../audio/audio.js';
+import { sfx, setDemoMuted } from '../audio/audio.js';
 import { render } from '../render/render.js';
 
 export function update(dt) {
+  setDemoMuted(G.demo);
   if (G.tsTimer > 0) { G.tsTimer -= dt; } else G.timescale = lerp(G.timescale, 1, .2);
   const wdt = dt * G.timescale;
   G.now += wdt;
