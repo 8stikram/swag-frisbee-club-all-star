@@ -80,7 +80,7 @@ function renderCharGrid() {
   }
   // Case aléatoire : tire les deux camps d'un coup.
   const rnd = document.createElement('div');
-  rnd.className = 'cell';
+  rnd.className = 'cell rndCell';
   rnd.innerHTML = '<span class="qm">?</span>';
   rnd.title = 'Personnages aléatoires';
   rnd.addEventListener('click', () => {

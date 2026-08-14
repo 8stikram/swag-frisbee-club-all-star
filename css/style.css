@@ -160,7 +160,7 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 .mbtn{
   display:flex;align-items:center;gap:1cqw;justify-content:center;
   font-family:'Archivo Black',sans-serif;font-size:clamp(11px,1.7cqh,17px);
-  color:var(--ink);background:#fff;
+  color:var(--ink);background:rgba(255,255,255,.78);
   padding:1.1cqh 1.4cqw;border:4px solid var(--ink);border-radius:15px;
   box-shadow:6px 6px 0 var(--ink);cursor:pointer;text-align:center;
   transition:background .1s,color .1s,transform .1s,box-shadow .1s;
@@ -271,7 +271,14 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 .grid .cell.sel1{outline:4px solid #2f6bff;outline-offset:2px}
 .grid .cell.sel2{outline:4px solid var(--red);outline-offset:2px}
 .grid .cell.sel1.sel2{outline:4px solid #8b5cf6;outline-offset:2px}
-.grid .cell .qm{font-family:'Archivo Black',sans-serif;font-size:4.4cqh;color:var(--ink)}
+/* Case "aléatoire" de la grille de persos : même dégradé animé que le
+   terrain aléatoire, pour que les deux se répondent visuellement. */
+.grid .cell.rndCell{
+  background:linear-gradient(120deg,#ff5f6d,#ffc371,#5df08a,#35e0ff,#a06bff,#ff5f6d);
+  background-size:400% 400%;animation:rainbow 6s ease infinite;
+}
+.grid .cell .qm{font-family:'Archivo Black',sans-serif;font-size:4.4cqh;color:#fff;
+  -webkit-text-stroke:3px var(--ink);paint-order:stroke fill}
 .grid .cell .tag{
   position:absolute;font-family:'Archivo Black',sans-serif;font-size:clamp(8px,1.6cqh,11px);
   color:#fff;-webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill;
