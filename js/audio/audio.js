@@ -1,9 +1,40 @@
 import { mtof } from '../core/utils.js';
+import { getTrackId, getTrack, setTrackId } from '../data/music.js';
 
 let AC = null, masterG = null, musicGain = null, sfxGain = null, noiseBuf = null;
 let musicVol = 0.8, sfxVol = 0.9;
 export let musicOn = true;
-export function toggleMusic() { musicOn = !musicOn; return musicOn; }
+export function toggleMusic() {
+  musicOn = !musicOn;
+  if (bgmEl) musicOn ? bgmEl.play().catch(() => { }) : bgmEl.pause();
+  return musicOn;
+}
+
+// ---- Piste réelle (OST), en plus du synthétiseur ci-dessous. Quand une
+// piste réelle est choisie, elle remplace le synthé (pas de superposition).
+let bgmEl = null;
+
+export function playTrack(id) {
+  setTrackId(id);
+  if (bgmEl) { bgmEl.pause(); bgmEl = null; }
+  const t = getTrack(id);
+  if (!t) return; // id inconnu -> retombe sur le synthé (géré par tickMusic)
+  bgmEl = new Audio(t.src);
+  bgmEl.loop = true;
+  bgmEl.volume = musicVol;
+  if (musicOn) bgmEl.play().catch(() => { });
+}
+export function stopTrack() {
+  setTrackId(null);
+  if (bgmEl) { bgmEl.pause(); bgmEl = null; }
+}
+export function hasRealTrack() { return !!bgmEl; }
+
+// Reprend la piste choisie précédemment (sauvegardée), au premier geste utilisateur.
+function resumeSavedTrack() {
+  const id = getTrackId();
+  if (id) playTrack(id);
+}
 
 const MUS = {
   bpm: 132, step: 0, next: 0,
@@ -23,6 +54,7 @@ export function initAudio() {
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     MUS.next = AC.currentTime + .1;
     setInterval(tickMusic, 30);
+    resumeSavedTrack();
   } catch (e) { }
 }
 
@@ -99,7 +131,7 @@ function kick(delay) {
 }
 
 function tickMusic() {
-  if (!AC || !musicOn) return;
+  if (!AC || !musicOn || bgmEl) return; // une piste réelle est active : pas de synthé par-dessus
   const spb = 60 / MUS.bpm / 4;
   while (MUS.next < AC.currentTime + .15) {
     const s = MUS.step, t = Math.max(0, MUS.next - AC.currentTime);
@@ -118,6 +150,7 @@ const sfxSlider = document.getElementById('sfxVol');
 musicSlider.addEventListener('input', function () {
   musicVol = this.value / 100;
   if (musicGain) musicGain.gain.value = musicVol;
+  if (bgmEl) bgmEl.volume = musicVol;
   document.getElementById('musicVal').textContent = Math.round(musicVol * 100) + '%';
 });
 sfxSlider.addEventListener('input', function () {

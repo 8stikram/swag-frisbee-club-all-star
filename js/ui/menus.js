@@ -6,7 +6,8 @@ import { SPECIALS } from '../data/specials.js';
 import { DISC_SKINS, getSkinId, setSkinId, drawSkinDisc } from '../data/skins.js';
 import { MAPS, setMapId } from '../data/maps.js';
 import { getKey } from '../data/keymap.js';
-import { sfx } from '../audio/audio.js';
+import { MUSIC_TRACKS, getTrackId } from '../data/music.js';
+import { sfx, playTrack, stopTrack } from '../audio/audio.js';
 import { addPopup } from '../game/fx.js';
 import { requestLock } from '../game/input.js';
 import { refreshKeysUI } from './keybind-ui.js';
@@ -263,6 +264,22 @@ export function mapsScreenKey(code) {
   else if (code === getKey('pause')) { sfx('select'); showScreen('select'); }
 }
 
+/* ---------- choix de la musique ----------
+   `null` = musique synthétisée par défaut, en première position. Les vraies
+   pistes viennent de data/music.js — en ajouter une là suffit à l'ajouter ici. */
+const MUSIC_CHOICES = [{ id: null, name: 'Synthé (défaut)' }, ...MUSIC_TRACKS];
+let musicIdx = Math.max(0, MUSIC_CHOICES.findIndex(t => t.id === getTrackId()));
+
+function renderMusic() {
+  const c = MUSIC_CHOICES[musicIdx];
+  $('musicName').textContent = c.name;
+  if (c.id) playTrack(c.id); else stopTrack();
+}
+function cycleMusic(d) {
+  musicIdx = (musicIdx + d + MUSIC_CHOICES.length) % MUSIC_CHOICES.length;
+  sfx('move'); renderMusic();
+}
+
 /* ---------- navigation ---------- */
 export function pauseGame() { Mouse.down = false; showScreen('pause'); }
 
@@ -295,9 +312,12 @@ export function doAct(act) {
 buildWatermarks();
 renderTitleHero();
 renderDisc();
+renderMusic();
 
 $('discPrev').addEventListener('click', () => cycleDisc(-1));
 $('discNext').addEventListener('click', () => cycleDisc(1));
+$('musicPrev').addEventListener('click', () => cycleMusic(-1));
+$('musicNext').addEventListener('click', () => cycleMusic(1));
 $('discLeft').addEventListener('click', () => cycleDisc(-1));
 $('discRight').addEventListener('click', () => cycleDisc(1));
 $('diffL').addEventListener('click', () => changeDiff(-1));
