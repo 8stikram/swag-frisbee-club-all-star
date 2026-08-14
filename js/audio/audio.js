@@ -2,7 +2,7 @@ import { mtof } from '../core/utils.js';
 import { getTrackId, getTrack, setTrackId } from '../data/music.js';
 
 let AC = null, masterG = null, musicGain = null, sfxGain = null, noiseBuf = null;
-let musicVol = 0.8, sfxVol = 0.9;
+let musicVol = 0.2, sfxVol = 0.9;
 export let musicOn = true;
 export function toggleMusic() {
   musicOn = !musicOn;

@@ -127,6 +127,13 @@ window.addEventListener('keydown', e => {
 
 window.addEventListener('keyup', e => {
   keys.delete(e.code);
+  // Le joueur 2 tire au relâchement d'Enter (comme P1 avec sa touche de
+  // charge), pas tant qu'elle reste enfoncée — sinon impossible de charger.
+  if (e.code === 'Enter' && G.isJ2J && G.p2 && G.p2.human && G.p2.holding && G.p2.wasCharging && G.p2.charge > 0) {
+    const p = G.p2;
+    const dir = norm(G.p1.x - p.x, G.p1.y - p.y);
+    throwDisc(p, dir, throwSpeed(p.charge, p.char.power));
+  }
   keysP2.delete(e.code);
   if (curScreen) return;
   const p = G.p1;
@@ -205,10 +212,9 @@ export function updatePlayer2(dt) {
     p.dashV.x = d.x * DASH_SPEED * 0.7; p.dashV.y = d.y * DASH_SPEED * 0.7;
     p.dashCd = DASH_CD; sfx('dash'); dust(p.x, p.y + 22, 8);
   }
-  if (keysP2.has('Enter') && p.holding && p.wasCharging && p.charge > 0) {
-    const dir = norm(G.p1.x - p.x, G.p1.y - p.y);
-    throwDisc(p, dir, throwSpeed(p.charge, p.char.power));
-  }
+  // Le tir part au relâchement de la touche (keyup), pas ici : voir plus bas.
+  // Le laisser ici tirait dès que charge>0, donc quasi immédiatement après
+  // avoir pris le disque — impossible de charger.
 }
 
 export function integratePlayer(p, dt) {
