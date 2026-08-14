@@ -3,6 +3,8 @@ import { COURT, CY, GOAL_TOP, GOAL_BOTTOM, DASH_SPEED, throwSpeed } from '../cor
 import { clamp, norm, gauss, rand, approach } from '../core/utils.js';
 import { dust } from './fx.js';
 import { onCatch, throwDisc } from './actions.js';
+import { trySpecial } from './specials.js';
+import { SPECIALS } from '../data/specials.js';
 
 export function predictArrivalAtX(disc, targetX) {
   if (!disc || !disc.free) return null;
@@ -34,17 +36,31 @@ export function getMirrorGoal(side, corner) {
 export function updateAI(p, dt) {
   const d = p.ai, D = d.diff, foe = p.foe, disc = G.disc;
   if (p.stun > 0) { d.target = { x: p.x, y: p.y }; return; }
+  // Ultime : jauge pleine -> tente de le lancer, avec une eagerness qui
+  // dépend de la difficulté (D.special). Coupé pendant la démo en fond de
+  // menu par trySpecial() lui-même.
+  if (p.meter >= 100 && !G.cine && (G.state === 'play' || G.state === 'serve')) {
+    const u = SPECIALS[p.char.ult];
+    if (u && (!u.needsDisc || p.holding) && Math.random() < D.special * dt) trySpecial(p);
+  }
   const attackSign = p.side === 2 ? -1 : 1;
   const hasDisc = p.holding;
   if (hasDisc) {
-    if (d.state !== 'STRIKE') { d.state = 'STRIKE'; d.stateTimer = 0; }
+    if (d.state !== 'STRIKE') {
+      d.state = 'STRIKE'; d.stateTimer = 0;
+      // Certaines possessions, l'IA vise volontairement une charge quasi
+      // complète pour sortir un vrai super-lancer, comme le ferait un joueur.
+      d.superCommit = Math.random() < D.smart * 0.35;
+    }
   } else {
     const puckInOwn = (attackSign * disc.x) < 0;
     const puckIncoming = (attackSign * disc.vx) < -15;
     const puckOutgoing = (attackSign * disc.vx) > 15;
     const distToPuck = Math.hypot(disc.x - p.x, disc.y - p.y);
     let newState = d.state;
-    if (puckIncoming && !hasDisc && distToPuck < 350) newState = 'DEFEND';
+    // `reactAt` matérialise le temps de réaction : en dessous, l'IA n'a pas
+    // encore "vu" le disque partir et ne bascule pas en défense.
+    if (puckIncoming && !hasDisc && distToPuck < 350 && G.now >= d.reactAt) newState = 'DEFEND';
     else if (puckOutgoing && !hasDisc && puckInOwn) newState = 'RECOVER';
     else if (!hasDisc && !puckInOwn) newState = 'READY';
     else if (d.aggro > 0 && puckInOwn && distToPuck < 350) newState = 'STRIKE';
@@ -125,7 +141,9 @@ export function updateAI(p, dt) {
     if (p.holdTimer > threshold || d.forceShoot) {
       p.charging = true;
       p.charge += dt / p.char.chargeT * (d.aggro > 3 ? 1.1 : 0.9);
-      if (p.charge >= Math.max(0.1, D.smart * 0.25) || p.holdTimer > 1.2) {
+      const releaseAt = d.superCommit ? 0.96 : Math.max(0.1, D.smart * 0.25);
+      const maxHold = d.superCommit ? 1.6 : 1.2;
+      if (p.charge >= releaseAt || p.holdTimer > maxHold) {
         const aimDir = norm(aimTarget.x - p.x, aimTarget.y - p.y);
         throwDisc(p, aimDir, throwSpeed(p.charge, p.char.power));
         d.state = 'RECOVER';

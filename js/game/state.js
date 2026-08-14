@@ -69,7 +69,7 @@ export function makePlayer(ck, side, human, diffIdx) {
       diff: DIFFS[diffIdx], reactAt: 0, plan: null, miss: false, missOff: 0, tracked: null,
       target: { x: p.home.x, y: p.home.y }, fleeing: false, aggro: 0, hesT: 0, hes: { x: 0, y: 0 },
       state: 'READY', stateTimer: 0, aimLock: 0, aimCorner: 1, emaTarget: { x: 0, y: 0 },
-      strikeDrive: false, shootTimer: 0, forceShoot: false, lastLog: 0
+      strikeDrive: false, shootTimer: 0, forceShoot: false, lastLog: 0, superCommit: false
     };
   }
   return p;
