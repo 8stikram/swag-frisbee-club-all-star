@@ -1,4 +1,10 @@
 import { getTrackId, getTrack, setTrackId } from '../data/music.js';
+import { G } from '../game/state.js';
+
+// Bruitages toujours autorisés même pendant la démo IA-vs-IA jouée en fond
+// de menu (clics/sélections) — tout le reste (buts, coups, cris...) est
+// coupé pour ne pas parasiter la musique/l'ambiance des menus.
+const UI_SFX = new Set(['move', 'select']);
 
 let AC = null, masterG = null, sfxGain = null, noiseBuf = null;
 let musicVol = 0.2, sfxVol = 0.9;
@@ -73,6 +79,7 @@ function noise(dur, vol, freq = 2000, delay = 0) {
 
 export function sfx(n) {
   if (!AC) return;
+  if (G.demo && !UI_SFX.has(n)) return;
   switch (n) {
     case 'move': beep(760, 760, .05, 'square', .06); break;
     case 'select': beep(620, 990, .12, 'square', .12); beep(990, 1320, .1, 'square', .08, .06); break;
