@@ -5,8 +5,9 @@ export const MUSIC_TRACKS = [
   { id: 'menu-ost', name: 'Menu OST', src: 'assets/audio/menu-ost.wav' }
 ];
 
-// null = musique synthétisée par défaut (celle déjà générée par audio.js).
-let currentTrackId = null;
+// Piste active par défaut : la première du registre. `null` = silence
+// (choisi explicitement via l'entrée "Aucune" du sélecteur).
+let currentTrackId = MUSIC_TRACKS[0].id;
 
 export function getTrackId() { return currentTrackId; }
 export function setTrackId(id) { currentTrackId = id; saveTrack(); }
@@ -15,11 +16,12 @@ export function getTrack(id) { return MUSIC_TRACKS.find(t => t.id === id) || nul
 function loadTrack() {
   try {
     const s = localStorage.getItem('sbcbTrack');
-    if (s === '__synth' || !s) currentTrackId = null;
-    else if (MUSIC_TRACKS.some(t => t.id === s)) currentTrackId = s;
+    if (s === '__none') currentTrackId = null;
+    else if (s && MUSIC_TRACKS.some(t => t.id === s)) currentTrackId = s;
+    // sinon : on garde le défaut déjà posé plus haut.
   } catch (e) { }
 }
 function saveTrack() {
-  try { localStorage.setItem('sbcbTrack', currentTrackId || '__synth'); } catch (e) { }
+  try { localStorage.setItem('sbcbTrack', currentTrackId || '__none'); } catch (e) { }
 }
 loadTrack();

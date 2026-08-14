@@ -1,7 +1,6 @@
-import { mtof } from '../core/utils.js';
 import { getTrackId, getTrack, setTrackId } from '../data/music.js';
 
-let AC = null, masterG = null, musicGain = null, sfxGain = null, noiseBuf = null;
+let AC = null, masterG = null, sfxGain = null, noiseBuf = null;
 let musicVol = 0.2, sfxVol = 0.9;
 export let musicOn = true;
 export function toggleMusic() {
@@ -10,15 +9,14 @@ export function toggleMusic() {
   return musicOn;
 }
 
-// ---- Piste réelle (OST), en plus du synthétiseur ci-dessous. Quand une
-// piste réelle est choisie, elle remplace le synthé (pas de superposition).
+// ---- Musique : un vrai fichier audio en boucle (plus de synthé par défaut).
 let bgmEl = null;
 
 export function playTrack(id) {
   setTrackId(id);
   if (bgmEl) { bgmEl.pause(); bgmEl = null; }
   const t = getTrack(id);
-  if (!t) return; // id inconnu -> retombe sur le synthé (géré par tickMusic)
+  if (!t) return; // pas de piste choisie -> silence
   bgmEl = new Audio(t.src);
   bgmEl.loop = true;
   bgmEl.volume = musicVol;
@@ -30,30 +28,22 @@ export function stopTrack() {
 }
 export function hasRealTrack() { return !!bgmEl; }
 
-// Reprend la piste choisie précédemment (sauvegardée), au premier geste utilisateur.
+// Reprend la piste choisie (ou celle par défaut de data/music.js) dès le
+// premier geste utilisateur — les navigateurs bloquent l'audio avant ça.
 function resumeSavedTrack() {
   const id = getTrackId();
   if (id) playTrack(id);
 }
-
-const MUS = {
-  bpm: 132, step: 0, next: 0,
-  bass: [45, 0, 45, 0, 48, 0, 45, 0, 43, 0, 43, 0, 50, 0, 48, 0, 45, 0, 45, 0, 48, 0, 45, 0, 41, 0, 43, 0, 45, 0, 43, 41],
-  lead: [69, 0, 0, 72, 0, 74, 0, 0, 76, 0, 74, 0, 72, 0, 69, 0, 69, 0, 0, 72, 0, 74, 0, 76, 79, 0, 76, 0, 74, 0, 72, 0]
-};
 
 export function initAudio() {
   if (AC) return;
   try {
     AC = new (window.AudioContext || window.webkitAudioContext)();
     masterG = AC.createGain(); masterG.gain.value = 0.9; masterG.connect(AC.destination);
-    musicGain = AC.createGain(); musicGain.gain.value = musicVol; musicGain.connect(masterG);
     sfxGain = AC.createGain(); sfxGain.gain.value = sfxVol; sfxGain.connect(masterG);
     noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.5, AC.sampleRate);
     const d = noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    MUS.next = AC.currentTime + .1;
-    setInterval(tickMusic, 30);
     resumeSavedTrack();
   } catch (e) { }
 }
@@ -112,44 +102,10 @@ export function sfx(n) {
   }
 }
 
-function beep2(f, dur, type, vol, delay) {
-  const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
-  o.type = type; o.frequency.value = f;
-  g.gain.setValueAtTime(vol, t);
-  g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-  o.connect(g); g.connect(musicGain); o.start(t); o.stop(t + dur + .02);
-}
-
-function kick(delay) {
-  const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
-  o.type = 'sine';
-  o.frequency.setValueAtTime(150, t);
-  o.frequency.exponentialRampToValueAtTime(45, t + .12);
-  g.gain.setValueAtTime(.22, t);
-  g.gain.exponentialRampToValueAtTime(.0001, t + .13);
-  o.connect(g); g.connect(musicGain); o.start(t); o.stop(t + .15);
-}
-
-function tickMusic() {
-  if (!AC || !musicOn || bgmEl) return; // une piste réelle est active : pas de synthé par-dessus
-  const spb = 60 / MUS.bpm / 4;
-  while (MUS.next < AC.currentTime + .15) {
-    const s = MUS.step, t = Math.max(0, MUS.next - AC.currentTime);
-    const b = MUS.bass[s]; if (b) beep2(mtof(b), spb * .9, 'square', .085, t);
-    const l = MUS.lead[s]; if (l) beep2(mtof(l), spb * .8, 'sawtooth', .035, t);
-    if (s % 4 === 0) kick(t);
-    if (s % 2 === 1) noise(.03, .03, 8000, t);
-    if (s % 8 === 4) noise(.09, .06, 1800, t);
-    MUS.next += spb;
-    MUS.step = (MUS.step + 1) % 32;
-  }
-}
-
 const musicSlider = document.getElementById('musicVol');
 const sfxSlider = document.getElementById('sfxVol');
 musicSlider.addEventListener('input', function () {
   musicVol = this.value / 100;
-  if (musicGain) musicGain.gain.value = musicVol;
   if (bgmEl) bgmEl.volume = musicVol;
   document.getElementById('musicVal').textContent = Math.round(musicVol * 100) + '%';
 });

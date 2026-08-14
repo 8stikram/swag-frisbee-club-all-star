@@ -265,9 +265,9 @@ export function mapsScreenKey(code) {
 }
 
 /* ---------- choix de la musique ----------
-   `null` = musique synthétisée par défaut, en première position. Les vraies
-   pistes viennent de data/music.js — en ajouter une là suffit à l'ajouter ici. */
-const MUSIC_CHOICES = [{ id: null, name: 'Synthé (défaut)' }, ...MUSIC_TRACKS];
+   Les pistes viennent de data/music.js — en ajouter une là suffit à
+   l'ajouter ici. "Aucune" (id null) coupe la musique sans couper les SFX. */
+const MUSIC_CHOICES = [...MUSIC_TRACKS, { id: null, name: 'Aucune musique' }];
 let musicIdx = Math.max(0, MUSIC_CHOICES.findIndex(t => t.id === getTrackId()));
 
 function renderMusic() {
