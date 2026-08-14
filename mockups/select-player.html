@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — Sélection perso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Great+Vibes&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#111318;
+    --teal1:#d8f8ea; --teal2:#7fe6b8; --teal3:#2fc98f;
+    --glow1:#ff8c1a; --glow2:#3f8fe0;
+    --yellow:#f5e63d; --green:#5df08a; --orange:#ff8c1f; --blue:#2f6bff; --red:#ff3b5c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{min-height:100vh;background:#070a12;color:#fff;font-family:'Barlow',sans-serif;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:28px 16px;}
+  .note{color:#8fa3cc;font-size:14px;font-family:sans-serif;}
+
+  /* container-type: tout l'intérieur se dimensionne sur le cadre (cqw/cqh),
+     pas sur la fenêtre du navigateur, pour garder les proportions. */
+  /* Le fond est un dégradé couleur joueur 1 → couleur joueur 2, posé par le script. */
+  .stage{position:relative;width:min(96vw,1180px);aspect-ratio:16/9;border-radius:8px;overflow:hidden;
+    container-type:size;transition:background .4s;
+    background:linear-gradient(100deg,#ffd0a3 0%,#ffd0a3 26%,#bfd6ee 74%,#bfd6ee 100%);}
+
+  /* ---------- FOND ANIMÉ (variante "VERSUS") ---------- */
+  .bg{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+  .watermark{position:absolute;top:-30%;left:-60%;width:220%;height:160%;
+    display:flex;flex-direction:column;gap:2.6cqw;transform:rotate(-14deg);animation:drift 30s linear infinite;}
+  .watermark .line{white-space:nowrap;font-family:'Archivo Black',sans-serif;font-size:4.2cqw;
+    letter-spacing:.12em;color:rgba(255,255,255,.28);}
+  .watermark .line:nth-child(even){color:rgba(255,255,255,.15);transform:translateX(-6%);}
+  @keyframes drift{from{transform:rotate(-14deg) translateX(0)}to{transform:rotate(-14deg) translateX(-12%)}}
+  .ringwrap{position:absolute;top:50%;left:50%;width:150cqh;height:150cqh;transform:translate(-50%,-50%);
+    animation:spin 50s linear infinite;}
+  @keyframes spin{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+  .ringwrap svg{width:100%;height:100%;}
+  .ringwrap text{font-family:'Archivo Black',sans-serif;font-size:15px;letter-spacing:.42em;fill:rgba(255,255,255,.7);}
+  .arc{position:absolute;top:50%;left:50%;width:126cqh;height:126cqh;transform:translate(-50%,-50%);
+    border:3px dashed rgba(255,255,255,.34);border-radius:50%;animation:spin 66s linear infinite reverse;}
+  .streaks{position:absolute;inset:-20%;
+    background:repeating-linear-gradient(-14deg,rgba(255,255,255,.2) 0 3px,transparent 3px 54px);
+    animation:slide 10s linear infinite;}
+  @keyframes slide{from{transform:translateX(0)}to{transform:translateX(54px)}}
+
+  /* Projecteurs de stade : deux faisceaux flous qui balaient lentement */
+  .beam{position:absolute;top:-40%;height:180%;width:26cqh;
+    background:linear-gradient(to bottom,rgba(255,255,255,.55),rgba(255,255,255,.05));
+    filter:blur(26px);transform-origin:50% 0;mix-blend-mode:soft-light;}
+  .beam.b-a{left:22%;animation:sweepA 13s ease-in-out infinite;}
+  .beam.b-b{left:64%;animation:sweepB 17s ease-in-out infinite;}
+  @keyframes sweepA{0%,100%{transform:rotate(-13deg)}50%{transform:rotate(11deg)}}
+  @keyframes sweepB{0%,100%{transform:rotate(12deg)}50%{transform:rotate(-10deg)}}
+
+  /* Halo derrière chaque combattant, teinté par le perso sélectionné */
+  .charglow{position:absolute;top:46%;width:52cqh;height:52cqh;border-radius:50%;
+    transform:translate(-50%,-50%);filter:blur(46px);opacity:.5;
+    animation:pulse 3.4s ease-in-out infinite;transition:background .35s;}
+  .charglow.g1{left:22%;background:var(--glow1);}
+  .charglow.g2{left:78%;background:var(--glow2);animation-delay:1.7s;}
+  @keyframes pulse{0%,100%{opacity:.36;transform:translate(-50%,-50%) scale(.94)}
+                   50%{opacity:.58;transform:translate(-50%,-50%) scale(1.06)}}
+
+  /* ---------- BANDEAU TITRE ---------- */
+  .titlebar{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:6;
+    background:var(--orange);border:4px solid var(--ink);border-top:0;border-radius:0 0 8px 8px;
+    padding:1.4cqh 2.6cqw;box-shadow:0 5px 0 var(--ink);
+    clip-path:polygon(4% 0,96% 0,100% 100%,0 100%);}
+  .titlebar span{font-family:'Archivo Black',sans-serif;font-size:clamp(13px,2.6cqh,22px);color:#fff;
+    -webkit-text-stroke:4px var(--ink);paint-order:stroke fill;letter-spacing:.04em;}
+
+  .prompt{position:absolute;top:3%;z-index:6;display:flex;align-items:center;gap:.6cqw;
+    font-family:'Archivo Black',sans-serif;font-size:clamp(9px,1.9cqh,14px);color:var(--ink);}
+  .prompt.left{left:2%;} .prompt.right{right:2%;flex-direction:column;align-items:flex-end;gap:.8cqh;}
+  .prompt .row{display:flex;align-items:center;gap:.6cqw;}
+  .key{width:3.4cqh;height:3.4cqh;min-width:19px;min-height:19px;border-radius:50%;background:var(--ink);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:.72em;flex-shrink:0;}
+
+  /* ---------- LAYOUT ---------- */
+  .board{position:absolute;inset:0;z-index:4;display:grid;
+    grid-template-columns:1fr auto 1fr;align-items:center;justify-items:center;
+    padding:11cqh 2.5cqw 15cqh;gap:1.5cqw;}
+
+  /* ---------- PANNEAU PERSO ---------- */
+  .side{display:flex;flex-direction:column;align-items:center;gap:1.4cqh;width:100%;}
+
+  /* Bandeau d'univers collé au bord du cadre, façon drapeau WJ2 */
+  .badge{position:absolute;top:15cqh;z-index:5;background:#fff;border:4px solid var(--ink);
+    padding:.8cqh 1.2cqw;font-family:'Archivo Black',sans-serif;font-size:clamp(8px,1.9cqh,13px);
+    color:var(--ink);letter-spacing:.08em;box-shadow:0 4px 0 var(--ink);white-space:nowrap;}
+  .badge.b1{left:0;border-left:0;border-radius:0 6px 6px 0;}
+  .badge.b2{right:0;border-right:0;border-radius:6px 0 0 6px;}
+
+  .heroBox{position:relative;display:flex;align-items:flex-end;justify-content:center;height:38cqh;}
+  .heroBox canvas{position:relative;image-rendering:pixelated;height:100%;width:auto;
+    animation:bob 2.8s ease-in-out infinite;transition:filter .25s;}
+  /* Contour diffus resserré qui épouse la silhouette (pas de gros flou qui "carre" le canvas) */
+  .heroBox canvas{filter:
+    drop-shadow(0 0 2px rgba(17,19,24,.5)) drop-shadow(0 0 6px rgba(17,19,24,.36))
+    drop-shadow(0 0 12px rgba(17,19,24,.22)) drop-shadow(0 5px 7px rgba(17,19,24,.22));}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+
+  .nameSlash{position:relative;padding:.9cqh 1.6cqw;transform:skewX(-10deg);
+    border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);}
+  .nameSlash.p1{background:var(--blue);} .nameSlash.p2{background:var(--red);}
+  .nameSlash span{display:inline-block;transform:skewX(10deg);font-family:'Archivo Black',sans-serif;
+    font-size:clamp(12px,2.8cqh,20px);color:#fff;-webkit-text-stroke:3.5px var(--ink);paint-order:stroke fill;}
+
+  .stats{width:82%;display:flex;flex-direction:column;gap:1.6cqh;}
+  .statRow{display:flex;flex-direction:column;gap:.7cqh;}
+  .statRow .lbl{font-family:'Archivo Black',sans-serif;font-size:clamp(8px,1.9cqh,12px);
+    color:#fff;-webkit-text-stroke:3.5px var(--ink);paint-order:stroke fill;letter-spacing:.06em;}
+  .bar{height:3.2cqh;min-height:12px;background:#fff;border:3px solid var(--ink);
+    box-shadow:3px 3px 0 var(--ink);display:flex;overflow:hidden;}
+  .bar i{display:block;height:100%;}
+
+  /* ---------- GRILLE CENTRALE ---------- */
+  .gridwrap{display:flex;flex-direction:column;align-items:center;gap:1.6cqh;}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.6cqh;
+    background:var(--ink);border:5px solid var(--ink);box-shadow:6px 6px 0 rgba(0,0,0,.35);}
+  .cell{position:relative;width:11.5cqh;height:11.5cqh;min-width:56px;min-height:56px;
+    background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;}
+  .cell canvas{image-rendering:pixelated;height:96%;width:auto;}
+  .cell .qm{font-family:'Archivo Black',sans-serif;font-size:5cqh;color:var(--ink);}
+  .cell .tag{position:absolute;font-family:'Archivo Black',sans-serif;font-size:clamp(8px,1.7cqh,12px);
+    color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;bottom:2px;}
+  .cell .tag.t1{left:3px;} .cell .tag.t2{right:3px;}
+  .cell.sel1{outline:4px solid var(--blue);outline-offset:-4px;}
+  .cell.sel2{outline:4px solid var(--red);outline-offset:-4px;}
+  .cell.sel1.sel2{outline:4px solid var(--yellow);outline-offset:-4px;}
+  .cell.rnd{background:var(--yellow);}
+
+  .special{max-width:30cqh;text-align:center;background:#fff;border:4px solid var(--ink);
+    box-shadow:4px 4px 0 var(--ink);padding:1cqh 1cqw;border-radius:6px;}
+  .special b{font-family:'Archivo Black',sans-serif;font-size:clamp(8px,1.7cqh,12px);color:var(--ink);}
+  .special em{font-style:normal;font-family:'Barlow',sans-serif;font-weight:600;
+    font-size:clamp(8px,1.6cqh,12px);color:rgba(17,19,24,.72);display:block;}
+
+  /* ---------- SÉLECTEUR DE DISQUE (un seul + flèches) ---------- */
+  .discbar{position:absolute;left:50%;bottom:2.4cqh;transform:translateX(-50%);z-index:6;
+    display:flex;flex-direction:column;align-items:center;gap:.5cqh;background:rgba(255,255,255,.92);
+    border:4px solid var(--ink);border-radius:8px;box-shadow:5px 5px 0 var(--ink);padding:1cqh 1.6cqw;}
+  .discbar .cap{font-family:'Archivo Black',sans-serif;font-size:clamp(7px,1.4cqh,11px);
+    color:rgba(17,19,24,.55);letter-spacing:.12em;}
+  .discrow{display:flex;align-items:center;gap:1.1cqw;}
+  .arrow{width:5.4cqh;height:5.4cqh;min-width:26px;min-height:26px;flex-shrink:0;
+    border:3px solid var(--ink);background:var(--yellow);border-radius:6px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    font-family:'Archivo Black',sans-serif;font-size:2.2cqh;color:var(--ink);
+    box-shadow:3px 3px 0 var(--ink);transition:transform .08s,box-shadow .08s;}
+  .arrow:hover{background:var(--ink);color:#fff;}
+  .arrow:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink);}
+  .disc{position:relative;width:9cqh;height:9cqh;min-width:44px;min-height:44px;border-radius:50%;
+    border:4px solid var(--ink);background:#0a1430;display:flex;align-items:center;
+    justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:3px 3px 0 var(--ink);}
+  .disc.rnd{background:var(--yellow);font-family:'Archivo Black',sans-serif;color:var(--ink);font-size:4cqh;}
+  .disc canvas{width:100%;height:100%;}
+  .discname{font-family:'Archivo Black',sans-serif;font-size:clamp(8px,1.7cqh,12px);
+    color:var(--ink);text-align:center;min-width:16cqh;white-space:nowrap;}
+</style>
+</head>
+<body>
+  <div class="note">Mockup — sélection des personnages (D.A. Windjammers 2)</div>
+
+  <div class="stage">
+    <div class="bg">
+      <div class="charglow g1" id="glow1"></div>
+      <div class="charglow g2" id="glow2"></div>
+      <div class="watermark" id="wm"></div>
+      <div class="beam b-a"></div>
+      <div class="beam b-b"></div>
+      <div class="streaks"></div>
+      <div class="arc"></div>
+      <div class="ringwrap">
+        <svg viewBox="0 0 400 400">
+          <path id="rp" d="M 200,200 m -160,0 a 160,160 0 1,1 320,0 a 160,160 0 1,1 -320,0" fill="none"/>
+          <text><textPath href="#rp" startOffset="0%">VERSUS • VERSUS • VERSUS • VERSUS • VERSUS • VERSUS • VERSUS • VERSUS • </textPath></text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="titlebar"><span>CHOISIS TON CHAMPION</span></div>
+    <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
+    <div class="prompt right">
+      <div class="row"><span class="key">⏎</span>VALIDER</div>
+      <div class="row"><span class="key">R</span>ALÉATOIRE</div>
+    </div>
+
+    <div class="badge b1" id="uni1">—</div>
+    <div class="badge b2" id="uni2">—</div>
+
+    <div class="board">
+      <div class="side p1">
+        <div class="heroBox"><canvas id="hero1"></canvas></div>
+        <div class="nameSlash p1"><span id="name1">—</span></div>
+        <div class="stats" id="stats1"></div>
+      </div>
+
+      <div class="gridwrap">
+        <div class="grid" id="grid"></div>
+        <div class="special"><b id="spName">—</b><em id="spDesc">—</em></div>
+      </div>
+
+      <div class="side p2">
+        <div class="heroBox"><canvas id="hero2"></canvas></div>
+        <div class="nameSlash p2"><span id="name2">—</span></div>
+        <div class="stats" id="stats2"></div>
+      </div>
+    </div>
+
+    <div class="discbar">
+      <span class="cap">DISQUE</span>
+      <div class="discrow">
+        <button class="arrow" id="discPrev">◀</button>
+        <div class="disc" id="discView"></div>
+        <button class="arrow" id="discNext">▶</button>
+      </div>
+      <span class="discname" id="discName">—</span>
+    </div>
+  </div>
+
+<script type="module">
+import { CHARS, ROSTER } from '/js/data/characters.js';
+import { DISC_SKINS, drawSkinDisc } from '/js/data/skins.js';
+
+// Libellés repris de data/specials.js : ce module importe tout le moteur
+// (audio, actions...) et ne peut pas être chargé hors du jeu.
+const SPECIALS = {
+  kurama: { name: 'KURAMA', desc: 'Invoque le Renard à Neuf Queues.' },
+  matilda: { name: 'TIR MATILDA', desc: 'Rafale triple.' },
+  leg: { name: 'LA JAMBE DE MAMAN', desc: 'La jambe de Mom tombe du ciel.' }
+};
+
+const wm = document.getElementById('wm');
+for (let i = 0; i < 6; i++) {
+  const d = document.createElement('div');
+  d.className = 'line';
+  d.textContent = 'VERSUS SWAG FRISBEE VERSUS SWAG FRISBEE VERSUS ';
+  wm.appendChild(d);
+}
+
+let pick1 = 'naruto', pick2 = 'leon', skin = DISC_SKINS[0].id;
+
+// Éclaircit une couleur vers le blanc, pour que le noir des contours reste lisible dessus.
+function pale(hex, w) {
+  const n = parseInt(hex.slice(1), 16);
+  const m = v => Math.round(v + (255 - v) * w);
+  return `rgb(${m((n >> 16) & 255)},${m((n >> 8) & 255)},${m(n & 255)})`;
+}
+
+function drawSprite(cv, ck, cropHead) {
+  const src = CHARS[ck].frames.idle, scale = 14;
+  const h = cropHead ? 11 : src.height;
+  cv.width = src.width * scale; cv.height = h * scale;
+  const g = cv.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  g.drawImage(src, 0, 0, src.width, h, 0, 0, cv.width, cv.height);
+}
+
+function statBar(label, val, color) {
+  const row = document.createElement('div'); row.className = 'statRow';
+  const lbl = document.createElement('span'); lbl.className = 'lbl'; lbl.textContent = label;
+  const bar = document.createElement('div'); bar.className = 'bar';
+  const fill = document.createElement('i');
+  fill.style.width = (val / 5 * 100) + '%'; fill.style.background = color;
+  bar.appendChild(fill); row.appendChild(lbl); row.appendChild(bar);
+  return row;
+}
+
+function renderSide(n, ck) {
+  const c = CHARS[ck];
+  document.getElementById('uni' + n).textContent = c.universe;
+  document.getElementById('name' + n).textContent = c.short;
+  drawSprite(document.getElementById('hero' + n), ck, false);
+  const box = document.getElementById('stats' + n);
+  box.innerHTML = '';
+  box.appendChild(statBar('VITESSE', c.stats.spd, 'var(--green)'));
+  box.appendChild(statBar('PUISSANCE', c.stats.pow, 'var(--red)'));
+  box.appendChild(statBar('CONTRÔLE', c.stats.ctl, 'var(--blue)'));
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for (const ck of ROSTER) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.style.background = CHARS[ck].color;
+    const cv = document.createElement('canvas');
+    drawSprite(cv, ck, true);
+    cell.appendChild(cv);
+    if (pick1 === ck) { const t = document.createElement('span'); t.className = 'tag t1'; t.textContent = '1P'; cell.appendChild(t); cell.classList.add('sel1'); }
+    if (pick2 === ck) { const t = document.createElement('span'); t.className = 'tag t2'; t.textContent = '2P'; cell.appendChild(t); cell.classList.add('sel2'); }
+    cell.addEventListener('click', () => { pick1 = ck; refresh(); });
+    cell.addEventListener('contextmenu', e => { e.preventDefault(); pick2 = ck; refresh(); });
+    grid.appendChild(cell);
+  }
+  // Case aléatoire, à côté des persos
+  const rnd = document.createElement('div');
+  rnd.className = 'cell rnd';
+  rnd.innerHTML = '<span class="qm">?</span>';
+  rnd.addEventListener('click', () => { pick1 = ROSTER[(Math.random() * ROSTER.length) | 0]; refresh(); });
+  rnd.addEventListener('contextmenu', e => { e.preventDefault(); pick2 = ROSTER[(Math.random() * ROSTER.length) | 0]; refresh(); });
+  grid.appendChild(rnd);
+}
+
+// Carrousel : les skins + une entrée "aléatoire" en fin de liste.
+const DISC_CHOICES = [...DISC_SKINS.map(s => ({ id: s.id, name: s.name })), { id: '__random', name: 'ALÉATOIRE' }];
+let discIdx = 0;
+
+function renderDiscs() {
+  const ch = DISC_CHOICES[discIdx];
+  const view = document.getElementById('discView');
+  view.innerHTML = '';
+  view.classList.toggle('rnd', ch.id === '__random');
+  if (ch.id === '__random') {
+    view.textContent = '?';
+  } else {
+    const cv = document.createElement('canvas');
+    cv.width = 90; cv.height = 90;
+    drawSkinDisc(cv.getContext('2d'), 45, 45, 41, ch.id, 0);
+    view.appendChild(cv);
+    skin = ch.id;
+  }
+  document.getElementById('discName').textContent = ch.name;
+}
+
+function cycleDisc(d) {
+  discIdx = (discIdx + d + DISC_CHOICES.length) % DISC_CHOICES.length;
+  renderDiscs();
+}
+document.getElementById('discPrev').addEventListener('click', () => cycleDisc(-1));
+document.getElementById('discNext').addEventListener('click', () => cycleDisc(1));
+
+function refresh() {
+  renderSide(1, pick1);
+  renderSide(2, pick2);
+  renderGrid();
+  // Le halo de chaque moitié prend la couleur du perso choisi de ce côté,
+  // et le fond entier passe en dégradé de la couleur J1 vers celle de J2.
+  const c1 = CHARS[pick1].color, c2 = CHARS[pick2].color;
+  document.getElementById('glow1').style.background = c1;
+  document.getElementById('glow2').style.background = c2;
+  document.querySelector('.stage').style.background =
+    `linear-gradient(100deg, ${pale(c1, .48)} 0%, ${pale(c1, .34)} 26%, ` +
+    `${pale(c2, .34)} 74%, ${pale(c2, .48)} 100%)`;
+  const sp = SPECIALS[CHARS[pick1].ult];
+  document.getElementById('spName').textContent = sp.name;
+  document.getElementById('spDesc').textContent = sp.desc;
+}
+
+refresh();
+renderDiscs();
+</script>
+</body>
+</html>

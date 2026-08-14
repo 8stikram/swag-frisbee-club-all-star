@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — style Windjammers 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Baloo+2:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12121a; --teal:#1fb8c9; --teal2:#0d8fa0;
+    --orange:#ff6a1f; --green:#3ddc84; --dark:#1a1a22;
+    --txt:#ffffff; --txt-dim:rgba(255,255,255,.75);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;font-family:'Baloo 2',sans-serif;color:var(--txt);
+    background:#070a12;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+    padding:40px 16px;
+  }
+  .note{color:#8fa3cc;font-size:14px;letter-spacing:.5px;font-family:sans-serif;}
+  .stage{
+    position:relative;width:min(94vw,1040px);aspect-ratio:16/9.6;
+    border-radius:10px;overflow:hidden;
+    background:
+      radial-gradient(700px 700px at 78% 30%, #29c4d4 0%, transparent 60%),
+      linear-gradient(135deg, var(--teal2), var(--teal) 55%, #23a6b8);
+    display:flex;
+  }
+  .stage::before{
+    content:'';position:absolute;inset:0;opacity:.10;pointer-events:none;
+    background:repeating-linear-gradient(-20deg, #fff 0 3px, transparent 3px 46px);
+  }
+
+  .left{width:44%;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:5% 4%;position:relative;z-index:2;}
+  .right{width:56%;position:relative;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;}
+
+  .logo{margin-bottom:8px;}
+  .logo .l1{
+    font-family:'Titan One',cursive;font-size:clamp(30px,4vw,42px);color:#fff;
+    -webkit-text-stroke:5px var(--ink);paint-order:stroke fill;
+    letter-spacing:1px;line-height:1;transform:skewX(-4deg);
+  }
+  .logo .l2{
+    font-family:'Titan One',cursive;font-size:clamp(46px,6.4vw,68px);color:#ffd23e;
+    -webkit-text-stroke:6px var(--ink);paint-order:stroke fill;
+    letter-spacing:1px;line-height:.95;transform:skewX(-4deg);margin-top:-4px;
+  }
+  .logo .l3{
+    font-family:'Titan One',cursive;font-size:clamp(22px,3vw,30px);color:#ff6a1f;
+    -webkit-text-stroke:4px var(--ink);paint-order:stroke fill;
+    letter-spacing:2px;line-height:1;transform:skewX(-4deg);margin-top:2px;
+  }
+
+  .menu{display:flex;flex-direction:column;gap:12px;}
+  .mbtn{
+    display:flex;align-items:center;gap:12px;
+    font-family:'Titan One',cursive;font-size:clamp(15px,1.8vw,19px);color:var(--ink);
+    padding:12px 20px;border-radius:16px;border:4px solid var(--ink);
+    box-shadow:5px 5px 0 var(--ink);cursor:pointer;
+    transition:transform .12s;
+  }
+  .mbtn:hover, .mbtn.sel{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--ink);}
+  .mbtn .ico{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.35);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;border:3px solid var(--ink);}
+  .mbtn .ico svg{width:16px;height:16px;}
+  .mbtn.orange{background:var(--orange);color:#fff;}
+  .mbtn.green{background:var(--green);color:var(--ink);}
+  .mbtn.dark{background:var(--dark);color:#fff;}
+
+  .tag{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:13px;letter-spacing:2px;color:rgba(255,255,255,.85);text-transform:uppercase;}
+
+  .ring{position:absolute;top:6%;right:6%;width:150px;height:150px;opacity:.9;z-index:1;}
+  .confirm{position:absolute;top:16px;right:20px;display:flex;align-items:center;gap:8px;
+    font-family:'Baloo 2',sans-serif;font-weight:700;font-size:13px;color:#fff;z-index:3;letter-spacing:1px;}
+  .confirm .key{width:22px;height:22px;border-radius:50%;border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:12px;}
+
+  .hero{position:relative;image-rendering:pixelated;filter:drop-shadow(0 10px 0 rgba(0,0,0,.18));z-index:2;}
+  .heroGlow{position:absolute;bottom:-8%;right:8%;width:60%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.16);z-index:0;}
+
+  .banner{position:absolute;left:0;right:0;bottom:0;background:rgba(10,10,16,.55);padding:10px 20px;text-align:center;z-index:3;}
+  .banner span{font-family:'Titan One',cursive;font-size:clamp(13px,1.8vw,18px);color:#fff;-webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill;letter-spacing:1px;}
+</style>
+</head>
+<body>
+  <div class="note">Direction C — dans l'esprit Windjammers 2</div>
+  <div class="stage">
+    <div class="confirm"><div class="key">⏎</div>VALIDER</div>
+
+    <div class="left">
+      <div class="logo">
+        <div class="l1">SWAG</div>
+        <div class="l2">FRISBEE</div>
+        <div class="l3">ALL STAR</div>
+      </div>
+      <div class="menu">
+        <button class="mbtn orange sel">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#12121a" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M9 12h6M12 9v6"/></svg></span>
+          Match vs IA
+        </button>
+        <button class="mbtn green">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#12121a" stroke-width="2.6" stroke-linecap="round"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M3 19c0-3 2.5-5 5-5s5 2 5 5M11 19c0-3 2.5-5 5-5s5 2 5 5"/></svg></span>
+          Match JcJ
+        </button>
+        <button class="mbtn dark">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1-1.55 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09a1.7 1.7 0 001.55-1 1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34H9a1.7 1.7 0 001-1.55V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87V9a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.55 1z"/></svg></span>
+          Options
+        </button>
+      </div>
+      <div class="tag">Appuie sur Entrée</div>
+    </div>
+
+    <div class="right">
+      <svg class="ring" viewBox="0 0 150 150">
+        <path id="ringPath" d="M 75,75 m -60,0 a 60,60 0 1,1 120,0 a 60,60 0 1,1 -120,0" fill="none"/>
+        <text font-family="Baloo 2" font-weight="700" font-size="11" letter-spacing="3" fill="#fff" opacity=".8">
+          <textPath href="#ringPath" startOffset="0%">MENU PRINCIPAL • MENU PRINCIPAL • </textPath>
+        </text>
+      </svg>
+      <div class="heroGlow"></div>
+      <canvas id="hero" class="hero"></canvas>
+      <div class="banner"><span>MONTRE-LEUR QUI EST LE BOSS !</span></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import('/js/data/characters.js').then(mod => {
+      const src = mod.CHARS.leon.frames.idle;
+      const scale = 14;
+      const c = document.getElementById('hero');
+      c.width = src.width * scale; c.height = src.height * scale;
+      c.style.width = (src.width * scale * 0.62) + 'px';
+      c.style.height = (src.height * scale * 0.62) + 'px';
+      const g = c.getContext('2d');
+      g.imageSmoothingEnabled = false;
+      g.drawImage(src, 0, 0, c.width, c.height);
+    });
+  </script>
+</body>
+</html>

@@ -4,13 +4,15 @@
 export const MAPS = [
   {
     id: 'arena',
-    name: 'DISC ARENA',
+    name: 'SPACE-STATION',
     court: { left: 70, right: 890, top: 84, bottom: 560 },
-    goal: { height: 170, depth: 44 },
+    goal: { height: 200, depth: 48 },
+    // La zone à 5 points est volontairement plus étroite que celles à 3 :
+    // viser le centre doit être le tir difficile.
     zones: [
-      { from: -85, to: -34, points: 3, color: '#35e0ff' },
-      { from: -34, to: 34, points: 5, color: '#ffd23e' },
-      { from: 34, to: 85, points: 3, color: '#35e0ff' }
+      { from: -100, to: -26, points: 3, color: '#35e0ff' },
+      { from: -26, to: 26, points: 5, color: '#ffd23e' },
+      { from: 26, to: 100, points: 3, color: '#35e0ff' }
     ],
     theme: {
       bgInner: '#0a1220',
@@ -19,8 +21,16 @@ export const MAPS = [
       line: 'rgba(255,255,255,.6)',
       goalFill: 'rgba(53,224,255,0.15)',
       goalStroke: '#35e0ff',
-      crowdColors: ['#ff8c1a', '#35e0ff', '#ffd23e', '#ff5340', '#7bd66a', '#e86ad0', '#cfe0ff', '#f2a2c0'],
-      starColor: '#ffffff'
+      crowdColors: ['#35e0ff', '#7fe9ff', '#ffd23e', '#ff5340'],
+      starColor: '#ffffff',
+      // Station spatiale : le terrain est une projection posée sur le pont métallique.
+      holo: '#35e0ff',        // teinte de la projection
+      holo2: '#7fe9ff',       // reflets clairs
+      deck: '#0c1424',        // tôle du pont
+      deckLine: '#1b2c48',    // joints entre les plaques
+      deckLight: '#16233c',   // plaques éclairées
+      hull: '#101a2e',        // coque autour de l'arène
+      hullEdge: '#243b63'
     }
   }
 ];

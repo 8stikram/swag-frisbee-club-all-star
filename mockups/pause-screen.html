@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — Pause</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#111318;--yellow:#f5e63d;--green:#5df08a;}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{min-height:100vh;background:#070a12;color:#fff;font-family:'Barlow',sans-serif;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:28px 16px;}
+  .note{color:#8fa3cc;font-size:14px;font-family:sans-serif;}
+
+  .stage{position:relative;width:min(96vw,1180px);aspect-ratio:16/9;border-radius:8px;overflow:hidden;
+    container-type:size;background:#05070d;}
+
+  /* Le vrai match tourne en fond, assombri : c'est littéralement ce sur quoi
+     on appuie pause, pas une image de remplacement. */
+  .demo{position:absolute;inset:0;border:0;width:100%;height:100%;filter:saturate(.7) brightness(.8);}
+  .scrim{position:absolute;inset:0;background:rgba(6,8,14,.6);z-index:2;}
+
+  .card{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;
+    width:52cqh;display:flex;flex-direction:column;align-items:center;gap:2.8cqh;}
+
+  .titleRibbon{background:var(--yellow);border:4px solid var(--ink);border-radius:8px;
+    padding:1.6cqh 3.6cqw;box-shadow:7px 7px 0 var(--ink);
+    clip-path:polygon(4% 0,96% 0,100% 100%,0 100%);}
+  .titleRibbon span{font-family:'Archivo Black',sans-serif;font-size:clamp(24px,5.6cqh,42px);
+    color:var(--ink);letter-spacing:.06em;}
+
+  .menu{display:flex;flex-direction:column;gap:1.2cqh;width:100%;}
+  /* Repos = bleu pastel pour les 3 boutons, sans état "sélectionné" forcé.
+     Le noir n'apparaît qu'au survol réel (:hover), jamais par défaut. */
+  .mbtn{font-family:'Archivo Black',sans-serif;font-size:clamp(13px,2.2cqh,18px);color:var(--ink);
+    background:#aecbff;padding:1.3cqh 1.6cqw;border:4px solid var(--ink);border-radius:8px;
+    box-shadow:5px 5px 0 var(--ink);cursor:pointer;text-align:center;
+    transition:background .1s,color .1s,transform .1s,box-shadow .1s;}
+  .mbtn:hover{background:var(--ink);color:#fff;transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--ink);}
+</style>
+</head>
+<body>
+  <div class="note">Mockup — écran Pause (D.A. Windjammers 2)</div>
+
+  <div class="stage">
+    <iframe class="demo" id="demo" src="/index.html" title="Match en fond, assombri"></iframe>
+    <div class="scrim"></div>
+
+    <div class="card">
+      <div class="titleRibbon"><span>PAUSE</span></div>
+      <div class="menu">
+        <button class="mbtn">Reprendre</button>
+        <button class="mbtn">Recommencer</button>
+        <button class="mbtn">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('demo').addEventListener('load', function(){
+      const d = this.contentDocument;
+      const s = d.createElement('style');
+      s.textContent = `
+        body{padding:0!important;gap:0!important;overflow:hidden!important;}
+        h1.brand, footer, .crt, #admin-panel{display:none!important;}
+        .screen{display:none!important;}
+        #stage{width:100vw!important;height:100vh!important;aspect-ratio:auto!important;
+               border:0!important;border-radius:0!important;box-shadow:none!important;}
+      `;
+      d.head.appendChild(s);
+    });
+  </script>
+</body>
+</html>

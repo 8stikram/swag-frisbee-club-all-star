@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — Main menu façon WJ2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Great+Vibes&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#111318;
+    --teal1:#d2f7f5; --teal2:#96e6ec; --teal3:#63d0dd;
+    --yellow:#f5e63d; --green:#5df08a; --orange:#ff7a2f; --blue:#2f6bff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;background:#070a12;color:#fff;font-family:'Barlow',sans-serif;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:34px 16px;
+  }
+  .note{color:#8fa3cc;font-size:14px;font-family:sans-serif;}
+
+  .stage{
+    position:relative;width:min(95vw,1120px);aspect-ratio:16/9;
+    border-radius:8px;overflow:hidden;
+    background:linear-gradient(160deg,var(--teal1) 0%,var(--teal2) 45%,var(--teal3) 100%);
+    display:flex;
+  }
+
+  /* ---------- FOND ANIMÉ ---------- */
+  .bg{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+
+  /* Vrai match de démo du jeu, en fond très atténué */
+  .demo{position:absolute;inset:0;border:0;width:100%;height:100%;
+    opacity:.6;mix-blend-mode:screen;pointer-events:none;}
+
+  .watermark{
+    position:absolute;top:-30%;left:-60%;width:220%;height:160%;
+    display:flex;flex-direction:column;gap:2.6vw;transform:rotate(-14deg);
+    animation:drift 26s linear infinite;
+  }
+  .watermark .line{
+    white-space:nowrap;font-family:'Archivo Black',sans-serif;
+    font-size:4.4vw;letter-spacing:.12em;color:rgba(255,255,255,.30);
+  }
+  .watermark .line:nth-child(even){color:rgba(255,255,255,.16);transform:translateX(-6%);}
+  @keyframes drift{from{transform:rotate(-14deg) translateX(0)}to{transform:rotate(-14deg) translateX(-12%)}}
+
+  .ringwrap{
+    position:absolute;top:50%;left:58%;width:86vh;height:86vh;
+    transform:translate(-50%,-50%);animation:spin 44s linear infinite;
+  }
+  @keyframes spin{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+  .ringwrap svg{width:100%;height:100%;}
+  .ringwrap text{font-family:'Archivo Black',sans-serif;font-size:15px;letter-spacing:.42em;fill:rgba(255,255,255,.72);}
+  .arc{position:absolute;top:50%;left:58%;width:74vh;height:74vh;transform:translate(-50%,-50%);
+    border:3px dashed rgba(255,255,255,.35);border-radius:50%;animation:spin 60s linear infinite reverse;}
+
+  .streaks{position:absolute;inset:-20%;
+    background:repeating-linear-gradient(-14deg,rgba(255,255,255,.22) 0 3px,transparent 3px 54px);
+    animation:slide 9s linear infinite;}
+  @keyframes slide{from{transform:translateX(0)}to{transform:translateX(54px)}}
+
+  /* ---------- COLONNE GAUCHE ---------- */
+  .left{position:relative;z-index:3;width:46%;display:flex;flex-direction:column;justify-content:center;gap:2.2vh;padding:0 3.4%;}
+
+  .logo{margin-bottom:1.4vh;color:var(--ink);}
+  .logo .brand{
+    font-family:'Archivo Black',sans-serif;
+    font-size:clamp(26px,3.5vw,44px);line-height:1;letter-spacing:.02em;
+  }
+  .logo .allstar{
+    font-family:'Great Vibes',cursive;
+    font-size:clamp(34px,4.6vw,58px);line-height:.9;margin-top:-.4vh;margin-left:.6vw;
+  }
+  .logo .placeholder{font-family:'Barlow',sans-serif;font-weight:600;font-size:11px;letter-spacing:.18em;
+    color:rgba(17,19,24,.5);margin-top:.4vh;text-transform:uppercase;}
+
+  .menu{display:flex;flex-direction:column;gap:1.1vh;}
+  .mbtn{
+    position:relative;display:flex;align-items:center;gap:1vw;
+    font-family:'Archivo Black',sans-serif;font-size:clamp(13px,1.5vw,20px);
+    color:var(--ink);background:#fff;
+    padding:1.2vh 1.4vw;border:4px solid var(--ink);border-radius:15px;
+    box-shadow:6px 6px 0 var(--ink);cursor:pointer;text-align:left;
+    transition:background .1s,color .1s,transform .1s,box-shadow .1s;
+  }
+  .mbtn .ico{
+    width:2.6vw;height:2.6vw;min-width:26px;min-height:26px;border-radius:50%;
+    border:3px solid var(--ink);background:transparent;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:border-color .1s;
+  }
+  .mbtn .ico svg{width:60%;height:60%;}
+  .mbtn.c-yellow{background:var(--yellow);}
+  .mbtn.c-green{background:var(--green);}
+  .mbtn.c-orange{background:var(--orange);color:#fff;}
+  .mbtn.c-blue{background:var(--blue);color:#fff;}
+  .mbtn.c-blue .ico{border-color:#fff;}
+  .mbtn.c-blue .ico svg{stroke:#fff;}
+
+  /* survol : bascule en noir & blanc */
+  .mbtn:hover,.mbtn.sel{
+    background:var(--ink);color:#fff;
+    transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--ink);
+  }
+  .mbtn:hover .ico,.mbtn.sel .ico{border-color:#fff;}
+  .mbtn:hover .ico svg,.mbtn.sel .ico svg{stroke:#fff;}
+
+  .hint{font-family:'Barlow',sans-serif;font-weight:700;font-size:clamp(10px,1vw,13px);
+    letter-spacing:.16em;color:rgba(17,19,24,.62);text-transform:uppercase;margin-top:.6vh;}
+
+  /* ---------- COLONNE DROITE ---------- */
+  .right{position:relative;z-index:2;width:54%;display:flex;align-items:flex-end;justify-content:center;}
+  .heroGlow{position:absolute;bottom:2%;left:50%;transform:translateX(-50%);
+    width:52%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.28);filter:blur(2px);}
+  #hero{position:relative;image-rendering:pixelated;margin-bottom:6%;
+    height:74%;width:auto;
+    filter:drop-shadow(0 8px 0 rgba(0,0,0,.16));animation:bob 2.6s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+  .confirm{position:absolute;top:2.6%;right:2.4%;z-index:4;display:flex;align-items:center;gap:.7vw;
+    font-family:'Archivo Black',sans-serif;font-size:clamp(11px,1.15vw,15px);color:var(--ink);}
+  .confirm .key{width:2.1vw;height:2.1vw;min-width:22px;min-height:22px;border-radius:50%;
+    background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.9em;}
+
+  /* Bandeau slogan : voile dégradé noir → transparent, comme dans la réf WJ2 */
+  .banner{position:absolute;left:0;right:0;bottom:0;z-index:4;padding:5vh 2.4vw 2vh;text-align:right;
+    background:linear-gradient(to top,rgba(0,0,0,.62) 0%,rgba(0,0,0,.38) 40%,rgba(0,0,0,0) 100%);}
+  .banner span{font-family:'Archivo Black',sans-serif;font-size:clamp(15px,2vw,27px);color:#fff;
+    -webkit-text-stroke:5px var(--ink);paint-order:stroke fill;letter-spacing:.02em;line-height:1.2;}
+</style>
+</head>
+<body>
+  <div class="note">Direction — main menu façon Windjammers 2 (fond animé, boutons noir&amp;blanc au survol)</div>
+
+  <div style="display:flex;gap:18px;align-items:center;font-family:sans-serif;font-size:13px;color:#8fa3cc;">
+    <label>Gameplay en fond
+      <select id="blendSel" style="margin-left:6px;padding:3px 6px;">
+        <option value="screen">screen</option>
+        <option value="soft-light">soft-light</option>
+        <option value="overlay">overlay</option>
+        <option value="luminosity">luminosity</option>
+        <option value="normal">normal</option>
+      </select>
+    </label>
+    <label>Opacité <input type="range" id="opaSel" min="0" max="100" value="60" style="vertical-align:middle;">
+      <span id="opaVal">60%</span>
+    </label>
+  </div>
+
+  <div class="stage">
+    <iframe class="demo" id="demo" src="/index.html" title="Match de démo en fond"></iframe>
+    <div class="bg">
+      <div class="watermark">
+        <div class="line">SWAG FRISBEE CLUB SWAG FRISBEE CLUB SWAG FRISBEE CLUB</div>
+        <div class="line">SWAG FRISBEE CLUB SWAG FRISBEE CLUB SWAG FRISBEE CLUB</div>
+        <div class="line">SWAG FRISBEE CLUB SWAG FRISBEE CLUB SWAG FRISBEE CLUB</div>
+        <div class="line">SWAG FRISBEE CLUB SWAG FRISBEE CLUB SWAG FRISBEE CLUB</div>
+        <div class="line">SWAG FRISBEE CLUB SWAG FRISBEE CLUB SWAG FRISBEE CLUB</div>
+        <div class="line">SWAG FRISBEE CLUB SWAG FRISBEE CLUB SWAG FRISBEE CLUB</div>
+      </div>
+      <div class="streaks"></div>
+      <div class="arc"></div>
+      <div class="ringwrap">
+        <svg viewBox="0 0 400 400">
+          <path id="rp" d="M 200,200 m -160,0 a 160,160 0 1,1 320,0 a 160,160 0 1,1 -320,0" fill="none"/>
+          <text><textPath href="#rp" startOffset="0%">MENU PRINCIPAL • MENU PRINCIPAL • MENU PRINCIPAL • MENU PRINCIPAL • </textPath></text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="confirm"><span class="key">⏎</span>VALIDER</div>
+
+    <div class="left">
+      <div class="logo">
+        <div class="brand">SWAG FRISBEE</div>
+        <div class="allstar">All Star</div>
+        <div class="placeholder">logo provisoire</div>
+      </div>
+
+      <div class="menu">
+        <button class="mbtn c-green">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#111318" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18"/></svg></span>
+          MATCH VS IA
+        </button>
+        <button class="mbtn c-green">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#111318" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 19c0-3 2.7-5 6-5M22 19c0-3-2.7-5-6-5"/></svg></span>
+          MATCH JCJ
+        </button>
+        <button class="mbtn">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#111318" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></span>
+          OPTIONS
+        </button>
+      </div>
+
+      <div class="hint">Appuie sur Entrée</div>
+    </div>
+
+    <div class="right">
+      <div class="heroGlow"></div>
+      <canvas id="hero"></canvas>
+    </div>
+
+    <div class="banner"><span>MONTRE AU MONDE<br>QUI EST LE MEILLEUR !</span></div>
+  </div>
+
+  <script>
+    // Le jeu fait déjà tourner un match IA vs IA derrière ses menus : on masque
+    // simplement son propre habillage pour ne garder que le canvas de jeu.
+    document.getElementById('demo').addEventListener('load', function(){
+      const d = this.contentDocument;
+      const s = d.createElement('style');
+      s.textContent = `
+        body{padding:0!important;gap:0!important;overflow:hidden!important;}
+        h1.brand, footer, .crt, #admin-panel{display:none!important;}
+        .screen{display:none!important;}
+        #stage{width:100vw!important;height:100vh!important;aspect-ratio:auto!important;
+               border:0!important;border-radius:0!important;box-shadow:none!important;}
+      `;
+      d.head.appendChild(s);
+    });
+
+    const demoEl = document.getElementById('demo');
+    document.getElementById('blendSel').addEventListener('change', function(){
+      demoEl.style.mixBlendMode = this.value;
+    });
+    document.getElementById('opaSel').addEventListener('input', function(){
+      demoEl.style.opacity = this.value / 100;
+      document.getElementById('opaVal').textContent = this.value + '%';
+    });
+  </script>
+
+  <script type="module">
+    import('/js/data/characters.js').then(mod=>{
+      // Perso tiré au hasard dans le roster à chaque chargement.
+      const ck=mod.ROSTER[(Math.random()*mod.ROSTER.length)|0];
+      const src=mod.CHARS[ck].frames.idle, scale=16;
+      const c=document.getElementById('hero');
+      c.width=src.width*scale; c.height=src.height*scale;
+      const g=c.getContext('2d');
+      g.imageSmoothingEnabled=false;
+      g.drawImage(src,0,0,c.width,c.height);
+    });
+  </script>
+</body>
+</html>

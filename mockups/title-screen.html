@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — écran titre v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#ff4a1f;
+    --accent-dark:#a82c0f;
+    --ink:#05080f;
+    --panel:#0d1730;
+    --panel-line:#22335c;
+    --txt:#eaf2ff;
+    --txt-dim:#8fa3cc;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;
+    font-family:'Chakra Petch',sans-serif;
+    color:var(--txt);
+    background:
+      radial-gradient(1200px 700px at 50% -10%, #0a0e1a 0%, transparent 60%),
+      radial-gradient(900px 600px at 85% 110%, #0a0e1a 0%, transparent 55%),
+      #05080f;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+    padding:40px 16px;
+  }
+  .note{color:var(--txt-dim);font-size:13px;letter-spacing:.5px;}
+  .stage{
+    position:relative;width:min(94vw,980px);aspect-ratio:16/10;
+    border:2px solid var(--panel-line);border-radius:6px;
+    background:#070b16;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+    overflow:hidden;
+  }
+
+  /* --- HUD preview (coin, juste pour donner le ton) --- */
+  .hud-preview{
+    position:absolute;top:18px;left:18px;
+    display:flex;align-items:center;gap:12px;
+    background:rgba(5,8,15,.72);border-left:3px solid var(--accent);
+    padding:8px 16px 8px 12px;
+  }
+  .hud-preview .name{font-weight:700;font-size:12px;letter-spacing:2px;color:var(--txt-dim);text-transform:uppercase;}
+  .hud-preview .score{font-family:'Anton',sans-serif;font-size:28px;color:#fff;line-height:1;}
+  .hud-preview.right{left:auto;right:18px;border-left:none;border-right:3px solid var(--accent);text-align:right;flex-direction:row-reverse;}
+
+  /* --- Logo --- */
+  .logo{display:flex;flex-direction:column;align-items:center;}
+  .word-swag{
+    font-family:'Anton',sans-serif;font-size:clamp(56px,9vw,96px);
+    letter-spacing:2px;color:#fff;line-height:.85;
+    text-shadow:5px 5px 0 var(--accent-dark);
+  }
+  .ribbon{
+    background:var(--accent);transform:skewX(-10deg);
+    padding:7px 30px;margin:10px 0 8px;
+  }
+  .ribbon span{
+    display:inline-block;transform:skewX(10deg);
+    font-family:'Chakra Petch',sans-serif;font-weight:700;
+    font-size:clamp(13px,1.8vw,18px);letter-spacing:8px;color:var(--ink);
+  }
+  .word-allstar{
+    font-family:'Anton',sans-serif;font-size:clamp(22px,3.4vw,36px);
+    letter-spacing:10px;color:var(--accent);
+    -webkit-text-stroke:1px #fff;
+  }
+
+  /* --- Menu --- */
+  .menu{display:flex;flex-direction:column;gap:10px;min-width:min(80vw,340px);}
+  .mbtn{
+    font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;
+    letter-spacing:2px;text-transform:uppercase;color:var(--txt);
+    background:rgba(18,35,71,.55);border:1px solid var(--panel-line);
+    padding:13px 22px;cursor:pointer;text-align:left;
+    clip-path:polygon(0 0,100% 0,100% 68%,95% 100%,0 100%);
+    transition:background .12s,color .12s,transform .12s;
+  }
+  .mbtn.sel,.mbtn:hover{background:var(--accent);color:var(--ink);transform:translateX(6px);}
+
+  .tag{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11px;letter-spacing:3px;color:var(--txt-dim);}
+</style>
+</head>
+<body>
+  <div class="note">Mockup — pas le vrai jeu, juste pour valider la direction avant d'appliquer partout</div>
+  <div class="stage">
+    <div class="hud-preview">
+      <div>
+        <div class="name">Isaac</div>
+        <div class="score">12</div>
+      </div>
+    </div>
+    <div class="hud-preview right">
+      <div>
+        <div class="name">Leon</div>
+        <div class="score">08</div>
+      </div>
+    </div>
+
+    <div class="logo">
+      <div class="word-swag">SWAG</div>
+      <div class="ribbon"><span>FRISBEE CLUB</span></div>
+      <div class="word-allstar">ALL STAR</div>
+    </div>
+
+    <div class="menu">
+      <button class="mbtn sel">Match vs IA</button>
+      <button class="mbtn">Match JcJ</button>
+      <button class="mbtn">Options</button>
+    </div>
+    <div class="tag">APPUIE SUR ENTRÉE</div>
+  </div>
+</body>
+</html>

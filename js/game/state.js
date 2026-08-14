@@ -23,15 +23,25 @@ export const G = {
 };
 
 (function initBackground() {
+  // Drones-caméras qui gravitent autour de l'arène, à la place du public.
+  // Chacun suit une petite orbite elliptique autour d'un point d'ancrage.
   const cols = getMap().theme.crowdColors;
-  for (let i = 0; i < 230; i++) {
+  for (let i = 0; i < 26; i++) {
     const side = rand(4) | 0;
     let x, y;
-    if (side === 0) { x = rand(W); y = rand(8, COURT.top - 18); }
-    else if (side === 1) { x = rand(W); y = rand(COURT.bottom + 16, H - 8); }
-    else if (side === 2) { x = rand(6, COURT.left - 16); y = rand(COURT.top - 10, COURT.bottom + 10); }
-    else { x = rand(COURT.right + 16, W - 6); y = rand(COURT.top - 10, COURT.bottom + 10); }
-    G.crowd.push({ x, y, c: cols[(Math.random() * cols.length) | 0], ph: rand(TAU), s: rand(2, 4) });
+    if (side === 0) { x = rand(W); y = rand(14, COURT.top - 26); }
+    else if (side === 1) { x = rand(W); y = rand(COURT.bottom + 26, H - 14); }
+    else if (side === 2) { x = rand(14, COURT.left - 26); y = rand(COURT.top - 10, COURT.bottom + 10); }
+    else { x = rand(COURT.right + 26, W - 14); y = rand(COURT.top - 10, COURT.bottom + 10); }
+    G.crowd.push({
+      x, y,
+      c: cols[(Math.random() * cols.length) | 0],
+      ph: rand(TAU),                 // phase de l'orbite
+      s: rand(4, 7),                 // taille du fuselage
+      orbit: rand(6, 16),            // rayon de l'orbite
+      speed: rand(0.4, 1.1),         // vitesse orbitale
+      blink: rand(TAU)               // phase du feu de position
+    });
   }
   for (let i = 0; i < 300; i++) {
     G.stars.push({ x: rand(W), y: rand(H), size: rand(1, 3), twinkle: rand(TAU), speed: rand(0.5, 2), color: getMap().theme.starColor });
@@ -48,7 +58,8 @@ export function makePlayer(ck, side, human, diffIdx) {
     throwCd: 0, throwPoseT: 0, lunge: 0, lungeCd: 0, dashCd: 0, dashV: { x: 0, y: 0 },
     walk: 0, moving: false, meter: 0, score: 0, speed: c.speed, stun: 0,
     ghosts: [], ghostT: 0, forceFr: null,
-    stats: { catches: 0, specials: 0, thrown: 0 },
+    // buts / z5 / z3 / dashCatches alimentent l'écran de fin de match.
+    stats: { catches: 0, specials: 0, thrown: 0, buts: 0, z5: 0, z3: 0, dashCatches: 0 },
     ai: null, foe: null,
     home: { x: side === 1 ? COURT.left + 120 : COURT.right - 120, y: CY },
     holdTimer: 0

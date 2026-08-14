@@ -1,6 +1,6 @@
 // Registre des personnages. Pour ajouter un perso : une palette, ses lignes de sprite,
 // puis une entrée dans CHARS + son id dans ROSTER. `ult` pointe vers une clé de data/specials.js.
-function buildSprite(rows, pal) {
+export function buildSprite(rows, pal) {
   const c = document.createElement('canvas');
   c.width = 16; c.height = rows.length;
   const g = c.getContext('2d');

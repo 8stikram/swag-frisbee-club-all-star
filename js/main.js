@@ -1,7 +1,7 @@
 import { showScreen } from './core/dom.js';
 import { initMatch } from './game/state.js';
 import { frame } from './game/loop.js';
-import { refreshSelect, renderSkinSelector } from './ui/menus.js';
+import { refreshSelect } from './ui/menus.js';
 import './game/input.js';
 import './ui/keybind-ui.js';
 import './ui/admin.js';
@@ -9,7 +9,6 @@ import './ui/admin.js';
 initMatch(true);
 showScreen('title');
 refreshSelect();
-renderSkinSelector();
 requestAnimationFrame(frame);
 
 console.log('=== Swag Frisbee Club All Star ===');

@@ -4,9 +4,12 @@ import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { getSkinId, drawSkinDisc } from '../data/skins.js';
+import { LEG_SPRITE, LEG_SPRITE_SCALE } from '../data/specials.js';
 
 ctx.imageSmoothingEnabled = false;
 const SCALE = 1.6;
+const LEG_W = LEG_SPRITE.width * LEG_SPRITE_SCALE;
+const LEG_H = LEG_SPRITE.height * LEG_SPRITE_SCALE;
 
 function drawStars() {
   for (const s of G.stars) {
@@ -18,62 +21,328 @@ function drawStars() {
   ctx.globalAlpha = 1;
 }
 
-function drawCrowd() {
-  for (const p of G.crowd) {
-    // Ola : une vague de lumière qui balaie la foule sur l'axe X, portée par G.waveX.
-    const waveBoost = clamp(1 - Math.abs(p.x - G.waveX) / 90, 0, 1);
-    const bob = Math.sin(G.now * 3 + p.ph) * (p.s * 0.5) - waveBoost * p.s * 1.8;
-    ctx.globalAlpha = 0.55 + waveBoost * 0.45;
-    ctx.fillStyle = p.c;
-    ctx.fillRect(p.x - p.s / 2, p.y + bob - p.s / 2, p.s, p.s);
+/* Nébuleuse de fond : nappes colorées diffuses, posées avant les étoiles.
+   Positions figées (pas d'aléatoire par image) pour qu'elle ne clignote pas. */
+const NEBULA = [
+  { x: .22, y: .18, r: .42, c: '120,70,190' },
+  { x: .34, y: .10, r: .30, c: '60,110,220' },
+  { x: .78, y: .74, r: .40, c: '150,60,160' },
+  { x: .88, y: .30, r: .26, c: '40,120,190' },
+  { x: .10, y: .82, r: .28, c: '90,50,150' }
+];
+function drawNebula() {
+  for (const n of NEBULA) {
+    const g = ctx.createRadialGradient(n.x * W, n.y * H, 0, n.x * W, n.y * H, n.r * W);
+    g.addColorStop(0, `rgba(${n.c},.30)`);
+    g.addColorStop(.55, `rgba(${n.c},.10)`);
+    g.addColorStop(1, `rgba(${n.c},0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
   }
-  ctx.globalAlpha = 1;
+}
+
+/* Silhouettes de la station au loin, très sombres, pour habiter le vide. */
+function drawStationBackdrop() {
+  const th = getMap().theme;
+  ctx.save();
+  ctx.globalAlpha = .5;
+  ctx.fillStyle = th.hull;
+  ctx.strokeStyle = th.hullEdge;
+  ctx.lineWidth = 1;
+  // Module en haut à droite, avec bras et antenne.
+  ctx.fillRect(W - 210, 8, 150, 26); ctx.strokeRect(W - 210, 8, 150, 26);
+  ctx.fillRect(W - 150, 34, 30, 22); ctx.strokeRect(W - 150, 34, 30, 22);
+  ctx.fillRect(W - 60, 14, 52, 14); ctx.strokeRect(W - 60, 14, 52, 14);
+  ctx.beginPath(); ctx.moveTo(W - 120, 8); ctx.lineTo(W - 112, -6); ctx.stroke();
+  // Antenne parabolique.
+  ctx.beginPath(); ctx.ellipse(W - 128, 4, 13, 7, -.4, 0, TAU); ctx.fill();
+  // Module en bas à gauche.
+  ctx.fillRect(30, H - 40, 120, 22); ctx.strokeRect(30, H - 40, 120, 22);
+  ctx.fillRect(70, H - 18, 26, 18); ctx.strokeRect(70, H - 18, 26, 18);
+  // Hublots allumés.
+  ctx.globalAlpha = .8;
+  ctx.fillStyle = 'rgba(53,224,255,.5)';
+  for (let i = 0; i < 6; i++) ctx.fillRect(W - 200 + i * 24, 16, 8, 5);
+  for (let i = 0; i < 4; i++) ctx.fillRect(42 + i * 26, H - 33, 8, 5);
+  ctx.restore();
+}
+
+/* Drones-caméras : ils gravitent autour de l'arène et remplacent le public.
+   Chacun tourne sur sa petite orbite, avec un feu de position qui clignote. */
+function drawDrones() {
+  const th = getMap().theme;
+  for (const d of G.crowd) {
+    const a = G.now * d.speed + d.ph;
+    const x = d.x + Math.cos(a) * d.orbit;
+    const y = d.y + Math.sin(a * 1.3) * d.orbit * .5;
+    const s = d.s;
+
+    // Faisceau de la caméra, orienté vers le terrain.
+    const toCourt = Math.atan2(CY - y, CX - x);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(toCourt);
+    const beam = ctx.createLinearGradient(0, 0, s * 7, 0);
+    beam.addColorStop(0, 'rgba(53,224,255,.22)');
+    beam.addColorStop(1, 'rgba(53,224,255,0)');
+    ctx.fillStyle = beam;
+    ctx.beginPath();
+    ctx.moveTo(0, 0); ctx.lineTo(s * 7, -s * 1.6); ctx.lineTo(s * 7, s * 1.6);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+
+    // Fuselage sombre + verrière.
+    ctx.fillStyle = th.hull;
+    ctx.beginPath(); ctx.ellipse(x, y, s, s * .62, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = th.hullEdge; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(x, y, s, s * .62, 0, 0, TAU); ctx.stroke();
+
+    // Feu de position clignotant.
+    const blink = .45 + .55 * Math.sin(G.now * 3 + d.blink);
+    ctx.globalAlpha = blink;
+    ctx.fillStyle = d.c;
+    ctx.beginPath(); ctx.arc(x, y - s * .1, s * .34, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+/* Plateforme de la station : châssis métallique épais à coins arrondis,
+   avec bandes lumineuses encastrées et panneaux techniques. */
+function drawRig() {
+  const th = getMap().theme;
+  const B = 26;                              // épaisseur du châssis
+  const L = COURT.left - B, R = COURT.right + B;
+  const T = COURT.top - B, Bo = COURT.bottom + B;
+  const rad = 26;
+
+  // Corps du châssis : anneau entre le contour extérieur arrondi et le terrain.
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(L, T, R - L, Bo - T, rad);
+  ctx.rect(COURT.right, COURT.top, -(COURT.right - COURT.left), COURT.bottom - COURT.top); // trou (sens inverse)
+  ctx.fillStyle = th.hull;
+  ctx.fill('evenodd');
+  ctx.restore();
+
+  // Arêtes.
+  ctx.strokeStyle = th.hullEdge; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(L, T, R - L, Bo - T, rad); ctx.stroke();
+  ctx.strokeRect(COURT.left, COURT.top, COURT.right - COURT.left, COURT.bottom - COURT.top);
+
+  // Plaques de blindage sur les longs côtés.
+  ctx.fillStyle = th.deckLight;
+  ctx.strokeStyle = th.deckLine; ctx.lineWidth = 1;
+  for (let x = COURT.left + 10; x < COURT.right - 40; x += 96) {
+    for (const y of [T + 5, COURT.bottom + 5]) {
+      ctx.fillRect(x, y, 62, B - 10);
+      ctx.strokeRect(x, y, 62, B - 10);
+    }
+  }
+
+  // Bandes lumineuses encastrées dans le châssis, qui respirent.
+  const pulse = .55 + .45 * Math.sin(G.now * 1.5);
+  ctx.fillStyle = `rgba(53,224,255,${.5 + pulse * .45})`;
+  ctx.shadowColor = th.holo; ctx.shadowBlur = 10;
+  for (let x = COURT.left + 80; x < COURT.right - 60; x += 96) {
+    ctx.fillRect(x, T + 9, 44, 5);
+    ctx.fillRect(x, COURT.bottom + B - 14, 44, 5);
+  }
+  for (let y = COURT.top + 40; y < COURT.bottom - 30; y += 92) {
+    ctx.fillRect(L + 9, y, 5, 40);
+    ctx.fillRect(COURT.right + B - 14, y, 5, 40);
+  }
+  ctx.shadowBlur = 0;
+
+  // Feux de balisage aux quatre coins.
+  const blink = .5 + .5 * Math.sin(G.now * 2.2);
+  for (const [cx2, cy2] of [[L + 13, T + 13], [R - 13, T + 13], [L + 13, Bo - 13], [R - 13, Bo - 13]]) {
+    ctx.fillStyle = `rgba(255,210,62,${.3 + blink * .55})`;
+    ctx.beginPath(); ctx.arc(cx2, cy2, 4, 0, TAU); ctx.fill();
+  }
+}
+
+/* Intensité de la projection : stable en jeu, elle ne se dérègle qu'au but. */
+function holoFlicker() {
+  const goal = Math.max(G.goalFlash[0], G.goalFlash[1]);
+  if (goal <= 0.02) return 1;
+  // Décrochage franc pendant la seconde qui suit le but.
+  const jitter = Math.sin(G.now * 47) > .3 ? 1 : .55;
+  return (1 + goal * .5) * jitter;
 }
 
 function drawCourt() {
   const th = getMap().theme;
-  const grd = ctx.createRadialGradient(CX, CY, 100, CX, CY, 500);
+  const cw = COURT.right - COURT.left, chh = COURT.bottom - COURT.top;
+
+  // 1. Le vide et les étoiles, visibles partout — y compris à travers le terrain.
+  const grd = ctx.createRadialGradient(CX, CY, 100, CX, CY, 560);
   grd.addColorStop(0, th.bgInner);
   grd.addColorStop(1, th.bgOuter);
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, W, H);
+  drawNebula();
   drawStars();
-  drawCrowd();
-  ctx.fillStyle = th.floor;
-  ctx.fillRect(COURT.left, COURT.top, COURT.right - COURT.left, COURT.bottom - COURT.top);
-  ctx.strokeStyle = th.line;
+  drawStationBackdrop();
+  drawDrones();
+
+  const I = holoFlicker();
+  const goal = Math.max(G.goalFlash[0], G.goalFlash[1]);
+
+  // 2. Halo diffus de la projection, très léger.
+  const halo = ctx.createRadialGradient(CX, CY, 40, CX, CY, Math.max(cw, chh) * .7);
+  halo.addColorStop(0, `rgba(53,224,255,${.1 * I})`);
+  halo.addColorStop(1, 'rgba(53,224,255,0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(COURT.left - 40, COURT.top - 40, cw + 80, chh + 80);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(COURT.left, COURT.top, cw, chh);
+  ctx.clip();
+
+  // 3. Cinq ondulations qui serpentent sur la surface, décalées entre elles.
   ctx.lineWidth = 2;
-  ctx.strokeRect(COURT.left, COURT.top, COURT.right - COURT.left, COURT.bottom - COURT.top);
+  for (let i = 0; i < 5; i++) {
+    const phase = G.now * (.5 + i * .07) + i * 1.3;
+    const baseY = COURT.top + chh * ((i + .5) / 5);
+    const amp = 14 + i % 2 * 6;
+    const alpha = (.16 + .1 * Math.sin(G.now * 1.1 + i)) * I;
+    ctx.strokeStyle = `rgba(127,233,255,${alpha})`;
+    ctx.beginPath();
+    for (let x = COURT.left; x <= COURT.right; x += 12) {
+      const t = (x - COURT.left) / cw;
+      const y = baseY + Math.sin(t * Math.PI * 2.4 + phase) * amp;
+      x === COURT.left ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 4. Lignes de jeu, en trait lumineux fin.
+  ctx.save();
+  ctx.shadowColor = th.holo;
+  ctx.shadowBlur = 10 * I;
+  ctx.strokeStyle = `rgba(127,233,255,${.8 * I})`;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(COURT.left, COURT.top, cw, chh);
+  ctx.setLineDash([9, 7]);
   ctx.beginPath(); ctx.moveTo(CX, COURT.top); ctx.lineTo(CX, COURT.bottom); ctx.stroke();
+  ctx.setLineDash([]);
   ctx.beginPath(); ctx.arc(CX, CY, 58, 0, TAU); ctx.stroke();
+  ctx.beginPath(); ctx.arc(CX, CY, 10, 0, TAU); ctx.stroke();
+  ctx.restore();
+
+  // 5. Dérèglement au but : la projection se dédouble en rouge/cyan.
+  if (goal > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = goal * .45;
+    ctx.globalCompositeOperation = 'screen';
+    ctx.strokeStyle = '#ff3b5c'; ctx.lineWidth = 2;
+    ctx.strokeRect(COURT.left + 5 * goal, COURT.top, cw, chh);
+    ctx.strokeStyle = '#7fe9ff';
+    ctx.strokeRect(COURT.left - 5 * goal, COURT.top, cw, chh);
+    ctx.restore();
+  }
+
+  drawRig();
   drawGoalSide(1);
   drawGoalSide(2);
 }
 
+/* But = baie ouverte sur le vide : une brèche dans le châssis qui donne
+   directement sur l'espace (on voit les étoiles au fond), fermée par un
+   rideau de lumière que le disque traverse. Trois volets marqués 3/5/3
+   encadrent l'ouverture. */
 function drawGoalSide(side) {
   const m = getMap(), th = m.theme;
   const x = side === 1 ? COURT.left : COURT.right;
   const gx = side === 1 ? x - GOAL_DEPTH : x;
   const flash = G.goalFlash[side === 1 ? 0 : 1];
-  ctx.fillStyle = th.goalFill;
-  ctx.fillRect(gx, GOAL_TOP, GOAL_DEPTH, GOAL_BOTTOM - GOAL_TOP);
-  ctx.strokeStyle = th.goalStroke;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(gx, GOAL_TOP, GOAL_DEPTH, GOAL_BOTTOM - GOAL_TOP);
-  ctx.font = '10px "Press Start 2P",monospace';
+  const I = holoFlicker();
+  const gh = GOAL_BOTTOM - GOAL_TOP;
+
+  // 1. La brèche : on efface le châssis pour laisser voir le vide derrière.
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(gx - 6, GOAL_TOP, GOAL_DEPTH + 6, gh);
+  ctx.clip();
+  const void_ = ctx.createLinearGradient(gx, 0, gx + GOAL_DEPTH, 0);
+  const deep = side === 1 ? 0 : 1;
+  void_.addColorStop(deep, 'rgba(2,3,8,1)');
+  void_.addColorStop(1 - deep, 'rgba(6,10,22,.9)');
+  ctx.fillStyle = void_;
+  ctx.fillRect(gx - 6, GOAL_TOP, GOAL_DEPTH + 6, gh);
+  // Étoiles visibles au fond de la baie.
+  for (let i = 0; i < 14; i++) {
+    const sx = gx + ((i * 37) % GOAL_DEPTH);
+    const sy = GOAL_TOP + ((i * 53) % gh);
+    const tw = .35 + .65 * Math.abs(Math.sin(G.now * 1.4 + i));
+    ctx.globalAlpha = tw;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(sx, sy, 1.5, 1.5);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // 2. Volets de sécurité : trois segments marqués, alignés sur les zones,
+  //    avec la valeur affichée directement dans la baie.
   ctx.textAlign = 'center';
   for (const z of m.zones) {
     const y1 = CY + z.from, y2 = CY + z.to;
-    ctx.fillStyle = z.color;
-    ctx.globalAlpha = .5 + flash * .2;
-    ctx.fillRect(gx + 4, y1 + 4, GOAL_DEPTH - 8, y2 - y1 - 8);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = '#fff';
-    ctx.fillText(String(z.points), gx + GOAL_DEPTH / 2, (y1 + y2) / 2 + 4);
+    const or = z.points >= 5;
+    // Rail lumineux qui borde le volet, côté terrain.
+    ctx.fillStyle = or ? `rgba(255,210,62,${(.55 + flash * .35) * I})` : `rgba(53,224,255,${(.4 + flash * .3) * I})`;
+    const railX = side === 1 ? x - 5 : x;
+    ctx.fillRect(railX, y1 + 2, 5, (y2 - y1) - 4);
+    // Séparateurs métalliques entre volets.
+    ctx.fillStyle = th.hullEdge;
+    ctx.fillRect(gx - 6, y1 - 1, GOAL_DEPTH + 6, 2);
+    ctx.fillRect(gx - 6, y2 - 1, GOAL_DEPTH + 6, 2);
+
+    // Valeur de la zone, gravée au fond de la baie. textBaseline='middle'
+    // centre verticalement de façon fiable, quelle que soit la taille.
+    ctx.save();
+    ctx.shadowColor = or ? '#ffd23e' : '#35e0ff';
+    ctx.shadowBlur = 10 * I;
+    ctx.fillStyle = or ? '#ffe98a' : '#bff0ff';
+    const size = Math.max(12, Math.min(20, (y2 - y1) - 18));
+    ctx.font = `700 ${size}px "Archivo Black", system-ui, sans-serif`;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(z.points), gx + GOAL_DEPTH / 2, (y1 + y2) / 2);
+    ctx.restore();
   }
+
+  // 3. Encadrement métallique de la baie.
+  ctx.fillStyle = th.hull;
+  ctx.fillRect(gx - 8, GOAL_TOP - 14, GOAL_DEPTH + 14, 14);
+  ctx.fillRect(gx - 8, GOAL_BOTTOM, GOAL_DEPTH + 14, 14);
+  ctx.strokeStyle = th.hullEdge; ctx.lineWidth = 2;
+  ctx.strokeRect(gx - 8, GOAL_TOP - 14, GOAL_DEPTH + 14, 14);
+  ctx.strokeRect(gx - 8, GOAL_BOTTOM, GOAL_DEPTH + 14, 14);
+  ctx.fillStyle = th.deckLight;
+  for (let i = 0; i < 4; i++) {
+    const bx = gx - 4 + i * (GOAL_DEPTH + 6) / 3;
+    ctx.fillRect(bx, GOAL_TOP - 11, 8, 8);
+    ctx.fillRect(bx, GOAL_BOTTOM + 3, 8, 8);
+  }
+
+  // 4. Rideau de lumière vertical à l'entrée de la baie.
+  ctx.save();
+  const curtain = ctx.createLinearGradient(x - 14, 0, x + 14, 0);
+  curtain.addColorStop(0, 'rgba(127,233,255,0)');
+  curtain.addColorStop(.5, `rgba(127,233,255,${.3 * I})`);
+  curtain.addColorStop(1, 'rgba(127,233,255,0)');
+  ctx.fillStyle = curtain;
+  ctx.fillRect(x - 14, GOAL_TOP, 28, gh);
+  ctx.shadowColor = th.holo; ctx.shadowBlur = 16 * I;
+  ctx.strokeStyle = `rgba(180,245,255,${.95 * I})`;
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x, GOAL_TOP); ctx.lineTo(x, GOAL_BOTTOM); ctx.stroke();
+  ctx.restore();
+
   if (flash > 0) {
-    ctx.fillStyle = `rgba(255,255,255,${flash * .15})`;
-    ctx.fillRect(gx, GOAL_TOP, GOAL_DEPTH, GOAL_BOTTOM - GOAL_TOP);
+    ctx.fillStyle = `rgba(255,255,255,${flash * .22})`;
+    ctx.fillRect(gx - 6, GOAL_TOP, GOAL_DEPTH + 6, gh);
   }
 }
 
@@ -126,7 +395,7 @@ function drawPlayer(p) {
   }
   if (p.human && !G.demo && !G.replay) {
     ctx.fillStyle = c.accent;
-    ctx.font = '8px "Press Start 2P",monospace';
+    ctx.font = '8px "Archivo Black", system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(G.isJ2J && p.side === 2 ? 'J2' : 'P1', p.x, p.y - 48 * SCALE);
   }
@@ -198,7 +467,6 @@ function drawDecoys() {
 function drawLeg() {
   const L = G.leg;
   if (!L) return;
-  const legW = 46, legH = 130;
   if (L.phase === 'shadow') {
     const k = clamp(L.t / .55, 0, 1);
     const pulse = 0.5 + 0.5 * Math.sin(G.now * 16);
@@ -206,44 +474,35 @@ function drawLeg() {
     ctx.globalAlpha = .35 + k * .4;
     ctx.fillStyle = '#ff6a7a';
     ctx.beginPath();
-    ctx.ellipse(L.x, L.yTarget, (legW * .55) * k, (legW * .22) * k, 0, 0, TAU);
+    ctx.ellipse(L.x, L.yTarget, (LEG_W * .55) * k, (LEG_W * .22) * k, 0, 0, TAU);
     ctx.fill();
     ctx.strokeStyle = `rgba(255,106,122,${.5 + pulse * .4})`;
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.ellipse(L.x, L.yTarget, (legW * .55) * k + 4, (legW * .22) * k + 2, 0, 0, TAU);
+    ctx.ellipse(L.x, L.yTarget, (LEG_W * .55) * k + 4, (LEG_W * .22) * k + 2, 0, 0, TAU);
     ctx.stroke();
     ctx.restore();
   } else if (L.phase === 'fall') {
     const k = clamp(L.t / .16, 0, 1);
-    const y = lerp(L.yTarget - 420, L.yTarget - legH * .3, k);
+    const y = lerp(L.yTarget - 420, L.yTarget - LEG_H * .3, k);
     drawLegSprite(L.x, y, 1);
     // Traînée de vitesse.
     for (let i = 1; i <= 3; i++) {
-      const ty = lerp(L.yTarget - 420, L.yTarget - legH * .3, clamp(k - i * .08, 0, 1));
+      const ty = lerp(L.yTarget - 420, L.yTarget - LEG_H * .3, clamp(k - i * .08, 0, 1));
       drawLegSprite(L.x, ty, .18 / i);
     }
   } else if (L.phase === 'impact') {
     const k = clamp(L.t / .4, 0, 1);
-    drawLegSprite(L.x, L.yTarget - legH * .3 * (1 - k), 1 - k, 1 + k * .3);
+    drawLegSprite(L.x, L.yTarget - LEG_H * .3 * (1 - k), 1 - k, 1 + k * .3);
   }
 }
 
 function drawLegSprite(x, y, alpha, squash = 1) {
-  const legW = 46, legH = 130;
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.translate(x, y);
   ctx.scale(1, squash);
-  ctx.fillStyle = '#f0c090';
-  ctx.fillRect(-legW / 2, -legH, legW, legH * .8);
-  ctx.fillStyle = '#e8b8d0';
-  ctx.fillRect(-legW / 2 - 3, -legH * .28, legW + 6, legH * .22);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(-legW / 2 - 5, -legH * .09, legW + 10, legH * .16);
-  ctx.strokeStyle = 'rgba(0,0,0,.25)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(-legW / 2, -legH, legW, legH * .8);
+  ctx.drawImage(LEG_SPRITE, -LEG_W / 2, -LEG_H, LEG_W, LEG_H);
   ctx.restore();
 }
 
@@ -263,11 +522,11 @@ function drawHUD() {
     const c = p.char;
     ctx.drawImage(c.frames.idle, 0, 0, 16, 20, alignRight ? x + 150 : x + 6, 8, 24, 30);
     ctx.fillStyle = c.accent;
-    ctx.font = '10px "Press Start 2P",monospace';
+    ctx.font = '10px "Archivo Black", system-ui, sans-serif';
     ctx.textAlign = alignRight ? 'right' : 'left';
     ctx.fillText(c.short + ' ' + c.icon, alignRight ? x + 144 : x + 36, 20);
     ctx.fillStyle = '#fff';
-    ctx.font = '20px "Press Start 2P",monospace';
+    ctx.font = '20px "Archivo Black", system-ui, sans-serif';
     ctx.fillText(String(p.score), alignRight ? x + 144 : x + 36, 44);
     const bx = alignRight ? x - 60 : x + 36;
     ctx.fillStyle = '#0a1430';
@@ -279,7 +538,7 @@ function drawHUD() {
     ctx.strokeRect(bx, 52, 180, 9);
     if (G.isJ2J && p.side === 2) {
       ctx.fillStyle = '#35e0ff';
-      ctx.font = '9px "Press Start 2P",monospace';
+      ctx.font = '9px "Archivo Black", system-ui, sans-serif';
       ctx.fillText('J2', alignRight ? bx + 190 : bx - 10, 68);
     }
   };
@@ -291,18 +550,18 @@ function drawHUD() {
   ctx.lineWidth = 2;
   ctx.strokeRect(CX - 78, 10, 156, 30);
   ctx.fillStyle = '#ffd23e';
-  ctx.font = '10px "Press Start 2P",monospace';
+  ctx.font = '10px "Archivo Black", system-ui, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('PREMIER À ' + TARGET, CX, 29);
   if (G.rally >= 4) {
     ctx.fillStyle = '#7bd66a';
-    ctx.font = '9px "Press Start 2P",monospace';
+    ctx.font = '9px "Archivo Black", system-ui, sans-serif';
     ctx.fillText('ÉCHANGE ×' + G.rally, CX, 56);
   }
   if (G.state === 'serve') {
     const server = G.serveTo === 1 ? G.p1 : G.p2;
     ctx.fillStyle = '#fff';
-    ctx.font = '11px "Press Start 2P",monospace';
+    ctx.font = '11px "Archivo Black", system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(server.human ? 'À toi de servir !' : 'L\'IA va servir...', CX, COURT.bottom - 14);
   }
@@ -317,7 +576,7 @@ function drawCommentator() {
   ctx.fillRect(0, H - 30, W, 30);
   ctx.fillStyle = '#ffd23e';
   ctx.fillRect(0, H - 30, W, 2);
-  ctx.font = '11px "Press Start 2P",monospace';
+  ctx.font = '11px "Archivo Black", system-ui, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#eaf2ff';
   ctx.fillText('🎙  ' + c.text, CX, H - 11);
@@ -330,7 +589,7 @@ function drawTexts() {
     const k = p.t / p.dur, a = k > .7 ? 1 - (k - .7) / .3 : 1;
     ctx.globalAlpha = a;
     ctx.fillStyle = p.color;
-    ctx.font = `${p.size * lerp(1.4, 1, Math.min(1, k / .15))}px "Press Start 2P",monospace`;
+    ctx.font = `${p.size * lerp(1.4, 1, Math.min(1, k / .15))}px "Archivo Black", system-ui, sans-serif`;
     ctx.fillText(p.text, CX, p.y);
     ctx.globalAlpha = 1;
   }
@@ -341,7 +600,7 @@ function drawTexts() {
     ctx.fillRect(0, CY - 46, W, 72);
     ctx.globalAlpha = a;
     ctx.fillStyle = b.color;
-    ctx.font = '32px "Press Start 2P",monospace';
+    ctx.font = '32px "Archivo Black", system-ui, sans-serif';
     ctx.fillText(b.text, CX, CY + 4);
     ctx.globalAlpha = 1;
   }
@@ -349,7 +608,7 @@ function drawTexts() {
     const n = Math.max(0, Math.ceil(G.cdT / .9));
     const txt = n > 0 ? String(n) : 'GO !';
     ctx.fillStyle = n > 0 ? '#ffd23e' : '#7bd66a';
-    ctx.font = `${n > 0 ? 74 : 54}px "Press Start 2P",monospace`;
+    ctx.font = `${n > 0 ? 74 : 54}px "Archivo Black", system-ui, sans-serif`;
     const frac = (G.cdT / .9) % 1;
     ctx.save();
     ctx.translate(CX, CY + 30);
@@ -377,12 +636,12 @@ function drawReplayOverlay() {
   ctx.fillRect(0, 0, W, 54);
   ctx.fillRect(0, H - 54, W, 54);
   ctx.fillStyle = '#fff';
-  ctx.font = '14px "Press Start 2P",monospace';
+  ctx.font = '14px "Archivo Black", system-ui, sans-serif';
   ctx.textAlign = 'left';
   ctx.fillText('REPLAY', 48, 33);
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(255,255,255,.8)';
-  ctx.font = '12px "Press Start 2P",monospace';
+  ctx.font = '12px "Archivo Black", system-ui, sans-serif';
   ctx.fillText('CLIC / ESPACE POUR SKIP', CX, H - 14);
 }
 

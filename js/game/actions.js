@@ -2,7 +2,7 @@ import { G, Mouse, resetDisc, initMatch, comment } from './state.js';
 import { COURT, CY, TARGET, GOAL_MID1, GOAL_MID2, throwSpeed } from '../core/constants.js';
 import { clamp, norm, gauss, pick, rand } from '../core/utils.js';
 import { zoneByY } from '../data/maps.js';
-import { portraitURL } from '../data/characters.js';
+import { CHARS } from '../data/characters.js';
 import { sfx } from '../audio/audio.js';
 import { burst, dust, ring, confetti, starBurst, addPopup } from './fx.js';
 import { $, cv, showScreen } from '../core/dom.js';
@@ -78,12 +78,15 @@ export function onThrowEvent(thrower) {
 
 export function onCatch(p, sp, dirx, diry) {
   const d = G.disc;
+  // Mesuré avant que le recul de l'attrapé ne vienne gonfler dashV.
+  const enDash = Math.hypot(p.dashV.x, p.dashV.y) > 130 || p.lunge > 0;
   const kb = clamp(sp * .22, 26, 260);
   p.dashV.x += (dirx || 0) * kb; p.dashV.y += (diry || 0) * kb * .4;
   dust(p.x, p.y + 18, Math.min(10, 2 + sp / 200));
   d.heldBy = p; d.free = false; d.vx = 0; d.vy = 0; d.kind = 'normal'; d.big = false; d.super = false;
   G.trail.length = 0;
   p.holding = true; p.charge = 0; p.stats.catches++;
+  if (enDash) p.stats.dashCatches++;
   p.meter = clamp(p.meter + 12, 0, 100);
   p.holdTimer = 0;
   G.rally++; G.maxRally = Math.max(G.maxRally, G.rally); G.idleT = 0;
@@ -119,6 +122,8 @@ export function ownFoul(p) {
 export function scoreGoal(scorer, y) {
   const pts = zoneByY(y);
   scorer.score += pts;
+  scorer.stats.buts++;
+  if (pts >= 5) scorer.stats.z5++; else scorer.stats.z3++;
   scorer.meter = clamp(scorer.meter + 25, 0, 100);
   scorer.foe.meter = clamp(scorer.foe.meter + 15, 0, 100);
   G.state = 'goal'; G.goalT = 1.1; G.timescale = .28; G.tsTimer = .5; G.shake = 14;
@@ -148,17 +153,95 @@ export function startReplay() {
 
 export function skipReplay() { if (!G.replay) return; G.replay = null; afterGoal(); }
 
+function drawOverSprite(canvasEl, ck, scale) {
+  const src = CHARS[ck].frames.idle;
+  canvasEl.width = src.width * scale;
+  canvasEl.height = src.height * scale;
+  const c = canvasEl.getContext('2d');
+  c.imageSmoothingEnabled = false;
+  c.drawImage(src, 0, 0, canvasEl.width, canvasEl.height);
+}
+
+// Titre en perspective dégressive : une lettre par span, taille décroissante.
+function buildPerspectiveTitle(el, text) {
+  el.innerHTML = '';
+  const n = text.length, maxSize = 31, minSize = 9;
+  for (let i = 0; i < n; i++) {
+    const t = n > 1 ? i / (n - 1) : 0;
+    const span = document.createElement('span');
+    span.textContent = text[i];
+    span.style.fontSize = (maxSize - (maxSize - minSize) * t).toFixed(2) + 'cqh';
+    el.appendChild(span);
+  }
+}
+
+function spawnConfetti() {
+  const wrap = $('confettiWrap');
+  if (wrap.childElementCount) return; // déjà généré
+  const cols = ['#ff8c1f', '#f5e63d', '#5df08a', '#35e0ff', '#ff3b5c', '#c86bff'];
+  for (let i = 0; i < 40; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.style.left = Math.random() * 100 + '%';
+    el.style.background = cols[(Math.random() * cols.length) | 0];
+    el.style.animationDelay = (Math.random() * 3.4) + 's';
+    wrap.appendChild(el);
+  }
+}
+
+// Stats détaillées par joueur, ouvertes au clic sur un portrait.
+let overDetail = {};
+function openOverDetail(who) {
+  const s = overDetail[who];
+  if (!s) return;
+  $('vicDetailName').textContent = CHARS[s.ck].short + ' — ' + s.tag;
+  $('dButs').textContent = s.buts;
+  $('dAttrapes').textContent = s.catches;
+  $('d5pt').textContent = s.z5;
+  $('d3pt').textContent = s.z3;
+  $('dUltimes').textContent = s.specials;
+  $('dDash').textContent = s.dashCatches;
+  $('vicDetailScrim').classList.add('open');
+}
+$('vicPortrait').addEventListener('click', () => openOverDetail('winner'));
+$('vicLoserCol').addEventListener('click', () => openOverDetail('loser'));
+$('vicDetailClose').addEventListener('click', () => $('vicDetailScrim').classList.remove('open'));
+$('vicDetailScrim').addEventListener('click', e => {
+  if (e.target.id === 'vicDetailScrim') e.currentTarget.classList.remove('open');
+});
+
 export function gameOver() {
   G.state = 'over';
   if (G.demo) { initMatch(true); return; }
   if (document.pointerLockElement === cv) document.exitPointerLock();
   const win = G.winner === G.p1;
   sfx(win ? 'win' : 'lose');
-  const t = $('overTitle');
-  t.textContent = win ? 'VICTOIRE !' : 'DÉFAITE...';
-  t.className = win ? 'win' : 'lose';
-  $('overImg').src = portraitURL(G.winner.ck);
-  $('overScore').textContent = G.p1.score + ' — ' + G.p2.score;
-  $('overStats').innerHTML = `Disques attrapés : <b>${G.p1.stats.catches}</b> (IA : ${G.p2.stats.catches})<br>Spéciales utilisées : <b>${G.p1.stats.specials}</b> (IA : ${G.p2.stats.specials})<br>Plus long échange : <b>${G.maxRally}</b> lancers`;
+
+  const winner = G.winner, loser = winner.foe;
+  const winnerIsP1 = winner === G.p1;
+
+  buildPerspectiveTitle($('vicName'), winner.char.short);
+  $('vicOutcome').textContent = win ? 'VICTOIRE' : 'DÉFAITE';
+  drawOverSprite($('vicPortrait'), winner.ck, 18);
+  drawOverSprite($('vicLoserPortrait'), loser.ck, 8);
+
+  const flag = $('vicFlag'), loserTag = $('vicLoserTag');
+  flag.textContent = winnerIsP1 ? 'P1' : (G.isJ2J ? 'J2' : 'CPU');
+  flag.className = 'bigFlag ' + (winnerIsP1 ? 'red' : 'gray');
+  loserTag.textContent = winnerIsP1 ? (G.isJ2J ? 'J2' : 'CPU') : 'P1';
+  loserTag.className = 'flag ' + (winnerIsP1 ? 'gray' : 'red');
+
+  $('vicCatch').textContent = G.p1.stats.catches;
+  $('vicSpec').textContent = G.p1.stats.specials;
+  $('vicRally').textContent = G.maxRally;
+
+  overDetail = {
+    winner: { ck: winner.ck, tag: flag.textContent, ...winner.stats },
+    loser: { ck: loser.ck, tag: loserTag.textContent, ...loser.stats }
+  };
+
+  spawnConfetti();
+  $('confettiWrap').style.display = win ? 'block' : 'none';
+  $('vicDetailScrim').classList.remove('open');
   showScreen('over');
 }

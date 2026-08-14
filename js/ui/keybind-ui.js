@@ -16,7 +16,8 @@ export function refreshKeysUI() {
     row.className = 'keys-row';
     const actLabel = document.createElement('span');
     actLabel.className = 'action';
-    actLabel.textContent = ACTION_NAMES[action];
+    // ACTION_NAMES porte un emoji en tête : on ne garde que le libellé.
+    actLabel.textContent = ACTION_NAMES[action].replace(/^\S+\s*/, '');
     const keySpan = document.createElement('span');
     keySpan.className = 'key';
     keySpan.textContent = getKeyDisplay(getKey(action));

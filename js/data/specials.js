@@ -4,6 +4,27 @@ import { norm, gauss, clamp } from '../core/utils.js';
 import { sfx } from '../audio/audio.js';
 import { burst } from '../game/fx.js';
 import { throwDisc } from '../game/actions.js';
+import { buildSprite } from './characters.js';
+
+// Sprite pixel-art de la Jambe de Maman (référence Binding of Isaac : chair
+// pâle et grumeleuse/malsaine, pas une jambe humaine propre, qui se termine
+// en escarpin rouge à talon aiguille). 16 large, du haut de cuisse (rang 0)
+// au talon qui touche le sol (dernier rang), même technique que les persos
+// (buildSprite).
+const PAL_LEG = { S: '#f4c9c9', s: '#dba3a8', d: '#c47f86', R: '#d81c4a', r: '#8f0f2c', H: '#ff5c7a', E: '#2a0f18' };
+const LEG_ROWS = [
+  "..sSSSSSSSSSSs..", "..sSSdSSSSSSSs..", "..sSSSSSSSSSSs..", "..sSSSSSSSSdSs..",
+  "...sSSSSSSSSs...", "...sSSSdSSSSs...", "...sSSSSSSSSs...", "...sSSSSdSSSs...", "...sSSSSSSSSs...", "...sSdSSSSSSs...",
+  "....sSSSSSSs....", "....sSSSdSSs....", "....sSSSSSSs....", "....sSdSSSSs....", "....sSSSSSSs....", "....sSSSSdSs....",
+  "....sSSSSSSs....", "....sSSdSSSs....",
+  ".....sSSSSs.....", ".....sSdSSs.....", ".....sSSSSs.....", ".....sSSdSs.....", ".....sSSSSs.....", ".....sdSSSs.....",
+  "....RRRRRRR.....",
+  "....RRRRRRRR....", "...RRRRRRRRRR...", "..RRRRRRRRRRRR..", "..RRRRRHRRRRRR..",
+  "..rr..RRRRRRRR..", "...r...RRRRRR...",
+  "...E...EEEEEE...",
+];
+export const LEG_SPRITE = buildSprite(LEG_ROWS, PAL_LEG);
+export const LEG_SPRITE_SCALE = 4;
 
 // Registre des attaques spéciales. Pour ajouter une spéciale : une entrée ici,
 // puis `ult:'<clé>'` sur le personnage dans data/characters.js.

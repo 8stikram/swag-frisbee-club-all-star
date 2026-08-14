@@ -5,112 +5,256 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Swag Frisbee Club All Star</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Chakra+Petch:wght@400;600;700&family=Bangers&family=Abril+Fatface&family=Anton&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Great+Vibes&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<h1 class="brand" id="adminTitle">★ Swag Frisbee Club All Star ★</h1>
+<h1 class="brand" id="adminTitle">Swag Frisbee Club All Star</h1>
 <div id="stage">
   <canvas id="game" width="960" height="600"></canvas>
 
-  <!-- Écran titre -->
-  <div class="screen" id="scr-title">
-    <div class="logo-sbcb"><div class="sbcb">SWAG</div><div class="allstar">FRISBEE CLUB</div><div class="discarena">ALL STAR</div></div>
-    <div class="menu">
-      <button class="mbtn sel" data-act="play">Match vs IA</button>
-      <button class="mbtn" data-act="j2j">Match JcJ</button>
-      <button class="mbtn" data-act="options">⚙️ Options</button>
+  <!-- ============ ÉCRAN TITRE ============ -->
+  <div class="screen scr-title" id="scr-title">
+    <div class="bg bg-title">
+      <div class="watermark" data-wm="SWAG FRISBEE CLUB"></div>
+      <div class="streaks"></div>
+      <div class="arc"></div>
+      <div class="ringwrap">
+        <svg viewBox="0 0 400 400"><path id="ring-title" d="M 200,200 m -160,0 a 160,160 0 1,1 320,0 a 160,160 0 1,1 -320,0" fill="none"/>
+          <text><textPath href="#ring-title" startOffset="0%">MENU PRINCIPAL • MENU PRINCIPAL • MENU PRINCIPAL • MENU PRINCIPAL • </textPath></text></svg>
+      </div>
     </div>
-    <div class="tag">APPUIE SUR ENTRÉE</div>
-    <div class="small"><kbd>M</kbd> musique · 5× clic sur le titre = Admin</div>
+
+    <div class="confirm"><span class="key">⏎</span>VALIDER</div>
+
+    <div class="titleLeft">
+      <img class="logo" src="assets/logo.png" alt="Swag Frisbee Club All Star">
+      <div class="menu">
+        <button class="mbtn c-green" data-act="play">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18"/></svg></span>
+          MATCH VS IA
+        </button>
+        <button class="mbtn c-green" data-act="j2j">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 19c0-3 2.7-5 6-5M22 19c0-3-2.7-5-6-5"/></svg></span>
+          MATCH JCJ
+        </button>
+        <button class="mbtn" data-act="options">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></span>
+          OPTIONS
+        </button>
+      </div>
+      <div class="hint"><kbd>M</kbd> musique · 5× clic sur le titre = admin</div>
+    </div>
+
+    <div class="titleRight">
+      <div class="heroGlow"></div>
+      <canvas id="titleHero"></canvas>
+    </div>
+    <div class="banner"><span>MONTRE AU MONDE<br>QUI EST LE MEILLEUR !</span></div>
   </div>
 
-  <!-- Sélection (Match vs IA / JcJ) -->
-  <div class="screen light hidden" id="scr-select">
-    <div class="sub" style="font-size:15px">Choisis ton champion</div>
-    <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;width:100%;max-width:700px;">
-      <div style="flex:1;min-width:200px;background:rgba(10,20,48,.7);border:2px solid #2c4b8f;border-radius:12px;padding:12px;">
-        <h4 style="font-family:'Press Start 2P',monospace;font-size:11px;color:var(--cyan);margin-bottom:10px;">👤 JOUEUR</h4>
-        <div style="cursor:pointer;background:linear-gradient(180deg,var(--panel2),var(--panel));border:3px solid #23407c;border-radius:10px;padding:10px;text-align:center;" id="card-player">
-          <div class="ico" id="player-ico" style="font-size:22px;">🍥</div>
-          <div class="uni" id="player-uni" style="font-size:10px;color:#7d92bd;">KONOHA</div>
-          <img id="player-img" alt="Player" style="width:96px;height:120px;image-rendering:pixelated;">
-          <h3 id="player-name" style="font-family:'Press Start 2P',monospace;font-size:9px;margin:4px 0;">NARUTO<br>UZUMAKI</h3>
-          <div style="display:flex;justify-content:center;gap:12px;margin-top:4px;">
-            <span class="arrow" id="playerLeft" style="cursor:pointer;color:var(--cyan);font-size:20px;">◀</span>
-            <span style="color:#9fb4dd;font-size:11px;">Changer</span>
-            <span class="arrow" id="playerRight" style="cursor:pointer;color:var(--cyan);font-size:20px;">▶</span>
+  <!-- ============ SÉLECTION DES PERSONNAGES ============ -->
+  <div class="screen scr-select hidden" id="scr-select">
+    <div class="bg bg-select">
+      <div class="charglow g1" id="selGlow1"></div>
+      <div class="charglow g2" id="selGlow2"></div>
+      <div class="watermark" data-wm="VERSUS SWAG FRISBEE"></div>
+      <div class="beam b-a"></div>
+      <div class="beam b-b"></div>
+      <div class="streaks"></div>
+      <div class="arc"></div>
+      <div class="ringwrap">
+        <svg viewBox="0 0 400 400"><path id="ring-select" d="M 200,200 m -160,0 a 160,160 0 1,1 320,0 a 160,160 0 1,1 -320,0" fill="none"/>
+          <text><textPath href="#ring-select" startOffset="0%">VERSUS • VERSUS • VERSUS • VERSUS • VERSUS • VERSUS • VERSUS • VERSUS • </textPath></text></svg>
+      </div>
+    </div>
+
+    <div class="titlebar"><span>CHOISIS TON CHAMPION</span></div>
+    <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
+    <div class="prompt right">
+      <div class="row"><span class="key">⏎</span>VALIDER</div>
+      <div class="row"><span class="key">R</span>ALÉATOIRE</div>
+    </div>
+
+    <div class="badge b1" id="selUni1">—</div>
+    <div class="badge b2" id="selUni2">—</div>
+
+    <div class="board">
+      <div class="side p1">
+        <div class="heroBox"><canvas id="selHero1"></canvas></div>
+        <div class="nameSlash p1"><span id="selName1">—</span></div>
+        <div class="stats" id="selStats1"></div>
+      </div>
+
+      <div class="gridwrap">
+        <div class="grid" id="charGrid"></div>
+        <div class="special"><b id="specialName">—</b><em id="specialDesc">—</em></div>
+        <div class="diffRow">
+          <span class="arrowBtn" id="diffL">◀</span>
+          <span class="diffLabel">IA : <b id="diffName">NORMAL</b></span>
+          <span class="arrowBtn" id="diffR">▶</span>
+        </div>
+        <button class="mbtn c-yellow fightBtn" data-act="fight">COMBATTRE</button>
+      </div>
+
+      <div class="side p2">
+        <div class="heroBox"><canvas id="selHero2"></canvas></div>
+        <div class="nameSlash p2"><span id="selName2">—</span></div>
+        <div class="stats" id="selStats2"></div>
+      </div>
+    </div>
+
+    <div class="discbar">
+      <span class="cap">DISQUE</span>
+      <div class="discrow">
+        <button class="arrowBtn" id="discPrev">◀</button>
+        <div class="discSide" id="discLeft"></div>
+        <div class="disc" id="discView"></div>
+        <div class="discSide" id="discRight"></div>
+        <button class="arrowBtn" id="discNext">▶</button>
+      </div>
+      <span class="discname" id="discName">—</span>
+    </div>
+  </div>
+
+  <!-- ============ SÉLECTION DU TERRAIN ============ -->
+  <div class="screen scr-maps hidden" id="scr-maps">
+    <div class="bg bg-maps" id="mapsBg">
+      <div class="blueprint"></div>
+      <div class="radarCross"></div>
+      <div class="radarCross vert"></div>
+      <div class="radarRings r3"></div>
+      <div class="radarRings r2"></div>
+      <div class="radarRings"></div>
+      <div class="radarSweep"><i></i></div>
+      <div class="ping"></div>
+      <div class="ping p2"></div>
+    </div>
+
+    <div class="titlebar"><span>CHOISIS TON TERRAIN</span></div>
+    <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
+    <div class="prompt right"><div class="row"><span class="key">⏎</span>VALIDER</div></div>
+
+    <div class="previewWrap"><canvas id="mapPreview" width="900" height="480"></canvas></div>
+    <div class="previewName"><span id="mapName">—</span></div>
+    <div class="thumbRow" id="mapThumbs"></div>
+    <button class="mbtn c-yellow mapGoBtn" data-act="startMatch">LANCER LE MATCH</button>
+  </div>
+
+  <!-- ============ OPTIONS ============ -->
+  <div class="screen scr-options hidden" id="scr-options">
+    <div class="bg bg-options">
+      <div class="chevrons"></div>
+      <div class="arc"></div>
+      <div class="ringwrap">
+        <svg viewBox="0 0 400 400"><path id="ring-options" d="M 200,200 m -160,0 a 160,160 0 1,1 320,0 a 160,160 0 1,1 -320,0" fill="none"/>
+          <text><textPath href="#ring-options" startOffset="0%">OPTIONS • OPTIONS • OPTIONS • OPTIONS • OPTIONS • OPTIONS • OPTIONS • </textPath></text></svg>
+      </div>
+    </div>
+
+    <div class="titlebar"><span>OPTIONS</span></div>
+    <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
+
+    <div class="optPanel">
+      <div class="tabs">
+        <div class="tab active" data-tab="audio">AUDIO</div>
+        <div class="tab" data-tab="keys">TOUCHES</div>
+      </div>
+
+      <div class="optCard">
+        <div class="tab-content active" id="tab-audio">
+          <div class="sliderRow">
+            <label>MUSIQUE</label>
+            <input type="range" id="musicVol" min="0" max="100" value="80">
+            <span class="val" id="musicVal">80%</span>
+          </div>
+          <div class="sliderRow">
+            <label>SFX</label>
+            <input type="range" id="sfxVol" min="0" max="100" value="90">
+            <span class="val" id="sfxVal">90%</span>
           </div>
         </div>
+
+        <div class="tab-content" id="tab-keys">
+          <div class="keys-grid" id="keysGrid"></div>
+          <button class="mbtn resetBtn" id="resetKeys">↺ RÉINITIALISER</button>
+        </div>
       </div>
-      <div style="flex:1;min-width:200px;background:rgba(10,20,48,.7);border:2px solid #2c4b8f;border-radius:12px;padding:12px;">
-        <h4 style="font-family:'Press Start 2P',monospace;font-size:11px;color:var(--cyan);margin-bottom:10px;">🤖 IA / CPU</h4>
-        <div style="cursor:pointer;background:linear-gradient(180deg,var(--panel2),var(--panel));border:3px solid #23407c;border-radius:10px;padding:10px;text-align:center;" id="card-cpu">
-          <div class="ico" id="cpu-ico" style="font-size:22px;">🚔</div>
-          <div class="uni" id="cpu-uni" style="font-size:10px;color:#7d92bd;">RACCOON CITY</div>
-          <img id="cpu-img" alt="CPU" style="width:96px;height:120px;image-rendering:pixelated;">
-          <h3 id="cpu-name" style="font-family:'Press Start 2P',monospace;font-size:9px;margin:4px 0;">LEON S.<br>KENNEDY</h3>
-          <div style="display:flex;justify-content:center;gap:12px;margin-top:4px;">
-            <span class="arrow" id="cpuLeft" style="cursor:pointer;color:var(--cyan);font-size:20px;">◀</span>
-            <span style="color:#9fb4dd;font-size:11px;">Changer</span>
-            <span class="arrow" id="cpuRight" style="cursor:pointer;color:var(--cyan);font-size:20px;">▶</span>
-          </div>
+
+      <button class="mbtn" data-act="back">RETOUR</button>
+    </div>
+  </div>
+
+  <!-- ============ PAUSE ============ -->
+  <div class="screen scr-pause hidden" id="scr-pause">
+    <div class="pauseCard">
+      <div class="titleRibbon"><span>PAUSE</span></div>
+      <div class="menu">
+        <button class="mbtn" data-act="resume">Reprendre</button>
+        <button class="mbtn" data-act="restart">Recommencer</button>
+        <button class="mbtn" data-act="menu">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ VICTOIRE / DÉFAITE ============ -->
+  <div class="screen scr-over hidden" id="scr-over">
+    <div class="overScrim"></div>
+    <div id="confettiWrap"></div>
+
+    <div class="bigFlag red" id="vicFlag">P1</div>
+
+    <div class="winnerNameWrap">
+      <div class="winnerName" id="vicName"></div>
+      <div class="outcome" id="vicOutcome">VICTOIRE</div>
+    </div>
+
+    <canvas class="heroPortrait" id="vicPortrait" title="Voir les stats"></canvas>
+
+    <div class="loserCard">
+      <div class="flag gray" id="vicLoserTag">CPU</div>
+      <div class="portraitCol" id="vicLoserCol" title="Voir les stats">
+        <canvas id="vicLoserPortrait"></canvas>
+      </div>
+      <div class="statBar">
+        <span>Attrapes <b id="vicCatch">0</b></span>
+        <span class="sep"></span>
+        <span>Spéciales <b id="vicSpec">0</b></span>
+        <span class="sep"></span>
+        <span>Échange max <b id="vicRally">0</b></span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <div class="actionsRow">
+        <button class="mbtn c-yellow" data-act="rematch">Revanche</button>
+        <button class="mbtn" data-act="menu">Menu</button>
+      </div>
+      <button class="mbtn changeChar" data-act="changeChar">Changez de perso</button>
+    </div>
+
+    <div class="detailScrim" id="vicDetailScrim">
+      <div class="detailCard">
+        <div class="close" id="vicDetailClose">✕</div>
+        <h3 id="vicDetailName">—</h3>
+        <div class="detailGrid">
+          <div class="cell"><span class="lbl">Buts</span><span class="val" id="dButs">—</span></div>
+          <div class="cell"><span class="lbl">Attrapes</span><span class="val" id="dAttrapes">—</span></div>
+          <div class="cell"><span class="lbl">Zone 5 pts</span><span class="val" id="d5pt">—</span></div>
+          <div class="cell"><span class="lbl">Zone 3 pts</span><span class="val" id="d3pt">—</span></div>
+          <div class="cell"><span class="lbl">Ultimes</span><span class="val" id="dUltimes">—</span></div>
+          <div class="cell"><span class="lbl">Attrapes en dash</span><span class="val" id="dDash">—</span></div>
         </div>
       </div>
     </div>
-
-    <!-- Sélection de skin -->
-    <div style="width:100%;max-width:640px;margin-top:4px;">
-      <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:#9fb4dd;margin-bottom:4px;">🎨 Skin du disque</div>
-      <div class="skin-selector" id="skinSelector"></div>
-    </div>
-
-    <div style="max-width:640px;background:rgba(18,35,71,.9);border:2px dashed #3d5ba6;border-radius:8px;padding:9px 16px;font-size:13px;text-align:center;width:100%;" id="specialInfo"></div>
-    <div style="display:flex;align-items:center;gap:14px;font-family:'Press Start 2P',monospace;font-size:11px;">
-      <span class="arrow" id="diffL" style="cursor:pointer;color:var(--cyan);padding:4px 10px;">◀</span>
-      <span style="color:#9fb4dd;">IA :</span><span id="diffName">NORMAL</span>
-      <span class="arrow" id="diffR" style="cursor:pointer;color:var(--cyan);padding:4px 10px;">▶</span>
-    </div>
-    <button class="mbtn sel" data-act="fight" style="text-align:center;">⚡ Combattre ⚡</button>
-    <div class="small"><kbd>←→</kbd> CPU / <kbd>A</kbd><kbd>D</kbd> Joueur — <kbd>↑↓</kbd> difficulté — Entrée pour combattre</div>
-  </div>
-
-  <!-- Options -->
-  <div class="screen hidden" id="scr-options">
-    <div class="sub" style="font-size:17px;">⚙️ Options</div>
-    <div class="tabs">
-      <span class="tab active" data-tab="audio">🔊 Audio</span>
-      <span class="tab" data-tab="keys">⌨️ Touches</span>
-    </div>
-    <div class="tab-content active" id="tab-audio">
-      <div class="option-row"><label>🎵 Musique</label><input type="range" id="musicVol" min="0" max="100" value="80"><span class="val" id="musicVal">80%</span></div>
-      <div class="option-row"><label>🔊 SFX</label><input type="range" id="sfxVol" min="0" max="100" value="90"><span class="val" id="sfxVal">90%</span></div>
-    </div>
-    <div class="tab-content" id="tab-keys">
-      <div class="keys-grid" id="keysGrid"></div>
-      <div style="display:flex;gap:10px;margin-top:4px;">
-        <button class="mbtn" id="resetKeys" style="text-align:center;font-size:9px;padding:6px 14px;">↺ Réinitialiser</button>
-      </div>
-    </div>
-    <button class="mbtn sel" data-act="back" style="text-align:center;font-size:11px;padding:8px 20px;">Retour</button>
-  </div>
-
-  <!-- Pause, Over -->
-  <div class="screen hidden" id="scr-pause"><div class="sub">PAUSE</div><button class="mbtn sel" data-act="resume">Reprendre</button><button class="mbtn" data-act="restart">Recommencer</button><button class="mbtn" data-act="menu">Menu</button></div>
-  <div class="screen hidden" id="scr-over">
-    <div id="overTitle" style="font-family:'Press Start 2P',monospace;font-size:26px;color:var(--jaune);">VICTOIRE</div>
-    <img id="overImg" alt="" style="width:96px;height:120px;image-rendering:pixelated;">
-    <div id="overScore" style="font-family:'Press Start 2P',monospace;font-size:20px;"></div>
-    <div id="overStats" style="font-size:13px;color:#9fb4dd;line-height:1.6;"></div>
-    <button class="mbtn sel" data-act="rematch">Revanche</button>
-    <button class="mbtn" data-act="menu">Menu</button>
   </div>
 
   <div class="crt"></div>
 
-  <!-- Conflict popup -->
+  <!-- Popup de conflit de touche -->
   <div class="conflict-popup" id="conflictPopup">
-    <h3>⚠️ CONFLIT DE TOUCHE</h3>
+    <h3>CONFLIT DE TOUCHE</h3>
     <p id="conflictMsg">La touche est déjà utilisée par <b>ACTION</b>.</p>
     <div>
       <button class="cbtn danger" id="conflictReplace">Remplacer</button>
@@ -118,26 +262,26 @@
     </div>
   </div>
 
-  <!-- Admin Panel -->
+  <!-- Panneau admin -->
   <div id="admin-panel">
-    <div class="arow"><span class="alabel">🔧 ADMIN</span>
-      <button class="abtn success" id="admin-forceShoot">💥 Forcer tir IA</button>
-      <button class="abtn" id="admin-giveDisc">🎯 Donner disque IA</button>
+    <div class="arow"><span class="alabel">ADMIN</span>
+      <button class="abtn success" id="admin-forceShoot">Forcer tir IA</button>
+      <button class="abtn" id="admin-giveDisc">Donner disque IA</button>
     </div>
     <div class="arow">
-      <button class="abtn danger" id="admin-reset">🔄 Reset match</button>
-      <button class="abtn" id="admin-logs">📋 Logs</button>
-      <button class="abtn" id="admin-stats">📊 Stats</button>
+      <button class="abtn danger" id="admin-reset">Reset match</button>
+      <button class="abtn" id="admin-logs">Logs</button>
+      <button class="abtn" id="admin-stats">Stats</button>
     </div>
     <div class="arow">
-      <button class="abtn" id="admin-togglePause">⏸️ Pause</button>
-      <button class="abtn" id="admin-slowmo">🐢 Slowmo</button>
-      <button class="abtn" id="admin-normal">▶️ Normal</button>
+      <button class="abtn" id="admin-togglePause">Pause</button>
+      <button class="abtn" id="admin-slowmo">Slowmo</button>
+      <button class="abtn" id="admin-normal">Normal</button>
     </div>
   </div>
 </div>
-<footer>5× clic sur le titre pour activer le Mode Admin · Options → Touches pour personnaliser</footer>
+<footer>5× clic sur le titre pour le mode admin · Options → Touches pour personnaliser</footer>
 
-<script type="module" src="js/main.js"></script>
+<script type="module" src="js/main.js?v=2"></script>
 </body>
 </html>

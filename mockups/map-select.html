@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — Sélection du terrain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  @property --accent{syntax:'<color>';inherits:true;initial-value:#35e0ff;}
+  :root{
+    --ink:#111318;
+    --yellow:#f5e63d; --orange:#ff8c1f; --cyan:#35e0ff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{min-height:100vh;background:#070a12;color:#fff;font-family:'Barlow',sans-serif;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:28px 16px;}
+  .note{color:#8fa3cc;font-size:14px;font-family:sans-serif;}
+
+  /* Le fond de scène reprend les vraies couleurs du terrain (data/maps.js), pas une teinte inventée. */
+  .stage{position:relative;width:min(96vw,1180px);aspect-ratio:16/9;border-radius:8px;overflow:hidden;
+    container-type:size;transition:background .5s;
+    background:radial-gradient(120cqh 90cqh at 50% 42%,#16233f 0%,#0a1220 55%,#020408 100%);}
+
+  /* ---------- FOND ANIMÉ : "radar tactique de stade" ----------
+     Volontairement différent du filigrane/anneau texte du titre et de la
+     sélection perso : ici on choisit un terrain, donc le fond emprunte le
+     langage visuel d'un radar/plan d'architecte plutôt que du texte qui
+     défile. La teinte (--accent) suit la vraie couleur du thème de la map
+     survolée (data/maps.js), posée par le script. */
+  .bg{position:absolute;inset:0;overflow:hidden;pointer-events:none;
+    --accent:#35e0ff;transition:--accent .4s;}
+
+  /* Grille façon plan de stade, qui dérive lentement en diagonale */
+  .blueprint{position:absolute;inset:-20%;opacity:.3;
+    background-image:
+      repeating-linear-gradient(0deg, var(--accent) 0 1px, transparent 1px 8cqh),
+      repeating-linear-gradient(90deg, var(--accent) 0 1px, transparent 1px 8cqh);
+    animation:gridpan 26s linear infinite;mix-blend-mode:screen;}
+  @keyframes gridpan{from{transform:translate(0,0)}to{transform:translate(8cqh,8cqh)}}
+
+  /* Anneaux radar concentriques, centrés sur la scène */
+  .radarRings{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:46cqh;height:46cqh;border-radius:50%;border:1px solid var(--accent);opacity:.28;}
+  .radarRings.r2{width:78cqh;height:78cqh;opacity:.2;}
+  .radarRings.r3{width:112cqh;height:112cqh;opacity:.13;}
+  .radarCross{position:absolute;top:50%;left:50%;width:112cqh;height:1px;
+    background:var(--accent);opacity:.15;transform:translate(-50%,-50%);}
+  .radarCross.vert{width:1px;height:112cqh;}
+
+  /* Faisceau radar qui balaie en continu, façon écran de sonar */
+  .radarSweep{position:absolute;top:50%;left:50%;width:112cqh;height:112cqh;
+    transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;
+    animation:radarspin 7s linear infinite;mix-blend-mode:screen;}
+  .radarSweep i{position:absolute;inset:0;
+    background:conic-gradient(from 0deg, var(--accent) 0deg, transparent 55deg, transparent 360deg);
+    opacity:.4;}
+  @keyframes radarspin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+
+  /* Écho qui s'étend depuis le centre par intermittence, façon ping sonar */
+  .ping{position:absolute;top:50%;left:50%;width:8cqh;height:8cqh;border-radius:50%;
+    border:2px solid var(--accent);transform:translate(-50%,-50%);
+    animation:pingOut 4s cubic-bezier(.2,.7,.3,1) infinite;}
+  .ping.p2{animation-delay:2s;}
+  @keyframes pingOut{0%{width:8cqh;height:8cqh;opacity:.7}100%{width:130cqh;height:130cqh;opacity:0}}
+
+  /* ---------- BANDEAU TITRE ---------- */
+  .titlebar{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:6;
+    background:var(--orange);border:4px solid var(--ink);border-top:0;border-radius:0 0 8px 8px;
+    padding:1.4cqh 2.6cqw;box-shadow:0 5px 0 var(--ink);
+    clip-path:polygon(4% 0,96% 0,100% 100%,0 100%);}
+  .titlebar span{font-family:'Archivo Black',sans-serif;font-size:clamp(13px,2.6cqh,22px);color:#fff;
+    -webkit-text-stroke:4px var(--ink);paint-order:stroke fill;letter-spacing:.04em;}
+
+  .prompt{position:absolute;top:3%;z-index:6;display:flex;align-items:center;gap:.6cqw;
+    font-family:'Archivo Black',sans-serif;font-size:clamp(9px,1.9cqh,14px);color:#fff;
+    text-shadow:0 2px 0 var(--ink);}
+  .prompt.left{left:2%;} .prompt.right{right:2%;flex-direction:column;align-items:flex-end;gap:.8cqh;}
+  .prompt .row{display:flex;align-items:center;gap:.6cqw;}
+  .key{width:3.4cqh;height:3.4cqh;min-width:19px;min-height:19px;border-radius:50%;background:var(--ink);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:.72em;flex-shrink:0;border:2px solid #fff;}
+
+  /* ---------- APERÇU GÉANT (façon UNS4) ---------- */
+  .previewWrap{position:absolute;top:9cqh;left:50%;transform:translateX(-50%);z-index:2;
+    width:74cqw;height:40cqh;border-radius:10px;overflow:hidden;
+    border:4px solid var(--ink);box-shadow:0 8px 0 rgba(0,0,0,.35);}
+  #bigPreview{width:100%;height:100%;display:block;}
+  .previewName{position:absolute;left:50%;bottom:45cqh;transform:translateX(-50%);z-index:5;
+    background:#fff;border:4px solid var(--ink);border-radius:8px;
+    padding:1cqh 2.4cqw;box-shadow:5px 5px 0 var(--ink);
+    clip-path:polygon(3% 0,97% 0,100% 100%,0 100%);}
+  .previewName span{font-family:'Archivo Black',sans-serif;font-size:clamp(14px,2.6cqh,24px);
+    color:var(--ink);letter-spacing:.03em;}
+
+  /* ---------- RANGÉE DE VIGNETTES ---------- */
+  .thumbRow{position:absolute;left:50%;bottom:2.4cqh;transform:translateX(-50%);z-index:5;
+    display:flex;gap:1.4cqw;}
+  .thumb{width:15cqh;height:15cqh;min-width:64px;min-height:64px;border-radius:8px;overflow:hidden;
+    border:4px solid var(--ink);cursor:pointer;position:relative;box-shadow:4px 4px 0 var(--ink);
+    transition:transform .12s,box-shadow .12s;background:#0a1220;}
+  .thumb:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink);}
+  .thumb.on{outline:4px solid var(--yellow);outline-offset:2px;}
+  .thumb canvas{width:100%;height:100%;display:block;}
+  .thumb .rndFace{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:'Archivo Black',sans-serif;font-size:5cqh;color:#fff;
+    background:linear-gradient(120deg,#ff5f6d,#ffc371,#5df08a,#35e0ff,#a06bff,#ff5f6d);
+    background-size:400% 400%;animation:rainbow 6s ease infinite;
+    -webkit-text-stroke:3px var(--ink);paint-order:stroke fill;}
+  @keyframes rainbow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  .thumb .tick{position:absolute;top:3px;right:3px;width:1.6cqh;height:1.6cqh;min-width:16px;min-height:16px;
+    border-radius:50%;background:var(--yellow);border:2px solid var(--ink);display:none;
+    align-items:center;justify-content:center;font-size:.7em;color:var(--ink);font-weight:800;}
+  .thumb.on .tick{display:flex;}
+  .thumb .label{position:absolute;left:0;right:0;bottom:0;padding:2px 4px;text-align:center;
+    background:rgba(17,19,24,.72);font-family:'Archivo Black',sans-serif;font-size:clamp(6px,1.1cqh,9px);
+    letter-spacing:.06em;color:#fff;}
+</style>
+</head>
+<body>
+  <div class="note">Mockup — sélection du terrain (D.A. Windjammers 2, inspiré de la mise en page Naruto UNS4)</div>
+
+  <div class="stage" id="stage">
+    <div class="bg" id="bg">
+      <div class="blueprint"></div>
+      <div class="radarCross"></div>
+      <div class="radarCross vert"></div>
+      <div class="radarRings r3"></div>
+      <div class="radarRings r2"></div>
+      <div class="radarRings"></div>
+      <div class="radarSweep"><i></i></div>
+      <div class="ping"></div>
+      <div class="ping p2"></div>
+    </div>
+
+    <div class="titlebar"><span>CHOISIS TON TERRAIN</span></div>
+    <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
+    <div class="prompt right">
+      <div class="row"><span class="key">⏎</span>VALIDER</div>
+      <div class="row"><span class="key">R</span>ALÉATOIRE</div>
+    </div>
+
+    <div class="previewWrap"><canvas id="bigPreview" width="900" height="480"></canvas></div>
+    <div class="previewName"><span id="mapName">—</span></div>
+
+    <div class="thumbRow" id="thumbRow"></div>
+  </div>
+
+<script type="module">
+import { MAPS } from '/js/data/maps.js';
+
+const CHOICES = [...MAPS, { id: '__random', name: 'ALÉATOIRE' }];
+let activeIdx = 0;
+
+// Mini-rendu proportionnel du vrai terrain (mêmes proportions que COURT/goal/zones
+// dans data/maps.js), pas une image bidon : sert autant pour la vignette que le grand aperçu.
+function drawArena(cv, map, big) {
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0, 0, W, H);
+  const t = map.theme;
+  const grd = ctx.createRadialGradient(W/2, H/2, H*0.12, W/2, H/2, H*0.9);
+  grd.addColorStop(0, t.bgInner); grd.addColorStop(1, t.bgOuter);
+  ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+
+  const m = Math.min(W, H) * (big ? 0.1 : 0.14);
+  const L = m, R = W - m, T = m * 0.7, B = H - m * 0.7;
+  ctx.fillStyle = t.floor; ctx.fillRect(L, T, R - L, B - T);
+  ctx.strokeStyle = t.line; ctx.lineWidth = big ? 2 : 1;
+  ctx.strokeRect(L, T, R - L, B - T);
+  ctx.beginPath(); ctx.moveTo((L+R)/2, T); ctx.lineTo((L+R)/2, B); ctx.stroke();
+  ctx.beginPath(); ctx.arc((L+R)/2, (T+B)/2, (B-T)*0.16, 0, Math.PI*2); ctx.stroke();
+
+  const cy = (T + B) / 2, goalW = (R - L) * 0.05, goalH = (B - T) * (map.goal.height / (map.court.bottom - map.court.top));
+  for (const side of [0, 1]) {
+    const gx = side === 0 ? L - goalW : R;
+    ctx.fillStyle = t.goalFill; ctx.strokeStyle = t.goalStroke; ctx.lineWidth = big ? 2 : 1;
+    ctx.fillRect(gx, cy - goalH/2, goalW, goalH);
+    ctx.strokeRect(gx, cy - goalH/2, goalW, goalH);
+    const scale = (B - T) / (map.court.bottom - map.court.top);
+    for (const z of map.zones) {
+      ctx.fillStyle = z.color; ctx.globalAlpha = .55;
+      ctx.fillRect(gx, cy + z.from*scale, goalW, (z.to - z.from)*scale);
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+function renderThumbs() {
+  const row = document.getElementById('thumbRow');
+  row.innerHTML = '';
+  CHOICES.forEach((c, i) => {
+    const el = document.createElement('div');
+    el.className = 'thumb' + (i === activeIdx ? ' on' : '');
+    if (c.id === '__random') {
+      el.innerHTML = '<div class="rndFace">?</div><div class="tick">✓</div><div class="label">ALÉATOIRE</div>';
+    } else {
+      const cv = document.createElement('canvas'); cv.width = 160; cv.height = 160;
+      drawArena(cv, c, false);
+      el.appendChild(cv);
+      const tick = document.createElement('div'); tick.className = 'tick'; tick.textContent = '✓';
+      el.appendChild(tick);
+      const label = document.createElement('div'); label.className = 'label'; label.textContent = c.name;
+      el.appendChild(label);
+    }
+    el.addEventListener('click', () => { activeIdx = i; refresh(); });
+    row.appendChild(el);
+  });
+}
+
+function refresh() {
+  const c = CHOICES[activeIdx];
+  document.getElementById('mapName').textContent = c.name;
+  const big = document.getElementById('bigPreview');
+  const stage = document.getElementById('stage');
+  if (c.id === '__random') {
+    const gctx = big.getContext('2d');
+    gctx.clearRect(0, 0, big.width, big.height);
+    gctx.fillStyle = '#0d0f16'; gctx.fillRect(0, 0, big.width, big.height);
+    gctx.fillStyle = '#fff'; gctx.font = '700 120px Archivo Black, sans-serif';
+    gctx.textAlign = 'center'; gctx.textBaseline = 'middle';
+    gctx.fillText('?', big.width/2, big.height/2 + 10);
+    stage.style.background = 'radial-gradient(120cqh 90cqh at 50% 42%,#241636 0%,#120a1c 55%,#040206 100%)';
+    document.getElementById('bg').style.setProperty('--accent', '#c86bff');
+  } else {
+    drawArena(big, c, true);
+    const t = c.theme;
+    stage.style.background =
+      `radial-gradient(120cqh 90cqh at 50% 42%, ${t.bgInner} 0%, ${t.bgOuter} 68%, #020408 100%)`;
+    // Le radar prend la couleur réelle du thème du terrain (goalStroke dans data/maps.js).
+    document.getElementById('bg').style.setProperty('--accent', t.goalStroke);
+  }
+  renderThumbs();
+}
+
+refresh();
+</script>
+</body>
+</html>

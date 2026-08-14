@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — Victoire / Défaite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#111318;--yellow:#f5e63d;--red:#e5384f;--gray:#9aa0ac;}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{min-height:100vh;background:#070a12;color:#fff;font-family:'Barlow',sans-serif;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:28px 16px;}
+  .note{color:#8fa3cc;font-size:14px;font-family:sans-serif;}
+  .devrow{font-family:sans-serif;font-size:13px;color:#8fa3cc;display:flex;gap:10px;align-items:center;}
+  .devrow button{font-family:sans-serif;font-size:12px;padding:4px 10px;cursor:pointer;}
+
+  .stage{position:relative;width:min(96vw,1180px);aspect-ratio:16/9;border-radius:8px;overflow:hidden;
+    container-type:size;background:#05070d;transition:filter .2s;}
+
+  .demo{position:absolute;inset:0;border:0;width:100%;height:100%;filter:saturate(.8) brightness(.7);}
+  .scrim{position:absolute;inset:0;z-index:2;
+    background:linear-gradient(160deg,rgba(255,168,90,.35) 0%,rgba(120,70,140,.4) 45%,rgba(10,8,18,.72) 100%);}
+
+  /* ---------- BADGE P1/CPU MASSIF, coin haut-gauche ---------- */
+  .bigFlag{position:absolute;top:-3cqh;left:-3cqw;z-index:7;
+    display:flex;align-items:center;justify-content:center;
+    width:30cqh;height:20cqh;padding:0 3cqw 2cqh 0;
+    clip-path:polygon(0 0,100% 0,78% 100%,0 100%);
+    transform:rotate(-3deg);transform-origin:top left;
+    font-family:'Archivo Black',sans-serif;font-size:clamp(30px,8cqh,64px);
+    color:#fff;-webkit-text-stroke:6px var(--ink);paint-order:stroke fill;
+    border:5px solid var(--ink);box-shadow:8px 8px 0 var(--ink);}
+  .bigFlag.red{background:var(--red);} .bigFlag.gray{background:#fff;color:var(--ink);-webkit-text-stroke:6px var(--ink);}
+
+  /* ---------- TITRE DU GAGNANT : perspective dégressive, penché, rogné, glow ---------- */
+  /* Titre entier visible (pas de crop) : le nom occupe toute la moitié gauche,
+     avec VICTOIRE/DÉFAITE en or juste en dessous pour combler le vide. */
+  .winnerNameWrap{position:absolute;top:20cqh;left:2cqw;z-index:4;
+    width:58cqw;pointer-events:none;}
+  .winnerName{display:flex;align-items:baseline;white-space:nowrap;
+    transform:skewX(-9deg) rotate(-6deg);transform-origin:left top;
+    filter:drop-shadow(0 0 10px rgba(0,0,0,.5)) drop-shadow(0 0 24px rgba(0,0,0,.35)) drop-shadow(0 0 46px rgba(0,0,0,.22));}
+  .winnerName span{font-family:'Archivo Black',sans-serif;color:#fff;line-height:.82;
+    -webkit-text-stroke:6px var(--ink);paint-order:stroke fill;}
+
+  .outcome{margin-top:4cqh;margin-left:1.5cqw;
+    font-family:'Archivo Black',sans-serif;font-size:clamp(26px,9cqh,72px);line-height:1;
+    letter-spacing:.06em;
+    background:linear-gradient(180deg,#fff0a8 0%,#f5c518 45%,#b8860b 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    -webkit-text-stroke:5px var(--ink);paint-order:stroke fill;
+    transform:skewX(-9deg) rotate(-6deg);transform-origin:left top;display:inline-block;
+    filter:drop-shadow(0 0 8px rgba(0,0,0,.5)) drop-shadow(4px 5px 0 rgba(0,0,0,.45));}
+
+  /* ---------- PORTRAIT GÉANT À DROITE ---------- */
+  .heroPortrait{position:absolute;right:3cqw;bottom:0;z-index:3;height:86cqh;width:auto;cursor:pointer;
+    image-rendering:pixelated;
+    filter:drop-shadow(0 0 3px rgba(17,19,24,.55)) drop-shadow(0 0 9px rgba(17,19,24,.4))
+           drop-shadow(0 0 18px rgba(17,19,24,.28)) drop-shadow(6px 10px 0 rgba(0,0,0,.2));}
+
+  /* ---------- CARTE DE STATS : agrandie, densifiée, plus de "2" ---------- */
+  .loserCard{position:absolute;bottom:2.5cqh;left:2.5cqw;z-index:4;width:62cqh;
+    background:#fff;border:5px solid var(--ink);border-radius:10px;box-shadow:7px 7px 0 var(--ink);
+    padding:1.6cqh 2cqw;display:flex;align-items:center;gap:1.8cqw;}
+  .loserCard .portraitCol{flex-shrink:0;width:18cqh;cursor:pointer;display:flex;justify-content:center;}
+  .loserCard .portraitCol canvas{width:100%;height:auto;image-rendering:pixelated;}
+  .loserCard .flag{position:absolute;top:-1.8cqh;left:-1.8cqw;padding:.6cqh 1.2cqw .6cqh .8cqw;
+    display:flex;align-items:center;clip-path:polygon(0 0,100% 0,86% 100%,0 100%);
+    font-family:'Archivo Black',sans-serif;font-size:clamp(11px,1.9cqh,16px);color:#fff;
+    -webkit-text-stroke:3px var(--ink);paint-order:stroke fill;
+    border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);}
+  .loserCard .flag.gray{background:#fff;color:var(--ink);-webkit-text-stroke:3px var(--ink);}
+  .loserCard .flag.red{background:var(--red);}
+
+  .statBar{flex:1;min-width:0;overflow:hidden;background:var(--ink);border-radius:8px;
+    padding:1.2cqh 1.4cqw;display:flex;align-items:center;flex-wrap:wrap;row-gap:.5cqh;column-gap:1.1cqw;}
+  .statBar span{font-family:'Archivo Black',sans-serif;font-size:clamp(10px,1.6cqh,14px);color:#fff;white-space:nowrap;}
+  .statBar .sep{width:2px;height:2cqh;background:rgba(255,255,255,.45);flex-shrink:0;}
+
+  /* ---------- ACTIONS : Revanche jaune / Menu blanc / Changez de perso (vrai bouton) ---------- */
+  .actions{position:absolute;top:3cqh;right:3cqw;z-index:5;display:flex;flex-direction:column;gap:.8cqh;align-items:stretch;}
+  .actionsRow{display:flex;gap:.7cqw;}
+  .mbtn{font-family:'Archivo Black',sans-serif;font-size:clamp(10px,1.6cqh,13px);color:var(--ink);
+    background:#fff;padding:.9cqh 1.4cqw;border:3px solid var(--ink);border-radius:6px;
+    box-shadow:3px 3px 0 var(--ink);cursor:pointer;text-align:center;text-decoration:none;display:block;
+    transition:background .1s,color .1s,transform .1s,box-shadow .1s;}
+  .mbtn.c-yellow{background:var(--yellow);}
+  .mbtn:hover{background:var(--ink);color:#fff;transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--ink);}
+  .mbtn.changeChar{background:#cfe0ff;font-size:clamp(9px,1.4cqh,12px);}
+
+  .confetti{position:absolute;top:-8%;width:1.1cqh;height:1.6cqh;z-index:3;opacity:0;
+    animation:fall 3.4s linear infinite;}
+  @keyframes fall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(120cqh) rotate(540deg);opacity:.9}}
+
+  /* ---------- BLOC DE STATS DÉTAILLÉES, AU CLIC SUR UN PORTRAIT ---------- */
+  .detailScrim{position:absolute;inset:0;z-index:20;background:rgba(6,8,14,.55);
+    display:none;align-items:center;justify-content:center;}
+  .detailScrim.open{display:flex;}
+  .detailCard{background:#fff;border:5px solid var(--ink);border-radius:10px;box-shadow:8px 8px 0 var(--ink);
+    padding:2cqh 2.4cqw;width:44cqh;position:relative;}
+  .detailCard .close{position:absolute;top:-1.6cqh;right:-1.6cqh;width:4cqh;height:4cqh;min-width:26px;min-height:26px;
+    border-radius:50%;background:var(--red);border:3px solid var(--ink);color:#fff;
+    font-family:'Archivo Black',sans-serif;font-size:clamp(12px,2cqh,16px);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 0 var(--ink);}
+  .detailCard h3{font-family:'Archivo Black',sans-serif;font-size:clamp(16px,3cqh,24px);color:var(--ink);
+    margin-bottom:1.4cqh;letter-spacing:.02em;}
+  .detailGrid{display:grid;grid-template-columns:1fr 1fr;gap:1cqh 1.4cqw;}
+  .detailGrid .cell{background:#f2f3fc;border:2px solid #d3d6f2;border-radius:6px;padding:.8cqh 1cqw;}
+  .detailGrid .cell .lbl{font-family:'Barlow',sans-serif;font-weight:700;font-size:clamp(9px,1.4cqh,11px);
+    color:#5a6180;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.2cqh;}
+  .detailGrid .cell .val{font-family:'Archivo Black',sans-serif;font-size:clamp(15px,2.6cqh,20px);color:var(--ink);}
+</style>
+</head>
+<body>
+  <div class="note">Mockup — écran Victoire / Défaite, inspiré de l'écran de résultats Smash Bros</div>
+  <div class="devrow">Aperçu : <button id="btnWin">Victoire (P1)</button><button id="btnLose">Défaite (CPU gagne)</button></div>
+
+  <div class="stage" id="stage">
+    <iframe class="demo" id="demo" src="/index.html" title="Match en fond, assombri"></iframe>
+    <div class="scrim"></div>
+    <div id="confettiWrap"></div>
+
+    <div class="bigFlag red" id="winnerTag">P1</div>
+
+    <div class="winnerNameWrap">
+      <div class="winnerName" id="winnerNameBig"></div>
+      <div class="outcome" id="outcomeTxt">VICTOIRE</div>
+    </div>
+
+    <canvas class="heroPortrait" id="winnerPortrait" title="Voir les stats"></canvas>
+
+    <div class="loserCard">
+      <div class="flag gray" id="loserTag">CPU</div>
+      <div class="portraitCol" id="loserPortraitCol" title="Voir les stats">
+        <canvas id="loserPortrait"></canvas>
+      </div>
+      <div class="statBar">
+        <span>Attrapes <b id="stCatch">14</b></span>
+        <span class="sep"></span>
+        <span>Spéciales <b id="stSpec">3</b></span>
+        <span class="sep"></span>
+        <span>Échange max <b id="stRally">7</b></span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <div class="actionsRow">
+        <button class="mbtn c-yellow">Revanche</button>
+        <button class="mbtn">Menu</button>
+      </div>
+      <a class="mbtn changeChar" href="select-player.html">Changez de perso</a>
+    </div>
+
+    <div class="detailScrim" id="detailScrim">
+      <div class="detailCard">
+        <div class="close" id="detailClose">✕</div>
+        <h3 id="detailName">—</h3>
+        <div class="detailGrid">
+          <div class="cell"><span class="lbl">Buts</span><span class="val" id="dButs">—</span></div>
+          <div class="cell"><span class="lbl">Attrapes</span><span class="val" id="dAttrapes">—</span></div>
+          <div class="cell"><span class="lbl">Zone 5 pts</span><span class="val" id="d5pt">—</span></div>
+          <div class="cell"><span class="lbl">Zone 3 pts</span><span class="val" id="d3pt">—</span></div>
+          <div class="cell"><span class="lbl">Ultimes</span><span class="val" id="dUltimes">—</span></div>
+          <div class="cell"><span class="lbl">Attrapes en dash</span><span class="val" id="dDash">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+import { ROSTER, CHARS } from '/js/data/characters.js';
+
+function drawPortrait(canvasEl, ck, scale) {
+  const src = CHARS[ck].frames.idle;
+  canvasEl.width = src.width * scale; canvasEl.height = src.height * scale;
+  const ctx = canvasEl.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(src, 0, 0, canvasEl.width, canvasEl.height);
+}
+
+// Titre à "perspective dégressive" : chaque lettre de sa propre taille, en
+// baisse progressive de la première à la dernière (effet de profondeur).
+// Nécessite un span par lettre car CSS n'a pas de dégradé de font-size natif.
+function buildPerspectiveTitle(el, text) {
+  el.innerHTML = '';
+  const n = text.length;
+  const maxSize = 31, minSize = 9; // cqh
+  for (let i = 0; i < n; i++) {
+    const t = n > 1 ? i / (n - 1) : 0;
+    const size = maxSize - (maxSize - minSize) * t;
+    const span = document.createElement('span');
+    span.textContent = text[i];
+    span.style.fontSize = size.toFixed(2) + 'cqh';
+    el.appendChild(span);
+  }
+}
+
+const iA = (Math.random() * ROSTER.length) | 0;
+let iB = (Math.random() * ROSTER.length) | 0;
+if (iB === iA) iB = (iA + 1) % ROSTER.length;
+const ckP1 = ROSTER[iA], ckCpu = ROSTER[iB];
+
+drawPortrait(document.getElementById('winnerPortrait'), ckP1, 18);
+drawPortrait(document.getElementById('loserPortrait'), ckCpu, 8);
+
+document.getElementById('demo').addEventListener('load', function () {
+  const d = this.contentDocument;
+  const s = d.createElement('style');
+  s.textContent = `
+    body{padding:0!important;gap:0!important;overflow:hidden!important;}
+    h1.brand, footer, .crt, #admin-panel{display:none!important;}
+    .screen{display:none!important;}
+    #stage{width:100vw!important;height:100vh!important;aspect-ratio:auto!important;
+           border:0!important;border-radius:0!important;box-shadow:none!important;}
+  `;
+  d.head.appendChild(s);
+});
+
+const confettiWrap = document.getElementById('confettiWrap');
+const cols = ['#ff8c1f', '#f5e63d', '#5df08a', '#35e0ff', '#ff3b5c', '#c86bff'];
+for (let i = 0; i < 40; i++) {
+  const el = document.createElement('div');
+  el.className = 'confetti';
+  el.style.left = Math.random() * 100 + '%';
+  el.style.background = cols[(Math.random() * cols.length) | 0];
+  el.style.animationDelay = (Math.random() * 3.4) + 's';
+  confettiWrap.appendChild(el);
+}
+
+let detailStats = {};
+function rollStats() {
+  const p5 = 2 + ((Math.random() * 4) | 0);
+  const p3 = 1 + ((Math.random() * 4) | 0);
+  return { buts: p5 + p3, p5, p3, ultimes: 1 + ((Math.random() * 3) | 0),
+    attrapes: 6 + ((Math.random() * 10) | 0), dash: 1 + ((Math.random() * 4) | 0) };
+}
+
+function setState(p1Wins) {
+  const winnerCk = p1Wins ? ckP1 : ckCpu, loserCk = p1Wins ? ckCpu : ckP1;
+  buildPerspectiveTitle(document.getElementById('winnerNameBig'), CHARS[winnerCk].short);
+  document.getElementById('outcomeTxt').textContent = p1Wins ? 'VICTOIRE' : 'DÉFAITE';
+  drawPortrait(document.getElementById('winnerPortrait'), winnerCk, 18);
+  drawPortrait(document.getElementById('loserPortrait'), loserCk, 8);
+
+  const winnerTag = document.getElementById('winnerTag'), loserTag = document.getElementById('loserTag');
+  winnerTag.textContent = p1Wins ? 'P1' : 'CPU';
+  winnerTag.className = 'bigFlag ' + (p1Wins ? 'red' : 'gray');
+  loserTag.textContent = p1Wins ? 'CPU' : 'P1';
+  loserTag.className = 'flag ' + (p1Wins ? 'gray' : 'red');
+
+  confettiWrap.style.display = p1Wins ? 'block' : 'none';
+  document.getElementById('stage').style.filter = p1Wins ? 'none' : 'grayscale(.3)';
+
+  detailStats = { winner: { ck: winnerCk, tag: winnerTag.textContent, ...rollStats() },
+                  loser: { ck: loserCk, tag: loserTag.textContent, ...rollStats() } };
+}
+
+function openDetail(who) {
+  const s = detailStats[who];
+  document.getElementById('detailName').textContent = CHARS[s.ck].short + ' — ' + s.tag;
+  document.getElementById('dButs').textContent = s.buts;
+  document.getElementById('dAttrapes').textContent = s.attrapes;
+  document.getElementById('d5pt').textContent = s.p5;
+  document.getElementById('d3pt').textContent = s.p3;
+  document.getElementById('dUltimes').textContent = s.ultimes;
+  document.getElementById('dDash').textContent = s.dash;
+  document.getElementById('detailScrim').classList.add('open');
+}
+document.getElementById('winnerPortrait').addEventListener('click', () => openDetail('winner'));
+document.getElementById('loserPortraitCol').addEventListener('click', () => openDetail('loser'));
+document.getElementById('detailClose').addEventListener('click', () => document.getElementById('detailScrim').classList.remove('open'));
+document.getElementById('detailScrim').addEventListener('click', e => {
+  if (e.target.id === 'detailScrim') e.currentTarget.classList.remove('open');
+});
+
+document.getElementById('btnWin').addEventListener('click', () => setState(true));
+document.getElementById('btnLose').addEventListener('click', () => setState(false));
+setState(true);
+</script>
+</body>
+</html>

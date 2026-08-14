@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#111318;--yellow:#f5e63d;--accent:#7b8cff;}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{min-height:100vh;background:#070a12;color:#fff;font-family:'Barlow',sans-serif;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:28px 16px;}
+  .note{color:#8fa3cc;font-size:14px;font-family:sans-serif;}
+
+  /* Fond sombre navy/violet, façon écran Réglages/Difficulté de Windjammers 2 :
+     ça lit "sérieux" alors que le pastel clair lisait "doux/enfantin". */
+  .stage{position:relative;width:min(96vw,1180px);aspect-ratio:16/9;border-radius:8px;overflow:hidden;
+    container-type:size;
+    background:linear-gradient(160deg,#241a5c 0%,#1a1350 48%,#0d0a28 100%);}
+
+  /* ---------- FOND ANIMÉ : même famille que titre/sélection, teinte "réglages" ---------- */
+  .bg{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+  .ringwrap{position:absolute;top:50%;left:50%;width:150cqh;height:150cqh;transform:translate(-50%,-50%);
+    animation:spin 50s linear infinite;}
+  @keyframes spin{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+  .ringwrap svg{width:100%;height:100%;}
+  .ringwrap text{font-family:'Archivo Black',sans-serif;font-size:15px;letter-spacing:.42em;fill:rgba(255,255,255,.22);}
+  .arc{position:absolute;top:50%;left:50%;width:126cqh;height:126cqh;transform:translate(-50%,-50%);
+    border:3px dashed rgba(255,255,255,.1);border-radius:50%;animation:spin 66s linear infinite reverse;}
+
+  /* Chevrons ">>" qui défilent en diagonale, texture de fond Windjammers 2 */
+  .chevrons{position:absolute;inset:-15%;opacity:.5;transform:rotate(-6deg);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='40' viewBox='0 0 60 40'%3E%3Cpath d='M4 6 L14 20 L4 34 M22 6 L32 20 L22 34' stroke='%23ffffff' stroke-opacity='0.16' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-size:60px 40px;animation:chevronScroll 16s linear infinite;}
+  @keyframes chevronScroll{from{background-position:0 0}to{background-position:240px 160px}}
+
+  /* ---------- CHROME ---------- */
+  .titlebar{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:6;
+    background:var(--yellow);border:4px solid var(--ink);border-top:0;border-radius:0 0 8px 8px;
+    padding:1.4cqh 2.6cqw;box-shadow:0 5px 0 var(--ink);
+    clip-path:polygon(4% 0,96% 0,100% 100%,0 100%);}
+  .titlebar span{font-family:'Archivo Black',sans-serif;font-size:clamp(13px,2.6cqh,22px);color:var(--ink);
+    letter-spacing:.04em;}
+  .prompt{position:absolute;top:3%;left:2%;z-index:6;display:flex;align-items:center;gap:.6cqw;
+    font-family:'Archivo Black',sans-serif;font-size:clamp(9px,1.9cqh,14px);color:#fff;
+    text-shadow:0 2px 0 var(--ink);}
+  .key{width:3.4cqh;height:3.4cqh;min-width:19px;min-height:19px;border-radius:50%;background:var(--ink);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:.72em;flex-shrink:0;border:2px solid #fff;}
+
+  /* ---------- PANNEAU CENTRAL ---------- */
+  .panel{position:absolute;top:11cqh;left:50%;transform:translateX(-50%);z-index:3;
+    width:64cqh;display:flex;flex-direction:column;align-items:center;gap:1.6cqh;}
+
+  .tabs{display:flex;gap:.8cqw;}
+  .tab{font-family:'Archivo Black',sans-serif;font-size:clamp(11px,1.9cqh,15px);color:var(--ink);
+    background:#fff;border:4px solid var(--ink);border-radius:8px;padding:.9cqh 2cqw;cursor:pointer;
+    box-shadow:4px 4px 0 var(--ink);transition:background .1s,color .1s,transform .1s;}
+  .tab.active{background:var(--ink);color:#fff;transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink);}
+
+  .card{background:#fff;border:4px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--ink);
+    padding:2cqh 2.2cqw;width:100%;display:flex;flex-direction:column;gap:1.6cqh;min-height:32cqh;}
+  .tabpanel{display:none;flex-direction:column;gap:1.4cqh;}
+  .tabpanel.active{display:flex;}
+
+  .sliderRow{display:flex;align-items:center;gap:1.2cqw;}
+  .sliderRow label{font-family:'Archivo Black',sans-serif;font-size:clamp(10px,1.7cqh,13px);
+    color:var(--ink);width:9cqw;flex-shrink:0;}
+  .sliderRow input[type=range]{flex:1;height:1.4cqh;-webkit-appearance:none;background:#e4e6f5;
+    border:2px solid var(--ink);border-radius:8px;outline:none;}
+  .sliderRow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:2.4cqh;height:2.4cqh;
+    min-width:16px;min-height:16px;border-radius:50%;background:var(--accent);border:3px solid var(--ink);cursor:pointer;}
+  .sliderRow .val{font-family:'Archivo Black',sans-serif;font-size:clamp(10px,1.7cqh,13px);
+    color:var(--ink);width:4cqw;text-align:right;flex-shrink:0;}
+
+  .keysGrid{display:flex;flex-direction:column;gap:.7cqh;}
+  .keyRow{display:flex;align-items:center;justify-content:space-between;gap:1cqw;
+    background:#f2f3fc;border:2px solid #d3d6f2;border-radius:6px;padding:.7cqh 1cqw;}
+  .keyRow .lbl{font-family:'Barlow',sans-serif;font-weight:700;font-size:clamp(10px,1.6cqh,13px);color:var(--ink);flex:1;}
+  .keyRow .badge{font-family:'Archivo Black',sans-serif;font-size:clamp(10px,1.6cqh,13px);color:#fff;
+    background:var(--ink);border-radius:5px;padding:.4cqh 1cqw;min-width:6cqw;text-align:center;
+    transition:background .15s;}
+  .keyRow .badge.capturing{background:var(--accent);animation:pulseBadge .6s ease-in-out infinite;}
+  @keyframes pulseBadge{0%,100%{opacity:1}50%{opacity:.55}}
+  .keyRow .kbtn{font-family:'Archivo Black',sans-serif;font-size:clamp(9px,1.4cqh,11px);color:var(--ink);
+    background:#fff;border:2px solid var(--ink);border-radius:5px;padding:.4cqh 1cqw;cursor:pointer;}
+  .keyRow .kbtn:hover{background:var(--ink);color:#fff;}
+  .keyRow .kbtn:disabled{opacity:.4;cursor:default;}
+
+  .bottomRow{display:flex;gap:1cqw;width:100%;}
+  .mbtn{flex:1;font-family:'Archivo Black',sans-serif;font-size:clamp(11px,1.8cqh,14px);color:var(--ink);
+    background:#fff;padding:1cqh 1cqw;border:4px solid var(--ink);border-radius:8px;
+    box-shadow:4px 4px 0 var(--ink);cursor:pointer;text-align:center;
+    transition:background .1s,color .1s,transform .1s,box-shadow .1s;}
+  .mbtn:hover{background:var(--ink);color:#fff;transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink);}
+
+  /* ---------- POPUP CONFLIT ---------- */
+  .conflictScrim{position:absolute;inset:0;z-index:10;background:rgba(10,10,16,.5);
+    display:none;align-items:center;justify-content:center;}
+  .conflictScrim.visible{display:flex;}
+  .conflictCard{background:#fff;border:4px solid var(--ink);border-radius:8px;box-shadow:7px 7px 0 var(--ink);
+    padding:2cqh 2.4cqw;width:34cqh;text-align:center;display:flex;flex-direction:column;gap:1.2cqh;}
+  .conflictCard h3{font-family:'Archivo Black',sans-serif;font-size:clamp(13px,2.2cqh,17px);color:#ff3b5c;}
+  .conflictCard p{font-family:'Barlow',sans-serif;font-weight:700;font-size:clamp(10px,1.7cqh,13px);color:var(--ink);}
+  .conflictBtns{display:flex;gap:.8cqw;}
+  .conflictBtns button{flex:1;font-family:'Archivo Black',sans-serif;font-size:clamp(9px,1.5cqh,12px);
+    padding:.8cqh .6cqw;border:3px solid var(--ink);border-radius:6px;cursor:pointer;color:var(--ink);background:#fff;}
+  .conflictBtns .danger{background:#ff3b5c;color:#fff;}
+</style>
+</head>
+<body>
+  <div class="note">Mockup — écran Options (D.A. Windjammers 2)</div>
+
+  <div class="stage">
+    <div class="bg">
+      <div class="chevrons"></div>
+      <div class="arc"></div>
+      <div class="ringwrap">
+        <svg viewBox="0 0 400 400">
+          <path id="rp" d="M 200,200 m -160,0 a 160,160 0 1,1 320,0 a 160,160 0 1,1 -320,0" fill="none"/>
+          <text><textPath href="#rp" startOffset="0%">OPTIONS • OPTIONS • OPTIONS • OPTIONS • OPTIONS • OPTIONS • OPTIONS • </textPath></text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="titlebar"><span>OPTIONS</span></div>
+    <div class="prompt"><span class="key">⎋</span>RETOUR</div>
+
+    <div class="panel">
+      <div class="tabs">
+        <div class="tab active" data-tab="audio">AUDIO</div>
+        <div class="tab" data-tab="keys">TOUCHES</div>
+      </div>
+
+      <div class="card">
+        <div class="tabpanel active" id="panel-audio">
+          <div class="sliderRow">
+            <label>MUSIQUE</label>
+            <input type="range" id="musicVol" min="0" max="100" value="80">
+            <span class="val" id="musicVal">80%</span>
+          </div>
+          <div class="sliderRow">
+            <label>SFX</label>
+            <input type="range" id="sfxVol" min="0" max="100" value="90">
+            <span class="val" id="sfxVal">90%</span>
+          </div>
+        </div>
+
+        <div class="tabpanel" id="panel-keys">
+          <div class="keysGrid" id="keysGrid"></div>
+          <div class="bottomRow" style="margin-top:.6cqh;">
+            <button class="mbtn" id="resetKeys">↺ RÉINITIALISER</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottomRow"><button class="mbtn">RETOUR</button></div>
+    </div>
+
+    <div class="conflictScrim" id="conflictScrim">
+      <div class="conflictCard">
+        <h3>CONFLIT DE TOUCHE</h3>
+        <p id="conflictMsg"></p>
+        <div class="conflictBtns">
+          <button class="danger" id="conflictReplace">Remplacer</button>
+          <button id="conflictCancel">Annuler</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+import { ACTION_NAMES, DEFAULT_KEYS, getKeyDisplay } from '/js/data/keymap.js';
+
+// Copie locale, en mémoire seulement : ce mockup ne doit pas écrire dans le
+// vrai localStorage du jeu (le vrai module garde son propre état persistant).
+let localKeyMap = { ...DEFAULT_KEYS };
+const cleanLabel = s => s.replace(/^\S+\s*/, ''); // retire l'emoji en tête, garde le libellé
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+function bindSlider(id, valId) {
+  const input = document.getElementById(id), out = document.getElementById(valId);
+  input.addEventListener('input', () => out.textContent = input.value + '%');
+}
+bindSlider('musicVol', 'musicVal');
+bindSlider('sfxVol', 'sfxVal');
+
+let capturingAction = null, captureListener = null;
+
+function renderKeys() {
+  const grid = document.getElementById('keysGrid');
+  grid.innerHTML = '';
+  for (const action in ACTION_NAMES) {
+    const row = document.createElement('div');
+    row.className = 'keyRow';
+    row.innerHTML = `
+      <span class="lbl">${cleanLabel(ACTION_NAMES[action])}</span>
+      <span class="badge" data-action="${action}">${getKeyDisplay(localKeyMap[action])}</span>
+      <button class="kbtn" data-action="${action}">MODIFIER</button>`;
+    row.querySelector('.kbtn').addEventListener('click', () => startCapture(action));
+    grid.appendChild(row);
+  }
+}
+
+function startCapture(action) {
+  if (capturingAction) stopCapture();
+  capturingAction = action;
+  document.querySelectorAll('.badge').forEach(el => el.classList.toggle('capturing', el.dataset.action === action));
+  document.querySelectorAll('.kbtn').forEach(b => b.disabled = true);
+  captureListener = e => {
+    e.preventDefault();
+    const code = e.code;
+    if (code === 'Escape') { stopCapture(); return; }
+    // Même règle de conflit que le vrai jeu (data/keymap.js : setKey) : on ne
+    // remplace jamais silencieusement une touche déjà utilisée ailleurs.
+    const conflictAction = Object.keys(localKeyMap).find(k => k !== action && localKeyMap[k] === code);
+    if (conflictAction) { showConflict(action, conflictAction, code); stopCapture(); }
+    else { localKeyMap[action] = code; stopCapture(); renderKeys(); }
+  };
+  window.addEventListener('keydown', captureListener, true);
+}
+function stopCapture() {
+  if (captureListener) window.removeEventListener('keydown', captureListener, true);
+  captureListener = null; capturingAction = null;
+  document.querySelectorAll('.badge').forEach(el => el.classList.remove('capturing'));
+  document.querySelectorAll('.kbtn').forEach(b => b.disabled = false);
+}
+function showConflict(action, conflictAction, code) {
+  document.getElementById('conflictMsg').innerHTML =
+    `La touche <b>${getKeyDisplay(code)}</b> est déjà utilisée par <b>${cleanLabel(ACTION_NAMES[conflictAction])}</b>.`;
+  const scrim = document.getElementById('conflictScrim');
+  scrim.classList.add('visible');
+  document.getElementById('conflictReplace').onclick = () => {
+    localKeyMap[action] = code;
+    localKeyMap[conflictAction] = DEFAULT_KEYS[conflictAction];
+    scrim.classList.remove('visible');
+    renderKeys();
+  };
+  document.getElementById('conflictCancel').onclick = () => {
+    scrim.classList.remove('visible');
+    renderKeys();
+  };
+}
+document.getElementById('resetKeys').addEventListener('click', () => {
+  localKeyMap = { ...DEFAULT_KEYS };
+  renderKeys();
+});
+
+renderKeys();
+</script>
+</body>
+</html>

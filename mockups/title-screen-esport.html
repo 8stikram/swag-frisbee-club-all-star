@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — Esport classe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Barlow+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#12151b; --line:#232a35;
+    --blue:#3fa9ff; --txt:#eef2f7; --txt-dim:#7c8898;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;font-family:'Barlow Condensed',sans-serif;color:var(--txt);
+    background:
+      radial-gradient(1000px 600px at 50% -10%, #10151f 0%, transparent 60%),
+      var(--bg);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+    padding:40px 16px;
+  }
+  .note{color:var(--txt-dim);font-size:14px;letter-spacing:.5px;font-family:sans-serif;}
+  .stage{
+    position:relative;width:min(94vw,980px);aspect-ratio:16/10;
+    border:1px solid var(--line);border-radius:2px;
+    background:var(--panel);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;
+    overflow:hidden;
+  }
+
+  .hud-preview{position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:12px;
+    padding:6px 4px;border-bottom:1px solid var(--line);
+  }
+  .hud-preview .name{font-size:13px;letter-spacing:3px;color:var(--txt-dim);text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;font-weight:600;}
+  .hud-preview .score{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:26px;color:#fff;line-height:1;}
+  .hud-preview.right{left:auto;right:20px;text-align:right;flex-direction:row-reverse;}
+
+  .logo{display:flex;flex-direction:column;align-items:center;}
+  .word-swag{
+    font-family:'Rajdhani',sans-serif;font-weight:700;font-size:clamp(46px,7.4vw,74px);
+    letter-spacing:-1px;line-height:.9;color:#fff;text-transform:uppercase;
+  }
+  .underline{width:64px;height:2px;background:var(--blue);margin:10px 0;}
+  .sub{
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:clamp(14px,1.8vw,17px);
+    letter-spacing:9px;color:var(--txt-dim);text-transform:uppercase;
+  }
+  .plate{display:flex;align-items:center;gap:16px;margin-top:14px;}
+  .plate .rule{width:36px;height:1px;background:var(--line);}
+  .word-allstar{
+    font-family:'Rajdhani',sans-serif;font-weight:600;font-size:clamp(15px,2vw,19px);
+    letter-spacing:5px;color:var(--blue);text-transform:uppercase;
+  }
+
+  .menu{display:flex;flex-direction:column;gap:8px;min-width:min(78vw,320px);}
+  .mbtn{
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:17px;
+    letter-spacing:3px;text-transform:uppercase;color:var(--txt-dim);
+    background:transparent;border:1px solid var(--line);border-left:1px solid var(--line);
+    padding:11px 20px;cursor:pointer;text-align:left;position:relative;
+    transition:border-color .12s,color .12s,padding-left .12s;
+  }
+  .mbtn::before{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:var(--blue);transition:width .12s;}
+  .mbtn.sel,.mbtn:hover{color:#fff;border-color:var(--blue);padding-left:26px;}
+  .mbtn.sel::before,.mbtn:hover::before{width:4px;}
+
+  .tag{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;letter-spacing:4px;color:var(--txt-dim);text-transform:uppercase;}
+</style>
+</head>
+<body>
+  <div class="note">Direction B — Esport classe</div>
+  <div class="stage">
+    <div class="hud-preview"><div><div class="name">Isaac</div><div class="score">12</div></div></div>
+    <div class="hud-preview right"><div><div class="name">Leon</div><div class="score">08</div></div></div>
+
+    <div class="logo">
+      <div class="word-swag">Swag</div>
+      <div class="underline"></div>
+      <div class="sub">Frisbee Club</div>
+      <div class="plate"><div class="rule"></div><div class="word-allstar">All Star</div><div class="rule"></div></div>
+    </div>
+
+    <div class="menu">
+      <button class="mbtn sel">Match vs IA</button>
+      <button class="mbtn">Match JcJ</button>
+      <button class="mbtn">Options</button>
+    </div>
+    <div class="tag">Appuie sur Entrée</div>
+  </div>
+</body>
+</html>

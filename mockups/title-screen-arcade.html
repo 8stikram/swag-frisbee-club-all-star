@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — Arcade poussé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Teko:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#10071f; --bg2:#1a0e33;
+    --pink:#ff2e6a; --orange:#ff8a1f; --cyan:#3ad6ff;
+    --ink:#10071f; --txt:#f5eaff; --txt-dim:#b79bd6;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;font-family:'Teko',sans-serif;color:var(--txt);
+    background:
+      radial-gradient(1100px 650px at 50% -10%, #2a1450 0%, transparent 60%),
+      radial-gradient(800px 550px at 90% 105%, #300a3a 0%, transparent 55%),
+      var(--bg);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+    padding:40px 16px;
+  }
+  .note{color:var(--txt-dim);font-size:14px;letter-spacing:.5px;font-family:sans-serif;}
+  .stage{
+    position:relative;width:min(94vw,980px);aspect-ratio:16/10;
+    border:2px solid #3a2060;border-radius:6px;
+    background:linear-gradient(180deg,#150a28,#0c0616);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+    overflow:hidden;
+  }
+  .stripes{position:absolute;inset:-20% -10%;
+    background:repeating-linear-gradient(-18deg, rgba(255,46,106,.10) 0 26px, transparent 26px 60px);
+    pointer-events:none;
+  }
+
+  .hud-preview{position:absolute;top:18px;left:18px;display:flex;align-items:center;gap:10px;
+    background:rgba(16,7,31,.75);border-left:5px solid var(--pink);padding:6px 16px 6px 12px;
+    clip-path:polygon(0 0,100% 0,100% 100%,10px 100%);
+  }
+  .hud-preview .name{font-size:14px;letter-spacing:2px;color:var(--txt-dim);text-transform:uppercase;font-family:'Teko',sans-serif;font-weight:600;}
+  .hud-preview .score{font-family:'Russo One',sans-serif;font-size:30px;color:#fff;line-height:1;}
+  .hud-preview.right{left:auto;right:18px;border-left:none;border-right:5px solid var(--cyan);text-align:right;flex-direction:row-reverse;clip-path:polygon(0 0,100% 0,calc(100% - 10px) 100%,0 100%);}
+
+  .logo{position:relative;display:flex;flex-direction:column;align-items:center;z-index:1;}
+  .word-swag{
+    font-family:'Russo One',sans-serif;font-size:clamp(58px,9.5vw,104px);
+    letter-spacing:1px;line-height:.85;transform:skewX(-6deg);
+    background:linear-gradient(180deg,var(--orange),var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:none;
+    filter:drop-shadow(4px 4px 0 #3a0f2c) drop-shadow(8px 8px 0 #1c0818);
+  }
+  .sub-bar{display:flex;align-items:center;gap:14px;margin:6px 0;}
+  .sub-bar .line{width:44px;height:3px;background:var(--pink);}
+  .sub-bar span{
+    font-family:'Teko',sans-serif;font-weight:700;font-size:clamp(16px,2.2vw,22px);
+    letter-spacing:10px;color:#fff;text-transform:uppercase;
+  }
+  .word-allstar{
+    font-family:'Russo One',sans-serif;font-size:clamp(20px,3.2vw,32px);
+    letter-spacing:6px;color:var(--cyan);transform:skewX(-6deg);
+    -webkit-text-stroke:1px rgba(16,7,31,.6);
+  }
+
+  .menu{display:flex;flex-direction:column;gap:10px;min-width:min(80vw,340px);z-index:1;}
+  .mbtn{
+    font-family:'Teko',sans-serif;font-weight:600;font-size:20px;
+    letter-spacing:3px;text-transform:uppercase;color:var(--txt);
+    background:rgba(30,14,56,.7);border-left:4px solid var(--pink);
+    padding:11px 22px;cursor:pointer;text-align:left;
+    clip-path:polygon(0 0,100% 0,94% 100%,0 100%);
+    transition:background .12s,color .12s,transform .12s;
+  }
+  .mbtn.sel,.mbtn:hover{
+    background:linear-gradient(90deg,var(--pink),var(--orange));
+    color:var(--ink);transform:translateX(6px) skewX(-2deg);
+  }
+
+  .tag{font-family:'Teko',sans-serif;font-weight:600;font-size:15px;letter-spacing:4px;color:var(--txt-dim);text-transform:uppercase;z-index:1;}
+</style>
+</head>
+<body>
+  <div class="note">Direction A — Arcade poussé</div>
+  <div class="stage">
+    <div class="stripes"></div>
+    <div class="hud-preview"><div><div class="name">Isaac</div><div class="score">12</div></div></div>
+    <div class="hud-preview right"><div><div class="name">Leon</div><div class="score">08</div></div></div>
+
+    <div class="logo">
+      <div class="word-swag">SWAG</div>
+      <div class="sub-bar"><div class="line"></div><span>Frisbee Club</span><div class="line"></div></div>
+      <div class="word-allstar">ALL STAR</div>
+    </div>
+
+    <div class="menu">
+      <button class="mbtn sel">Match vs IA</button>
+      <button class="mbtn">Match JcJ</button>
+      <button class="mbtn">Options</button>
+    </div>
+    <div class="tag">Appuie sur Entrée</div>
+  </div>
+</body>
+</html>
