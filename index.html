@@ -99,9 +99,9 @@
         <div class="turnHint" id="turnHint">AU TOUR DE 1P</div>
         <div class="grid" id="charGrid"></div>
         <div class="diffRow">
-          <span class="arrowBtn" id="diffL">◀</span>
+          <span class="arrowBtn ghost" id="diffL">◀</span>
           <span class="diffLabel">IA : <b id="diffName">NORMAL</b></span>
-          <span class="arrowBtn" id="diffR">▶</span>
+          <span class="arrowBtn ghost" id="diffR">▶</span>
         </div>
         <button class="mbtn fightBtn" data-act="fight">COMBATTRE</button>
       </div>
@@ -155,14 +155,14 @@
     <div class="musicBar">
       <span class="cap">MUSIQUE</span>
       <div class="discrow">
-        <button class="arrowBtn" id="musicPrev">◀</button>
+        <button class="arrowBtn ghost" id="musicPrev">◀</button>
         <span class="discname" id="musicName">—</span>
-        <button class="arrowBtn" id="musicNext">▶</button>
+        <button class="arrowBtn ghost" id="musicNext">▶</button>
       </div>
     </div>
 
     <div class="thumbRow" id="mapThumbs"></div>
-    <button class="mbtn c-yellow mapGoBtn" data-act="startMatch">LANCER LE MATCH</button>
+    <button class="mbtn mapGoBtn big" data-act="startMatch">LANCER LE MATCH</button>
   </div>
 
   <!-- ============ OPTIONS ============ -->
@@ -208,6 +208,14 @@
           <p style="font-size:1.5cqh;color:#8fa4c4;margin:1cqh 0 0;line-height:1.5">
             « Vers la souris » : tu dashes là où tu vises.<br>
             « Sens du déplacement » : tu dashes là où tu cours.
+          </p>
+          <div class="sliderRow" style="margin-top:1.4cqh">
+            <label>DISQUE PRÉFÉRÉ</label>
+            <button class="mbtn" id="favSkin" style="flex:1">ALÉATOIRE</button>
+          </div>
+          <p style="font-size:1.5cqh;color:#8fa4c4;margin:1cqh 0 0;line-height:1.5">
+            Le disque retenu ici est celui de chaque nouvelle session.
+            « Aléatoire » en tire un différent à chaque ouverture.
           </p>
         </div>
 

@@ -3,7 +3,7 @@ import { G, Mouse, initMatch } from '../game/state.js';
 import { DIFFS } from '../core/constants.js';
 import { CHARS, ROSTER } from '../data/characters.js';
 import { SPECIALS } from '../data/specials.js';
-import { DISC_SKINS, getSkinId, setSkinId, drawSkinDisc } from '../data/skins.js';
+import { DISC_SKINS, getSkinId, setSkinId, drawSkinDisc, getFavSkin, setFavSkin } from '../data/skins.js';
 import { MAPS, setMapId } from '../data/maps.js';
 import { getKey } from '../data/keymap.js';
 import { MUSIC_TRACKS, getTrackId } from '../data/music.js';
@@ -90,6 +90,25 @@ export function resetSelectTurn() {
   turn = 1; lockedP1 = lockedP2 = false; rndP1 = rndP2 = false;
   previewP1 = previewP2 = false;
 }
+
+// Disque préféré, dans l'onglet JEU des options. Il fait le tour des skins puis
+// repasse par « aléatoire ».
+(function () {
+  const b = $('favSkin');
+  if (!b) return;
+  const refresh = () => {
+    const f = getFavSkin();
+    b.textContent = f ? (DISC_SKINS.find(s => s.id === f) || {}).name || f : 'ALÉATOIRE';
+  };
+  b.addEventListener('click', e => {
+    e.stopPropagation();
+    const f = getFavSkin();
+    const i = f ? DISC_SKINS.findIndex(s => s.id === f) : -1;
+    setFavSkin(i + 1 >= DISC_SKINS.length ? null : DISC_SKINS[i + 1].id);
+    sfx('move'); refresh(); renderDisc();
+  });
+  refresh();
+})();
 
 // Les deux boutons VALIDER, sous le nom de chaque camp.
 (function () {

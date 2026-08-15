@@ -218,6 +218,15 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 .grid.locked{pointer-events:none}
 .okBtn{margin:.5cqh auto 0;padding:.5cqh 1.2cqw;font-size:1.4cqh}
 
+/* Bouton de lancement : plus grand, avec un dégradé qui défile en continu. */
+.mapGoBtn.big{
+  font-size:clamp(14px,2.6cqh,26px);padding:1.6cqh 3cqw;border-radius:18px;
+  color:var(--ink);
+  background:linear-gradient(100deg,#ffe259,#ffa751,#5df08a,#35e0ff,#ffe259);
+  background-size:320% 100%;animation:goSlide 5s linear infinite;
+}
+@keyframes goSlide{from{background-position:0% 50%}to{background-position:320% 50%}}
+
 /* Validation d'un perso : le contour se dessine autour de la case. */
 .cell.picked{position:relative}
 .cell .pickRing{

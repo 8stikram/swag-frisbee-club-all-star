@@ -10,6 +10,18 @@ export const DISC_SKINS = [
   { id: 'glitch', name: 'Glitch', colors: ['#ff00ff', '#00ffff', '#ff0000', '#00ff00'] }
 ];
 
+// Disque préféré, réglable dans les options et conservé d'une session à l'autre.
+// `null` signifie « aléatoire » : c'est le comportement par défaut, un disque
+// différent étant tiré à chaque ouverture du site.
+let favSkinId = null;
+export function getFavSkin() { return favSkinId; }
+export function setFavSkin(id) {
+  favSkinId = id;
+  try { localStorage.setItem('sbcbFavSkin', id || '__random'); } catch (e) { }
+  if (id) { currentSkinId = id; saveSkin(); }
+}
+export function randomSkinId() { return DISC_SKINS[(Math.random() * DISC_SKINS.length) | 0].id; }
+
 let currentSkinId = 'captain';
 
 export function getSkinId() { return currentSkinId; }
@@ -24,6 +36,18 @@ function loadSkin() {
 }
 function saveSkin() { try { localStorage.setItem('sbcbSkin', currentSkinId); } catch (e) { } }
 loadSkin();
+
+// Au démarrage : si un disque préféré est enregistré on l'applique, sinon on en
+// tire un au hasard — le disque de base est volontairement aléatoire.
+(function initSkin() {
+  let s = null;
+  try { s = localStorage.getItem('sbcbFavSkin'); } catch (e) { }
+  if (s && s !== '__random' && DISC_SKINS.some(k => k.id === s)) {
+    favSkinId = s; currentSkinId = s;
+  } else {
+    favSkinId = null; currentSkinId = randomSkinId();
+  }
+})();
 
 /* Générateur pseudo-aléatoire déterministe : les motifs (étoiles, veines de lave)
    doivent rester identiques d'une image à l'autre, sinon le disque scintille. */
