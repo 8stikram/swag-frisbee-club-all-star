@@ -403,7 +403,29 @@ function drawPlayer(p) {
   else if (p.diveDown > 0) ctx.rotate(-0.75);
   if (p.charging && !G.replay) ctx.translate(gauss() * p.charge * 2.4, gauss() * p.charge * 2.4);
   if (p.stun > 0) ctx.rotate(Math.sin(G.now * 14) * .12);
-  ctx.drawImage(img, -24 * SCALE, 0, 48 * SCALE, 60 * SCALE);
+  // Jingle Bells : sa tête-cloche n'est pas posée sur ses épaules, elle
+  // lévite. On dessine donc le corps sans elle, puis la tête par-dessus avec
+  // un décalage propre — elle flotte, oscille et prend du retard sur les
+  // déplacements, ce qui se voit surtout quand il court ou dashe.
+  if (p.ck === 'jingle' && !G.replay) {
+    const sansTete = c.frames.headless;
+    ctx.drawImage(sansTete, -24 * SCALE, 0, 48 * SCALE, 60 * SCALE);
+    // Retard sur le mouvement + oscillation lente et rotation légère.
+    p.bellLag = p.bellLag || { x: 0, y: 0, a: 0 };
+    const vx = p.vx + p.dashV.x, vy = p.vy + p.dashV.y;
+    p.bellLag.x += (-vx * .012 - p.bellLag.x) * .18;
+    p.bellLag.y += (-vy * .010 - p.bellLag.y) * .18;
+    p.bellLag.a += (clamp(-vx * .0006, -.22, .22) - p.bellLag.a) * .15;
+    const flot = Math.sin(G.now * 2.4 + p.side) * 2.4;
+    ctx.save();
+    ctx.translate(p.bellLag.x * SCALE, p.bellLag.y * SCALE + flot - 3);
+    ctx.rotate(p.bellLag.a + Math.sin(G.now * 1.7) * .05);
+    // Seules les 10 premières lignes du sprite portent la cloche.
+    ctx.drawImage(img, 0, 0, 16, 10, -24 * SCALE, 0, 48 * SCALE, 30 * SCALE);
+    ctx.restore();
+  } else {
+    ctx.drawImage(img, -24 * SCALE, 0, 48 * SCALE, 60 * SCALE);
+  }
   ctx.restore();
   if (p.charging && p.charge > 0 && !G.replay) {
     const col = p.charge >= 1 ? '#ff5340' : c.accent;
@@ -692,6 +714,61 @@ function drawReplayOverlay() {
   ctx.fillText('CLIQUE POUR PASSER', CX, H - 20);
 }
 
+/* Cloche de Minuit : la tête de Jingle, devenue géante, se balance devant sa
+   cage. Elle est dessinée à la main plutôt qu'agrandie depuis le sprite, pour
+   rester nette à cette taille. */
+function drawBell() {
+  const b = G.bell;
+  const k = Math.min(1, b.t / .4);                 // apparition
+  const fin = Math.min(1, (b.dur - b.t) / .5);     // disparition
+  const a = Math.min(k, fin);
+  const bal = Math.sin(b.t * 3.4) * .18;           // balancement
+  const R = 58 * (0.8 + 0.2 * k);
+
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.translate(b.x, b.y - 30);
+  ctx.rotate(bal);
+
+  // Halo doré, plus intense au moment où elle sonne.
+  const halo = ctx.createRadialGradient(0, 0, 8, 0, 0, R * 2.2);
+  halo.addColorStop(0, `rgba(245,197,66,${.34 + b.ring * .4})`);
+  halo.addColorStop(1, 'rgba(245,197,66,0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(0, 0, R * 2.2, 0, TAU); ctx.fill();
+
+  // Corps de la cloche : anse, dôme évasé, rebord, battant.
+  ctx.strokeStyle = '#241318'; ctx.lineWidth = 4;
+  ctx.fillStyle = '#c9992a';
+  ctx.beginPath(); ctx.arc(0, -R * .95, R * .16, 0, TAU); ctx.fill(); ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(-R * .12, -R * .82);
+  ctx.quadraticCurveTo(-R * .95, -R * .2, -R, R * .55);
+  ctx.lineTo(R, R * .55);
+  ctx.quadraticCurveTo(R * .95, -R * .2, R * .12, -R * .82);
+  ctx.closePath();
+  const cor = ctx.createLinearGradient(-R, 0, R, 0);
+  cor.addColorStop(0, '#c9992a'); cor.addColorStop(.38, '#ffe9a0'); cor.addColorStop(1, '#a87f1e');
+  ctx.fillStyle = cor; ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle = '#f5c542';
+  ctx.beginPath(); ctx.ellipse(0, R * .55, R * 1.04, R * .2, 0, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#8a6a15';
+  ctx.beginPath(); ctx.ellipse(Math.sin(b.t * 3.4) * R * .3, R * .68, R * .17, R * .2, 0, 0, TAU); ctx.fill(); ctx.stroke();
+
+  // Ondes sonores à chaque coup.
+  if (b.ring > .02) {
+    ctx.strokeStyle = `rgba(255,233,160,${b.ring * .8})`;
+    ctx.lineWidth = 3;
+    for (const m of [1.3, 1.7, 2.1]) {
+      ctx.beginPath(); ctx.arc(0, 0, R * m * (1 + (1 - b.ring) * .4), 0, TAU); ctx.stroke();
+    }
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
 // ---------------------------------------------------------------------------
 // Calques de debug, pilotés par les interrupteurs du panneau admin. Ils sont
 // dessinés en espace écran, après la caméra, pour rester lisibles.
@@ -806,6 +883,7 @@ export function render() {
     if (!drewDisc) drawDisc();
   }
   if (G.leg && G.leg.phase !== 'shadow') drawLeg();
+  if (G.bell) drawBell();
   drawParticles();
   if (G.p1 && !G.demo) { drawHUD(); drawCrosshair(); }
   drawTexts();

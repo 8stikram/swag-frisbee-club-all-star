@@ -78,7 +78,24 @@ const I_THROW_B = ["....bbbbbb......", "..aaSSSSSSaa....", ".aSSSSSSSSSSaa..", "
 const I_DIVE_B = ["....bbbbbb......", "..aaSSSSSSaaa...", ".aSSSSSSSSSSaa..", ".aSSSSSSSSSSaa..", "..bSSSSSSSSb....", "..aSSSSSSSSa....", ".aSSa....aSSa...", "aSSa......aSSa..", "aaa........aaa..", "................"];
 const I_DASH_B = ["....bbbbbb......", "aaaSSSSSSaa.....", "aSSSSSSSSSSa....", ".aSSSSSSSSSa....", "..bSSSSSSSSb....", "..aSSSSSSSSa....", "..aSSa.aSSa.....", ".aSSa.aSSa......", "aSSa.aSSa.......", "aaa..aaa........"];
 
-export const ROSTER = ['naruto', 'isaac', 'leon'];
+// G : l'or de la cloche qui lui tient lieu de tête. R : la bure cramoisie.
+// V : le vert sapin de l'écharpe et du drapé. S : les pièces d'armure.
+// Son visage n'existe pas : toute sa lisibilité tient à la silhouette de cloche.
+const PAL_J = { G: '#f5c542', g: '#c9992a', W: '#ffe9a0', R: '#a8232f', r: '#7a1620', V: '#1f5c3a', v: '#143f28', S: '#b9c0cb', s: '#7e8794', K: '#241318' };
+
+// Tête partagée : la cloche s'évase jusqu'au rebord, puis l'écharpe rayée
+// rouge et verte fait la jonction avec les épaules.
+const J_HEAD = ["......GG........", ".....GgGG.......", ".....GGGG.......", "....GGGGGG......", "....GWGGGg......", "...GGGGGGGG.....", "...GWGGGGgg.....", "..GGGGGGGGGG....", "..gGGGGGGGGg....", "..RVRVRVRVRV...."];
+// Bure cramoisie évasée, écharpe verte qui descend au centre, épaulières et
+// bottes d'acier.
+const J_IDLE_B = ["....RRRRRR......", "..SSRRVVRRSS....", ".SSRRRVVRRRSS...", ".SSRRRVVRRRSS...", "..RRRRVVRRRR....", "..rRRRVVRRRr....", "...RRRRRRRR.....", "...SS....SS.....", "...SS....SS.....", "..GSS....SSG...."];
+const J_RUN1_B = ["....RRRRRR......", "..SSRRVVRRSS....", ".SSRRRVVRRRS....", "..SRRRVVRRRSS...", "..RRRRVVRRRR....", "..rRRRVVRRRr....", "..RRRRRRRRRR....", "..SS......SS....", ".SS........SS...", "GSS........SSG.."];
+const J_RUN2_B = ["....RRRRRR......", "..SSRRVVRRSS....", "..SRRRVVRRRSS...", ".SSRRRVVRRRS....", "..RRRRVVRRRR....", "..rRRRVVRRRr....", "...RRRRRRRR.....", "...SS....SS.....", "...SS....SS.....", "..GSS....SSG...."];
+const J_THROW_B = ["....RRRRRR......", "..SSRRVVRRSS....", "..SRRRVVRRRSSS..", "..SRRRVVRRRSSS..", "..RRRRVVRRRR....", "..rRRRVVRRRr....", "...RRRRRRRR.....", "..SS.....SS.....", "..SS......SS....", ".GSS......SSG..."];
+const J_DIVE_B = ["....RRRRRR......", "..SSRRVVRRSSS...", "..SRRRVVRRRSSS..", "..SRRRVVRRRSSS..", "..RRRRVVRRRR....", "..rRRRVVRRRr....", ".RRRRRRRRRR.....", ".SS......SS.....", "GS........SG....", "................"];
+const J_DASH_B = ["....RRRRRR......", "SSSRRVVRRRRR....", "SSSRRRVVRRRR....", "..RRRRVVRRRR....", "..RRRRVVRRRR....", "..rRRRVVRRRr....", "..RRRRRRRR......", "..SS..SS........", ".SS..SS.........", "GSS.GSS........."];
+
+export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle'];
 
 export const CHARS = {
   naruto: {
@@ -124,6 +141,26 @@ export const CHARS = {
       throw: buildSprite([...L_HEAD, ...L_THROW_B], PAL_L),
       dive: buildSprite([...L_HEAD, ...L_DIVE_B], PAL_L),
       dash: buildSprite([...L_HEAD, ...L_DASH_B], PAL_L)
+    }
+  },
+  jingle: {
+    name: 'JINGLE BELLS', short: 'JINGLE', icon: '🔔', universe: 'PÔLE NORD',
+    // Profil défensif : lent et lourd, mais très sûr à la réception — sa large
+    // bure lui donne la meilleure zone d'attrapé du jeu.
+    speed: 296, power: 1.1, catchR: 33, chargeT: .95,
+    color: '#1f5c3a', accent: '#f5c542',
+    stats: { spd: 2, pow: 4, ctl: 5 },
+    ult: 'bell',
+    frames: {
+      idle: buildSprite([...J_HEAD, ...J_IDLE_B], PAL_J),
+      run1: buildSprite([...J_HEAD, ...J_RUN1_B], PAL_J),
+      run2: buildSprite([...J_HEAD, ...J_RUN2_B], PAL_J),
+      throw: buildSprite([...J_HEAD, ...J_THROW_B], PAL_J),
+      dive: buildSprite([...J_HEAD, ...J_DIVE_B], PAL_J),
+      dash: buildSprite([...J_HEAD, ...J_DASH_B], PAL_J),
+      // Pendant son ultime, sa tête part devenir la cloche géante : le corps
+      // reste seul sur le terrain.
+      headless: buildSprite([...J_HEAD.map(() => '................'), ...J_IDLE_B], PAL_J)
     }
   }
 };

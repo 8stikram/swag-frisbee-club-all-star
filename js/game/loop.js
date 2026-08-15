@@ -6,7 +6,7 @@ import { getMap } from '../data/maps.js';
 import { updatePlayerHuman, updatePlayer2, integratePlayer } from './input.js';
 import { updateAI } from './ai.js';
 import { updateDisc, updateDecoys } from './disc.js';
-import { updateLeg, launchCine } from './specials.js';
+import { updateLeg, updateBell, launchCine } from './specials.js';
 import { updateFX } from './fx.js';
 import { capture, applySnap } from './replay.js';
 import { setupServe, afterGoal, startReplay, endReplay, finishReplay } from './actions.js';
@@ -72,6 +72,7 @@ export function update(dt) {
     return;
   }
   updateLeg(wdt);
+  updateBell(wdt);
   for (const p of [G.p1, G.p2]) p.meter = clamp(p.meter + (G.state === 'play' ? 1.5 : 0) * wdt, 0, 100);
   switch (G.state) {
     case 'countdown': {

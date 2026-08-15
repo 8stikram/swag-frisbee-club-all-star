@@ -20,6 +20,44 @@ export function launchCine(cine) {
   if (u && u.launch) u.launch(cine.p);
 }
 
+// La cloche se balance et sonne. À chaque coup, elle secoue l'écran et
+// perturbe l'adversaire : sa visée part de travers un court instant. On agit
+// sur son contrôle plutôt que sur le cadrage de sa moitié de terrain, qui
+// aurait laissé apparaître des bords noirs en décalant l'image.
+export function updateBell(dt) {
+  const b = G.bell;
+  if (!b) return;
+  b.t += dt;
+  if (b.t >= b.dur) {
+    G.bell = null;
+    addPopup('LA CLOCHE SE TAIT', '#f5c542', 13, .9);
+    return;
+  }
+  // Un coup toutes les 0,9 s : secousse et désorientation de l'adversaire.
+  if (b.t >= b.next) {
+    b.next = b.t + .9;
+    b.ring = 1;
+    G.shake = Math.max(G.shake, 7);
+    sfx('bigbounce');
+    const foe = b.owner.foe;
+    if (foe) {
+      foe.dizzy = .55;                 // sa course dérive pendant ce temps
+      if (foe.ai) foe.ai.hesT = .4;    // et l'IA hésite tout autant
+    }
+  }
+  b.ring = Math.max(0, b.ring - dt * 2.2);
+  // Elle repousse le disque qui approche de la cage protégée.
+  const d = G.disc;
+  if (d.free && Math.hypot(d.x - b.x, d.y - b.y) < 62) {
+    const away = b.side === 1 ? 1 : -1;
+    d.vx = Math.abs(d.vx || 400) * away * 1.15;
+    d.vy += gauss() * 180;
+    G.shake = Math.max(G.shake, 9);
+    sfx('bigbounce');
+    addPopup('REPOUSSÉ !', '#f5c542', 14, .7, b.y - 60);
+  }
+}
+
 export function updateLeg(dt) {
   const L = G.leg;
   if (!L) return;

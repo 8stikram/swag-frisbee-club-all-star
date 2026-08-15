@@ -85,6 +85,24 @@ export const SPECIALS = {
     }
   },
 
+  bell: {
+    name: 'CLOCHE DE MINUIT',
+    desc: 'Sa tête devient une cloche géante qui protège sa cage.',
+    needsDisc: false,
+    cast(p) {
+      p.meter = 0; p.stats.specials++;
+      // Sa tête quitte ses épaules pour aller grossir devant sa propre cage.
+      G.bell = {
+        owner: p, side: p.side, t: 0, dur: 7,
+        x: p.side === 1 ? COURT.left + 54 : COURT.right - 54,
+        y: CY, ring: 0, next: 0
+      };
+      G.banner = { text: 'CLOCHE DE MINUIT !!', color: '#f5c542', t: 0, dur: 1.3 };
+      G.shake = 12;
+      sfx('roar'); comment('LA CLOCHE SONNE MINUIT !');
+    }
+  },
+
   leg: {
     name: 'LA JAMBE DE MAMAN',
     desc: 'La jambe de Mom tombe du ciel.',

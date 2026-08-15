@@ -4,7 +4,7 @@ import {
   COURT, CX, DASH_SPEED, DASH_DECAY, DASH_CD, DASH_DIST, DASH_TIME, DASH_GAP,
   CANCEL_GAP, CANCEL_CATCH, FEINT_TIME, FEINT_CD, DASH_SLIDE, throwSpeed
 } from '../core/constants.js';
-import { clamp, norm, approach } from '../core/utils.js';
+import { clamp, norm, approach, gauss } from '../core/utils.js';
 import { getKey } from '../data/keymap.js';
 import { getDashAim, toggleDashAim } from '../data/settings.js';
 import { initAudio, sfx, toggleMusic } from '../audio/audio.js';
@@ -285,7 +285,9 @@ export function integratePlayer(p, dt) {
   if (p.moving) p.walk += dt * 10;
   p.throwCd -= dt; p.throwPoseT -= dt; p.lunge -= dt; p.lungeCd -= dt; p.dashCd -= dt;
   p.dashT -= dt; p.dashGap -= dt; p.dashThrowT -= dt; p.diveT -= dt; p.diveDown -= dt;
-  p.cancelCatchT -= dt; p.feintT -= dt; p.feintCd -= dt;
+  p.cancelCatchT -= dt; p.feintT -= dt; p.feintCd -= dt; p.dizzy -= dt;
+  // La cloche fait vaciller sa course sans jamais le bloquer.
+  if (p.dizzy > 0) { p.vx += gauss() * 90 * dt * 60 * .016; p.vy += gauss() * 90 * dt * 60 * .016; }
   if (p.stun > 0) p.stun -= dt;
   // Pendant le dash la vitesse est maintenue constante, ce qui garantit la
   // distance fixe. À la fin on la coupe net : sans ça elle décroît en douceur et
