@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Isaac — contour du corps adouci</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 50px}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:14px;margin:26px 0 10px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .sub{color:#8fa4c4;font-size:13px;margin:0 0 6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:730px;line-height:1.6;margin:0 0 12px}
+  .row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px}
+  .lbl{font-size:11px;color:#8fa4c4;text-transform:uppercase;letter-spacing:1.1px;
+       margin-bottom:8px;text-align:center;min-height:26px}
+  .lbl b{color:var(--ok)}
+  canvas{display:block;image-rendering:pixelated;margin:0 auto}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok)}
+  #errs.bad{color:#ff5340}
+  .sw{display:inline-block;width:13px;height:13px;border-radius:3px;
+      vertical-align:-2px;margin-right:5px;border:1px solid #0008}
+</style>
+</head>
+<body>
+
+<h1>Isaac — contour du corps adouci</h1>
+<p class="sub">Tête toujours cernée de noir, corps cerné d'une peau plus foncée. Reste à choisir l'intensité.</p>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>Les intensités de contour du corps</h2>
+<p class="note">Même sprite partout : seule la couleur du contour du corps change. La tête garde son noir dans les quatre cas.</p>
+<div class="row" id="variants"></div>
+
+<h2>À la taille réelle du jeu</h2>
+<p class="note">Le test qui compte : à ×2,4 un contour trop clair disparaît, un contour trop foncé revient à du noir.</p>
+<div class="row" id="real"></div>
+
+<h2>Dans le trio</h2>
+<p class="note">Est-ce que le corps reste lisible à côté de Naruto et Leon, sans le côté « autocollant » du tout-noir ?</p>
+<div class="row" id="trio"></div>
+
+<h2>Les 4 animations, avec l'intensité moyenne</h2>
+<div class="row" id="anim"></div>
+
+<script>
+// ------------------------------------------------------------------ palettes
+// K = contour noir (tête) · k = contour du corps, en peau foncée
+const BASE = { S:'#f2cfcb', s:'#d8a9a5', E:'#151013', T:'#8fd8e8', W:'#ffffff', K:'#151013' };
+const P_NOIR   = Object.assign({}, BASE, { k:'#151013' });   // l'actuel, tout noir
+const P_DOUX   = Object.assign({}, BASE, { k:'#cf9b97' });   // à peine marqué
+const P_MOYEN  = Object.assign({}, BASE, { k:'#b07a76' });   // intermédiaire
+const P_MARQUE = Object.assign({}, BASE, { k:'#8f5f5b' });   // net sans être noir
+
+const PAL_NARUTO = { H:'#ffd23e', h:'#e2a71c', M:'#d9dfe8', S:'#f8c890', s:'#d99a63',
+  w:'#c08050', E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#f2f2f5', K:'#1e1e24', P:'#e5730f' };
+const PAL_LEON = { L:'#7a4f2c', l:'#4e2f18', S:'#f0c090', s:'#cf9660', E:'#2c2a26',
+  J:'#42537d', j:'#26314d', V:'#b3bac6', B:'#e8b83a', W:'#eef1f6', D:'#2f3b59', K:'#1b1f2a' };
+
+// ------------------------------------------------------------------ sprites
+// Tête inchangée : K = noir.
+const I_HEAD = ["....KKKKKK......","..KKSSSSSSKK....",".KSSSSSSSSSSK...",".KSSSSSSSSSSK...",
+  ".KSSSSSSSSSSK...",".KSWESSSSWESK...",".KSEESSSSEESK...",".KSTSSKKSSTSK...",
+  "..KTSSSSSSTK....","..KKSSSSSSKK....","....KKKKKK......"];
+// Corps : tous les contours passent en 'k'.
+const I_IDLE = ["...kkkkkkkk.....","..kSSSSSSSSk....",".kSSSSSSSSSSk...",".kSSSSSSSSSSk...",
+  "..kSSSSSSSSk....","..kSSSSSSSSk....","...kSSkkSSk.....","..kSSk..kSSk....",
+  "..kSSk..kSSk....","..kkkk..kkkk...."];
+const I_RUN1 = ["...kkkkkkkk.....","..kSSSSSSSSk....",".kSSSSSSSSSSk...","..kSSSSSSSSk....",
+  "..kSSSSSSSSk....","..kSSSSSSSSk....","..kSSk..kSSk....",".kSSk....kSSk...",
+  ".kSSk....kSSk...","kkkk......kkkk.."];
+const I_RUN2 = ["...kkkkkkkk.....","..kSSSSSSSSk....","..kSSSSSSSSSSk..",".kSSSSSSSSk.....",
+  "..kSSSSSSSSk....","..kSSSSSSSSk....","...kSSkkSSk.....","..kSSk..kSSk....",
+  "..kSSk..kSSk....","..kkkk..kkkk...."];
+const I_THROW = ["...kkkkkkkk.....","..kSSSSSSSSkk...","..kSSSSSSSSSSkk.","..kSSSSSSSSSSkk.",
+  "..kSSSSSSSSk....","..kSSSSSSSSk....","...kSSkkSSk.....","..kSSk..kSSk....",
+  "..kSSk..kSSk....","..kkkk..kkkk...."];
+
+const N_HEAD=["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....",
+  "..KKKKKKKKKK....","..KKMMMMMMKK....","..SSSSSSSSSS....","..SSSESSSSES....",
+  "..swSSSSSSws....","...SSSSSSSS....."];
+const N_IDLE=["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...",
+  "..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....",
+  "..PPP....PPP....","..KKK....KKK...."];
+const L_HEAD=["....lLLLLl......","...LLLLLLLL.....","..LLLLLLLLLL....","..LLLLllLLLL....",
+  "..LLSSSSSSLL....","..LSSSSSSSSL....","..SSSESSSSES....","..SSSSSSSSSS....",
+  "...SSSSSSSS.....","....JJJJJJ......"];
+const L_IDLE=["..KKKKKKKKKB....",".VKKKKKKKKKKV...",".VKKWKWKWKKKV...",".SKKKKKKKKKKS...",
+  "..JJJJJJJJJJ....","..KKKKVKKKKK....","...DD....DD.....","...KK....KK.....",
+  "...DD....DD.....","..KKK....KKK...."];
+
+// ------------------------------------------------------------------ outils
+function build(rows, pal){
+  const c=document.createElement('canvas'); c.width=16; c.height=rows.length;
+  const g=c.getContext('2d');
+  rows.forEach((r,y)=>{ for(let x=0;x<r.length;x++){ const ch=r[x];
+    if(ch!=='.'&&pal[ch]){ g.fillStyle=pal[ch]; g.fillRect(x,y,1,1); } } });
+  return c;
+}
+function show(parent, rows, pal, label, scale){
+  const card=document.createElement('div'); card.className='card';
+  const l=document.createElement('div'); l.className='lbl'; l.innerHTML=label;
+  const cv=document.createElement('canvas');
+  cv.width=16*scale; cv.height=rows.length*scale;
+  const g=cv.getContext('2d'); g.imageSmoothingEnabled=false;
+  g.fillStyle='#101a2e'; g.fillRect(0,0,cv.width,cv.height);
+  g.drawImage(build(rows,pal),0,0,cv.width,cv.height);
+  card.appendChild(l); card.appendChild(cv); parent.appendChild(card);
+}
+
+// ------------------------------------------------------------------ validation
+(function(){
+  const sets={I_HEAD,I_IDLE,I_RUN1,I_RUN2,I_THROW};
+  const bad=[]; const missing=new Set();
+  for(const k in sets) sets[k].forEach((r,i)=>{ if(r.length!==16) bad.push(`${k}[${i}]=${r.length}`); });
+  Object.values(sets).forEach(a=>a.forEach(r=>{
+    for(const ch of r) if(ch!=='.'&&!P_MOYEN[ch]) missing.add(ch); }));
+  const box=document.getElementById('errs');
+  if(bad.length||missing.size){ box.className='bad';
+    box.textContent=(bad.length?'Largeurs incorrectes : '+bad.join(', ')+'\n':'')
+      +(missing.size?'Couleurs manquantes : '+[...missing].join(' '):''); }
+  else box.textContent='OK — toutes les lignes font 16 px, toutes les couleurs sont définies.';
+})();
+
+// ------------------------------------------------------------------ rendus
+const ISAAC = [...I_HEAD, ...I_IDLE];
+function sw(c){ return '<span class="sw" style="background:'+c+'"></span>'; }
+
+const v=document.getElementById('variants');
+show(v, ISAAC, P_NOIR,   'ACTUEL — tout noir<br>'+sw('#151013')+'trop dur',      9);
+show(v, ISAAC, P_DOUX,   'A — doux<br>'+sw('#cf9b97'),                            9);
+show(v, ISAAC, P_MOYEN,  'B — moyen<br>'+sw('#b07a76')+'<b>mon choix</b>',        9);
+show(v, ISAAC, P_MARQUE, 'C — marqué<br>'+sw('#8f5f5b'),                          9);
+
+const real=document.getElementById('real');
+show(real, ISAAC, P_NOIR,   'noir · ×2,4',   2.4);
+show(real, ISAAC, P_DOUX,   'A · ×2,4',      2.4);
+show(real, ISAAC, P_MOYEN,  'B · ×2,4',      2.4);
+show(real, ISAAC, P_MARQUE, 'C · ×2,4',      2.4);
+show(real, ISAAC, P_DOUX,   'A · ×5',        5);
+show(real, ISAAC, P_MOYEN,  'B · ×5',        5);
+show(real, ISAAC, P_MARQUE, 'C · ×5',        5);
+
+const trio=document.getElementById('trio');
+show(trio, [...N_HEAD,...N_IDLE], PAL_NARUTO, 'Naruto',           6);
+show(trio, ISAAC,                 P_MOYEN,    'Isaac <b>B</b>',   6);
+show(trio, [...L_HEAD,...L_IDLE], PAL_LEON,   'Leon',             6);
+
+const anim=document.getElementById('anim');
+show(anim, [...I_HEAD,...I_IDLE],  P_MOYEN, 'idle',     6);
+show(anim, [...I_HEAD,...I_RUN1],  P_MOYEN, 'course 1', 6);
+show(anim, [...I_HEAD,...I_RUN2],  P_MOYEN, 'course 2', 6);
+show(anim, [...I_HEAD,...I_THROW], P_MOYEN, 'lancer',   6);
+</script>
+</body>
+</html>
