@@ -213,9 +213,10 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 .turnHint.done{display:none}
 @keyframes turnBlink{0%,100%{opacity:1}50%{opacity:.35}}
 
-/* Côté non concerné par le tour : grisé et non cliquable. */
-.side.locked{filter:grayscale(.7) brightness(.72)}
-.grid.locked{pointer-events:none;opacity:.55}
+/* Le camp non concerné n'est plus grisé — l'effet était disgracieux. Le tour se
+   lit au bandeau clignotant et aux contours posés sur les cases. */
+.grid.locked{pointer-events:none}
+.okBtn{margin:.5cqh auto 0;padding:.5cqh 1.2cqw;font-size:1.4cqh}
 
 /* Validation d'un perso : le contour se dessine autour de la case. */
 .cell.picked{position:relative}
@@ -555,7 +556,9 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
   border:5px solid var(--ink);box-shadow:8px 8px 0 var(--ink);
 }
 .bigFlag.red{background:var(--red)}
-.bigFlag.gray{background:#fff;color:var(--ink)}
+/* Le badge CPU était un texte sombre sur fond blanc, illisible à côté du rouge
+   éclatant du badge P1. On garde le blanc au texte et on met du gris franc. */
+.bigFlag.gray{background:#7d8595;color:#fff}
 
 .winnerNameWrap{position:absolute;top:20cqh;left:2cqw;z-index:4;width:58cqw;pointer-events:none}
 .winnerName{
@@ -594,8 +597,9 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
   -webkit-text-stroke:3px var(--ink);paint-order:stroke fill;
   border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);
 }
-/* Fond clair + texte sombre rendait « CPU » illisible : on inverse. */
-.loserCard .flag.gray{background:#3a3f4a;color:#fff}
+/* Fond clair + texte sombre rendait « CPU » illisible ; un gris trop foncé le
+   noyait tout autant. Gris moyen + texte blanc, comme le grand badge. */
+.loserCard .flag.gray{background:#7d8595;color:#fff}
 .loserCard .flag.red{background:var(--red)}
 .statBar{
   flex:1;min-width:0;overflow:hidden;background:var(--ink);border-radius:8px;

@@ -65,8 +65,10 @@ function mirrorButtonIcons() {
   if (!b) return;
   b.addEventListener('click', e => {
     e.stopPropagation();
+    // On met le cadre du jeu en plein écran, pas la page entière : c'est le
+    // carré de jeu qu'on veut voir occuper tout l'écran.
     if (document.fullscreenElement) document.exitFullscreen();
-    else document.documentElement.requestFullscreen().catch(() => { });
+    else $('stage').requestFullscreen().catch(() => { });
   });
 })();
 
@@ -86,14 +88,47 @@ let rndP1 = false, rndP2 = false;   // camp tiré au sort : masqué jusqu'au mat
 
 export function resetSelectTurn() {
   turn = 1; lockedP1 = lockedP2 = false; rndP1 = rndP2 = false;
+  previewP1 = previewP2 = false;
 }
+
+// Les deux boutons VALIDER, sous le nom de chaque camp.
+(function () {
+  const b1 = $('okP1'), b2 = $('okP2');
+  if (b1) b1.addEventListener('click', e => { e.stopPropagation(); validate(1); });
+  if (b2) b2.addEventListener('click', e => { e.stopPropagation(); validate(2); });
+})();
 
 // « Clac » doux de validation : deux notes courtes et rondes, sans agressivité.
 function clac() { sfx('select'); }
 
-function validate(side, ck, isRandom) {
-  if (side === 1) { selCharPlayer = ck; lockedP1 = true; rndP1 = !!isRandom; turn = 2; }
-  else { selCharCPU = ck; lockedP2 = true; rndP2 = !!isRandom; turn = 0; }
+// Présélection : le clic sur une case ne fait que proposer un personnage. Rien
+// n'est figé tant que le joueur n'a pas appuyé sur VALIDER sous son nom.
+let previewP1 = false, previewP2 = false;
+
+function preselect(ck) {
+  if (turn === 1) { selCharPlayer = ck; previewP1 = true; rndP1 = false; }
+  else if (turn === 2) { selCharCPU = ck; previewP2 = true; rndP2 = false; }
+  else return;
+  sfx('move');
+  refreshSelect();
+  punchHero(turn);
+}
+
+function preselectRandom() {
+  const pick = ROSTER[(Math.random() * ROSTER.length) | 0];
+  if (turn === 1) { selCharPlayer = pick; previewP1 = true; rndP1 = true; }
+  else if (turn === 2) { selCharCPU = pick; previewP2 = true; rndP2 = true; }
+  else return;
+  sfx('move');
+  refreshSelect();
+  punchHero(turn);
+}
+
+// Confirmation : c'est ici seulement que le choix est verrouillé et que la
+// main passe au camp suivant.
+function validate(side) {
+  if (side === 1) { if (!previewP1 || lockedP1) return; lockedP1 = true; turn = 2; }
+  else { if (!previewP2 || lockedP2) return; lockedP2 = true; turn = 0; }
   clac();
   refreshSelect();
   punchHero(side);
@@ -118,8 +153,8 @@ function punchHero(side) {
 
 // Échap : le joueur en cours revient sur son choix, tant que 2P n'a pas validé.
 export function undoSelect() {
-  if (lockedP2) return false;
-  if (turn === 2 && lockedP1) { lockedP1 = false; rndP1 = false; turn = 1; sfx('deny'); refreshSelect(); return true; }
+  if (turn === 0 && lockedP2) { lockedP2 = false; turn = 2; sfx('deny'); refreshSelect(); return true; }
+  if (turn === 2 && lockedP1) { lockedP1 = false; turn = 1; sfx('deny'); refreshSelect(); return true; }
   return false;
 }
 
@@ -147,10 +182,7 @@ function renderCharGrid() {
     // Contour dessiné + tag de la couleur du camp, posé à la validation.
     if (lockedP1 && selCharPlayer === ck) markPicked(cell, 'p1', '1P');
     if (lockedP2 && selCharCPU === ck) markPicked(cell, modeJ2J ? 'p2' : 'cpu', modeJ2J ? '2P' : 'CPU');
-    cell.addEventListener('click', () => {
-      if (turn === 1) validate(1, ck);
-      else if (turn === 2) validate(2, ck);
-    });
+    cell.addEventListener('click', () => preselect(ck));
     grid.appendChild(cell);
   }
   // Case aléatoire : ne tire que pour le camp dont c'est le tour, et le
@@ -161,11 +193,7 @@ function renderCharGrid() {
   rnd.title = 'Personnage aléatoire';
   if (lockedP1 && rndP1) markPicked(rnd, 'p1', '1P');
   if (lockedP2 && rndP2) markPicked(rnd, modeJ2J ? 'p2' : 'cpu', modeJ2J ? '2P' : 'CPU');
-  rnd.addEventListener('click', () => {
-    const pick = ROSTER[(Math.random() * ROSTER.length) | 0];
-    if (turn === 1) validate(1, pick, true);
-    else if (turn === 2) validate(2, pick, true);
-  });
+  rnd.addEventListener('click', preselectRandom);
   grid.appendChild(rnd);
   grid.classList.toggle('locked', turn === 0);
 }
@@ -194,10 +222,12 @@ export function refreshSelect() {
   showRandomMask(0, rndP1);
   showRandomMask(1, rndP2);
 
-  // Tour de choix : côté verrouillé grisé, bandeau clignotant mis à jour.
-  const sides = document.querySelectorAll('.scr-select .side');
-  if (sides[0]) sides[0].classList.toggle('locked', turn === 2);
-  if (sides[1]) sides[1].classList.toggle('locked', turn === 1);
+  // Plus de grisage : le camp en cours se lit au bandeau clignotant et aux
+  // contours posés sur les cases. Le bouton VALIDER n'apparaît que pour le
+  // camp dont c'est le tour, et seulement s'il a présélectionné un personnage.
+  const b1 = $('okP1'), b2 = $('okP2');
+  if (b1) b1.classList.toggle('hidden', !(turn === 1 && previewP1));
+  if (b2) b2.classList.toggle('hidden', !(turn === 2 && previewP2));
   const hint = $('turnHint');
   if (hint) {
     hint.className = 'turnHint ' + (turn === 1 ? 'p1' : turn === 2 ? 'p2' : 'done');

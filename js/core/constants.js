@@ -9,8 +9,12 @@ export const TARGET = 35;
 // DASH_GAP est l'anti-spam : sans lui, marteler la touche permet d'avancer plus
 // vite qu'en courant et le déplacement normal ne sert plus à rien. Le dash durant
 // DASH_TIME, il reste ~0,33 s de course entre deux dashs — de quoi enchaîner.
-export const DASH_DIST = 92, DASH_TIME = .17, DASH_GAP = .5;
+export const DASH_DIST = 155, DASH_TIME = .17, DASH_GAP = .5;
 export const DASH_CATCH_MULT = 1.9;   // hitbox de catch élargie pendant le dash
+// Part de vitesse conservée en fin de dash : un arrêt net paraissait mécanique.
+// 12 % donne une glissade d'une trentaine de pixels, assez pour arrondir le
+// mouvement sans rallonger la distance de façon sensible.
+export const DASH_SLIDE = .12;
 export const DASH_THROW_WINDOW = .5;  // délai pour déclencher un Dash Throw après le catch
 
 // --- Plongeon : purement défensif, il repousse le disque mais ne l'attrape jamais.
@@ -24,7 +28,10 @@ export const CANCEL_GAP = .35, CANCEL_CATCH = .2;
 
 // --- Feinte de tir : le disque part à peine puis claque dans la main.
 // Pendant FEINT_FREE il est réellement interceptable par un adversaire collé.
-export const FEINT_TIME = .18, FEINT_FREE = .1, FEINT_CD = .25, FEINT_REACH = 26;
+// Le disque part plus loin et plus longtemps : à 26 px sur 0,18 s l'aller-retour
+// était trop bref pour tromper qui que ce soit. Le délai avant de pouvoir retirer
+// est allongé d'autant, pour que la feinte se paie.
+export const FEINT_TIME = .26, FEINT_FREE = .14, FEINT_CD = .35, FEINT_REACH = 44;
 
 // --- Perfect Dive : plonger dans la fenêtre exacte où le disque arrive.
 // 45 ms, soit moins de 3 images à 60 fps. À 0,1 s la fenêtre était illusoire :

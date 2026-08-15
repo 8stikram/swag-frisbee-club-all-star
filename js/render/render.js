@@ -375,7 +375,10 @@ function drawPlayer(p) {
   let fr = p.forceFr;
   if (!fr) {
     fr = 'idle';
-    if (p.holding && (p.charging || p.throwPoseT > 0)) fr = 'throw';
+    // Le plongeon a sa propre pose : sans elle il réutilisait celle du dash et
+    // les deux actions étaient impossibles à distinguer.
+    if (p.diveT > 0 || p.diveDown > 0) fr = 'dive';
+    else if (p.holding && (p.charging || p.throwPoseT > 0)) fr = 'throw';
     else if (p.moving) fr = (Math.floor(p.walk) % 2) ? 'run1' : 'run2';
   }
   const img = c.frames[fr];
@@ -384,8 +387,10 @@ function drawPlayer(p) {
   if (p.face < 0) ctx.scale(-1, 1);
   // Plongeon : le perso bascule à l'horizontale. Après un plongeon dans le vide
   // il reste à plat au sol le temps de se relever — c'est le risque du whiff.
-  if (p.diveT > 0) ctx.rotate(-0.9 * Math.min(1, p.diveT / DIVE_TIME));
-  else if (p.diveDown > 0) ctx.rotate(-1.35);
+  // Inclinaison très réduite : la pose de sprite porte désormais la lecture du
+  // plongeon, la rotation ne fait que l'accompagner.
+  if (p.diveT > 0) ctx.rotate(-0.3 * Math.min(1, p.diveT / DIVE_TIME));
+  else if (p.diveDown > 0) ctx.rotate(-0.42);
   if (p.charging && !G.replay) ctx.translate(gauss() * p.charge * 2.4, gauss() * p.charge * 2.4);
   if (p.stun > 0) ctx.rotate(Math.sin(G.now * 14) * .12);
   ctx.drawImage(img, -24 * SCALE, 0, 48 * SCALE, 60 * SCALE);
@@ -663,17 +668,12 @@ export function render() {
   if (G.shake > 0.3) ctx.translate(gauss() * G.shake, gauss() * G.shake);
   // Caméra du replay : serrée sur le lanceur avant le tir, elle suit ensuite le
   // disque, puis se resserre encore à l'approche du but.
-  if (G.replay && !G.replay.closing) {
-    const r = G.replay;
-    const avantTir = r.idx < r.shot;
-    const finale = r.idx > r.end - 26;
-    const cible = avantTir
-      ? (G.disc.x < CX ? G.p1 : G.p2)     // le porteur, du côté d'où part le tir
-      : G.disc;
-    const z = finale ? 1.55 : (avantTir ? 1.35 : 1.18);
-    // On borne le centre pour ne jamais cadrer hors du terrain.
-    const cx = clamp(cible.x, W / (2 * z), W - W / (2 * z));
-    const cy = clamp(cible.y, H / (2 * z), H - H / (2 * z));
+  // Caméra du replay : la position et le zoom sont lissés dans la boucle de
+  // jeu (voir loop.js), on ne fait ici que borner le cadrage au terrain.
+  if (G.replay && !G.replay.closing && G.replay.cam) {
+    const c = G.replay.cam, z = c.z;
+    const cx = clamp(c.x, W / (2 * z), W - W / (2 * z));
+    const cy = clamp(c.y, H / (2 * z), H - H / (2 * z));
     ctx.translate(W / 2, H / 2);
     ctx.scale(z, z);
     ctx.translate(-cx, -cy);
@@ -681,8 +681,10 @@ export function render() {
   // Zoom caméra du Perfect Dive : on grossit autour du plongeur puis on
   // revient, en gardant le cadrage dans les limites du terrain.
   if (G.zoom) {
-    const k = G.zoom.t / G.zoom.dur;
-    const amt = Math.sin(Math.min(1, k) * Math.PI) * .16;   // 0 -> 16% -> 0
+    const k = Math.min(1, G.zoom.t / G.zoom.dur);
+    // Courbe adoucie aux deux extrémités : le zoom monte et redescend en
+    // douceur au lieu de démarrer et de finir sèchement.
+    const amt = Math.pow(Math.sin(k * Math.PI), 1.6) * .16;
     const z = 1 + amt;
     ctx.translate(G.zoom.x, G.zoom.y);
     ctx.scale(z, z);

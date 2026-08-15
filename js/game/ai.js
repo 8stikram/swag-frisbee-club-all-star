@@ -1,6 +1,6 @@
 import { G } from './state.js';
 import {
-  COURT, CY, GOAL_TOP, GOAL_BOTTOM, DASH_SPEED, throwSpeed,
+  COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, DASH_SPEED, throwSpeed,
   DASH_CATCH_MULT, DIVE_RANGE, PERFECT_WINDOW
 } from '../core/constants.js';
 import { clamp, norm, gauss, rand, approach } from '../core/utils.js';
@@ -81,6 +81,15 @@ export function updateAI(p, dt) {
     if (newState !== d.state) { if (d.stateTimer < 0.15) newState = d.state; else d.stateTimer = 0; }
     else d.stateTimer += dt;
     d.state = newState;
+  }
+  // Anti-plantage : si l'IA stagne près de la ligne médiane, elle s'en détache
+  // au bout de 1,5 s. La voir coller au centre sans rien faire cassait le rythme.
+  const presDuCentre = Math.abs(p.x - CX) < 90;
+  d.centerT = presDuCentre ? (d.centerT || 0) + dt : 0;
+  if (d.centerT > 1.5) {
+    d.state = 'RECOVER';
+    d.centerT = 0;
+    if (p.dashT <= 0 && p.dashGap <= 0) startDash(p, norm(p.home.x - p.x, p.home.y - p.y));
   }
   if (d.hesT > 0) d.hesT -= dt;
   if (d.hesT <= 0 && Math.random() < 0.005) { d.hesT = 0.2 + rand(0.3); d.hes = { x: gauss() * 40, y: gauss() * 50 }; }

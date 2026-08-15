@@ -14,7 +14,10 @@ export function capture() {
     p1: snapFrame(G.p1),
     p2: snapFrame(G.p2),
     d: { x: G.disc.x, y: G.disc.y, spin: G.disc.spin, big: G.disc.big, super: G.disc.super },
-    held: !!G.disc.heldBy   // sert à retrouver l'instant du tir dans le replay
+    held: !!G.disc.heldBy,   // sert à retrouver l'instant du tir dans le replay
+    // Les leurres du Tir Matilda font partie de l'action : sans eux, le replay
+    // d'un but à l'ultime ne montrerait qu'un seul disque au lieu de trois.
+    dec: G.decoys.length ? G.decoys.map(o => ({ x: o.x, y: o.y })) : null
   });
   // La fenêtre glisse : on décale aussi le repère de la dernière prise de disque
   // pour qu'il continue de pointer la bonne image.
@@ -29,8 +32,22 @@ export function applySnap(s) {
     if (G.trail.length > 14) G.trail.shift();
   }
   const a = G.p1, b = G.p2, d = G.disc;
-  a.x = s.p1.x; a.y = s.p1.y; a.face = s.p1.face; a.forceFr = s.p1.fr; a.moving = false; a.charging = false; a.stun = 0;
-  b.x = s.p2.x; b.y = s.p2.y; b.face = s.p2.face; b.forceFr = s.p2.fr; b.moving = false; b.charging = false; b.stun = 0;
+  // On conserve les animations du jeu : `moving` est recalculé d'après le
+  // déplacement réel entre deux images, ce qui fait vivre la marche, la
+  // poussière et les fantômes comme en match. Les figer donnait des
+  // personnages statiques qui glissaient sur le terrain.
+  const anime = (p, s) => {
+    const dx = s.x - p.x, dy = s.y - p.y;
+    p.moving = Math.hypot(dx, dy) > .6;
+    if (p.moving) p.walk += .35;
+    p.x = s.x; p.y = s.y; p.face = s.face; p.forceFr = s.fr;
+    p.charging = false; p.stun = 0;
+  };
+  anime(a, s.p1);
+  anime(b, s.p2);
   d.x = s.d.x; d.y = s.d.y; d.spin = s.d.spin; d.big = s.d.big; d.super = s.d.super;
   d.heldBy = null; d.free = true; d.kind = 'normal'; d.vx = 0; d.vy = 0;
+  // Rejoue les leurres tels qu'ils étaient, pour que le triple tir se voie.
+  G.decoys.length = 0;
+  if (s.dec) for (const o of s.dec) G.decoys.push({ x: o.x, y: o.y, vx: 0, vy: 0, life: 1, real: false, thrower: null });
 }

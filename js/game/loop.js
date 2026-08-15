@@ -1,5 +1,6 @@
 import { G, comment } from './state.js';
 import { W, curScreen } from '../core/dom.js';
+import { CX } from '../core/constants.js';
 import { lerp, gauss, rand, pick, clamp } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { updatePlayerHuman, updatePlayer2, integratePlayer } from './input.js';
@@ -46,10 +47,25 @@ export function update(dt) {
       return;
     }
     // Vitesse normale, puis ralenti au moment du tir et à l'approche du but.
-    const prochesDuBut = r.idx > r.end - 26;
-    const prochesDuTir = Math.abs(r.idx - r.shot) < 12;
-    r.speed = (prochesDuBut || prochesDuTir) ? .28 : 1;
+    // La transition est progressive : basculer d'un coup de 1× à 0,28× donnait
+    // une cassure brutale au lieu d'un effet de ralenti.
+    const prochesDuBut = r.idx > r.end - 30;
+    const prochesDuTir = Math.abs(r.idx - r.shot) < 14;
+    const cible = (prochesDuBut || prochesDuTir) ? .28 : 1;
+    r.speed = lerp(r.speed, cible, 1 - Math.exp(-6 * dt));
     r.idx += dt * 60 * r.speed;
+
+    // Caméra lissée : la cible et le facteur de zoom changent par paliers selon
+    // la phase, mais on s'en approche progressivement. Sauter d'un cadrage à
+    // l'autre donnait des à-coups au lieu d'un mouvement de caméra.
+    const avantTir = r.idx < r.shot;
+    const suivi = avantTir ? (G.disc.x < CX ? G.p1 : G.p2) : G.disc;
+    const zCible = prochesDuBut ? 1.55 : (avantTir ? 1.35 : 1.18);
+    if (!r.cam) r.cam = { x: suivi.x, y: suivi.y, z: 1 };
+    const k = 1 - Math.exp(-5 * dt);
+    r.cam.x = lerp(r.cam.x, suivi.x, k);
+    r.cam.y = lerp(r.cam.y, suivi.y, k);
+    r.cam.z = lerp(r.cam.z, zCible, k);
     if (r.idx >= r.end) { G.shake = Math.max(G.shake, 12); endReplay(); }
     else { applySnap(G.rec[Math.floor(r.idx)]); }
     updateFX(dt);

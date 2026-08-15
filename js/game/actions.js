@@ -87,7 +87,11 @@ export function doDive(p, aim) {
   p.face = aim.x >= 0 ? 1 : -1;
   p.charging = false; p.wasCharging = false; p.charge = 0;
   p.dashV.x += aim.x * 300; p.dashV.y += aim.y * 300;
-  dust(p.x, p.y + 20, 5); sfx('dash');
+  // Poussière projetée au point d'impact au sol, devant le joueur — le dash,
+  // lui, en soulève derrière ses pieds. Les deux actions se distinguent ainsi
+  // même sans regarder la pose.
+  dust(p.x + aim.x * 26, p.y + 22, 12);
+  sfx('dash');
 
   const inRange = d.free && Math.hypot(d.x - p.x, d.y - p.y) < DIVE_RANGE + DISC_RADIUS;
   if (!inRange) {
@@ -313,7 +317,9 @@ export function gameOver() {
   const winnerIsP1 = winner === G.p1;
 
   buildPerspectiveTitle($('vicName'), winner.char.short);
-  $('vicOutcome').textContent = win ? 'VICTOIRE' : 'DÉFAITE';
+  // L'écran met en scène le VAINQUEUR : afficher « DÉFAITE » quand le CPU
+  // l'emporte donnait l'impression que c'était lui qui avait perdu.
+  $('vicOutcome').textContent = 'VICTOIRE';
   drawOverSprite($('vicPortrait'), winner.ck, 18);
   drawOverSprite($('vicLoserPortrait'), loser.ck, 8);
 

@@ -42,6 +42,10 @@ const N_IDLE_B = ["....KKKKKK......", "..KKKKKKKKKK....", ".SKKKKKKKKKKS...", ".
 const N_RUN1_B = ["....KKKKKK......", "..KKKKKKKKKK....", ".SKKKKKKKKKK....", "...OOOKKOOOOS...", "..OOOOKKOOOO....", "..KKKKKKKKKK....", "..PP......PP....", ".WW........PP...", ".PP........PP...", "KKK........KKK.."];
 const N_RUN2_B = ["....KKKKKK......", "..KKKKKKKKKK....", "...KKKKKKKKKS...", ".SKOOOKKOOOO....", "..OOOOKKOOOO....", "..KKKKKKKKKK....", "...PP....PP.....", "...WW....PP.....", "..PPP....PPP....", "..KKK....KKK...."];
 const N_THROW_B = ["....KKKKKK......", "..KKKKKKKKKK....", "..KKKKKKKKKKSS..", "..OOOOKKOOOOSS..", "..OOOOKKOOOO....", "..KKKKKKKKKK....", "..PP.....PP.....", "..WW......PP....", ".PPP......PPP...", ".KKK......KKK..."];
+// Pose de plongeon : bras tendus vers l'avant, jambes écartées et rejetées en
+// arrière. Elle se distingue nettement de la course et du lancer, ce qui rend
+// l'action lisible sans dépendre uniquement de la rotation.
+const N_DIVE_B = ["....KKKKKK......", "..KKKKKKKKKKSS..", "..KKKKKKKKKKSS..", "..OOOOKKOOOO....", "..OOOOKKOOOO....", "..KKKKKKKKKK....", ".PPPP...PPPP....", "PPP......PPP....", "KK........KK....", "................"];
 
 // Tête partagée : coupe à raie au milieu, les cheveux encadrent le visage des deux côtés.
 // Yeux décalés d'un pixel à droite, même raison que pour Naruto : c'est ce qui
@@ -53,6 +57,7 @@ const L_IDLE_B = ["..KKKKKKKKKB....", ".VKKKKKKKKKKV...", ".VKKWKWKWKKKV...", ".
 const L_RUN1_B = ["..KKKKKKKKKB....", ".VKKKKKKKKKK....", "...KWKWKWKKKV...", "..KKKKKKKKKKS...", "..JJJJJJJJJJ....", "..KKKKVKKKKK....", "..DD......DD....", "..KK......KK....", ".DD........DD...", "KKK........KKK.."];
 const L_RUN2_B = ["..KKKKKKKKKB....", "...KKKKKKKKKV...", ".VKKWKWKWKKK....", "..KKKKKKKKKKS...", "..JJJJJJJJJJ....", "..KKKKVKKKKK....", "...DD....DD.....", "...KK....KK.....", "...DD....DD.....", "..KKK....KKK...."];
 const L_THROW_B = ["..KKKKKKKKKB....", "..KKKKKKKKKKVV..", "..KKWKWKWKKKVV..", "..KKKKKKKKKK....", "..JJJJJJJJJJ....", "..KKKKVKKKKK....", "..DD.....DD.....", "..KK.....KK.....", ".DDD......DDD...", ".KKK......KKK..."];
+const L_DIVE_B = ["..KKKKKKKKKB....", "..KKKKKKKKKKVV..", "..KKWKWKWKKKVV..", "..KKKKKKKKKK....", "..JJJJJJJJJJ....", "..KKKKVKKKKK....", ".DDDD...DDDD....", "KKK......KKK....", "KK........KK....", "................"];
 
 // Grosse tête ronde entièrement cernée de noir, yeux à reflet blanc, larmes permanentes.
 // Isaac sert de gabarit de référence pour tout nouveau perso : tête sur 10 lignes,
@@ -66,6 +71,7 @@ const I_IDLE_B = ["....bbbbbb......", "..aaSSSSSSaa....", ".aSSSSSSSSSSa...", ".
 const I_RUN1_B = ["....bbbbbb......", "..aaSSSSSSaa....", ".aSSSSSSSSSa....", "..aSSSSSSSSSa...", "..bSSSSSSSSb....", "..aSSSSSSSSa....", "..aSSb..bSSa....", ".aSSb....bSSa...", ".aSSb....bSSa...", "..aa......aa...."];
 const I_RUN2_B = ["....bbbbbb......", "..aaSSSSSSaa....", "..aSSSSSSSSSa...", ".aSSSSSSSSSa....", "..bSSSSSSSSb....", "..aSSSSSSSSa....", "..aSSb..bSSa....", "..aSSb..bSSa....", "..aSSb..bSSa....", "...aa....aa....."];
 const I_THROW_B = ["....bbbbbb......", "..aaSSSSSSaa....", ".aSSSSSSSSSSaa..", ".aSSSSSSSSSSaa..", "..bSSSSSSSSb....", "..aSSSSSSSSa....", "..aSSb..bSSa....", "..aSSb..bSSa....", "..aSSb..bSSa....", "...aa....aa....."];
+const I_DIVE_B = ["....bbbbbb......", "..aaSSSSSSaaa...", ".aSSSSSSSSSSaa..", ".aSSSSSSSSSSaa..", "..bSSSSSSSSb....", "..aSSSSSSSSa....", ".aSSa....aSSa...", "aSSa......aSSa..", "aaa........aaa..", "................"];
 
 export const ROSTER = ['naruto', 'isaac', 'leon'];
 
@@ -80,7 +86,8 @@ export const CHARS = {
       idle: buildSprite([...N_HEAD, ...N_IDLE_B], PAL_N),
       run1: buildSprite([...N_HEAD, ...N_RUN1_B], PAL_N),
       run2: buildSprite([...N_HEAD, ...N_RUN2_B], PAL_N),
-      throw: buildSprite([...N_HEAD, ...N_THROW_B], PAL_N)
+      throw: buildSprite([...N_HEAD, ...N_THROW_B], PAL_N),
+      dive: buildSprite([...N_HEAD, ...N_DIVE_B], PAL_N)
     }
   },
   isaac: {
@@ -93,7 +100,8 @@ export const CHARS = {
       idle: buildSprite([...I_HEAD, ...I_IDLE_B], PAL_I),
       run1: buildSprite([...I_HEAD, ...I_RUN1_B], PAL_I),
       run2: buildSprite([...I_HEAD, ...I_RUN2_B], PAL_I),
-      throw: buildSprite([...I_HEAD, ...I_THROW_B], PAL_I)
+      throw: buildSprite([...I_HEAD, ...I_THROW_B], PAL_I),
+      dive: buildSprite([...I_HEAD, ...I_DIVE_B], PAL_I)
     }
   },
   leon: {
@@ -106,7 +114,8 @@ export const CHARS = {
       idle: buildSprite([...L_HEAD, ...L_IDLE_B], PAL_L),
       run1: buildSprite([...L_HEAD, ...L_RUN1_B], PAL_L),
       run2: buildSprite([...L_HEAD, ...L_RUN2_B], PAL_L),
-      throw: buildSprite([...L_HEAD, ...L_THROW_B], PAL_L)
+      throw: buildSprite([...L_HEAD, ...L_THROW_B], PAL_L),
+      dive: buildSprite([...L_HEAD, ...L_DIVE_B], PAL_L)
     }
   }
 };

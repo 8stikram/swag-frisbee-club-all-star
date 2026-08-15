@@ -2,7 +2,7 @@ import { G, Mouse } from './state.js';
 import { $, cv, W, H, curScreen, showScreen, moveMenu, activateMenu, setSelIdx, menuButtons } from '../core/dom.js';
 import {
   COURT, CX, DASH_SPEED, DASH_DECAY, DASH_CD, DASH_DIST, DASH_TIME, DASH_GAP,
-  CANCEL_GAP, CANCEL_CATCH, FEINT_TIME, FEINT_CD, throwSpeed
+  CANCEL_GAP, CANCEL_CATCH, FEINT_TIME, FEINT_CD, DASH_SLIDE, throwSpeed
 } from '../core/constants.js';
 import { clamp, norm, approach } from '../core/utils.js';
 import { getKey } from '../data/keymap.js';
@@ -295,8 +295,10 @@ export function integratePlayer(p, dt) {
     p.dashV.x = p.dashDir.x * v; p.dashV.y = p.dashDir.y * v;
     p.dashEnding = true;
   } else if (p.dashEnding) {
+    // Fin de dash : on garde une fraction de l'élan qui s'amortit tout seul,
+    // pour une décélération naturelle plutôt qu'un arrêt net.
     p.dashEnding = false;
-    p.dashV.x = 0; p.dashV.y = 0;
+    p.dashV.x *= DASH_SLIDE; p.dashV.y *= DASH_SLIDE;
   }
   p.dashV.x *= Math.exp(-DASH_DECAY * dt);
   p.dashV.y *= Math.exp(-DASH_DECAY * dt);
