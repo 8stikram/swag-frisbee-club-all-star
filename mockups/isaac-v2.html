@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Isaac — 3 niveaux de contour</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 50px}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:14px;margin:26px 0 10px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .sub{color:#8fa4c4;font-size:13px;margin:0 0 6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:730px;line-height:1.6;margin:0 0 12px}
+  .row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px}
+  .lbl{font-size:11px;color:#8fa4c4;text-transform:uppercase;letter-spacing:1.1px;
+       margin-bottom:8px;text-align:center;min-height:26px}
+  .lbl b{color:var(--ok)}
+  canvas{display:block;image-rendering:pixelated;margin:0 auto}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok)}
+  #errs.bad{color:#ff5340}
+  ul{font-size:12.5px;color:#8fa4c4;line-height:1.8;max-width:730px;margin:0 0 12px;padding-left:20px}
+  ul b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<h1>Isaac — quel niveau de contour ?</h1>
+<p class="sub">Larmes permanentes. Les 3 versions à comparer, avec Naruto et Leon à côté pour juger la cohérence.</p>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>Ce que je corrige dans tous les cas</h2>
+<ul>
+  <li><b>La peau passe au rose pâle.</b> Aujourd'hui elle est beige/crème — sur toutes tes références Isaac est nettement rosé.</li>
+  <li><b>Reflet blanc dans les yeux.</b> Ses yeux sont de gros ovales noirs avec un point blanc : sans ce reflet ils font juste « deux trous ».</li>
+  <li><b>Tête plus grosse, corps plus petit.</b> Aujourd'hui son corps est presque aussi large que sa tête ; sur les références la tête écrase tout et le corps n'est qu'un petit tronc.</li>
+  <li><b>Larmes permanentes</b> sous les deux yeux, comme tu l'as choisi.</li>
+</ul>
+
+<h2>Les 3 niveaux de contour</h2>
+<p class="note">Le contour noir est LA signature du style Binding of Isaac — mais Isaac serait le seul des trois persos à en avoir.
+C'est fidélité contre homogénéité, à toi de trancher.</p>
+<div class="row" id="variants"></div>
+
+<h2>Cohérence avec les deux autres</h2>
+<p class="note">Le vrai test : est-ce qu'il a l'air d'appartenir au même jeu que Naruto et Leon ?</p>
+<div class="row" id="trio1"></div>
+<div class="row" id="trio2" style="margin-top:14px"></div>
+<div class="row" id="trio3" style="margin-top:14px"></div>
+
+<h2>À la taille réelle du jeu</h2>
+<div class="row" id="real"></div>
+
+<script>
+// ------------------------------------------------------------------ palettes
+const PAL_ACT = { S:'#f7ddc0', s:'#d9b58d', E:'#14100c', T:'#7fd8ff' };
+// peau rosée + reflet blanc dans l'œil
+const BASE   = { S:'#f2cfcb', s:'#d8a9a5', E:'#151013', T:'#8fd8e8', W:'#ffffff' };
+const PAL_FORT  = Object.assign({}, BASE, { K:'#151013' });   // contour noir franc
+const PAL_LEGER = Object.assign({}, BASE, { K:'#8a6360' });   // contour sombre doux
+const PAL_SANS  = Object.assign({}, BASE, { K:'#f2cfcb' });   // "contour" = la peau -> invisible
+
+const PAL_NARUTO = { H:'#ffd23e', h:'#e2a71c', M:'#d9dfe8', S:'#f8c890', s:'#d99a63',
+  w:'#c08050', E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#f2f2f5', K:'#1e1e24', P:'#e5730f' };
+const PAL_LEON = { L:'#7a4f2c', l:'#4e2f18', S:'#f0c090', s:'#cf9660', E:'#2c2a26',
+  J:'#42537d', j:'#26314d', V:'#b3bac6', B:'#e8b83a', W:'#eef1f6', D:'#2f3b59', K:'#1b1f2a' };
+
+// ------------------------------------------------------------------ ACTUEL
+const HEAD_ACT = ["................","....SSSSSSSS....","...SSSSSSSSSS...","..SSSSSSSSSSSS..",
+  "..SSSSSSSSSSSS..","..SEESSSSSSEES..","..SEESSSSSSEES..","..SSTSSSSSSTSS..",
+  "...SSSssssSSS...","....SSSSSSSS....",".....SSSSSS....."];
+const IDLE_ACT = [".....SSSSSS.....","....SSSSSSSS....","...SSSSSSSSSS...","..sSSSSSSSSSSs..",
+  "..s.SSSSSSSS.s..","....SSSSSSSS....","....SS....SS....","....SS....SS....",
+  "...ss......ss...","................"];
+
+// ------------------------------------------------------------------ NOUVEAU
+// Les 3 variantes partagent exactement ces lignes : seule la couleur du K change.
+const HEAD_NEW = [".....KKKKKK.....","...KKSSSSSSKK...","..KSSSSSSSSSSK..",".KSSSSSSSSSSSSK.",
+  ".KSSSSSSSSSSSSK.",".KSWESSSSSSWESK.",".KSEESSSSSSEESK.",".KSSTSSKKSSTSSK.",
+  "..KSTSSSSSSTSK..","...KKSSSSSSKK...",".....KKKKKK....."];
+const IDLE_NEW = ["....KSSSSSSK....","..KKSSSSSSSSKK..","..KSSSSSSSSSSK..","...KSSSSSSSSK...",
+  "....KSSSSSSK....","....KKSSSSKK....",".....KSSSSK.....",".....KSKKSK.....",
+  ".....KKKKK......","................"];
+const RUN1_NEW = ["....KSSSSSSK....","..KKSSSSSSSSK...","..KSSSSSSSSSSK..","...KSSSSSSSSK...",
+  "....KSSSSSSK....","....KKSSSSKK....","....KSK..KSK....","...KSK....KSK...",
+  "...KKK....KKK...","................"];
+const RUN2_NEW = ["....KSSSSSSK....","...KSSSSSSSSKK..","..KSSSSSSSSSSK..","...KSSSSSSSSK...",
+  "....KSSSSSSK....","....KKSSSSKK....",".....KSSSSK.....",".....KSKKSK.....",
+  ".....KKKKK......","................"];
+const THROW_NEW = ["....KSSSSSSK....","..KKSSSSSSSSKKK.","..KSSSSSSSSSSKK.","...KSSSSSSSSK...",
+  "....KSSSSSSK....","....KKSSSSKK....",".....KSSSSK.....","....KSK..KSK....",
+  "....KKK..KKK....","................"];
+
+// les deux autres persos, pour la comparaison
+const N_HEAD=["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....",
+  "..KKKKKKKKKK....","..KKMMMMMMKK....","..SSSSSSSSSS....","..SESSSSESS.....",
+  "..swSSSSSSws....","...SSSSSSSS....."];
+const N_IDLE=["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...",
+  "..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....",
+  "..PPP....PPP....","..KKK....KKK...."];
+const L_HEAD=["....lLLLLl......","...LLLLLLLL.....","..LLLLLLLLLL....","..LLLLllLLLL....",
+  "..LLSSSSSSLL....","..LSSSSSSSSL....","..SESSSSESS.....","..SSSSSSSSSS....",
+  "...SSSSSSSS.....","....JJJJJJ......"];
+const L_IDLE=["..KKKKKKKKKB....",".VKKKKKKKKKKV...",".VKKWKWKWKKKV...",".SKKKKKKKKKKS...",
+  "..JJJJJJJJJJ....","..KKKKVKKKKK....","...DD....DD.....","...KK....KK.....",
+  "...DD....DD.....","..KKK....KKK...."];
+
+// ------------------------------------------------------------------ outils
+function build(rows, pal){
+  const c=document.createElement('canvas'); c.width=16; c.height=rows.length;
+  const g=c.getContext('2d');
+  rows.forEach((r,y)=>{ for(let x=0;x<r.length;x++){ const ch=r[x];
+    if(ch!=='.'&&pal[ch]){ g.fillStyle=pal[ch]; g.fillRect(x,y,1,1); } } });
+  return c;
+}
+function show(parent, rows, pal, label, scale){
+  const card=document.createElement('div'); card.className='card';
+  const l=document.createElement('div'); l.className='lbl'; l.innerHTML=label;
+  const cv=document.createElement('canvas');
+  cv.width=16*scale; cv.height=rows.length*scale;
+  const g=cv.getContext('2d'); g.imageSmoothingEnabled=false;
+  g.fillStyle='#101a2e'; g.fillRect(0,0,cv.width,cv.height);
+  g.drawImage(build(rows,pal),0,0,cv.width,cv.height);
+  card.appendChild(l); card.appendChild(cv); parent.appendChild(card);
+}
+
+// ------------------------------------------------------------------ validation
+(function(){
+  const sets={HEAD_NEW,IDLE_NEW,RUN1_NEW,RUN2_NEW,THROW_NEW,HEAD_ACT,IDLE_ACT};
+  const bad=[]; const missing=new Set();
+  for(const k in sets) sets[k].forEach((r,i)=>{ if(r.length!==16) bad.push(`${k}[${i}]=${r.length}`); });
+  [HEAD_NEW,IDLE_NEW,RUN1_NEW,RUN2_NEW,THROW_NEW].forEach(a=>a.forEach(r=>{
+    for(const ch of r) if(ch!=='.'&&!PAL_FORT[ch]) missing.add(ch); }));
+  const box=document.getElementById('errs');
+  if(bad.length||missing.size){ box.className='bad';
+    box.textContent=(bad.length?'Largeurs incorrectes : '+bad.join(', ')+'\n':'')
+      +(missing.size?'Couleurs manquantes : '+[...missing].join(' '):''); }
+  else box.textContent='OK — toutes les lignes font 16 px, toutes les couleurs sont définies.';
+})();
+
+// ------------------------------------------------------------------ rendus
+const NEW = [...HEAD_NEW, ...IDLE_NEW];
+const v=document.getElementById('variants');
+show(v, [...HEAD_ACT,...IDLE_ACT], PAL_ACT,   'ACTUEL<br>(beige, sans contour)', 9);
+show(v, NEW, PAL_SANS,  '1 — sans contour<br>(homogène)',        9);
+show(v, NEW, PAL_LEGER, '2 — contour léger<br>(compromis)',      9);
+show(v, NEW, PAL_FORT,  '3 — contour noir<br><b>(fidèle)</b>',   9);
+
+function trio(id, pal, label){
+  const box=document.getElementById(id);
+  const t=document.createElement('div'); t.className='card';
+  t.innerHTML='<div class="lbl">'+label+'</div>';
+  box.appendChild(t);
+  show(box, [...N_HEAD,...N_IDLE], PAL_NARUTO, 'Naruto', 6);
+  show(box, NEW,                   pal,        'Isaac',  6);
+  show(box, [...L_HEAD,...L_IDLE], PAL_LEON,   'Leon',   6);
+}
+trio('trio1', PAL_SANS,  'sans<br>contour');
+trio('trio2', PAL_LEGER, 'contour<br>léger');
+trio('trio3', PAL_FORT,  'contour<br>noir');
+
+const real=document.getElementById('real');
+show(real, [...HEAD_ACT,...IDLE_ACT], PAL_ACT,  'actuel · ×2,4', 2.4);
+show(real, NEW, PAL_SANS,  'sans · ×2,4',   2.4);
+show(real, NEW, PAL_LEGER, 'léger · ×2,4',  2.4);
+show(real, NEW, PAL_FORT,  'noir · ×2,4',   2.4);
+show(real, NEW, PAL_SANS,  'sans · ×5',     5);
+show(real, NEW, PAL_LEGER, 'léger · ×5',    5);
+show(real, NEW, PAL_FORT,  'noir · ×5',     5);
+</script>
+</body>
+</html>

@@ -22,11 +22,17 @@ const PAL_N = { H: '#ffd23e', h: '#e2a71c', M: '#d9dfe8', S: '#f8c890', s: '#d99
 // J est un bleu volontairement un peu clair : sans ça Leon devient une masse noire
 // sur le fond spatial déjà sombre.
 const PAL_L = { L: '#7a4f2c', l: '#4e2f18', S: '#f0c090', s: '#cf9660', E: '#2c2a26', J: '#42537d', j: '#26314d', V: '#b3bac6', B: '#e8b83a', W: '#eef1f6', D: '#2f3b59', K: '#1b1f2a' };
-const PAL_I = { S: '#f7ddc0', s: '#d9b58d', E: '#14100c', T: '#7fd8ff' };
+// K : le gros contour noir, signature du style Binding of Isaac — sans lui la tête
+// et le corps fusionnent en une seule masse. W : le reflet blanc dans l'œil, sans
+// lequel les yeux ne sont que deux trous. T : les larmes, permanentes.
+const PAL_I = { S: '#f2cfcb', s: '#d8a9a5', E: '#151013', T: '#8fd8e8', W: '#ffffff', K: '#151013' };
 
 // Tête partagée par les 4 poses : tignasse en pics (sa signature), bandeau noir
 // à plaque, moustaches d'1 px par joue.
-const N_HEAD = ["...hH.HH.Hh.....", "..HHHHHHHHHH....", ".hHHHHHHHHHHh...", "..hHHHHHHHHh....", "..KKKKKKKKKK....", "..KKMMMMMMKK....", "..SSSSSSSSSS....", "..SESSSSESS.....", "..swSSSSSSws....", "...SSSSSSSS....."];
+// Les yeux sont volontairement décalés d'un pixel à droite du centre de la tête :
+// sans ça le visage regarde à gauche en permanence et le miroir horizontal
+// (render.js, p.face) ne se lit pas. Sprite naturel = tourné vers la droite.
+const N_HEAD = ["...hH.HH.Hh.....", "..HHHHHHHHHH....", ".hHHHHHHHHHHh...", "..hHHHHHHHHh....", "..KKKKKKKKKK....", "..KKMMMMMMKK....", "..SSSSSSSSSS....", "..SSSESSSSES....", "..swSSSSSSws....", "...SSSSSSSS....."];
 // Veste Shippuden : col et épaules noirs, fermeture éclair noire au centre,
 // bande noire au-dessus de la ceinture, puis pantalon orange à bande blanche
 // (jambe gauche) et sandales noires.
@@ -36,7 +42,9 @@ const N_RUN2_B = ["....KKKKKK......", "..KKKKKKKKKK....", "...KKKKKKKKKS...", ".
 const N_THROW_B = ["....KKKKKK......", "..KKKKKKKKKK....", "..KKKKKKKKKKSS..", "..OOOOKKOOOOSS..", "..OOOOKKOOOO....", "..KKKKKKKKKK....", "..PP.....PP.....", "..WW......PP....", ".PPP......PPP...", ".KKK......KKK..."];
 
 // Tête partagée : coupe à raie au milieu, les cheveux encadrent le visage des deux côtés.
-const L_HEAD = ["....lLLLLl......", "...LLLLLLLL.....", "..LLLLLLLLLL....", "..LLLLllLLLL....", "..LLSSSSSSLL....", "..LSSSSSSSSL....", "..SESSSSESS.....", "..SSSSSSSSSS....", "...SSSSSSSS.....", "....JJJJJJ......"];
+// Yeux décalés d'un pixel à droite, même raison que pour Naruto : c'est ce qui
+// rend le miroir horizontal lisible quand il se tourne vers la souris.
+const L_HEAD = ["....lLLLLl......", "...LLLLLLLL.....", "..LLLLLLLLLL....", "..LLLLllLLLL....", "..LLSSSSSSLL....", "..LSSSSSSSSL....", "..SSSESSSSES....", "..SSSSSSSSSS....", "...SSSSSSSS.....", "....JJJJJJ......"];
 // Gilet pare-balles noir montant jusqu'aux épaules, R.P.D. en 3 points, ceinture
 // dégagée sous le gilet, protège-genoux à la largeur de la jambe (sans déborder).
 const L_IDLE_B = ["..KKKKKKKKKB....", ".VKKKKKKKKKKV...", ".VKKWKWKWKKKV...", ".SKKKKKKKKKKS...", "..JJJJJJJJJJ....", "..KKKKVKKKKK....", "...DD....DD.....", "...KK....KK.....", "...DD....DD.....", "..KKK....KKK...."];
@@ -44,11 +52,16 @@ const L_RUN1_B = ["..KKKKKKKKKB....", ".VKKKKKKKKKK....", "...KWKWKWKKKV...", ".
 const L_RUN2_B = ["..KKKKKKKKKB....", "...KKKKKKKKKV...", ".VKKWKWKWKKK....", "..KKKKKKKKKKS...", "..JJJJJJJJJJ....", "..KKKKVKKKKK....", "...DD....DD.....", "...KK....KK.....", "...DD....DD.....", "..KKK....KKK...."];
 const L_THROW_B = ["..KKKKKKKKKB....", "..KKKKKKKKKKVV..", "..KKWKWKWKKKVV..", "..KKKKKKKKKK....", "..JJJJJJJJJJ....", "..KKKKVKKKKK....", "..DD.....DD.....", "..KK.....KK.....", ".DDD......DDD...", ".KKK......KKK..."];
 
-const I_HEAD = ["................", "....SSSSSSSS....", "...SSSSSSSSSS...", "..SSSSSSSSSSSS..", "..SSSSSSSSSSSS..", "..SEESSSSSSEES..", "..SEESSSSSSEES..", "..SSTSSSSSSTSS..", "...SSSssssSSS...", "....SSSSSSSS....", ".....SSSSSS....."];
-const I_IDLE_B = [".....SSSSSS.....", "....SSSSSSSS....", "...SSSSSSSSSS...", "..sSSSSSSSSSSs..", "..s.SSSSSSSS.s..", "....SSSSSSSS....", "....SS....SS....", "....SS....SS....", "...ss......ss...", "................"];
-const I_RUN1_B = [".....SSSSSS.....", "....SSSSSSSS....", "..sSSSSSSSSSS...", "....SSSSSSSS.s..", "....SSSSSSSS....", "....SSSSSSSS....", "...SS......SS...", "..SS........SS..", "..ss........ss..", "................"];
-const I_RUN2_B = [".....SSSSSS.....", "....SSSSSSSS....", "....SSSSSSSSs...", "..s.SSSSSSSS....", "....SSSSSSSS....", "....SSSSSSSS....", "....SS....SS....", "....SS....SS....", "...ss......ss...", "................"];
-const I_THROW_B = [".....SSSSSS.....", "....SSSSSSSS....", "...SSSSSSSSSS...", "...SSSSSSSSSSss.", "...SSSSSSSSSSss.", "....SSSSSSSS....", "....SS....SS....", "...SS......SS...", "...ss......ss...", "................"];
+// Grosse tête ronde entièrement cernée de noir, yeux à reflet blanc, larmes permanentes.
+// Centrée sur la colonne 6,5 comme le corps et comme les deux autres persos :
+// un décalage d'un seul pixel se voyait immédiatement à l'écran.
+const I_HEAD = ["....KKKKKK......", "..KKSSSSSSKK....", ".KSSSSSSSSSSK...", ".KSSSSSSSSSSK...", ".KSSSSSSSSSSK...", ".KSWESSSSWESK...", ".KSEESSSSEESK...", ".KSTSSKKSSTSK...", "..KTSSSSSSTK....", "..KKSSSSSSKK....", "....KKKKKK......"];
+// Corps au même gabarit que Naruto et Leon (bras jusqu'aux colonnes 1 et 12,
+// jambes aux mêmes positions), pour qu'Isaac ne paraisse pas chétif à côté d'eux.
+const I_IDLE_B = ["...KKKKKKKK.....", "..KSSSSSSSSK....", ".KSSSSSSSSSSK...", ".KSSSSSSSSSSK...", "..KSSSSSSSSK....", "..KSSSSSSSSK....", "...KSSKKSSK.....", "..KSSK..KSSK....", "..KSSK..KSSK....", "..KKKK..KKKK...."];
+const I_RUN1_B = ["...KKKKKKKK.....", "..KSSSSSSSSK....", ".KSSSSSSSSSSK...", "..KSSSSSSSSK....", "..KSSSSSSSSK....", "..KSSSSSSSSK....", "..KSSK..KSSK....", ".KSSK....KSSK...", ".KSSK....KSSK...", "KKKK......KKKK.."];
+const I_RUN2_B = ["...KKKKKKKK.....", "..KSSSSSSSSK....", "..KSSSSSSSSSSK..", ".KSSSSSSSSK.....", "..KSSSSSSSSK....", "..KSSSSSSSSK....", "...KSSKKSSK.....", "..KSSK..KSSK....", "..KSSK..KSSK....", "..KKKK..KKKK...."];
+const I_THROW_B = ["...KKKKKKKK.....", "..KSSSSSSSSKK...", "..KSSSSSSSSSSKK.", "..KSSSSSSSSSSKK.", "..KSSSSSSSSK....", "..KSSSSSSSSK....", "...KSSKKSSK.....", "..KSSK..KSSK....", "..KSSK..KSSK....", "..KKKK..KKKK...."];
 
 export const ROSTER = ['naruto', 'isaac', 'leon'];
 
