@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Leon S. Kennedy — plus accurate</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 50px}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:14px;margin:26px 0 10px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .sub{color:#8fa4c4;font-size:13px;margin:0 0 6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:720px;line-height:1.6;margin:0 0 12px}
+  .row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px}
+  .card.pick{border-color:var(--ok);box-shadow:0 0 0 1px var(--ok) inset}
+  .lbl{font-size:11px;color:#8fa4c4;text-transform:uppercase;letter-spacing:1.1px;
+       margin-bottom:8px;text-align:center;min-height:26px}
+  .lbl b{color:var(--ok)}
+  canvas{display:block;image-rendering:pixelated;margin:0 auto}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok)}
+  #errs.bad{color:#ff5340}
+  ul{font-size:12.5px;color:#8fa4c4;line-height:1.8;max-width:720px;margin:0 0 12px;padding-left:20px}
+  ul b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<h1>Leon S. Kennedy — plus accurate</h1>
+<p class="sub">Même méthode que Naruto : style 16×20 conservé, corrections de reconnaissance uniquement.</p>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>Ce que je corrige</h2>
+<ul>
+  <li><b>Le gilet passe au noir.</b> Aujourd'hui il est gris clair — c'est l'erreur principale, sur toutes tes photos c'est un gilet tactique noir.</li>
+  <li><b>« R.P.D. » en blanc sur la poitrine.</b> C'est ce qui le rend identifiable au premier coup d'œil, et ça manque complètement.</li>
+  <li><b>Manches gris clair</b> aux avant-bras — très reconnaissables, et elles ressortent bien sur le fond sombre.</li>
+  <li><b>Écusson doré</b> à l'épaule.</li>
+  <li><b>Mèche sur le côté</b> au lieu de la coupe symétrique en casque.</li>
+  <li><b>Rangers noires</b> et genouillères marquées.</li>
+</ul>
+
+<h2>Actuel contre nouveau</h2>
+<div class="row" id="cmp"></div>
+
+<h2>À la taille réelle du jeu</h2>
+<p class="note">C'est ici qu'il faut juger : voilà ce que tu verras en jouant.</p>
+<div class="row" id="real"></div>
+
+<h2>Les 4 animations</h2>
+<div class="row" id="anim"></div>
+
+<h2>Et à côté du nouveau Naruto</h2>
+<p class="note">Pour vérifier que les deux persos restent cohérents entre eux.</p>
+<div class="row" id="duo"></div>
+
+<script>
+// ------------------------------------------------------------------ palettes
+const PAL_OLD = { L:'#6f4526', l:'#4e2f18', S:'#f0c090', s:'#cf9660', E:'#2c2a26',
+  J:'#2e3c5c', j:'#202b44', V:'#9aa2ad', B:'#e8b83a', W:'#e8ecf2', D:'#222c44', K:'#171c2c' };
+
+// V : manches gris clair · K : gilet + rangers noirs · W : le marquage R.P.D.
+const PAL_NEW = { L:'#7a4f2c', l:'#4e2f18', S:'#f0c090', s:'#cf9660', E:'#2c2a26',
+  J:'#36446a', j:'#26314d', V:'#b3bac6', B:'#e8b83a', W:'#eef1f6', D:'#2c3757', K:'#1b1f2a' };
+
+const PAL_NARUTO = { H:'#ffd23e', h:'#e2a71c', M:'#d9dfe8', S:'#f8c890', s:'#d99a63',
+  w:'#c08050', E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#f2f2f5', K:'#1e1e24', P:'#e5730f' };
+
+// ------------------------------------------------------------------ ACTUEL
+const HEAD_OLD = ["....lLLLLl......","...LLLLLLLL.....","..LLLLLLLLLL....","..LlSSSSSSlL....",
+  "..LSSSSSSSSL....","..SSSSSSSSSS....","..SESSSSESS.....","..SSSSSSSSSS....",
+  "...SSSSSSSS.....","....WWWWWW......"];
+const IDLE_OLD = ["..JJJJJJJJJJ....",".SVVVVVVVVVJS...",".SVVBVVVVVVJS...",".SVVVVVVVVVJS...",
+  "..JJJJJJJJJJ....","..jJJJJJJJJj....","...DD....DD.....","...DD....DD.....",
+  "..DDD....DDD....","..KKK....KKK...."];
+
+// ------------------------------------------------------------------ NOUVEAU
+// Raie au milieu : les cheveux encadrent le visage des deux côtés.
+const HEAD_NEW = ["....lLLLLl......","...LLLLLLLL.....","..LLLLLLLLLL....","..LLLLllLLLL....",
+  "..LLSSSSSSLL....","..LSSSSSSSSL....","..SESSSSESS.....","..SSSSSSSSSS....",
+  "...SSSSSSSS.....","....JJJJJJ......"];
+// Gilet jusqu'aux épaules, R.P.D. en 3 points, ceinture dégagée, protège-genoux.
+const IDLE_NEW = ["..KKKKKKKKKB....",".VKKKKKKKKKKV...",".VKKWKWKWKKKV...",".SKKKKKKKKKKS...",
+  "..JJJJJJJJJJ....","..KKKKVKKKKK....","...DD....DD.....","..KKK....KKK....",
+  "...DD....DD.....","..KKK....KKK...."];
+const RUN1_NEW = ["..KKKKKKKKKB....",".VKKKKKKKKKK....","...KWKWKWKKKV...","..KKKKKKKKKKS...",
+  "..JJJJJJJJJJ....","..KKKKVKKKKK....","..DD......DD....",".KKK......KKK...",
+  ".DD........DD...","KKK........KKK.."];
+const RUN2_NEW = ["..KKKKKKKKKB....","...KKKKKKKKKV...",".VKKWKWKWKKK....","..KKKKKKKKKKS...",
+  "..JJJJJJJJJJ....","..KKKKVKKKKK....","...DD....DD.....","..KKK....KKK....",
+  "...DD....DD.....","..KKK....KKK...."];
+const THROW_NEW = ["..KKKKKKKKKB....","..KKKKKKKKKKVV..","..KKWKWKWKKKVV..","..KKKKKKKKKK....",
+  "..JJJJJJJJJJ....","..KKKKVKKKKK....","..DD.....DD.....","..KKK....KKK....",
+  ".DDD......DDD...",".KKK......KKK..."];
+
+// Naruto validé, pour la comparaison de cohérence
+const N_HEAD = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....",
+  "..KKKKKKKKKK....","..KKMMMMMMKK....","..SSSSSSSSSS....","..SESSSSESS.....",
+  "..swSSSSSSws....","...SSSSSSSS....."];
+const N_IDLE = ["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...",
+  "..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....",
+  "..PPP....PPP....","..KKK....KKK...."];
+
+// ------------------------------------------------------------------ outils
+function build(rows, pal){
+  const c=document.createElement('canvas'); c.width=16; c.height=rows.length;
+  const g=c.getContext('2d');
+  rows.forEach((r,y)=>{ for(let x=0;x<r.length;x++){ const ch=r[x];
+    if(ch!=='.'&&pal[ch]){ g.fillStyle=pal[ch]; g.fillRect(x,y,1,1); } } });
+  return c;
+}
+function show(parent, rows, pal, label, scale, pick){
+  const card=document.createElement('div'); card.className='card'+(pick?' pick':'');
+  const l=document.createElement('div'); l.className='lbl'; l.innerHTML=label;
+  const cv=document.createElement('canvas');
+  cv.width=16*scale; cv.height=rows.length*scale;
+  const g=cv.getContext('2d'); g.imageSmoothingEnabled=false;
+  g.fillStyle='#101a2e'; g.fillRect(0,0,cv.width,cv.height);
+  g.drawImage(build(rows,pal),0,0,cv.width,cv.height);
+  card.appendChild(l); card.appendChild(cv); parent.appendChild(card);
+}
+
+// ------------------------------------------------------------------ validation
+(function(){
+  const sets={HEAD_NEW,IDLE_NEW,RUN1_NEW,RUN2_NEW,THROW_NEW,HEAD_OLD,IDLE_OLD};
+  const bad=[]; const missing=new Set();
+  for(const k in sets) sets[k].forEach((r,i)=>{ if(r.length!==16) bad.push(`${k}[${i}]=${r.length}`); });
+  [HEAD_NEW,IDLE_NEW,RUN1_NEW,RUN2_NEW,THROW_NEW].forEach(a=>a.forEach(r=>{
+    for(const ch of r) if(ch!=='.'&&!PAL_NEW[ch]) missing.add(ch); }));
+  const box=document.getElementById('errs');
+  if(bad.length||missing.size){ box.className='bad';
+    box.textContent=(bad.length?'Largeurs incorrectes : '+bad.join(', ')+'\n':'')
+      +(missing.size?'Couleurs manquantes : '+[...missing].join(' '):''); }
+  else box.textContent='OK — toutes les lignes font 16 px, toutes les couleurs sont définies.';
+})();
+
+// ------------------------------------------------------------------ rendus
+const cmp=document.getElementById('cmp');
+show(cmp, [...HEAD_OLD,...IDLE_OLD], PAL_OLD, 'ACTUEL<br>(gilet gris, pas de R.P.D.)', 10);
+show(cmp, [...HEAD_NEW,...IDLE_NEW], PAL_NEW, 'NOUVEAU<br><b>gilet noir + R.P.D.</b>',  10, true);
+
+const real=document.getElementById('real');
+show(real, [...HEAD_OLD,...IDLE_OLD], PAL_OLD, 'actuel · ×2,4',  2.4);
+show(real, [...HEAD_NEW,...IDLE_NEW], PAL_NEW, 'nouveau · ×2,4', 2.4, true);
+show(real, [...HEAD_OLD,...IDLE_OLD], PAL_OLD, 'actuel · ×5',    5);
+show(real, [...HEAD_NEW,...IDLE_NEW], PAL_NEW, 'nouveau · ×5',   5, true);
+
+const anim=document.getElementById('anim');
+show(anim, [...HEAD_NEW,...IDLE_NEW],  PAL_NEW, 'idle',     6);
+show(anim, [...HEAD_NEW,...RUN1_NEW],  PAL_NEW, 'course 1', 6);
+show(anim, [...HEAD_NEW,...RUN2_NEW],  PAL_NEW, 'course 2', 6);
+show(anim, [...HEAD_NEW,...THROW_NEW], PAL_NEW, 'lancer',   6);
+
+const duo=document.getElementById('duo');
+show(duo, [...N_HEAD,...N_IDLE],      PAL_NARUTO, 'Naruto (validé)', 7);
+show(duo, [...HEAD_NEW,...IDLE_NEW],  PAL_NEW,    'Leon (nouveau)',  7);
+</script>
+</body>
+</html>

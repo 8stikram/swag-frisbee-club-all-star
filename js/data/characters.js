@@ -17,7 +17,11 @@ export function buildSprite(rows, pal) {
 // P : l'orange du pantalon, volontairement plus terne que le O de la veste pour
 //     que les deux se distinguent. w : les moustaches.
 const PAL_N = { H: '#ffd23e', h: '#e2a71c', M: '#d9dfe8', S: '#f8c890', s: '#d99a63', w: '#c08050', E: '#173e8f', O: '#ff8c1a', o: '#d96b08', W: '#f2f2f5', K: '#1e1e24', P: '#e5730f' };
-const PAL_L = { L: '#6f4526', l: '#4e2f18', S: '#f0c090', s: '#cf9660', E: '#2c2a26', J: '#2e3c5c', j: '#202b44', V: '#9aa2ad', B: '#e8b83a', W: '#e8ecf2', D: '#222c44', K: '#171c2c' };
+// K : le gilet pare-balles, la ceinture et les rangers. V : les manches gris clair
+// et la boucle. W : le marquage R.P.D., découpé en 3 points pour lire 3 lettres.
+// J est un bleu volontairement un peu clair : sans ça Leon devient une masse noire
+// sur le fond spatial déjà sombre.
+const PAL_L = { L: '#7a4f2c', l: '#4e2f18', S: '#f0c090', s: '#cf9660', E: '#2c2a26', J: '#42537d', j: '#26314d', V: '#b3bac6', B: '#e8b83a', W: '#eef1f6', D: '#2f3b59', K: '#1b1f2a' };
 const PAL_I = { S: '#f7ddc0', s: '#d9b58d', E: '#14100c', T: '#7fd8ff' };
 
 // Tête partagée par les 4 poses : tignasse en pics (sa signature), bandeau noir
@@ -31,11 +35,14 @@ const N_RUN1_B = ["....KKKKKK......", "..KKKKKKKKKK....", ".SKKKKKKKKKK....", ".
 const N_RUN2_B = ["....KKKKKK......", "..KKKKKKKKKK....", "...KKKKKKKKKS...", ".SKOOOKKOOOO....", "..OOOOKKOOOO....", "..KKKKKKKKKK....", "...PP....PP.....", "...WW....PP.....", "..PPP....PPP....", "..KKK....KKK...."];
 const N_THROW_B = ["....KKKKKK......", "..KKKKKKKKKK....", "..KKKKKKKKKKSS..", "..OOOOKKOOOOSS..", "..OOOOKKOOOO....", "..KKKKKKKKKK....", "..PP.....PP.....", "..WW......PP....", ".PPP......PPP...", ".KKK......KKK..."];
 
-const L_HEAD = ["....lLLLLl......", "...LLLLLLLL.....", "..LLLLLLLLLL....", "..LlSSSSSSlL....", "..LSSSSSSSSL....", "..SSSSSSSSSS....", "..SESSSSESS.....", "..SSSSSSSSSS....", "...SSSSSSSS.....", "....WWWWWW......"];
-const L_IDLE_B = ["..JJJJJJJJJJ....", ".SVVVVVVVVVJS...", ".SVVBVVVVVVJS...", ".SVVVVVVVVVJS...", "..JJJJJJJJJJ....", "..jJJJJJJJJj....", "...DD....DD.....", "...DD....DD.....", "..DDD....DDD....", "..KKK....KKK...."];
-const L_RUN1_B = ["..JJJJJJJJJJ....", ".SJJJJJJJJJJ....", "...JJJJJJJJJS...", "..JJVVVVVVJJ....", "..jJJJJJJJJj....", "...JJJJJJJJ.....", "..DD......DD....", ".DD........DD...", ".DD........DD...", "KKK........KKK.."];
-const L_RUN2_B = ["..JJJJJJJJJJ....", "...JJJJJJJJJS...", ".SJJJJJJJJJJ....", "..JJVVVVVVJJ....", "..jJJJJJJJJj....", "...JJJJJJJJ.....", "...DD....DD.....", "...DD....DD.....", "..DDD....DDD....", "..KKK....KKK...."];
-const L_THROW_B = ["..JJJJJJJJJJ....", "..JJJJJJJJJJSS..", "..JJJJJJJJJJSS..", "..JJVVVVVVJJ....", "..jJJJJJJJJj....", "...JJJJJJJJ.....", "..DD.....DD.....", "..DD......DD....", ".DDD......DDD...", ".KKK......KKK..."];
+// Tête partagée : coupe à raie au milieu, les cheveux encadrent le visage des deux côtés.
+const L_HEAD = ["....lLLLLl......", "...LLLLLLLL.....", "..LLLLLLLLLL....", "..LLLLllLLLL....", "..LLSSSSSSLL....", "..LSSSSSSSSL....", "..SESSSSESS.....", "..SSSSSSSSSS....", "...SSSSSSSS.....", "....JJJJJJ......"];
+// Gilet pare-balles noir montant jusqu'aux épaules, R.P.D. en 3 points, ceinture
+// dégagée sous le gilet, protège-genoux à la largeur de la jambe (sans déborder).
+const L_IDLE_B = ["..KKKKKKKKKB....", ".VKKKKKKKKKKV...", ".VKKWKWKWKKKV...", ".SKKKKKKKKKKS...", "..JJJJJJJJJJ....", "..KKKKVKKKKK....", "...DD....DD.....", "...KK....KK.....", "...DD....DD.....", "..KKK....KKK...."];
+const L_RUN1_B = ["..KKKKKKKKKB....", ".VKKKKKKKKKK....", "...KWKWKWKKKV...", "..KKKKKKKKKKS...", "..JJJJJJJJJJ....", "..KKKKVKKKKK....", "..DD......DD....", "..KK......KK....", ".DD........DD...", "KKK........KKK.."];
+const L_RUN2_B = ["..KKKKKKKKKB....", "...KKKKKKKKKV...", ".VKKWKWKWKKK....", "..KKKKKKKKKKS...", "..JJJJJJJJJJ....", "..KKKKVKKKKK....", "...DD....DD.....", "...KK....KK.....", "...DD....DD.....", "..KKK....KKK...."];
+const L_THROW_B = ["..KKKKKKKKKB....", "..KKKKKKKKKKVV..", "..KKWKWKWKKKVV..", "..KKKKKKKKKK....", "..JJJJJJJJJJ....", "..KKKKVKKKKK....", "..DD.....DD.....", "..KK.....KK.....", ".DDD......DDD...", ".KKK......KKK..."];
 
 const I_HEAD = ["................", "....SSSSSSSS....", "...SSSSSSSSSS...", "..SSSSSSSSSSSS..", "..SSSSSSSSSSSS..", "..SEESSSSSSEES..", "..SEESSSSSSEES..", "..SSTSSSSSSTSS..", "...SSSssssSSS...", "....SSSSSSSS....", ".....SSSSSS....."];
 const I_IDLE_B = [".....SSSSSS.....", "....SSSSSSSS....", "...SSSSSSSSSS...", "..sSSSSSSSSSSs..", "..s.SSSSSSSS.s..", "....SSSSSSSS....", "....SS....SS....", "....SS....SS....", "...ss......ss...", "................"];
