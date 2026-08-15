@@ -383,7 +383,17 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
   color:#fff;-webkit-text-stroke:3.5px var(--ink);paint-order:stroke fill;letter-spacing:.06em}
 .bar{height:2.8cqh;min-height:11px;background:#fff;border:3px solid var(--ink);
   box-shadow:3px 3px 0 var(--ink);display:flex;overflow:hidden}
-.bar i{display:block;height:100%}
+/* La barre garde sa couleur propre : le dégradé n'est qu'un reflet clair qui la
+   parcourt, obtenu en superposant un voile blanc translucide animé. */
+.bar i{
+  display:block;height:100%;position:relative;overflow:hidden;
+  background-image:linear-gradient(100deg,
+    rgba(255,255,255,0) 0%, rgba(255,255,255,.45) 42%,
+    rgba(255,255,255,.62) 50%, rgba(255,255,255,.45) 58%, rgba(255,255,255,0) 100%);
+  background-size:260% 100%;background-repeat:no-repeat;
+  animation:statShine 2.8s linear infinite;
+}
+@keyframes statShine{from{background-position:180% 0}to{background-position:-80% 0}}
 
 .gridwrap{display:flex;flex-direction:column;align-items:center;gap:1.2cqh}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.8cqh}

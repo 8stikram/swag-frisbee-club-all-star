@@ -1,6 +1,6 @@
 import { G, Mouse } from '../game/state.js';
 import { ctx, W, H } from '../core/dom.js';
-import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG_RADIUS, TARGET, DIVE_TIME, DIVE_RANGE, DASH_CATCH_MULT } from '../core/constants.js';
+import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG_RADIUS, TARGET, DIVE_TIME, DIVE_RANGE, DASH_CATCH_MULT, DASH_GAP } from '../core/constants.js';
 import { dbg } from '../ui/admin.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
@@ -360,7 +360,12 @@ function drawGhosts(p) {
   for (const g of p.ghosts) {
     const img = c.frames[g.fr];
     ctx.save();
-    ctx.globalAlpha = clamp(g.life / .55, 0, 1) * .35;
+    // Les fantômes de dash s'effacent vite : le plus proche reste léger, les
+    // plus anciens deviennent quasi invisibles. La courbe au cube accentue
+    // franchement l'écart, là où une décroissance linéaire donnait une bouillie
+    // de silhouettes toutes aussi opaques les unes que les autres.
+    const k = clamp(g.life / .55, 0, 1);
+    ctx.globalAlpha = k * k * k * .22;
     ctx.translate(g.x, g.y - 30 * SCALE);
     if (g.face < 0) ctx.scale(-1, 1);
     ctx.drawImage(img, -24 * SCALE, 0, 48 * SCALE, 60 * SCALE);
@@ -378,8 +383,11 @@ function drawPlayer(p) {
     fr = 'idle';
     // Le plongeon a sa propre pose : sans elle il réutilisait celle du dash et
     // les deux actions étaient impossibles à distinguer.
+    // Les poses tiennent un peu au-delà de l'action : le dash ne dure que
+    // 0,17 s, la pose passait trop vite pour être perçue. dashGap et feintCd
+    // servent de rémanence sans rien changer au gameplay.
     if (p.diveT > 0 || p.diveDown > 0) fr = 'dive';
-    else if (p.dashT > 0) fr = 'dash';
+    else if (p.dashT > 0 || p.dashGap > DASH_GAP - .28) fr = 'dash';
     else if (p.holding && (p.charging || p.throwPoseT > 0)) fr = 'throw';
     else if (p.moving) fr = (Math.floor(p.walk) % 2) ? 'run1' : 'run2';
   }
