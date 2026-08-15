@@ -7,7 +7,7 @@ import { DISC_SKINS, getSkinId, setSkinId, drawSkinDisc, getFavSkin, setFavSkin 
 import { MAPS, setMapId } from '../data/maps.js';
 import { getKey } from '../data/keymap.js';
 import { MUSIC_TRACKS, getTrackId } from '../data/music.js';
-import { sfx, playTrack, stopTrack } from '../audio/audio.js';
+import { sfx, playTrack, stopTrack, duckMusic } from '../audio/audio.js';
 import { addPopup } from '../game/fx.js';
 import { requestLock } from '../game/input.js';
 import { refreshKeysUI } from './keybind-ui.js';
@@ -478,7 +478,7 @@ function cycleMusic(d) {
 }
 
 /* ---------- navigation ---------- */
-export function pauseGame() { Mouse.down = false; showScreen('pause'); }
+export function pauseGame() { Mouse.down = false; duckMusic(true); showScreen('pause'); }
 
 function startMatch() {
   resolveSkin();
@@ -497,7 +497,7 @@ export function doAct(act) {
     case 'back': sfx('select'); showScreen('title'); break;
     case 'fight': sfx('select'); showScreen('maps'); refreshMaps(); break;
     case 'startMatch': sfx('select'); startMatch(); break;
-    case 'resume': sfx('select'); showScreen(null); requestLock(); break;
+    case 'resume': sfx('select'); duckMusic(false); showScreen(null); requestLock(); break;
     case 'restart': sfx('select'); showScreen(null); initMatch(false, G.matchChar, G.matchCPU, G.matchDiff, G.isJ2J); requestLock(); break;
     case 'rematch': sfx('select'); showScreen(null); initMatch(false, G.matchChar, G.matchCPU, G.matchDiff, G.isJ2J); requestLock(); break;
     case 'changeChar': sfx('select'); initMatch(true); showScreen('select'); refreshSelect(); $('admin-panel').classList.remove('visible'); break;

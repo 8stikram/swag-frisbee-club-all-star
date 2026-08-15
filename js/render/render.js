@@ -1,6 +1,7 @@
 import { G, Mouse } from '../game/state.js';
 import { ctx, W, H } from '../core/dom.js';
-import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG_RADIUS, TARGET, DIVE_TIME } from '../core/constants.js';
+import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG_RADIUS, TARGET, DIVE_TIME, DIVE_RANGE, DASH_CATCH_MULT } from '../core/constants.js';
+import { dbg } from '../ui/admin.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { getSkinId, drawSkinDisc } from '../data/skins.js';
@@ -388,20 +389,39 @@ function drawPlayer(p) {
   if (p.face < 0) ctx.scale(-1, 1);
   // Plongeon : le perso bascule à l'horizontale. Après un plongeon dans le vide
   // il reste à plat au sol le temps de se relever — c'est le risque du whiff.
-  // Inclinaison très réduite : la pose de sprite porte désormais la lecture du
-  // plongeon, la rotation ne fait que l'accompagner.
-  if (p.diveT > 0) ctx.rotate(-0.3 * Math.min(1, p.diveT / DIVE_TIME));
-  else if (p.diveDown > 0) ctx.rotate(-0.42);
+  // Le plongeon bascule vers l'avant pour que la tête parte la première, comme
+  // une tête au corner : c'est elle qui va chercher le disque.
+  if (p.diveT > 0) ctx.rotate(-0.62 * Math.min(1, p.diveT / DIVE_TIME));
+  else if (p.diveDown > 0) ctx.rotate(-0.75);
   if (p.charging && !G.replay) ctx.translate(gauss() * p.charge * 2.4, gauss() * p.charge * 2.4);
   if (p.stun > 0) ctx.rotate(Math.sin(G.now * 14) * .12);
   ctx.drawImage(img, -24 * SCALE, 0, 48 * SCALE, 60 * SCALE);
   ctx.restore();
   if (p.charging && p.charge > 0 && !G.replay) {
-    ctx.strokeStyle = p.charge >= 1 ? '#ff5340' : c.accent;
+    const col = p.charge >= 1 ? '#ff5340' : c.accent;
+    const r = 32 * SCALE;
+    ctx.strokeStyle = col;
     ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 32 * SCALE, -Math.PI / 2, -Math.PI / 2 + TAU * p.charge);
+    ctx.arc(p.x, p.y, r, -Math.PI / 2, -Math.PI / 2 + TAU * p.charge);
     ctx.stroke();
+    // Petite flèche posée sur l'anneau de charge, dans la direction visée :
+    // l'adversaire voit où part le tir, ce qui donne tout leur sens au dash et
+    // à la feinte pour le prendre de vitesse.
+    const aim = p.human && !p.ai
+      ? Math.atan2(Mouse.y - p.y, Mouse.x - p.x)
+      : (p.ai && p.ai.emaTarget && p.ai.emaTarget.x
+        ? Math.atan2(p.ai.emaTarget.y - p.y, p.ai.emaTarget.x - p.x)
+        : (p.face >= 0 ? 0 : Math.PI));
+    ctx.save();
+    ctx.translate(p.x + Math.cos(aim) * r, p.y + Math.sin(aim) * r);
+    ctx.rotate(aim);
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(11, 0); ctx.lineTo(-5, -7); ctx.lineTo(-5, 7);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.restore();
   }
   if (p.human && !G.demo && !G.replay) {
     ctx.fillStyle = c.accent;
@@ -664,6 +684,80 @@ function drawReplayOverlay() {
   ctx.fillText('CLIQUE POUR PASSER', CX, H - 20);
 }
 
+// ---------------------------------------------------------------------------
+// Calques de debug, pilotés par les interrupteurs du panneau admin. Ils sont
+// dessinés en espace écran, après la caméra, pour rester lisibles.
+// ---------------------------------------------------------------------------
+let fpsT = 0, fpsN = 0, fpsVal = 0, fpsLast = 0;
+
+function drawDebug() {
+  if (!G.p1) return;
+
+  // Trajectoire prédite du disque : on simule ses rebonds à l'avance.
+  if (dbg.traj && G.disc && G.disc.free) {
+    let x = G.disc.x, y = G.disc.y, vx = G.disc.vx, vy = G.disc.vy;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,210,62,.75)'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
+    ctx.beginPath(); ctx.moveTo(x, y);
+    for (let i = 0; i < 220; i++) {
+      x += vx / 60; y += vy / 60;
+      if (y < COURT.top + 9) { y = COURT.top + 9; vy = -vy; }
+      if (y > COURT.bottom - 9) { y = COURT.bottom - 9; vy = -vy; }
+      ctx.lineTo(x, y);
+      if (x < COURT.left - 20 || x > COURT.right + 20) break;
+    }
+    ctx.stroke(); ctx.restore();
+  }
+
+  // Intentions de l'IA : sa cible courante et son état.
+  if (dbg.ia && G.p2 && G.p2.ai) {
+    const a = G.p2.ai;
+    ctx.save();
+    if (a.target) {
+      ctx.strokeStyle = 'rgba(53,224,255,.8)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(G.p2.x, G.p2.y); ctx.lineTo(a.target.x, a.target.y); ctx.stroke();
+      ctx.beginPath(); ctx.arc(a.target.x, a.target.y, 8, 0, TAU); ctx.stroke();
+    }
+    ctx.fillStyle = '#35e0ff';
+    ctx.font = '11px Consolas, monospace'; ctx.textAlign = 'center';
+    ctx.fillText(a.state + ' · aggro ' + a.aggro.toFixed(1), G.p2.x, G.p2.y - 60);
+    ctx.restore();
+  }
+
+  // Hitboxes : rayon d'attrapé de chaque joueur, élargi pendant un dash.
+  if (dbg.hitbox) {
+    ctx.save();
+    ctx.lineWidth = 2;
+    for (const p of [G.p1, G.p2]) {
+      if (!p) continue;
+      const bonus = (p.dashT > 0 || p.cancelCatchT > 0) ? DASH_CATCH_MULT : 1;
+      ctx.strokeStyle = bonus > 1 ? 'rgba(93,240,138,.9)' : 'rgba(255,255,255,.55)';
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.char.catchR * bonus, 0, TAU); ctx.stroke();
+      if (p.diveT > 0) {
+        ctx.strokeStyle = 'rgba(255,83,64,.9)';
+        ctx.beginPath(); ctx.arc(p.x, p.y, DIVE_RANGE, 0, TAU); ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  // Compteur d'images et charge par image.
+  if (dbg.fps) {
+    const now = performance.now();
+    if (fpsLast) { fpsT += now - fpsLast; fpsN++; }
+    fpsLast = now;
+    if (fpsT > 400) { fpsVal = Math.round(1000 / (fpsT / fpsN)); fpsT = 0; fpsN = 0; }
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(6, 6, 132, 44);
+    ctx.fillStyle = fpsVal >= 55 ? '#5df08a' : (fpsVal >= 30 ? '#ffd23e' : '#ff5340');
+    ctx.font = '13px Consolas, monospace'; ctx.textAlign = 'left';
+    ctx.fillText(fpsVal + ' fps', 14, 24);
+    ctx.fillStyle = '#9fb4dd'; ctx.font = '10px Consolas, monospace';
+    ctx.fillText('particules ' + G.particles.length + ' · trail ' + G.trail.length, 14, 40);
+    ctx.restore();
+  }
+}
+
 export function render() {
   ctx.save();
   if (G.shake > 0.3) ctx.translate(gauss() * G.shake, gauss() * G.shake);
@@ -712,6 +806,7 @@ export function render() {
   // Les bandes et le logo REPLAY sont en espace écran : dessinés dans la
   // transformation caméra, ils auraient été zoomés avec le terrain.
   if (G.replay) drawReplayOverlay();
+  drawDebug();
   // Flash du Perfect Dive, appliqué hors zoom pour couvrir tout l'écran.
   if (G.flash > 0) {
     ctx.fillStyle = 'rgba(255,255,255,' + (G.flash * .55).toFixed(3) + ')';

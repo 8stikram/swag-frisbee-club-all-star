@@ -49,8 +49,38 @@ function resumeSavedTrack() {
 let muffle = null;
 export function setMuffled(on) {
   if (muffle) muffle.frequency.setTargetAtTime(on ? 700 : 20000, AC ? AC.currentTime : 0, .05);
-  if (bgmEl) bgmEl.volume = musicVol * (on ? .35 : 1);
+  applyMusicVol();
 }
+
+// --- Atténuations temporaires, qui ne touchent jamais au réglage de l'utilisateur.
+// duck : la pause fait descendre la musique à zéro en une seconde environ.
+// solo : pendant qu'on règle un volume dans les options, on n'entend que la
+//        catégorie concernée, pour l'ajuster à l'oreille sans interférence.
+let duck = 1, duckTimer = null, solo = null;
+
+function applyMusicVol() {
+  if (!bgmEl) return;
+  let v = musicVol * duck;
+  if (solo === 'sfx') v = 0;
+  bgmEl.volume = Math.max(0, Math.min(1, v));
+}
+function applySfxVol() {
+  if (sfxGain) sfxGain.gain.value = (solo === 'music') ? 0 : sfxVol;
+}
+
+// Fondu de la musique, utilisé à la mise en pause et à la reprise.
+export function duckMusic(on) {
+  const cible = on ? 0 : 1;
+  clearInterval(duckTimer);
+  duckTimer = setInterval(() => {
+    duck += (cible - duck) * .18;
+    if (Math.abs(cible - duck) < .02) { duck = cible; clearInterval(duckTimer); }
+    applyMusicVol();
+  }, 40);
+}
+
+// Isole une catégorie le temps d'un réglage ; null rétablit tout.
+export function setSolo(kind) { solo = kind; applyMusicVol(); applySfxVol(); }
 
 export function initAudio() {
   if (AC) return;
@@ -128,13 +158,20 @@ export function sfx(n) {
 
 const musicSlider = document.getElementById('musicVol');
 const sfxSlider = document.getElementById('sfxVol');
+// Pendant qu'on règle la musique, les bruitages se taisent — et inversement —
+// pour juger chaque volume à l'oreille sans que l'autre vienne parasiter.
 musicSlider.addEventListener('input', function () {
   musicVol = this.value / 100;
-  if (bgmEl) bgmEl.volume = musicVol;
+  setSolo('music');
+  applyMusicVol();
   document.getElementById('musicVal').textContent = Math.round(musicVol * 100) + '%';
 });
+['change', 'pointerup', 'blur'].forEach(ev => musicSlider.addEventListener(ev, () => setSolo(null)));
 sfxSlider.addEventListener('input', function () {
   sfxVol = this.value / 100;
-  if (sfxGain) sfxGain.gain.value = sfxVol;
+  setSolo('sfx');
+  applySfxVol();
+  sfx('select');                 // un repère sonore pour juger le niveau
   document.getElementById('sfxVal').textContent = Math.round(sfxVol * 100) + '%';
 });
+['change', 'pointerup', 'blur'].forEach(ev => sfxSlider.addEventListener(ev, () => setSolo(null)));
