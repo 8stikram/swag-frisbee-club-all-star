@@ -14,6 +14,10 @@ import { render } from '../render/render.js';
 
 export function update(dt) {
   setDemoMuted(G.demo);
+  // Mise en scène du Perfect Dive : le zoom et le flash vivent en temps réel,
+  // pas en temps de jeu, pour rester lisibles pendant le ralenti.
+  if (G.zoom) { G.zoom.t += dt; if (G.zoom.t >= G.zoom.dur) G.zoom = null; }
+  if (G.flash > 0) G.flash = Math.max(0, G.flash - dt * 2.2);
   if (G.tsTimer > 0) { G.tsTimer -= dt; } else G.timescale = lerp(G.timescale, 1, .2);
   const wdt = dt * G.timescale;
   G.now += wdt;

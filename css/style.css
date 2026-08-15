@@ -6,6 +6,7 @@
 @property --accent { syntax: '<color>'; inherits: true; initial-value: #35e0ff; }
 
 :root{
+  --apane-w:min(17vw,210px);   /* largeur d'un volet admin */
   --ink:#111318;
   --yellow:#f5e63d; --green:#5df08a; --blue:#2f6bff; --red:#e5384f; --gray:#9aa0ac;
   --pastel:#aecbff;
@@ -158,10 +159,10 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 
 /* ================= BOUTONS ================= */
 .mbtn{
-  display:flex;align-items:center;gap:1cqw;justify-content:center;
-  font-family:'Archivo Black',sans-serif;font-size:clamp(11px,1.7cqh,17px);
-  color:var(--ink);background:rgba(255,255,255,.78);
-  padding:1.1cqh 1.4cqw;border:4px solid var(--ink);border-radius:15px;
+  display:flex;align-items:center;gap:1cqw;justify-content:space-between;
+  font-family:'Archivo Black',sans-serif;font-size:clamp(11px,1.85cqh,18px);
+  color:var(--ink);background:rgba(255,255,255,.96);
+  padding:1.15cqh 1.5cqw;border:4px solid var(--ink);border-radius:15px;
   box-shadow:6px 6px 0 var(--ink);cursor:pointer;text-align:center;
   transition:background .1s,color .1s,transform .1s,box-shadow .1s;
 }
@@ -170,6 +171,90 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
   border:3px solid currentColor;display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
 .mbtn .ico svg{width:60%;height:60%}
+/* Le libellé occupe l'espace central entre les deux icônes jumelles, ce qui le
+   garde parfaitement centré quelle que soit la longueur du texte. */
+.mbtn .lbl{flex:1;text-align:center}
+
+/* ---- écran de sélection : carrousel épuré et tour de jeu ----
+   Le texte tournant du fond est retiré ici (on garde le cercle et les
+   dégradés, qui suffisent). */
+.scr-select .ringwrap text{display:none}
+
+/* Description de l'ultime, sous les personnages et au-dessus du carrousel. */
+.scr-select .special{
+  position:absolute;left:50%;bottom:15.5cqh;transform:translateX(-50%);
+  z-index:6;text-align:center;max-width:46%;
+  background:rgba(255,255,255,.94);border:3px solid var(--ink);border-radius:12px;
+  box-shadow:4px 4px 0 var(--ink);padding:.7cqh 1.4cqw;color:var(--ink);
+}
+.scr-select .special b{
+  display:block;font-family:'Archivo Black',sans-serif;font-size:1.7cqh;letter-spacing:.04em;
+}
+.scr-select .special em{display:block;font-style:normal;font-size:1.35cqh;opacity:.72;margin-top:.2cqh}
+
+.discbar.bare{background:none;border:none;box-shadow:none;padding:0}
+.discbar.bare .discrow{background:none;border:none;box-shadow:none}
+.arrowBtn.ghost{
+  background:none;border:none;box-shadow:none;color:#fff;
+  font-size:2.6cqh;text-shadow:0 2px 6px rgba(0,0,0,.55);
+}
+.arrowBtn.ghost:hover{color:#fff;transform:scale(1.18)}
+.arrowBtn.ghost:active{transform:scale(.94);box-shadow:none}
+
+/* Indique à qui de choisir, en clignotant doucement. */
+.turnHint{
+  font-family:'Archivo Black',sans-serif;font-size:1.9cqh;letter-spacing:.12em;
+  text-align:center;margin-bottom:.6cqh;color:#fff;
+  -webkit-text-stroke:3px var(--ink);paint-order:stroke fill;
+  animation:turnBlink 1.1s ease-in-out infinite;
+}
+.turnHint.p1{color:var(--red)}
+.turnHint.p2{color:#4aa3ff}
+.turnHint.done{display:none}
+@keyframes turnBlink{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* Côté non concerné par le tour : grisé et non cliquable. */
+.side.locked{filter:grayscale(.7) brightness(.72)}
+.grid.locked{pointer-events:none;opacity:.55}
+
+/* Validation d'un perso : le contour se dessine autour de la case. */
+.cell.picked{position:relative}
+.cell .pickRing{
+  position:absolute;inset:-2px;border-radius:inherit;pointer-events:none;
+  border:3px solid currentColor;
+  clip-path:inset(0 100% 0 0);animation:ringDraw .32s ease-out forwards;
+}
+@keyframes ringDraw{to{clip-path:inset(0 0 0 0)}}
+.cell .pickTag{
+  position:absolute;right:2px;bottom:2px;z-index:3;
+  font-family:'Archivo Black',sans-serif;font-size:1.3cqh;line-height:1;
+  padding:2px 4px;border-radius:5px;color:#fff;background:currentColor;
+}
+.cell .pickTag span{color:#fff;mix-blend-mode:normal}
+.pick-p1{color:var(--red)}
+.pick-p2{color:#2f8fff}
+.pick-cpu{color:#8b93a2}
+
+/* Propulsion du grand portrait au clic. */
+@keyframes heroPunch{
+  0%{transform:translateX(0) scale(1)}
+  30%{transform:translateX(-7%) scale(.96)}
+  62%{transform:translateX(3%) scale(1.05)}
+  100%{transform:translateX(0) scale(1)}
+}
+.heroBox.punch{animation:heroPunch .38s cubic-bezier(.2,.8,.3,1)}
+.heroBox.punch canvas{filter:drop-shadow(0 0 14px rgba(255,255,255,.75))}
+
+/* Grand « ? » arc-en-ciel quand le choix est aléatoire : le perso n'est révélé
+   qu'au lancement du match. */
+.heroBox .rndMark{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Archivo Black',sans-serif;font-size:22cqh;line-height:1;
+  -webkit-text-stroke:5px var(--ink);paint-order:stroke fill;
+  background:linear-gradient(120deg,#ff5f6d,#ffc371,#5df08a,#35e0ff,#a06bff,#ff5f6d);
+  background-size:400% 400%;animation:rainbow 6s ease infinite;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
 .mbtn.c-green{background:var(--green)}
 .mbtn.c-yellow{background:var(--yellow)}
 /* Survol souris et sélection clavier partagent le même rendu (inversion noire).
@@ -188,15 +273,24 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 .arrowBtn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
 
 /* ================= ÉCRAN TITRE ================= */
-.scr-title .confirm{
-  position:absolute;top:2.6%;right:2.4%;z-index:4;display:flex;align-items:center;gap:.7cqw;
-  font-family:'Archivo Black',sans-serif;font-size:clamp(10px,1.1cqw,14px);color:var(--ink);
+/* Bouton plein écran, à l'emplacement de l'ancien hint « VALIDER » : Entrée
+   valide toujours, mais sans occuper l'écran d'un texte permanent. */
+.fsBtn{
+  position:absolute;top:2.6%;right:2.4%;z-index:5;
+  width:4.4cqh;height:4.4cqh;min-width:34px;min-height:34px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.96);color:var(--ink);
+  border:3px solid var(--ink);border-radius:11px;box-shadow:4px 4px 0 var(--ink);
+  cursor:pointer;transition:transform .1s,box-shadow .1s,background .1s;
 }
+.fsBtn svg{width:58%;height:58%}
+.fsBtn:hover{background:var(--yellow)}
+.fsBtn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
 .titleLeft{
   position:absolute;top:0;left:0;bottom:0;width:46%;z-index:3;
   display:flex;flex-direction:column;justify-content:center;gap:2cqh;padding:2cqh 3.4% 4cqh;
 }
-.logo{display:block;width:112%;max-width:none;height:auto;margin:0 0 -1cqh -6%;
+.logo{display:block;width:124%;max-width:none;height:auto;margin:0 0 -1.5cqh -11%;
   filter:drop-shadow(0 6px 0 rgba(0,0,0,.28))}
 .titleLeft .menu{display:flex;flex-direction:column;gap:1.1cqh}
 .titleLeft .mbtn{justify-content:flex-start;text-align:left}
@@ -500,7 +594,8 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
   -webkit-text-stroke:3px var(--ink);paint-order:stroke fill;
   border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);
 }
-.loserCard .flag.gray{background:#fff;color:var(--ink)}
+/* Fond clair + texte sombre rendait « CPU » illisible : on inverse. */
+.loserCard .flag.gray{background:#3a3f4a;color:#fff}
 .loserCard .flag.red{background:var(--red)}
 .statBar{
   flex:1;min-width:0;overflow:hidden;background:var(--ink);border-radius:8px;
@@ -550,19 +645,91 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 }
 .conflict-popup .cbtn.danger{background:var(--red);color:#fff}
 
-/* ================= PANNEAU ADMIN ================= */
+/* ================= PANNEAU ADMIN =================
+   Deux volets latéraux logés dans les bandes noires hors terrain : aucun
+   gameplay ne s'y déroule, ils ne masquent donc jamais l'action. Style sobre
+   de menu de paramètres — gris foncés, accents pastel, monospace pour le code. */
 #admin-panel{
-  position:absolute;bottom:14px;left:14px;z-index:40;display:none;gap:6px;
-  background:rgba(0,0,0,.85);border:3px solid var(--yellow);border-radius:10px;
-  padding:10px 12px;max-width:420px;pointer-events:auto;
+  position:fixed;inset:0;
+  --a-bg1:#1b1d21; --a-bg2:#131418; --a-card:#212429; --a-card2:#282c33;
+  --a-line:#33383f; --a-txt:#e6e8ec; --a-dim:#9aa0aa;
+  --a-accent:#a8c7e8;      /* onglets */
+  --a-code:#bfe3c9;        /* variables et valeurs */
+  --a-ok:#9fd6ae; --a-danger:#e8a9a9;
+  z-index:9000;display:none;pointer-events:none;
 }
-#admin-panel.visible{display:flex;flex-direction:column}
-#admin-panel .arow{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
-#admin-panel .alabel{font-family:'Archivo Black',sans-serif;font-size:9px;color:var(--yellow);padding:2px 6px;border-right:1px solid #3d5ba6}
-#admin-panel .abtn{
-  font-family:'Archivo Black',sans-serif;font-size:8px;padding:5px 10px;background:#1b2a52;
-  border:2px solid #3d5ba6;border-radius:5px;color:#cfe0ff;cursor:pointer;white-space:nowrap;
+#admin-panel.visible{display:block}
+
+/* Les volets sont ancrés au viewport. Quand le panneau est ouvert, le terrain
+   se rétrécit d'autant (voir body.adminOn) : ainsi les volets occupent de vraies
+   bandes libres et ne recouvrent jamais l'action, quelle que soit la fenêtre. */
+body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
+
+.apane{
+  position:fixed;top:0;bottom:0;width:var(--apane-w);
+  display:flex;flex-direction:column;pointer-events:auto;
+  background:linear-gradient(160deg,var(--a-bg1),var(--a-bg2));
+  border:1px solid var(--a-line);
+  font-family:'Segoe UI',system-ui,sans-serif;color:var(--a-txt);
+  transition:transform .22s ease;
 }
-#admin-panel .abtn:hover{background:var(--yellow);color:var(--ink);border-color:#fff}
-#admin-panel .abtn.danger{background:#6a1a1a;border-color:var(--red)}
-#admin-panel .abtn.success{background:#1a4a2a;border-color:var(--green)}
+#apane-L{left:0;border-left:none;transform:translateX(-102%)}
+#apane-R{right:0;border-right:none;transform:translateX(102%)}
+#admin-panel.visible #apane-L,
+#admin-panel.visible #apane-R{transform:translateX(0)}
+
+/* --- barre d'onglets, propre à chaque volet --- */
+.atabs{display:flex;flex-wrap:wrap;gap:2px;padding:6px;border-bottom:1px solid var(--a-line)}
+.atab{
+  font-size:10px;letter-spacing:.5px;padding:4px 7px;border-radius:5px;
+  background:transparent;border:1px solid transparent;color:var(--a-dim);cursor:pointer;
+}
+.atab:hover{background:var(--a-card2);color:var(--a-txt)}
+.atab.on{background:var(--a-card2);border-color:var(--a-line);color:var(--a-accent)}
+
+/* --- corps défilant --- */
+.abody{flex:1;overflow-y:auto;padding:7px;display:flex;flex-direction:column;gap:6px}
+.abody::-webkit-scrollbar{width:7px}
+.abody::-webkit-scrollbar-thumb{background:var(--a-line);border-radius:4px}
+
+/* --- carte de réglage : titre gras, description grise, contrôle à droite --- */
+.acard{
+  background:var(--a-card);border:1px solid var(--a-line);border-radius:8px;
+  padding:7px 8px;display:flex;align-items:center;gap:7px;
+}
+.acard .atxt{flex:1;min-width:0}
+.acard .aname{font-size:11.5px;font-weight:600;line-height:1.25}
+.acard .adesc{font-size:9.5px;color:var(--a-dim);line-height:1.3;margin-top:1px}
+.acard .actrl{display:flex;align-items:center;gap:4px;flex-shrink:0}
+
+/* --- boutons --- */
+.abtn{
+  font-family:inherit;font-size:10px;padding:4px 8px;border-radius:6px;
+  background:var(--a-card2);border:1px solid var(--a-line);color:var(--a-txt);
+  cursor:pointer;white-space:nowrap;
+}
+.abtn:hover{background:#323740;border-color:#454b55}
+.abtn.success{color:var(--a-ok);border-color:#3c5443}
+.abtn.danger{color:var(--a-danger);border-color:#5a3c3c}
+.abtn.on{color:var(--a-accent);border-color:#3f5064;background:#242a33}
+
+/* --- réglage numérique : − valeur + , en monospace --- */
+.astep{
+  font-family:Consolas,'SF Mono',monospace;font-size:1.05cqh;color:var(--a-code);
+  min-width:44px;text-align:center;
+}
+.avar{font-family:Consolas,monospace;font-size:10px;color:var(--a-code)}
+.abtn.mini{padding:2px 6px;font-family:Consolas,monospace;line-height:1}
+
+/* --- console de debug --- */
+.acon{
+  font-family:Consolas,monospace;font-size:9.5px;background:#0e0f12;color:var(--a-code);
+  border:1px solid var(--a-line);border-radius:6px;padding:5px;
+  height:120px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;
+}
+.acli{
+  width:100%;font-family:Consolas,monospace;font-size:9.5px;background:#0e0f12;
+  color:var(--a-txt);border:1px solid var(--a-line);border-radius:6px;padding:4px 6px;
+}
+.acli:focus{outline:none;border-color:var(--a-accent)}
+.asec{font-size:9px;color:var(--a-dim);letter-spacing:1.2px;margin:3px 0 1px;padding-left:2px}

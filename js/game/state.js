@@ -19,7 +19,9 @@ export const G = {
   cine: null, leg: null, rec: [], replay: null, comment: null,
   idleT: 0, waveX: -200, mem: { t: 0, m: 0, b: 0 }, startCom: false,
   lungeBonus: false, lungeBonusTimer: 0, adminMode: false, isJ2J: false,
-  pendingServe: 1
+  pendingServe: 1,
+  // Mise en scène du Perfect Dive : zoom caméra transitoire et flash lumineux.
+  zoom: null, flash: 0
 };
 
 (function initBackground() {
@@ -62,7 +64,17 @@ export function makePlayer(ck, side, human, diffIdx) {
     stats: { catches: 0, specials: 0, thrown: 0, buts: 0, z5: 0, z3: 0, dashCatches: 0 },
     ai: null, foe: null,
     home: { x: side === 1 ? COURT.left + 120 : COURT.right - 120, y: CY },
-    holdTimer: 0
+    holdTimer: 0,
+    // --- Dash : dashT décompte le dash en cours, dashGap l'anti-spam,
+    // dashThrowT la fenêtre pendant laquelle un tir part instantanément à fond.
+    dashT: 0, dashGap: 0, dashDir: { x: 1, y: 0 }, dashThrowT: 0, dashEnding: false,
+    // cancelCatchT : la hitbox élargie survit un instant au freinage.
+    cancelCatchT: 0,
+    // Feinte de tir : feintT anime le geste, feintCd empêche d'enchaîner.
+    feintT: 0, feintCd: 0, feintDir: { x: 1, y: 0 },
+    // --- Plongeon : diveT pendant l'action, diveDown le temps au sol après un
+    // plongeon dans le vide (whiff), pendant lequel le joueur est vulnérable.
+    diveT: 0, diveDown: 0, diveDir: { x: 1, y: 0 }, diveHit: false
   };
   if (!human) {
     p.ai = {
@@ -84,6 +96,7 @@ export function initMatch(demo, ck, cpu, diffIdx, j2j) {
   G.particles.length = 0; G.popups.length = 0; G.trail.length = 0; G.decoys.length = 0; G.rec.length = 0;
   G.timescale = 1; G.shake = 0; G.rally = 0; G.maxRally = 0; G.comment = null; G.idleT = 0;
   G.mem = { t: 0, m: 0, b: 0 }; G.startCom = false; G.lungeBonus = false; G.lungeBonusTimer = 0;
+  G.zoom = null; G.flash = 0;
   G.isJ2J = j2j || false;
   if (demo) {
     G.p1 = makePlayer('naruto', 1, false, 0);

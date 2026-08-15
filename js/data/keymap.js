@@ -5,6 +5,7 @@ export const DEFAULT_KEYS = {
   moveRight: 'KeyD',
   dash: 'ShiftLeft',
   charge: 'Space',
+  feint: 'KeyE',
   pause: 'Escape'
 };
 
@@ -13,8 +14,9 @@ export const ACTION_NAMES = {
   moveDown: '⬇ Descendre',
   moveLeft: '⬅ Gauche',
   moveRight: '➡ Droite',
-  dash: '💨 Dash',
-  charge: '⚡ Charger / Plongée',
+  dash: '💨 Dash / Annuler le dash',
+  charge: '⚡ Charger le tir',
+  feint: '🎭 Feinte de tir',
   pause: '⏸ Pause'
 };
 

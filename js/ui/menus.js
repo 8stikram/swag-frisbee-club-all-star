@@ -44,13 +44,85 @@ function buildWatermarks() {
   });
 }
 
+// Chaque bouton de menu reçoit une seconde icône identique à droite : le
+// libellé se retrouve centré entre les deux, sans toucher au HTML de chaque
+// bouton. On enveloppe au passage le texte pour pouvoir le centrer.
+function mirrorButtonIcons() {
+  document.querySelectorAll('.mbtn').forEach(b => {
+    const ico = b.querySelector(':scope > .ico');
+    if (!ico || b.querySelectorAll(':scope > .ico').length > 1) return;
+    const lbl = document.createElement('span');
+    lbl.className = 'lbl';
+    [...b.childNodes].forEach(n => { if (n !== ico) lbl.appendChild(n); });
+    b.appendChild(lbl);
+    b.appendChild(ico.cloneNode(true));
+  });
+}
+
+// Bouton plein écran de l'écran titre.
+(function () {
+  const b = $('fsBtn');
+  if (!b) return;
+  b.addEventListener('click', e => {
+    e.stopPropagation();
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen().catch(() => { });
+  });
+})();
+
 /* ---------- écran titre ---------- */
 function renderTitleHero() {
   const ck = ROSTER[(Math.random() * ROSTER.length) | 0];
   drawSprite($('titleHero'), ck, 16);
 }
 
-/* ---------- sélection des personnages ---------- */
+/* ---------- sélection des personnages ----------
+   Le choix est séquentiel : 1P d'abord, puis 2P/CPU. Tant que 1P n'a pas
+   validé, le côté adverse reste verrouillé, et inversement. Échap revient en
+   arrière tant que le second joueur n'a pas validé. */
+let turn = 1;              // 1 = au tour de 1P, 2 = au tour de 2P/CPU, 0 = terminé
+let lockedP1 = false, lockedP2 = false;
+let rndP1 = false, rndP2 = false;   // camp tiré au sort : masqué jusqu'au match
+
+export function resetSelectTurn() {
+  turn = 1; lockedP1 = lockedP2 = false; rndP1 = rndP2 = false;
+}
+
+// « Clac » doux de validation : deux notes courtes et rondes, sans agressivité.
+function clac() { sfx('select'); }
+
+function validate(side, ck, isRandom) {
+  if (side === 1) { selCharPlayer = ck; lockedP1 = true; rndP1 = !!isRandom; turn = 2; }
+  else { selCharCPU = ck; lockedP2 = true; rndP2 = !!isRandom; turn = 0; }
+  clac();
+  refreshSelect();
+  punchHero(side);
+}
+
+// Pose ou retire le grand « ? » par-dessus le portrait d'un côté.
+function showRandomMask(i, on) {
+  const box = document.querySelectorAll('.scr-select .side .heroBox')[i];
+  if (!box) return;
+  let m = box.querySelector('.rndMark');
+  if (on && !m) { m = document.createElement('div'); m.className = 'rndMark'; m.textContent = '?'; box.appendChild(m); }
+  else if (!on && m) m.remove();
+}
+
+function punchHero(side) {
+  const box = document.querySelectorAll('.scr-select .side .heroBox')[side === 1 ? 0 : 1];
+  if (!box) return;
+  box.classList.remove('punch');
+  void box.offsetWidth;              // relance l'animation
+  box.classList.add('punch');
+}
+
+// Échap : le joueur en cours revient sur son choix, tant que 2P n'a pas validé.
+export function undoSelect() {
+  if (lockedP2) return false;
+  if (turn === 2 && lockedP1) { lockedP1 = false; rndP1 = false; turn = 1; sfx('deny'); refreshSelect(); return true; }
+  return false;
+}
+
 function pickPlayer(c) { selCharPlayer = c; sfx('move'); refreshSelect(); }
 function pickCPU(c) { selCharCPU = c; sfx('move'); refreshSelect(); }
 function changeDiff(d) { diffIdx = (diffIdx + d + DIFFS.length) % DIFFS.length; sfx('move'); refreshSelect(); }
@@ -72,33 +144,66 @@ function renderCharGrid() {
     const cv = document.createElement('canvas');
     drawSprite(cv, ck, 5);
     cell.appendChild(cv);
-    if (selCharPlayer === ck) { cell.classList.add('sel1'); const t = document.createElement('span'); t.className = 'tag t1'; t.textContent = '1P'; cell.appendChild(t); }
-    if (selCharCPU === ck) { cell.classList.add('sel2'); const t = document.createElement('span'); t.className = 'tag t2'; t.textContent = '2P'; cell.appendChild(t); }
-    cell.addEventListener('click', () => pickPlayer(ck));
-    cell.addEventListener('contextmenu', e => { e.preventDefault(); pickCPU(ck); });
+    // Contour dessiné + tag de la couleur du camp, posé à la validation.
+    if (lockedP1 && selCharPlayer === ck) markPicked(cell, 'p1', '1P');
+    if (lockedP2 && selCharCPU === ck) markPicked(cell, modeJ2J ? 'p2' : 'cpu', modeJ2J ? '2P' : 'CPU');
+    cell.addEventListener('click', () => {
+      if (turn === 1) validate(1, ck);
+      else if (turn === 2) validate(2, ck);
+    });
     grid.appendChild(cell);
   }
-  // Case aléatoire : tire les deux camps d'un coup.
+  // Case aléatoire : ne tire que pour le camp dont c'est le tour, et le
+  // personnage reste masqué derrière un « ? » jusqu'au lancement du match.
   const rnd = document.createElement('div');
   rnd.className = 'cell rndCell';
   rnd.innerHTML = '<span class="qm">?</span>';
-  rnd.title = 'Personnages aléatoires';
+  rnd.title = 'Personnage aléatoire';
+  if (lockedP1 && rndP1) markPicked(rnd, 'p1', '1P');
+  if (lockedP2 && rndP2) markPicked(rnd, modeJ2J ? 'p2' : 'cpu', modeJ2J ? '2P' : 'CPU');
   rnd.addEventListener('click', () => {
-    selCharPlayer = ROSTER[(Math.random() * ROSTER.length) | 0];
-    selCharCPU = ROSTER[(Math.random() * ROSTER.length) | 0];
-    sfx('select'); refreshSelect();
+    const pick = ROSTER[(Math.random() * ROSTER.length) | 0];
+    if (turn === 1) validate(1, pick, true);
+    else if (turn === 2) validate(2, pick, true);
   });
   grid.appendChild(rnd);
+  grid.classList.toggle('locked', turn === 0);
+}
+
+function markPicked(cell, kind, label) {
+  cell.classList.add('picked', 'pick-' + kind);
+  const ring = document.createElement('i');
+  ring.className = 'pickRing';
+  cell.appendChild(ring);
+  const tag = document.createElement('span');
+  tag.className = 'pickTag';
+  tag.innerHTML = '<span>' + label + '</span>';
+  cell.appendChild(tag);
 }
 
 export function refreshSelect() {
   const p1 = CHARS[selCharPlayer], p2 = CHARS[selCharCPU];
   $('selUni1').textContent = p1.universe;
   $('selUni2').textContent = p2.universe;
-  $('selName1').textContent = p1.short;
-  $('selName2').textContent = p2.short;
+  // Un camp tiré au sort reste caché derrière un « ? » arc-en-ciel : la
+  // révélation n'a lieu qu'au lancement du match.
+  $('selName1').textContent = rndP1 ? '???' : p1.short;
+  $('selName2').textContent = rndP2 ? '???' : p2.short;
   drawSprite($('selHero1'), selCharPlayer, 12);
   drawSprite($('selHero2'), selCharCPU, 12);
+  showRandomMask(0, rndP1);
+  showRandomMask(1, rndP2);
+
+  // Tour de choix : côté verrouillé grisé, bandeau clignotant mis à jour.
+  const sides = document.querySelectorAll('.scr-select .side');
+  if (sides[0]) sides[0].classList.toggle('locked', turn === 2);
+  if (sides[1]) sides[1].classList.toggle('locked', turn === 1);
+  const hint = $('turnHint');
+  if (hint) {
+    hint.className = 'turnHint ' + (turn === 1 ? 'p1' : turn === 2 ? 'p2' : 'done');
+    hint.textContent = turn === 1 ? 'AU TOUR DE 1P'
+      : turn === 2 ? (modeJ2J ? 'AU TOUR DE 2P' : 'AU TOUR DU CPU') : '';
+  }
   renderStats($('selStats1'), p1);
   renderStats($('selStats2'), p2);
   renderCharGrid();
@@ -130,7 +235,9 @@ export function selectScreenKey(code) {
     sfx('select'); refreshSelect();
   }
   else if (code === 'Enter' || code === 'Space') { sfx('select'); doAct('fight'); }
-  else if (code === getKey('pause')) doAct('back');
+  // Échap revient sur le choix en cours tant que le second joueur n'a pas
+  // validé ; sinon seulement, il quitte l'écran.
+  else if (code === getKey('pause')) { if (!undoSelect()) doAct('back'); }
 }
 
 /* ---------- carrousel de disque ---------- */
@@ -294,8 +401,8 @@ function startMatch() {
 
 export function doAct(act) {
   switch (act) {
-    case 'play': sfx('select'); modeJ2J = false; showScreen('select'); refreshSelect(); break;
-    case 'j2j': sfx('select'); modeJ2J = true; showScreen('select'); refreshSelect(); break;
+    case 'play': sfx('select'); modeJ2J = false; resetSelectTurn(); showScreen('select'); refreshSelect(); break;
+    case 'j2j': sfx('select'); modeJ2J = true; resetSelectTurn(); showScreen('select'); refreshSelect(); break;
     case 'options': sfx('select'); showScreen('options'); refreshKeysUI(); break;
     case 'back': sfx('select'); showScreen('title'); break;
     case 'fight': sfx('select'); showScreen('maps'); refreshMaps(); break;
@@ -310,6 +417,7 @@ export function doAct(act) {
 
 /* ---------- câblage ---------- */
 buildWatermarks();
+mirrorButtonIcons();
 renderTitleHero();
 renderDisc();
 renderMusic();

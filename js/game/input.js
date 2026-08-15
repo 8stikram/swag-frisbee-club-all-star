@@ -1,11 +1,15 @@
 import { G, Mouse } from './state.js';
 import { $, cv, W, H, curScreen, showScreen, moveMenu, activateMenu, setSelIdx, menuButtons } from '../core/dom.js';
-import { COURT, CX, DASH_SPEED, DASH_DECAY, DASH_CD, throwSpeed } from '../core/constants.js';
+import {
+  COURT, CX, DASH_SPEED, DASH_DECAY, DASH_CD, DASH_DIST, DASH_TIME, DASH_GAP,
+  CANCEL_GAP, CANCEL_CATCH, FEINT_TIME, FEINT_CD, throwSpeed
+} from '../core/constants.js';
 import { clamp, norm, approach } from '../core/utils.js';
 import { getKey } from '../data/keymap.js';
+import { getDashAim, toggleDashAim } from '../data/settings.js';
 import { initAudio, sfx, toggleMusic } from '../audio/audio.js';
 import { addPopup, dust } from './fx.js';
-import { doThrowHuman, throwDisc, skipReplay } from './actions.js';
+import { doThrowHuman, throwDisc, skipReplay, doDive } from './actions.js';
 import { trySpecial } from './specials.js';
 import { isCapturing } from '../ui/keybind-ui.js';
 import { doAct, pauseGame, selectScreenKey } from '../ui/menus.js';
@@ -59,8 +63,9 @@ window.addEventListener('mousedown', e => {
     if (!p || !p.human || p.stun > 0) return;
     if (G.state !== 'play' && G.state !== 'serve') return;
     if (G.cine) return;
+    if (p.diveT > 0 || p.diveDown > 0) return;
     if (p.holding) { p.charging = true; }
-    else if (p.lungeCd <= 0) { doLunge(p); G.lungeBonus = true; G.lungeBonusTimer = 1.5; }
+    else doDive(p, norm(Mouse.x - p.x, Mouse.y - p.y));
   } else if (e.button === 2) { trySpecial(G.p1); }
 });
 
@@ -97,31 +102,19 @@ window.addEventListener('keydown', e => {
   if (e.code === getKey('pause') || e.code === 'KeyP') { if (G.state !== 'over' && !G.demo && !G.adminMode) pauseGame(); return; }
   const p = G.p1;
   if (!p || !p.human || p.stun > 0) return;
-  if (e.code === getKey('dash') || e.code === 'ShiftLeft') {
-    if (p.dashCd <= 0) {
-      const d = norm(Mouse.x - p.x, Mouse.y - p.y);
-      p.dashV.x = d.x * DASH_SPEED; p.dashV.y = d.y * DASH_SPEED;
-      p.dashCd = DASH_CD; sfx('dash'); dust(p.x, p.y + 22, 8);
-    }
-  }
-  const dirKeys = [getKey('moveUp'), getKey('moveDown'), getKey('moveLeft'), getKey('moveRight')];
-  if (dirKeys.includes(e.code)) {
-    const now = performance.now();
-    if (tapTimes[e.code] && now - tapTimes[e.code] < 300 && p.dashCd <= 0) {
-      let dx = 0, dy = 0;
-      if (e.code === getKey('moveUp')) dy = -1;
-      else if (e.code === getKey('moveDown')) dy = 1;
-      else if (e.code === getKey('moveLeft')) dx = -1;
-      else if (e.code === getKey('moveRight')) dx = 1;
-      p.dashV.x = dx * DASH_SPEED; p.dashV.y = dy * DASH_SPEED;
-      p.dashCd = DASH_CD; sfx('dash'); dust(p.x, p.y + 22, 8);
-    }
-    tapTimes[e.code] = now;
-  }
+  // Le dash est géré au maintien dans updatePlayerHuman. Ici on ne traite que le
+  // Cancel Dash : réappuyer sur la touche pendant le dash freine net.
+  if ((e.code === getKey('dash') || e.code === 'ShiftLeft') && p.dashT > 0) { cancelDash(p); return; }
+  // Feinte de tir : annule la charge en cours d'un faux geste de tir.
+  if (e.code === getKey('feint')) { doFeint(p); return; }
+  // Le double-tap directionnel a été retiré : le dash passe désormais uniquement
+  // par la touche dédiée maintenue, visée à la souris. Le garder déclenchait deux
+  // dashs concurrents avec des règles différentes.
   if (e.code === getKey('charge') || e.code === 'Space') {
     if (G.cine) return;
+    if (p.diveT > 0 || p.diveDown > 0) return;
     if (p.holding) { p.charging = true; }
-    else if (p.lungeCd <= 0) { doLunge(p); G.lungeBonus = true; G.lungeBonusTimer = 1.5; }
+    else doDive(p, norm(Mouse.x - p.x, Mouse.y - p.y));
   }
 });
 
@@ -140,6 +133,15 @@ window.addEventListener('keyup', e => {
   if (p && p.human && e.code === getKey('charge') && p.holding && p.wasCharging) doThrowHuman(p);
 });
 
+// Bascule de la visée du dash dans l'onglet JEU des options.
+(function () {
+  const b = $('dashAim');
+  if (!b) return;
+  const refresh = () => { b.textContent = getDashAim() === 'move' ? 'SENS DU DÉPLACEMENT' : 'VERS LA SOURIS'; };
+  b.addEventListener('click', e => { e.stopPropagation(); toggleDashAim(); refresh(); sfx('move'); });
+  refresh();
+})();
+
 // Survol souris des boutons de menu : synchronise la sélection clavier.
 document.querySelectorAll('.mbtn').forEach(b => {
   b.addEventListener('mouseenter', () => {
@@ -147,6 +149,45 @@ document.querySelectorAll('.mbtn').forEach(b => {
   });
   b.addEventListener('click', () => doAct(b.dataset.act));
 });
+
+// Cancel Dash : arrêt net en pleine course. Pas d'invincibilité — si un disque
+// arrive, le joueur se le prend. La hitbox élargie du dash survit brièvement
+// pour pouvoir attraper malgré le freinage.
+export function cancelDash(p) {
+  if (p.dashT <= 0) return;
+  p.dashT = 0; p.dashEnding = false;
+  p.dashV.x = 0; p.dashV.y = 0;
+  p.vx = 0; p.vy = 0;
+  p.dashGap = CANCEL_GAP;
+  p.cancelCatchT = CANCEL_CATCH;
+  dust(p.x, p.y + 20, 9);
+  // Pas de son neuf : le crissement est rendu par le bruit de dash très atténué.
+  sfx('move');
+}
+
+// Feinte de tir : le geste part, le disque avance à peine puis claque dans la
+// main. Impossible d'annuler un Dash Throw ainsi — c'est le prix de sa puissance.
+export function doFeint(p) {
+  if (!p.holding || p.feintT > 0 || p.feintCd > 0) return;
+  if (p.dashThrowT > 0) return;
+  const dir = norm(Mouse.x - p.x, Mouse.y - p.y);
+  p.feintT = FEINT_TIME; p.feintCd = FEINT_TIME + FEINT_CD;
+  p.feintDir = dir;
+  p.face = dir.x >= 0 ? 1 : -1;
+  p.charging = false; p.wasCharging = false; p.charge = 0; p.fullFlash = false;
+  p.throwPoseT = FEINT_TIME;
+}
+
+// Dash : propulsion sur une distance fixe, sans invincibilité. La vitesse est
+// calculée pour couvrir DASH_DIST en DASH_TIME quelle que soit la direction.
+export function startDash(p, dir) {
+  if (!dir || (!dir.x && !dir.y)) dir = { x: p.face, y: 0 };
+  p.dashT = DASH_TIME; p.dashGap = DASH_GAP; p.dashDir = dir;
+  p.face = dir.x >= 0 ? 1 : -1;
+  const v = DASH_DIST / DASH_TIME;
+  p.dashV.x = dir.x * v; p.dashV.y = dir.y * v;
+  dust(p.x, p.y + 20, 6); sfx('dash');
+}
 
 export function doLunge(p) {
   p.lunge = .18; p.lungeCd = .55;
@@ -157,7 +198,17 @@ export function doLunge(p) {
 
 export function updatePlayerHuman(p, dt) {
   if (p.stun > 0) { p.vx = approach(p.vx, 0, 20, dt); p.vy = approach(p.vy, 0, 20, dt); return; }
+  // Au sol après un plongeon dans le vide : le joueur ne contrôle plus rien.
+  if (p.diveDown > 0) { p.vx = approach(p.vx, 0, 12, dt); p.vy = approach(p.vy, 0, 12, dt); return; }
   const d = inputDir();
+  // Touche de dash maintenue : distance fixe, soumise à l'anti-spam. La visée
+  // dépend du réglage (curseur ou sens du déplacement) ; sans direction de
+  // déplacement on retombe sur la souris pour ne jamais dasher sur place.
+  if (keys.has(getKey('dash')) && p.dashT <= 0 && p.dashGap <= 0 && p.diveT <= 0 && p.diveDown <= 0) {
+    let aim = norm(Mouse.x - p.x, Mouse.y - p.y);
+    if (getDashAim() === 'move' && (d.x || d.y)) aim = norm(d.x, d.y);
+    startDash(p, aim);
+  }
   let mx = d.x, my = d.y;
   const l = Math.hypot(mx, my);
   if (l) { mx /= l; my /= l; }
@@ -227,7 +278,20 @@ export function integratePlayer(p, dt) {
   p.moving = Math.hypot(mvx, mvy) > 34;
   if (p.moving) p.walk += dt * 10;
   p.throwCd -= dt; p.throwPoseT -= dt; p.lunge -= dt; p.lungeCd -= dt; p.dashCd -= dt;
+  p.dashT -= dt; p.dashGap -= dt; p.dashThrowT -= dt; p.diveT -= dt; p.diveDown -= dt;
+  p.cancelCatchT -= dt; p.feintT -= dt; p.feintCd -= dt;
   if (p.stun > 0) p.stun -= dt;
+  // Pendant le dash la vitesse est maintenue constante, ce qui garantit la
+  // distance fixe. À la fin on la coupe net : sans ça elle décroît en douceur et
+  // ajoute plus de 200 px de glissade, soit près du double de la distance voulue.
+  if (p.dashT > 0) {
+    const v = DASH_DIST / DASH_TIME;
+    p.dashV.x = p.dashDir.x * v; p.dashV.y = p.dashDir.y * v;
+    p.dashEnding = true;
+  } else if (p.dashEnding) {
+    p.dashEnding = false;
+    p.dashV.x = 0; p.dashV.y = 0;
+  }
   p.dashV.x *= Math.exp(-DASH_DECAY * dt);
   p.dashV.y *= Math.exp(-DASH_DECAY * dt);
   p.ghostT -= dt;

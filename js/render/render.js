@@ -1,6 +1,6 @@
 import { G, Mouse } from '../game/state.js';
 import { ctx, W, H } from '../core/dom.js';
-import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG_RADIUS, TARGET } from '../core/constants.js';
+import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG_RADIUS, TARGET, DIVE_TIME } from '../core/constants.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { getSkinId, drawSkinDisc } from '../data/skins.js';
@@ -382,6 +382,10 @@ function drawPlayer(p) {
   ctx.save();
   ctx.translate(p.x, p.y - 30 * SCALE);
   if (p.face < 0) ctx.scale(-1, 1);
+  // Plongeon : le perso bascule à l'horizontale. Après un plongeon dans le vide
+  // il reste à plat au sol le temps de se relever — c'est le risque du whiff.
+  if (p.diveT > 0) ctx.rotate(-0.9 * Math.min(1, p.diveT / DIVE_TIME));
+  else if (p.diveDown > 0) ctx.rotate(-1.35);
   if (p.charging && !G.replay) ctx.translate(gauss() * p.charge * 2.4, gauss() * p.charge * 2.4);
   if (p.stun > 0) ctx.rotate(Math.sin(G.now * 14) * .12);
   ctx.drawImage(img, -24 * SCALE, 0, 48 * SCALE, 60 * SCALE);
@@ -648,6 +652,16 @@ function drawReplayOverlay() {
 export function render() {
   ctx.save();
   if (G.shake > 0.3) ctx.translate(gauss() * G.shake, gauss() * G.shake);
+  // Zoom caméra du Perfect Dive : on grossit autour du plongeur puis on
+  // revient, en gardant le cadrage dans les limites du terrain.
+  if (G.zoom) {
+    const k = G.zoom.t / G.zoom.dur;
+    const amt = Math.sin(Math.min(1, k) * Math.PI) * .16;   // 0 -> 16% -> 0
+    const z = 1 + amt;
+    ctx.translate(G.zoom.x, G.zoom.y);
+    ctx.scale(z, z);
+    ctx.translate(-G.zoom.x, -G.zoom.y);
+  }
   drawCourt();
   if (G.leg && G.leg.phase === 'shadow') drawLeg();
   drawDecoys();
@@ -667,4 +681,9 @@ export function render() {
   drawCommentator();
   if (G.replay) drawReplayOverlay();
   ctx.restore();
+  // Flash du Perfect Dive, appliqué hors zoom pour couvrir tout l'écran.
+  if (G.flash > 0) {
+    ctx.fillStyle = 'rgba(255,255,255,' + (G.flash * .55).toFixed(3) + ')';
+    ctx.fillRect(0, 0, W, H);
+  }
 }

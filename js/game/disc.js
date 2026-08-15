@@ -1,5 +1,8 @@
 import { G } from './state.js';
-import { COURT, GOAL_TOP, GOAL_BOTTOM, DISC_RADIUS, DISC_BIG_RADIUS } from '../core/constants.js';
+import {
+  COURT, GOAL_TOP, GOAL_BOTTOM, DISC_RADIUS, DISC_BIG_RADIUS, DASH_CATCH_MULT,
+  FEINT_TIME, FEINT_FREE, FEINT_CD, FEINT_REACH
+} from '../core/constants.js';
 import { norm, gauss, clamp, rand } from '../core/utils.js';
 import { sfx } from '../audio/audio.js';
 import { burst, dust, addPopup } from './fx.js';
@@ -9,7 +12,36 @@ export const DISC_R = () => G.disc.big ? DISC_BIG_RADIUS : DISC_RADIUS;
 
 export function updateDisc(dt) {
   const d = G.disc;
-  if (d.heldBy) { d.x = d.heldBy.x + d.heldBy.face * 20; d.y = d.heldBy.y + Math.sin(G.now * 6) * 2; d.spin += dt * 4; return; }
+  if (d.heldBy) {
+    const h = d.heldBy;
+    d.x = h.x + h.face * 20; d.y = h.y + Math.sin(G.now * 6) * 2; d.spin += dt * 4;
+    // Feinte : le disque s'élance puis claque dans la main. La sortie est rapide
+    // et le retour encore plus, pour tromper le réflexe de l'adversaire.
+    if (h.feintT > 0) {
+      const k = h.feintT / FEINT_TIME;             // 1 au départ -> 0 à la fin
+      const out = Math.sin(k * Math.PI) * FEINT_REACH;
+      d.x += h.feintDir.x * out; d.y += h.feintDir.y * out;
+      d.spin += dt * 26;
+      // Pendant FEINT_FREE le disque est réellement interceptable : un adversaire
+      // collé au bon moment peut le voler. C'est le risque de la feinte.
+      if (h.feintT > FEINT_TIME - FEINT_FREE) {
+        const foe = h.foe;
+        if (foe && !foe.holding && foe.throwCd <= 0 && foe.stun <= 0
+          && foe.diveT <= 0 && foe.diveDown <= 0
+          && Math.hypot(d.x - foe.x, d.y - foe.y) < foe.char.catchR * .8) {
+          h.holding = false; h.feintT = 0; h.charging = false; h.charge = 0;
+          d.heldBy = null; d.free = true; d.thrower = h; d.thrownAt = G.now - 1;
+          addPopup('INTERCEPTION !', '#ff5340', 15, .9, foe.y - 56);
+          onCatch(foe, 0, 0, 0);
+        }
+      }
+    } else if (h.feintCd > 0 && h.feintCd < FEINT_CD + .02 && !h.feintSwish) {
+      // Le disque vient de revenir en main : petit claquement sec.
+      h.feintSwish = true; sfx('catch');
+    }
+    if (h.feintT <= 0 && h.feintCd <= 0) h.feintSwish = false;
+    return;
+  }
   if (!d.free) return;
   d.age += dt;
   d.spin += Math.hypot(d.vx, d.vy) * dt * .06;
@@ -52,8 +84,14 @@ export function updateDisc(dt) {
   } else d.stall = 0;
   for (const p of [G.p1, G.p2]) {
     if (p.holding || p.throwCd > 0 || p.stun > 0) continue;
+    // Le plongeon ne rattrape jamais : il ne fait que repousser (voir doDive).
+    if (p.diveT > 0 || p.diveDown > 0) continue;
     if (G.now - d.thrownAt < .24 && d.thrower === p && !d.bounced) continue;
-    const r2 = p.char.catchR * (d.kind === 'kurama' ? .5 : 1) * (p.lunge > 0 ? 1.45 : 1) + (d.big ? 8 : 0);
+    // Dasher vers le disque élargit nettement la fenêtre d'attrapé : c'est la
+    // récompense du joueur qui va le chercher.
+    // La hitbox élargie vaut pendant le dash et survit brièvement à un Cancel Dash.
+    const dashBonus = (p.dashT > 0 || p.cancelCatchT > 0) ? DASH_CATCH_MULT : 1;
+    const r2 = p.char.catchR * (d.kind === 'kurama' ? .5 : 1) * (p.lunge > 0 ? 1.45 : 1) * dashBonus + (d.big ? 8 : 0);
     if (Math.hypot(d.x - p.x, d.y - p.y) < r2) { onCatch(p, sp, dirB.x, dirB.y); break; }
   }
 }

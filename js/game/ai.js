@@ -1,8 +1,12 @@
 import { G } from './state.js';
-import { COURT, CY, GOAL_TOP, GOAL_BOTTOM, DASH_SPEED, throwSpeed } from '../core/constants.js';
+import {
+  COURT, CY, GOAL_TOP, GOAL_BOTTOM, DASH_SPEED, throwSpeed,
+  DASH_CATCH_MULT, DIVE_RANGE, PERFECT_WINDOW
+} from '../core/constants.js';
 import { clamp, norm, gauss, rand, approach } from '../core/utils.js';
 import { dust } from './fx.js';
-import { onCatch, throwDisc } from './actions.js';
+import { onCatch, throwDisc, doDive } from './actions.js';
+import { startDash } from './input.js';
 import { trySpecial } from './specials.js';
 import { SPECIALS } from '../data/specials.js';
 
@@ -33,8 +37,17 @@ export function getMirrorGoal(side, corner) {
   return { x: side === 1 ? COURT.right : COURT.left, y: reflectedY };
 }
 
+// Moral de l'IA : elle prend confiance quand elle mène et doute quand elle est
+// menée. Le facteur module ses prises de risque (plongeon, parry, dash) sans
+// jamais toucher à ses capacités brutes — elle garde exactement les mêmes règles
+// que le joueur, seule son audace varie.
+function morale(p) {
+  return clamp(1 + (p.score - p.foe.score) * 0.045, .6, 1.5);
+}
+
 export function updateAI(p, dt) {
   const d = p.ai, D = d.diff, foe = p.foe, disc = G.disc;
+  const mor = morale(p);
   if (p.stun > 0) { d.target = { x: p.x, y: p.y }; return; }
   // Ultime : jauge pleine -> tente de le lancer, avec une eagerness qui
   // dépend de la difficulté (D.special). Coupé pendant la démo en fond de
@@ -129,10 +142,33 @@ export function updateAI(p, dt) {
   p.vx = approach(p.vx, tx, 9, dt);
   p.vy = approach(p.vy, ty, 9, dt);
   p.face = (foe.x > p.x) ? 1 : -1;
-  if (disc.free && !p.holding && p.throwCd <= 0 && p.stun <= 0) {
+  if (disc.free && !p.holding && p.throwCd <= 0 && p.stun <= 0 && p.diveT <= 0 && p.diveDown <= 0) {
     const dd = Math.hypot(disc.x - p.x, disc.y - p.y);
-    if (dd < p.char.catchR * 1.05) { onCatch(p, Math.hypot(disc.vx, disc.vy), 0, 0); }
-    else if (dd < 50 && p.lungeCd <= 0 && Math.random() < D.smart * 0.3) { p.lunge = 0.12; p.lungeCd = 0.7; }
+    const sp = Math.hypot(disc.vx, disc.vy);
+    const closing = (disc.x - p.x) * disc.vx + (disc.y - p.y) * disc.vy < 0;
+    const tti = dd / Math.max(1, sp);
+
+    // Dash défensif : le disque file hors de portée, elle va le chercher.
+    // La probabilité est ramenée par seconde pour ne pas dépendre du framerate.
+    if (dd > 70 && dd < 260 && closing && p.dashT <= 0 && p.dashGap <= 0
+      && Math.random() < D.dash * mor * 3 * dt) {
+      startDash(p, norm(disc.x - p.x, disc.y - p.y));
+    }
+
+    if (dd < p.char.catchR * (p.dashT > 0 ? DASH_CATCH_MULT : 1.05)) {
+      onCatch(p, sp, 0, 0);
+    } else if (closing && dd < DIVE_RANGE + 26) {
+      // Contre au plongeon. Un CPU qui « vise le parry » attend la fenêtre
+      // exacte du Perfect Dive ; les autres plongent plus tôt et se contentent
+      // d'un renvoi normal. C'est ce qui creuse l'écart entre les difficultés.
+      const viseParry = D.parry > 0 && Math.random() < D.parry * mor;
+      const doitPlonger = viseParry ? (tti <= PERFECT_WINDOW && dd < DIVE_RANGE)
+        : (Math.random() < D.dive * mor * 3 * dt);
+      if (doitPlonger) {
+        const corner = getOpenCorner(p.side);
+        doDive(p, norm(corner.x - p.x, corner.y + gauss() * D.err * .4 - p.y));
+      }
+    }
   }
   if (d.state === 'STRIKE' && p.holding) {
     p.holdTimer += dt;

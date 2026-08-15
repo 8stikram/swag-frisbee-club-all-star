@@ -1,5 +1,9 @@
 import { G, Mouse, resetDisc, initMatch, comment } from './state.js';
-import { COURT, CY, TARGET, GOAL_MID1, GOAL_MID2, throwSpeed } from '../core/constants.js';
+import {
+  COURT, CY, TARGET, GOAL_MID1, GOAL_MID2, throwSpeed,
+  DIVE_TIME, DIVE_RANGE, DIVE_WHIFF_DOWN, DIVE_POWER,
+  PERFECT_WINDOW, PERFECT_SPEED, DISC_RADIUS, DASH_THROW_WINDOW
+} from '../core/constants.js';
 import { clamp, norm, gauss, pick, rand } from '../core/utils.js';
 import { zoneByY } from '../data/maps.js';
 import { CHARS } from '../data/characters.js';
@@ -61,7 +65,68 @@ export function doThrowHuman(p) {
   if (!p.holding) return;
   const dir = norm(Mouse.x - p.x, Mouse.y - p.y);
   p.face = dir.x >= 0 ? 1 : -1;
+  // Dash Throw : attraper pendant un dash puis tirer dans la foulée envoie le
+  // disque à pleine puissance sans avoir eu besoin de charger.
+  if (p.dashThrowT > 0) {
+    p.dashThrowT = 0; p.charge = 1;
+    addPopup('DASH THROW !', '#35e0ff', 15, .8, p.y - 56);
+    burst(p.x + dir.x * 24, p.y + dir.y * 24, '#35e0ff', 14);
+    G.shake = Math.max(G.shake, 6);
+    throwDisc(p, dir, throwSpeed(1, p.char.power));
+    return;
+  }
   throwDisc(p, dir, throwSpeed(p.charge, p.char.power));
+}
+
+// Plongeon : purement défensif. Il ne rattrape jamais le disque, il le repousse
+// très fort. Déclenché dans le vide, le joueur tombe et reste vulnérable.
+export function doDive(p, aim) {
+  const d = G.disc;
+  p.diveT = DIVE_TIME; p.diveHit = false;
+  p.diveDir = aim;
+  p.face = aim.x >= 0 ? 1 : -1;
+  p.charging = false; p.wasCharging = false; p.charge = 0;
+  p.dashV.x += aim.x * 300; p.dashV.y += aim.y * 300;
+  dust(p.x, p.y + 20, 5); sfx('dash');
+
+  const inRange = d.free && Math.hypot(d.x - p.x, d.y - p.y) < DIVE_RANGE + DISC_RADIUS;
+  if (!inRange) {
+    // Whiff : plongeon dans le vide, le joueur reste au sol un instant.
+    p.diveDown = DIVE_WHIFF_DOWN;
+    return;
+  }
+  p.diveHit = true;
+  // Perfect Dive : le disque doit venir vers nous ET être sur le point d'arriver.
+  // On exige les deux conditions, sinon un disque lent déclencherait le parry
+  // alors qu'il est encore loin.
+  const closing = (d.x - p.x) * d.vx + (d.y - p.y) * d.vy < 0;
+  const dist = Math.hypot(d.x - p.x, d.y - p.y);
+  const tti = dist / Math.max(1, Math.hypot(d.vx, d.vy));
+  if (closing && tti <= PERFECT_WINDOW && dist < DIVE_RANGE) perfectDive(p);
+  else {
+    throwDisc(p, aim, DIVE_POWER * p.char.power);
+    burst(d.x, d.y, p.char.accent, 16);
+    G.shake = Math.max(G.shake, 7);
+    addPopup('CONTRE !', '#ffd23e', 13, .7, p.y - 56);
+  }
+}
+
+// Renvoi parfait : visé automatiquement vers le but adverse, à vitesse fulgurante,
+// avec ralenti, flash et secousse. Aucun son neuf : on réutilise ceux du jeu.
+function perfectDive(p) {
+  const gx = p.side === 1 ? COURT.right : COURT.left;
+  const dir = norm(gx - p.x, CY - p.y);
+  throwDisc(p, dir, PERFECT_SPEED * p.char.power);
+  G.disc.super = true;
+  p.meter = clamp(p.meter + 30, 0, 100);
+  G.timescale = .3; G.tsTimer = .3;
+  G.zoom = { t: 0, dur: .45, x: p.x, y: p.y };
+  G.flash = .35;
+  G.shake = Math.max(G.shake, 18);
+  G.banner = { text: 'PERFECT DIVE !', color: '#35e0ff', t: 0, dur: 1.1 };
+  burst(p.x, p.y, '#ffffff', 26); burst(p.x, p.y, '#35e0ff', 22);
+  starBurst(p.x, p.y); ring(p.x, p.y, '#35e0ff');
+  sfx('perfect'); comment('QUEL RENVOI !');
 }
 
 export function onThrowEvent(thrower) {
@@ -90,6 +155,10 @@ export function onCatch(p, sp, dirx, diry) {
   p.meter = clamp(p.meter + 12, 0, 100);
   p.holdTimer = 0;
   G.rally++; G.maxRally = Math.max(G.maxRally, G.rally); G.idleT = 0;
+  // Attrapé pendant un dash (ou juste après un Cancel Dash) : le joueur a un
+  // court instant pour déclencher un Dash Throw, tir instantané à pleine
+  // puissance. S'il ne clique pas, il garde simplement le disque en main.
+  if (p.dashT > 0 || p.cancelCatchT > 0) p.dashThrowT = DASH_THROW_WINDOW;
   sfx('catch'); ring(p.x, p.y, p.char.accent);
   if (sp > 780) {
     p.meter = clamp(p.meter + 20, 0, 100);

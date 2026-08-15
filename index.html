@@ -26,7 +26,14 @@
       </div>
     </div>
 
-    <div class="confirm"><span class="key">⏎</span>VALIDER</div>
+    <!-- Entrée valide toujours, mais sans texte à l'écran : la place sert
+         désormais au plein écran. -->
+    <button class="fsBtn" id="fsBtn" title="Plein écran" aria-label="Plein écran">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
+      </svg>
+    </button>
 
     <div class="titleLeft">
       <img class="logo" src="assets/logo.png" alt="Swag Frisbee Club All Star">
@@ -44,7 +51,7 @@
           OPTIONS
         </button>
       </div>
-      <div class="hint"><kbd>M</kbd> musique · 5× clic sur le titre = admin</div>
+      <div class="hint"><kbd>M</kbd> musique</div>
     </div>
 
     <div class="titleRight">
@@ -59,7 +66,7 @@
     <div class="bg bg-select">
       <div class="charglow g1" id="selGlow1"></div>
       <div class="charglow g2" id="selGlow2"></div>
-      <div class="watermark" data-wm="VERSUS SWAG FRISBEE"></div>
+<!-- Plus de texte en diagonale ici : le fond dégradé + cercle se suffit. -->
       <div class="beam b-a"></div>
       <div class="beam b-b"></div>
       <div class="streaks"></div>
@@ -88,14 +95,14 @@
       </div>
 
       <div class="gridwrap">
+        <div class="turnHint" id="turnHint">AU TOUR DE 1P</div>
         <div class="grid" id="charGrid"></div>
-        <div class="special"><b id="specialName">—</b><em id="specialDesc">—</em></div>
         <div class="diffRow">
           <span class="arrowBtn" id="diffL">◀</span>
           <span class="diffLabel">IA : <b id="diffName">NORMAL</b></span>
           <span class="arrowBtn" id="diffR">▶</span>
         </div>
-        <button class="mbtn c-yellow fightBtn" data-act="fight">COMBATTRE</button>
+        <button class="mbtn fightBtn" data-act="fight">COMBATTRE</button>
       </div>
 
       <div class="side p2">
@@ -105,14 +112,18 @@
       </div>
     </div>
 
-    <div class="discbar">
-      <span class="cap">DISQUE</span>
+    <!-- Description de l'ultime, désormais SOUS les personnages plutôt qu'entre
+         la grille et le niveau d'IA. -->
+    <div class="special" id="specialBox"><b id="specialName">—</b><em id="specialDesc">—</em></div>
+
+    <!-- Carrousel de disques : plus de cadre, juste les flèches en blanc. -->
+    <div class="discbar bare">
       <div class="discrow">
-        <button class="arrowBtn" id="discPrev">◀</button>
+        <button class="arrowBtn ghost" id="discPrev">◀</button>
         <div class="discSide" id="discLeft"></div>
         <div class="disc" id="discView"></div>
         <div class="discSide" id="discRight"></div>
-        <button class="arrowBtn" id="discNext">▶</button>
+        <button class="arrowBtn ghost" id="discNext">▶</button>
       </div>
       <span class="discname" id="discName">—</span>
     </div>
@@ -169,6 +180,7 @@
     <div class="optPanel">
       <div class="tabs">
         <div class="tab active" data-tab="audio">AUDIO</div>
+        <div class="tab" data-tab="jeu">JEU</div>
         <div class="tab" data-tab="keys">TOUCHES</div>
       </div>
 
@@ -184,6 +196,17 @@
             <input type="range" id="sfxVol" min="0" max="100" value="90">
             <span class="val" id="sfxVal">90%</span>
           </div>
+        </div>
+
+        <div class="tab-content" id="tab-jeu">
+          <div class="sliderRow">
+            <label>VISÉE DU DASH</label>
+            <button class="mbtn" id="dashAim" style="flex:1">VERS LA SOURIS</button>
+          </div>
+          <p style="font-size:1.5cqh;color:#8fa4c4;margin:1cqh 0 0;line-height:1.5">
+            « Vers la souris » : tu dashes là où tu vises.<br>
+            « Sens du déplacement » : tu dashes là où tu cours.
+          </p>
         </div>
 
         <div class="tab-content" id="tab-keys">
@@ -272,25 +295,21 @@
     </div>
   </div>
 
-  <!-- Panneau admin -->
+  <!-- Panneau admin : deux volets latéraux, dans les bandes noires hors terrain.
+       Le contenu des onglets est généré par js/ui/admin.js ; les boutons d'action
+       historiques y sont réinjectés en gardant leurs identifiants. -->
   <div id="admin-panel">
-    <div class="arow"><span class="alabel">ADMIN</span>
-      <button class="abtn success" id="admin-forceShoot">Forcer tir IA</button>
-      <button class="abtn" id="admin-giveDisc">Donner disque IA</button>
-    </div>
-    <div class="arow">
-      <button class="abtn danger" id="admin-reset">Reset match</button>
-      <button class="abtn" id="admin-logs">Logs</button>
-      <button class="abtn" id="admin-stats">Stats</button>
-    </div>
-    <div class="arow">
-      <button class="abtn" id="admin-togglePause">Pause</button>
-      <button class="abtn" id="admin-slowmo">Slowmo</button>
-      <button class="abtn" id="admin-normal">Normal</button>
-    </div>
+    <aside class="apane" id="apane-L" data-side="L">
+      <div class="atabs" id="atabs-L"></div>
+      <div class="abody" id="abody-L"></div>
+    </aside>
+    <aside class="apane" id="apane-R" data-side="R">
+      <div class="atabs" id="atabs-R"></div>
+      <div class="abody" id="abody-R"></div>
+    </aside>
   </div>
 </div>
-<footer>5× clic sur le titre pour le mode admin · Options → Touches pour personnaliser</footer>
+<footer>Options → Touches pour personnaliser les commandes</footer>
 
 <script type="module" src="js/main.js?v=2"></script>
 </body>
