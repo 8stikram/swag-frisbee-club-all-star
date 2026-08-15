@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Naruto V2 — veste et pantalon corrigés</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 50px}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:14px;margin:26px 0 10px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .sub{color:#8fa4c4;font-size:13px;margin:0 0 6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:720px;line-height:1.6;margin:0 0 12px}
+  .row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px}
+  .card.pick{border-color:var(--ok);box-shadow:0 0 0 1px var(--ok) inset}
+  .lbl{font-size:11px;color:#8fa4c4;text-transform:uppercase;letter-spacing:1.1px;
+       margin-bottom:8px;text-align:center;min-height:26px}
+  .lbl b{color:var(--ok)}
+  canvas{display:block;image-rendering:pixelated;margin:0 auto}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok)}
+  #errs.bad{color:#ff5340}
+  ul{font-size:12.5px;color:#8fa4c4;line-height:1.8;max-width:720px;margin:0 0 12px;padding-left:20px}
+  ul b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<h1>Naruto V2 — veste et pantalon corrigés</h1>
+<p class="sub">Bandeau noir validé + les 5 corrections relevées sur tes photos.</p>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>Ce que j'ai corrigé</h2>
+<ul>
+  <li><b>Pantalon orange</b> — il était bleu marine, c'était simplement faux.</li>
+  <li><b>Bande blanche</b> sur la jambe gauche.</li>
+  <li><b>Chaussures noires</b> au lieu du bleu marine.</li>
+  <li><b>Trait noir vertical</b> au milieu du torse = la fermeture éclair.</li>
+  <li><b>Bande noire au-dessus de la ceinture</b> — celle que j'avais oubliée.</li>
+  <li><b>Le noir est un vrai noir</b> maintenant (#1e1e24), plus le bleu-marine d'avant. Même noir pour le bandeau, la veste et les chaussures.</li>
+  <li><b>Plus de noir en haut qu'en bas</b> : col + épaules + bras en noir, l'orange ne commence qu'à mi-torse.</li>
+</ul>
+
+<h2>Validé (V1) contre nouveau (V2)</h2>
+<div class="row" id="cmp"></div>
+
+<h2>À la taille réelle du jeu</h2>
+<p class="note">C'est ici qu'il faut juger : voilà ce que tu verras en jouant.</p>
+<div class="row" id="real"></div>
+
+<h2>Les 4 animations en V2</h2>
+<div class="row" id="anim"></div>
+
+<script>
+// ------------------------------------------------------------------ palettes
+const PAL_V1 = { H:'#ffd23e', h:'#e2a71c', B:'#252b45', M:'#d9dfe8', S:'#f8c890',
+  s:'#d99a63', w:'#c08050', E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#ffffff', D:'#24325e', R:'#e8463c' };
+
+// V2 : K = vrai noir, partagé par le bandeau, la veste et les chaussures.
+// P = orange du pantalon, volontairement plus sombre que le O de la veste.
+const PAL_V2 = { H:'#ffd23e', h:'#e2a71c', M:'#d9dfe8', S:'#f8c890', s:'#d99a63',
+  w:'#c08050', E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#f2f2f5', K:'#1e1e24',
+  P:'#e5730f' };
+// variante de contrôle : pantalon exactement du même orange que la veste
+const PAL_V2_UNI = Object.assign({}, PAL_V2, { P:'#ff8c1a' });
+
+// ------------------------------------------------------------------ V1 (validée)
+const HEAD_V1 = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....",
+  "..BBBBBBBBBB....","..BBMMMMMMBB....","..SSSSSSSSSS....","..SESSSSESS.....",
+  "..swSSSSSSws....","...SSSSSSSS....."];
+const IDLE_V1 = ["....DDDDDD......","..DDOOOOOODD....",".SDOOOOOOOODS...",".SDoOOOOOOoDS...",
+  "..DOOOOOOOOD....","..ooOORROOoo....","...DD....DD.....","...DD....DD.....",
+  "..DDD....DDD....","..DDD....DDD...."];
+
+// ------------------------------------------------------------------ V2
+// tête : identique, mais le tissu du bandeau passe au vrai noir (K)
+const HEAD_V2 = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....",
+  "..KKKKKKKKKK....","..KKMMMMMMKK....","..SSSSSSSSSS....","..SESSSSESS.....",
+  "..swSSSSSSws....","...SSSSSSSS....."];
+
+//  col+épaules+bras noirs · zip noir au milieu · bande noire sur la ceinture
+//  pantalon orange · bande blanche jambe gauche · chaussures noires
+const IDLE_V2 = ["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...",
+  "..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....",
+  "..PPP....PPP....","..KKK....KKK...."];
+const RUN1_V2 = ["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKK....","...OOOKKOOOOS...",
+  "..OOOOKKOOOO....","..KKKKKKKKKK....","..PP......PP....",".WW........PP...",
+  ".PP........PP...","KKK........KKK.."];
+const RUN2_V2 = ["....KKKKKK......","..KKKKKKKKKK....","...KKKKKKKKKS...",".SKOOOKKOOOO....",
+  "..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....",
+  "..PPP....PPP....","..KKK....KKK...."];
+const THROW_V2 = ["....KKKKKK......","..KKKKKKKKKK....","..KKKKKKKKKKSS..","..OOOOKKOOOOSS..",
+  "..OOOOKKOOOO....","..KKKKKKKKKK....","..PP.....PP.....","..WW......PP....",
+  ".PPP......PPP...",".KKK......KKK..."];
+
+// ------------------------------------------------------------------ outils
+function build(rows, pal){
+  const c=document.createElement('canvas'); c.width=16; c.height=rows.length;
+  const g=c.getContext('2d');
+  rows.forEach((r,y)=>{ for(let x=0;x<r.length;x++){ const ch=r[x];
+    if(ch!=='.'&&pal[ch]){ g.fillStyle=pal[ch]; g.fillRect(x,y,1,1); } } });
+  return c;
+}
+function show(parent, rows, pal, label, scale, pick){
+  const card=document.createElement('div'); card.className='card'+(pick?' pick':'');
+  const l=document.createElement('div'); l.className='lbl'; l.innerHTML=label;
+  const cv=document.createElement('canvas');
+  cv.width=16*scale; cv.height=rows.length*scale;
+  const g=cv.getContext('2d'); g.imageSmoothingEnabled=false;
+  g.fillStyle='#101a2e'; g.fillRect(0,0,cv.width,cv.height);
+  g.drawImage(build(rows,pal),0,0,cv.width,cv.height);
+  card.appendChild(l); card.appendChild(cv); parent.appendChild(card);
+}
+
+// ------------------------------------------------------------------ validation
+(function(){
+  const sets = { HEAD_V2, IDLE_V2, RUN1_V2, RUN2_V2, THROW_V2, HEAD_V1, IDLE_V1 };
+  const bad=[]; const missing=new Set();
+  for(const k in sets) sets[k].forEach((r,i)=>{ if(r.length!==16) bad.push(`${k}[${i}]=${r.length}`); });
+  [HEAD_V2,IDLE_V2,RUN1_V2,RUN2_V2,THROW_V2].forEach(a=>a.forEach(r=>{
+    for(const ch of r) if(ch!=='.' && !PAL_V2[ch]) missing.add(ch); }));
+  const box=document.getElementById('errs');
+  if(bad.length||missing.size){ box.className='bad';
+    box.textContent=(bad.length?'Largeurs incorrectes : '+bad.join(', ')+'\n':'')
+      +(missing.size?'Couleurs manquantes en V2 : '+[...missing].join(' '):''); }
+  else box.textContent='OK — toutes les lignes font 16 px, toutes les couleurs V2 sont définies.';
+})();
+
+// ------------------------------------------------------------------ rendus
+const cmp=document.getElementById('cmp');
+show(cmp, [...HEAD_V1,...IDLE_V1], PAL_V1,     'V1 validée<br>(secours)',        10);
+show(cmp, [...HEAD_V2,...IDLE_V2], PAL_V2_UNI, 'V2 · pantalon<br>même orange',   10);
+show(cmp, [...HEAD_V2,...IDLE_V2], PAL_V2,     'V2 · pantalon<br><b>plus sombre</b>', 10, true);
+
+const real=document.getElementById('real');
+show(real, [...HEAD_V1,...IDLE_V1], PAL_V1,     'V1 · ×2,4',            2.4);
+show(real, [...HEAD_V2,...IDLE_V2], PAL_V2_UNI, 'V2 uni · ×2,4',        2.4);
+show(real, [...HEAD_V2,...IDLE_V2], PAL_V2,     'V2 sombre · ×2,4',     2.4, true);
+show(real, [...HEAD_V1,...IDLE_V1], PAL_V1,     'V1 · ×5',              5);
+show(real, [...HEAD_V2,...IDLE_V2], PAL_V2_UNI, 'V2 uni · ×5',          5);
+show(real, [...HEAD_V2,...IDLE_V2], PAL_V2,     'V2 sombre · ×5',       5, true);
+
+const anim=document.getElementById('anim');
+show(anim, [...HEAD_V2,...IDLE_V2],  PAL_V2, 'idle',     6);
+show(anim, [...HEAD_V2,...RUN1_V2],  PAL_V2, 'course 1', 6);
+show(anim, [...HEAD_V2,...RUN2_V2],  PAL_V2, 'course 2', 6);
+show(anim, [...HEAD_V2,...THROW_V2], PAL_V2, 'lancer',   6);
+</script>
+</body>
+</html>

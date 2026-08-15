@@ -13,15 +13,23 @@ export function buildSprite(rows, pal) {
   return c;
 }
 
-const PAL_N = { H: '#ffd23e', h: '#e2a71c', B: '#2b5cd9', M: '#d9dfe8', S: '#f8c890', s: '#d99a63', E: '#173e8f', O: '#ff8c1a', o: '#d96b08', W: '#ffffff', D: '#24325e', R: '#e8463c' };
+// K : le noir du bandeau, de la veste et des sandales — un vrai noir, pas un bleu marine.
+// P : l'orange du pantalon, volontairement plus terne que le O de la veste pour
+//     que les deux se distinguent. w : les moustaches.
+const PAL_N = { H: '#ffd23e', h: '#e2a71c', M: '#d9dfe8', S: '#f8c890', s: '#d99a63', w: '#c08050', E: '#173e8f', O: '#ff8c1a', o: '#d96b08', W: '#f2f2f5', K: '#1e1e24', P: '#e5730f' };
 const PAL_L = { L: '#6f4526', l: '#4e2f18', S: '#f0c090', s: '#cf9660', E: '#2c2a26', J: '#2e3c5c', j: '#202b44', V: '#9aa2ad', B: '#e8b83a', W: '#e8ecf2', D: '#222c44', K: '#171c2c' };
 const PAL_I = { S: '#f7ddc0', s: '#d9b58d', E: '#14100c', T: '#7fd8ff' };
 
-const N_HEAD = ["....hHHHHh......", "...HHHHHHHH.....", "..HHHHHHHHHH....", "..hHHHHHHHHh....", "..BBBBBBBBBB....", "..BBMMMMMMBB....", "..SSSSSSSSSS....", "..SESSSSESS.....", "..sSSSSSSSSs....", "...SSSSSSSS....."];
-const N_IDLE_B = ["....OOOOOO......", "..OOOOOOOOOO....", ".SOOOOOOOOOOS...", ".SOoOOOOOOoOS...", "..OOOOOOOOOO....", "..ooOORROOoo....", "...DD....DD.....", "...DD....DD.....", "..DDD....DDD....", "..DDD....DDD...."];
-const N_RUN1_B = ["....OOOOOO......", "..OOOOOOOOOO....", ".SOOOOOOOOOO....", "...OOOOOOOOOS...", "..OOOOOOOOOO....", "..ooOOOOOOoo....", "..DD......DD....", ".DD........DD...", ".DD........DD...", "DDD........DDD.."];
-const N_RUN2_B = ["....OOOOOO......", "..OOOOOOOOOO....", "...OOOOOOOOOS...", ".SOOOOOOOOOO....", "..OOOOOOOOOO....", "..ooOOOOOOoo....", "...DD....DD.....", "...DD....DD.....", "..DDD....DDD....", "..DDD....DDD...."];
-const N_THROW_B = ["....OOOOOO......", "..OOOOOOOOOO....", "..OOOOOOOOOOSS..", "..OOOOOOOOOOSS..", "..OOOOOOOOOO....", "..ooOOOOOOoo....", "..DD.....DD.....", "..DD......DD....", ".DDD......DDD...", ".DDD......DDD..."];
+// Tête partagée par les 4 poses : tignasse en pics (sa signature), bandeau noir
+// à plaque, moustaches d'1 px par joue.
+const N_HEAD = ["...hH.HH.Hh.....", "..HHHHHHHHHH....", ".hHHHHHHHHHHh...", "..hHHHHHHHHh....", "..KKKKKKKKKK....", "..KKMMMMMMKK....", "..SSSSSSSSSS....", "..SESSSSESS.....", "..swSSSSSSws....", "...SSSSSSSS....."];
+// Veste Shippuden : col et épaules noirs, fermeture éclair noire au centre,
+// bande noire au-dessus de la ceinture, puis pantalon orange à bande blanche
+// (jambe gauche) et sandales noires.
+const N_IDLE_B = ["....KKKKKK......", "..KKKKKKKKKK....", ".SKKKKKKKKKKS...", ".SOOOOKKOOOOS...", "..OOOOKKOOOO....", "..KKKKKKKKKK....", "...PP....PP.....", "...WW....PP.....", "..PPP....PPP....", "..KKK....KKK...."];
+const N_RUN1_B = ["....KKKKKK......", "..KKKKKKKKKK....", ".SKKKKKKKKKK....", "...OOOKKOOOOS...", "..OOOOKKOOOO....", "..KKKKKKKKKK....", "..PP......PP....", ".WW........PP...", ".PP........PP...", "KKK........KKK.."];
+const N_RUN2_B = ["....KKKKKK......", "..KKKKKKKKKK....", "...KKKKKKKKKS...", ".SKOOOKKOOOO....", "..OOOOKKOOOO....", "..KKKKKKKKKK....", "...PP....PP.....", "...WW....PP.....", "..PPP....PPP....", "..KKK....KKK...."];
+const N_THROW_B = ["....KKKKKK......", "..KKKKKKKKKK....", "..KKKKKKKKKKSS..", "..OOOOKKOOOOSS..", "..OOOOKKOOOO....", "..KKKKKKKKKK....", "..PP.....PP.....", "..WW......PP....", ".PPP......PPP...", ".KKK......KKK..."];
 
 const L_HEAD = ["....lLLLLl......", "...LLLLLLLL.....", "..LLLLLLLLLL....", "..LlSSSSSSlL....", "..LSSSSSSSSL....", "..SSSSSSSSSS....", "..SESSSSESS.....", "..SSSSSSSSSS....", "...SSSSSSSS.....", "....WWWWWW......"];
 const L_IDLE_B = ["..JJJJJJJJJJ....", ".SVVVVVVVVVJS...", ".SVVBVVVVVVJS...", ".SVVVVVVVVVJS...", "..JJJJJJJJJJ....", "..jJJJJJJJJj....", "...DD....DD.....", "...DD....DD.....", "..DDD....DDD....", "..KKK....KKK...."];

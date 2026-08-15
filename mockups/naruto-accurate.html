@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Naruto 16×20 — plus accurate</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 50px}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:14px;margin:28px 0 10px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .sub{color:#8fa4c4;font-size:13px;margin:0 0 6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:700px;line-height:1.6;margin:0 0 12px}
+  .row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px}
+  .card.pick{border-color:var(--ok)}
+  .lbl{font-size:11px;color:#8fa4c4;text-transform:uppercase;letter-spacing:1.1px;
+       margin-bottom:8px;text-align:center}
+  .lbl b{color:var(--ok)}
+  canvas{display:block;image-rendering:pixelated;margin:0 auto}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok)}
+  #errs.bad{color:#ff5340}
+  .chg{font-size:12.5px;color:#8fa4c4;line-height:1.7;max-width:700px}
+  .chg b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<h1>Naruto 16×20 — même style, plus accurate</h1>
+<p class="sub">Aucun détail ajouté au visage. Uniquement des corrections de reconnaissance.</p>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>Les 3 corrections</h2>
+<div class="chg">
+  <b>1. Les pics de cheveux.</b> Aujourd'hui sa tignasse est un <i>dôme parfaitement lisse</i> — ça pourrait être n'importe quel blond.
+  C'est LA signature de Naruto et elle manque. Coût : 1 ligne modifiée, zéro pixel ajouté au visage.<br>
+  <b>2. Les moustaches.</b> 1 pixel par joue. C'est son trait le plus iconique après les cheveux.<br>
+  <b>3. La veste Shippuden.</b> Col et épaules noires au lieu du tout-orange. C'est ce qui distingue le Shippuden du Naruto d'origine.
+</div>
+
+<h2>Vue d'ensemble — zoom 9×</h2>
+<p class="note">De gauche à droite : l'actuel, puis chaque correction ajoutée une par une, pour voir ce que chacune apporte vraiment.</p>
+<div class="row" id="steps"></div>
+
+<h2>Le bandeau : bleu ou noir ?</h2>
+<p class="note">Vrai dilemme, je te laisse trancher. Le <b>noir</b> est fidèle au Shippuden. Le <b>bleu</b> est celui du Naruto d'origine
+— mais il ressort beaucoup mieux sur le fond spatial sombre du jeu. C'est précision contre lisibilité.</p>
+<div class="row" id="band"></div>
+
+<h2>À la taille réelle du jeu</h2>
+<p class="note">Voilà ce que tu verras vraiment en jouant (×2,4 sur le terrain). C'est à cette taille qu'il faut juger, pas au zoom.</p>
+<div class="row" id="real"></div>
+
+<h2>Les 4 animations existantes, avec la nouvelle tête</h2>
+<p class="note">La tête étant partagée, les 4 poses du jeu en profitent automatiquement.</p>
+<div class="row" id="anim"></div>
+
+<script>
+// ---------------------------------------------------------------- palettes
+const PAL_OLD = { H:'#ffd23e', h:'#e2a71c', B:'#2b5cd9', M:'#d9dfe8', S:'#f8c890',
+  s:'#d99a63', E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#ffffff', D:'#24325e', R:'#e8463c' };
+// nouvelle : + 'w' moustache, B devient noir (Shippuden)
+const PAL_NOIR = Object.assign({}, PAL_OLD, { B:'#252b45', w:'#c08050' });
+const PAL_BLEU = Object.assign({}, PAL_OLD, { w:'#c08050' });
+
+// ---------------------------------------------------------------- ACTUEL
+const HEAD_OLD = ["....hHHHHh......","...HHHHHHHH.....","..HHHHHHHHHH....","..hHHHHHHHHh....",
+  "..BBBBBBBBBB....","..BBMMMMMMBB....","..SSSSSSSSSS....","..SESSSSESS.....",
+  "..sSSSSSSSSs....","...SSSSSSSS....."];
+const IDLE_OLD = ["....OOOOOO......","..OOOOOOOOOO....",".SOOOOOOOOOOS...",".SOoOOOOOOoOS...",
+  "..OOOOOOOOOO....","..ooOORROOoo....","...DD....DD.....","...DD....DD.....",
+  "..DDD....DDD....","..DDD....DDD...."];
+
+// ---------------------------------------------------------------- ÉTAPE 1 : pics
+const HEAD_PICS = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....",
+  "..BBBBBBBBBB....","..BBMMMMMMBB....","..SSSSSSSSSS....","..SESSSSESS.....",
+  "..sSSSSSSSSs....","...SSSSSSSS....."];
+
+// ---------------------------------------------------------------- ÉTAPE 2 : + moustaches
+const HEAD_FULL = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....",
+  "..BBBBBBBBBB....","..BBMMMMMMBB....","..SSSSSSSSSS....","..SESSSSESS.....",
+  "..swSSSSSSws....","...SSSSSSSS....."];
+
+// ---------------------------------------------------------------- ÉTAPE 3 : veste Shippuden
+const IDLE_SHIP = ["....DDDDDD......","..DDOOOOOODD....",".SDOOOOOOOODS...",".SDoOOOOOOoDS...",
+  "..DOOOOOOOOD....","..ooOORROOoo....","...DD....DD.....","...DD....DD.....",
+  "..DDD....DDD....","..DDD....DDD...."];
+
+// les 3 autres poses, adaptées au col/épaules noires
+const RUN1_SHIP = ["....DDDDDD......","..DDOOOOOODD....",".SDOOOOOOOOD....","...DOOOOOOOODS..",
+  "..DOOOOOOOOD....","..ooOOOOOOoo....","..DD......DD....",".DD........DD...",
+  ".DD........DD...","DDD........DDD.."];
+const RUN2_SHIP = ["....DDDDDD......","..DDOOOOOODD....","...DOOOOOOOODS..",".SDOOOOOOOOD....",
+  "..DOOOOOOOOD....","..ooOOOOOOoo....","...DD....DD.....","...DD....DD.....",
+  "..DDD....DDD....","..DDD....DDD...."];
+const THROW_SHIP = ["....DDDDDD......","..DDOOOOOODD....","..DOOOOOOOODSS..","..DOOOOOOOODSS..",
+  "..DOOOOOOOOD....","..ooOOOOOOoo....","..DD.....DD.....","..DD......DD....",
+  ".DDD......DDD...",".DDD......DDD..."];
+
+// ---------------------------------------------------------------- outils
+function build(rows, pal){
+  const c=document.createElement('canvas'); c.width=16; c.height=rows.length;
+  const g=c.getContext('2d');
+  rows.forEach((r,y)=>{ for(let x=0;x<r.length;x++){ const ch=r[x];
+    if(ch!=='.'&&pal[ch]){ g.fillStyle=pal[ch]; g.fillRect(x,y,1,1); } } });
+  return c;
+}
+function show(parent, rows, pal, label, scale, pick){
+  const card=document.createElement('div'); card.className='card'+(pick?' pick':'');
+  const l=document.createElement('div'); l.className='lbl'; l.innerHTML=label;
+  const cv=document.createElement('canvas');
+  cv.width=16*scale; cv.height=rows.length*scale;
+  const g=cv.getContext('2d'); g.imageSmoothingEnabled=false;
+  g.fillStyle='#101a2e'; g.fillRect(0,0,cv.width,cv.height);
+  g.drawImage(build(rows,pal),0,0,cv.width,cv.height);
+  card.appendChild(l); card.appendChild(cv); parent.appendChild(card);
+}
+
+// ---------------------------------------------------------------- validation
+(function(){
+  const all = { HEAD_OLD, IDLE_OLD, HEAD_PICS, HEAD_FULL, IDLE_SHIP, RUN1_SHIP, RUN2_SHIP, THROW_SHIP };
+  const bad=[];
+  for(const k in all) all[k].forEach((r,i)=>{ if(r.length!==16) bad.push(`${k}[${i}]=${r.length}`); });
+  const pals=new Set(); const need=new Set();
+  [HEAD_FULL,IDLE_SHIP,RUN1_SHIP,RUN2_SHIP,THROW_SHIP].forEach(a=>a.forEach(r=>{
+    for(const ch of r) if(ch!=='.') need.add(ch); }));
+  need.forEach(ch=>{ if(!PAL_NOIR[ch]) pals.add(ch); });
+  const box=document.getElementById('errs');
+  if(bad.length||pals.size){ box.className='bad';
+    box.textContent = (bad.length?'Lignes de mauvaise largeur : '+bad.join(', ')+'\n':'')
+      + (pals.size?'Caractères sans couleur : '+[...pals].join(' '):''); }
+  else box.textContent = 'OK — toutes les lignes font 16 px, toutes les couleurs sont définies.';
+})();
+
+// ---------------------------------------------------------------- rendus
+const steps=document.getElementById('steps');
+show(steps, [...HEAD_OLD,...IDLE_OLD],   PAL_OLD,  'ACTUEL',                      9);
+show(steps, [...HEAD_PICS,...IDLE_OLD],  PAL_OLD,  '+ pics de cheveux',           9);
+show(steps, [...HEAD_FULL,...IDLE_OLD],  PAL_BLEU, '+ moustaches',                9);
+show(steps, [...HEAD_FULL,...IDLE_SHIP], PAL_BLEU, '+ veste Shippuden<br><b>= proposition</b>', 9, true);
+
+const band=document.getElementById('band');
+show(band, [...HEAD_FULL,...IDLE_SHIP], PAL_BLEU, 'bandeau BLEU<br>(lisible)',   10);
+show(band, [...HEAD_FULL,...IDLE_SHIP], PAL_NOIR, 'bandeau NOIR<br>(fidèle)',    10);
+
+const real=document.getElementById('real');
+show(real, [...HEAD_OLD,...IDLE_OLD],   PAL_OLD,  'actuel',        2.4);
+show(real, [...HEAD_FULL,...IDLE_SHIP], PAL_BLEU, 'nouveau bleu',  2.4);
+show(real, [...HEAD_FULL,...IDLE_SHIP], PAL_NOIR, 'nouveau noir',  2.4);
+show(real, [...HEAD_OLD,...IDLE_OLD],   PAL_OLD,  'actuel ×5',     5);
+show(real, [...HEAD_FULL,...IDLE_SHIP], PAL_BLEU, 'nouveau ×5',    5);
+
+const anim=document.getElementById('anim');
+show(anim, [...HEAD_FULL,...IDLE_SHIP],  PAL_BLEU, 'idle',    6);
+show(anim, [...HEAD_FULL,...RUN1_SHIP],  PAL_BLEU, 'course 1',6);
+show(anim, [...HEAD_FULL,...RUN2_SHIP],  PAL_BLEU, 'course 2',6);
+show(anim, [...HEAD_FULL,...THROW_SHIP], PAL_BLEU, 'lancer',  6);
+</script>
+</body>
+</html>
