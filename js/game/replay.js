@@ -13,13 +13,21 @@ export function capture() {
   G.rec.push({
     p1: snapFrame(G.p1),
     p2: snapFrame(G.p2),
-    d: { x: G.disc.x, y: G.disc.y, spin: G.disc.spin, big: G.disc.big, super: G.disc.super }
+    d: { x: G.disc.x, y: G.disc.y, spin: G.disc.spin, big: G.disc.big, super: G.disc.super },
+    held: !!G.disc.heldBy   // sert à retrouver l'instant du tir dans le replay
   });
-  if (G.rec.length > 240) G.rec.shift();
+  // La fenêtre glisse : on décale aussi le repère de la dernière prise de disque
+  // pour qu'il continue de pointer la bonne image.
+  if (G.rec.length > 240) { G.rec.shift(); if (G.lastCatchIdx > 0) G.lastCatchIdx--; }
 }
 
 export function applySnap(s) {
   if (!s) return;
+  // Traînée légère derrière le disque pour lire sa trajectoire.
+  if (G.disc) {
+    G.trail.push({ x: G.disc.x, y: G.disc.y, life: .32, spin: G.disc.spin });
+    if (G.trail.length > 14) G.trail.shift();
+  }
   const a = G.p1, b = G.p2, d = G.disc;
   a.x = s.p1.x; a.y = s.p1.y; a.face = s.p1.face; a.forceFr = s.p1.fr; a.moving = false; a.charging = false; a.stun = 0;
   b.x = s.p2.x; b.y = s.p2.y; b.face = s.p2.face; b.forceFr = s.p2.fr; b.moving = false; b.charging = false; b.stun = 0;

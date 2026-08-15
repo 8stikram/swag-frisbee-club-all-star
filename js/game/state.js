@@ -21,7 +21,10 @@ export const G = {
   lungeBonus: false, lungeBonusTimer: 0, adminMode: false, isJ2J: false,
   pendingServe: 1,
   // Mise en scène du Perfect Dive : zoom caméra transitoire et flash lumineux.
-  zoom: null, flash: 0
+  zoom: null, flash: 0,
+  // Image du dernier attrapé : sert de point de départ au replay, dont la durée
+  // s'adapte ainsi à l'action plutôt que d'être fixe.
+  lastCatchIdx: -1
 };
 
 (function initBackground() {
@@ -96,7 +99,7 @@ export function initMatch(demo, ck, cpu, diffIdx, j2j) {
   G.particles.length = 0; G.popups.length = 0; G.trail.length = 0; G.decoys.length = 0; G.rec.length = 0;
   G.timescale = 1; G.shake = 0; G.rally = 0; G.maxRally = 0; G.comment = null; G.idleT = 0;
   G.mem = { t: 0, m: 0, b: 0 }; G.startCom = false; G.lungeBonus = false; G.lungeBonusTimer = 0;
-  G.zoom = null; G.flash = 0;
+  G.zoom = null; G.flash = 0; G.lastCatchIdx = -1;
   G.isJ2J = j2j || false;
   if (demo) {
     G.p1 = makePlayer('naruto', 1, false, 0);

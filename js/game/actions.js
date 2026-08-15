@@ -7,7 +7,7 @@ import {
 import { clamp, norm, gauss, pick, rand } from '../core/utils.js';
 import { zoneByY } from '../data/maps.js';
 import { CHARS } from '../data/characters.js';
-import { sfx } from '../audio/audio.js';
+import { sfx, setMuffled } from '../audio/audio.js';
 import { burst, dust, ring, confetti, starBurst, addPopup } from './fx.js';
 import { $, cv, showScreen } from '../core/dom.js';
 
@@ -155,6 +155,7 @@ export function onCatch(p, sp, dirx, diry) {
   p.meter = clamp(p.meter + 12, 0, 100);
   p.holdTimer = 0;
   G.rally++; G.maxRally = Math.max(G.maxRally, G.rally); G.idleT = 0;
+  G.lastCatchIdx = G.rec.length;   // point de départ du prochain replay
   // Attrapé pendant un dash (ou juste après un Cancel Dash) : le joueur a un
   // court instant pour déclencher un Dash Throw, tir instantané à pleine
   // puissance. S'il ne clique pas, il garde simplement le disque en main.
@@ -214,13 +215,35 @@ export function afterGoal() { if (G.winner) gameOver(); else setupServe(G.pendin
 
 export function startReplay() {
   const n = G.rec.length;
-  if (n < 45) { afterGoal(); return; }
-  G.replay = { idx: Math.max(0, n - 95), end: n - 1, speed: .5 };
+  if (n < 12) { afterGoal(); return; }
+  // Durée adaptative : on remonte jusqu'à l'instant où le buteur a pris le
+  // disque, plutôt que d'utiliser un nombre d'images fixe. On borne quand même
+  // pour éviter un replay interminable sur une possession très longue.
+  let start = (G.lastCatchIdx >= 0 && G.lastCatchIdx < n - 8) ? G.lastCatchIdx : n - 90;
+  start = Math.max(0, Math.min(start, n - 12));
+  if (n - start > 200) start = n - 200;
+  // Repère du tir : première image où le disque n'est plus tenu.
+  let shot = start;
+  for (let i = start; i < n; i++) { if (!G.rec[i].held) { shot = i; break; } }
+  G.replay = { idx: start, end: n - 1, shot, speed: 1, closing: 0 };
   G.state = 'replay'; sfx('replay');
+  setMuffled(true);
   G.p1.ghosts.length = 0; G.p2.ghosts.length = 0;
 }
 
-export function skipReplay() { if (!G.replay) return; G.replay = null; afterGoal(); }
+// Fin du replay : les bandes se referment sur un léger flash avant le retour au
+// jeu. Le son redevient normal.
+export function endReplay() {
+  if (!G.replay) return;
+  G.replay.closing = .001;      // amorce l'animation de fermeture
+}
+export function finishReplay() {
+  G.replay = null;
+  setMuffled(false);
+  G.flash = Math.max(G.flash, .22);
+  afterGoal();
+}
+export function skipReplay() { endReplay(); }
 
 function drawOverSprite(canvasEl, ck, scale) {
   const src = CHARS[ck].frames.idle;

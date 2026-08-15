@@ -636,22 +636,48 @@ function drawCrosshair() {
 }
 
 function drawReplayOverlay() {
+  const r = G.replay;
+  // Les bandes s'ouvrent au début et se referment en fin de replay, jusqu'à
+  // masquer complètement l'écran avant le retour au jeu.
+  let band = 54;
+  if (r && r.closing > 0) band = 54 + (H / 2 - 54) * Math.min(1, r.closing / .3);
   ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, W, 54);
-  ctx.fillRect(0, H - 54, W, 54);
+  ctx.fillRect(0, 0, W, band);
+  ctx.fillRect(0, H - band, W, band);
+  if (r && r.closing > 0) return;       // pendant la fermeture, plus aucun texte
+
   ctx.fillStyle = '#fff';
   ctx.font = '14px "Archivo Black", system-ui, sans-serif';
   ctx.textAlign = 'left';
   ctx.fillText('REPLAY', 48, 33);
+  // Hint discret, centré en bas, qui clignote très légèrement.
+  const a = .55 + .25 * Math.sin(G.now * 4);
   ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(255,255,255,.8)';
-  ctx.font = '12px "Archivo Black", system-ui, sans-serif';
-  ctx.fillText('CLIC / ESPACE POUR SKIP', CX, H - 14);
+  ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')';
+  ctx.font = '11px "Archivo Black", system-ui, sans-serif';
+  ctx.fillText('CLIQUE POUR PASSER', CX, H - 20);
 }
 
 export function render() {
   ctx.save();
   if (G.shake > 0.3) ctx.translate(gauss() * G.shake, gauss() * G.shake);
+  // Caméra du replay : serrée sur le lanceur avant le tir, elle suit ensuite le
+  // disque, puis se resserre encore à l'approche du but.
+  if (G.replay && !G.replay.closing) {
+    const r = G.replay;
+    const avantTir = r.idx < r.shot;
+    const finale = r.idx > r.end - 26;
+    const cible = avantTir
+      ? (G.disc.x < CX ? G.p1 : G.p2)     // le porteur, du côté d'où part le tir
+      : G.disc;
+    const z = finale ? 1.55 : (avantTir ? 1.35 : 1.18);
+    // On borne le centre pour ne jamais cadrer hors du terrain.
+    const cx = clamp(cible.x, W / (2 * z), W - W / (2 * z));
+    const cy = clamp(cible.y, H / (2 * z), H - H / (2 * z));
+    ctx.translate(W / 2, H / 2);
+    ctx.scale(z, z);
+    ctx.translate(-cx, -cy);
+  }
   // Zoom caméra du Perfect Dive : on grossit autour du plongeur puis on
   // revient, en gardant le cadrage dans les limites du terrain.
   if (G.zoom) {
@@ -679,8 +705,10 @@ export function render() {
   if (G.p1 && !G.demo) { drawHUD(); drawCrosshair(); }
   drawTexts();
   drawCommentator();
-  if (G.replay) drawReplayOverlay();
   ctx.restore();
+  // Les bandes et le logo REPLAY sont en espace écran : dessinés dans la
+  // transformation caméra, ils auraient été zoomés avec le terrain.
+  if (G.replay) drawReplayOverlay();
   // Flash du Perfect Dive, appliqué hors zoom pour couvrir tout l'écran.
   if (G.flash > 0) {
     ctx.fillStyle = 'rgba(255,255,255,' + (G.flash * .55).toFixed(3) + ')';

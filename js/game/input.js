@@ -56,7 +56,8 @@ window.addEventListener('mousemove', e => {
 window.addEventListener('mousedown', e => {
   initAudio();
   if (curScreen !== null || G.demo) return;
-  if (G.replay) { skipReplay(); return; }
+  // Idem au clic : on consomme l'événement pour qu'aucun tir ne parte derrière.
+  if (G.replay) { e.preventDefault(); Mouse.down = false; skipReplay(); return; }
   if (e.button === 0) {
     Mouse.down = true;
     const p = G.p1;
@@ -88,7 +89,12 @@ window.addEventListener('keydown', e => {
   keys.add(e.code);
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'ShiftRight'].includes(e.code)) keysP2.add(e.code);
   if (e.code === 'KeyM') { addPopup(toggleMusic() ? '♪ MUSIQUE ON' : '♪ MUSIQUE OFF', '#9fb4dd', 13); return; }
-  if (G.replay && (e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyS')) { skipReplay(); return; }
+  // Le skip consomme la touche : sans ça, la même pression relancerait une
+  // charge ou un tir dès le retour au jeu.
+  if (G.replay && ['Space', 'Enter', 'Escape'].includes(e.code)) {
+    e.preventDefault(); keys.delete(e.code); keysP2.delete(e.code);
+    skipReplay(); return;
+  }
   if (curScreen) {
     if (['title', 'options', 'pause', 'over'].includes(curScreen)) {
       const up = getKey('moveUp'), down = getKey('moveDown');

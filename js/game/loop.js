@@ -8,7 +8,7 @@ import { updateDisc, updateDecoys } from './disc.js';
 import { updateLeg, launchCine } from './specials.js';
 import { updateFX } from './fx.js';
 import { capture, applySnap } from './replay.js';
-import { setupServe, afterGoal, startReplay } from './actions.js';
+import { setupServe, afterGoal, startReplay, endReplay, finishReplay } from './actions.js';
 import { sfx, setDemoMuted } from '../audio/audio.js';
 import { render } from '../render/render.js';
 
@@ -38,8 +38,19 @@ export function update(dt) {
   }
   if (G.state === 'replay') {
     const r = G.replay;
+    // Fermeture des bandes noires en fin de replay (ou après un skip).
+    if (r.closing > 0) {
+      r.closing += dt;
+      if (r.closing > .3) { finishReplay(); }
+      updateFX(dt);
+      return;
+    }
+    // Vitesse normale, puis ralenti au moment du tir et à l'approche du but.
+    const prochesDuBut = r.idx > r.end - 26;
+    const prochesDuTir = Math.abs(r.idx - r.shot) < 12;
+    r.speed = (prochesDuBut || prochesDuTir) ? .28 : 1;
     r.idx += dt * 60 * r.speed;
-    if (r.idx >= r.end) { G.replay = null; afterGoal(); }
+    if (r.idx >= r.end) { G.shake = Math.max(G.shake, 12); endReplay(); }
     else { applySnap(G.rec[Math.floor(r.idx)]); }
     updateFX(dt);
     return;
@@ -89,7 +100,8 @@ export function update(dt) {
       G.goalT -= dt;
       updateDecoys(wdt);
       if (G.goalT <= 0) {
-        if (!G.demo && G.rec.length > 50) startReplay();
+        // Replay après chaque but, plus seulement quand l'échange a été long.
+        if (!G.demo) startReplay();
         else afterGoal();
       }
       break;

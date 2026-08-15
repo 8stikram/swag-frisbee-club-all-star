@@ -44,11 +44,21 @@ function resumeSavedTrack() {
   if (id) playTrack(id);
 }
 
+// Pendant le replay, tout le son passe par un filtre passe-bas : l'ambiance
+// devient feutrée, comme entendue de loin, puis redevient normale à la fin.
+let muffle = null;
+export function setMuffled(on) {
+  if (muffle) muffle.frequency.setTargetAtTime(on ? 700 : 20000, AC ? AC.currentTime : 0, .05);
+  if (bgmEl) bgmEl.volume = musicVol * (on ? .35 : 1);
+}
+
 export function initAudio() {
   if (AC) return;
   try {
     AC = new (window.AudioContext || window.webkitAudioContext)();
-    masterG = AC.createGain(); masterG.gain.value = 0.9; masterG.connect(AC.destination);
+    masterG = AC.createGain(); masterG.gain.value = 0.9;
+    muffle = AC.createBiquadFilter(); muffle.type = 'lowpass'; muffle.frequency.value = 20000;
+    masterG.connect(muffle); muffle.connect(AC.destination);
     sfxGain = AC.createGain(); sfxGain.gain.value = sfxVol; sfxGain.connect(masterG);
     noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.5, AC.sampleRate);
     const d = noiseBuf.getChannelData(0);
