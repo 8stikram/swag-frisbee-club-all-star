@@ -163,7 +163,7 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
   /* Chakra Petch pour tous les boutons : plus technique et plus lisible en
      petit que l'Archivo Black, qui reste réservé aux titres. */
   font-family:'Chakra Petch','Archivo Black',sans-serif;font-weight:700;
-  font-size:clamp(12px,2cqh,19px);letter-spacing:.03em;
+  font-size:clamp(13px,2.35cqh,23px);letter-spacing:.03em;
   color:var(--ink);background:rgba(255,255,255,.96);
   padding:1.15cqh 1.5cqw;border:4px solid var(--ink);border-radius:15px;
   box-shadow:6px 6px 0 var(--ink);cursor:pointer;text-align:center;
@@ -333,7 +333,7 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 /* Le logo est volontairement plus large que sa colonne et déborde à gauche.
    Sa marge basse négative est plafonnée : au-delà, il poussait les boutons
    hors du cadre et OPTIONS disparaissait. */
-.logo{display:block;width:138%;max-width:none;height:auto;margin:-2cqh 0 -4cqh -15%;
+.logo{display:block;width:120%;max-width:none;height:auto;margin:-2cqh 0 -4cqh -9%;
   filter:drop-shadow(0 6px 0 rgba(0,0,0,.28))}
 .titleLeft .menu{display:flex;flex-direction:column;gap:1.1cqh}
 .titleLeft .mbtn{justify-content:flex-start;text-align:left}
