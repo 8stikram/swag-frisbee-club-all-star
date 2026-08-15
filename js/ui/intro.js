@@ -106,9 +106,15 @@ function terminer() {
 
 // Le clic sur le personnage (plan 5) enchaîne sur son glissement à droite ;
 // n'importe quel autre clic saute la séquence.
+// Délai de grâce : un clic ou une touche parasite au tout premier instant du
+// chargement sautait la séquence avant même qu'elle ne commence.
+let debut = 0;
+const GRACE = 700;
+
 function auClic(e) {
   initAudio();
   if (phase === 9) return;
+  if (performance.now() - debut < GRACE) return;
   if (phase === 5) {
     sfx('select');
     etincelles(18, 22);            // impulsion lumineuse au clic
@@ -120,6 +126,7 @@ function auClic(e) {
 }
 
 export function lancerIntro() {
+  debut = performance.now();
   poserFaisceaux();
   poserParticules();
   dessinerHeros();
