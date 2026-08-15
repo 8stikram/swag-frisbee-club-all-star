@@ -1,8 +1,13 @@
 import { G } from './state.js';
 
+// L'ordre reproduit exactement celui du rendu : sans le dash ni le plongeon, ces
+// poses disparaissaient du replay et les personnages semblaient figés alors
+// qu'ils étaient en pleine action.
 function snapFrame(p) {
   let fr = 'idle';
-  if (p.holding && (p.charging || p.throwPoseT > 0)) fr = 'throw';
+  if (p.diveT > 0 || p.diveDown > 0) fr = 'dive';
+  else if (p.dashT > 0) fr = 'dash';
+  else if (p.holding && (p.charging || p.throwPoseT > 0)) fr = 'throw';
   else if (p.moving) fr = (Math.floor(p.walk) % 2) ? 'run1' : 'run2';
   return { x: p.x, y: p.y, face: p.face, fr };
 }

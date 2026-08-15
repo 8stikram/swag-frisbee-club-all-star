@@ -91,23 +91,48 @@ export function resetSelectTurn() {
   previewP1 = previewP2 = false;
 }
 
-// Disque préféré, dans l'onglet JEU des options. Il fait le tour des skins puis
-// repasse par « aléatoire ».
+// Disque préféré : le bouton ouvre un panneau où l'on VOIT les disques, plutôt
+// que de les faire défiler à l'aveugle par leur nom.
 (function () {
-  const b = $('favSkin');
-  if (!b) return;
-  const refresh = () => {
+  const b = $('favSkin'), panel = $('skinPanel');
+  if (!b || !panel) return;
+
+  const label = () => {
     const f = getFavSkin();
-    b.textContent = f ? (DISC_SKINS.find(s => s.id === f) || {}).name || f : 'ALÉATOIRE';
+    b.textContent = f ? ((DISC_SKINS.find(s => s.id === f) || {}).name || f) : 'ALÉATOIRE';
   };
+
+  function buildPanel() {
+    panel.innerHTML = '';
+    const fav = getFavSkin();
+    // Case « aléatoire » en tête, puis un aperçu dessiné de chaque disque.
+    const rnd = document.createElement('button');
+    rnd.className = 'skinCell rnd' + (fav ? '' : ' on');
+    rnd.innerHTML = '<span class="qm">?</span><em>Aléatoire</em>';
+    rnd.addEventListener('click', e => { e.stopPropagation(); setFavSkin(null); sfx('select'); label(); buildPanel(); renderDisc(); });
+    panel.appendChild(rnd);
+
+    for (const s of DISC_SKINS) {
+      const cell = document.createElement('button');
+      cell.className = 'skinCell' + (fav === s.id ? ' on' : '');
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = 72;
+      drawSkinDisc(cv.getContext('2d'), 36, 36, 32, s.id, 0);
+      cell.appendChild(cv);
+      const em = document.createElement('em'); em.textContent = s.name;
+      cell.appendChild(em);
+      cell.addEventListener('click', e => { e.stopPropagation(); setFavSkin(s.id); sfx('select'); label(); buildPanel(); renderDisc(); });
+      panel.appendChild(cell);
+    }
+  }
+
   b.addEventListener('click', e => {
     e.stopPropagation();
-    const f = getFavSkin();
-    const i = f ? DISC_SKINS.findIndex(s => s.id === f) : -1;
-    setFavSkin(i + 1 >= DISC_SKINS.length ? null : DISC_SKINS[i + 1].id);
-    sfx('move'); refresh(); renderDisc();
+    const ouvert = panel.classList.toggle('hidden');
+    if (!ouvert) buildPanel();
+    sfx('move');
   });
-  refresh();
+  label();
 })();
 
 // Les deux boutons VALIDER, sous le nom de chaque camp.

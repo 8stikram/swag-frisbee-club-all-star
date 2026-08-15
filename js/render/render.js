@@ -378,6 +378,7 @@ function drawPlayer(p) {
     // Le plongeon a sa propre pose : sans elle il réutilisait celle du dash et
     // les deux actions étaient impossibles à distinguer.
     if (p.diveT > 0 || p.diveDown > 0) fr = 'dive';
+    else if (p.dashT > 0) fr = 'dash';
     else if (p.holding && (p.charging || p.throwPoseT > 0)) fr = 'throw';
     else if (p.moving) fr = (Math.floor(p.walk) % 2) ? 'run1' : 'run2';
   }

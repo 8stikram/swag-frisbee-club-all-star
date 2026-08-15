@@ -167,8 +167,8 @@ export function cancelDash(p) {
   p.dashGap = CANCEL_GAP;
   p.cancelCatchT = CANCEL_CATCH;
   dust(p.x, p.y + 20, 9);
-  // Pas de son neuf : le crissement est rendu par le bruit de dash très atténué.
-  sfx('move');
+  // Crissement de freinage, distinct du souffle du dash.
+  sfx('skid');
 }
 
 // Feinte de tir : le geste part, le disque avance à peine puis claque dans la

@@ -37,7 +37,7 @@ export function updateDisc(dt) {
       }
     } else if (h.feintCd > 0 && h.feintCd < FEINT_CD + .02 && !h.feintSwish) {
       // Le disque vient de revenir en main : petit claquement sec.
-      h.feintSwish = true; sfx('catch');
+      h.feintSwish = true; sfx('swish');
     }
     if (h.feintT <= 0 && h.feintCd <= 0) h.feintSwish = false;
     return;

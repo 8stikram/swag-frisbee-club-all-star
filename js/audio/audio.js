@@ -119,6 +119,10 @@ export function sfx(n) {
     case 'stun': beep(300, 500, .08, 'square', .1); beep(500, 300, .08, 'square', .1, .1); beep(300, 500, .08, 'square', .1, .2); break;
     case 'bigbounce': beep(140, 90, .12, 'triangle', .26); noise(.1, .12, 700); break;
     case 'replay': beep(1200, 400, .3, 'sine', .12); break;
+    // Crissement de basket au Cancel Dash : bruit filtré qui descend, très léger.
+    case 'skid': noise(.16, .07, 3200); noise(.12, .05, 1600, .03); break;
+    // Claquement sec du disque qui revient en main à la fin d'une feinte.
+    case 'swish': noise(.07, .06, 5200); beep(1500, 900, .06, 'sine', .06); break;
   }
 }
 

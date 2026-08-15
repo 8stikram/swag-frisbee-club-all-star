@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Poses de dash et de plongeon</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 50px}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:14px;margin:26px 0 10px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .sub{color:#8fa4c4;font-size:13px;margin:0 0 6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:760px;line-height:1.6;margin:0 0 12px}
+  .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px}
+  .card.neuf{border-color:var(--ok)}
+  .lbl{font-size:11px;color:#8fa4c4;text-transform:uppercase;letter-spacing:1.1px;
+       margin-bottom:8px;text-align:center;min-height:24px}
+  .lbl b{color:var(--ok)}
+  canvas{display:block;image-rendering:pixelated;margin:0 auto}
+</style>
+</head>
+<body>
+
+<h1>Nouvelles poses : dash et plongeon</h1>
+<p class="sub">Les deux actions partageaient la pose de course : rien ne les distinguait à l'écran.</p>
+
+<h2>Ce que chaque pose raconte</h2>
+<p class="note">
+  <b>Dash</b> : bras rejetés en arrière, buste ramassé, jambes en ciseau — la silhouette penche vers l'avant, on lit l'élan.<br>
+  <b>Plongeon</b> : bras tendus devant, jambes écartées et relevées, corps qui quitte le sol — on lit l'engagement, et le personnage reste à terre après un coup dans le vide.
+</p>
+<div class="row" id="poses"></div>
+
+<h2>Les six poses de chaque personnage</h2>
+<div class="row" id="tous"></div>
+
+<h2>À la taille du jeu</h2>
+<p class="note">C'est ici qu'il faut juger : en combat, seule la silhouette compte.</p>
+<div class="row" id="reel"></div>
+
+<script type="module">
+import { CHARS, ROSTER } from '../js/data/characters.js';
+
+const POSES = ['idle', 'run1', 'run2', 'throw', 'dive', 'dash'];
+const NOMS = { idle: 'repos', run1: 'course 1', run2: 'course 2', throw: 'lancer', dive: 'plongeon', dash: 'dash' };
+
+function show(parent, ck, pose, scale, neuf) {
+  const card = document.createElement('div');
+  card.className = 'card' + (neuf ? ' neuf' : '');
+  const l = document.createElement('div');
+  l.className = 'lbl';
+  l.innerHTML = ck.toUpperCase() + '<br>' + (neuf ? '<b>' + NOMS[pose] + '</b>' : NOMS[pose]);
+  const src = CHARS[ck].frames[pose];
+  const cv = document.createElement('canvas');
+  cv.width = src.width * scale; cv.height = src.height * scale;
+  const g = cv.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, cv.width, cv.height);
+  g.drawImage(src, 0, 0, cv.width, cv.height);
+  card.appendChild(l); card.appendChild(cv); parent.appendChild(card);
+}
+
+// Comparaison ciblée : course, puis les deux nouveautés.
+const p = document.getElementById('poses');
+for (const ck of ROSTER) {
+  show(p, ck, 'run1', 8);
+  show(p, ck, 'dash', 8, true);
+  show(p, ck, 'dive', 8, true);
+}
+
+const t = document.getElementById('tous');
+for (const ck of ROSTER) for (const pose of POSES) show(t, ck, pose, 5, pose === 'dash' || pose === 'dive');
+
+const r = document.getElementById('reel');
+for (const ck of ROSTER) { show(r, ck, 'dash', 2.4, true); show(r, ck, 'dive', 2.4, true); }
+</script>
+</body>
+</html>
