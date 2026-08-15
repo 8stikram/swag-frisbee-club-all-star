@@ -160,7 +160,10 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 /* ================= BOUTONS ================= */
 .mbtn{
   display:flex;align-items:center;gap:1cqw;justify-content:space-between;
-  font-family:'Archivo Black',sans-serif;font-size:clamp(11px,1.85cqh,18px);
+  /* Chakra Petch pour tous les boutons : plus technique et plus lisible en
+     petit que l'Archivo Black, qui reste réservé aux titres. */
+  font-family:'Chakra Petch','Archivo Black',sans-serif;font-weight:700;
+  font-size:clamp(12px,2cqh,19px);letter-spacing:.03em;
   color:var(--ink);background:rgba(255,255,255,.96);
   padding:1.15cqh 1.5cqw;border:4px solid var(--ink);border-radius:15px;
   box-shadow:6px 6px 0 var(--ink);cursor:pointer;text-align:center;
@@ -323,7 +326,7 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
   position:absolute;top:0;left:0;bottom:0;width:46%;z-index:3;
   display:flex;flex-direction:column;justify-content:center;gap:2cqh;padding:2cqh 3.4% 4cqh;
 }
-.logo{display:block;width:124%;max-width:none;height:auto;margin:0 0 -1.5cqh -11%;
+.logo{display:block;width:152%;max-width:none;height:auto;margin:0 0 -2cqh -18%;
   filter:drop-shadow(0 6px 0 rgba(0,0,0,.28))}
 .titleLeft .menu{display:flex;flex-direction:column;gap:1.1cqh}
 .titleLeft .mbtn{justify-content:flex-start;text-align:left}
@@ -749,7 +752,7 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .acard .actrl{display:flex;align-items:center;gap:4px;flex-shrink:0}
 
 /* --- boutons --- */
-.abtn{
+.abtn{font-family:'Chakra Petch',sans-serif;font-weight:600;
   font-family:inherit;font-size:10px;padding:4px 8px;border-radius:6px;
   background:var(--a-card2);border:1px solid var(--a-line);color:var(--a-txt);
   cursor:pointer;white-space:nowrap;
