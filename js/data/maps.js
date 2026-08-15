@@ -4,7 +4,10 @@
 export const MAPS = [
   {
     id: 'arena',
-    name: 'SPACE-STATION',
+    name: 'STELLAR ORBITAL STATION',
+    // OST propre au terrain : sélectionnée d'office quand on choisit cette map,
+    // le joueur restant libre d'en changer via le sélecteur de musique.
+    ost: 'stellar',
     court: { left: 70, right: 890, top: 84, bottom: 560 },
     goal: { height: 200, depth: 48 },
     // La zone à 5 points est volontairement plus étroite que celles à 3 :

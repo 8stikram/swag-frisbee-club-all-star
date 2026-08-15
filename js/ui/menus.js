@@ -385,6 +385,9 @@ export function refreshMaps() {
     const t = c.theme;
     bg.style.background = `radial-gradient(120cqh 90cqh at 50% 42%, ${t.bgInner} 0%, ${t.bgOuter} 68%, #020408 100%)`;
     bg.style.setProperty('--accent', t.goalStroke);
+    // Chaque terrain a son OST : la choisir la met en route d'office. Le joueur
+    // reste libre d'en changer juste en dessous, son choix n'est pas écrasé.
+    if (c.ost && !musicTouchee) selectTrack(c.ost);
   }
   renderMapThumbs();
 }
@@ -407,13 +410,26 @@ export function mapsScreenKey(code) {
 const MUSIC_CHOICES = [...MUSIC_TRACKS, { id: null, name: 'Aucune musique' }];
 let musicIdx = Math.max(0, MUSIC_CHOICES.findIndex(t => t.id === getTrackId()));
 
+// Vrai dès que le joueur touche au sélecteur : à partir de là, changer de
+// terrain n'écrase plus son choix de musique.
+let musicTouchee = false;
+
 function renderMusic() {
   const c = MUSIC_CHOICES[musicIdx];
   $('musicName').textContent = c.name;
   if (c.id) playTrack(c.id); else stopTrack();
 }
+// Bascule sur une piste donnée sans passer par les flèches — utilisé quand un
+// terrain impose son OST.
+function selectTrack(id) {
+  const i = MUSIC_CHOICES.findIndex(t => t.id === id);
+  if (i < 0 || i === musicIdx) return;
+  musicIdx = i;
+  renderMusic();
+}
 function cycleMusic(d) {
   musicIdx = (musicIdx + d + MUSIC_CHOICES.length) % MUSIC_CHOICES.length;
+  musicTouchee = true;
   sfx('move'); renderMusic();
 }
 
