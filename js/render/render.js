@@ -7,7 +7,7 @@ import { centreDunk, centrePanier, ZONES } from '../game/zones.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { getSkinId, drawSkinDisc } from '../data/skins.js';
-import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE } from '../data/specials.js';
+import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE } from '../data/specials.js';
 
 ctx.imageSmoothingEnabled = false;
 const SCALE = 1.6;
@@ -683,6 +683,40 @@ function drawGhosts(p) {
   ctx.globalAlpha = 1;
 }
 
+// Les six orbes du mode Six Paths : un anneau régulier qui tourne lentement,
+// centré sur le buste — au-dessus des jambes, pas autour des pieds. Elles
+// s'ouvrent et se referment avec la durée restante, pour que l'entrée et la
+// sortie du mode se voient sans avoir à lire une jauge.
+function dessinerOrbes(p) {
+  const c = p.char;
+  // Le buste occupe les rangées 10 à 15 du sprite : son milieu tombe ici.
+  const cy = p.y - 30 * SCALE + 13 * 3 * SCALE;
+  // Montée à l'apparition, repli à la fin.
+  const k = Math.min(1, (SIX_DUREE - p.sixT) * 3.5, p.sixT * 2.2);
+  if (k <= 0) return;
+  const R = SIX_ORBES.rayon * SCALE * k;
+  for (let i = 0; i < SIX_ORBES.n; i++) {
+    const a = p.sixA + (i * TAU) / SIX_ORBES.n;
+    // Ellipse écrasée : le terrain est vu de haut, un cercle parfait ferait
+    // flotter les orbes au lieu de tourner autour de lui.
+    const x = p.x + Math.cos(a) * R;
+    const y = cy + Math.sin(a) * R * .42;
+    const r = 4.6 * SCALE * k;
+    const halo = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2);
+    halo.addColorStop(0, 'rgba(120,90,180,.5)');
+    halo.addColorStop(1, 'rgba(120,90,180,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(x, y, r * 2.2, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#15111f';
+    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+    // Reflet unique, décalé en haut à gauche : sans lui l'orbe est un trou noir
+    // plat et on ne voit pas qu'elle tourne.
+    ctx.fillStyle = 'rgba(190,170,255,.55)';
+    ctx.beginPath(); ctx.arc(x - r * .32, y - r * .34, r * .3, 0, TAU); ctx.fill();
+  }
+  void c;
+}
+
 function drawPlayer(p) {
   const c = p.char;
   drawGhosts(p);
@@ -695,14 +729,21 @@ function drawPlayer(p) {
     // Les poses tiennent un peu au-delà de l'action : le dash ne dure que
     // 0,17 s, la pose passait trop vite pour être perçue. dashGap et feintCd
     // servent de rémanence sans rien changer au gameplay.
-    if (p.diveT > 0 || p.diveDown > 0) fr = 'dive';
+    // Bras tendu du Tir Matilda : la pose de lancer tient le temps de la visée,
+    // sinon elle passait en deux images et on ne voyait jamais Leon mettre en joue.
+    if (p.viseT > 0) fr = 'throw';
+    else if (p.diveT > 0 || p.diveDown > 0) fr = 'dive';
     else if (p.dashT > 0 || p.dashGap > DASH_GAP - .28) fr = 'dash';
     else if (p.holding && (p.charging || p.throwPoseT > 0)) fr = 'throw';
     else if (p.moving) fr = (Math.floor(p.walk) % 2) ? 'run1' : 'run2';
   }
+  // Les six orbes passent AVANT le sprite : elles gravitent derrière lui, elles
+  // ne doivent jamais recouvrir ni son corps ni le disque qu'il tient.
+  if (p.sixT > 0) dessinerOrbes(p);
   // p.frames porte le skin choisi ; il retombe sur la tenue d'origine si le
-  // personnage n'en a pas d'autre.
-  const jeu = p.frames || c.frames;
+  // personnage n'en a pas d'autre. Pendant l'ultime, la tenue Six Paths passe
+  // devant tout le reste : c'est un état, pas un choix du joueur.
+  const jeu = (p.sixT > 0 && c.sixpaths) ? c.sixpaths : (p.frames || c.frames);
   const img = jeu[fr] || c.frames[fr];
   ctx.save();
   ctx.translate(p.x, p.y - 30 * SCALE);
@@ -749,6 +790,16 @@ function drawPlayer(p) {
     ctx.drawImage(img, -24 * SCALE, 0, 48 * SCALE, 60 * SCALE);
   }
   ctx.restore();
+  // Le pistolet, posé au bout du bras tendu et orienté dans l'axe du tir. Il
+  // vient après le sprite : c'est la main qui le tient, il passe donc devant.
+  if (p.viseT > 0) {
+    const l = 8 * 3 * SCALE, h = 8 * 3 * SCALE;
+    ctx.save();
+    ctx.translate(p.x + p.face * 20 * SCALE, p.y + 5 * SCALE);
+    if (p.face < 0) ctx.scale(-1, 1);
+    ctx.drawImage(GUN_SPRITE, 0, 0, 8, 8, -l / 2, -h / 2, l, h);
+    ctx.restore();
+  }
   if (p.charging && p.charge > 0 && !G.replay) {
     const col = p.charge >= 1 ? '#ff5340' : c.accent;
     const r = 32 * SCALE;
@@ -1225,8 +1276,10 @@ export function render() {
   if (G.replay) drawReplayOverlay();
   drawDebug();
   // Flash du Perfect Dive, appliqué hors zoom pour couvrir tout l'écran.
+  // Plafonné à 1 : la transformation Six Paths pousse la valeur bien au-delà
+  // pour blanchir complètement l'écran, et redescend ensuite par le même chemin.
   if (G.flash > 0) {
-    ctx.fillStyle = 'rgba(255,255,255,' + (G.flash * .55).toFixed(3) + ')';
+    ctx.fillStyle = 'rgba(255,255,255,' + Math.min(1, G.flash * .55).toFixed(3) + ')';
     ctx.fillRect(0, 0, W, H);
   }
 }

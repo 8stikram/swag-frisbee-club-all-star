@@ -7,6 +7,7 @@ import { updatePlayerHuman, updatePlayer2, integratePlayer } from './input.js';
 import { updateAI } from './ai.js';
 import { updateDisc, updateDecoys } from './disc.js';
 import { updateLeg, updateBell, launchCine } from './specials.js';
+import { SIX_ORBES } from '../data/specials.js';
 import { updateFX } from './fx.js';
 import { capture, applySnap } from './replay.js';
 import { setupServe, afterGoal, startReplay, endReplay, finishReplay } from './actions.js';
@@ -31,6 +32,21 @@ export function update(dt) {
     s.twinkle += dt * s.speed;
     if (G.state === 'goal' && Math.random() < 0.02) { s.color = pick(['#ffd23e', '#ff8c1a', '#35e0ff', '#ff5340', '#7bd66a']); }
     else if (G.state !== 'goal') { s.color = getMap().theme.starColor; }
+  }
+  // Mode Six Paths : la tenue dorée, l'anneau d'orbes et les braises. Le temps
+  // s'écoule en temps de jeu — un ralenti doit aussi ralentir les orbes, sinon
+  // elles se mettent à filer pendant que tout le reste rampe.
+  for (const p of [G.p1, G.p2]) {
+    if (!p) continue;
+    if (p.viseT > 0) p.viseT = Math.max(0, p.viseT - wdt);
+    if (!(p.sixT > 0)) continue;
+    p.sixT = Math.max(0, p.sixT - wdt);
+    p.sixA = (p.sixA || 0) + wdt * SIX_ORBES.vitesse;
+    // Braises qui s'élèvent autour de lui (variante « particules »).
+    if (Math.random() < .55) G.particles.push({
+      x: p.x + gauss() * 22, y: p.y - rand(0, 30), vx: gauss() * 18, vy: -rand(30, 90),
+      life: .55, c: Math.random() < .5 ? '#ffd23e' : '#ffe89a', s: 2, g: 0
+    });
   }
   if (G.cine) {
     const c = G.cine;

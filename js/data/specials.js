@@ -43,18 +43,52 @@ BELL_SPRITE.src = 'assets/img/cloche-ulti.png';
 //   needsDisc : refuse le cast si le perso n'a pas le disque
 //   cast(p)   : déclenche la spéciale
 //   launch(p) : optionnel, appelé par la boucle à la fin de la cinématique
+// Durée de la tenue Six Paths après le cast. Assez long pour couvrir l'échange
+// qui suit le tir, assez court pour rester un moment et pas un état.
+export const SIX_DUREE = 4.2;
+// Les six orbes : rayon de l'anneau, hauteur au-dessus des pieds, et vitesse de
+// rotation. Volontairement lente — à pleine vitesse elles tiraient l'œil hors
+// du disque, qui est la seule chose que le joueur doit suivre.
+export const SIX_ORBES = { n: 6, rayon: 40, hauteur: 34, vitesse: .55 };
+
+// Durée pendant laquelle Leon garde le bras tendu après le Tir Matilda.
+export const MATILDA_VISEE = .75;
+// Le pistolet, tenu au bout du bras tendu. Dessiné en pixel art comme le reste.
+// buildSprite produit toujours une toile de 16 de large : le pistolet n'occupe
+// que les 8 premières colonnes, le rendu ne découpe donc que cette moitié.
+const PAL_GUN = { K: '#23262e', k: '#14161c', V: '#8b929e', B: '#5a4028' };
+export const GUN_SPRITE = buildSprite([
+  "KKKKKKV.",
+  "KkkkkkV.",
+  "KKKKKKK.",
+  ".BBK.K..",
+  ".BBK....",
+  ".BB.....",
+  "..B.....",
+  "........"
+], PAL_GUN);
+
 export const SPECIALS = {
   kurama: {
-    name: 'KURAMA',
-    desc: 'Invoque le Renard à Neuf Queues.',
+    name: 'SIX PATHS',
+    desc: 'Passe en mode Six Paths : tenue dorée, six orbes, et un tir qui traverse tout.',
     needsDisc: true,
     cast(p) {
       p.meter = 0; p.stats.specials++;
       p.charging = false; p.wasCharging = false; p.charge = 0;
       G.cine = { t: 0, p, launched: false, ult: 'kurama' };
       G.timescale = .22; G.tsTimer = 1.0; G.shake = 10;
-      G.banner = { text: 'KURAMA !!!', color: '#ff5a1a', t: 0, dur: 1.3 };
-      sfx('roar'); comment('KURAMA EST LÂCHÉ !!');
+      G.banner = { text: 'SIX PATHS !!!', color: '#ffd23e', t: 0, dur: 1.3 };
+      // L'écran blanchit d'un coup : quand il redevient lisible, Naruto a
+      // changé de tenue. La transformation ne se regarde pas, elle se constate
+      // — c'est ce qui la rend brutale plutôt que longue.
+      // 2.9 n'est pas arbitraire : le flash s'efface à 2.2 par seconde et sature
+      // le blanc au-delà de 1.82, ce qui donne une demi-seconde d'écran
+      // entièrement blanc, puis un fondu qui s'éteint pile avec la cinématique.
+      G.flash = 2.9;
+      // Tenue dorée et six orbes, le temps que l'échange se joue.
+      p.sixT = SIX_DUREE; p.sixA = 0;
+      sfx('roar'); comment('LES SIX CHEMINS !!');
     },
     launch(p) {
       let dir;
@@ -84,6 +118,9 @@ export const SPECIALS = {
       p.meter = 0; p.stats.specials++;
       G.banner = { text: 'TIR MATILDA !!', color: '#9fe8ff', t: 0, dur: 1.2 };
       G.timescale = .15; G.tsTimer = .14;
+      // Bras tendu, canon à l'horizontale : la lecture la plus directe, on voit
+      // qu'il vise avant même que les disques partent.
+      p.viseT = MATILDA_VISEE;
       sfx('special'); comment('RAFALE TRIPLE !');
       let dir;
       if (p.human) { dir = norm(Mouse.x - p.x, Mouse.y - p.y); }

@@ -87,7 +87,11 @@ export function makePlayer(ck, side, human, diffIdx) {
     // plongeon dans le vide (whiff), pendant lequel le joueur est vulnérable.
     diveT: 0, diveDown: 0, diveDir: { x: 1, y: 0 }, diveHit: false,
     // Désorienté par la cloche de Jingle : sa course dérive un court instant.
-    dizzy: 0
+    dizzy: 0,
+    // Mode Six Paths de Naruto : temps restant, et angle de l'anneau d'orbes.
+    sixT: 0, sixA: 0,
+    // Bras tendu de Leon pendant le Tir Matilda : durée de la pose.
+    viseT: 0
   };
   if (!human) {
     p.ai = {

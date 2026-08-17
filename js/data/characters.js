@@ -257,6 +257,37 @@ function construireSkinL(s) {
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// Tenue Six Paths de Naruto, portée le temps de son ultime.
+// Manteau de chakra doré, col et ceinture sombres, ouverture du manteau au
+// centre. Les yeux passent en or sombre : en or vif ils disparaissaient
+// purement et simplement du visage, noyés dans les cheveux de la même couleur.
+//
+// Le col, la bande de chemise et la ceinture occupent trois lignes identiques
+// dans les six poses : on les recopie telles quelles. Le reste est recoloré, et
+// l'ouverture du manteau est réinjectée colonne par colonne, sinon elle
+// n'existerait que sur la pose immobile — or l'ultime se joue en mouvement.
+// ---------------------------------------------------------------------------
+const PAL_SIX = { ...PAL_N, G: '#ffd76b', n: '#3a2f14', E: '#7a4e05' };
+const SIX_IDLE_B = ["....nnnnnn......", "..GGGGnnGGGG....", ".SGGGGnnGGGGS...", ".SGGGGnnGGGGS...", "..GGGGnnGGGG....", "..nnnnnnnnnn....", "...GG....GG.....", "...WW....GG.....", "..GGG....GGG....", "..nnn....nnn...."];
+const SIX_BUSTE = { K: 'G', O: 'G', o: 'G' };
+const SIX_JAMBE = { P: 'G', K: 'n' };
+const SIX_OUVERTURE = { 6: 'n', 7: 'n' };
+
+function construireSixPaths() {
+  const poses = { run1: N_RUN1_B, run2: N_RUN2_B, throw: N_THROW_B, dive: N_DIVE_B, dash: N_DASH_B };
+  const out = { idle: buildSprite([...N_HEAD, ...SIX_IDLE_B], PAL_SIX) };
+  for (const [nom, base] of Object.entries(poses)) {
+    const corps = base.map((ligne, i) => {
+      if (i === 0 || i === 4 || i === 5) return SIX_IDLE_B[i];
+      if (i >= 6) return teinter([ligne], SIX_JAMBE)[0];
+      return injecter(teinter([ligne], SIX_BUSTE)[0], SIX_OUVERTURE, 'G');
+    });
+    out[nom] = buildSprite([...N_HEAD, ...corps], PAL_SIX);
+  }
+  return out;
+}
+
 export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle'];
 
 export const CHARS = {
@@ -274,6 +305,8 @@ export const CHARS = {
       dive: buildSprite([...N_HEAD, ...N_DIVE_B], PAL_N),
       dash: buildSprite([...N_HEAD, ...N_DASH_B], PAL_N)
     },
+    // Tenue portée pendant l'ultime seulement, jamais choisissable.
+    sixpaths: construireSixPaths(),
     skins: {
       shippuden: null,          // rempli juste après : c'est `frames` lui-même
       hokage: construireSkin(SKINS_N.hokage),
