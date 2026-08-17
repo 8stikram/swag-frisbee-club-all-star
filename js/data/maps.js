@@ -1,3 +1,5 @@
+import { forcageTuto } from './deverrouillage.js';
+
 // Registre des terrains. Pour ajouter une map : ajouter une entrée dans MAPS.
 // `zones` décrit les tranches de but en offset vertical depuis le centre du terrain,
 // ce qui permet à une map d'avoir des buts plus grands ou un découpage de points différent.
@@ -101,7 +103,12 @@ MAPS.push({
 // Vrai quand le terrain est jouable. Même principe que pour les skins.
 export function mapDebloquee(m) {
   if (!m || !m.verrou) return true;
-  if (m.verrou === 'tuto') return _tutoFini ? _tutoFini() : false;
+  if (m.verrou === 'tuto') {
+    // Forçage du panneau admin : session seulement, jamais sauvegardé.
+    const f = forcageTuto();
+    if (f !== null) return f;
+    return _tutoFini ? _tutoFini() : false;
+  }
   return true;
 }
 let _tutoFini = null;

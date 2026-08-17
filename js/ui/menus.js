@@ -400,8 +400,11 @@ function majChoixTerrains() {
   MAP_CHOICES = [...MAPS.filter(m => !m.horsSelection),
                  { id: '__random', name: 'ALÉATOIRE' }];
   if (mapIdx >= MAP_CHOICES.length) mapIdx = 0;
-  // On ne s'arrête jamais sur un terrain qu'on ne peut pas jouer.
-  if (verrouille(MAP_CHOICES[mapIdx])) mapIdx = 0;
+  // On peut s'arrêter sur un terrain verrouillé : c'est là qu'on lit comment le
+  // gagner. Renvoyer d'office au premier terrain rendait la flèche droite
+  // inutilisable — on rebondissait sur le cadenas sans jamais atteindre ce qui
+  // vient après — et masquait la marche à suivre. Le lancement, lui, reste
+  // fermé : bouton JOUER caché, Entrée refusée, vignette non cliquable.
 }
 
 function verrouille(c) { return !!(c && c.id !== '__random' && !mapDebloquee(c)); }

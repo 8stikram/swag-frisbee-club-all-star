@@ -9,6 +9,8 @@
 //   sbcbStats         — les compteurs de progression, eux réinitialisables.
 // ---------------------------------------------------------------------------
 
+import { forcageTenue } from './deverrouillage.js';
+
 export const SKINS = {
   naruto: [
     { id: 'shippuden', nom: 'SHIPPUDEN', defaut: true },
@@ -95,7 +97,12 @@ export function skinParDefaut(ck) {
 export function estDebloque(ck, id) {
   const s = listeSkins(ck).find(x => x.id === id);
   if (!s) return false;
+  // La tenue d'origine reste ouverte quoi qu'il arrive : même en verrouillant
+  // tout pour tester, un personnage doit pouvoir s'habiller.
   if (s.defaut) return true;
+  // Forçage du panneau admin : vaut pour la session seulement, jamais sauvegardé.
+  const f = forcageTenue(ck + ':' + id);
+  if (f !== null) return f;
   return debloques.includes(ck + ':' + id);
 }
 

@@ -5,7 +5,11 @@ import { norm } from '../core/utils.js';
 import { addPopup } from '../game/fx.js';
 import { throwDisc } from '../game/actions.js';
 import { sfx } from '../audio/audio.js';
-import { doAct, pauseGame, isAdminMode, setAdminMode } from './menus.js';
+import { doAct, pauseGame, isAdminMode, setAdminMode, refreshSelect, refreshMaps } from './menus.js';
+import { ROSTER, CHARS } from '../data/characters.js';
+import { listeSkins, estDebloque } from '../data/skins-perso.js';
+import { MAPS, mapDebloquee } from '../data/maps.js';
+import { forcerTenue, forcerTuto, forcerTout, retablirEtatReel } from '../data/deverrouillage.js';
 
 // ---------------------------------------------------------------------------
 // Ouverture par 5 clics sur le titre. Plus aucune mention à l'écran : le mode
@@ -118,7 +122,7 @@ const SONS = ['move', 'select', 'deny', 'bounce', 'catch', 'throw', 'dash', 'goa
   'whistle', 'talk', 'win', 'lose', 'charge', 'full', 'superthrow', 'perfect', 'roar', 'special',
   'legcast', 'splat', 'stun', 'bigbounce', 'replay'];
 
-const TABS = ['MATCH', 'IA', 'DEBUG', 'AFFICHAGE', 'JOUEURS', 'SON'];
+const TABS = ['MATCH', 'IA', 'DÉBLOCAGES', 'DEBUG', 'AFFICHAGE', 'JOUEURS', 'SON'];
 
 // ---------------------------------------------------------------------------
 // Construction du contenu
@@ -197,6 +201,65 @@ function buildTab(name) {
     TUNE.slice(3).forEach(t => add(stepper(t)));
   }
 
+  if (name === 'DÉBLOCAGES') {
+    const avert = el('div', 'adesc',
+      'Rien n\'est écrit dans ta sauvegarde : au rechargement, tout revient à ton vrai état.');
+    avert.style.cssText = 'padding:6px 8px;line-height:1.6';
+    add(avert);
+
+    // Redessine l'onglet et rafraîchit les écrans concernés si l'un d'eux est
+    // ouvert : sans ça, les cadenas resteraient affichés derrière le panneau.
+    const majAffichage = () => {
+      if (curScreen === 'select') refreshSelect();
+      if (curScreen === 'maps') refreshMaps();
+      render();
+    };
+    const toutes = () => ROSTER.flatMap(ck => listeSkins(ck).filter(s => !s.defaut).map(s => ck + ':' + s.id));
+
+    let c = card('Tout débloquer', 'Les 20 tenues, le Swag Frisbee Stadium et le disque 20/20');
+    c.ctrl.appendChild(btn('OUVRIR', 'success', () => {
+      forcerTout(true, toutes()); log('tout débloqué (session)'); majAffichage();
+    })); add(c.card);
+
+    c = card('Tout reverrouiller', 'Pour revoir le jeu comme un nouveau joueur le découvre');
+    c.ctrl.appendChild(btn('FERMER', 'danger', () => {
+      forcerTout(false, toutes()); log('tout reverrouillé (session)'); majAffichage();
+    })); add(c.card);
+
+    c = card('État réel', 'Annule le forçage et rend la main à ta sauvegarde');
+    c.ctrl.appendChild(btn('RÉTABLIR', '', () => {
+      retablirEtatReel(); log('état réel rétabli'); majAffichage();
+    })); add(c.card);
+
+    add(el('div', 'asec', 'RÉCOMPENSES DU TUTORIEL'));
+    c = card('Stade + disque 20/20', 'Les deux partagent le même verrou : finir les 5 chapitres');
+    const ouvertTuto = () => mapDebloquee(MAPS.find(m => m.verrou === 'tuto'));
+    c.ctrl.appendChild(btn(ouvertTuto() ? 'OUVERT' : 'FERMÉ', ouvertTuto() ? 'on' : '', b => {
+      forcerTuto(!ouvertTuto());
+      b.textContent = ouvertTuto() ? 'OUVERT' : 'FERMÉ';
+      b.classList.toggle('on', ouvertTuto());
+      majAffichage();
+    })); add(c.card);
+
+    for (const ck of ROSTER) {
+      const liste = listeSkins(ck).filter(s => !s.defaut);
+      if (!liste.length) continue;
+      add(el('div', 'asec', 'TENUES · ' + CHARS[ck].short));
+      for (const s of liste) {
+        const cc = card(s.nom, s.texte);
+        cc.card.querySelector('.aname').className = 'aname avar';
+        const ouvert = () => estDebloque(ck, s.id);
+        cc.ctrl.appendChild(btn(ouvert() ? 'OUVERT' : 'FERMÉ', ouvert() ? 'on' : '', b => {
+          forcerTenue(ck + ':' + s.id, !ouvert());
+          b.textContent = ouvert() ? 'OUVERT' : 'FERMÉ';
+          b.classList.toggle('on', ouvert());
+          majAffichage();
+        }));
+        add(cc.card);
+      }
+    }
+  }
+
   if (name === 'DEBUG') {
     add(toggle('Trajectoire du disque', 'Affiche la trajectoire prédite', 'traj'));
     add(toggle('Intentions de l\'IA', 'Affiche sa cible et son état', 'ia'));
@@ -253,7 +316,7 @@ function buildTab(name) {
 
 // ---------------------------------------------------------------------------
 // Raccourcis clavier, actifs uniquement panneau ouvert pour ne jamais entrer en
-// conflit avec les commandes du jeu. Aucune配置 pré-remplie : à toi de la définir.
+// conflit avec les commandes du jeu. Aucune touche pré-remplie : à toi de les définir.
 // ---------------------------------------------------------------------------
 const ACTIONS = {
   reset: adminReset, pause: adminTogglePause, forceShoot: adminForceShoot,

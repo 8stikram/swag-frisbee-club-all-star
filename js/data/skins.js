@@ -1,4 +1,5 @@
 import { TAU } from '../core/utils.js';
+import { forcageTuto } from './deverrouillage.js';
 
 // Registre des skins de disque. Pour ajouter un skin : une entrée ici + un `case` dans drawSkinDisc.
 export const DISC_SKINS = [
@@ -22,7 +23,12 @@ export const DISC_SKINS = [
 // importé à la demande pour ne pas lier ce registre au reste au chargement.
 export function skinDebloque(skin) {
   if (!skin || !skin.verrou) return true;
-  if (skin.verrou === 'tuto') return tutoEstTermine();
+  if (skin.verrou === 'tuto') {
+    // Forçage du panneau admin : session seulement, jamais sauvegardé.
+    const f = forcageTuto();
+    if (f !== null) return f;
+    return tutoEstTermine();
+  }
   return true;
 }
 let _tuto = null;
