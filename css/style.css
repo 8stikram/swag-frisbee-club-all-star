@@ -993,19 +993,21 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .trHud.hidden{display:none}
 .trHud button,.trHud .trPanel{pointer-events:auto}
 
-/* Historique des actions, en haut : les plus récentes en tête. */
+/* Historique des actions, en haut : une suite qui se lit de gauche à droite,
+   la plus récente à droite. Les anciennes s'estompent en remontant la file. */
 .trHist{
   position:absolute;top:1.4cqh;left:50%;transform:translateX(-50%);
-  display:flex;flex-direction:column;gap:.35cqh;align-items:center;max-width:46cqw;
+  display:flex;flex-direction:row;gap:.4cqw;align-items:center;
+  max-width:82cqw;justify-content:flex-end;overflow:hidden;
 }
 .trHist i{
-  font-style:normal;font-size:clamp(8px,1.35cqh,12px);letter-spacing:.04em;
+  font-style:normal;font-size:clamp(7px,1.25cqh,11px);letter-spacing:.04em;
   background:rgba(20,24,32,.76);color:#e8f0ff;border:2px solid rgba(0,0,0,.5);
-  border-radius:6px;padding:.25cqh .8cqw;white-space:nowrap;
+  border-radius:6px;padding:.25cqh .7cqw;white-space:nowrap;flex-shrink:0;
   animation:trPop .22s ease-out backwards;
 }
 .trHist i.frais{background:rgba(217,184,245,.92);color:#141820}
-@keyframes trPop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes trPop{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
 
 /* Volet de réglages, escamotable par glissement. */
 .trPanel{

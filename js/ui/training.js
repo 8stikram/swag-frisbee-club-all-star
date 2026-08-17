@@ -30,6 +30,7 @@ const defauts = {
   persoDummy: 'leon',
   niveau: 'facile',
   renvoiAuto: true,      // le partenaire remet le disque dans tes pieds
+  jauge: 'normale',      // normale | pleine | vide
   trajectoires: false,
   hitboxes: false,
   panneauOuvert: true
@@ -87,6 +88,15 @@ export function resetEntrainement() {
   installerJoueurs();
   if (G.training) { G.training.demandeReset = false; G.training.histoire.length = 0; }
   sfx('move');
+}
+
+// Sans but qui compte, rien ne vide jamais la jauge : elle se remplissait une
+// fois puis restait pleine pour toujours. On la repart à zéro à chaque
+// replacement, ce qui lui redonne le rythme qu'elle a en match.
+function viderJauges() {
+  if (options.jauge !== 'normale') return;
+  if (G.p1) G.p1.meter = 0;
+  if (G.p2) G.p2.meter = 0;
 }
 
 export function changerPerso(camp, ck) {
@@ -151,9 +161,24 @@ export function updateTraining(dt) {
     t.delaiReset = (t.delaiReset || 0) + dt;
     if (t.delaiReset > .5) { t.delaiReset = 0; resetEntrainement(); }
   }
+  // Le disque revient au partenaire ou au joueur : on en profite pour repartir
+  // d'une jauge vide, faute de but pour le faire.
+  if (t.tenuPrec !== undefined && !t.tenuPrec && G.disc.heldBy) viderJauges();
+  t.tenuPrec = !!G.disc.heldBy;
 
   // La barre des touches suit l'état réel des entrées, image par image.
   majTouches(keys, Mouse.down);
+
+  // Jauge spéciale. Sans réglage elle se remplissait et restait pleine pour
+  // toujours : rien ne la vide ici, faute de buts qui comptent. « Pleine » sert
+  // à répéter un ultime, « vide » à travailler sans jamais y penser.
+  if (G.p1) {
+    if (options.jauge === 'pleine') G.p1.meter = 100;
+    else if (options.jauge === 'vide') G.p1.meter = 0;
+  }
+  // Le partenaire ne sort son ultime qu'aux niveaux qui le justifient : à
+  // Inoffensif et Facile, il n'a rien à prouver.
+  if (G.p2 && (options.niveau === 'inoffensif' || options.niveau === 'facile')) G.p2.meter = 0;
 
   // Le volet s'ouvre à l'arrivée pour montrer ce qu'on peut régler, puis se
   // referme dès qu'on joue : il couvre la cage adverse, on ne peut pas
@@ -272,6 +297,15 @@ export function majPanneau() {
       !options.renvoiAuto, () => { options.renvoiAuto = false; majPanneau(); }));
     corps.appendChild(g);
 
+    const gj = groupe('TA JAUGE SPÉCIALE');
+    gj.appendChild(bouton('NORMALE', 'Elle se remplit en jouant, comme en match.',
+      options.jauge === 'normale', () => { options.jauge = 'normale'; majPanneau(); }));
+    gj.appendChild(bouton('TOUJOURS PLEINE', 'Pour répéter ton ultime autant que tu veux.',
+      options.jauge === 'pleine', () => { options.jauge = 'pleine'; majPanneau(); }));
+    gj.appendChild(bouton('VIDE', 'Elle reste à zéro : on travaille sans y penser.',
+      options.jauge === 'vide', () => { options.jauge = 'vide'; majPanneau(); }));
+    corps.appendChild(gj);
+
   } else {
     const g = groupe('CALQUES');
     g.appendChild(bouton('TRAJECTOIRES',
@@ -296,17 +330,22 @@ export function noterAction(texte) {
   dessinerHistorique();
 }
 
+// La file est stockée du plus récent au plus ancien ; on l'affiche à l'envers
+// pour qu'elle se lise comme un enchaînement, de gauche à droite.
 function dessinerHistorique() {
   const el = $('trHist');
   if (!el || !G.training) return;
   const maintenant = performance.now();
   el.innerHTML = '';
-  for (const a of G.training.histoire) {
+  const suite = G.training.histoire.slice().reverse();
+  suite.forEach((a, idx) => {
     const i = document.createElement('i');
     i.textContent = a.texte;
     if (maintenant - a.t < 400) i.className = 'frais';
+    // Les plus anciennes pâlissent : l'œil va naturellement vers la dernière.
+    i.style.opacity = (0.45 + 0.55 * (idx + 1) / suite.length).toFixed(2);
     el.appendChild(i);
-  }
+  });
 }
 
 // --- Affichage des touches --------------------------------------------------
