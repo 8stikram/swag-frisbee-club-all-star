@@ -3,7 +3,7 @@ import { G, Mouse, initMatch } from '../game/state.js';
 import { DIFFS } from '../core/constants.js';
 import { CHARS, ROSTER } from '../data/characters.js';
 import { SPECIALS } from '../data/specials.js';
-import { DISC_SKINS, getSkinId, setSkinId, drawSkinDisc, getFavSkin, setFavSkin, skinDebloque } from '../data/skins.js';
+import { DISC_SKINS, getSkinId, setSkinId, drawSkinDisc, getFavSkin, setFavSkin, skinDebloque, randomSkinId } from '../data/skins.js';
 import { MAPS, setMapId, mapDebloquee } from '../data/maps.js';
 import { getKey } from '../data/keymap.js';
 import { MUSIC_TRACKS, getTrackId } from '../data/music.js';
@@ -379,9 +379,9 @@ function cycleDisc(d) {
 }
 // Un skin "aléatoire" doit être résolu au moment de lancer le match.
 function resolveSkin() {
-  if (DISC_CHOICES[discIdx].id === '__random') {
-    setSkinId(DISC_SKINS[(Math.random() * DISC_SKINS.length) | 0].id);
-  }
+  // Même règle que pour les terrains : le tirage ne donne jamais un disque
+  // encore verrouillé. randomSkinId() n'ouvre que ce qui est débloqué.
+  if (DISC_CHOICES[discIdx].id === '__random') setSkinId(randomSkinId());
 }
 
 /* ---------- sélection du terrain ---------- */
@@ -479,7 +479,12 @@ export function refreshMaps() {
 
 function resolveMap() {
   const c = MAP_CHOICES[mapIdx];
-  setMapId(c.id === '__random' ? MAPS[(Math.random() * MAPS.length) | 0].id : c.id);
+  if (c.id !== '__random') { setMapId(c.id); return; }
+  // ALÉATOIRE ne tire que parmi les terrains réellement proposés : piocher dans
+  // la liste brute sortait la salle d'entraînement, et offrait la récompense du
+  // tutoriel à qui ne l'avait pas gagnée.
+  const libres = MAPS.filter(m => !m.horsSelection && mapDebloquee(m));
+  setMapId(libres[(Math.random() * libres.length) | 0].id);
 }
 
 export function mapsScreenKey(code) {
