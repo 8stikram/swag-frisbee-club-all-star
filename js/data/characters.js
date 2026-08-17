@@ -165,6 +165,98 @@ function construireSkin(s) {
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// Skins de Leon. Chez lui ce ne sont pas des recolorations : ce sont quatre
+// vêtements différents, repris des jeux d'origine.
+//   1998     — la combinaison bleue, épaulières et gros marquage R.P.D.
+//   RE4      — le blouson de cuir à col en peau de mouton sur chemise olive.
+//   Darkside — le gilet tactique olive à bretelles, sur t-shirt noir.
+//   Requiem  — le manteau noir à double boutonnage, entrouvert sur le t-shirt.
+//
+// Trois lignes du corps sont identiques d'une pose à l'autre chez Leon : le
+// haut du buste, la bande de chemise et la ceinture. On y recopie la tenue
+// telle quelle. Les lignes qui bougent sont recolorées, et les détails qui
+// font reconnaître le vêtement — marquage, bretelles, t-shirt — sont
+// réinjectés colonne par colonne pour survivre à la course et au plongeon.
+// Sans ça, un skin de Leon ne se lirait que sur la pose immobile.
+// ---------------------------------------------------------------------------
+const PAL_SKINS_L = {
+  ...PAL_L,
+  U: '#3f5fa8', u: '#2a3f73',   // les bleus de 1998
+  A: '#9aa0ad',                 // épaulières grises
+  m: '#57301a',                 // cuir sombre du blouson
+  F: '#dcc49a', f: '#ab8f68',   // col en peau de mouton
+  N: '#26262b',                 // t-shirt noir
+  C: '#3d4136', c: '#565c47',   // cargo et poches
+  g: '#556a2f',                 // vert militaire
+  Q: '#2b2d34', q: '#181a20',   // manteau de Requiem
+  Y: '#565b66'                  // gris ardoise : col, boutons, t-shirt
+};
+
+// Les 9 premières lignes de la tête. La 10e est le col : il change avec la
+// tenue, c'est lui qui raccorde le visage au vêtement.
+const L_TETE = L_HEAD.slice(0, 9);
+// RE4 : les mèches descendent et encadrent le visage.
+const L_TETE_RIDEAU = ["....lLLLLl......", "...LLLLLLLL.....", "..LLLLLLLLLL....", "..LLLLllLLLL....", "..LLLSSSSLLL....", "..LLSSSSSSLL....", "..LSSESSSSEL....", "..SSSSSSSSSS....", "...SSSSSSSS....."];
+// Requiem : mêmes mèches longues, plus la barbe de trois jours.
+const L_TETE_REQUIEM = ["....lLLLLl......", "...LLLLLLLL.....", "..LLLLLLLLLL....", "..LLLLllLLLL....", "..LLLSSSSLLL....", "..LLSSSSSSLL....", "..LSSESSSSEL....", "..SsSSSSSSsS....", "...lsSSSSsl....."];
+function teteL(haut, col) { return [...haut, '....' + col.repeat(6) + '......']; }
+
+const SKINS_L = {
+  re2: {
+    tete: teteL(L_TETE, 'U'),
+    idle: ["..AUUUUUUUUA....", ".VUUUUUUUUUUV...", ".VUUWWWWWWUUV...", ".SUUUUUUUUUUS...", "..JJJJJJJJJJ....", "..KKKKVKKKKK....", "...uu....uu.....", "...uu....uu.....", "...uu....uu.....", "..KKK....KKK...."],
+    tissu: 'U', teinte: { K: 'U' }, jambe: 'u',
+    // Le marquage R.P.D. d'origine était bien plus large que celui du remake.
+    colonnes: { 2: { 4: 'W', 5: 'W', 6: 'W', 7: 'W', 8: 'W', 9: 'W' } }
+  },
+  re4: {
+    tete: teteL(L_TETE_RIDEAU, 'f'),
+    idle: ["..fFFFFFFFFf....", ".mmmmggggmmmm...", ".mmmmggggmmmm...", ".NmmmggggmmmN...", "..mmmggggmmm....", "..CCCCVCCCCC....", "...CC....CC.....", "...cc....cc.....", "...CC....CC.....", "..KKK....KKK...."],
+    tissu: 'm', teinte: { K: 'm', W: 'm', V: 'm', B: 'f', J: 'g' }, jambe: 'C',
+    // La chemise olive reste visible dans l'ouverture du blouson.
+    colonnes: { 1: { 5: 'g', 6: 'g', 7: 'g', 8: 'g' }, 2: { 5: 'g', 6: 'g', 7: 'g', 8: 'g' }, 3: { 5: 'g', 6: 'g', 7: 'g', 8: 'g' } }
+  },
+  darkside: {
+    tete: teteL(L_TETE, 'g'),
+    idle: ["..ggCggggCgg....", ".NggCggggCggN...", ".SggCggggCggS...", ".SggCggggCggS...", "..NNNNNNNNNN....", "..CCCCVCCCCC....", "...Cc....cC.....", "...cC....Cc.....", "...Cc....cC.....", "..KKK....KKK...."],
+    tissu: 'g', teinte: { K: 'g', W: 'g', B: 'g', V: 'S', J: 'N' }, jambe: 'C',
+    // Les deux bretelles du gilet, des épaules au ceinturon.
+    colonnes: { 1: { 4: 'C', 9: 'C' }, 2: { 4: 'C', 9: 'C' }, 3: { 4: 'C', 9: 'C' } }
+  },
+  requiem: {
+    tete: teteL(L_TETE_REQUIEM, 'Y'),
+    idle: ["..YQQQQQQQQY....", ".QQQQqYYqQQQQ...", ".QQQQqYYqQQQQ...", ".SQQQqYYqQQQS...", "..QQQqYYqQQQ....", "..QQQQVQQQQQ....", "..QQQQ..QQQQ....", "...qq....qq.....", "...qq....qq.....", "..KKK....KKK...."],
+    tissu: 'Q', teinte: { K: 'Q', W: 'Q', V: 'Q', B: 'Q', J: 'Q' }, jambe: 'q',
+    // Le t-shirt entre les deux rangées de boutons.
+    colonnes: { 1: { 5: 'q', 6: 'Y', 7: 'Y', 8: 'q' }, 2: { 5: 'q', 6: 'Y', 7: 'Y', 8: 'q' }, 3: { 5: 'q', 6: 'Y', 7: 'Y', 8: 'q' } }
+  }
+};
+
+// Repose un détail sur des colonnes précises, mais seulement là où le pixel
+// appartient déjà au vêtement : les bras, les mains et le vide sont épargnés,
+// donc la silhouette de la pose ne bouge pas d'un pixel.
+function injecter(ligne, cols, tissu) {
+  if (!cols) return ligne;
+  return [...ligne].map((ch, x) => (ch === tissu && cols[x]) ? cols[x] : ch).join('');
+}
+
+function construireSkinL(s) {
+  const poses = { run1: L_RUN1_B, run2: L_RUN2_B, throw: L_THROW_B, dive: L_DIVE_B, dash: L_DASH_B };
+  const out = { idle: buildSprite([...s.tete, ...s.idle], PAL_SKINS_L) };
+  for (const [nom, base] of Object.entries(poses)) {
+    const corps = base.map((ligne, i) => {
+      // Buste, bande de chemise et ceinture : identiques dans les six poses.
+      if (i === 0 || i === 4 || i === 5) return s.idle[i];
+      // Jambes : seul le pantalon change, les rangers restent noires.
+      if (i >= 6) return teinter([ligne], { D: s.jambe })[0];
+      return injecter(teinter([ligne], s.teinte)[0], s.colonnes[i], s.tissu);
+    });
+    out[nom] = buildSprite([...s.tete, ...corps], PAL_SKINS_L);
+  }
+  return out;
+}
+
 export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle'];
 
 export const CHARS = {
@@ -218,6 +310,13 @@ export const CHARS = {
       throw: buildSprite([...L_HEAD, ...L_THROW_B], PAL_L),
       dive: buildSprite([...L_HEAD, ...L_DIVE_B], PAL_L),
       dash: buildSprite([...L_HEAD, ...L_DASH_B], PAL_L)
+    },
+    skins: {
+      rpd: null,                // rempli juste après : c'est `frames` lui-même
+      re2: construireSkinL(SKINS_L.re2),
+      re4: construireSkinL(SKINS_L.re4),
+      darkside: construireSkinL(SKINS_L.darkside),
+      requiem: construireSkinL(SKINS_L.requiem)
     }
   },
   jingle: {
@@ -256,3 +355,4 @@ export function portraitURL(ck) {
 // La tenue d'origine est un skin comme les autres : elle pointe simplement sur
 // les sprites de base, ce qui évite de les dupliquer.
 CHARS.naruto.skins.shippuden = CHARS.naruto.frames;
+CHARS.leon.skins.rpd = CHARS.leon.frames;

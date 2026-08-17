@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Skins de Leon — mockups</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; --bad:#ff5340; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:15px;margin:34px 0 4px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:980px;line-height:1.75;margin:0 0 14px}
+  .note b{color:var(--ink)}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:6px}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:11px;
+        flex:1 1 0;min-width:196px;max-width:250px}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:8px;line-height:1.55;min-height:70px}
+  .lbl b{display:block;font-size:13.5px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  canvas{display:block;margin:0 auto;image-rendering:pixelated;background:#101a2e;border-radius:6px}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok);white-space:pre-wrap;margin-bottom:8px}
+  #errs.bad{color:var(--bad)}
+  ul{font-size:12.5px;color:#8fa4c4;line-height:1.85;max-width:980px;margin:0 0 14px;padding-left:20px}
+  ul b{color:var(--ink)}
+  .ref{font-size:12px;color:#6f86a8;max-width:980px;line-height:1.8;margin:0 0 18px;padding-left:20px}
+  .ref b{color:#a9bcd8}
+</style>
+</head>
+<body>
+
+<h1>Skins de Leon — 4 tenues, 4 propositions chacune</h1>
+<p class="note">
+  Tu avais raison : chez Leon ce ne sont pas des changements de couleur, ce sont
+  <b>quatre vêtements différents</b>. J'ai vérifié chaque tenue avant de dessiner,
+  et deux surprises sont sorties de la recherche — elles changent le résultat, lis-les.
+</p>
+
+<h2>Ce que disent les références</h2>
+<ul>
+  <li><b>R.P.D. 1998</b> — « combinaison bleu foncé, protections aux genoux et aux coudes, plaque au torse »,
+      et la version d'origine avait <b>des épaulières à la place des genouillères</b>, avec un
+      <b>logo R.P.D. plus gros</b>. Tenue « uniquement des nuances de bleu ».
+      <br><span style="color:#ff9a6a">Le piège : c'est presque la tenue de base du jeu.</span>
+      D'où trois propositions qui vont chercher ailleurs — dont les <b>vraies tenues alternatives de 1998</b> :
+      blouson de cuir sur t-shirt blanc + jean, et débardeur marine + treillis vert + casquette.</li>
+  <li><b>RE4 (2005)</b> — <b>gros blouson bomber marron</b> à <b>col en peau de mouton</b>, chemise noire dessous,
+      pantalon cargo lourd, rangers, mitaines. Et la tenue de fin de jeu, sans blouson : chemise noire
+      manches courtes, gaine de couteau et pochettes tactiques.</li>
+  <li><b>Darkside Chronicles / Opération Javier (2002)</b> —
+      <span style="color:#ff9a6a">ce n'est pas du camouflage.</span>
+      La tenue par défaut est : <b>chemise bleu moyen à manches courtes</b>, <b>gilet pare-balles gris</b>
+      couvert de poches (chargeurs, grenades), <b>cargo gris foncé</b>, rangers noires.
+      Le vert olive + camo, c'est sa tenue <b>alternative</b> « Type B ».</li>
+  <li><b>Requiem (2026)</b> — <b>manteau noir en cuir, double boutonnage</b>, <b>col large</b> qui encadre le visage,
+      détails ceinturés, sangles à boucle aux manches, cuir volontairement usé. Leon plus vieux, cheveux plus longs.</li>
+</ul>
+<p class="ref">
+  Sources : <b>DualShockers</b> (classement des tenues, détails RE2 98 et RE4 2005) ·
+  <b>Resident Evil Wiki / Fandom</b> (tenues alternatives 1998, Opération Javier) ·
+  <b>GameSpot &amp; Steam</b> (costume « 98 ») ·
+  <b>Nerdbot</b> (design du costume de Requiem) ·
+  <b>GameRant</b> et <b>Gfinity</b> (tenues héritées de Requiem).
+</p>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>Les quatre retenues — 1A · 2D · 3D · 4A</h2>
+<p class="note">
+  Avec tes deux retouches : les <b>bretelles</b> descendent des épaules sur le gilet de Darkside,
+  et le <b>t-shirt</b> ressort entre les deux rangées de boutons du manteau de Requiem.
+</p>
+<div class="row" id="final"></div>
+
+<h2>Rappel — la tenue de base actuelle</h2>
+<div class="row" id="base"></div>
+
+<h2>1 · R.P.D. / RE2 — quatre pistes</h2>
+<p class="note">La piste <b>A</b> est la fidèle au 1998. Les trois autres évitent le doublon avec la tenue de base.</p>
+<div class="row" id="s1"></div>
+
+<h2>2 · RE4</h2>
+<div class="row" id="s2"></div>
+
+<h2>3 · DARKSIDE — Opération Javier</h2>
+<div class="row" id="s3"></div>
+
+<h2>4 · REQUIEM</h2>
+<div class="row" id="s4"></div>
+
+<h2>5 · À la taille réelle du jeu</h2>
+<p class="note">Ce qui compte vraiment : est-ce qu'on les reconnaît à cette taille-là, en pleine action ?</p>
+<div class="row" id="reel"></div>
+
+<script>
+const PAL = {
+  L:'#7a4f2c', l:'#4e2f18',          // cheveux
+  S:'#f0c090', s:'#cf9660',          // peau
+  E:'#2c2a26',                       // yeux
+  J:'#42537d', j:'#26314d',          // bleu R.P.D.
+  V:'#b3bac6',                       // gris clair : manches, boucles
+  B:'#e8b83a',                       // doré : badge, boucle de ceinture
+  W:'#eef1f6',                       // blanc du marquage
+  D:'#2f3b59', K:'#1b1f2a',          // pantalon d'origine, noir
+  U:'#3f5fa8', u:'#2a3f73',          // bleu vif de 1998
+  A:'#9aa0ad', a:'#6b7280',          // gilet pare-balles gris
+  M:'#7d4a24', m:'#57301a',          // cuir marron du bomber
+  F:'#dcc49a', f:'#ab8f68',          // col en peau de mouton
+  N:'#26262b',                       // tissu noir
+  C:'#3d4136', c:'#565c47',          // cargo et camouflage
+  G:'#7d9a46', g:'#556a2f',          // verts militaires
+  Q:'#2b2d34', q:'#181a20',          // manteau de Requiem
+  Y:'#565b66',                       // gris ardoise, plis et usure
+  T:'#e9e9ee',                       // t-shirt blanc
+  Z:'#41618f',                       // jean
+  X:'#6b4a2a'                        // sangle de cuir
+};
+
+/* ---- Têtes ------------------------------------------------------------
+   Les 9 premières lignes seulement : la 10e est le col, qui change avec
+   la tenue. C'est le col qui fait le lien entre la tête et le corps. */
+const T_BASE = [
+  "....lLLLLl......",
+  "...LLLLLLLL.....",
+  "..LLLLLLLLLL....",
+  "..LLLLllLLLL....",
+  "..LLSSSSSSLL....",
+  "..LSSSSSSSSL....",
+  "..SSSESSSSES....",
+  "..SSSSSSSSSS....",
+  "...SSSSSSSS....."
+];
+// RE4 : les mèches descendent et encadrent le visage.
+const T_RIDEAU = [
+  "....lLLLLl......",
+  "...LLLLLLLL.....",
+  "..LLLLLLLLLL....",
+  "..LLLLllLLLL....",
+  "..LLLSSSSLLL....",
+  "..LLSSSSSSLL....",
+  "..LSSESSSSEL....",
+  "..SSSSSSSSSS....",
+  "...SSSSSSSS....."
+];
+// Requiem : mêmes mèches longues, plus la barbe de trois jours.
+const T_REQUIEM = [
+  "....lLLLLl......",
+  "...LLLLLLLL.....",
+  "..LLLLLLLLLL....",
+  "..LLLLllLLLL....",
+  "..LLLSSSSLLL....",
+  "..LLSSSSSSLL....",
+  "..LSSESSSSEL....",
+  "..SsSSSSSSsS....",
+  "...lsSSSSsl....."
+];
+// Tenue alternative 98 : casquette à initiales.
+const T_CASQUETTE = [
+  "...NNNNNNNN.....",
+  "..NNNNNNNNNN....",
+  "..NNNWWNNNNN....",
+  "..LLLLLLLLLL....",
+  "..LLSSSSSSLL....",
+  "..LSSSSSSSSL....",
+  "..SSSESSSSES....",
+  "..SSSSSSSSSS....",
+  "...SSSSSSSS....."
+];
+function tete(base, col) { return [...base, "...." + col.repeat(6) + "......"]; }
+
+/* ---- Corps ----------------------------------------------------------- */
+
+// Tenue de base du jeu, pour comparer.
+const B_BASE = [
+  "..KKKKKKKKKB....",
+  ".VKKKKKKKKKKV...",
+  ".VKKWKWKWKKKV...",
+  ".SKKKKKKKKKKS...",
+  "..JJJJJJJJJJ....",
+  "..KKKKVKKKKK....",
+  "...DD....DD.....",
+  "...KK....KK.....",
+  "...DD....DD.....",
+  "..KKK....KKK...."
+];
+
+// 1A — le 1998 fidèle : tout en bleus, épaulières, gros logo, pas de genouillères.
+const B_98 = [
+  "..AUUUUUUUUA....",
+  ".VUUUUUUUUUUV...",
+  ".VUUWWWWWWUUV...",
+  ".SUUUUUUUUUUS...",
+  "..JJJJJJJJJJ....",
+  "..KKKKVKKKKK....",
+  "...uu....uu.....",
+  "...uu....uu.....",
+  "...uu....uu.....",
+  "..KKK....KKK...."
+];
+// 1B — l'uniforme sans gilet : chemise de flic, avant-bras nus, badge.
+const B_CHEMISE = [
+  "..JJJJJJJJJB....",
+  ".JJJJJJJJJJJJ...",
+  ".SJJWJWJWJJJS...",
+  ".SJJJJJJJJJJS...",
+  "..JJJJJJJJJJ....",
+  "..KKKKVKKKKK....",
+  "...uu....uu.....",
+  "...uu....uu.....",
+  "...uu....uu.....",
+  "..KKK....KKK...."
+];
+// 1C — vraie tenue alternative 98 : blouson de cuir sur t-shirt blanc, jean, bottes marron.
+const B_CUIR = [
+  "..NNNNNNNNNN....",
+  ".NNNNTTTTNNNN...",
+  ".NNNNTTTTNNNN...",
+  ".SNNNTTTTNNNS...",
+  "..NNNTTTTNNN....",
+  "..LLLLBLLLLL....",
+  "...ZZ....ZZ.....",
+  "...ZZ....ZZ.....",
+  "...ZZ....ZZ.....",
+  "..mmm....mmm...."
+];
+// 1D — l'autre tenue alternative 98 : débardeur marine, bras nus, treillis vert, casquette.
+const B_DEBARDEUR = [
+  "..jjjjjjjjjj....",
+  ".SSjjjjjjjjSS...",
+  ".SSjjjjjjjjSS...",
+  ".SSjjjjjjjjSS...",
+  "..jjjjjjjjjj....",
+  "..CCCCVCCCCC....",
+  "...CC....CC.....",
+  "...cC....Cc.....",
+  "...CC....CC.....",
+  "..KKK....KKK...."
+];
+
+// 2A — le bomber ouvert : col mouton, chemise noire au centre, mitaines.
+const B_BOMBER = [
+  "..FFFFFFFFFF....",
+  ".MMMMNNNNMMMM...",
+  ".MMMMNNNNMMMM...",
+  ".NMMMNNNNMMMN...",
+  "..MMMNNNNMMM....",
+  "..CCCCVCCCCC....",
+  "...CC....CC.....",
+  "...cc....cc.....",
+  "...CC....CC.....",
+  "..KKK....KKK...."
+];
+// 2B — blouson fermé, sangle du holster en travers du torse.
+const B_BOMBER_F = [
+  "..FFFFFFFFFF....",
+  ".MMXMMMMMMMM....",
+  ".MMMXMMMMMMMM...",
+  ".NMMMXMMMMMMN...",
+  "..MMMMXMMMMM....",
+  "..CCCCVCCCCC....",
+  "...CC....CC.....",
+  "...cc....cc.....",
+  "...CC....CC.....",
+  "..KKK....KKK...."
+];
+// 2C — fin de jeu, sans blouson : chemise noire manches courtes, pochettes, gaine.
+const B_SANSBLOUSON = [
+  "..NNNNNNNNNN....",
+  ".NNNNNNNNNNNN...",
+  ".SNNNNXNNNNNS...",
+  ".SNNNNNNNNNNS...",
+  "..NNNNNNNNNN....",
+  "..CCVCCCVCCC....",
+  "...CC....CC.....",
+  "...cc....cc.....",
+  "...CC....CC.....",
+  "..KKK....KKK...."
+];
+// 2D — lecture Remake : cuir plus sombre, col mouton plus serré, chemise olive.
+const B_BOMBER_R = [
+  "..fFFFFFFFFf....",
+  ".mmmmggggmmmm...",
+  ".mmmmggggmmmm...",
+  ".NmmmggggmmmN...",
+  "..mmmggggmmm....",
+  "..CCCCVCCCCC....",
+  "...CC....CC.....",
+  "...cc....cc.....",
+  "...CC....CC.....",
+  "..KKK....KKK...."
+];
+
+// 3A — la vraie tenue par défaut : gilet gris à poches, chemise bleue à manches courtes.
+const B_SOCOM = [
+  "..AAAAAAAAAA....",
+  ".JAAAAAAAAAAJ...",
+  ".SAaAAAAAAaAS...",
+  ".SAAAAAAAAAAS...",
+  "..JJJJJJJJJJ....",
+  "..YYYYVYYYYY....",
+  "...YY....YY.....",
+  "...aa....aa.....",
+  "...YY....YY.....",
+  "..KKK....KKK...."
+];
+// 3B — la tenue alternative « Type B » : chemise vert lime, treillis camouflé.
+const B_TYPEB = [
+  "..GGGGGGGGGG....",
+  ".GGGGGGGGGGGG...",
+  ".SGGGGGGGGGGS...",
+  ".SGGGGGGGGGGS...",
+  "..GGGGGGGGGG....",
+  "..CCCCVCCCCC....",
+  "...Cc....cC.....",
+  "...cC....Cc.....",
+  "...Cc....cC.....",
+  "..KKK....KKK...."
+];
+// 3C — le mélange : gilet gris par-dessus la chemise verte, camo aux jambes.
+const B_JAVIER_MIX = [
+  "..AAAAAAAAAA....",
+  ".GAAAAAAAAAAG...",
+  ".SAaAAAAAAaAS...",
+  ".SAAAAAAAAAAS...",
+  "..GGGGGGGGGG....",
+  "..CCCCVCCCCC....",
+  "...Cc....cC.....",
+  "...cC....Cc.....",
+  "...Cc....cC.....",
+  "..KKK....KKK...."
+];
+// 3D — gilet tactique olive intégral sur t-shirt noir.
+const B_TACTIQUE = [
+  "..gggggggggg....",
+  ".NggggggggggN...",
+  ".SgCggggggCgS...",
+  ".SggggggggggS...",
+  "..NNNNNNNNNN....",
+  "..CCCCVCCCCC....",
+  "...Cc....cC.....",
+  "...cC....Cc.....",
+  "...Cc....cC.....",
+  "..KKK....KKK...."
+];
+
+// 3D corrigé — les bretelles du gilet descendent des épaules jusqu'au ceinturon.
+const B_TACTIQUE_2 = [
+  "..ggCggggCgg....",
+  ".NggCggggCggN...",
+  ".SggCggggCggS...",
+  ".SggCggggCggS...",
+  "..NNNNNNNNNN....",
+  "..CCCCVCCCCC....",
+  "...Cc....cC.....",
+  "...cC....Cc.....",
+  "...Cc....cC.....",
+  "..KKK....KKK...."
+];
+
+// 4A corrigé — le manteau s'entrouvre : le t-shirt ressort entre les deux
+// rangées de boutons, du col jusqu'à la ceinture.
+const B_MANTEAU_2 = [
+  "..YQQQQQQQQY....",
+  ".QQQQqYYqQQQQ...",
+  ".QQQQqYYqQQQQ...",
+  ".SQQQqYYqQQQS...",
+  "..QQQqYYqQQQ....",
+  "..QQQQVQQQQQ....",
+  "..QQQQ..QQQQ....",
+  "...qq....qq.....",
+  "...qq....qq.....",
+  "..KKK....KKK...."
+];
+
+// 4A — manteau long, double boutonnage, col relevé, pans qui tombent sur les cuisses.
+const B_MANTEAU = [
+  "..YQQQQQQQQY....",
+  ".QQQQYQQYQQQQ...",
+  ".QQQQYQQYQQQQ...",
+  ".SQQQYQQYQQQS...",
+  "..QQQYQQYQQQ....",
+  "..QQQQVQQQQQ....",
+  "..QQQQ..QQQQ....",
+  "...qq....qq.....",
+  "...qq....qq.....",
+  "..KKK....KKK...."
+];
+// 4B — manteau ouvert sur un pull sombre, col largement écarté.
+const B_MANTEAU_O = [
+  "..YYQQQQQQYY....",
+  ".QQQQNNNNQQQQ...",
+  ".QQQQNNNNQQQQ...",
+  ".SQQQNNNNQQQS...",
+  "..QQQNNNNQQQ....",
+  "..QQQQVQQQQQ....",
+  "..QQQQ..QQQQ....",
+  "...qq....qq.....",
+  "...qq....qq.....",
+  "..KKK....KKK...."
+];
+// 4C — veste courte et harnais de poitrine, plus proche du terrain que du manteau.
+const B_HARNAIS = [
+  "..QQQQQQQQQQ....",
+  ".QQQQQQQQQQQQ...",
+  ".SQXXXXXXXXQS...",
+  ".SQQQQQQQQQQS...",
+  "..QQQQQQQQQQ....",
+  "..YYYYVYYYYY....",
+  "...qq....qq.....",
+  "...qq....qq.....",
+  "...qq....qq.....",
+  "..KKK....KKK...."
+];
+// 4D — le manteau avec col fourrure et usure marquée aux épaules.
+const B_MANTEAU_F = [
+  "..FFFFFFFFFF....",
+  ".QQQQYQQYQQQQ...",
+  ".QQqqYQQYqqQQ...",
+  ".SQQQYQQYQQQS...",
+  "..QQQYQQYQQQ....",
+  "..QQQQVQQQQQ....",
+  "..QQQQ..QQQQ....",
+  "...qq....qq.....",
+  "...qq....qq.....",
+  "..KKK....KKK...."
+];
+
+const GROUPES = [
+  { hote:'s1', items:[
+    { id:'1A', nom:'1A · R.P.D. 1998', tete:tete(T_BASE,'U'), corps:B_98,
+      desc:'Le 1998 fidèle : tout en bleus, épaulières grises, gros logo R.P.D. sur 6 pixels, pas de genouillères. Le plus juste — mais le plus proche de la tenue de base.' },
+    { id:'1B', nom:'1B · Uniforme sans gilet', tete:tete(T_BASE,'J'), corps:B_CHEMISE,
+      desc:'Le gilet saute : chemise de police bleue, avant-bras nus, badge doré. Silhouette bien plus claire que la base.' },
+    { id:'1C', nom:'1C · Blouson de cuir', tete:tete(T_BASE,'N'), corps:B_CUIR,
+      desc:'La vraie tenue alternative de 1998 : blouson noir ouvert sur t-shirt blanc, ceinture de cuir, jean, bottes marron.' },
+    { id:'1D', nom:'1D · Débardeur + treillis', tete:tete(T_CASQUETTE,'j'), corps:B_DEBARDEUR,
+      desc:'L\'autre alternative de 1998 : casquette à initiales, débardeur marine, bras nus, treillis vert.' }
+  ]},
+  { hote:'s2', items:[
+    { id:'2A', nom:'2A · Bomber ouvert', tete:tete(T_RIDEAU,'F'), corps:B_BOMBER,
+      desc:'Le blouson marron ouvert, col en peau de mouton, chemise noire au centre, cargo, mitaines. La lecture la plus immédiate.' },
+    { id:'2B', nom:'2B · Bomber fermé', tete:tete(T_RIDEAU,'F'), corps:B_BOMBER_F,
+      desc:'Blouson fermé, sangle du holster en diagonale sur le torse. Plus massif, moins de contraste au centre.' },
+    { id:'2C', nom:'2C · Sans blouson', tete:tete(T_RIDEAU,'N'), corps:B_SANSBLOUSON,
+      desc:'La tenue de fin de jeu : chemise noire manches courtes, bras nus, gaine de couteau et pochettes au ceinturon.' },
+    { id:'2D', nom:'2D · Lecture Remake', tete:tete(T_RIDEAU,'f'), corps:B_BOMBER_R,
+      desc:'Cuir plus sombre, col mouton plus serré, chemise olive dessous. Plus sobre, moins « 2005 ».' }
+  ]},
+  { hote:'s3', items:[
+    { id:'3A', nom:'3A · Tenue par défaut', tete:tete(T_BASE,'J'), corps:B_SOCOM,
+      desc:'La vraie : gilet pare-balles gris couvert de poches, chemise bleue à manches courtes, cargo gris foncé.' },
+    { id:'3B', nom:'3B · Type B militaire', tete:tete(T_BASE,'G'), corps:B_TYPEB,
+      desc:'Sa tenue alternative : chemise vert lime manches courtes, treillis camouflé bicolore, rangers.' },
+    { id:'3C', nom:'3C · Gilet + chemise verte', tete:tete(T_BASE,'G'), corps:B_JAVIER_MIX,
+      desc:'Le compromis : le gilet gris de la tenue par défaut, mais le vert et le camo dessous. Le plus lisible des trois.' },
+    { id:'3D', nom:'3D · Tactique olive', tete:tete(T_BASE,'g'), corps:B_TACTIQUE,
+      desc:'Gilet tactique olive intégral sur t-shirt noir. Le plus éloigné des refs, mais le plus distinct du roster.' }
+  ]},
+  { hote:'s4', items:[
+    { id:'4A', nom:'4A · Manteau long', tete:tete(T_REQUIEM,'Y'), corps:B_MANTEAU,
+      desc:'Manteau noir à double boutonnage, col large relevé, ceinture à boucle, pans qui tombent sur les cuisses.' },
+    { id:'4B', nom:'4B · Manteau ouvert', tete:tete(T_REQUIEM,'Y'), corps:B_MANTEAU_O,
+      desc:'Le même manteau grand ouvert sur un pull sombre. Le col très écarté encadre le visage.' },
+    { id:'4C', nom:'4C · Veste + harnais', tete:tete(T_REQUIEM,'Q'), corps:B_HARNAIS,
+      desc:'Version courte : veste noire et harnais de poitrine. Plus mobile, mais on perd la silhouette du manteau.' },
+    { id:'4D', nom:'4D · Col fourrure', tete:tete(T_REQUIEM,'F'), corps:B_MANTEAU_F,
+      desc:'Le manteau avec le col en fourrure clair et l\'usure marquée aux épaules. Le col clair le sépare du fond noir.' }
+  ]}
+];
+
+const bad = [];
+function peindre(rows, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, c.width, c.height);
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && PAL[ch]) { g.fillStyle = PAL[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+  }});
+  return c;
+}
+function verifier(nom, rows) {
+  if (rows.length !== 20) bad.push(nom + ' a ' + rows.length + ' lignes au lieu de 20');
+  rows.forEach((r, i) => {
+    if (r.length !== 16) bad.push(nom + '[' + i + '] largeur ' + r.length + ' au lieu de 16');
+    for (const ch of r) if (ch !== '.' && !PAL[ch]) bad.push(nom + '[' + i + '] couleur inconnue "' + ch + '"');
+  });
+}
+function carte(hote, titre, desc, rows, ech) {
+  const card = document.createElement('div'); card.className = 'card';
+  const lbl = document.createElement('div'); lbl.className = 'lbl';
+  lbl.innerHTML = '<b>' + titre + '</b>' + (desc || '');
+  if (!desc) lbl.style.minHeight = '0';
+  card.appendChild(lbl); card.appendChild(peindre(rows, ech));
+  document.getElementById(hote).appendChild(card);
+}
+
+// Les quatre tenues retenues, avec les deux retouches demandées.
+const RETENUES = [
+  { nom:'R.P.D. 1998 (1A)', tete:tete(T_BASE,'U'), corps:B_98,
+    desc:'Tout en bleus, épaulières, gros logo. Aucune retouche.' },
+  { nom:'RE4 (2D)', tete:tete(T_RIDEAU,'f'), corps:B_BOMBER_R,
+    desc:'Cuir sombre, col mouton serré, chemise olive. Aucune retouche.' },
+  { nom:'DARKSIDE (3D + bretelles)', tete:tete(T_BASE,'g'), corps:B_TACTIQUE_2,
+    desc:'Les deux bretelles descendent des épaules jusqu\'au ceinturon.' },
+  { nom:'REQUIEM (4A + t-shirt)', tete:tete(T_REQUIEM,'Y'), corps:B_MANTEAU_2,
+    desc:'Le manteau s\'entrouvre : le t-shirt ressort du col à la ceinture, entre les boutons.' }
+];
+for (const t of RETENUES) {
+  const rows = [...t.tete, ...t.corps];
+  verifier(t.nom, rows);
+  carte('final', t.nom, t.desc, rows, 11);
+}
+
+const BASE = [...tete(T_BASE, 'J'), ...B_BASE];
+verifier('BASE', BASE);
+carte('base', 'R.P.D. STANDARD', 'La tenue actuelle : gilet noir, marquage R.P.D., chemise bleue, genouillères.', BASE, 9);
+
+for (const gr of GROUPES) for (const it of gr.items) {
+  const rows = [...it.tete, ...it.corps];
+  verifier(it.id, rows);
+  carte(gr.hote, it.nom, it.desc, rows, 9);
+}
+carte('reel', 'BASE', '', BASE, 3);
+for (const gr of GROUPES) for (const it of gr.items) carte('reel', it.id, '', [...it.tete, ...it.corps], 3);
+
+const boite = document.getElementById('errs');
+boite.textContent = bad.length ? bad.join('\n')
+  : 'OK — les 17 sprites tiennent le gabarit 16x20, toutes les couleurs sont definies.';
+if (bad.length) boite.className = 'bad';
+</script>
+</body>
+</html>
