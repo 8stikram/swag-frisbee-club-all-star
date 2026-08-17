@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Skins de Naruto — version finale</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; --bad:#ff5340; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:15px;margin:32px 0 4px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:930px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:6px}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:11px;
+        flex:1 1 0;min-width:186px;max-width:250px}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:8px;line-height:1.5;min-height:58px}
+  .lbl b{display:block;font-size:13.5px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  canvas{display:block;margin:0 auto;image-rendering:pixelated;background:#101a2e;border-radius:6px}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok);white-space:pre-wrap;margin-bottom:8px}
+  #errs.bad{color:var(--bad)}
+  ul{font-size:12.5px;color:#8fa4c4;line-height:1.9;max-width:930px;margin:0 0 14px;padding-left:20px}
+  ul b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<h1>Skins de Naruto — version finale</h1>
+
+<h2>Les deux derniers ajustements</h2>
+<ul>
+  <li><b>Hokage</b> : l'orange foncé passe <b>pile au milieu</b> du buste et fait la fermeture, au lieu d'encadrer le centre par deux traits.</li>
+  <li><b>Minato</b> : <b>beaucoup moins de bleu</b>. La fermeture du gilet passe en vert foncé et le bleu ne reste que sur le pantalon.</li>
+</ul>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>1 · Les deux corrections, agrandies</h2>
+<div class="row" id="zoom"></div>
+
+<h2>2 · Les cinq tenues</h2>
+<div class="row" id="tenues"></div>
+
+<h2>3 · À la taille du jeu</h2>
+<div class="row" id="reel"></div>
+
+<script>
+const PAL = {
+  H:'#ffd23e', h:'#e2a71c', j:'#b8860b',
+  M:'#d9dfe8',
+  S:'#f8c890', s:'#d99a63', w:'#c08050',
+  E:'#173e8f', Y:'#e8a020', y:'#8a5a08',
+  O:'#ff8c1a', o:'#d96b08', P:'#e5730f', W:'#f2f2f5',
+  K:'#1e1e24', k:'#101015',
+  B:'#f4f1e6', b:'#cfcab8',
+  R:'#c0272d', r:'#8f1a1f', X:'#e04a2a',
+  A:'#b52a2a', a:'#7e1818',
+  D:'#3b3f33', d:'#24271f',
+  V:'#4f7a4a', v:'#375a34', u:'#284026',
+  N:'#2a4a8f', n:'#1d3568',
+  C:'#8a6a3a'
+};
+
+const VISAGE        = ["..SSSSSSSSSS....","..SSSESSSSES....","..swSSSSSSws....","...SSSSSSSS....."];
+const VISAGE_ERMITE = ["..SSSSSSSSSS....","..SSyYSSSyYS....","..swSSSSSSws....","...SSSSSSSS....."];
+const TETE        = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....", ...VISAGE];
+const TETE_ERMITE = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....", ...VISAGE_ERMITE];
+
+const B_BASE = ["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...","..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."];
+
+/* Hokage : l'orange foncé occupe les deux colonnes centrales et fait la
+   fermeture. Deux bandes noires en bas, cape blanche du col aux flammes. */
+const B_HOKAGE = [
+  "....BOooOB......",     // coins orange, un seul pixel de cape de chaque côté
+  "..BBOOooOOBB....",     // l'ombre de la fermeture démarre tout en haut
+  ".BBBOOooOOBBB...",
+  ".BBBOOooOOBBB...",
+  "..BBKKKKKKBB....",
+  "..RRKKKKKKRR....",
+  "...KK....KK.....",
+  "...KK....KK.....",
+  "..KKK....KKK....",
+  "..kkk....kkk...."
+];
+
+/* Minato : le bleu ne subsiste plus que sur le pantalon. La fermeture du
+   gilet et les pochettes restent dans les verts. */
+// Minato reçoit exactement la même coupe de cape que le Hokage : mêmes
+// colonnes, mêmes flammes. Seule la tenue dessous change.
+const B_MINATO = [
+  "....BVvvVB......",
+  "..BBVVvvVVBB....",
+  ".BBBVuvvuVBBB...",
+  ".BBBVvvvvVBBB...",
+  "..BBVVvvVVBB....",
+  "..RRNNNNNNRR....",     // ceinture bleue : plus aucun blanc à ce niveau
+  "...NN....NN.....",
+  "...NN....NN.....",
+  "..NNN....NNN....",
+  "..nnn....nnn...."
+];
+
+const B_LAST = [
+  "....RRRRRR......",
+  "..RRDdddddDR....",
+  ".SXXDdddddDDS...",
+  ".SDDDdddddDDS...",
+  "..DDDdddddDD....",
+  "..dddddddddd....",
+  "...PP....PP.....",
+  "...WW....PP.....",
+  "..PPP....PPP....",
+  "..KKK....KKK...."
+];
+
+const B_ERMITE = [
+  "....KKKKKK......",
+  "..AAKKKKKKAA....",
+  ".SACKKKKKKCAS...",
+  ".SAOOOKKOOOAS...",
+  "..AaOOKKOOaA....",
+  "..AaAKKKKAaA....",
+  "...PP....PP.....",
+  "...WW....PP.....",
+  "..PPP....PPP....",
+  "..CCC....CCC...."
+];
+
+const TENUES = [
+  { nom:'SHIPPUDEN', tete:TETE, corps:B_BASE, desc:'La tenue d\'origine.' },
+  { nom:'HOKAGE', tete:TETE, corps:B_HOKAGE, desc:'Fermeture en orange foncé pile au centre, deux bandes noires en bas, cape du col aux flammes.' },
+  { nom:'MODE ERMITE', tete:TETE_ERMITE, corps:B_ERMITE, desc:'Haori rouge ouvert, bras dégagés, flammes sur la veste, parchemin en bandoulière.' },
+  { nom:'THE LAST', tete:TETE, corps:B_LAST, desc:'Écharpe au cou, brassard au bras, fermeture du col jusqu\'en bas.' },
+  { nom:'MINATO', tete:TETE, corps:B_MINATO, desc:'Gilet vert et pochettes, cape au col à flammes rouges. Le bleu ne reste que sur le pantalon.' }
+];
+
+const bad = [];
+function peindre(rows, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, c.width, c.height);
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && PAL[ch]) { g.fillStyle = PAL[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+  }});
+  return c;
+}
+function verifier(nom, rows) {
+  if (rows.length !== 20) bad.push(nom + ' a ' + rows.length + ' lignes au lieu de 20');
+  rows.forEach((r, i) => {
+    if (r.length !== 16) bad.push(nom + '[' + i + '] largeur ' + r.length);
+    for (const ch of r) if (ch !== '.' && !PAL[ch]) bad.push(nom + '[' + i + '] couleur inconnue "' + ch + '"');
+  });
+}
+function carte(hote, titre, desc, rows, ech) {
+  const card = document.createElement('div'); card.className = 'card';
+  const lbl = document.createElement('div'); lbl.className = 'lbl';
+  lbl.innerHTML = '<b>' + titre + '</b>' + (desc || '');
+  if (!desc) lbl.style.minHeight = '0';
+  card.appendChild(lbl); card.appendChild(peindre(rows, ech));
+  document.getElementById(hote).appendChild(card);
+}
+
+carte('zoom', 'HOKAGE ×14', 'L\'orange foncé occupe les deux colonnes centrales : c\'est la fermeture.', [...TETE, ...B_HOKAGE], 14);
+carte('zoom', 'MINATO ×14', 'Plus de bleu sur le buste — il ne reste que sur le pantalon.', [...TETE, ...B_MINATO], 14);
+
+for (const t of TENUES) { const r = [...t.tete, ...t.corps]; verifier(t.nom, r); carte('tenues', t.nom, t.desc, r, 9); }
+for (const t of TENUES) carte('reel', t.nom, '', [...t.tete, ...t.corps], 3);
+
+const boite = document.getElementById('errs');
+boite.textContent = bad.length ? bad.join('\n')
+  : 'OK — les cinq tenues tiennent le gabarit du jeu, couleurs toutes définies.';
+if (bad.length) boite.className = 'bad';
+</script>
+</body>
+</html>

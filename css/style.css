@@ -1283,3 +1283,63 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   font-size:clamp(13px,2.2cqh,20px);pointer-events:none;
   filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));
 }
+
+/* ================= PANNEAU DES SKINS ================= */
+.skinsPanel{
+  position:absolute;inset:0;z-index:14;display:flex;align-items:center;justify-content:center;
+  background:rgba(6,8,14,.66);font-family:'DotGothic16',monospace;
+}
+.skinsPanel.hidden{display:none}
+.skinsCard{
+  background:rgba(16,20,28,.96);border:4px solid var(--ink);border-radius:16px;
+  box-shadow:0 0 0 2px rgba(53,224,255,.45), 8px 8px 0 var(--ink);
+  padding:2.4cqh 2cqw;text-align:center;max-width:62cqw;
+  animation:learnSlide .22s cubic-bezier(.2,.9,.3,1.2) backwards;
+}
+.skinsCard>b{
+  display:block;font-family:'Russo One',sans-serif;
+  font-size:clamp(12px,2.3cqh,20px);color:var(--accent);letter-spacing:.08em;margin-bottom:1.6cqh;
+}
+.skinsGrid{display:flex;gap:1cqw;flex-wrap:wrap;justify-content:center}
+.skinTile{
+  position:relative;background:rgba(255,255,255,.06);border:3px solid rgba(255,255,255,.16);
+  border-radius:10px;padding:.7cqh .5cqw;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:.4cqh;
+  transition:transform .12s,border-color .12s,background .12s;
+}
+.skinTile:hover{transform:translateY(-3px);background:rgba(255,255,255,.13)}
+/* Bordure dorée et lueur douce sur le skin porté. */
+.skinTile.on{border-color:var(--yellow);box-shadow:0 0 12px rgba(245,230,61,.45)}
+.skinTile canvas{display:block;image-rendering:pixelated}
+.skinTile em{
+  font-style:normal;font-size:clamp(7px,1.15cqh,10px);color:#c9d4e8;letter-spacing:.04em;
+}
+.skinTile.locked{cursor:not-allowed}
+.skinTile.locked canvas{filter:grayscale(1) brightness(.4)}
+.skinTile.locked em{color:#6b7488}
+.skinTileLock{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-62%);
+  font-size:clamp(13px,2.2cqh,19px);pointer-events:none;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));
+}
+.skinsAstuce{
+  display:block;margin-top:1.4cqh;font-size:clamp(7px,1.15cqh,10px);color:#7c8aa4;
+}
+
+/* Bandeau de message : condition rappelée, ou déblocage annoncé. */
+.skinsMsg{
+  position:absolute;left:50%;bottom:6cqh;transform:translateX(-50%);z-index:16;
+  font-family:'DotGothic16',monospace;font-size:clamp(8px,1.5cqh,13px);
+  background:rgba(16,20,28,.95);color:#e8f0ff;
+  border:3px solid rgba(255,255,255,.2);border-radius:10px;
+  padding:.8cqh 1.6cqw;white-space:nowrap;
+}
+.skinsMsg.hidden{display:none}
+.skinsMsg.dore{
+  border-color:var(--yellow);color:#fff6c8;
+  box-shadow:0 0 18px rgba(245,230,61,.5);
+}
+.skinsMsg.pop{animation:learnSlide .26s cubic-bezier(.2,.9,.3,1.3)}
+/* Le grand portrait devient cliquable, et le dit. */
+.heroBox{cursor:pointer}
+.heroBox.punchSkin{animation:tuPop .4s ease-out}

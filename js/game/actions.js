@@ -11,6 +11,8 @@ import { sfx, setMuffled } from '../audio/audio.js';
 import { burst, dust, ring, confetti, starBurst, addPopup } from './fx.js';
 import { $, cv, showScreen } from '../core/dom.js';
 import { signalerPerfectDive } from './moves.js';
+import { ajouterStat, verifierDeblocages } from '../data/skins-perso.js';
+import { annoncerSkins } from '../ui/skins-ui.js';
 
 export function setupServe(side) {
   G.state = 'serve'; G.serveTo = side;
@@ -90,6 +92,7 @@ export function doThrowHuman(p) {
   // disque à pleine puissance sans avoir eu besoin de charger.
   if (p.dashThrowT > 0) {
     p.dashThrowT = 0; p.charge = 1;
+    p.stats.dashThrows++;
     addPopup('DASH THROW !', '#35e0ff', 15, .8, p.y - 56);
     burst(p.x + dir.x * 24, p.y + dir.y * 24, '#35e0ff', 14);
     G.shake = Math.max(G.shake, 6);
@@ -142,6 +145,7 @@ function perfectDive(p) {
   // Le jeu est seul à connaître sa fenêtre : il le signale à l'observateur de
   // gestes, que le tutoriel interroge.
   signalerPerfectDive(p);
+  p.stats.perfects++;
   const gx = p.side === 1 ? COURT.right : COURT.left;
   const dir = norm(gx - p.x, CY - p.y);
   throwDisc(p, dir, PERFECT_SPEED * p.char.power);
@@ -344,6 +348,32 @@ $('vicDetailScrim').addEventListener('click', e => {
   if (e.target.id === 'vicDetailScrim') e.currentTarget.classList.remove('open');
 });
 
+// Fait le compte de ce que le joueur vient d'accomplir et débloque ce qui est
+// mérité. Les conditions « en un seul match » sont jugées ici, à chaud, sans
+// être stockées ; les autres viennent des compteurs cumulés.
+function bilanSkins(aGagne) {
+  const p = G.p1;
+  if (!p || !p.human || G.isJ2J) return;
+  const ck = p.ck, s = p.stats;
+  const duree = (performance.now() - (G.debutMatch || 0)) / 1000;
+
+  if (s.perfects) ajouterStat(ck, 'perfects', s.perfects);
+  if (s.buts) ajouterStat(ck, 'buts', s.buts);
+  if (aGagne) {
+    ajouterStat(ck, 'victoires');
+    if (duree < 60) ajouterStat(ck, 'victoiresRapides');
+    if (G.matchDiff === 2) ajouterStat(ck, 'victoiresDifficile');
+    if (!G.aDashe) ajouterStat(ck, 'victoiresSansDash');
+  }
+  const gagnes = verifierDeblocages(ck, {
+    perfectsMatch: s.perfects,
+    butsMatch: s.buts,
+    dashThrowsMatch: s.dashThrows,
+    attrapesMatch: s.catches
+  });
+  if (gagnes.length) annoncerSkins(ck, gagnes);
+}
+
 export function gameOver() {
   G.state = 'over';
   if (G.demo) { initMatch(true); return; }
@@ -353,6 +383,7 @@ export function gameOver() {
 
   const winner = G.winner, loser = winner.foe;
   const winnerIsP1 = winner === G.p1;
+  bilanSkins(win);
 
   buildPerspectiveTitle($('vicName'), winner.char.short);
   // L'écran met en scène le VAINQUEUR : afficher « DÉFAITE » quand le CPU

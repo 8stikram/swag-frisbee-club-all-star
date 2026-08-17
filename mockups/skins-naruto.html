@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Skins de Naruto — coupes et tenues</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; --bad:#ff5340; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:15px;margin:32px 0 4px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  h3{font-size:12px;margin:16px 0 8px;color:#8fa4c4;letter-spacing:1.2px;text-transform:uppercase}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:930px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:6px}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:11px;
+        flex:1 1 0;min-width:172px;max-width:220px}
+  .card.def{border-color:var(--or)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:8px;line-height:1.5;min-height:76px}
+  .lbl b{display:block;font-size:13.5px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  canvas{display:block;margin:0 auto;image-rendering:pixelated;background:#101a2e;border-radius:6px}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok);white-space:pre-wrap;margin-bottom:8px}
+  #errs.bad{color:var(--bad)}
+  ul{font-size:12.5px;color:#8fa4c4;line-height:1.8;max-width:930px;margin:0 0 14px;padding-left:20px}
+  ul b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<h1>Skins de Naruto — coupes et tenues</h1>
+<p class="note">Trois versions par tenue, et surtout <b>quatre coupes de cheveux réellement différentes</b> :
+c'est ce qui manquait le plus. Choisis une lettre par tenue.</p>
+
+<h2>D'abord les coupes, isolées</h2>
+<p class="note">Sans le corps, pour juger de la silhouette du crâne. C'est elle qu'on reconnaît en premier
+dans un sprite de seize pixels.</p>
+<div class="row" id="coupes"></div>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>Hokage — trois versions</h2>
+<div class="row" id="hokage"></div>
+
+<h2>Mode Ermite — trois versions</h2>
+<div class="row" id="ermite"></div>
+
+<h2>The Last — trois versions</h2>
+<div class="row" id="thelast"></div>
+
+<h2>Minato — trois versions</h2>
+<div class="row" id="minato"></div>
+
+<h2>Rappel : la tenue d'origine</h2>
+<div class="row" id="base"></div>
+
+<script>
+const PAL = {
+  H:'#ffd23e', h:'#e2a71c', j:'#c98f10',   // cheveux : clair, ombre, ombre profonde
+  M:'#d9dfe8', m:'#9aa3b2',                 // plaque du bandeau
+  S:'#f8c890', s:'#d99a63', w:'#c08050',    // peau
+  E:'#173e8f',                              // œil bleu
+  Y:'#e8a020', y:'#8a5a08',                 // œil de crapaud
+  O:'#ff8c1a', o:'#d96b08',                 // orange de la veste
+  P:'#e5730f',                              // orange du pantalon
+  W:'#f2f2f5',                              // bande blanche
+  K:'#1e1e24', k:'#101015',                 // noir
+  B:'#f4f1e6', b:'#d5d0be',                 // blanc de la cape
+  R:'#c0272d', r:'#8f1a1f',                 // rouge : flammes, brassard, écharpe
+  A:'#b52a2a', a:'#7e1818',                 // rouge du haori de l'Ermite
+  D:'#3b3f33', d:'#24271f',                 // veste sombre de The Last
+  V:'#4f7a4a', v:'#375a34',                 // gilet vert de Minato
+  N:'#2a4a8f', n:'#1d3568',                 // bleu de Minato
+  C:'#8a6a3a',                              // sangle du parchemin
+  G:'#6b6f60'                               // manchettes grises
+};
+
+/* =====================================================================
+   LES QUATRE COUPES. Chacune a une silhouette de crâne différente : c'est
+   ce qu'on lit en premier, bien avant la couleur de la veste.
+   ===================================================================== */
+
+// Shippuden : pics dressés et bandeau noir. La coupe d'origine.
+const C_BASE = [
+  "...hH.HH.Hh.....",
+  "..HHHHHHHHHH....",
+  ".hHHHHHHHHHHh...",
+  "..hHHHHHHHHh....",
+  "..KKKKKKKKKK....",
+  "..KKMMMMMMKK....",
+  "..SSSSSSSSSS....",
+  "..SSSESSSSES....",
+  "..swSSSSSSws....",
+  "...SSSSSSSS....."
+];
+
+// Hokage : plus aucun pic, une coupe basse et nette, et surtout PAS de
+// bandeau — il ne le porte plus une fois Hokage. Le front se dégage.
+const C_HOKAGE = [
+  "................",
+  "....HHHHHH......",
+  "..HHHHHHHHHH....",
+  ".hHHHHHHHHHHh...",
+  ".hHHHHHHHHHHh...",
+  ".hjHhhhhhhHjh...",
+  "..SSSSSSSSSS....",
+  "..SSSESSSSES....",
+  "..swSSSSSSws....",
+  "...SSSSSSSS....."
+];
+
+// The Last : nettement plus court que Shippuden, les pics sont retombés,
+// mais il porte encore son bandeau.
+const C_LAST = [
+  "................",
+  "...HHHHHHHH.....",
+  ".hHHHHHHHHHHh...",
+  "..hHHHHHHHHh....",
+  "..KKKKKKKKKK....",
+  "..KKMMMMMMKK....",
+  "..SSSSSSSSSS....",
+  "..SSSESSSSES....",
+  "..swSSSSSSws....",
+  "...SSSSSSSS....."
+];
+
+// Minato : la coupe la plus large, hérissée sur le dessus, avec les deux
+// longues mèches qui descendent le long du visage jusqu'aux joues.
+const C_MINATO = [
+  "..hH.HH.HH.Hh...",
+  ".HHHHHHHHHHHH...",
+  "HHHHHHHHHHHHHH..",
+  "HhHHHHHHHHHHhH..",
+  "HHKKKKKKKKKKHH..",
+  "HHKKMMMMMMKKHH..",
+  "HhSSSSSSSSSShH..",
+  "HhSSSESSSSEShH..",
+  ".hswSSSSSSwsh...",
+  "...SSSSSSSS....."
+];
+
+// Mode Ermite : la coupe de Shippuden, mais les yeux deviennent ceux d'un
+// crapaud — pupille horizontale et iris orange.
+const C_ERMITE = [
+  "...hH.HH.Hh.....",
+  "..HHHHHHHHHH....",
+  ".hHHHHHHHHHHh...",
+  "..hHHHHHHHHh....",
+  "..KKKKKKKKKK....",
+  "..KKMMMMMMKK....",
+  "..SSSSSSSSSS....",
+  "..SSyYSSSyYS....",
+  "..swSSSSSSws....",
+  "...SSSSSSSS....."
+];
+
+const COUPES = [
+  { nom:'SHIPPUDEN', desc:'Pics dressés, bandeau noir. La coupe d\'origine.', h:C_BASE },
+  { nom:'HOKAGE', desc:'Coupe basse et nette, plus aucun pic, et pas de bandeau : il ne le porte plus.', h:C_HOKAGE },
+  { nom:'THE LAST', desc:'Nettement plus courte, les pics sont retombés, mais il garde son bandeau.', h:C_LAST },
+  { nom:'MINATO', desc:'La plus large, hérissée sur le dessus, avec les deux longues mèches le long des joues.', h:C_MINATO },
+  { nom:'ERMITE', desc:'Celle de Shippuden, mais avec les yeux de crapaud à pupille horizontale.', h:C_ERMITE }
+];
+
+/* =====================================================================
+   LES TENUES, trois versions chacune.
+   ===================================================================== */
+const CORPS_BASE = ["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...","..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."];
+
+const HOKAGE = [
+  { id:'A', nom:'CAPE LARGE',
+    desc:'La cape couvre les épaules et retombe de chaque côté jusqu\'aux flammes rouges. Le plus imposant, la veste orange se voit surtout au centre.',
+    b:["....OOOOOO......","..BBOOOOOOBB....",".BBBOOKKOOBBB...",".BBBOOKKOOBBB...",".BBOOKKKKOOBB...",".rRBKKKKKKBRr...","...KK....KK.....","...KK....KK.....","..KKK....KKK....","..kkk....kkk...."] },
+
+  { id:'B', nom:'CAPE ÉTROITE',
+    desc:'La cape ne prend que les épaules et le dos : la veste orange à bandes noires reste bien lisible. Le meilleur compromis à seize pixels.',
+    b:["....OOOOOO......","..BBOOOOOOBB....",".SBBOOKKOOBBS...",".SOOOOKKOOOOS...","..KKOOKKOOKK....","..RBBKKKKBBR....","...KK....KK.....","...KK....KK.....","..KKK....KKK....","..kkk....kkk...."] },
+
+  { id:'C', nom:'FLAMMES HAUTES',
+    desc:'Les flammes rouges remontent plus haut sur la cape, comme sur ton illustration de dos. Le plus décoratif, un peu plus chargé.',
+    b:["....OOOOOO......","..BBOOOOOOBB....",".BBBOOKKOOBBB...",".BRBOOKKOOBRB...",".RRBOKKKKOBRR...",".rrBKKKKKKBrr...","...KK....KK.....","...KK....KK.....","..KKK....KKK....","..kkk....kkk...."] }
+];
+
+const ERMITE = [
+  { id:'A', nom:'HAORI FERMÉ',
+    desc:'Le manteau rouge tombe droit, col sombre, sangle du parchemin en travers. Silhouette nette et compacte.',
+    b:["....KKKKKK......","..AAKKKKKKAA....",".AAACKKKKCAAA...",".AAAKOOKKOAAA...","..AAKOOKKOAA....","..AAKKKKKKAA....","...aa....aa.....","...PP....PP.....","..PPP....PPP....","..CCC....CCC...."] },
+
+  { id:'B', nom:'HAORI OUVERT',
+    desc:'Le manteau s\'écarte et laisse voir toute la tenue noire et orange dessous. On reconnaît mieux Naruto sous le manteau.',
+    b:["....KKKKKK......","..AAKKKKKKAA....",".AAACKKKKCAAA...",".AAOOOKKOOOAA...","..AOOOKKOOOA....","..AKKKKKKKKA....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..CCC....CCC...."] },
+
+  { id:'C', nom:'PANS DÉCHIQUETÉS',
+    desc:'Le bas du manteau se termine en flammes, comme dans l\'anime. Le plus fidèle, mais le motif est serré à cette taille.',
+    b:["....KKKKKK......","..AAKKKKKKAA....",".AAACKKKKCAAA...",".AAAKOOKKOAAA...","..AAKOOKKOAA....","..AaAKKKKAaA....","...aa....aa.....","...PP....PP.....","..PPP....PPP....","..CCC....CCC...."] }
+];
+
+const THELAST = [
+  { id:'A', nom:'SANS ÉCHARPE',
+    desc:'Veste sombre, brassard rouge au bras, pantalon orange. Conforme au cahier des charges et à ta deuxième image.',
+    b:["....DDDDDD......","..DDDDDDDDDD....",".SRRDDDDDDDDS...",".SDDDDddDDDDS...","..DDDDddDDDD....","..dddddddddd....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."] },
+
+  { id:'B', nom:'AVEC ÉCHARPE',
+    desc:'La longue écharpe rouge autour du cou, comme sur ta première image. Nettement plus reconnaissable, mais elle épaissit les épaules.',
+    b:["...RRRRRRRR.....","..RRDDDDDDRR....",".SRRDDDDDDRRS...",".SDDDDddDDDDS...","..DDDDddDDDD....","..dddddddddd....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."] },
+
+  { id:'C', nom:'MANCHES RETROUSSÉES',
+    desc:'Sans écharpe, mais avec les manchettes grises retroussées et le brassard bien visible. Le détail qui le distingue vraiment de la tenue de base.',
+    b:["....DDDDDD......","..DDDDDDDDDD....",".GRRDDDDDDGGS...",".GDDDDddDDDGS...","..DDDDddDDDD....","..dddddddddd....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."] }
+];
+
+const MINATO = [
+  { id:'A', nom:'CAPE FERMÉE',
+    desc:'Cape blanche sur gilet vert et tenue bleue, flammes rouges en bas. Le plus proche de la posture droite de ton illustration.',
+    b:["....VVVVVV......","..BBVVVVVVBB....",".BBBVVNNVVBBB...",".BBBVVNNVVBBB...","..BBVVVVVVBB....","..RRBBBBBBRR....","...NN....NN.....","...WW....NN.....","..NNN....NNN....","..nnn....nnn...."] },
+
+  { id:'B', nom:'CAPE OUVERTE',
+    desc:'La cape s\'écarte largement et laisse voir tout le gilet vert. Silhouette plus large, comme quand il court.',
+    b:["....VVVVVV......",".BBBVVVVVVBBB...","BBBBVVNNVVBBBB..","BBBVVVNNVVVBBB..",".BBVVVVVVVVBB...",".RRBBBBBBBBRR...","...NN....NN.....","...WW....NN.....","..NNN....NNN....","..nnn....nnn...."] },
+
+  { id:'C', nom:'GRANDES FLAMMES',
+    desc:'Les flammes rouges montent haut sur les pans de la cape, comme sur ta seconde image. Le plus spectaculaire.',
+    b:["....VVVVVV......","..BBVVVVVVBB....",".BRBVVNNVVBRB...",".RRBVVNNVVBRR...","..RBVVVVVVBR....","..rrBBBBBBrr....","...NN....NN.....","...WW....NN.....","..NNN....NNN....","..nnn....nnn...."] }
+];
+
+/* ---------- montage et contrôle ---------- */
+const bad = [];
+function peindre(rows, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, c.width, c.height);
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && PAL[ch]) { g.fillStyle = PAL[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+  }});
+  return c;
+}
+function verifier(nom, rows, attendu) {
+  if (rows.length !== attendu) bad.push(nom + ' a ' + rows.length + ' lignes au lieu de ' + attendu);
+  rows.forEach((r, i) => {
+    if (r.length !== 16) bad.push(nom + '[' + i + '] largeur ' + r.length);
+    for (const ch of r) if (ch !== '.' && !PAL[ch]) bad.push(nom + '[' + i + '] couleur inconnue "' + ch + '"');
+  });
+}
+function carte(hote, titre, desc, rows, ech, dore) {
+  const card = document.createElement('div');
+  card.className = 'card' + (dore ? ' def' : '');
+  const lbl = document.createElement('div'); lbl.className = 'lbl';
+  lbl.innerHTML = '<b>' + titre + '</b>' + desc;
+  card.appendChild(lbl);
+  card.appendChild(peindre(rows, ech));
+  document.getElementById(hote).appendChild(card);
+}
+
+for (const c of COUPES) { verifier('coupe ' + c.nom, c.h, 10); carte('coupes', c.nom, c.desc, c.h, 10); }
+for (const s of HOKAGE)  { verifier('hokage ' + s.id, [...C_HOKAGE, ...s.b], 20); carte('hokage', s.id + ' · ' + s.nom, s.desc, [...C_HOKAGE, ...s.b], 9); }
+for (const s of ERMITE)  { verifier('ermite ' + s.id, [...C_ERMITE, ...s.b], 20); carte('ermite', s.id + ' · ' + s.nom, s.desc, [...C_ERMITE, ...s.b], 9); }
+for (const s of THELAST) { verifier('last ' + s.id, [...C_LAST, ...s.b], 20); carte('thelast', s.id + ' · ' + s.nom, s.desc, [...C_LAST, ...s.b], 9); }
+for (const s of MINATO)  { verifier('minato ' + s.id, [...C_MINATO, ...s.b], 20); carte('minato', s.id + ' · ' + s.nom, s.desc, [...C_MINATO, ...s.b], 9); }
+carte('base', 'SHIPPUDEN', 'La tenue d\'origine, pour comparer.', [...C_BASE, ...CORPS_BASE], 9, true);
+
+const boite = document.getElementById('errs');
+boite.textContent = bad.length ? bad.join('\n')
+  : 'OK — les cinq coupes et les douze tenues tiennent le gabarit du jeu, couleurs toutes définies.';
+if (bad.length) boite.className = 'bad';
+</script>
+</body>
+</html>

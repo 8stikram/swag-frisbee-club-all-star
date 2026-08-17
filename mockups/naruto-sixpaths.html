@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Naruto Six Paths — la tenue</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; --bad:#ff5340; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:14px;margin:30px 0 8px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:900px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:11px;flex:1 1 0;min-width:180px}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:8px;line-height:1.45;min-height:58px}
+  .lbl b{display:block;font-size:14px;color:#ffd23e;letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;margin:0 auto;image-rendering:pixelated;background:#101a2e;border-radius:6px}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok);white-space:pre-wrap;margin-bottom:10px}
+  #errs.bad{color:var(--bad)}
+  ul{font-size:12.5px;color:#8fa4c4;line-height:1.8;max-width:900px;margin:0 0 14px;padding-left:20px}
+</style>
+</head>
+<body>
+
+<h1>Naruto Six Paths — la tenue</h1>
+<p class="note">Cinq façons de répartir l'or et le sombre, toutes fidèles au personnage et toutes au
+gabarit du jeu. Le reste est déjà arrêté : orbes en anneau lent derrière lui, braises en aura, flash
+blanc à la transformation, bras tendu pour Leon.</p>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>Ce que j'ai corrigé par rapport au premier jet</h2>
+<ul>
+  <li><b>Les yeux</b> passent à un ambre foncé au lieu du doré clair : ils se lisaient à peine.</li>
+  <li><b>Les magatamas</b> (les virgules du col) sont là, alignées comme sur tes illustrations.</li>
+  <li><b>L'anneau du torse</b> est un vrai anneau creux, pas un simple point.</li>
+  <li><b>Le bandeau</b> garde sa plaque métallique : c'est ce qui le rend reconnaissable en une image.</li>
+  <li><b>Les cheveux</b> ont un liseré clair pour donner l'impression qu'ils émettent de la lumière.</li>
+</ul>
+
+<h2>Les cinq tenues</h2>
+<div class="row" id="tenues"></div>
+
+<h2>À la taille réelle du jeu, à côté du Naruto actuel</h2>
+<div class="row" id="reel"></div>
+
+<script>
+/* Palette Six Paths. Les teintes de peau et de bandeau viennent du sprite du
+   jeu pour que ce soit bien le même personnage, en plus lumineux. */
+const PAL = {
+  W:'#fff6d0',   // liseré des cheveux, le plus clair
+  H:'#ffd23e',   // or principal
+  h:'#e2a71c',   // or d'ombre
+  G:'#ffc21c',   // or de la tenue
+  g:'#d99406',   // or d'ombre de la tenue
+  R:'#ff9c0a',   // magatamas et anneau
+  K:'#241f2b',   // combinaison sombre
+  k:'#15121c',   // ombre de la combinaison
+  M:'#d9dfe8',   // plaque du bandeau
+  S:'#f8c890', s:'#d99a63', w:'#c08050',   // peau
+  E:'#7a4a08'    // œil : ambre foncé, lisible sur la peau claire
+};
+
+/* Tête commune. Cheveux plus clairs sur les pointes, bandeau doré à plaque,
+   yeux foncés et moustaches marquées. */
+const TETE = [
+  "...WH.HH.HW.....",
+  "..WHHHHHHHHW....",
+  ".WHHHHHHHHHHW...",
+  "..hHHHHHHHHh....",
+  "..GGGGGGGGGG....",
+  "..GGMMMMMMGG....",
+  "..SSSSSSSSSS....",
+  "..SSSESSSSES....",
+  "..swSSSSSSws....",
+  "...SSSSSSSS....."
+];
+
+const TENUES = [
+  { id:'A', nom:'MANTEAU D\'OR',
+    desc:'Manteau doré sur les épaules et les bras, cœur du torse sombre, jambes sombres et sandales dorées. La transposition directe de ta référence.',
+    b:[
+      "..GGGGGGGGGG....",
+      "..GGGKKKKGGG....",
+      ".GGGGKKKKGGGG...",
+      ".GGGGKKKKGGGG...",
+      "..GGKKKKKKGG....",
+      "...KKKKKKKK.....",
+      "...KK....KK.....",
+      "...KK....KK.....",
+      "..GGG....GGG....",
+      "..GGG....GGG...."
+    ] },
+
+  { id:'B', nom:'AVEC L\'ANNEAU',
+    desc:'La même, avec l\'anneau creux du ventre et les magatamas au col. Plus proche des illustrations, un peu plus chargé à seize pixels.',
+    b:[
+      "..GGGGGGGGGG....",
+      "..GGRKKKKRGG....",
+      ".GGGGKKKKGGGG...",
+      ".GGGGKGGKGGGG...",
+      "..GGKGKKGKGG....",
+      "...KKKGGKKK.....",
+      "...KK....KK.....",
+      "...KK....KK.....",
+      "..GGG....GGG....",
+      "..GGG....GGG...."
+    ] },
+
+  { id:'C', nom:'TOUT EN OR',
+    desc:'Presque entièrement doré, le sombre réduit à une fente centrale. Le plus éclatant — il brille au point de manger un peu ses contours.',
+    b:[
+      "..GGGGGGGGGG....",
+      "..GGGGKKGGGG....",
+      ".GGGGGKKGGGGG...",
+      ".GGGGGKKGGGGG...",
+      "..GGGGKKGGGG....",
+      "...GGGKKGGG.....",
+      "...GG....GG.....",
+      "...KK....KK.....",
+      "..GGG....GGG....",
+      "..GGG....GGG...."
+    ] },
+
+  { id:'D', nom:'COL SOMBRE',
+    desc:'Le sombre remonte jusqu\'au col et redescend en pointe sur le ventre. La silhouette dorée encadre le buste, comme un plastron.',
+    b:[
+      "....KKKKKK......",
+      "..GGKKKKKKGG....",
+      ".GGGGKKKKGGGG...",
+      ".GGGGGKKGGGGG...",
+      "..GGGGKKGGGG....",
+      "...GGKKKKGG.....",
+      "...KK....KK.....",
+      "...KK....KK.....",
+      "..GGG....GGG....",
+      "..GGG....GGG...."
+    ] },
+
+  { id:'E', nom:'PANTALON D\'OR',
+    desc:'Torse sombre et bas du corps entièrement doré, comme si le chakra montait du sol. La lecture la plus tranchée entre le haut et le bas.',
+    b:[
+      "..GGGGGGGGGG....",
+      "..GGGKKKKGGG....",
+      ".GGGGKKKKGGGG...",
+      ".GGGGKKKKGGGG...",
+      "..GGKKKKKKGG....",
+      "...GGGGGGGG.....",
+      "...GG....GG.....",
+      "...GG....GG.....",
+      "..GGG....GGG....",
+      "..KKK....KKK...."
+    ] }
+];
+
+/* Le Naruto d'aujourd'hui, pour comparer. */
+const PAL_ACT = { H:'#ffd23e', h:'#e2a71c', M:'#d9dfe8', S:'#f8c890', s:'#d99a63', w:'#c08050',
+  E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#f2f2f5', K:'#1e1e24', P:'#e5730f' };
+const TETE_ACT = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....","..SSSSSSSSSS....","..SSSESSSSES....","..swSSSSSSws....","...SSSSSSSS....."];
+const CORPS_ACT = ["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...","..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."];
+
+function peindre(rows, pal, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, c.width, c.height);
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+  }});
+  return c;
+}
+
+/* ---------- contrôle ---------- */
+const bad = [];
+function verifier(nom, rows, pal) {
+  if (rows.length !== 20) bad.push(nom + ' a ' + rows.length + ' lignes au lieu de 20');
+  rows.forEach((r, i) => {
+    if (r.length !== 16) bad.push(nom + '[' + i + '] largeur ' + r.length);
+    for (const ch of r) if (ch !== '.' && !pal[ch]) bad.push(nom + '[' + i + '] couleur inconnue "' + ch + '"');
+  });
+}
+for (const t of TENUES) verifier(t.id, [...TETE, ...t.b], PAL);
+const boite = document.getElementById('errs');
+boite.textContent = bad.length ? bad.join('\n')
+  : 'OK — les cinq tenues tiennent le gabarit 16 × 20 et n\'utilisent que des couleurs définies.';
+if (bad.length) boite.className = 'bad';
+
+/* ---------- rendus ---------- */
+const hote = document.getElementById('tenues');
+for (const t of TENUES) {
+  const card = document.createElement('div'); card.className = 'card';
+  const lbl = document.createElement('div'); lbl.className = 'lbl';
+  lbl.innerHTML = '<b>' + t.id + ' · ' + t.nom + '</b>' + t.desc;
+  card.appendChild(lbl);
+  card.appendChild(peindre([...TETE, ...t.b], PAL, 9));
+  hote.appendChild(card);
+}
+
+const reel = document.getElementById('reel');
+function vignette(rows, pal, titre, ech) {
+  const card = document.createElement('div'); card.className = 'card';
+  const lbl = document.createElement('div'); lbl.className = 'lbl';
+  lbl.style.minHeight = '0'; lbl.innerHTML = '<b>' + titre + '</b>';
+  card.appendChild(lbl);
+  card.appendChild(peindre(rows, pal, ech));
+  reel.appendChild(card);
+}
+vignette([...TETE_ACT, ...CORPS_ACT], PAL_ACT, 'ACTUEL ×2,4', 2.4);
+for (const t of TENUES) vignette([...TETE, ...t.b], PAL, t.id + ' ×2,4', 2.4);
+</script>
+</body>
+</html>

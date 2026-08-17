@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Skins de Naruto — v4</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; --bad:#ff5340; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:15px;margin:32px 0 4px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:930px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:6px}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:11px;
+        flex:1 1 0;min-width:182px;max-width:236px}
+  .card.bad{border-color:#8c3a3a;opacity:.7}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:8px;line-height:1.5;min-height:66px}
+  .lbl b{display:block;font-size:13.5px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  canvas{display:block;margin:0 auto;image-rendering:pixelated;background:#101a2e;border-radius:6px}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok);white-space:pre-wrap;margin-bottom:8px}
+  #errs.bad{color:var(--bad)}
+  ul{font-size:12.5px;color:#8fa4c4;line-height:1.9;max-width:930px;margin:0 0 14px;padding-left:20px}
+  ul b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<h1>Skins de Naruto — v4</h1>
+
+<h2>Tes quatre remarques</h2>
+<ul>
+  <li><b>« Le dégradé sur le côté on dirait ses oreilles »</b> : c'était le ton foncé qui dépassait à hauteur du visage. Le dégradé reste, mais <b>uniquement au-dessus de la ligne des yeux</b> — plus rien ne dépasse sur les côtés. Trois versions ci-dessous.</li>
+  <li><b>« Un triangle noir sur le orange »</b> : la fermeture noire au centre formait un coin. Supprimée. La veste Hokage n'a plus que <b>deux bandes noires horizontales en bas</b>, comme sur la vraie.</li>
+  <li><b>Fermeture de The Last</b> : elle <b>monte maintenant jusqu'au col</b>.</li>
+  <li><b>Le vert de Minato</b> : le gilet est <b>bien plus large sous la cape</b>, on le voit franchement.</li>
+</ul>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>1 · La coupe Hokage — le problème des oreilles</h2>
+<p class="note">À gauche l'ancienne, pour comparer. Les trois suivantes corrigent le débordement.</p>
+<div class="row" id="coupes"></div>
+
+<h2>2 · Hokage — deux bandes noires, plus de triangle</h2>
+<div class="row" id="hokage"></div>
+
+<h2>3 · The Last — fermeture jusqu'au col</h2>
+<div class="row" id="thelast"></div>
+
+<h2>4 · Minato — le gilet vert bien visible</h2>
+<div class="row" id="minato"></div>
+
+<h2>5 · Mode Ermite</h2>
+<div class="row" id="ermite"></div>
+
+<h2>6 · À la taille du jeu</h2>
+<div class="row" id="reel"></div>
+
+<script>
+const PAL = {
+  H:'#ffd23e', h:'#e2a71c', j:'#b8860b',
+  M:'#d9dfe8',
+  S:'#f8c890', s:'#d99a63', w:'#c08050',
+  E:'#173e8f', Y:'#e8a020', y:'#8a5a08',
+  O:'#ff8c1a', o:'#d96b08', P:'#e5730f', W:'#f2f2f5',
+  K:'#1e1e24', k:'#101015',
+  B:'#f4f1e6', b:'#d5d0be',
+  R:'#c0272d', r:'#8f1a1f', X:'#e04a2a',
+  A:'#b52a2a', a:'#7e1818',
+  D:'#3b3f33', d:'#24271f',
+  V:'#4f7a4a', v:'#375a34', N:'#2a4a8f', n:'#1d3568',
+  C:'#8a6a3a'
+};
+
+const VISAGE        = ["..SSSSSSSSSS....","..SSSESSSSES....","..swSSSSSSws....","...SSSSSSSS....."];
+const VISAGE_ERMITE = ["..SSSSSSSSSS....","..SSyYSSSyYS....","..swSSSSSSws....","...SSSSSSSS....."];
+const VISAGE_MECHES = [".HSSSSSSSSSSH...",".HSSSESSSSESH...","..swSSSSSSws....","...SSSSSSSS....."];
+
+/* ---------------------------------------------------------------------
+   COUPE HOKAGE — le dégradé ne doit jamais dépasser sur les côtés au
+   niveau du visage, sinon les pixels foncés se lisent comme des oreilles.
+   Les trois versions gardent le dégradé mais le rangent différemment.
+   --------------------------------------------------------------------- */
+
+// L'ancienne, fautive : le ton foncé descend jusqu'à hauteur des yeux.
+const H_AVANT = ["................",".....HHHH.......","...hHHHHHHh.....","..jhHHHHHHhj....","..jhHHHHHHhj....","..jjhHHHHhjj....", ...VISAGE_MECHES];
+
+// A — dégradé vertical : clair en haut, foncé en bas. Aucun pixel ne
+// dépasse latéralement, donc plus rien ne ressemble à une oreille.
+const H_A = ["................",".....HHHH.......","...HHHHHHHH.....","..HHHHHHHHHH....","..hhhhhhhhhh....","..jjhhhhhhjj....", ...VISAGE_MECHES];
+
+// B — dégradé en couronne : il ne touche que le contour supérieur, et la
+// rangée juste au-dessus du visage reste d'un seul ton.
+const H_B = ["................",".....jHHj.......","...jhHHHHhj.....","..jhHHHHHHhj....","..hHHHHHHHHh....","..hHHHHHHHHh....", ...VISAGE_MECHES];
+
+// C — coupe plus étroite : la chevelure se resserre vers le bas, ce qui
+// dégage complètement les tempes.
+const H_C = ["................","................","....HHHHHH......","...hHHHHHHh.....","..hHHHHHHHHh....","...jhHHHHhj.....", ...VISAGE_MECHES];
+
+const C_BASE   = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....", ...VISAGE];
+const C_LAST   = ["....H..H..H.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....", ...VISAGE];
+const C_MINATO = ["..hH.HH.HH.Hh...",".HHHHHHHHHHHH...","HHHHHHHHHHHHHH..","HhHHHHHHHHHHhH..","HHKKKKKKKKKKHH..","HHKKMMMMMMKKHH..","HhSSSSSSSSSShH..","HhSSSESSSSEShH..",".hswSSSSSSwsh...","...SSSSSSSS....."];
+const C_ERMITE = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....", ...VISAGE_ERMITE];
+
+/* ---------------------------------------------------------------------
+   TENUES
+   --------------------------------------------------------------------- */
+
+// Hokage : plus de fermeture noire au centre — elle formait un triangle sur
+// l'orange. Juste deux bandes noires horizontales en bas de la veste, et la
+// cape blanche qui prend les épaules et redescend.
+const B_HOKAGE = [
+  "....OOOOOO......",
+  "..BBOOOOOOBB....",
+  ".BBBOOOOOOBBB...",
+  ".BBBOOOOOOBBB...",
+  "..BBKKKKKKBB....",
+  "..RRKKKKKKRR....",
+  "...KK....KK.....",
+  "...KK....KK.....",
+  "..KKK....KKK....",
+  "..kkk....kkk...."
+];
+
+// The Last : la fermeture part du col et descend d'un trait.
+const B_LAST = [
+  "...RRRRRRRR.....",
+  "..RRDDddDDRR....",
+  ".SXXDDddDDDDS...",
+  ".SDDDDddDDDDS...",
+  "..DDDDddDDDD....",
+  "..dddddddddd....",
+  "...PP....PP.....",
+  "...WW....PP.....",
+  "..PPP....PPP....",
+  "..KKK....KKK...."
+];
+
+// Minato : le gilet vert prend toute la largeur du buste, la cape ne le
+// borde plus que sur les côtés.
+const B_MINATO = [
+  "....VVVVVV......",
+  "..BVVVVVVVVB....",
+  ".BBVVVVVVVVBB...",
+  ".BRVVVVVVVVRB...",
+  "..BVVVNNVVVB....",
+  "..rrBBBBBBrr....",
+  "...NN....NN.....",
+  "...WW....NN.....",
+  "..NNN....NNN....",
+  "..nnn....nnn...."
+];
+
+const B_ERMITE = [
+  "....KKKKKK......",
+  "..AAKKKKKKAA....",
+  ".SACKKKKKKCAS...",
+  ".SAOOOKKOOOAS...",
+  "..AaOOKKOOaA....",
+  "..AaAKKKKAaA....",
+  "...PP....PP.....",
+  "...WW....PP.....",
+  "..PPP....PPP....",
+  "..CCC....CCC...."
+];
+
+/* ---------- montage ---------- */
+const bad = [];
+function peindre(rows, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, c.width, c.height);
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && PAL[ch]) { g.fillStyle = PAL[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+  }});
+  return c;
+}
+function verifier(nom, rows, attendu) {
+  if (rows.length !== attendu) bad.push(nom + ' a ' + rows.length + ' lignes au lieu de ' + attendu);
+  rows.forEach((r, i) => {
+    if (r.length !== 16) bad.push(nom + '[' + i + '] largeur ' + r.length);
+    for (const ch of r) if (ch !== '.' && !PAL[ch]) bad.push(nom + '[' + i + '] couleur inconnue "' + ch + '"');
+  });
+}
+function carte(hote, titre, desc, rows, ech, fautif) {
+  const card = document.createElement('div');
+  card.className = 'card' + (fautif ? ' bad' : '');
+  const lbl = document.createElement('div'); lbl.className = 'lbl';
+  lbl.innerHTML = '<b>' + titre + '</b>' + (desc || '');
+  if (!desc) lbl.style.minHeight = '0';
+  card.appendChild(lbl); card.appendChild(peindre(rows, ech));
+  document.getElementById(hote).appendChild(card);
+}
+
+carte('coupes', 'AVANT (fautive)', 'Le ton foncé descend jusqu\'aux yeux : ce sont ces pixels qui se lisaient comme des oreilles.', H_AVANT, 12, true);
+carte('coupes', 'A · DÉGRADÉ VERTICAL', 'Clair en haut, foncé en bas. Aucun pixel ne dépasse sur les côtés.', H_A, 12);
+carte('coupes', 'B · EN COURONNE', 'Le dégradé ne touche que le contour du dessus ; la rangée au-dessus du visage reste unie.', H_B, 12);
+carte('coupes', 'C · PLUS ÉTROITE', 'La chevelure se resserre vers le bas et dégage complètement les tempes.', H_C, 12);
+
+for (const [id, tete] of [['A', H_A], ['B', H_B], ['C', H_C]]) {
+  const r = [...tete, ...B_HOKAGE];
+  verifier('hokage ' + id, r, 20);
+  carte('hokage', 'HOKAGE — coupe ' + id, 'Veste orange sans fermeture centrale, deux bandes noires en bas, cape blanche aux épaules et flammes rouges.', r, 9);
+}
+carte('thelast', 'THE LAST', 'La fermeture part du col et descend d\'un seul trait, dans la teinte foncée de la veste. Écharpe au cou, brassard au bras.',
+  (function(){ const r = [...C_LAST, ...B_LAST]; verifier('thelast', r, 20); return r; })(), 9);
+carte('minato', 'MINATO', 'Le gilet vert prend toute la largeur du buste ; la cape ne le borde plus que sur les côtés.',
+  (function(){ const r = [...C_MINATO, ...B_MINATO]; verifier('minato', r, 20); return r; })(), 9);
+carte('ermite', 'MODE ERMITE', 'Inchangé depuis ta validation : haori ouvert, bras dégagés, flammes sur la veste.',
+  (function(){ const r = [...C_ERMITE, ...B_ERMITE]; verifier('ermite', r, 20); return r; })(), 9);
+
+carte('reel', 'SHIPPUDEN', '', [...C_BASE, ...["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...","..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."]], 3);
+carte('reel', 'HOKAGE (B)', '', [...H_B, ...B_HOKAGE], 3);
+carte('reel', 'ERMITE', '', [...C_ERMITE, ...B_ERMITE], 3);
+carte('reel', 'THE LAST', '', [...C_LAST, ...B_LAST], 3);
+carte('reel', 'MINATO', '', [...C_MINATO, ...B_MINATO], 3);
+
+const boite = document.getElementById('errs');
+boite.textContent = bad.length ? bad.join('\n')
+  : 'OK — toutes les coupes et tenues tiennent le gabarit du jeu, couleurs toutes définies.';
+if (bad.length) boite.className = 'bad';
+</script>
+</body>
+</html>

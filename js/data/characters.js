@@ -99,6 +99,72 @@ const J_THROW_B = ["....rvrvrv......", "..SVvRVVRvVS....", "..SVvVVVVvVSSS..", "
 const J_DIVE_B = ["....rvrvrv......", "..SVvRVVRvVSS...", "..SVvVVVVvVSSS..", "..SlvVVVVvlSSS..", "..rrlSssSlrr....", "..rRRlsSlRRr....", ".RRRRRllRRR.....", ".SS......SS.....", "GS........SG....", "................"];
 const J_DASH_B = ["....rvrvrv......", "SSSVvVVRRvVR....", "SSSVvVVVVvVR....", "..RlvVVVVvlR....", "..rrlSssSlrr....", "..rRRlsSlRRr....", "..RRRRllRR......", "..SS..SS........", ".SS..SS.........", "GSS.GSS........."];
 
+// ---------------------------------------------------------------------------
+// Skins de Naruto. Chaque tenue est décrite par deux choses :
+//   - `idle`, dessiné à la main et validé pixel par pixel ;
+//   - `teinte`, une correspondance de couleurs appliquée aux autres poses, pour
+//     que la course, le tir, le dash et le plongeon restent cohérents sans
+//     réécrire vingt-quatre sprites à l'aveugle.
+// Les silhouettes ne bougent jamais : seules les couleurs changent.
+// ---------------------------------------------------------------------------
+const PAL_SKINS_N = {
+  ...PAL_N,
+  B: '#f4f1e6',   // blanc de cape
+  R: '#c0272d',   // flammes et écharpe
+  r: '#8f1a1f',
+  X: '#e04a2a',   // brassard de The Last
+  A: '#b52a2a',   // haori de l'Ermite
+  a: '#7e1818',
+  D: '#3b3f33',   // veste sombre de The Last
+  d: '#24271f',
+  V: '#4f7a4a',   // gilet de Minato
+  v: '#375a34',
+  u: '#284026',
+  N: '#2a4a8f',
+  n: '#1d3568',
+  C: '#8a6a3a',   // sangle du parchemin
+  Y: '#e8a020',   // œil de crapaud
+  y: '#8a5a08'
+};
+
+function teinter(rows, corresp) {
+  return rows.map(r => [...r].map(ch => corresp[ch] || ch).join(''));
+}
+
+const SKINS_N = {
+  hokage: {
+    tete: N_HEAD,
+    idle: ["....BOooOB......", "..BBOOooOOBB....", ".BBBOOooOOBBB...", ".BBBOOooOOBBB...", "..BBKKKKKKBB....", "..RRKKKKKKRR....", "...KK....KK.....", "...KK....KK.....", "..KKK....KKK....", "..kkk....kkk...."],
+    teinte: { K: 'B', P: 'K', W: 'K' }
+  },
+  ermite: {
+    // Yeux de crapaud : la seule tenue qui touche aussi au visage.
+    tete: teinter(N_HEAD, {}).map((r, i) => i === 7 ? "..SSyYSSSyYS...." : r),
+    idle: ["....KKKKKK......", "..AAKKKKKKAA....", ".SACKKKKKKCAS...", ".SAOOOKKOOOAS...", "..AaOOKKOOaA....", "..AaAKKKKAaA....", "...PP....PP.....", "...WW....PP.....", "..PPP....PPP....", "..CCC....CCC...."],
+    teinte: { K: 'A' }
+  },
+  thelast: {
+    tete: N_HEAD,
+    idle: ["....RRRRRR......", "..RRDdddddDR....", ".SXXDdddddDDS...", ".SDDDdddddDDS...", "..DDDdddddDD....", "..dddddddddd....", "...PP....PP.....", "...WW....PP.....", "..PPP....PPP....", "..KKK....KKK...."],
+    teinte: { K: 'D', O: 'D', o: 'd' }
+  },
+  minato: {
+    tete: N_HEAD,
+    idle: ["....BVvvVB......", "..BBVVvvVVBB....", ".BBBVuvvuVBBB...", ".BBBVvvvvVBBB...", "..BBVVvvVVBB....", "..RRNNNNNNRR....", "...NN....NN.....", "...NN....NN.....", "..NNN....NNN....", "..nnn....nnn...."],
+    teinte: { K: 'B', O: 'V', o: 'v', P: 'N', W: 'N' }
+  }
+};
+
+// Construit les six poses d'un skin : l'idle validé tel quel, le reste teinté.
+function construireSkin(s) {
+  const corps = { run1: N_RUN1_B, run2: N_RUN2_B, throw: N_THROW_B, dive: N_DIVE_B, dash: N_DASH_B };
+  const out = { idle: buildSprite([...s.tete, ...s.idle], PAL_SKINS_N) };
+  for (const [nom, base] of Object.entries(corps)) {
+    out[nom] = buildSprite([...s.tete, ...teinter(base, s.teinte)], PAL_SKINS_N);
+  }
+  return out;
+}
+
 export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle'];
 
 export const CHARS = {
@@ -115,6 +181,13 @@ export const CHARS = {
       throw: buildSprite([...N_HEAD, ...N_THROW_B], PAL_N),
       dive: buildSprite([...N_HEAD, ...N_DIVE_B], PAL_N),
       dash: buildSprite([...N_HEAD, ...N_DASH_B], PAL_N)
+    },
+    skins: {
+      shippuden: null,          // rempli juste après : c'est `frames` lui-même
+      hokage: construireSkin(SKINS_N.hokage),
+      ermite: construireSkin(SKINS_N.ermite),
+      thelast: construireSkin(SKINS_N.thelast),
+      minato: construireSkin(SKINS_N.minato)
     }
   },
   isaac: {
@@ -179,3 +252,7 @@ export function portraitURL(ck) {
   g.drawImage(f, 0, 0, c.width, c.height);
   return c.toDataURL();
 }
+
+// La tenue d'origine est un skin comme les autres : elle pointe simplement sur
+// les sprites de base, ce qui évite de les dupliquer.
+CHARS.naruto.skins.shippuden = CHARS.naruto.frames;

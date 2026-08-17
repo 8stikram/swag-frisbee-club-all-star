@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Skins de Naruto — v3</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; --bad:#ff5340; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:15px;margin:32px 0 4px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:930px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:6px}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:11px;
+        flex:1 1 0;min-width:180px;max-width:230px}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:8px;line-height:1.5;min-height:66px}
+  .lbl b{display:block;font-size:13.5px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  canvas{display:block;margin:0 auto;image-rendering:pixelated;background:#101a2e;border-radius:6px}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok);white-space:pre-wrap;margin-bottom:8px}
+  #errs.bad{color:var(--bad)}
+  ul{font-size:12.5px;color:#8fa4c4;line-height:1.9;max-width:930px;margin:0 0 14px;padding-left:20px}
+  ul b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<h1>Skins de Naruto — v3</h1>
+
+<h2>Ce que j'ai appliqué de tes retours</h2>
+<ul>
+  <li><b>Le gris sur les cheveux = pixels à retirer.</b> J'ai compris : là où tu avais grisé, les pixels disparaissent. Les coupes sont donc plus étroites en haut.</li>
+  <li><b>Coupe Hokage</b> : côtés <b>en dégradé</b> (trois tons d'or qui foncent vers l'extérieur) et <b>un pixel jaune contre chaque joue</b>, comme tu l'as demandé.</li>
+  <li><b>Cape du Hokage</b> : on ne la voyait plus. Elle reprend les <b>épaules larges de Minato</b> et redescend le long du corps.</li>
+  <li><b>Fermeture éclair de The Last</b> : plus de gris clair — elle prend <b>la couleur de la veste en plus foncé</b>.</li>
+  <li><b>Épaules de Minato</b> : remises.</li>
+</ul>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>1 · La coupe Hokage — le dégradé de près</h2>
+<p class="note">Agrandie au maximum pour juger du dégradé et du pixel jaune contre les joues.</p>
+<div class="row" id="zoom"></div>
+
+<h2>2 · Les quatre coupes, comparées</h2>
+<div class="row" id="coupes"></div>
+
+<h2>3 · Les quatre tenues</h2>
+<div class="row" id="tenues"></div>
+
+<h2>4 · À la taille du jeu</h2>
+<div class="row" id="reel"></div>
+
+<script>
+const PAL = {
+  H:'#ffd23e',   // or clair, cœur de la chevelure
+  h:'#e2a71c',   // or moyen, premier cran du dégradé
+  j:'#b8860b',   // or foncé, bord extérieur du dégradé
+  M:'#d9dfe8',
+  S:'#f8c890', s:'#d99a63', w:'#c08050',
+  E:'#173e8f', Y:'#e8a020', y:'#8a5a08',
+  O:'#ff8c1a', o:'#d96b08', P:'#e5730f', W:'#f2f2f5',
+  K:'#1e1e24', k:'#101015',
+  B:'#f4f1e6', b:'#d5d0be',
+  R:'#c0272d', r:'#8f1a1f',
+  X:'#e04a2a',                 // brassard de The Last, distinct de l'écharpe
+  A:'#b52a2a', a:'#7e1818',
+  D:'#3b3f33', d:'#24271f',    // veste sombre et sa version foncée : la fermeture
+  V:'#4f7a4a', N:'#2a4a8f', n:'#1d3568',
+  C:'#8a6a3a'
+};
+
+const VISAGE        = ["..SSSSSSSSSS....","..SSSESSSSES....","..swSSSSSSws....","...SSSSSSSS....."];
+const VISAGE_ERMITE = ["..SSSSSSSSSS....","..SSyYSSSyYS....","..swSSSSSSws....","...SSSSSSSS....."];
+// Visage encadré d'un pixel d'or de chaque côté : les mèches qui tombent le
+// long des joues, comme tu l'as demandé pour le Hokage.
+const VISAGE_MECHES = [".HSSSSSSSSSSH...",".HSSSESSSSESH...","..swSSSSSSws....","...SSSSSSSS....."];
+
+/* ---------------------------------------------------------------------
+   LES COUPES
+   Le gris que tu avais posé sur les cheveux vaut « retirer » : le sommet
+   est donc dégagé, et les côtés descendent en dégradé H → h → j.
+   --------------------------------------------------------------------- */
+
+// Shippuden, inchangée : pics dressés et bandeau.
+const C_BASE = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....", ...VISAGE];
+
+// Hokage : sommet dégagé, côtés en dégradé sur trois tons, mèches d'or
+// contre les joues, et aucun bandeau.
+const C_HOKAGE = [
+  "................",
+  ".....HHHH.......",
+  "...hHHHHHHh.....",
+  "..jhHHHHHHhj....",
+  "..jhHHHHHHhj....",
+  "..jjhHHHHhjj....",
+  ...VISAGE_MECHES
+];
+
+// The Last : quelques pointes courtes et son bandeau. Rien à voir avec la
+// coupe ci-dessus.
+const C_LAST = ["....H..H..H.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....", ...VISAGE];
+
+// Minato : large, hérissée, avec les longues mèches jusqu'aux joues.
+const C_MINATO = ["..hH.HH.HH.Hh...",".HHHHHHHHHHHH...","HHHHHHHHHHHHHH..","HhHHHHHHHHHHhH..","HHKKKKKKKKKKHH..","HHKKMMMMMMKKHH..","HhSSSSSSSSSShH..","HhSSSESSSSEShH..",".hswSSSSSSwsh...","...SSSSSSSS....."];
+
+// Ermite : celle de Shippuden, yeux de crapaud.
+const C_ERMITE = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....", ...VISAGE_ERMITE];
+
+/* ---------------------------------------------------------------------
+   LES TENUES
+   --------------------------------------------------------------------- */
+
+// Hokage : la cape reprend les épaules larges de Minato et redescend le long
+// du corps, sinon on ne la voyait plus. Veste orange à bandes noires au
+// centre, flammes rouges en bas de la cape, pantalon noir.
+const B_HOKAGE = [
+  "....OOOOOO......",
+  "..BBOOOOOOBB....",
+  ".BBBOOKKOOBBB...",
+  ".BBBOOKKOOBBB...",
+  "..BBOKKKKOBB....",
+  "..RRBBBBBBRR....",
+  "...KK....KK.....",
+  "...KK....KK.....",
+  "..KKK....KKK....",
+  "..kkk....kkk...."
+];
+
+// Ermite : haori ouvert, bras dégagés, flammes qui remontent sur la veste.
+const B_ERMITE = [
+  "....KKKKKK......",
+  "..AAKKKKKKAA....",
+  ".SACKKKKKKCAS...",
+  ".SAOOOKKOOOAS...",
+  "..AaOOKKOOaA....",
+  "..AaAKKKKAaA....",
+  "...PP....PP.....",
+  "...WW....PP.....",
+  "..PPP....PPP....",
+  "..CCC....CCC...."
+];
+
+// The Last : écharpe rouge au cou, brassard orangé sur le bras, et la
+// fermeture éclair dans la teinte foncée de la veste — plus de gris clair.
+const B_LAST = [
+  "...RRRRRRRR.....",
+  "..RRDDDDDDRR....",
+  ".SXXDDddDDDDS...",
+  ".SDDDDddDDDDS...",
+  "..DDDDddDDDD....",
+  "..dddddddddd....",
+  "...PP....PP.....",
+  "...WW....PP.....",
+  "..PPP....PPP....",
+  "..KKK....KKK...."
+];
+
+// Minato : les épaules sont remises, cape blanche à flammes rouges sur le
+// gilet vert et la tenue bleue.
+const B_MINATO = [
+  "....VVVVVV......",
+  "..BBVVVVVVBB....",
+  ".BBBVVNNVVBBB...",
+  ".BRBVVNNVVBRB...",
+  "..RBVVVVVVBR....",
+  "..rrBBBBBBrr....",
+  "...NN....NN.....",
+  "...WW....NN.....",
+  "..NNN....NNN....",
+  "..nnn....nnn...."
+];
+
+const TENUES = [
+  { nom:'HOKAGE', desc:'Cape blanche aux épaules larges qui redescend le long du corps, veste orange à bandes noires au centre, flammes rouges en bas.', h:C_HOKAGE, b:B_HOKAGE },
+  { nom:'MODE ERMITE', desc:'Haori rouge ouvert, bras dégagés, flammes remontant sur la veste, parchemin en bandoulière.', h:C_ERMITE, b:B_ERMITE },
+  { nom:'THE LAST', desc:'Écharpe rouge au cou, brassard orangé au bras, fermeture éclair dans le ton foncé de la veste.', h:C_LAST, b:B_LAST },
+  { nom:'MINATO', desc:'Épaules remises, cape blanche à flammes rouges sur le gilet vert et la tenue bleue.', h:C_MINATO, b:B_MINATO }
+];
+
+const COUPES = [
+  { nom:'SHIPPUDEN', desc:'D\'origine : pics dressés, bandeau noir.', h:C_BASE },
+  { nom:'HOKAGE', desc:'Sommet dégagé, côtés en dégradé sur trois tons, mèches d\'or contre les joues, pas de bandeau.', h:C_HOKAGE },
+  { nom:'THE LAST', desc:'Pointes courtes espacées, bandeau conservé.', h:C_LAST },
+  { nom:'MINATO', desc:'Large et hérissée, longues mèches jusqu\'aux joues.', h:C_MINATO }
+];
+
+/* ---------- montage ---------- */
+const bad = [];
+function peindre(rows, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, c.width, c.height);
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && PAL[ch]) { g.fillStyle = PAL[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+  }});
+  return c;
+}
+function verifier(nom, rows, attendu) {
+  if (rows.length !== attendu) bad.push(nom + ' a ' + rows.length + ' lignes au lieu de ' + attendu);
+  rows.forEach((r, i) => {
+    if (r.length !== 16) bad.push(nom + '[' + i + '] largeur ' + r.length);
+    for (const ch of r) if (ch !== '.' && !PAL[ch]) bad.push(nom + '[' + i + '] couleur inconnue "' + ch + '"');
+  });
+}
+function carte(hote, titre, desc, rows, ech) {
+  const card = document.createElement('div'); card.className = 'card';
+  const lbl = document.createElement('div'); lbl.className = 'lbl';
+  lbl.innerHTML = '<b>' + titre + '</b>' + (desc || '');
+  if (!desc) lbl.style.minHeight = '0';
+  card.appendChild(lbl); card.appendChild(peindre(rows, ech));
+  document.getElementById(hote).appendChild(card);
+}
+
+carte('zoom', 'HOKAGE — ×20', 'Le dégradé va de l\'or clair au centre à l\'or foncé sur les bords, et un pixel d\'or borde chaque joue.', C_HOKAGE, 20);
+for (const c of COUPES) { verifier('coupe ' + c.nom, c.h, 10); carte('coupes', c.nom, c.desc, c.h, 11); }
+for (const t of TENUES) { const r = [...t.h, ...t.b]; verifier(t.nom, r, 20); carte('tenues', t.nom, t.desc, r, 9); }
+for (const t of TENUES) carte('reel', t.nom, '', [...t.h, ...t.b], 3);
+
+const boite = document.getElementById('errs');
+boite.textContent = bad.length ? bad.join('\n')
+  : 'OK — les quatre coupes et les quatre tenues tiennent le gabarit du jeu, couleurs toutes définies.';
+if (bad.length) boite.className = 'bad';
+</script>
+</body>
+</html>

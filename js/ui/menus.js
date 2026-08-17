@@ -14,6 +14,8 @@ import { refreshKeysUI } from './keybind-ui.js';
 import { CHAPITRES, nbChapitresFaits, chapitreFait, tutoDejaPropose, marquerTutoPropose } from '../data/apprentissage.js';
 import { lancerEntrainement } from './training.js';
 import { lancerChapitre } from './tutoriel.js';
+import { skinActif } from '../data/skins-perso.js';
+import { ouvrirPanneauSkins, brancherSkins } from './skins-ui.js';
 
 let selCharPlayer = 'naruto', selCharCPU = 'leon', diffIdx = 1;
 let modeJ2J = false;
@@ -27,7 +29,10 @@ export function setAdminMode(v) { adminMode = v; G.adminMode = v; $('admin-panel
 // qui masque un camp tiré au sort — le « ? » posé par-dessus est translucide,
 // il ne suffisait pas à cacher la silhouette.
 function drawSprite(canvasEl, ck, scale) {
-  const src = CHARS[ck || ROSTER[0]].frames.idle;
+  // Le portrait porte le skin choisi pour ce personnage, pas sa tenue d'origine.
+  const base = CHARS[ck || ROSTER[0]];
+  const sk = ck ? skinActif(ck) : null;
+  const src = (sk && base.skins && base.skins[sk] && base.skins[sk].idle) || base.frames.idle;
   canvasEl.width = src.width * scale;
   canvasEl.height = src.height * scale;
   const c = canvasEl.getContext('2d');
@@ -571,6 +576,27 @@ function cycleMusic(d) {
   musicTouchee = true;
   sfx('move'); renderMusic();
 }
+
+/* ---------- skins ----------
+   Le grand portrait de chaque camp ouvre le choix des skins. On ne l'ouvre
+   que pour un camp déjà verrouillé et non tiré au sort : sinon on dévoilerait
+   un personnage encore secret. */
+(function cablerPortraits() {
+  const boites = document.querySelectorAll('.scr-select .side .heroBox');
+  boites.forEach((box, i) => {
+    box.addEventListener('click', () => {
+      const camp = i + 1;
+      const aleatoire = camp === 1 ? rndP1 : rndP2;
+      if (aleatoire) { sfx('deny'); return; }
+      const ck = camp === 1 ? selCharPlayer : selCharCPU;
+      box.classList.remove('punchSkin'); void box.offsetWidth; box.classList.add('punchSkin');
+      sfx('select');
+      ouvrirPanneauSkins(camp, ck);
+    });
+  });
+  // Changer de skin redessine tout de suite portraits et grille.
+  brancherSkins(() => refreshSelect());
+})();
 
 /* ---------- apprentissage ---------- */
 function ouvrirApprentissage() {

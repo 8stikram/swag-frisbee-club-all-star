@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Skins — les vingt tenues</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; --bad:#ff5340; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:15px;margin:34px 0 4px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:920px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:6px}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:11px;
+        flex:1 1 0;min-width:158px;max-width:210px}
+  .card.def{border-color:var(--or)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:8px;line-height:1.45;min-height:74px}
+  .lbl b{display:block;font-size:13.5px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  .lbl i{display:block;font-style:normal;color:#5df08a;font-size:10.5px;margin-top:4px}
+  .lbl i.lock{color:#ffb44a}
+  canvas{display:block;margin:0 auto;image-rendering:pixelated;background:#101a2e;border-radius:6px}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok);white-space:pre-wrap;margin-bottom:8px}
+  #errs.bad{color:var(--bad)}
+</style>
+</head>
+<body>
+
+<h1>Skins — les vingt tenues</h1>
+<p class="note">Quatre personnages, cinq tenues chacun : celle d'origine plus quatre à gagner.
+Tout est construit sur le gabarit exact du jeu (16 × 20) et sur les sprites existants — même
+silhouette, même carrure, seule la tenue change. La condition de déblocage est écrite sous chaque
+vignette. Le cadre doré marque la tenue d'origine.</p>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>Naruto</h2>
+<div class="row" id="naruto"></div>
+
+<h2>Leon</h2>
+<div class="row" id="leon"></div>
+
+<h2>Isaac</h2>
+<div class="row" id="isaac"></div>
+
+<h2>Jingle Bells</h2>
+<div class="row" id="jingle"></div>
+
+<script>
+/* =====================================================================
+   Sprites d'origine, repris tels quels du jeu. Chaque skin part de là :
+   on ne touche jamais à la silhouette, seulement aux couleurs et aux
+   quelques pixels qui font l'accessoire.
+   ===================================================================== */
+const PAL_N = { H:'#ffd23e', h:'#e2a71c', M:'#d9dfe8', S:'#f8c890', s:'#d99a63', w:'#c08050',
+  E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#f2f2f5', K:'#1e1e24', P:'#e5730f' };
+const N_HEAD = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....","..SSSSSSSSSS....","..SSSESSSSES....","..swSSSSSSws....","...SSSSSSSS....."];
+const N_BODY = ["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...","..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."];
+
+const PAL_L = { L:'#7a4f2c', l:'#4e2f18', S:'#f0c090', s:'#cf9660', E:'#2c2a26', J:'#42537d',
+  j:'#26314d', V:'#b3bac6', B:'#e8b83a', W:'#eef1f6', D:'#2f3b59', K:'#1b1f2a' };
+const L_HEAD = ["....lLLLLl......","...LLLLLLLL.....","..LLLLLLLLLL....","..LLLLllLLLL....","..LLSSSSSSLL....","..LSSSSSSSSL....","..SSSESSSSES....","..SSSSSSSSSS....","...SSSSSSSS.....","....JJJJJJ......"];
+const L_BODY = ["..KKKKKKKKKB....",".VKKKKKKKKKKV...",".VKKWKWKWKKKV...",".SKKKKKKKKKKS...","..JJJJJJJJJJ....","..KKKKVKKKKK....","...DD....DD.....","...KK....KK.....","...DD....DD.....","..KKK....KKK...."];
+
+const PAL_I = { S:'#f2cfcb', a:'#e2b8b4', b:'#c08c88', E:'#151013', T:'#8fd8e8', W:'#ffffff', K:'#151013' };
+const I_HEAD = ["....aaaaaa......","..aaSSSSSSaa....",".aSSSSSSSSSSa...",".aSSSSSSSSSSa...",".aSSSSSSSSSSa...",".aSSWESSSWESa...",".aSSEESSSEESa...",".aSSTSKKSTSSa...","..aSTSSSSTSa....","...bbbbbbbb....."];
+const I_BODY = ["....bbbbbb......","..aaSSSSSSaa....",".aSSSSSSSSSSa...",".aSSSSSSSSSSa...","..bSSSSSSSSb....","..aSSSSSSSSa....","..aSSb..bSSa....","..aSSb..bSSa....","..aSSb..bSSa....","...aa....aa....."];
+
+const PAL_J = { G:'#f5c542', g:'#c9992a', W:'#ffe9a0', d:'#8a6a15', R:'#a8232f', r:'#7a1620',
+  V:'#1f5c3a', v:'#143f28', l:'#3fae70', S:'#b9c0cb', s:'#7e8794', K:'#241318' };
+const J_HEAD = ["......WG........",".....WgGg.......",".....WGGg.......","....WGGGgg......","....WGGGgd......","...WGGGGggd.....","...WGGGGggd.....","..gWGGGGgggd....","..dgGGGgggdg....","..RVRVRVRVRV...."];
+const J_BODY = ["....rvrvrv......","..SVvRVVRvVS....",".SSVvVVVVvVSS...",".SSlvVVVVvlSS...","..rrlSssSlrr....","..rRRlsSlRRr....","...RRRllRRR.....","...SS....SS.....","...SS....SS.....","..GSS....SSG...."];
+
+/* Repeint toutes les occurrences d'une lettre par une autre : la silhouette
+   reste rigoureusement identique. */
+function teinter(rows, corresp) {
+  return rows.map(r => [...r].map(ch => corresp[ch] || ch).join(''));
+}
+/* Ne change que des pixels déjà remplis, aux coordonnées données. */
+function retoucher(rows, map) {
+  return rows.map((row, r) => {
+    let out = '';
+    for (let c = 0; c < row.length; c++) {
+      const ch = row[c];
+      if (ch === '.') { out += '.'; continue; }
+      out += (map[r + ',' + c] !== undefined) ? map[r + ',' + c] : ch;
+    }
+    return out;
+  });
+}
+
+/* =====================================================================
+   NARUTO — Shippuden, Hokage, Mode Ermite, The Last, Minato
+   ===================================================================== */
+// Palette étendue : on ajoute les teintes propres à chaque tenue.
+const P_N = { ...PAL_N,
+  B:'#f4f4f8',   // blanc du manteau Hokage / Minato
+  R:'#c0272d',   // rouge du liseré et de l'écharpe
+  N:'#1b3a8f',   // bleu marine de The Last
+  n:'#122a66',
+  C:'#2f6bff',   // bleu du liseré de Minato
+  A:'#ff6a1a',   // orange du Mode Ermite
+  Y:'#ff9c2a',   // œil de crapaud
+  T:'#e8e4d8'    // cape blanche du Mode Ermite
+};
+
+const NARUTO = [
+  { id:'shippuden', nom:'SHIPPUDEN', def:true,
+    desc:'La tenue d\'origine : veste orange et noire, bandeau noir, cheveux en pics.',
+    cond:'Débloqué dès le départ',
+    h:N_HEAD, b:N_BODY },
+
+  { id:'hokage', nom:'HOKAGE',
+    desc:'Manteau blanc à liseré rouge et écharpe rouge au cou, comme dans Boruto. Cheveux plus courts et coiffés en arrière.',
+    cond:'Gagner 10 matchs avec Naruto',
+    // Cheveux ramenés en arrière : les pics du dessus disparaissent.
+    h:retoucher(teinter(N_HEAD, { K:'B' }), { '0,3':'.', '0,4':'.', '0,6':'.', '0,7':'.', '0,9':'.', '0,10':'.' }),
+    b:["....RRRRRR......","..BBRRRRRRBB....",".SBBBBBBBBBBS...",".SBBBRRRRBBBS...","..BBBRRRRBBB....","..BBBBBBBBBB....","...BB....BB.....","...BB....BB.....","..BBB....BBB....","..KKK....KKK...."] },
+
+  { id:'ermite', nom:'MODE ERMITE',
+    desc:'Veste rouge-orange et cape blanche qui flotte. Yeux de crapaud, pupilles horizontales, traînées de chakra.',
+    cond:'Faire 5 Perfect Dives en un seul match',
+    h:retoucher(N_HEAD, { '7,5':'Y', '7,10':'Y', '7,4':'Y', '7,9':'Y' }),
+    b:["....TTTTTT......","..TTAAAAAATT....",".STTAAAAAATTS...",".SAAAARRAAAAS...","..AAAARRAAAA....","..AAAAAAAAAA....","...AA....AA.....","...TT....AA.....","..AAA....AAA....","..KKK....KKK...."] },
+
+  { id:'thelast', nom:'THE LAST',
+    desc:'Veste bleu marine et pantalon orange, bandeau noir. Cheveux plus courts, sans écharpe.',
+    cond:'Gagner 5 matchs en moins de 60 secondes',
+    h:retoucher(N_HEAD, { '0,3':'.', '0,9':'.', '0,10':'.' }),
+    b:["....NNNNNN......","..NNNNNNNNNN....",".SNNNNNNNNNNS...",".SNNNNnnNNNNS...","..NNNNnnNNNN....","..nnnnnnnnnn....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."] },
+
+  { id:'minato', nom:'MINATO',
+    desc:'Le Quatrième Hokage : manteau blanc à flammes bleues, cheveux blonds tirés en arrière, visage plus dur.',
+    cond:'Gagner 3 matchs en difficulté Difficile',
+    // Mèches longues qui retombent de part et d'autre, pas de pics dressés.
+    h:retoucher(teinter(N_HEAD, { K:'B' }),
+       { '0,3':'.', '0,4':'.', '0,6':'.', '0,7':'.', '0,9':'.', '0,10':'.',
+         '3,1':'H', '3,12':'H', '4,1':'H', '4,12':'H', '5,1':'h', '5,12':'h' }),
+    b:["....BBBBBB......","..BBBBBBBBBB....",".SBBBBBBBBBBS...",".SBBBBCCBBBBS...","..BBBBCCBBBB....","..CCCCCCCCCC....","...BB....BB.....","...CC....BB.....","..BBB....BBB....","..KKK....KKK...."] }
+];
+
+/* =====================================================================
+   LEON — R.P.D., RE2 classique, RE4, Darkside, Requiem
+   ===================================================================== */
+const P_L = { ...PAL_L,
+  N:'#2f52a8',   // bleu R.P.D. du RE2 PS1
+  n:'#1e3771',
+  T:'#7fb4e8',   // t-shirt bleu clair du RE4
+  G:'#3a3f33',   // cargo militaire
+  g:'#262a20',
+  X:'#0e1016',   // noir profond du Requiem
+  x:'#05060a',
+  U:'#d8dce4'    // reflets des lunettes
+};
+
+const LEON = [
+  { id:'rpd', nom:'R.P.D. STANDARD', def:true,
+    desc:'La tenue d\'origine : gilet noir, manches gris clair, marquage R.P.D. sur la poitrine.',
+    cond:'Débloqué dès le départ',
+    h:L_HEAD, b:L_BODY },
+
+  { id:'re2', nom:'RE2 CLASSIQUE',
+    desc:'L\'uniforme entièrement bleu de la version PS1 : gilet, manches et pantalon bleus, marquage toujours blanc.',
+    cond:'Gagner 10 matchs avec Leon',
+    h:L_HEAD,
+    b:teinter(L_BODY, { K:'N', V:'n', J:'n', D:'n' }) },
+
+  { id:'re4', nom:'RE4',
+    desc:'Bomber noir ouvert sur un t-shirt bleu clair, bandoulière en diagonale, pantalon noir.',
+    cond:'Marquer 5 buts en un seul match',
+    h:L_HEAD,
+    b:["..KKKKKKKKKK....",".KKKTTTTTTKKK...",".KKKTTTTTTKKK...",".SKKTTTTTTKKS...","..KKKTTTTKKK....","..KKKKKKKKKK....","...KK....KK.....","...KK....KK.....","..KKK....KKK....","..KKK....KKK...."] },
+
+  { id:'darkside', nom:'DARKSIDE',
+    desc:'T-shirt noir, gilet tactique et pantalon cargo. Look militaire décontracté, bretelles apparentes.',
+    cond:'Faire 3 Dash Throws en un seul match',
+    h:L_HEAD,
+    b:["..KKKKKKKKKK....",".SKKVKKKKVKKS...",".SKKVKKKKVKKS...",".SKKKKKKKKKKS...","..KKKKKKKKKK....","..GGGGVGGGGG....","...GG....GG.....","...GG....GG.....","..GGG....GGG....","..KKK....KKK...."] },
+
+  { id:'requiem', nom:'REQUIEM',
+    desc:'Tout en noir, manteau long, gants et lunettes de soleil. Silhouette sombre, presque inquiétante.',
+    cond:'Gagner 3 matchs en difficulté Difficile',
+    // Lunettes noires : la bande des yeux passe en sombre avec un reflet.
+    h:retoucher(L_HEAD, { '6,2':'X', '6,3':'X', '6,4':'X', '6,5':'U', '6,6':'X', '6,7':'X',
+                          '6,8':'X', '6,9':'X', '6,10':'U', '6,11':'X' }),
+    b:["..XXXXXXXXXX....",".XXXXXXXXXXXX...",".XXXXXXXXXXXX...",".SXXXXXXXXXXS...","..XXXXXXXXXX....","..xxxxxxxxxx....","..XXX....XXX....","..XXX....XXX....","..XXX....XXX....","..xxx....xxx...."] }
+];
+
+/* =====================================================================
+   ISAAC — Isaac, Magdalene, Cain, Azazel, Eve
+   ===================================================================== */
+const P_I = { ...PAL_I,
+  B:'#7a4a24',   // cheveux bruns de Magdalene
+  Q:'#5c3418',
+  N:'#1a1518',   // cheveux noirs d'Eve
+  R:'#a02020',   // rouge d'Azazel
+  r:'#6e1414',
+  C:'#3a1010',   // corne
+  P:'#c94a4a',   // larmes de sang
+  Z:'#bcd6e8',   // teinte bleutée d'Eve
+  z:'#9ab4c8',
+  X:'#151013'    // bandeau de Cain
+};
+
+const ISAAC = [
+  { id:'isaac', nom:'ISAAC', def:true,
+    desc:'L\'enfant d\'origine : peau pâle, grosse tête ronde, larmes permanentes.',
+    cond:'Débloqué dès le départ',
+    h:I_HEAD, b:I_BODY },
+
+  { id:'magdalene', nom:'MAGDALENE',
+    desc:'Longs cheveux bruns qui tombent de part et d\'autre, une mèche sur le front. Même corps, plus douce.',
+    cond:'Gagner 10 matchs avec Isaac',
+    h:retoucher(I_HEAD, {
+      '0,4':'B','0,5':'B','0,6':'B','0,7':'B','0,8':'B','0,9':'B',
+      '1,2':'B','1,3':'B','1,4':'B','1,5':'B','1,10':'B','1,11':'B','1,12':'B','1,13':'B',
+      '2,1':'B','2,2':'B','2,11':'B','2,12':'B',
+      '3,1':'B','3,2':'B','3,11':'B','3,12':'B',
+      '4,1':'B','4,2':'B','4,11':'B','4,12':'B',
+      '5,1':'Q','5,12':'Q' }),
+    b:I_BODY },
+
+  { id:'cain', nom:'CAIN',
+    desc:'Bandeau noir sur l\'œil gauche, cheveux en bataille, une seule larme. Regard de survivant.',
+    cond:'Attraper le disque 20 fois en un seul match',
+    h:retoucher(I_HEAD, {
+      '5,4':'X','5,5':'X','5,3':'X','5,2':'X',
+      '6,2':'X','6,3':'X','6,4':'X','6,5':'X',
+      '7,3':'X','7,4':'.', '8,3':'.', '8,4':'.' }),
+    b:teinter(I_BODY, { a:'b' }) },
+
+  { id:'azazel', nom:'AZAZEL',
+    desc:'Teinte rouge sombre, corne noire sur le front, ailes dans le dos et larmes de sang.',
+    cond:'Faire 10 Perfect Dives au total',
+    h:retoucher(teinter(I_HEAD, { S:'R', a:'r', b:'r', T:'P' }), { '0,7':'C','0,8':'C','1,7':'C' }),
+    b:retoucher(teinter(I_BODY, { S:'R', a:'r', b:'r' }),
+      { '2,1':'C','2,12':'C','3,1':'C','3,12':'C','4,1':'C','4,11':'C' }) },
+
+  { id:'eve', nom:'EVE',
+    desc:'Longs cheveux noirs, teinte pâle presque bleutée, larmes qui coulent sans fin.',
+    cond:'Gagner 3 matchs en difficulté Difficile',
+    h:retoucher(teinter(I_HEAD, { S:'Z', a:'z', b:'z' }), {
+      '0,4':'N','0,5':'N','0,6':'N','0,7':'N','0,8':'N','0,9':'N',
+      '1,2':'N','1,3':'N','1,4':'N','1,5':'N','1,10':'N','1,11':'N','1,12':'N','1,13':'N',
+      '2,1':'N','2,2':'N','2,11':'N','2,12':'N',
+      '3,1':'N','3,2':'N','3,11':'N','3,12':'N',
+      '4,1':'N','4,2':'N','4,11':'N','4,12':'N',
+      '5,1':'N','5,12':'N','6,1':'N','6,12':'N' }),
+    b:teinter(I_BODY, { S:'Z', a:'z', b:'z' }) }
+];
+
+/* =====================================================================
+   JINGLE — Pôle Nord, Smoking, Ninja, Cowboy, Halloween
+   La cloche dorée ne change JAMAIS : c'est son identité.
+   ===================================================================== */
+const P_J = { ...PAL_J,
+  N:'#16171c',   // noir du smoking et du ninja
+  n:'#0b0c10',
+  B:'#f4f4f8',   // chemise blanche
+  Y:'#c0272d',  // nœud papillon / bandana
+  E:'#2b2f38',   // tissu du ninja
+  C:'#8a5a2b',   // cuir du cowboy
+  c:'#6b4420',
+  F:'#d9b26a',   // franges
+  P:'#ff8c1f',   // citrouille
+  p:'#c85f0a',
+  M:'#4a2a6b',   // cape de sorcière
+  m:'#2f1a45'
+};
+
+const JINGLE = [
+  { id:'polenord', nom:'PÔLE NORD', def:true,
+    desc:'La tenue d\'origine : écharpe rayée, bure cramoisie, bandoulière verte et bottes d\'acier.',
+    cond:'Débloqué dès le départ',
+    h:J_HEAD, b:J_BODY },
+
+  { id:'smoking', nom:'SMOKING NOIR',
+    desc:'Costume noir, chemise blanche et nœud papillon rouge. Allure de majordome, chaussures vernies.',
+    cond:'Gagner 10 matchs avec Jingle',
+    h:retoucher(J_HEAD, { '9,2':'N','9,3':'N','9,4':'N','9,5':'Y','9,6':'Y','9,7':'Y','9,8':'Y','9,9':'N','9,10':'N','9,11':'N' }),
+    b:["....NBBBBN......","..SNNBBBBNNS....",".SSNNBBBBNNSS...",".SSNNBNNBNNSS...","..NNNBNNBNNN....","..NNNNBBNNNN....","...NNNNNNNN.....","...SS....SS.....","...SS....SS.....","..nSS....SSn...."] },
+
+  { id:'ninja', nom:'NINJA',
+    desc:'Masque et tenue sombres, bandoulière de shurikens en travers du torse. Posture furtive.',
+    cond:'Gagner un match sans jamais dasher',
+    h:retoucher(J_HEAD, { '9,2':'E','9,3':'E','9,4':'E','9,5':'E','9,6':'E','9,7':'E','9,8':'E','9,9':'E','9,10':'E','9,11':'E' }),
+    b:["....EEEEEE......","..SEEEEEEEES....",".SSEEEEEEEESS...",".SSVEEEEEEVSS...","..EEVEEEEVEE....","..EEEVEEVEEE....","...EEEEEEEE.....","...SS....SS.....","...SS....SS.....","..ESS....SSE...."] },
+
+  { id:'cowboy', nom:'COWBOY',
+    desc:'Chapeau à large bord posé sur la cloche, veste de cuir à franges, bandana rouge et éperons.',
+    cond:'Marquer 5 buts avec Jingle',
+    // Le chapeau coiffe la cloche sans la masquer : bord large sur deux rangs.
+    h:retoucher(J_HEAD, {
+      '0,6':'c','0,7':'c',
+      '1,5':'c','1,6':'C','1,7':'C','1,8':'c',
+      '2,5':'c','2,6':'C','2,7':'C','2,8':'c',
+      '3,4':'c','3,5':'C','3,6':'C','3,7':'C','3,8':'C','3,9':'c',
+      '9,2':'Y','9,3':'Y','9,4':'Y','9,5':'Y','9,6':'Y','9,7':'Y','9,8':'Y','9,9':'Y','9,10':'Y','9,11':'Y' }),
+    b:["....CCCCCC......","..SCCCCCCCCS....",".SSCCCCCCCCSS...",".SSFCCCCCCFSS...","..CCFCCCCFCC....","..CCCFCCFCCC....","...CCCCCCCC.....","...SS....SS.....","...SS....SS.....","..GSS....SSG...."] },
+
+  { id:'halloween', nom:'HALLOWEEN',
+    desc:'Cape de sorcière violette, chapeau pointu et citrouille-lanterne en guise de battant sous la cloche.',
+    cond:'Gagner 3 matchs en difficulté Difficile',
+    h:retoucher(J_HEAD, {
+      '0,6':'m','0,7':'m',
+      '1,5':'M','1,6':'M','1,7':'M','1,8':'M',
+      '2,5':'M','2,6':'M','2,7':'M','2,8':'M',
+      '3,4':'m','3,5':'M','3,6':'M','3,7':'M','3,8':'M','3,9':'m',
+      '9,2':'P','9,3':'p','9,4':'P','9,5':'p','9,6':'P','9,7':'p','9,8':'P','9,9':'p','9,10':'P','9,11':'p' }),
+    b:["....MMMMMM......","..SMMPPPPMMS....",".SSMMPPPPMMSS...",".SSMMPppPMMSS...","..MMMPppPMMM....","..MMMMPPMMMM....","...MMMMMMMM.....","...SS....SS.....","...SS....SS.....","..mSS....SSm...."] }
+];
+
+/* ===================== montage et contrôle ===================== */
+const bad = [];
+function peindre(rows, pal, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, c.width, c.height);
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+  }});
+  return c;
+}
+function poser(cible, liste, pal) {
+  const hote = document.getElementById(cible);
+  for (const s of liste) {
+    const rows = [...s.h, ...s.b];
+    if (rows.length !== 20) bad.push(s.id + ' a ' + rows.length + ' lignes');
+    rows.forEach((r, i) => {
+      if (r.length !== 16) bad.push(s.id + '[' + i + '] largeur ' + r.length);
+      for (const ch of r) if (ch !== '.' && !pal[ch]) bad.push(s.id + '[' + i + '] couleur inconnue "' + ch + '"');
+    });
+    const card = document.createElement('div');
+    card.className = 'card' + (s.def ? ' def' : '');
+    const lbl = document.createElement('div'); lbl.className = 'lbl';
+    lbl.innerHTML = '<b>' + s.nom + '</b>' + s.desc
+      + '<i class="' + (s.def ? '' : 'lock') + '">' + (s.def ? '✔ ' : '🔒 ') + s.cond + '</i>';
+    card.appendChild(lbl);
+    card.appendChild(peindre(rows, pal, 8));
+    hote.appendChild(card);
+  }
+}
+poser('naruto', NARUTO, P_N);
+poser('leon', LEON, P_L);
+poser('isaac', ISAAC, P_I);
+poser('jingle', JINGLE, P_J);
+
+const boite = document.getElementById('errs');
+boite.textContent = bad.length ? bad.join('\n')
+  : 'OK — les vingt tenues tiennent le gabarit 16 × 20 et n\'utilisent que des couleurs définies.';
+if (bad.length) boite.className = 'bad';
+</script>
+</body>
+</html>

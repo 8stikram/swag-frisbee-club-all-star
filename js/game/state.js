@@ -2,6 +2,7 @@ import { W, H } from '../core/dom.js';
 import { COURT, CX, CY, DIFFS } from '../core/constants.js';
 import { TAU, rand } from '../core/utils.js';
 import { CHARS } from '../data/characters.js';
+import { skinActif } from './../data/skins-perso.js';
 import { getMap } from '../data/maps.js';
 import { sfx } from '../audio/audio.js';
 import { setupServe } from './actions.js';
@@ -57,8 +58,12 @@ export const G = {
 
 export function makePlayer(ck, side, human, diffIdx) {
   const c = CHARS[ck];
+  // Jeu de sprites effectivement porté : celui du skin choisi, ou la tenue
+  // d'origine. Résolu une fois ici plutôt qu'à chaque image du rendu.
+  const sk = skinActif(ck);
   const p = {
     ck, char: c, side, human,
+    frames: (c.skins && c.skins[sk]) ? c.skins[sk] : c.frames,
     x: side === 1 ? COURT.left + 120 : COURT.right - 120, y: CY,
     vx: 0, vy: 0, face: side === 1 ? 1 : -1,
     holding: false, charging: false, wasCharging: false, charge: 0, fullFlash: false,
@@ -66,7 +71,8 @@ export function makePlayer(ck, side, human, diffIdx) {
     walk: 0, moving: false, meter: 0, score: 0, speed: c.speed, stun: 0,
     ghosts: [], ghostT: 0, forceFr: null,
     // buts / z5 / z3 / dashCatches alimentent l'écran de fin de match.
-    stats: { catches: 0, specials: 0, thrown: 0, buts: 0, z5: 0, z3: 0, dashCatches: 0 },
+    // perfects et dashThrows servent aux conditions de déblocage des skins.
+    stats: { catches: 0, specials: 0, thrown: 0, buts: 0, z5: 0, z3: 0, dashCatches: 0, perfects: 0, dashThrows: 0 },
     ai: null, foe: null,
     home: { x: side === 1 ? COURT.left + 120 : COURT.right - 120, y: CY },
     holdTimer: 0,
@@ -105,6 +111,10 @@ export function initMatch(demo, ck, cpu, diffIdx, j2j) {
   G.mem = { t: 0, m: 0, b: 0 }; G.startCom = false; G.lungeBonus = false; G.lungeBonusTimer = 0;
   G.zoom = null; G.flash = 0; G.lastCatchIdx = -1;
   G.cercles.length = 0; G.prochainCercle = 0;
+  // Repères pour les conditions de déblocage des skins : depuis quand le match
+  // dure, et si le joueur s'est autorisé un dash.
+  G.debutMatch = performance.now();
+  G.aDashe = false;
   G.isJ2J = j2j || false;
   if (demo) {
     G.p1 = makePlayer('naruto', 1, false, 0);

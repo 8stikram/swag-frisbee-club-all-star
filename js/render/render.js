@@ -700,7 +700,10 @@ function drawPlayer(p) {
     else if (p.holding && (p.charging || p.throwPoseT > 0)) fr = 'throw';
     else if (p.moving) fr = (Math.floor(p.walk) % 2) ? 'run1' : 'run2';
   }
-  const img = c.frames[fr];
+  // p.frames porte le skin choisi ; il retombe sur la tenue d'origine si le
+  // personnage n'en a pas d'autre.
+  const jeu = p.frames || c.frames;
+  const img = jeu[fr] || c.frames[fr];
   ctx.save();
   ctx.translate(p.x, p.y - 30 * SCALE);
   if (p.face < 0) ctx.scale(-1, 1);
@@ -899,7 +902,7 @@ function drawHUD() {
   ctx.textAlign = 'left';
   const panel = (p, x, alignRight) => {
     const c = p.char;
-    ctx.drawImage(c.frames.idle, 0, 0, 16, 20, alignRight ? x + 150 : x + 6, 8, 24, 30);
+    ctx.drawImage((p.frames || c.frames).idle, 0, 0, 16, 20, alignRight ? x + 150 : x + 6, 8, 24, 30);
     ctx.fillStyle = c.accent;
     ctx.font = '10px "Archivo Black", system-ui, sans-serif';
     ctx.textAlign = alignRight ? 'right' : 'left';

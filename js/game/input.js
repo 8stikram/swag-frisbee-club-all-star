@@ -223,6 +223,9 @@ export function doFeint(p, dirVoulue) {
 // Dash : propulsion sur une distance fixe, sans invincibilité. La vitesse est
 // calculée pour couvrir DASH_DIST en DASH_TIME quelle que soit la direction.
 export function startDash(p, dir) {
+  // Un seul dash du joueur suffit à disqualifier la condition « gagner sans
+  // jamais dasher » du skin Ninja.
+  if (p === G.p1 && p.human) G.aDashe = true;
   if (!dir || (!dir.x && !dir.y)) dir = { x: p.face, y: 0 };
   p.dashT = DASH_TIME; p.dashGap = DASH_GAP; p.dashDir = dir;
   p.face = dir.x >= 0 ? 1 : -1;

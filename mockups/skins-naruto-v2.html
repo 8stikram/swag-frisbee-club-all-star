@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Skins de Naruto — corrections</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; --bad:#ff5340; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:15px;margin:32px 0 4px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:930px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:6px}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:11px;
+        flex:1 1 0;min-width:176px;max-width:224px}
+  .card.old{border-color:#63406a;opacity:.72}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:8px;line-height:1.5;min-height:70px}
+  .lbl b{display:block;font-size:13.5px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  canvas{display:block;margin:0 auto;image-rendering:pixelated;background:#101a2e;border-radius:6px}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok);white-space:pre-wrap;margin-bottom:8px}
+  #errs.bad{color:var(--bad)}
+  ul{font-size:12.5px;color:#8fa4c4;line-height:1.9;max-width:930px;margin:0 0 14px;padding-left:20px}
+  ul b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<h1>Skins de Naruto — corrections</h1>
+
+<h2>Ce que j'ai repris</h2>
+<ul>
+  <li><b>Coupe Hokage</b> : c'était une coupe au bol, identique à The Last. Je la reprends avec une <b>frange balayée sur le côté</b>, asymétrique — et je redonne à The Last <b>quelques pointes courtes</b>, pour que les deux ne se confondent plus.</li>
+  <li><b>Ermite</b> : je garde le haori ouvert, mais <b>les bras redeviennent visibles</b> et les <b>flammes montent sur la veste</b>.</li>
+  <li><b>The Last</b> : <b>fermeture éclair marquée</b> au centre, et l'<b>écharpe nettement séparée du brassard</b> — deux rouges différents, deux emplacements distincts.</li>
+  <li><b>Le gris</b> que tu as marqué sur les épaules est <b>supprimé</b> : ces pixels disparaissent au lieu d'être remplis.</li>
+</ul>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>1 · La coupe Hokage — trois propositions</h2>
+<p class="note">Comparée à celle de The Last, à droite, pour vérifier qu'on ne peut plus les confondre.</p>
+<div class="row" id="coupes"></div>
+
+<h2>2 · Hokage — sur les trois coupes</h2>
+<div class="row" id="hokage"></div>
+
+<h2>3 · Mode Ermite — bras visibles et flammes sur la veste</h2>
+<div class="row" id="ermite"></div>
+
+<h2>4 · The Last — fermeture éclair et écharpe séparée</h2>
+<div class="row" id="thelast"></div>
+
+<h2>5 · Minato — sans les épaules grises</h2>
+<div class="row" id="minato"></div>
+
+<script>
+const PAL = {
+  H:'#ffd23e', h:'#e2a71c', j:'#c98f10',
+  M:'#d9dfe8', S:'#f8c890', s:'#d99a63', w:'#c08050',
+  E:'#173e8f', Y:'#e8a020', y:'#8a5a08',
+  O:'#ff8c1a', o:'#d96b08', P:'#e5730f', W:'#f2f2f5',
+  K:'#1e1e24', k:'#101015',
+  B:'#f4f1e6', b:'#d5d0be',
+  R:'#c0272d', r:'#8f1a1f',      // rouge de l'écharpe
+  X:'#e04a2a',                    // rouge-orangé du brassard, distinct de l'écharpe
+  A:'#b52a2a', a:'#7e1818',
+  D:'#3b3f33', d:'#24271f',
+  V:'#4f7a4a', N:'#2a4a8f', n:'#1d3568',
+  C:'#8a6a3a', Z:'#c9ced6'        // fermeture éclair
+};
+
+const VISAGE = ["..SSSSSSSSSS....","..SSSESSSSES....","..swSSSSSSws....","...SSSSSSSS....."];
+const VISAGE_ERMITE = ["..SSSSSSSSSS....","..SSyYSSSyYS....","..swSSSSSSws....","...SSSSSSSS....."];
+
+/* ---- Coupes ---- */
+// The Last : courte, mais on lui rend quelques pointes espacées, et il garde
+// son bandeau. C'est ce qui la sépare franchement de la coupe Hokage.
+const C_LAST = ["....H..H..H.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....", ...VISAGE];
+
+// Hokage : pas de bandeau, et surtout une frange BALAYÉE d'un côté. C'est
+// l'asymétrie qui empêche de la confondre avec une coupe au bol.
+const H1 = ["................","....HHHHHHh.....","..HHHHHHHHHh....",".hHHHHHHHHHh....",".hHHHHHHHHHh....",".jhhHHHHhhhh....", ...VISAGE];
+// Variante : mèche relevée sur le devant, plus de volume au sommet.
+const H2 = ["......HHH.......","...HHHHHHHH.....","..HHHHHHHHHH....",".hHHHHHHHHHh....",".hHHHHHHHHHh....","..hhHHHHhhh.....", ...VISAGE];
+// Variante : coupe très courte et plaquée, front largement dégagé.
+const H3 = ["................","................","...HHHHHHHH.....","..hHHHHHHHHh....","..hHHHHHHHHh....","..hjhhhhhhjh....", ...VISAGE];
+
+const C_ERMITE = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....", ...VISAGE_ERMITE];
+const C_MINATO = ["..hH.HH.HH.Hh...",".HHHHHHHHHHHH...","HHHHHHHHHHHHHH..","HhHHHHHHHHHHhH..","HHKKKKKKKKKKHH..","HHKKMMMMMMKKHH..","HhSSSSSSSSSShH..","HhSSSESSSSEShH..",".hswSSSSSSwsh...","...SSSSSSSS....."];
+
+const COUPES = [
+  { nom:'H1 · FRANGE BALAYÉE', desc:'La frange part d\'un côté : l\'asymétrie se voit tout de suite et rien ne rappelle une coupe au bol.', h:H1 },
+  { nom:'H2 · MÈCHE RELEVÉE', desc:'Un peu de volume sur le devant, comme s\'il avait passé la main dedans. Plus proche du Naruto adulte de Boruto.', h:H2 },
+  { nom:'H3 · TRÈS COURTE', desc:'Coupe plaquée, front largement dégagé. La plus sobre et la plus « adulte ».', h:H3 },
+  { nom:'THE LAST (repris)', desc:'Courte elle aussi, mais avec ses pointes espacées et son bandeau. Aucune confusion possible.', h:C_LAST }
+];
+
+/* ---- Corps ---- */
+// Hokage : veste orange à bandes noires, cape blanche aux épaules seulement,
+// flammes rouges en bas. Aucun gris.
+const B_HOKAGE = [
+  "....OOOOOO......",
+  "..BBOOOOOOBB....",
+  ".SBBOOZZOOBBS...",
+  ".SOOOOZZOOOOS...",
+  "..KKOOZZOOKK....",
+  "..RBBKKKKBBR....",
+  "...KK....KK.....",
+  "...KK....KK.....",
+  "..KKK....KKK....",
+  "..kkk....kkk...."
+];
+
+// Ermite : haori ouvert, bras dégagés, et les flammes qui remontent sur la
+// veste elle-même plutôt que de rester au bas du manteau.
+const B_ERMITE = [
+  "....KKKKKK......",
+  "..AAKKKKKKAA....",
+  ".SACKKKKKKCAS...",
+  ".SAOOOKKOOOAS...",
+  "..AaOOKKOOaA....",
+  "..AaAKKKKAaA....",
+  "...PP....PP.....",
+  "...WW....PP.....",
+  "..PPP....PPP....",
+  "..CCC....CCC...."
+];
+
+// The Last : écharpe rouge au COU (rangée du haut), brassard orangé sur le
+// BRAS (rangée des épaules), et fermeture éclair claire au centre.
+const B_LAST = [
+  "...RRRRRRRR.....",
+  "..RRDDDDDDRR....",
+  ".SXXDDZZDDDDS...",
+  ".SDDDDZZDDDDS...",
+  "..DDDDZZDDDD....",
+  "..dddddddddd....",
+  "...PP....PP.....",
+  "...WW....PP.....",
+  "..PPP....PPP....",
+  "..KKK....KKK...."
+];
+
+// Minato : les épaules que tu avais grisées disparaissent — la cape ne
+// commence qu'en dessous, et le gilet vert reste dégagé.
+const B_MINATO = [
+  "....VVVVVV......",
+  "....VVVVVV......",
+  ".BBBVVNNVVBBB...",
+  ".BRBVVNNVVBRB...",
+  "..RBVVVVVVBR....",
+  "..rrBBBBBBrr....",
+  "...NN....NN.....",
+  "...WW....NN.....",
+  "..NNN....NNN....",
+  "..nnn....nnn...."
+];
+
+/* ---- montage ---- */
+const bad = [];
+function peindre(rows, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, c.width, c.height);
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && PAL[ch]) { g.fillStyle = PAL[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+  }});
+  return c;
+}
+function verifier(nom, rows, attendu) {
+  if (rows.length !== attendu) bad.push(nom + ' a ' + rows.length + ' lignes au lieu de ' + attendu);
+  rows.forEach((r, i) => {
+    if (r.length !== 16) bad.push(nom + '[' + i + '] largeur ' + r.length);
+    for (const ch of r) if (ch !== '.' && !PAL[ch]) bad.push(nom + '[' + i + '] couleur inconnue "' + ch + '"');
+  });
+}
+function carte(hote, titre, desc, rows, ech) {
+  const card = document.createElement('div'); card.className = 'card';
+  const lbl = document.createElement('div'); lbl.className = 'lbl';
+  lbl.innerHTML = '<b>' + titre + '</b>' + desc;
+  card.appendChild(lbl); card.appendChild(peindre(rows, ech));
+  document.getElementById(hote).appendChild(card);
+}
+
+for (const c of COUPES) { verifier(c.nom, c.h, 10); carte('coupes', c.nom, c.desc, c.h, 10); }
+
+[['H1', H1], ['H2', H2], ['H3', H3]].forEach(([id, tete]) => {
+  const rows = [...tete, ...B_HOKAGE];
+  verifier('hokage ' + id, rows, 20);
+  carte('hokage', 'HOKAGE ' + id, 'Veste orange à bandes noires, cape blanche sur les épaules, flammes rouges en bas. Fermeture éclair claire au centre.', rows, 9);
+});
+
+carte('ermite', 'ERMITE B (repris)',
+  'Haori ouvert, bras dégagés de part et d\'autre, et les flammes qui remontent sur la veste au lieu de rester en bas du manteau.',
+  (function(){ const r = [...C_ERMITE, ...B_ERMITE]; verifier('ermite', r, 20); return r; })(), 9);
+
+carte('thelast', 'THE LAST B (repris)',
+  'Écharpe rouge au cou sur la rangée du haut, brassard orangé sur le bras — deux rouges différents, deux emplacements distincts. Fermeture éclair marquée au centre.',
+  (function(){ const r = [...C_LAST, ...B_LAST]; verifier('thelast', r, 20); return r; })(), 9);
+
+carte('minato', 'MINATO C (repris)',
+  'Les épaules que tu avais grisées sont supprimées : la cape ne commence qu\'en dessous et le gilet vert reste dégagé.',
+  (function(){ const r = [...C_MINATO, ...B_MINATO]; verifier('minato', r, 20); return r; })(), 9);
+
+const boite = document.getElementById('errs');
+boite.textContent = bad.length ? bad.join('\n')
+  : 'OK — toutes les coupes et tenues tiennent le gabarit du jeu, couleurs toutes définies.';
+if (bad.length) boite.className = 'bad';
+</script>
+</body>
+</html>

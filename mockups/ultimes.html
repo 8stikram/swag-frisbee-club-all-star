@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Rework des ultimes — Naruto Six Paths & Leon</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:14px;margin:32px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:900px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;flex:1 1 0;min-width:180px}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:52px}
+  .lbl b{display:block;font-size:14px;color:#ffd23e;letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px;background:#101a2e;image-rendering:pixelated}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin-bottom:6px}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>Rework des ultimes — pièces détachées</h1>
+<p class="note">Comme pour le stade : chaque morceau en cinq versions franchement différentes.
+Dis-moi une lettre par section et j'assemble. Le sprite reste au gabarit du jeu (16 × 20), les orbes
+et les effets sont dessinés par-dessus, exactement comme ils le seront en match.</p>
+
+<div id="errs"></div>
+
+<h2>1 · Naruto — la tenue Six Paths</h2>
+<div class="row" id="tenue"></div>
+
+<h2>2 · Les orbes noirs</h2>
+<div class="row" id="orbes"></div>
+
+<h2>3 · L'aura de chakra</h2>
+<div class="row" id="aura"></div>
+
+<h2>4 · L'instant de la transformation</h2>
+<div class="row" id="transfo"></div>
+
+<h2>5 · Le pistolet de Leon</h2>
+<div class="row" id="pistolet"></div>
+
+<script>
+const TAU = Math.PI * 2;
+
+/* ---------- sprite de base, repris du jeu ---------- */
+const PAL_N = { H:'#ffd23e', h:'#e2a71c', M:'#d9dfe8', S:'#f8c890', s:'#d99a63', w:'#c08050',
+  E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#f2f2f5', K:'#1e1e24', P:'#e5730f' };
+const N_HEAD = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....","..SSSSSSSSSS....","..SSSESSSSES....","..swSSSSSSws....","...SSSSSSSS....."];
+const N_IDLE_B = ["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...","..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."];
+
+const PAL_L = { L:'#7a4f2c', l:'#4e2f18', S:'#f0c090', s:'#cf9660', E:'#2c2a26', J:'#42537d',
+  j:'#26314d', V:'#b3bac6', B:'#e8b83a', W:'#eef1f6', D:'#2f3b59', K:'#1b1f2a' };
+const L_HEAD = ["....lLLLLl......","...LLLLLLLL.....","..LLLLLLLLLL....","..LLLLllLLLL....","..LLSSSSSSLL....","..LSSSSSSSSL....","..SSSESSSSES....","..SSSSSSSSSS....","...SSSSSSSS.....","....JJJJJJ......"];
+const L_THROW_B = ["..KKKKKKKKKB....","..KKKKKKKKKKVV..","..KKWKWKWKKKVV..","..KKKKKKKKKK....","..JJJJJJJJJJ....","..KKKKVKKKKK....","..DD.....DD.....","..KK.....KK.....",".DDD......DDD...",".KKK......KKK..."];
+
+// Ne change que la couleur de pixels déjà remplis : la silhouette est
+// mathématiquement intacte, comme pour Jingle Bells.
+function reshade(rows, map) {
+  return rows.map((row, r) => {
+    let out = '';
+    for (let c = 0; c < row.length; c++) {
+      const ch = row[c];
+      if (ch === '.') { out += '.'; continue; }
+      out += (map[r + ',' + c] !== undefined) ? map[r + ',' + c] : ch;
+    }
+    return out;
+  });
+}
+// Repeint toutes les occurrences d'une couleur par une autre.
+function teinter(rows, corresp) {
+  return rows.map(r => [...r].map(ch => corresp[ch] || ch).join(''));
+}
+function bati(rows, pal, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+  }});
+  return c;
+}
+
+/* ======================= 1 · TENUE SIX PATHS ======================= */
+// Palettes dérivées : on garde la même silhouette, on change les teintes.
+const P_OR   = { ...PAL_N, K:'#3a2f14', O:'#ffe89a', o:'#ffd23e', P:'#ffe89a', W:'#fff6d0', H:'#fff2a8', h:'#ffd23e', E:'#f5a623' };
+const P_BLANC= { ...PAL_N, K:'#f4f1e6', O:'#2a2a30', o:'#1e1e24', P:'#f4f1e6', W:'#2a2a30', H:'#fff2a8', h:'#ffd23e', E:'#f5a623' };
+const P_NOIR = { ...PAL_N, K:'#1a1a20', O:'#ffd23e', o:'#e2a71c', P:'#1a1a20', W:'#ffd23e', H:'#fff2a8', h:'#ffd23e', E:'#f5a623' };
+const P_FEU  = { ...PAL_N, K:'#4a2410', O:'#ff8c1a', o:'#e5480f', P:'#ff6a1a', W:'#ffd23e', H:'#fff2a8', h:'#ff8c1a', E:'#f5a623' };
+
+const TENUE = [
+  { id:'A', nom:'MANTEAU D\'OR',
+    desc:'Tout le corps vire au doré lumineux, comme baigné de chakra. Le plus éclatant, se repère instantanément sur le terrain.',
+    pal:P_OR, rows:[...N_HEAD, ...N_IDLE_B] },
+
+  { id:'B', nom:'TENUE CLAIRE',
+    desc:'Haut blanc cassé et motifs sombres, fidèle à la tenue Six Paths de l\'anime. Élégant, mais moins lisible sur le parquet clair du stade.',
+    pal:P_BLANC, rows:[...N_HEAD, ...N_IDLE_B] },
+
+  { id:'C', nom:'COMBINAISON NOIRE',
+    desc:'Combinaison sombre avec les anneaux dorés qui ressortent. C\'est la version des illustrations que tu as envoyées.',
+    pal:P_NOIR, rows:teinter([...N_HEAD, ...N_IDLE_B], { W:'H' }) },
+
+  { id:'D', nom:'BRASIER',
+    desc:'Orange et rouge incandescents, dans la continuité de sa tenue actuelle. Le changement se lit sans qu\'on perde le personnage de vue.',
+    pal:P_FEU, rows:[...N_HEAD, ...N_IDLE_B] },
+
+  { id:'E', nom:'DEUX MOITIÉS',
+    desc:'Un côté doré, l\'autre sombre, comme le manteau bicolore de la première illustration. Le plus caractérisé, aussi le plus chargé.',
+    pal:P_NOIR,
+    rows:(function(){
+      const base = [...N_HEAD, ...N_IDLE_B];
+      const m = {};
+      // Moitié droite du torse repeinte en clair.
+      for (let r = 10; r < 16; r++) for (let c = 8; c < 13; c++) m[r + ',' + c] = 'H';
+      return reshade(base, m);
+    })() }
+];
+
+/* ======================= 2 · ORBES ======================= */
+const ORBES = [
+  { id:'A', nom:'ANNEAU LENT', desc:'Six orbes en cercle régulier, rotation lente. Sobre et parfaitement lisible.',
+    f(g,cx,cy,t){ for(let i=0;i<6;i++){ const a=t*.7+i*TAU/6;
+      orbe(g,cx+Math.cos(a)*34,cy+Math.sin(a)*34,6); } } },
+
+  { id:'B', nom:'DANS LE DOS', desc:'Les orbes s\'alignent en arc derrière lui, comme sur les illustrations. Elles ne gênent jamais la lecture du disque.',
+    f(g,cx,cy,t){ for(let i=0;i<6;i++){ const a=-Math.PI*.75+i*(Math.PI*1.5/5)+Math.sin(t)*.06;
+      orbe(g,cx+Math.cos(a)*40,cy+Math.sin(a)*30-6,6); } } },
+
+  { id:'C', nom:'ORBITE INCLINÉE', desc:'Une ellipse penchée qui passe devant puis derrière lui. Donne du relief, mais une orbe peut masquer le disque un instant.',
+    f(g,cx,cy,t){ for(let i=0;i<6;i++){ const a=t*.9+i*TAU/6;
+      orbe(g,cx+Math.cos(a)*40,cy+Math.sin(a)*16-4,5+Math.sin(a)*1.6); } } },
+
+  { id:'D', nom:'DEUX TRIANGLES', desc:'Deux groupes de trois qui tournent en sens inverse. Le plus dynamique, l\'œil est attiré en permanence.',
+    f(g,cx,cy,t){ for(let s of [1,-1]) for(let i=0;i<3;i++){ const a=t*.8*s+i*TAU/3;
+      orbe(g,cx+Math.cos(a)*(s>0?30:44),cy+Math.sin(a)*(s>0?30:44),s>0?6:5); } } },
+
+  { id:'E', nom:'EN SUSPENS', desc:'Elles flottent presque immobiles, avec un simple frémissement. Le plus calme — on les oublie jusqu\'à ce qu\'on les regarde.',
+    f(g,cx,cy,t){ const pos=[[-42,-26],[42,-26],[-48,4],[48,4],[-30,30],[30,30]];
+      pos.forEach((p,i)=>orbe(g,cx+p[0]+Math.sin(t*1.2+i)*2.5,cy+p[1]+Math.cos(t*1.1+i)*2.5,6)); } }
+];
+function orbe(g,x,y,r){
+  const d=g.createRadialGradient(x-r*.3,y-r*.3,r*.1,x,y,r);
+  d.addColorStop(0,'#4a4a56'); d.addColorStop(1,'#0a0a10');
+  g.fillStyle=d; g.beginPath(); g.arc(x,y,r,0,TAU); g.fill();
+  g.strokeStyle='rgba(255,210,62,.35)'; g.lineWidth=1;
+  g.beginPath(); g.arc(x,y,r,0,TAU); g.stroke();
+}
+
+/* ======================= 3 · AURA ======================= */
+const AURA = [
+  { id:'A', nom:'HALO DOUX', desc:'Un simple halo doré qui respire. Discret, ne mange rien à l\'écran.',
+    f(g,cx,cy,t){ const r=44+Math.sin(t*2)*4;
+      const d=g.createRadialGradient(cx,cy,6,cx,cy,r);
+      d.addColorStop(0,'rgba(255,226,140,.5)'); d.addColorStop(1,'rgba(255,180,40,0)');
+      g.fillStyle=d; g.beginPath(); g.arc(cx,cy,r,0,TAU); g.fill(); } },
+
+  { id:'B', nom:'FLAMMES', desc:'Des langues de chakra qui montent et ondulent. Le plus vivant, très « manteau en flamme ».',
+    f(g,cx,cy,t){ for(let i=0;i<14;i++){ const a=-Math.PI/2+(i-7)*.19;
+      const h=26+Math.sin(t*6+i)*12;
+      g.strokeStyle=`rgba(255,${170+((i*13)%60)},40,.6)`; g.lineWidth=3;
+      g.beginPath(); g.moveTo(cx+Math.cos(a)*18,cy+Math.sin(a)*18);
+      g.quadraticCurveTo(cx+Math.cos(a)*(18+h*.6)+Math.sin(t*5+i)*7,cy+Math.sin(a)*(18+h*.6),
+                         cx+Math.cos(a)*(18+h),cy+Math.sin(a)*(18+h));
+      g.stroke(); } } },
+
+  { id:'C', nom:'MANTEAU', desc:'Une silhouette de chakra plus large que lui, qui bat comme une cape. Impressionnant, prend de la place.',
+    f(g,cx,cy,t){ g.save(); g.globalAlpha=.5;
+      g.fillStyle='rgba(255,190,60,.55)';
+      g.beginPath();
+      g.moveTo(cx,cy-46);
+      g.quadraticCurveTo(cx+46+Math.sin(t*3)*6,cy-6,cx+26,cy+46);
+      g.lineTo(cx-26,cy+46);
+      g.quadraticCurveTo(cx-46-Math.sin(t*3)*6,cy-6,cx,cy-46);
+      g.fill(); g.restore(); } },
+
+  { id:'D', nom:'PARTICULES', desc:'Des braises qui s\'élèvent autour de lui. Très léger, se marie bien avec les orbes.',
+    f(g,cx,cy,t){ for(let i=0;i<22;i++){ const ph=(t*.6+i*.37)%1;
+      const x=cx+Math.sin(i*2.3)*26, y=cy+30-ph*66;
+      g.globalAlpha=(1-ph)*.85; g.fillStyle=i%3?'#ffd23e':'#ff8c1a';
+      g.fillRect(x,y,2.5,2.5);} g.globalAlpha=1; } },
+
+  { id:'E', nom:'ANNEAUX', desc:'Des cercles de chakra qui s\'échappent vers le haut, façon onde de puissance. Rythmé et net.',
+    f(g,cx,cy,t){ for(let i=0;i<3;i++){ const ph=((t*.8+i/3)%1);
+      g.strokeStyle=`rgba(255,210,62,${(1-ph)*.7})`; g.lineWidth=2.5;
+      g.beginPath(); g.ellipse(cx,cy+26-ph*54,30*(1-ph*.4),9*(1-ph*.4),0,0,TAU); g.stroke(); } } }
+];
+
+/* ======================= 4 · TRANSFORMATION ======================= */
+const TRANSFO = [
+  { id:'A', nom:'FLASH BLANC', desc:'L\'écran blanchit une demi-seconde, il réapparaît transformé. Brutal et net, zéro attente.',
+    f(g,cx,cy,t){ const k=(t%2)/2; g.fillStyle=`rgba(255,255,255,${Math.max(0,1-k*3)})`;
+      g.fillRect(0,0,300,150); } },
+
+  { id:'B', nom:'COLONNE DE CHAKRA', desc:'Une colonne de lumière jaillit du sol et l\'engloutit. Le plus spectaculaire, dure une bonne seconde.',
+    f(g,cx,cy,t){ const k=(t%2)/2; const l=30+Math.sin(t*20)*5;
+      const d=g.createLinearGradient(cx-l,0,cx+l,0);
+      d.addColorStop(0,'rgba(255,210,62,0)'); d.addColorStop(.5,`rgba(255,240,190,${.85-k*.4})`);
+      d.addColorStop(1,'rgba(255,210,62,0)');
+      g.fillStyle=d; g.fillRect(cx-l,0,l*2,150); } },
+
+  { id:'C', nom:'ONDE DE CHOC', desc:'Un anneau qui se propage et repousse tout. On sent la puissance sans masquer le terrain.',
+    f(g,cx,cy,t){ for(let i=0;i<3;i++){ const ph=((t*.9+i/3)%1);
+      g.strokeStyle=`rgba(255,226,140,${(1-ph)*.9})`; g.lineWidth=5*(1-ph)+1;
+      g.beginPath(); g.arc(cx,cy,ph*80,0,TAU); g.stroke(); } } },
+
+  { id:'D', nom:'ORBES QUI CONVERGENT', desc:'Les six orbes arrivent des bords et se mettent en place autour de lui. La transformation se raconte toute seule.',
+    f(g,cx,cy,t){ const k=Math.min(1,(t%2)/1.2);
+      for(let i=0;i<6;i++){ const a=i*TAU/6;
+        const d0=120*(1-k)+34*k;
+        orbe(g,cx+Math.cos(a)*d0,cy+Math.sin(a)*d0,6); } } },
+
+  { id:'E', nom:'EMBRASEMENT', desc:'Le chakra le recouvre de bas en haut, comme une flamme qui prend. Progressif, très lisible.',
+    f(g,cx,cy,t){ const k=(t%2)/2;
+      g.save(); g.beginPath(); g.rect(cx-30,cy+40-k*90,60,90); g.clip();
+      const d=g.createLinearGradient(0,cy+40,0,cy-50);
+      d.addColorStop(0,'rgba(255,140,26,.85)'); d.addColorStop(1,'rgba(255,226,140,.2)');
+      g.fillStyle=d; g.fillRect(cx-30,cy-50,60,90);
+      g.restore();
+      g.strokeStyle='rgba(255,240,190,.9)'; g.lineWidth=2;
+      g.beginPath(); g.moveTo(cx-30,cy+40-k*90); g.lineTo(cx+30,cy+40-k*90); g.stroke(); } }
+];
+
+/* ======================= 5 · PISTOLET DE LEON ======================= */
+const PISTOLET = [
+  { id:'A', nom:'BRAS TENDU', desc:'Il tend le bras devant lui, pistolet à l\'horizontale. La lecture la plus simple : on voit tout de suite qu\'il vise.',
+    f(g,cx,cy,t){ const rec=Math.max(0,Math.sin(t*6))*3;
+      arme(g,cx+16-rec,cy-2,0); etincelle(g,cx+30-rec,cy-2,t); } },
+
+  { id:'B', nom:'DEUX MAINS', desc:'Prise à deux mains, coudes serrés, comme un tir de précision. Plus posé, plus « tactique ».',
+    f(g,cx,cy,t){ const rec=Math.max(0,Math.sin(t*6))*3;
+      g.fillStyle='#f0c090'; g.fillRect(cx+6,cy+2,8,4);
+      arme(g,cx+16-rec,cy-2,0); etincelle(g,cx+30-rec,cy-2,t); } },
+
+  { id:'C', nom:'BRAS LEVÉ', desc:'Il lève le bras en l\'air avant d\'abaisser le canon. Théâtral, donne un temps d\'anticipation avant le tir.',
+    f(g,cx,cy,t){ const a=-Math.PI/3+Math.min(1,(t%2))*Math.PI/3;
+      g.save(); g.translate(cx+8,cy-6); g.rotate(a);
+      arme(g,10,0,0); g.restore();
+      if((t%2)>.9) etincelle(g,cx+30,cy-4,t); } },
+
+  { id:'D', nom:'ÉVENTAIL', desc:'Le canon balaie de haut en bas au fil des trois tirs, dans l\'axe de l\'éventail de disques. Le geste raconte la mécanique.',
+    f(g,cx,cy,t){ const p=(t*2)%3, a=(p-1)*.35;
+      g.save(); g.translate(cx+8,cy-2); g.rotate(a);
+      arme(g,10,0,0); etincelle(g,26,0,t); g.restore(); } },
+
+  { id:'E', nom:'DÉGAINÉ', desc:'On le voit sortir l\'arme de sa ceinture puis la ranger après. Le plus complet, aussi le plus long à jouer.',
+    f(g,cx,cy,t){ const k=(t%3)/3;
+      const y=k<.25?cy+16-(k/.25)*18:cy-2;
+      const a=k<.25?(1-k/.25)*1.2:0;
+      g.save(); g.translate(cx+10,y); g.rotate(a); arme(g,8,0,0); g.restore();
+      if(k>.35&&k<.8) etincelle(g,cx+30,cy-2,t); } }
+];
+function arme(g,x,y,a){
+  g.save(); g.translate(x,y); g.rotate(a);
+  g.fillStyle='#20242e'; g.fillRect(-10,-3,22,6);      // corps
+  g.fillRect(-8,2,5,9);                                 // crosse
+  g.fillStyle='#3a4050'; g.fillRect(6,-2,8,3);          // canon
+  g.fillStyle='#8b94a6'; g.fillRect(-2,-4,3,1.5);       // hausse
+  g.restore();
+}
+function etincelle(g,x,y,t){
+  if(Math.sin(t*6)<.4) return;
+  g.fillStyle='rgba(255,226,140,.95)';
+  for(let i=0;i<5;i++){ const a=(i-2)*.4;
+    g.fillRect(x+Math.cos(a)*7,y+Math.sin(a)*7,3,2); }
+  const d=g.createRadialGradient(x,y,1,x,y,12);
+  d.addColorStop(0,'rgba(255,240,190,.9)'); d.addColorStop(1,'rgba(255,180,40,0)');
+  g.fillStyle=d; g.beginPath(); g.arc(x,y,12,0,TAU); g.fill();
+}
+
+/* ======================= MONTAGE ======================= */
+const bad = [];
+function poser(cible, liste, mode) {
+  const hote = document.getElementById(cible);
+  const rendus = [];
+  for (const v of liste) {
+    const card = document.createElement('div'); card.className = 'card';
+    const lbl = document.createElement('div'); lbl.className = 'lbl';
+    lbl.innerHTML = '<b>' + v.id + ' · ' + v.nom + '</b>' + v.desc;
+    const cv = document.createElement('canvas');
+    cv.width = 300; cv.height = 150;
+    card.appendChild(lbl); card.appendChild(cv);
+    hote.appendChild(card);
+    if (v.rows) {
+      v.rows.forEach((r, i) => { if (r.length !== 16) bad.push(v.id + '[' + i + '] largeur ' + r.length); });
+      if (v.rows.length !== 20) bad.push(v.id + ' a ' + v.rows.length + ' lignes');
+    }
+    rendus.push({ ctx: cv.getContext('2d'), v, mode });
+  }
+  return rendus;
+}
+const tout = [
+  ...poser('tenue', TENUE, 'sprite'),
+  ...poser('orbes', ORBES, 'orbe'),
+  ...poser('aura', AURA, 'effet'),
+  ...poser('transfo', TRANSFO, 'effet'),
+  ...poser('pistolet', PISTOLET, 'leon')
+];
+
+const boite = document.getElementById('errs');
+boite.textContent = bad.length ? bad.join('\n') : 'OK — tous les sprites tiennent le gabarit 16 × 20 du jeu.';
+if (bad.length) boite.className = 'bad';
+
+const spriteBase = bati([...N_HEAD, ...N_IDLE_B], PAL_N, 4);
+const spriteLeon = bati([...L_HEAD, ...L_THROW_B], PAL_L, 4);
+
+(function boucle(ms) {
+  const t = ms / 1000;
+  for (const r of tout) {
+    const g = r.ctx;
+    g.clearRect(0, 0, 300, 150);
+    g.fillStyle = '#101a2e'; g.fillRect(0, 0, 300, 150);
+    g.imageSmoothingEnabled = false;
+    const cx = 150, cy = 75;
+    if (r.mode === 'sprite') {
+      const s = bati(r.v.rows, r.v.pal, 5);
+      g.drawImage(s, cx - s.width / 2, cy - s.height / 2);
+    } else if (r.mode === 'leon') {
+      g.drawImage(spriteLeon, cx - spriteLeon.width / 2 - 10, cy - spriteLeon.height / 2);
+      r.v.f(g, cx - 10, cy, t);
+    } else if (r.mode === 'orbe') {
+      // Les orbes gravitent autour de lui : celles de devant doivent le
+      // recouvrir, sinon elles semblent collées au décor.
+      g.drawImage(spriteBase, cx - spriteBase.width / 2, cy - spriteBase.height / 2);
+      r.v.f(g, cx, cy, t);
+    } else {
+      r.v.f(g, cx, cy, t);
+      g.drawImage(spriteBase, cx - spriteBase.width / 2, cy - spriteBase.height / 2);
+    }
+  }
+  requestAnimationFrame(boucle);
+})(0);
+</script>
+</body>
+</html>
