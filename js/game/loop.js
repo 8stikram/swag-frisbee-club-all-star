@@ -40,7 +40,11 @@ export function update(dt) {
     if (!p) continue;
     if (p.viseT > 0) p.viseT = Math.max(0, p.viseT - wdt);
     if (!(p.sixT > 0)) continue;
-    p.sixT = Math.max(0, p.sixT - wdt);
+    // Le compte à rebours ne tourne que balle en jeu. Sinon un but, son replay
+    // et la remise en jeu dévoraient la moitié de la forme sans qu'on ait pu
+    // s'en servir — le joueur l'a gagnée pour jouer avec, pas pour la regarder
+    // s'écouler pendant un ralenti.
+    if (G.state === 'play' || G.state === 'serve') p.sixT = Math.max(0, p.sixT - wdt);
     p.sixA = (p.sixA || 0) + wdt * SIX_ORBES.vitesse;
     // Braises qui s'élèvent autour de lui (variante « particules »).
     if (Math.random() < .55) G.particles.push({

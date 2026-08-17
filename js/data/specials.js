@@ -47,9 +47,10 @@ BELL_SPRITE.src = 'assets/img/cloche-ulti.png';
 // et les orbes restent dorées — le chakra ne vire au bleu qu'au moment du tir.
 export const RASENGAN = '#5ad2ff';
 
-// Durée de la tenue Six Paths après le cast. Assez long pour couvrir l'échange
-// qui suit le tir, assez court pour rester un moment et pas un état.
-export const SIX_DUREE = 4.2;
+// Durée de la tenue Six Paths après le cast. À 4,2 s elle ne couvrait guère
+// que le tir d'ultime et un échange ; à 8 s elle laisse le temps de plusieurs
+// Rasengan, ce qui en fait un vrai passage de puissance et plus un éclair.
+export const SIX_DUREE = 8;
 // Les six orbes : rayon de l'anneau, hauteur au-dessus des pieds, et vitesse de
 // rotation. Volontairement lente — à pleine vitesse elles tiraient l'œil hors
 // du disque, qui est la seule chose que le joueur doit suivre.
