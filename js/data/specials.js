@@ -86,10 +86,11 @@ export const SPECIALS = {
       // L'écran blanchit d'un coup : quand il redevient lisible, Naruto a
       // changé de tenue. La transformation ne se regarde pas, elle se constate
       // — c'est ce qui la rend brutale plutôt que longue.
-      // 2.9 n'est pas arbitraire : le flash s'efface à 2.2 par seconde et sature
-      // le blanc au-delà de 1.82, ce qui donne une demi-seconde d'écran
-      // entièrement blanc, puis un fondu qui s'éteint pile avec la cinématique.
-      G.flash = 2.9;
+      // Volontairement en dessous du seuil de saturation (1.82) : l'écran
+      // s'éclaircit fortement sans jamais devenir entièrement blanc, et
+      // s'éteint en six dixièmes. On perd le voile aveuglant, on garde la
+      // bascule — c'est encore le flash qui cache le changement de tenue.
+      G.flash = 1.3;
       // Tenue dorée et six orbes, le temps que l'échange se joue.
       p.sixT = SIX_DUREE; p.sixA = 0;
       sfx('sixpaths'); comment('LES SIX CHEMINS !!');

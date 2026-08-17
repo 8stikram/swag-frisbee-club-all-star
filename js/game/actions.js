@@ -35,6 +35,10 @@ export function setupServe(side) {
 
 export function throwDisc(p, dir, speed, kind = 'normal') {
   const d = G.disc;
+  // En mode Six Paths, Naruto ne lance plus de disque : il lance des Rasengan.
+  // Tous les tirs passant par ici, il suffit de les requalifier au seuil — le
+  // tir de l'ultime, lui, arrive déjà étiqueté et n'est pas concerné.
+  if (kind === 'normal' && p.sixT > 0) kind = 'kurama';
   let bonus = 1;
   if (G.lungeBonus && G.lungeBonusTimer > 0 && p.human && !p.holding) {
     bonus = 1.6; G.lungeBonus = false; G.lungeBonusTimer = 0;
