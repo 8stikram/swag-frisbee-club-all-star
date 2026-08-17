@@ -539,7 +539,35 @@ function cycleMusic(d) {
 function ouvrirApprentissage() {
   const p = $('tutoProg');
   if (p) p.textContent = nbChapitresFaits() + ' / ' + CHAPITRES.length + ' chapitres';
+  majMusiqueCarte();
   showScreen('learn');
+}
+
+// Choix de la musique de l'entraînement, posé sur sa carte : on la règle avant
+// d'entrer. Les flèches ne doivent pas lancer la séance, d'où l'arrêt de
+// propagation — elles sont à l'intérieur du bouton de la carte.
+let musTrIdx = 0;
+function majMusiqueCarte() {
+  const el = $('musTrNom');
+  if (el) el.textContent = MUSIC_CHOICES[musTrIdx].name;
+}
+(function cablerMusiqueCarte() {
+  const prev = $('musTrPrev'), next = $('musTrNext'), boite = $('cardMusique');
+  if (boite) boite.addEventListener('click', e => e.stopPropagation());
+  const bouger = d => {
+    musTrIdx = (musTrIdx + d + MUSIC_CHOICES.length) % MUSIC_CHOICES.length;
+    sfx('move'); majMusiqueCarte();
+  };
+  if (prev) prev.addEventListener('click', e => { e.stopPropagation(); bouger(-1); });
+  if (next) next.addEventListener('click', e => { e.stopPropagation(); bouger(1); });
+})();
+
+// La piste est passée à l'entraînement au lancement plutôt que lue depuis
+// training.js : cela éviterait un import croisé entre les deux modules.
+function jouerMusiqueEntrainement() {
+  const id = MUSIC_CHOICES[musTrIdx].id;
+  if (!id) { stopTrack(); return; }
+  if (getTrackId() !== id) playTrack(id);
 }
 
 // Les chapitres se présentent dans l'ordre conseillé, mais rien n'oblige à le
@@ -596,7 +624,7 @@ export function doAct(act) {
     case 'j2j': sfx('select'); modeJ2J = true; musiqueDeMenu(); resetSelectTurn(); showScreen('select'); refreshSelect(); break;
     case 'options': sfx('select'); musiqueDeMenu(); showScreen('options'); refreshKeysUI(); break;
     case 'learn': sfx('select'); musiqueDeMenu(); ouvrirApprentissage(); break;
-    case 'training': sfx('select'); lancerEntrainement(); break;
+    case 'training': sfx('select'); jouerMusiqueEntrainement(); lancerEntrainement(); break;
     case 'tuto': sfx('select'); musiqueDeMenu(); ouvrirChapitres(); break;
     // Refuser le tutoriel au premier lancement ne doit se demander qu'une fois.
     case 'skipTuto': sfx('select'); marquerTutoPropose(); showScreen('title'); break;

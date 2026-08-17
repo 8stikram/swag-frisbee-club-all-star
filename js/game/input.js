@@ -15,7 +15,7 @@ import { isCapturing } from '../ui/keybind-ui.js';
 import { doAct, pauseGame, selectScreenKey } from '../ui/menus.js';
 import {
   enEntrainement, tenterPriseDummy, lacherDummy, dummyEnDeplacement,
-  resetEntrainement, quitterEntrainement
+  resetEntrainement, quitterEntrainement, demanderSortie, sortieOuverte, annulerSortie
 } from '../ui/training.js';
 import { enTutoriel, quitterTutoriel } from './../ui/tutoriel.js';
 
@@ -116,11 +116,17 @@ window.addEventListener('keydown', e => {
   }
   // Entraînement : R remet tout en place instantanément, Échap rend la main au
   // sous-menu plutôt que d'ouvrir la pause d'un match qui n'existe pas.
+  // Une demande de sortie est ouverte : Échap la referme au lieu d'en ouvrir
+  // une seconde, et plus rien d'autre ne passe.
+  if (sortieOuverte()) {
+    if (e.code === getKey('pause')) annulerSortie();
+    return;
+  }
   if (enEntrainement()) {
     if (e.code === 'KeyR') { resetEntrainement(); return; }
-    if (e.code === getKey('pause')) { quitterEntrainement(); return; }
+    if (e.code === getKey('pause')) { demanderSortie('training', quitterEntrainement); return; }
   }
-  if (enTutoriel() && e.code === getKey('pause')) { quitterTutoriel(); return; }
+  if (enTutoriel() && e.code === getKey('pause')) { demanderSortie('tuto', quitterTutoriel); return; }
   if (e.code === getKey('pause') || e.code === 'KeyP') { if (G.state !== 'over' && !G.demo && !G.adminMode) pauseGame(); return; }
   const p = G.p1;
   if (!p || !p.human || p.stun > 0) return;
@@ -165,9 +171,14 @@ window.addEventListener('keyup', e => {
 })();
 
 // Survol souris des boutons de menu : synchronise la sélection clavier.
-document.querySelectorAll('.mbtn').forEach(b => {
+// Tout élément porteur d'un data-act déclenche l'action correspondante : les
+// boutons de menu, mais aussi les grandes cartes de l'écran d'apprentissage,
+// qui ne sont pas des .mbtn.
+document.querySelectorAll('[data-act]').forEach(b => {
   b.addEventListener('mouseenter', () => {
-    if (curScreen) { setSelIdx(curScreen, menuButtons(curScreen).indexOf(b)); }
+    if (curScreen && b.classList.contains('mbtn')) {
+      setSelIdx(curScreen, menuButtons(curScreen).indexOf(b));
+    }
   });
   b.addEventListener('click', () => doAct(b.dataset.act));
 });

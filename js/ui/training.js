@@ -369,6 +369,36 @@ function demonterHud() {
   if (bascule) bascule.addEventListener('click', () => { basculerPanneau(!options.panneauOuvert); sfx('move'); });
 })();
 
+// --- Confirmation de sortie -------------------------------------------------
+// Échap se presse par réflexe : sans garde-fou, on quitte un chapitre à peine
+// commencé sans l'avoir voulu. Partagée avec le tutoriel.
+let sortieEnCours = null;
+
+export function demanderSortie(quoi, auRevoir) {
+  const b = $('quitBox');
+  if (!b) { auRevoir(); return; }
+  sortieEnCours = auRevoir;
+  const titre = $('quitTitre'), texte = $('quitTexte');
+  if (titre) titre.textContent = quoi === 'tuto' ? 'QUITTER LE CHAPITRE ?' : 'QUITTER L\'ENTRAÎNEMENT ?';
+  if (texte) texte.textContent = quoi === 'tuto'
+    ? 'Ta progression sur ce chapitre sera perdue.'
+    : 'Tu reviendras au menu Apprendre à jouer.';
+  b.classList.remove('hidden');
+  sfx('move');
+}
+export function sortieOuverte() { return !!sortieEnCours; }
+export function annulerSortie() {
+  sortieEnCours = null;
+  const b = $('quitBox'); if (b) b.classList.add('hidden');
+}
+(function cablerSortie() {
+  const oui = $('quitOui'), non = $('quitNon');
+  if (oui) oui.addEventListener('click', () => {
+    const f = sortieEnCours; annulerSortie(); sfx('select'); if (f) f();
+  });
+  if (non) non.addEventListener('click', () => { annulerSortie(); sfx('select'); });
+})();
+
 export function basculerPanneau(ouvert) {
   options.panneauOuvert = ouvert;
   const panneau = $('trPanel'), bascule = $('trToggle');

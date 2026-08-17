@@ -102,6 +102,19 @@
     <div class="trInputs" id="trInputs"></div>
   </div>
 
+  <!-- Confirmation de sortie, partagée par l'entraînement et le tutoriel :
+       Échap est trop facile à presser par réflexe pour tout perdre d'un coup. -->
+  <div class="quitBox hidden" id="quitBox">
+    <div class="quitCard">
+      <b id="quitTitre">QUITTER L'ENTRAÎNEMENT ?</b>
+      <p id="quitTexte">Tu reviendras au menu Apprendre à jouer.</p>
+      <div class="quitBtns">
+        <button class="mbtn" id="quitOui">QUITTER</button>
+        <button class="mbtn c-learn" id="quitNon">CONTINUER</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ SURCOUCHE DU TUTORIEL ============ -->
   <div class="tuHud hidden" id="tuHud">
     <aside class="tuPanel" id="tuPanel">
@@ -155,7 +168,11 @@
         <span class="learnIco">🎯</span>
         <b>ENTRAÎNEMENT LIBRE</b>
         <em>Un partenaire réglable, aucun score : le terrain pour s'exercer.</em>
-        <span class="learnProg">Sans limite de temps</span>
+        <span class="cardMusique" id="cardMusique">
+          <button id="musTrPrev" title="Musique précédente">◀</button>
+          <span id="musTrNom">—</span>
+          <button id="musTrNext" title="Musique suivante">▶</button>
+        </span>
       </button>
     </div>
   </div>
