@@ -1180,9 +1180,12 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   font-size:clamp(10px,1.7cqh,15px);color:var(--ink);
 }
 
-/* Butin de fin, façon palier de passe de combat. */
+/* Butin de fin, façon palier de passe de combat.
+   z-index 26 : il s'affiche par-dessus l'écran d'apprentissage, où le tutoriel
+   nous ramène juste avant de l'annoncer. À égalité avec .screen (20) il passait
+   dessous, et la récompense — tout l'intérêt d'avoir fini — restait invisible. */
 .tuLoot{
-  position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  position:absolute;inset:0;z-index:26;display:flex;align-items:center;justify-content:center;
   background:rgba(6,8,14,.72);font-family:'DotGothic16',monospace;
 }
 .tuLoot.hidden{display:none}
@@ -1284,9 +1287,12 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));
 }
 
-/* ================= PANNEAU DES SKINS ================= */
+/* ================= PANNEAU DES SKINS =================
+   z-index 24 : au-dessus des écrans (.screen est à 20), sinon l'écran de
+   sélection passe par-dessus le panneau et avale les clics sur les tuiles.
+   En dessous du filtre CRT (30), qui doit rester la dernière couche. */
 .skinsPanel{
-  position:absolute;inset:0;z-index:14;display:flex;align-items:center;justify-content:center;
+  position:absolute;inset:0;z-index:24;display:flex;align-items:center;justify-content:center;
   background:rgba(6,8,14,.66);font-family:'DotGothic16',monospace;
 }
 .skinsPanel.hidden{display:none}
@@ -1328,7 +1334,7 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 
 /* Bandeau de message : condition rappelée, ou déblocage annoncé. */
 .skinsMsg{
-  position:absolute;left:50%;bottom:6cqh;transform:translateX(-50%);z-index:16;
+  position:absolute;left:50%;bottom:6cqh;transform:translateX(-50%);z-index:25;
   font-family:'DotGothic16',monospace;font-size:clamp(8px,1.5cqh,13px);
   background:rgba(16,20,28,.95);color:#e8f0ff;
   border:3px solid rgba(255,255,255,.2);border-radius:10px;
