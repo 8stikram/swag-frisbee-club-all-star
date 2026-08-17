@@ -157,6 +157,18 @@ export function updateTutoriel(dt) {
     }
   }
 
+  // Un but pendant un exercice ne compte pas : on replace simplement le décor
+  // de l'étape en cours, sans interrompre ce que le joueur est en train
+  // d'apprendre.
+  if (etat.demandeReset) {
+    etat.delaiReset = (etat.delaiReset || 0) + dt;
+    if (etat.delaiReset > .5) {
+      etat.delaiReset = 0; etat.demandeReset = false;
+      G.state = 'play';
+      preparerDecor(etapeCourante());
+    }
+  }
+
   pilotagePartenaire(dt);
 
   if (etat.phase === 'demo') {

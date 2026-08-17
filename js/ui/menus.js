@@ -543,23 +543,21 @@ function ouvrirApprentissage() {
   showScreen('learn');
 }
 
-// Choix de la musique de l'entraînement, posé sur sa carte : on la règle avant
-// d'entrer. Les flèches ne doivent pas lancer la séance, d'où l'arrêt de
-// propagation — elles sont à l'intérieur du bouton de la carte.
+// Choix de la musique de l'entraînement, sous les deux cartes : elle vaut pour
+// la séance et se règle avant d'entrer.
 let musTrIdx = 0;
 function majMusiqueCarte() {
   const el = $('musTrNom');
   if (el) el.textContent = MUSIC_CHOICES[musTrIdx].name;
 }
 (function cablerMusiqueCarte() {
-  const prev = $('musTrPrev'), next = $('musTrNext'), boite = $('cardMusique');
-  if (boite) boite.addEventListener('click', e => e.stopPropagation());
   const bouger = d => {
     musTrIdx = (musTrIdx + d + MUSIC_CHOICES.length) % MUSIC_CHOICES.length;
     sfx('move'); majMusiqueCarte();
   };
-  if (prev) prev.addEventListener('click', e => { e.stopPropagation(); bouger(-1); });
-  if (next) next.addEventListener('click', e => { e.stopPropagation(); bouger(1); });
+  const prev = $('musTrPrev'), next = $('musTrNext');
+  if (prev) prev.addEventListener('click', () => bouger(-1));
+  if (next) next.addEventListener('click', () => bouger(1));
 })();
 
 // La piste est passée à l'entraînement au lancement plutôt que lue depuis

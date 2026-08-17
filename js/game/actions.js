@@ -208,6 +208,8 @@ export function dropDisc(p) {
 }
 
 export function ownFoul(p) {
+  // Aucune sanction pendant l'apprentissage : on y vient pour essayer.
+  if (G.training || G.tuto) { setupServe(p.foe.side); return; }
   p.score = Math.max(0, p.score - 1);
   G.shake = 10; sfx('whistle');
   addPopup('FAUTE ! −1 POINT', '#ff5340', 20, 1.5);
@@ -217,13 +219,16 @@ export function ownFoul(p) {
 }
 
 export function scoreGoal(scorer, y) {
-  // À l'entraînement, un but n'est qu'un repère : on le signale brièvement et
-  // on remet en place, sans compteur ni mise en scène. Il n'y a rien à gagner.
-  if (G.training) {
+  // À l'entraînement comme au tutoriel, un but n'est qu'un repère : on le
+  // signale brièvement et on remet en place, sans compteur ni mise en scène.
+  // Il n'y a rien à gagner ici, et surtout rien à perdre : sans cette garde le
+  // partenaire finissait par remporter la partie en plein apprentissage.
+  if (G.training || G.tuto) {
     addPopup('BUT !', '#ffd23e', 20, .55, y);
     sfx('goal');
     burst(scorer.side === 1 ? COURT.right : COURT.left, y, '#ffd23e', 20);
-    G.training.demandeReset = true;
+    if (G.training) G.training.demandeReset = true;
+    else G.tuto.demandeReset = true;
     return;
   }
   const pts = zoneByY(y);

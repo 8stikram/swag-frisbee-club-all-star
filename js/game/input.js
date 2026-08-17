@@ -112,6 +112,11 @@ window.addEventListener('keydown', e => {
       else if (e.code === 'Enter' || e.code === 'Space') { sfx('select'); activateMenu(curScreen); }
       else if (e.code === getKey('pause') && curScreen !== 'title') { if (curScreen === 'pause') doAct('resume'); else doAct('back'); }
     } else if (curScreen === 'select') { selectScreenKey(e.code); }
+    // Écrans d'apprentissage : Échap remonte d'un cran. Le sous-menu et la
+    // proposition de départ ramènent au titre, la liste des chapitres au
+    // sous-menu — sans quoi on s'y retrouvait coincé au clavier.
+    else if (curScreen === 'chap' && e.code === getKey('pause')) doAct('learn');
+    else if ((curScreen === 'learn' || curScreen === 'firstrun') && e.code === getKey('pause')) doAct('back');
     return;
   }
   // Entraînement : R remet tout en place instantanément, Échap rend la main au

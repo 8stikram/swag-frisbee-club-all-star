@@ -1247,17 +1247,18 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .quitBtns{display:flex;gap:1.2cqw;justify-content:center}
 .quitBtns .mbtn{justify-content:center}
 
-/* Choix de la musique sur la carte de l'entraînement, avant de lancer. */
-.cardMusique{
-  display:flex;align-items:center;gap:.5cqw;margin-top:.4cqh;
-  background:rgba(0,0,0,.06);border:2px solid rgba(0,0,0,.18);border-radius:999px;
-  padding:.3cqh .5cqw;
+/* Choix de la musique, posé sous les deux cartes : il vaut pour la séance, pas
+   pour l'une des options. Mêmes flèches fantômes que le reste du jeu. */
+.learnMusique{
+  position:absolute;left:50%;bottom:5cqh;transform:translateX(-50%);z-index:6;
+  display:flex;flex-direction:column;align-items:center;gap:.5cqh;
 }
-.cardMusique button{
-  background:transparent;border:0;cursor:pointer;color:var(--ink);
-  font-size:clamp(9px,1.5cqh,14px);padding:0 .3cqw;line-height:1;
-}
-.cardMusique span{
+.learnMusique .cap{
   font-family:'DotGothic16',monospace;font-size:clamp(7px,1.2cqh,11px);
-  color:#5b6478;min-width:11ch;text-align:center;
+  letter-spacing:.14em;color:#5b6478;
+}
+.learnMusique .discrow{display:flex;align-items:center;gap:1cqw}
+.learnMusique .discname{
+  font-family:'DotGothic16',monospace;font-size:clamp(8px,1.5cqh,13px);
+  color:var(--ink);min-width:16ch;text-align:center;
 }
