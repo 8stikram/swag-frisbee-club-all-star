@@ -1,6 +1,7 @@
 import { $ } from '../core/dom.js';
 import { CHARS, ROSTER } from '../data/characters.js';
 import { initAudio, sfx } from '../audio/audio.js';
+import { proposerTutoSiPremiereFois } from './menus.js';
 
 // ---------------------------------------------------------------------------
 // Séquence d'ouverture, jouée une fois au chargement. Chaque plan se résume à
@@ -102,6 +103,9 @@ function terminer() {
   timers.forEach(clearTimeout); timers = [];
   scr.className = 'screen scr-intro done';
   ouvrirMenu();
+  // Tout premier lancement : on propose le tutoriel une seule fois, une fois
+  // l'introduction passée pour ne pas lui couper la parole.
+  proposerTutoSiPremiereFois();
 }
 
 // Le clic sur le personnage (plan 5) enchaîne sur son glissement à droite ;

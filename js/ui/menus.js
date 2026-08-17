@@ -11,6 +11,8 @@ import { sfx, playTrack, stopTrack, duckMusic } from '../audio/audio.js';
 import { addPopup } from '../game/fx.js';
 import { requestLock } from '../game/input.js';
 import { refreshKeysUI } from './keybind-ui.js';
+import { CHAPITRES, nbChapitresFaits, tutoDejaPropose, marquerTutoPropose } from '../data/apprentissage.js';
+import { lancerEntrainement } from './training.js';
 
 let selCharPlayer = 'naruto', selCharCPU = 'leon', diffIdx = 1;
 let modeJ2J = false;
@@ -358,7 +360,9 @@ function resolveSkin() {
 }
 
 /* ---------- sélection du terrain ---------- */
-const MAP_CHOICES = [...MAPS, { id: '__random', name: 'ALÉATOIRE' }];
+// La salle d'entraînement est un décor de travail, pas un terrain de match :
+// elle est écartée de la sélection.
+const MAP_CHOICES = [...MAPS.filter(m => !m.horsSelection), { id: '__random', name: 'ALÉATOIRE' }];
 let mapIdx = 0;
 
 // Mini-rendu proportionnel du vrai terrain (données de data/maps.js).
@@ -499,6 +503,22 @@ function cycleMusic(d) {
   sfx('move'); renderMusic();
 }
 
+/* ---------- apprentissage ---------- */
+function ouvrirApprentissage() {
+  const p = $('tutoProg');
+  if (p) p.textContent = nbChapitresFaits() + ' / ' + CHAPITRES.length + ' chapitres';
+  showScreen('learn');
+}
+
+// Au tout premier lancement, on propose le tutoriel une seule fois. Appelé par
+// l'introduction quand elle rend la main, pour ne pas passer devant elle.
+export function proposerTutoSiPremiereFois() {
+  if (tutoDejaPropose()) return false;
+  marquerTutoPropose();
+  showScreen('firstrun');
+  return true;
+}
+
 /* ---------- navigation ---------- */
 export function pauseGame() { Mouse.down = false; duckMusic(true); showScreen('pause'); }
 
@@ -517,6 +537,13 @@ export function doAct(act) {
     case 'play': sfx('select'); modeJ2J = false; musiqueDeMenu(); resetSelectTurn(); showScreen('select'); refreshSelect(); break;
     case 'j2j': sfx('select'); modeJ2J = true; musiqueDeMenu(); resetSelectTurn(); showScreen('select'); refreshSelect(); break;
     case 'options': sfx('select'); musiqueDeMenu(); showScreen('options'); refreshKeysUI(); break;
+    case 'learn': sfx('select'); musiqueDeMenu(); ouvrirApprentissage(); break;
+    case 'training': sfx('select'); lancerEntrainement(); break;
+    // Le tutoriel arrive dans un second temps ; en attendant on le dit au lieu
+    // de laisser le bouton ne rien faire.
+    case 'tuto': sfx('deny'); addPopup('TUTORIEL BIENTÔT DISPONIBLE', '#8f6fc7', 14, 1.4); break;
+    // Refuser le tutoriel au premier lancement ne doit se demander qu'une fois.
+    case 'skipTuto': sfx('select'); marquerTutoPropose(); showScreen('title'); break;
     case 'back': sfx('select'); musiqueDeMenu(); showScreen('title'); break;
     case 'fight': sfx('select'); showScreen('maps'); refreshMaps(); break;
     case 'startMatch': sfx('select'); startMatch(); break;

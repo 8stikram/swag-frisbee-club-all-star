@@ -10,6 +10,7 @@
   --ink:#111318;
   --yellow:#f5e63d; --green:#5df08a; --blue:#2f6bff; --red:#e5384f; --gray:#9aa0ac;
   --pastel:#aecbff;
+  --learn:#d9b8f5; --learn-deep:#8f6fc7;   /* rose-violet pastel : apprentissage */
   --txt:#eaf2ff; --txt-dim:#8fa3cc;
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -294,6 +295,9 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
 .mbtn.c-green{background:var(--green)}
+/* Rose-violet pastel réservé à l'apprentissage : ce bouton ne lance pas un
+   match, sa couleur le dit avant même qu'on lise. */
+.mbtn.c-learn{background:var(--learn)}
 .mbtn.c-yellow{background:var(--yellow)}
 /* Survol souris et sélection clavier partagent le même rendu (inversion noire).
    La classe .sel n'est posée qu'après une vraie navigation au clavier, donc
@@ -919,3 +923,152 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 /* Plan 8 : le logo réapparaît en fondu à sa place définitive. */
 .scr-title .logo.fadeIn{animation:logoIn .7s ease-out backwards}
 @keyframes logoIn{from{opacity:0;transform:translateY(-8%)}to{opacity:1;transform:translateY(0)}}
+
+/* ================= APPRENTISSAGE (tutoriel + entraînement) =================
+   Ces écrans ont leur propre typographie : DotGothic16 pour le corps, Russo One
+   pour les titres. Elle ne déborde pas sur le reste du jeu — l'apprentissage
+   est un espace à part, et le changer de voix aide à le reconnaître. */
+.bg-learn{
+  background:
+    radial-gradient(90cqh 70cqh at 50% 36%, #f0e2ff 0%, #d9c8f2 46%, #bfa9dd 100%);
+}
+.scr-learn .titlebar,.scr-firstrun .titlebar{background:var(--learn-deep)}
+
+.learnWrap{
+  position:absolute;inset:0;z-index:5;
+  display:flex;align-items:center;justify-content:center;gap:3cqw;
+  padding:0 4cqw;
+}
+.learnCard{
+  flex:1 1 0;max-width:32cqw;min-height:38cqh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4cqh;
+  background:rgba(255,255,255,.94);border:4px solid var(--ink);border-radius:18px;
+  box-shadow:7px 7px 0 var(--ink);cursor:pointer;padding:2.6cqh 2cqw;text-align:center;
+  transition:transform .12s,box-shadow .12s;
+  /* Glissement d'entrée, décalé entre les deux cartes. */
+  animation:learnSlide .34s cubic-bezier(.2,.9,.3,1.2) backwards;
+}
+.learnWrap .learnCard:nth-child(2){animation-delay:.08s}
+.learnCard:hover{transform:translate(-3px,-3px);box-shadow:10px 10px 0 var(--ink)}
+.learnCard:active{transform:translate(2px,2px);box-shadow:3px 3px 0 var(--ink)}
+.learnIco{font-size:clamp(28px,6cqh,54px);line-height:1}
+.learnCard b{
+  font-family:'Russo One',sans-serif;font-size:clamp(14px,2.9cqh,26px);
+  color:var(--ink);letter-spacing:.04em;
+}
+.learnCard em{
+  font-family:'DotGothic16',monospace;font-style:normal;
+  font-size:clamp(9px,1.6cqh,14px);color:#5b6478;line-height:1.6;max-width:26ch;
+}
+.learnProg{
+  font-family:'DotGothic16',monospace;font-size:clamp(8px,1.4cqh,12px);
+  background:var(--learn);border:3px solid var(--ink);border-radius:999px;
+  padding:.5cqh 1.2cqw;color:var(--ink);
+}
+@keyframes learnSlide{from{opacity:0;transform:translateY(14%)}to{opacity:1;transform:translateY(0)}}
+
+/* Proposition du tutoriel au premier lancement. */
+.firstBox{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;
+  background:rgba(255,255,255,.96);border:4px solid var(--ink);border-radius:18px;
+  box-shadow:8px 8px 0 var(--ink);padding:3.4cqh 3.4cqw;text-align:center;
+  max-width:56cqw;animation:learnSlide .3s cubic-bezier(.2,.9,.3,1.2) backwards;
+}
+.firstBox b{
+  display:block;font-family:'Russo One',sans-serif;
+  font-size:clamp(16px,3.4cqh,30px);color:var(--ink);margin-bottom:1.4cqh;
+}
+.firstBox p{
+  font-family:'DotGothic16',monospace;font-size:clamp(9px,1.7cqh,15px);
+  color:#5b6478;line-height:1.8;margin-bottom:2.4cqh;
+}
+.firstBtns{display:flex;gap:1.6cqw;justify-content:center}
+.firstBtns .mbtn{justify-content:center}
+
+/* ================= SURCOUCHE DE L'ENTRAÎNEMENT =================
+   Elle flotte au-dessus du terrain, qui continue de tourner derrière. Tout est
+   en DotGothic16 : lisible en petit et raccord avec les écrans d'apprentissage. */
+.trHud{position:absolute;inset:0;z-index:8;pointer-events:none;
+  font-family:'DotGothic16',monospace}
+.trHud.hidden{display:none}
+.trHud button,.trHud .trPanel{pointer-events:auto}
+
+/* Historique des actions, en haut : les plus récentes en tête. */
+.trHist{
+  position:absolute;top:1.4cqh;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;gap:.35cqh;align-items:center;max-width:46cqw;
+}
+.trHist i{
+  font-style:normal;font-size:clamp(8px,1.35cqh,12px);letter-spacing:.04em;
+  background:rgba(20,24,32,.76);color:#e8f0ff;border:2px solid rgba(0,0,0,.5);
+  border-radius:6px;padding:.25cqh .8cqw;white-space:nowrap;
+  animation:trPop .22s ease-out backwards;
+}
+.trHist i.frais{background:rgba(217,184,245,.92);color:#141820}
+@keyframes trPop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Volet de réglages, escamotable par glissement. */
+.trPanel{
+  position:absolute;top:0;right:0;height:100%;width:min(23cqw,260px);
+  background:rgba(22,26,34,.94);border-left:4px solid var(--ink);
+  display:flex;flex-direction:column;
+  transition:transform .26s cubic-bezier(.2,.9,.3,1);
+}
+.trPanel.ferme{transform:translateX(100%)}
+.trToggle{
+  position:absolute;top:1.4cqh;right:min(23cqw,260px);z-index:9;
+  background:var(--learn);border:3px solid var(--ink);border-right:0;
+  border-radius:8px 0 0 8px;padding:.7cqh .9cqw;cursor:pointer;
+  font-size:clamp(11px,1.9cqh,16px);color:var(--ink);
+  transition:right .26s cubic-bezier(.2,.9,.3,1);
+}
+.trToggle.decale{right:0}
+
+.trTabs{display:flex;border-bottom:3px solid rgba(0,0,0,.5)}
+.trTab{
+  flex:1;background:transparent;border:0;border-bottom:3px solid transparent;
+  color:#8fa3cc;font-family:inherit;font-size:clamp(7px,1.2cqh,11px);
+  padding:1cqh .3cqw;cursor:pointer;letter-spacing:.03em;
+}
+.trTab.on{color:var(--learn);border-bottom-color:var(--learn);background:rgba(217,184,245,.1)}
+
+.trBody{flex:1;overflow-y:auto;padding:1.4cqh 1cqw;display:flex;flex-direction:column;gap:1.2cqh}
+.trGroupe{display:flex;flex-direction:column;gap:.6cqh}
+.trGroupe>span{font-size:clamp(7px,1.15cqh,10px);color:#8fa3cc;letter-spacing:.09em}
+.trOpt{
+  background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.14);
+  border-radius:7px;color:#e8f0ff;font-family:inherit;
+  font-size:clamp(8px,1.3cqh,12px);padding:.6cqh .7cqw;cursor:pointer;text-align:left;
+  transition:background .12s,border-color .12s;
+}
+.trOpt:hover{background:rgba(255,255,255,.12)}
+.trOpt.on{background:var(--learn);border-color:#fff;color:var(--ink)}
+.trOpt em{display:block;font-style:normal;font-size:.82em;opacity:.72;margin-top:.2cqh;line-height:1.4}
+.trPersos{display:flex;gap:.4cqw;flex-wrap:wrap}
+.trPerso{
+  width:3.4cqh;height:3.4cqh;min-width:30px;min-height:30px;padding:2px;
+  background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.14);
+  border-radius:6px;cursor:pointer;
+}
+.trPerso.on{border-color:var(--learn);background:rgba(217,184,245,.22)}
+.trPerso canvas{width:100%;height:100%;image-rendering:pixelated;display:block}
+.trFoot{
+  border-top:3px solid rgba(0,0,0,.5);padding:.9cqh 1cqw;
+  font-size:clamp(7px,1.15cqh,10px);color:#8fa3cc;text-align:center;
+}
+.trFoot kbd{
+  background:rgba(255,255,255,.14);border-radius:4px;padding:0 .3cqw;color:#e8f0ff;
+}
+
+/* Bandeau des touches pressées, en bas. */
+.trInputs{
+  position:absolute;bottom:1.4cqh;left:50%;transform:translateX(-50%);
+  display:flex;gap:.5cqw;align-items:center;
+}
+.trInputs b{
+  font-weight:400;font-size:clamp(8px,1.4cqh,13px);
+  min-width:3.2cqh;text-align:center;
+  background:rgba(20,24,32,.76);color:#5f6b82;border:2px solid rgba(0,0,0,.5);
+  border-radius:6px;padding:.35cqh .55cqw;transition:background .06s,color .06s;
+}
+.trInputs b.on{background:var(--learn);color:var(--ink);border-color:#fff}

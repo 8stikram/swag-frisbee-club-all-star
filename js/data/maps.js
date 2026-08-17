@@ -38,6 +38,34 @@ export const MAPS = [
   }
 ];
 
+// Terrain de l'entraînement : volontairement nu. Il n'a aucune ambiance, aucun
+// décor et aucune animation, pour que rien ne détourne l'œil du disque et des
+// personnages pendant qu'on apprend. `horsSelection` le tient à l'écart de
+// l'écran de choix du terrain — on n'y joue pas de match.
+MAPS.push({
+  id: 'dojo',
+  name: 'SALLE D\'ENTRAÎNEMENT',
+  horsSelection: true,
+  style: 'nu',
+  court: { left: 70, right: 890, top: 84, bottom: 560 },
+  goal: { height: 200, depth: 48 },
+  zones: [
+    { from: -100, to: -26, points: 3, color: '#9fb6d6' },
+    { from: -26, to: 26, points: 5, color: '#d9b26a' },
+    { from: 26, to: 100, points: 3, color: '#9fb6d6' }
+  ],
+  theme: {
+    bgInner: '#2b2f36',      // anthracite, neutre
+    bgOuter: '#1e2126',
+    floor: '#c9ced6',        // sol gris clair, doux pour l'œil
+    line: 'rgba(60,70,86,.55)',
+    goalFill: 'rgba(90,110,140,.16)',
+    goalStroke: '#6b7d99',
+    crowdColors: ['#9fb6d6'],
+    starColor: 'rgba(0,0,0,0)'
+  }
+});
+
 let currentMapId = MAPS[0].id;
 
 export function getMap() { return MAPS.find(m => m.id === currentMapId) || MAPS[0]; }

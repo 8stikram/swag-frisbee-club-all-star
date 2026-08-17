@@ -213,6 +213,15 @@ export function ownFoul(p) {
 }
 
 export function scoreGoal(scorer, y) {
+  // À l'entraînement, un but n'est qu'un repère : on le signale brièvement et
+  // on remet en place, sans compteur ni mise en scène. Il n'y a rien à gagner.
+  if (G.training) {
+    addPopup('BUT !', '#ffd23e', 20, .55, y);
+    sfx('goal');
+    burst(scorer.side === 1 ? COURT.right : COURT.left, y, '#ffd23e', 20);
+    G.training.demandeReset = true;
+    return;
+  }
   const pts = zoneByY(y);
   scorer.score += pts;
   scorer.stats.buts++;

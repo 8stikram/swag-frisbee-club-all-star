@@ -5,10 +5,14 @@ export const cv = $('game');
 export const ctx = cv.getContext('2d');
 export const W = 960, H = 600;
 
-export const SCREENS = { title: 'scr-title', select: 'scr-select', maps: 'scr-maps', options: 'scr-options', pause: 'scr-pause', over: 'scr-over' };
+export const SCREENS = {
+  title: 'scr-title', select: 'scr-select', maps: 'scr-maps', options: 'scr-options',
+  pause: 'scr-pause', over: 'scr-over',
+  learn: 'scr-learn', firstrun: 'scr-firstrun'
+};
 
 export let curScreen = 'title';
-const selIdx = { title: 0, options: 0, pause: 0, over: 0 };
+const selIdx = { title: 0, options: 0, pause: 0, over: 0, learn: 0, firstrun: 0 };
 
 // Le liseré de sélection n'apparaît qu'après une vraie navigation au clavier :
 // à la souris, un bouton entouré en permanence n'a aucun sens.

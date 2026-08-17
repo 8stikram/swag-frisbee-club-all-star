@@ -13,6 +13,10 @@ import { doThrowHuman, throwDisc, skipReplay, doDive, viseVersAvant } from './ac
 import { trySpecial } from './specials.js';
 import { isCapturing } from '../ui/keybind-ui.js';
 import { doAct, pauseGame, selectScreenKey } from '../ui/menus.js';
+import {
+  enEntrainement, tenterPriseDummy, lacherDummy, dummyEnDeplacement,
+  resetEntrainement, quitterEntrainement
+} from '../ui/training.js';
 
 export const keys = new Set();
 export const keysP2 = new Set();
@@ -59,6 +63,9 @@ window.addEventListener('mousedown', e => {
   // Idem au clic : on consomme l'événement pour qu'aucun tir ne parte derrière.
   if (G.replay) { e.preventDefault(); Mouse.down = false; skipReplay(); return; }
   if (e.button === 0) {
+    // À l'entraînement, cliquer sur le partenaire le saisit pour le déplacer :
+    // on le place où l'on veut travailler, sans toucher au reste.
+    if (enEntrainement() && tenterPriseDummy(Mouse.x, Mouse.y)) { Mouse.down = false; return; }
     Mouse.down = true;
     const p = G.p1;
     if (!p || !p.human || p.stun > 0) return;
@@ -72,6 +79,7 @@ window.addEventListener('mousedown', e => {
 
 window.addEventListener('mouseup', e => {
   if (e.button === 0) {
+    if (dummyEnDeplacement()) { lacherDummy(); Mouse.down = false; return; }
     Mouse.down = false;
     const p = G.p1;
     if (p && p.human && p.holding && p.wasCharging && curScreen === null) doThrowHuman(p);
@@ -104,6 +112,12 @@ window.addEventListener('keydown', e => {
       else if (e.code === getKey('pause') && curScreen !== 'title') { if (curScreen === 'pause') doAct('resume'); else doAct('back'); }
     } else if (curScreen === 'select') { selectScreenKey(e.code); }
     return;
+  }
+  // Entraînement : R remet tout en place instantanément, Échap rend la main au
+  // sous-menu plutôt que d'ouvrir la pause d'un match qui n'existe pas.
+  if (enEntrainement()) {
+    if (e.code === 'KeyR') { resetEntrainement(); return; }
+    if (e.code === getKey('pause')) { quitterEntrainement(); return; }
   }
   if (e.code === getKey('pause') || e.code === 'KeyP') { if (G.state !== 'over' && !G.demo && !G.adminMode) pauseGame(); return; }
   const p = G.p1;

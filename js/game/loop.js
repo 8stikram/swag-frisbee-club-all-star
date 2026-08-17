@@ -12,6 +12,7 @@ import { capture, applySnap } from './replay.js';
 import { setupServe, afterGoal, startReplay, endReplay, finishReplay } from './actions.js';
 import { sfx, setDemoMuted } from '../audio/audio.js';
 import { render } from '../render/render.js';
+import { updateTraining, pilotageDummy } from '../ui/training.js';
 
 export function update(dt) {
   setDemoMuted(G.demo);
@@ -97,11 +98,15 @@ export function update(dt) {
           if (p.human && !G.isJ2J) updatePlayerHuman(p, wdt);
           else if (p.human && G.isJ2J && p.side === 1) updatePlayerHuman(p, wdt);
           else if (p.human && G.isJ2J && p.side === 2) { /* géré par updatePlayer2 */ }
+          // À l'entraînement le partenaire a ses propres règles : elles peuvent
+          // remplacer l'IA (mode inoffensif) ou seulement s'y ajouter.
+          else if (pilotageDummy(p, wdt)) { /* pris en charge par l'entraînement */ }
           else updateAI(p, wdt);
         } else { p.vx = 0; p.vy = 0; }
         integratePlayer(p, wdt);
       }
       if (G.isJ2J) updatePlayer2(wdt);
+      updateTraining(wdt);
       updateDisc(wdt);
       updateDecoys(wdt);
       if (G.state === 'play') {

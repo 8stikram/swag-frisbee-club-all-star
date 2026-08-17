@@ -2,6 +2,7 @@ import { G, Mouse } from '../game/state.js';
 import { ctx, W, H } from '../core/dom.js';
 import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG_RADIUS, TARGET, DIVE_TIME, DIVE_RANGE, DASH_CATCH_MULT, DASH_GAP, CATCH_RADIUS } from '../core/constants.js';
 import { dbg } from '../ui/admin.js';
+import { options as optionsTraining } from '../ui/training.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { getSkinId, drawSkinDisc } from '../data/skins.js';
@@ -171,7 +172,44 @@ function holoFlicker() {
   return (1 + goal * .5) * jitter;
 }
 
+/* Salle d'entraînement : aucun décor, aucune animation. Juste un sol clair sur
+   un fond anthracite et le strict minimum de lignes pour se repérer. Tout ce
+   qui bouge ici, ce sont les joueurs et le disque — c'est le but. */
+function drawCourtNu() {
+  const th = getMap().theme;
+  const cw = COURT.right - COURT.left, chh = COURT.bottom - COURT.top;
+
+  ctx.fillStyle = th.bgOuter;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = th.floor;
+  ctx.fillRect(COURT.left, COURT.top, cw, chh);
+
+  ctx.strokeStyle = th.line;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(COURT.left, COURT.top, cw, chh);
+  ctx.beginPath(); ctx.moveTo(CX, COURT.top); ctx.lineTo(CX, COURT.bottom); ctx.stroke();
+  ctx.beginPath(); ctx.arc(CX, CY, 58, 0, TAU); ctx.stroke();
+
+  // Cages : un simple volet par zone de points, sans effet lumineux.
+  const m = getMap();
+  for (const side of [1, 2]) {
+    const x = side === 1 ? COURT.left : COURT.right;
+    const gx = side === 1 ? x - GOAL_DEPTH : x;
+    for (const z of m.zones) {
+      ctx.fillStyle = z.color;
+      ctx.globalAlpha = .5;
+      ctx.fillRect(gx, CY + z.from, GOAL_DEPTH, z.to - z.from);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = th.goalStroke; ctx.lineWidth = 1;
+      ctx.strokeRect(gx, CY + z.from, GOAL_DEPTH, z.to - z.from);
+    }
+    ctx.strokeStyle = th.goalStroke; ctx.lineWidth = 2;
+    ctx.strokeRect(gx, GOAL_TOP, GOAL_DEPTH, GOAL_BOTTOM - GOAL_TOP);
+  }
+}
+
 function drawCourt() {
+  if (getMap().style === 'nu') { drawCourtNu(); return; }
   const th = getMap().theme;
   const cw = COURT.right - COURT.left, chh = COURT.bottom - COURT.top;
 
@@ -789,9 +827,13 @@ let fpsT = 0, fpsN = 0, fpsVal = 0, fpsLast = 0;
 
 function drawDebug() {
   if (!G.p1) return;
+  // L'entraînement dispose des mêmes calques que le panneau admin, pilotés par
+  // ses propres cases à cocher : c'est le même besoin, autant réutiliser.
+  const traj = dbg.traj || (G.training && optionsTraining.trajectoires);
+  const hitbox = dbg.hitbox || (G.training && optionsTraining.hitboxes);
 
   // Trajectoire prédite du disque : on simule ses rebonds à l'avance.
-  if (dbg.traj && G.disc && G.disc.free) {
+  if (traj && G.disc && G.disc.free) {
     let x = G.disc.x, y = G.disc.y, vx = G.disc.vx, vy = G.disc.vy;
     ctx.save();
     ctx.strokeStyle = 'rgba(255,210,62,.75)'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
@@ -822,7 +864,7 @@ function drawDebug() {
   }
 
   // Hitboxes : rayon d'attrapé de chaque joueur, élargi pendant un dash.
-  if (dbg.hitbox) {
+  if (hitbox) {
     ctx.save();
     ctx.lineWidth = 2;
     for (const p of [G.p1, G.p2]) {
@@ -897,7 +939,10 @@ export function render() {
   if (G.leg && G.leg.phase !== 'shadow') drawLeg();
   if (G.bell) drawBell();
   drawParticles();
-  if (G.p1 && !G.demo) { drawHUD(); drawCrosshair(); }
+  // Pas de HUD à l'entraînement : il n'y a ni score ni objectif à suivre, et le
+  // bandeau mangerait la place de l'historique des actions.
+  if (G.p1 && !G.demo && !G.training) drawHUD();
+  if (G.p1 && !G.demo) drawCrosshair();
   drawTexts();
   drawCommentator();
   ctx.restore();
