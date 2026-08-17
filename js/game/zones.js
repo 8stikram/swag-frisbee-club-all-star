@@ -16,8 +16,10 @@ const RAYON = 30;
 const DUREE = 3;              // durée de vie d'un cercle
 const ATTENTE = [5, 8];       // intervalle entre deux apparitions
 const DUNK_RAYON = 60;
+const RAYON_PANIER = 22;
 const POINTS_CERCLE = 1;
 const POINTS_DUNK = 2;
+const POINTS_PANIER = 5;
 
 export function terrainAZones() { return !!getMap().zonesSol; }
 
@@ -50,6 +52,27 @@ export function updateZones(dt) {
 // Le demi-cercle de dunk, planté devant chaque cage.
 export function centreDunk(side) {
   return { x: side === 1 ? COURT.left + GOAL_DEPTH : COURT.right - GOAL_DEPTH, y: CY };
+}
+
+// Le panier, avancé sur le terrain au-dessus de la cage : il faut passer par
+// dessus la défense pour l'atteindre, ce qui en fait un tir de prestige.
+export function centrePanier(side) {
+  return {
+    x: side === 1 ? COURT.left + 108 : COURT.right - 108,
+    y: COURT.top + 62
+  };
+}
+
+// Le disque traverse le panier adverse : cinq points, et l'échange continue.
+// Un seul panier par lancer, sinon un disque qui traîne dans l'anneau les
+// empilerait image après image.
+export function testerPanier(d) {
+  if (!terrainAZones() || !d.free || !d.thrower || d.panierMarque) return;
+  const cible = centrePanier(d.thrower.side === 1 ? 2 : 1);
+  if (Math.hypot(d.x - cible.x, d.y - cible.y) > RAYON_PANIER) return;
+  d.panierMarque = true;
+  marquer(d.thrower, POINTS_PANIER, 'PANIER +5', '#ff8c1f', cible.x, cible.y);
+  G.shake = Math.max(G.shake, 8);
 }
 
 // Appelé quand le disque s'immobilise. Renvoie true si une zone l'a récompensé,
@@ -85,4 +108,4 @@ function marquer(p, pts, texte, couleur, x, y) {
   comment(pts >= POINTS_DUNK ? 'DANS LA ZONE !' : 'JOLI PLACEMENT !');
 }
 
-export const ZONES = { RAYON, DUREE, DUNK_RAYON };
+export const ZONES = { RAYON, DUREE, DUNK_RAYON, RAYON_PANIER, POINTS_PANIER };

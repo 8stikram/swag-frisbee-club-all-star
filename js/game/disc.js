@@ -5,7 +5,7 @@ import {
 } from '../core/constants.js';
 import { norm, gauss, clamp, rand } from '../core/utils.js';
 import { sfx } from '../audio/audio.js';
-import { disqueImmobile } from './zones.js';
+import { disqueImmobile, testerPanier } from './zones.js';
 import { burst, dust, addPopup } from './fx.js';
 import { onCatch, scoreGoal, ownFoul, setupServe } from './actions.js';
 
@@ -82,6 +82,7 @@ export function updateDisc(dt) {
       if (G.state === 'play' && d.thrower === G.p2 && pre > 180) { ownFoul(G.p2); return; }
     }
   }
+  testerPanier(d);
   if (sp < 70 && !d.big) {
     d.stall += dt;
     if (d.stall > 1.6) {

@@ -44,6 +44,7 @@ export function throwDisc(p, dir, speed, kind = 'normal') {
   d.x = p.x + dir.x * 22; d.y = p.y + dir.y * 22;
   d.vx = dir.x * finalSpeed; d.vy = dir.y * finalSpeed;
   d.heldBy = null; d.free = true; d.thrower = p; d.thrownAt = G.now; d.bounced = false;
+  d.panierMarque = false;        // un panier par lancer, pas un par image
   d.kind = kind; d.stall = 0;
   d.big = (kind === 'kurama'); d.kSpeed = (kind === 'kurama') ? finalSpeed : 0;
   d.super = (kind === 'normal' && p.charge >= .98);

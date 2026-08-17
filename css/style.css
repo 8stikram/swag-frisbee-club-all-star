@@ -1264,3 +1264,22 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   font-family:'DotGothic16',monospace;font-size:clamp(8px,1.5cqh,13px);
   color:var(--ink);min-width:16ch;text-align:center;
 }
+
+/* Terrain encore à gagner : on le montre, éteint et cadenassé. Le cacher
+   n'aurait donné aucune raison de le débloquer. */
+#mapPreview.locked{filter:grayscale(1) brightness(.4)}
+.mapAide{
+  position:absolute;left:50%;top:calc(50% + 22cqh);transform:translateX(-50%);z-index:7;
+  font-family:'DotGothic16',monospace;font-size:clamp(8px,1.4cqh,12px);
+  color:#ffd98a;background:rgba(18,22,30,.9);border:2px solid #ffd98a;
+  border-radius:8px;padding:.6cqh 1.4cqw;text-align:center;white-space:nowrap;
+}
+.mapAide.hidden{display:none}
+.thumb.locked{position:relative;cursor:not-allowed}
+.thumb.locked canvas{filter:grayscale(1) brightness(.4)}
+.thumb.locked .label{opacity:.5}
+.mapLock{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);
+  font-size:clamp(13px,2.2cqh,20px);pointer-events:none;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));
+}

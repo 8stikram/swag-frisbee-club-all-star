@@ -390,10 +390,16 @@ function resolveSkin() {
 // gagné — la liste se recalcule donc à chaque ouverture de l'écran.
 let MAP_CHOICES = [];
 function majChoixTerrains() {
-  MAP_CHOICES = [...MAPS.filter(m => !m.horsSelection && mapDebloquee(m)),
+  // Les terrains verrouillés restent dans la liste, cadenassés : les cacher
+  // reviendrait à ne donner aucune raison de les gagner.
+  MAP_CHOICES = [...MAPS.filter(m => !m.horsSelection),
                  { id: '__random', name: 'ALÉATOIRE' }];
   if (mapIdx >= MAP_CHOICES.length) mapIdx = 0;
+  // On ne s'arrête jamais sur un terrain qu'on ne peut pas jouer.
+  if (verrouille(MAP_CHOICES[mapIdx])) mapIdx = 0;
 }
+
+function verrouille(c) { return !!(c && c.id !== '__random' && !mapDebloquee(c)); }
 let mapIdx = 0;
 
 // Mini-rendu proportionnel du vrai terrain (données de data/maps.js).
@@ -434,8 +440,10 @@ function renderMapThumbs() {
   const row = $('mapThumbs');
   row.innerHTML = '';
   MAP_CHOICES.forEach((c, i) => {
+    const ferme = verrouille(c);
     const el = document.createElement('div');
-    el.className = 'thumb' + (i === mapIdx ? ' on' : '');
+    el.className = 'thumb' + (i === mapIdx ? ' on' : '') + (ferme ? ' locked' : '');
+    if (ferme) el.title = c.aide || 'Terrain à débloquer.';
     if (c.id === '__random') {
       el.innerHTML = '<div class="rndFace">?</div><div class="label">ALÉATOIRE</div>';
     } else {
@@ -444,8 +452,17 @@ function renderMapThumbs() {
       el.appendChild(cv);
       const label = document.createElement('div'); label.className = 'label'; label.textContent = c.name;
       el.appendChild(label);
+      if (ferme) {
+        const lock = document.createElement('span');
+        lock.className = 'mapLock'; lock.textContent = '🔒';
+        el.appendChild(lock);
+      }
     }
-    el.addEventListener('click', () => { mapIdx = i; sfx('move'); refreshMaps(); });
+    // On peut regarder un terrain verrouillé, pas le choisir.
+    el.addEventListener('click', () => {
+      if (ferme) { sfx('deny'); return; }
+      mapIdx = i; sfx('move'); refreshMaps();
+    });
     row.appendChild(el);
   });
 }
@@ -474,6 +491,17 @@ export function refreshMaps() {
     // reste libre d'en changer juste en dessous, son choix n'est pas écrasé.
     if (c.ost && !musicTouchee) selectTrack(c.ost);
   }
+  // Terrain encore à gagner : aperçu éteint, cadenas, et la marche à suivre.
+  const ferme = verrouille(c);
+  $('mapName').textContent = ferme ? '🔒 ' + c.name : c.name;
+  big.classList.toggle('locked', ferme);
+  const aide = $('mapAide');
+  if (aide) {
+    aide.textContent = ferme ? (c.aide || 'Terrain à débloquer.') : '';
+    aide.classList.toggle('hidden', !ferme);
+  }
+  const go = document.querySelector('.mapGoBtn');
+  if (go) go.classList.toggle('hidden', ferme);
   renderMapThumbs();
 }
 
@@ -490,7 +518,11 @@ function resolveMap() {
 export function mapsScreenKey(code) {
   if (code === 'ArrowLeft') { mapIdx = (mapIdx + MAP_CHOICES.length - 1) % MAP_CHOICES.length; sfx('move'); refreshMaps(); }
   else if (code === 'ArrowRight') { mapIdx = (mapIdx + 1) % MAP_CHOICES.length; sfx('move'); refreshMaps(); }
-  else if (code === 'Enter' || code === 'Space') { sfx('select'); doAct('startMatch'); }
+  // On ne lance pas un terrain qu'on n'a pas encore gagné.
+  else if (code === 'Enter' || code === 'Space') {
+    if (verrouille(MAP_CHOICES[mapIdx])) { sfx('deny'); return; }
+    sfx('select'); doAct('startMatch');
+  }
   else if (code === getKey('pause')) { sfx('select'); showScreen('select'); }
 }
 

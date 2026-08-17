@@ -3,7 +3,7 @@ import { ctx, W, H } from '../core/dom.js';
 import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG_RADIUS, TARGET, DIVE_TIME, DIVE_RANGE, DASH_CATCH_MULT, DASH_GAP, CATCH_RADIUS } from '../core/constants.js';
 import { dbg } from '../ui/admin.js';
 import { options as optionsTraining } from '../ui/training.js';
-import { centreDunk, ZONES } from '../game/zones.js';
+import { centreDunk, centrePanier, ZONES } from '../game/zones.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { getSkinId, drawSkinDisc } from '../data/skins.js';
@@ -309,32 +309,52 @@ function drawEcranGeant() {
   ctx.restore();
 }
 
-/* Panier décoratif monté sur son bras articulé, planté hors du terrain de
-   chaque côté. Le montage est symétrique : le poteau vient toujours du bord
-   le plus proche, jamais par-dessus le parquet. */
+/* Panier monté sur son bras articulé. Il est avancé sur le terrain, au-dessus
+   de la cage : c'est une vraie cible à cinq points, il faut donc pouvoir y
+   faire passer le disque par-dessus la défense. Le poteau vient toujours du
+   bord le plus proche, jamais par-dessus le parquet. */
 function drawPanier(side) {
   const vers = side === 1 ? 1 : -1;            // 1 = poteau à gauche
-  const x = side === 1 ? COURT.left - 4 : COURT.right + 4;
-  const y = GOAL_TOP - 74;
+  const c = centrePanier(side);
   ctx.save();
-  ctx.translate(x, y);
+  ctx.translate(c.x, c.y);
   ctx.scale(vers, 1);                          // miroir pour le côté droit
 
+  // Bras qui part du bord du terrain le plus proche. Dans le repère miroité,
+  // ce bord est toujours à gauche : une seule valeur suffit pour les deux
+  // côtés. En mesurant depuis COURT.left pour tout le monde, le bras du panier
+  // de droite traversait tout le terrain.
+  const recul = -(side === 1 ? c.x - COURT.left : COURT.right - c.x);
   ctx.strokeStyle = '#8b94a6'; ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.moveTo(-52, 58); ctx.lineTo(-52, 10); ctx.lineTo(-20, 10); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(recul, 30); ctx.lineTo(recul, -34); ctx.lineTo(-26, -34); ctx.stroke();
   ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.moveTo(-52, 26); ctx.lineTo(-24, 12); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(recul, -12); ctx.lineTo(-28, -30); ctx.stroke();
 
-  ctx.fillStyle = '#f2f4f8'; ctx.fillRect(-22, 0, 52, 34);
-  ctx.strokeStyle = '#20263a'; ctx.lineWidth = 3; ctx.strokeRect(-22, 0, 52, 34);
-  ctx.strokeStyle = '#e5384f'; ctx.lineWidth = 2; ctx.strokeRect(-8, 12, 24, 16);
+  ctx.fillStyle = '#f2f4f8'; ctx.fillRect(-28, -44, 52, 34);
+  ctx.strokeStyle = '#20263a'; ctx.lineWidth = 3; ctx.strokeRect(-28, -44, 52, 34);
+  ctx.strokeStyle = '#e5384f'; ctx.lineWidth = 2; ctx.strokeRect(-14, -32, 24, 16);
+  ctx.restore();
 
-  ctx.strokeStyle = '#cfd6e2'; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.ellipse(4, 38, 15, 5, 0, 0, TAU); ctx.stroke();
-  ctx.strokeStyle = 'rgba(255,255,255,.72)'; ctx.lineWidth = 1.4;
+  // L'anneau, dessiné hors du miroir pour que le chiffre reste lisible.
+  const pulse = .55 + Math.sin(G.now * 3) * .2;
+  ctx.save();
+  ctx.strokeStyle = `rgba(255,140,31,${pulse + .3})`;
+  ctx.fillStyle = `rgba(255,140,31,.14)`;
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(c.x, c.y, ZONES.RAYON_PANIER, 0, TAU);
+  ctx.fill(); ctx.stroke();
+  // Filet suggéré par quelques mailles sous l'anneau.
+  ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1.4;
   for (let i = -2; i <= 2; i++) {
-    ctx.beginPath(); ctx.moveTo(4 + i * 6, 40); ctx.lineTo(4 + i * 3, 56); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(c.x + i * 8, c.y + ZONES.RAYON_PANIER * .7);
+    ctx.lineTo(c.x + i * 4, c.y + ZONES.RAYON_PANIER + 14);
+    ctx.stroke();
   }
+  ctx.fillStyle = '#ff8c1f';
+  ctx.font = '700 14px "Archivo Black", sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(ZONES.POINTS_PANIER, c.x, c.y);
   ctx.restore();
 }
 
@@ -445,6 +465,11 @@ function drawCourtStade() {
       ctx.fillStyle = z.color; ctx.globalAlpha = .45;
       ctx.fillRect(gx, CY + z.from, GOAL_DEPTH, z.to - z.from);
       ctx.globalAlpha = 1;
+      // Sa valeur écrite dans chaque volet : on sait où viser sans deviner.
+      ctx.fillStyle = 'rgba(255,255,255,.92)';
+      ctx.font = '700 17px "Archivo Black", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(z.points, gx + GOAL_DEPTH / 2, CY + (z.from + z.to) / 2);
     }
     ctx.strokeStyle = th.goalStroke; ctx.lineWidth = 4;
     ctx.strokeRect(gx, GOAL_TOP, GOAL_DEPTH, GOAL_BOTTOM - GOAL_TOP);
