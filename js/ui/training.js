@@ -30,7 +30,9 @@ const defauts = {
   persoDummy: 'leon',
   niveau: 'facile',
   renvoiAuto: true,      // le partenaire remet le disque dans tes pieds
-  jauge: 'normale',      // normale | pleine | vide
+  // Pleine par défaut : on vient ici pour répéter, ultime compris. Attendre la
+  // jauge n'apprendrait rien. Les deux autres réglages restent à un clic.
+  jauge: 'pleine',       // pleine | normale | vide
   trajectoires: false,
   hitboxes: false,
   panneauOuvert: true
@@ -298,10 +300,10 @@ export function majPanneau() {
     corps.appendChild(g);
 
     const gj = groupe('TA JAUGE SPÉCIALE');
-    gj.appendChild(bouton('NORMALE', 'Elle se remplit en jouant, comme en match.',
-      options.jauge === 'normale', () => { options.jauge = 'normale'; majPanneau(); }));
     gj.appendChild(bouton('TOUJOURS PLEINE', 'Pour répéter ton ultime autant que tu veux.',
       options.jauge === 'pleine', () => { options.jauge = 'pleine'; majPanneau(); }));
+    gj.appendChild(bouton('NORMALE', 'Elle se remplit en jouant, comme en match.',
+      options.jauge === 'normale', () => { options.jauge = 'normale'; majPanneau(); }));
     gj.appendChild(bouton('VIDE', 'Elle reste à zéro : on travaille sans y penser.',
       options.jauge === 'vide', () => { options.jauge = 'vide'; majPanneau(); }));
     corps.appendChild(gj);
