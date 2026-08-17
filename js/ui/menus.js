@@ -3,16 +3,17 @@ import { G, Mouse, initMatch } from '../game/state.js';
 import { DIFFS } from '../core/constants.js';
 import { CHARS, ROSTER } from '../data/characters.js';
 import { SPECIALS } from '../data/specials.js';
-import { DISC_SKINS, getSkinId, setSkinId, drawSkinDisc, getFavSkin, setFavSkin } from '../data/skins.js';
-import { MAPS, setMapId } from '../data/maps.js';
+import { DISC_SKINS, getSkinId, setSkinId, drawSkinDisc, getFavSkin, setFavSkin, skinDebloque } from '../data/skins.js';
+import { MAPS, setMapId, mapDebloquee } from '../data/maps.js';
 import { getKey } from '../data/keymap.js';
 import { MUSIC_TRACKS, getTrackId } from '../data/music.js';
 import { sfx, playTrack, stopTrack, duckMusic } from '../audio/audio.js';
 import { addPopup } from '../game/fx.js';
 import { requestLock } from '../game/input.js';
 import { refreshKeysUI } from './keybind-ui.js';
-import { CHAPITRES, nbChapitresFaits, tutoDejaPropose, marquerTutoPropose } from '../data/apprentissage.js';
+import { CHAPITRES, nbChapitresFaits, chapitreFait, tutoDejaPropose, marquerTutoPropose } from '../data/apprentissage.js';
 import { lancerEntrainement } from './training.js';
+import { lancerChapitre } from './tutoriel.js';
 
 let selCharPlayer = 'naruto', selCharCPU = 'leon', diffIdx = 1;
 let modeJ2J = false;
@@ -120,15 +121,31 @@ export function resetSelectTurn() {
     panel.appendChild(rnd);
 
     for (const s of DISC_SKINS) {
+      const libre = skinDebloque(s);
       const cell = document.createElement('button');
-      cell.className = 'skinCell' + (fav === s.id ? ' on' : '');
+      // Un disque encore verrouillé reste visible mais grisé et cadenassé :
+      // il donne une raison de faire le tutoriel. L'infobulle dit comment.
+      cell.className = 'skinCell' + (fav === s.id ? ' on' : '') + (libre ? '' : ' locked');
+      if (!libre) cell.title = s.aide || 'Récompense à débloquer.';
       const cv = document.createElement('canvas');
       cv.width = cv.height = 72;
       drawSkinDisc(cv.getContext('2d'), 36, 36, 32, s.id, 0);
       cell.appendChild(cv);
       const em = document.createElement('em'); em.textContent = s.name;
       cell.appendChild(em);
-      cell.addEventListener('click', e => { e.stopPropagation(); setFavSkin(s.id); sfx('select'); label(); buildPanel(); renderDisc(); });
+      if (!libre) {
+        const c = document.createElement('span');
+        c.className = 'skinLock'; c.textContent = '🔒';
+        cell.appendChild(c);
+        const aide = document.createElement('span');
+        aide.className = 'skinAide'; aide.textContent = s.aide || 'Récompense à débloquer.';
+        cell.appendChild(aide);
+      }
+      cell.addEventListener('click', e => {
+        e.stopPropagation();
+        if (!libre) { sfx('deny'); return; }
+        setFavSkin(s.id); sfx('select'); label(); buildPanel(); renderDisc();
+      });
       panel.appendChild(cell);
     }
   }
@@ -322,8 +339,16 @@ export function selectScreenKey(code) {
 }
 
 /* ---------- carrousel de disque ---------- */
-const DISC_CHOICES = [...DISC_SKINS.map(s => ({ id: s.id, name: s.name })), { id: '__random', name: 'ALÉATOIRE' }];
-let discIdx = Math.max(0, DISC_CHOICES.findIndex(c => c.id === getSkinId()));
+// Le carrousel se recalcule à l'ouverture : un disque débloqué en cours de
+// session doit y apparaître sans relancer le jeu.
+let DISC_CHOICES = [];
+let discIdx = 0;
+function majChoixDisques() {
+  DISC_CHOICES = [...DISC_SKINS.filter(skinDebloque).map(s => ({ id: s.id, name: s.name })),
+                  { id: '__random', name: 'ALÉATOIRE' }];
+  discIdx = Math.max(0, DISC_CHOICES.findIndex(c => c.id === getSkinId()));
+}
+majChoixDisques();
 
 // Peint une case du carrousel (grande au centre, petites sur les côtés).
 function paintDiscSlot(el, choice, size) {
@@ -361,8 +386,14 @@ function resolveSkin() {
 
 /* ---------- sélection du terrain ---------- */
 // La salle d'entraînement est un décor de travail, pas un terrain de match :
-// elle est écartée de la sélection.
-const MAP_CHOICES = [...MAPS.filter(m => !m.horsSelection), { id: '__random', name: 'ALÉATOIRE' }];
+// elle est écartée de la sélection. Le terrain secret n'y entre qu'une fois
+// gagné — la liste se recalcule donc à chaque ouverture de l'écran.
+let MAP_CHOICES = [];
+function majChoixTerrains() {
+  MAP_CHOICES = [...MAPS.filter(m => !m.horsSelection && mapDebloquee(m)),
+                 { id: '__random', name: 'ALÉATOIRE' }];
+  if (mapIdx >= MAP_CHOICES.length) mapIdx = 0;
+}
 let mapIdx = 0;
 
 // Mini-rendu proportionnel du vrai terrain (données de data/maps.js).
@@ -420,6 +451,7 @@ function renderMapThumbs() {
 }
 
 export function refreshMaps() {
+  majChoixTerrains();
   const c = MAP_CHOICES[mapIdx];
   $('mapName').textContent = c.name;
   const big = $('mapPreview');
@@ -510,6 +542,32 @@ function ouvrirApprentissage() {
   showScreen('learn');
 }
 
+// Les chapitres se présentent dans l'ordre conseillé, mais rien n'oblige à le
+// suivre : chacun est jouable seul, et ceux déjà faits portent leur coche.
+function ouvrirChapitres() {
+  const wrap = $('chapWrap');
+  if (wrap) {
+    wrap.innerHTML = '';
+    CHAPITRES.forEach((c, i) => {
+      const fait = chapitreFait(c.id);
+      const b = document.createElement('button');
+      b.className = 'chapCard' + (fait ? ' fait' : '');
+      b.style.animationDelay = (i * .06) + 's';
+      b.innerHTML = '<span class="num">' + c.num + '</span>'
+        + '<span class="nom">' + c.nom + '</span>'
+        + '<span class="desc">' + c.desc + '</span>'
+        + (fait ? '<span class="coche">✓</span>' : '');
+      b.addEventListener('click', () => { sfx('select'); lancerChapitre(c.id); });
+      wrap.appendChild(b);
+    });
+  }
+  const n = nbChapitresFaits();
+  const bar = $('chapBar'), txt = $('chapProgTxt');
+  if (bar) bar.style.width = Math.round(100 * n / CHAPITRES.length) + '%';
+  if (txt) txt.textContent = n + ' / ' + CHAPITRES.length + ' CHAPITRES';
+  showScreen('chap');
+}
+
 // Au tout premier lancement, on propose le tutoriel une seule fois. Appelé par
 // l'introduction quand elle rend la main, pour ne pas passer devant elle.
 export function proposerTutoSiPremiereFois() {
@@ -539,9 +597,7 @@ export function doAct(act) {
     case 'options': sfx('select'); musiqueDeMenu(); showScreen('options'); refreshKeysUI(); break;
     case 'learn': sfx('select'); musiqueDeMenu(); ouvrirApprentissage(); break;
     case 'training': sfx('select'); lancerEntrainement(); break;
-    // Le tutoriel arrive dans un second temps ; en attendant on le dit au lieu
-    // de laisser le bouton ne rien faire.
-    case 'tuto': sfx('deny'); addPopup('TUTORIEL BIENTÔT DISPONIBLE', '#8f6fc7', 14, 1.4); break;
+    case 'tuto': sfx('select'); musiqueDeMenu(); ouvrirChapitres(); break;
     // Refuser le tutoriel au premier lancement ne doit se demander qu'une fois.
     case 'skipTuto': sfx('select'); marquerTutoPropose(); showScreen('title'); break;
     case 'back': sfx('select'); musiqueDeMenu(); showScreen('title'); break;

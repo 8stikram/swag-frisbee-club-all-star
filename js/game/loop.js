@@ -13,6 +13,7 @@ import { setupServe, afterGoal, startReplay, endReplay, finishReplay } from './a
 import { sfx, setDemoMuted } from '../audio/audio.js';
 import { render } from '../render/render.js';
 import { updateTraining, pilotageDummy } from '../ui/training.js';
+import { updateTutoriel, enTutoriel } from '../ui/tutoriel.js';
 
 export function update(dt) {
   setDemoMuted(G.demo);
@@ -101,12 +102,16 @@ export function update(dt) {
           // À l'entraînement le partenaire a ses propres règles : elles peuvent
           // remplacer l'IA (mode inoffensif) ou seulement s'y ajouter.
           else if (pilotageDummy(p, wdt)) { /* pris en charge par l'entraînement */ }
+          // Le tutoriel pilote entièrement le partenaire : il doit rester lent
+          // et prévisible, une IA normale rendrait les étapes impraticables.
+          else if (enTutoriel()) { p.vx = 0; p.vy = 0; }
           else updateAI(p, wdt);
         } else { p.vx = 0; p.vy = 0; }
         integratePlayer(p, wdt);
       }
       if (G.isJ2J) updatePlayer2(wdt);
       updateTraining(wdt);
+      updateTutoriel(wdt);
       updateDisc(wdt);
       updateDecoys(wdt);
       if (G.state === 'play') {

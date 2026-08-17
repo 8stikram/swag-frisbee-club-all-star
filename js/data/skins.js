@@ -7,8 +7,31 @@ export const DISC_SKINS = [
   { id: 'israel', name: 'Israël', colors: ['#ffffff', '#0038b8'] },
   { id: 'galaxy', name: 'Galaxie', colors: ['#1a0033', '#4a00e0', '#8e2de2', '#00d4ff'] },
   { id: 'magma', name: 'Magma', colors: ['#2a1410', '#ff4500', '#ffd700'] },
-  { id: 'glitch', name: 'Glitch', colors: ['#ff00ff', '#00ffff', '#ff0000', '#00ff00'] }
+  { id: 'glitch', name: 'Glitch', colors: ['#ff00ff', '#00ffff', '#ff0000', '#00ff00'] },
+  // Récompense du tutoriel. `verrou` nomme la condition à remplir : le sélecteur
+  // l'affiche grisé et cadenassé tant qu'elle ne l'est pas, plutôt que de le
+  // cacher — on ne convoite pas ce qu'on ignore.
+  {
+    id: 'vingt', name: '20/20', verrou: 'tuto',
+    aide: 'Termine les 5 chapitres du tutoriel pour le débloquer.',
+    colors: ['#fdfaf0', '#c8d8e8', '#d81f26']
+  }
 ];
+
+// Vrai quand le skin est jouable. Le déblocage vit dans data/apprentissage.js,
+// importé à la demande pour ne pas lier ce registre au reste au chargement.
+export function skinDebloque(skin) {
+  if (!skin || !skin.verrou) return true;
+  if (skin.verrou === 'tuto') return tutoEstTermine();
+  return true;
+}
+let _tuto = null;
+function tutoEstTermine() {
+  if (!_tuto) return false;
+  return _tuto();
+}
+// Branché une fois au démarrage par apprentissage.js, pour éviter un cycle.
+export function brancherVerrouTuto(fn) { _tuto = fn; }
 
 // Disque préféré, réglable dans les options et conservé d'une session à l'autre.
 // `null` signifie « aléatoire » : c'est le comportement par défaut, un disque
@@ -20,7 +43,13 @@ export function setFavSkin(id) {
   try { localStorage.setItem('sbcbFavSkin', id || '__random'); } catch (e) { }
   if (id) { currentSkinId = id; saveSkin(); }
 }
-export function randomSkinId() { return DISC_SKINS[(Math.random() * DISC_SKINS.length) | 0].id; }
+// Le tirage au sort ne pioche que dans ce qui est débloqué : recevoir une
+// récompense qu'on n'a pas gagnée lui retirerait tout son sens.
+export function skinsJouables() { return DISC_SKINS.filter(skinDebloque); }
+export function randomSkinId() {
+  const libres = skinsJouables();
+  return libres[(Math.random() * libres.length) | 0].id;
+}
 
 let currentSkinId = 'captain';
 
@@ -289,6 +318,35 @@ export function drawSkinDisc(ctx, x, y, r, skinId, spin) {
       for (let yy = -r; yy < r; yy += Math.max(2, r * .12)) ctx.fillRect(-r, yy, r * 2, 1);
       break;
     }
+
+    /* ---------- 20/20 : une copie d'examen, la note au stylo rouge ---------- */
+    case 'vingt': {
+      // Papier légèrement crème, comme une feuille de classeur.
+      ctx.fillStyle = '#fdfaf0';
+      ctx.fillRect(-r, -r, r * 2, r * 2);
+
+      // Réglure bleue horizontale, puis la marge verticale rouge.
+      ctx.strokeStyle = 'rgba(120,160,200,.55)';
+      ctx.lineWidth = Math.max(1, r * .035);
+      for (let yy = -r + r * .28; yy < r; yy += r * .26) {
+        ctx.beginPath(); ctx.moveTo(-r, yy); ctx.lineTo(r, yy); ctx.stroke();
+      }
+      ctx.strokeStyle = 'rgba(216,31,38,.5)';
+      ctx.beginPath(); ctx.moveTo(-r * .52, -r); ctx.lineTo(-r * .52, r); ctx.stroke();
+
+      // La note, écrite par-dessus et légèrement de travers.
+      ctx.save();
+      ctx.rotate(-.14);
+      ctx.fillStyle = '#d81f26';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '700 ' + (r * .86).toFixed(1) + 'px "Archivo Black", sans-serif';
+      ctx.fillText('20', 0, -r * .12);
+      ctx.font = '700 ' + (r * .42).toFixed(1) + 'px "Archivo Black", sans-serif';
+      ctx.fillText('/20', 0, r * .42);
+      ctx.restore();
+    }
+      break;
 
     default: {
       ctx.fillStyle = '#ffd23e';

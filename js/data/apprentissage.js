@@ -1,5 +1,7 @@
 // Progression du joueur dans le tutoriel, et ce qu'elle débloque.
 // Tout est conservé en local : c'est un suivi personnel, pas un état de partie.
+import { brancherVerrouTuto } from './skins.js';
+import { brancherVerrouTutoMap } from './maps.js';
 
 export const CHAPITRES = [
   { id: 'bases', num: 1, nom: 'FONDATIONS', desc: 'Se déplacer, viser, attraper, tirer.' },
@@ -28,6 +30,11 @@ function sauver() {
   try { localStorage.setItem(CLE, JSON.stringify(etat)); } catch (e) { }
 }
 charger();
+
+// Le registre des skins a besoin de savoir si le tutoriel est fini, sans
+// dépendre de ce module au chargement : on lui passe la question à poser.
+brancherVerrouTuto(() => tutoTermine());
+brancherVerrouTutoMap(() => tutoTermine());
 
 export function chapitreFait(id) { return etat.faits.includes(id); }
 export function nbChapitresFaits() { return etat.faits.length; }

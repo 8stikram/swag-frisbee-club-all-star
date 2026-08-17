@@ -318,7 +318,7 @@ const TOUCHES = [
   { act: '__clic', label: 'CLIC' }
 ];
 
-function construireTouches() {
+export function construireTouches() {
   const el = $('trInputs');
   if (!el) return;
   el.innerHTML = '';

@@ -66,6 +66,43 @@ MAPS.push({
   }
 });
 
+// Terrain secret, récompense du tutoriel : un gymnase de collège, écho direct
+// à la copie d'examen du disque « 20/20 ». Verrouillé jusqu'au dernier chapitre.
+MAPS.push({
+  id: 'gymnase',
+  name: 'GYMNASE DU COLLÈGE',
+  verrou: 'tuto',
+  aide: 'Termine les 5 chapitres du tutoriel pour le débloquer.',
+  ost: 'menu-ost',
+  court: { left: 70, right: 890, top: 84, bottom: 560 },
+  goal: { height: 210, depth: 48 },
+  zones: [
+    { from: -105, to: -28, points: 3, color: '#4aa3df' },
+    { from: -28, to: 28, points: 5, color: '#f2b134' },
+    { from: 28, to: 105, points: 3, color: '#4aa3df' }
+  ],
+  style: 'nu',
+  theme: {
+    bgInner: '#3c3128',
+    bgOuter: '#2a221b',
+    floor: '#e0b878',        // parquet clair de gymnase
+    line: 'rgba(120,70,40,.55)',
+    goalFill: 'rgba(74,163,223,.16)',
+    goalStroke: '#8a5a33',
+    crowdColors: ['#4aa3df'],
+    starColor: 'rgba(0,0,0,0)'
+  }
+});
+
+// Vrai quand le terrain est jouable. Même principe que pour les skins.
+export function mapDebloquee(m) {
+  if (!m || !m.verrou) return true;
+  if (m.verrou === 'tuto') return _tutoFini ? _tutoFini() : false;
+  return true;
+}
+let _tutoFini = null;
+export function brancherVerrouTutoMap(fn) { _tutoFini = fn; }
+
 let currentMapId = MAPS[0].id;
 
 export function getMap() { return MAPS.find(m => m.id === currentMapId) || MAPS[0]; }

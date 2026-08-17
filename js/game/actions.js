@@ -10,6 +10,7 @@ import { CHARS } from '../data/characters.js';
 import { sfx, setMuffled } from '../audio/audio.js';
 import { burst, dust, ring, confetti, starBurst, addPopup } from './fx.js';
 import { $, cv, showScreen } from '../core/dom.js';
+import { signalerPerfectDive } from './moves.js';
 
 export function setupServe(side) {
   G.state = 'serve'; G.serveTo = side;
@@ -137,6 +138,9 @@ export function doDive(p, aim) {
 // Renvoi parfait : visé automatiquement vers le but adverse, à vitesse fulgurante,
 // avec ralenti, flash et secousse. Aucun son neuf : on réutilise ceux du jeu.
 function perfectDive(p) {
+  // Le jeu est seul à connaître sa fenêtre : il le signale à l'observateur de
+  // gestes, que le tutoriel interroge.
+  signalerPerfectDive(p);
   const gx = p.side === 1 ? COURT.right : COURT.left;
   const dir = norm(gx - p.x, CY - p.y);
   throwDisc(p, dir, PERFECT_SPEED * p.char.power);

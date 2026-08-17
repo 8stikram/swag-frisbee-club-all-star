@@ -17,6 +17,7 @@ import {
   enEntrainement, tenterPriseDummy, lacherDummy, dummyEnDeplacement,
   resetEntrainement, quitterEntrainement
 } from '../ui/training.js';
+import { enTutoriel, quitterTutoriel } from './../ui/tutoriel.js';
 
 export const keys = new Set();
 export const keysP2 = new Set();
@@ -119,6 +120,7 @@ window.addEventListener('keydown', e => {
     if (e.code === 'KeyR') { resetEntrainement(); return; }
     if (e.code === getKey('pause')) { quitterEntrainement(); return; }
   }
+  if (enTutoriel() && e.code === getKey('pause')) { quitterTutoriel(); return; }
   if (e.code === getKey('pause') || e.code === 'KeyP') { if (G.state !== 'over' && !G.demo && !G.adminMode) pauseGame(); return; }
   const p = G.p1;
   if (!p || !p.human || p.stun > 0) return;

@@ -102,6 +102,42 @@
     <div class="trInputs" id="trInputs"></div>
   </div>
 
+  <!-- ============ SURCOUCHE DU TUTORIEL ============ -->
+  <div class="tuHud hidden" id="tuHud">
+    <aside class="tuPanel" id="tuPanel">
+      <div class="tuProg" id="tuProg">CHAPITRE 1/5</div>
+      <div class="tuPhase" id="tuPhase">REGARDE</div>
+      <p class="tuTexte" id="tuTexte"></p>
+      <div class="tuPoints" id="tuPoints"></div>
+      <p class="tuIndice hidden" id="tuIndice"></p>
+      <div class="tuCoche" id="tuCoche">✓</div>
+      <div class="tuFoot"><kbd>Échap</kbd> quitter</div>
+    </aside>
+    <button class="tuToggle" id="tuToggle" title="Masquer les consignes">‹</button>
+  </div>
+
+  <!-- Butin de fin de tutoriel, façon palier de passe de combat. -->
+  <div class="tuLoot hidden" id="tuLoot">
+    <div class="tuLootCard">
+      <span class="tuLootTag">TUTORIEL TERMINÉ</span>
+      <b>DEUX RÉCOMPENSES DÉBLOQUÉES</b>
+      <div class="tuLootRow">
+        <div class="tuLootItem"><span>📄</span><b>DISQUE 20/20</b><em>Nouveau skin de disque</em></div>
+        <div class="tuLootItem"><span>🏟️</span><b>TERRAIN SECRET</b><em>Nouveau stade en match</em></div>
+      </div>
+      <button class="mbtn c-learn" id="tuLootBtn">SUPER</button>
+    </div>
+  </div>
+
+  <!-- ============ CHOIX DU CHAPITRE ============ -->
+  <div class="screen scr-chap hidden" id="scr-chap">
+    <div class="bg bg-learn"></div>
+    <div class="titlebar"><span>CHOISIS TON CHAPITRE</span></div>
+    <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
+    <div class="chapProg"><i id="chapBar"></i><span id="chapProgTxt">0 / 5</span></div>
+    <div class="chapWrap" id="chapWrap"></div>
+  </div>
+
   <!-- ============ ENTRAÎNEMENT / TUTORIEL ============ -->
   <div class="screen scr-learn hidden" id="scr-learn">
     <div class="bg bg-learn"></div>
