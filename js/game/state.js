@@ -17,6 +17,8 @@ export const G = {
   matchChar: 'naruto', matchCPU: 'leon', matchDiff: 1,
   crowd: [], stars: [], rally: 0, maxRally: 0,
   cine: null, leg: null, bell: null, rec: [], replay: null, comment: null,
+  // Cercles bonus au sol du Swag Frisbee Stadium. Vide partout ailleurs.
+  cercles: [], prochainCercle: 0,
   idleT: 0, waveX: -200, mem: { t: 0, m: 0, b: 0 }, startCom: false,
   lungeBonus: false, lungeBonusTimer: 0, adminMode: false, isJ2J: false,
   pendingServe: 1,
@@ -102,6 +104,7 @@ export function initMatch(demo, ck, cpu, diffIdx, j2j) {
   G.timescale = 1; G.shake = 0; G.rally = 0; G.maxRally = 0; G.comment = null; G.idleT = 0;
   G.mem = { t: 0, m: 0, b: 0 }; G.startCom = false; G.lungeBonus = false; G.lungeBonusTimer = 0;
   G.zoom = null; G.flash = 0; G.lastCatchIdx = -1;
+  G.cercles.length = 0; G.prochainCercle = 0;
   G.isJ2J = j2j || false;
   if (demo) {
     G.p1 = makePlayer('naruto', 1, false, 0);

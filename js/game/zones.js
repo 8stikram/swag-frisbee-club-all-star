@@ -1,0 +1,88 @@
+import { G, comment } from './state.js';
+import { COURT, CY, GOAL_DEPTH } from '../core/constants.js';
+import { getMap } from '../data/maps.js';
+import { rand } from '../core/utils.js';
+import { sfx } from '../audio/audio.js';
+import { addPopup, burst, ring } from './fx.js';
+
+// ---------------------------------------------------------------------------
+// Zones de score au sol, propres au Swag Frisbee Stadium. Elles offrent une
+// alternative à la cage : moins de points, mais bien plus faciles à toucher.
+// Tout est conditionné à `zonesSol` du terrain — ailleurs, ce fichier ne fait
+// rien du tout.
+// ---------------------------------------------------------------------------
+
+const RAYON = 30;
+const DUREE = 3;              // durée de vie d'un cercle
+const ATTENTE = [5, 8];       // intervalle entre deux apparitions
+const DUNK_RAYON = 60;
+const POINTS_CERCLE = 1;
+const POINTS_DUNK = 2;
+
+export function terrainAZones() { return !!getMap().zonesSol; }
+
+// À l'entraînement les cercles sont plus fréquents : on vient les travailler.
+function attente() {
+  const [a, b] = ATTENTE;
+  return G.training ? rand(a * .5, b * .5) : rand(a, b);
+}
+
+export function updateZones(dt) {
+  if (!terrainAZones() || G.state !== 'play') return;
+
+  G.prochainCercle -= dt;
+  if (G.prochainCercle <= 0) {
+    G.prochainCercle = attente();
+    // On évite les abords immédiats des cages : un cercle là-bas se
+    // confondrait avec la zone de dunk.
+    G.cercles.push({
+      x: rand(COURT.left + 150, COURT.right - 150),
+      y: rand(COURT.top + 60, COURT.bottom - 60),
+      t: 0
+    });
+  }
+  for (let i = G.cercles.length - 1; i >= 0; i--) {
+    G.cercles[i].t += dt;
+    if (G.cercles[i].t > DUREE) G.cercles.splice(i, 1);
+  }
+}
+
+// Le demi-cercle de dunk, planté devant chaque cage.
+export function centreDunk(side) {
+  return { x: side === 1 ? COURT.left + GOAL_DEPTH : COURT.right - GOAL_DEPTH, y: CY };
+}
+
+// Appelé quand le disque s'immobilise. Renvoie true si une zone l'a récompensé,
+// auquel cas l'appelant n'a pas à déclarer le disque mort.
+export function disqueImmobile(d) {
+  if (!terrainAZones() || !d.thrower) return false;
+  const p = d.thrower;
+
+  for (let i = 0; i < G.cercles.length; i++) {
+    const c = G.cercles[i];
+    if (Math.hypot(d.x - c.x, d.y - c.y) <= RAYON) {
+      G.cercles.splice(i, 1);
+      marquer(p, POINTS_CERCLE, 'CERCLE +1', '#5df08a', d.x, d.y);
+      return true;
+    }
+  }
+  // Zone de dunk : celle que l'on défend ne rapporte rien, sinon il suffirait
+  // de poser le disque chez soi.
+  const dk = centreDunk(p.side === 1 ? 2 : 1);
+  if (Math.hypot(d.x - dk.x, d.y - dk.y) <= DUNK_RAYON) {
+    marquer(p, POINTS_DUNK, 'DUNK +2', '#ffd23e', d.x, d.y);
+    return true;
+  }
+  return false;
+}
+
+function marquer(p, pts, texte, couleur, x, y) {
+  p.score += pts;
+  addPopup(texte, couleur, 16, .9, y - 40);
+  burst(x, y, couleur, 18);
+  ring(x, y, couleur);
+  sfx('perfect');
+  comment(pts >= POINTS_DUNK ? 'DANS LA ZONE !' : 'JOLI PLACEMENT !');
+}
+
+export const ZONES = { RAYON, DUREE, DUNK_RAYON };

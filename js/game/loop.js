@@ -14,6 +14,7 @@ import { sfx, setDemoMuted } from '../audio/audio.js';
 import { render } from '../render/render.js';
 import { updateTraining, pilotageDummy } from '../ui/training.js';
 import { updateTutoriel, enTutoriel } from '../ui/tutoriel.js';
+import { updateZones } from './zones.js';
 
 export function update(dt) {
   setDemoMuted(G.demo);
@@ -112,6 +113,7 @@ export function update(dt) {
       if (G.isJ2J) updatePlayer2(wdt);
       updateTraining(wdt);
       updateTutoriel(wdt);
+      updateZones(wdt);
       updateDisc(wdt);
       updateDecoys(wdt);
       if (G.state === 'play') {

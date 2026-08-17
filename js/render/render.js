@@ -3,6 +3,7 @@ import { ctx, W, H } from '../core/dom.js';
 import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG_RADIUS, TARGET, DIVE_TIME, DIVE_RANGE, DASH_CATCH_MULT, DASH_GAP, CATCH_RADIUS } from '../core/constants.js';
 import { dbg } from '../ui/admin.js';
 import { options as optionsTraining } from '../ui/training.js';
+import { centreDunk, ZONES } from '../game/zones.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { getSkinId, drawSkinDisc } from '../data/skins.js';
@@ -208,7 +209,252 @@ function drawCourtNu() {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Swag Frisbee Stadium. Une salle de basket de gala : parquet verni, gradins
+   pleins, écran suspendu, projecteurs. Le public est engendré à la volée à
+   partir de son indice — aucune donnée à stocker, et il reste identique d'une
+   image à l'autre. */
+
+// Pseudo-aléatoire stable : le même indice donne toujours le même spectateur.
+function graine(i) { const x = Math.sin(i * 127.1) * 43758.5453; return x - Math.floor(x); }
+
+/* Gradins en escalier : chaque marche porte son nez éclairé, et l'ensemble
+   s'éclaircit en descendant vers le parquet. Les tribunes du bas suivent la
+   même logique à l'envers, pour que la lumière vienne toujours du terrain. */
+function drawMarches(y0, hauteur, versLeBas) {
+  const RANGS = 7, pas = hauteur / RANGS;
+  for (let r = 0; r < RANGS; r++) {
+    const k = versLeBas ? r : RANGS - 1 - r;      // 0 = le plus loin du terrain
+    const y = y0 + r * pas;
+    ctx.fillStyle = `rgba(255,255,255,${.04 + k * .012})`;
+    ctx.fillRect(0, y, W, pas - 3);
+    ctx.fillStyle = 'rgba(255,255,255,.14)';
+    ctx.fillRect(0, y + pas - 4, W, 1.6);
+  }
+}
+
+/* Le public, en rangs serrés : buste et tête, comme une vraie tribune pleine.
+   Il applaudit en rythme, se lève au but et lève les bras sur un Perfect Dive
+   — toute l'ambiance passe par lui, sans un son de plus. */
+function drawRangs(y0, hauteur, calme, leve) {
+  const cols = getMap().theme.crowdColors;
+  const RANGS = 5;
+  for (let r = 0; r < RANGS; r++) {
+    const y = y0 + hauteur * (.14 + r * .19);
+    for (let x = 6; x < W; x += 13) {
+      const i = r * 991 + x;
+      const saut = Math.sin(G.now * 3 + i) * 1.6 * calme;
+      const debout = leve * 5;
+      // Assez présent pour faire une foule, assez transparent pour laisser
+      // deviner les marches derrière : à pleine opacité, les gradins
+      // disparaissaient complètement sous les spectateurs.
+      ctx.globalAlpha = .34 + r * .07;
+      ctx.fillStyle = cols[(graine(i + 7) * cols.length) | 0];
+      ctx.fillRect(x, y + saut - debout, 7, 9);
+      ctx.beginPath(); ctx.arc(x + 3.5, y - 3 + saut - debout, 3.2, 0, TAU); ctx.fill();
+      // Bras levés quand la salle s'enflamme.
+      if (leve > .25) {
+        ctx.fillRect(x - 1.5, y - 8 + saut - debout, 1.5, 6);
+        ctx.fillRect(x + 7, y - 8 + saut - debout, 1.5, 6);
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawGradins() {
+  const th = getMap().theme;
+  const hautH = COURT.top - 8;
+  const basY = COURT.bottom + 8, basH = H - basY;
+
+  ctx.fillStyle = '#141824';
+  ctx.fillRect(0, 0, W, hautH);
+  ctx.fillRect(0, basY, W, basH);
+  drawMarches(0, hautH, true);
+  drawMarches(basY, basH, false);
+
+  const but = Math.max(G.goalFlash[0], G.goalFlash[1]);
+  const surprise = G.zoom ? 1 : 0;
+  const calme = G.training ? .35 : 1;          // moins agité à l'entraînement
+  const leve = Math.min(1, but + surprise) * calme;
+  drawRangs(0, hautH, calme, leve);
+  drawRangs(basY, basH, calme, leve);
+}
+
+/* Écran géant suspendu. Il se loge dans la bande libre entre le bandeau de
+   score et le parquet : plus haut, il passait derrière le HUD et on n'en
+   voyait qu'une tranche. Le score est déjà lisible en haut, l'écran affiche
+   donc surtout le nom de la salle. */
+function drawEcranGeant() {
+  const l = 236, h = 26, x = CX - l / 2, y = COURT.top - h - 6;
+  ctx.save();
+  ctx.fillStyle = '#0a0d14';
+  ctx.fillRect(x, y, l, h);
+  ctx.strokeStyle = `rgba(53,224,255,${.5 + Math.sin(G.now * 3) * .22})`;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, l, h);
+
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = Math.sin(G.now * 2.4) > -.3 ? '#35e0ff' : '#1b6b80';
+  ctx.font = '700 11px "Archivo Black", sans-serif';
+  ctx.fillText('SWAG FRISBEE STADIUM', CX, y + h / 2);
+
+  // Petits témoins lumineux qui défilent, comme un bandeau à LED.
+  ctx.fillStyle = 'rgba(255,210,62,.8)';
+  for (let i = 0; i < 6; i++) {
+    const px = x + 8 + ((G.now * 60 + i * 42) % (l - 16));
+    ctx.fillRect(px, y + 2, 3, 2);
+    ctx.fillRect(px, y + h - 4, 3, 2);
+  }
+  ctx.restore();
+}
+
+/* Panier décoratif monté sur son bras articulé, planté hors du terrain de
+   chaque côté. Le montage est symétrique : le poteau vient toujours du bord
+   le plus proche, jamais par-dessus le parquet. */
+function drawPanier(side) {
+  const vers = side === 1 ? 1 : -1;            // 1 = poteau à gauche
+  const x = side === 1 ? COURT.left - 4 : COURT.right + 4;
+  const y = GOAL_TOP - 74;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(vers, 1);                          // miroir pour le côté droit
+
+  ctx.strokeStyle = '#8b94a6'; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(-52, 58); ctx.lineTo(-52, 10); ctx.lineTo(-20, 10); ctx.stroke();
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(-52, 26); ctx.lineTo(-24, 12); ctx.stroke();
+
+  ctx.fillStyle = '#f2f4f8'; ctx.fillRect(-22, 0, 52, 34);
+  ctx.strokeStyle = '#20263a'; ctx.lineWidth = 3; ctx.strokeRect(-22, 0, 52, 34);
+  ctx.strokeStyle = '#e5384f'; ctx.lineWidth = 2; ctx.strokeRect(-8, 12, 24, 16);
+
+  ctx.strokeStyle = '#cfd6e2'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.ellipse(4, 38, 15, 5, 0, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.72)'; ctx.lineWidth = 1.4;
+  for (let i = -2; i <= 2; i++) {
+    ctx.beginPath(); ctx.moveTo(4 + i * 6, 40); ctx.lineTo(4 + i * 3, 56); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* Cercles bonus et zone de dunk, dessinés à même le parquet. */
+function drawZonesSol() {
+  if (!getMap().zonesSol) return;
+  const vif = G.training ? 1.35 : 1;          // plus lisibles à l'entraînement
+
+  for (const side of [1, 2]) {
+    const c = centreDunk(side);
+    const vers = side === 1 ? 1 : -1;
+    ctx.save();
+    ctx.strokeStyle = `rgba(255,210,62,${.5 * vif})`;
+    ctx.fillStyle = `rgba(255,210,62,${.07 * vif})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, ZONES.DUNK_RAYON, -Math.PI / 2 * vers, Math.PI / 2 * vers, vers < 0);
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+
+  for (const c of G.cercles) {
+    // Apparition et disparition en fondu, pour qu'ils ne surgissent pas.
+    const k = Math.min(1, c.t / .25) * Math.min(1, (ZONES.DUREE - c.t) / .5);
+    const pulse = 1 + Math.sin(G.now * 6) * .06;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, k) * vif;
+    ctx.fillStyle = 'rgba(93,240,138,.16)';
+    ctx.strokeStyle = 'rgba(93,240,138,.9)';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(c.x, c.y, ZONES.RAYON * pulse, 0, TAU);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(93,240,138,.95)';
+    ctx.font = '700 13px "Archivo Black", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('+1', c.x, c.y);
+    ctx.restore();
+  }
+}
+
+function drawCourtStade() {
+  const th = getMap().theme;
+  const cw = COURT.right - COURT.left, chh = COURT.bottom - COURT.top;
+
+  ctx.fillStyle = th.bgOuter;
+  ctx.fillRect(0, 0, W, H);
+  drawGradins();
+
+  // Parquet : lattes à peine suggérées — en pleine opacité elles rayaient le
+  // sol comme un tapis — puis la nappe de lumière des projecteurs.
+  ctx.fillStyle = th.floor;
+  ctx.fillRect(COURT.left, COURT.top, cw, chh);
+  ctx.globalAlpha = .3;
+  ctx.fillStyle = th.floorClair;
+  for (let x = COURT.left; x < COURT.right; x += 26) ctx.fillRect(x, COURT.top, 13, chh);
+  ctx.globalAlpha = 1;
+  const halo = ctx.createRadialGradient(CX, CY, 40, CX, CY, Math.max(cw, chh) * .62);
+  halo.addColorStop(0, 'rgba(255,244,214,.3)');
+  halo.addColorStop(1, 'rgba(255,244,214,0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(COURT.left, COURT.top, cw, chh);
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(COURT.left, COURT.top, cw, chh); ctx.clip();
+
+  // Logo peint au centre, comme sur un vrai parquet.
+  ctx.save();
+  ctx.globalAlpha = .16;
+  ctx.translate(CX, CY);
+  ctx.fillStyle = '#2a1a0c';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '700 30px "Archivo Black", sans-serif';
+  ctx.fillText('SWAG FRISBEE', 0, -14);
+  ctx.font = '700 20px "Archivo Black", sans-serif';
+  ctx.fillText('CLUB', 0, 12);
+  ctx.restore();
+
+  // Raquettes peintes, sous le marquage : c'est ce qui donne au parquet sa
+  // couleur d'équipe et ancre les deux camps.
+  ctx.fillStyle = 'rgba(47,107,255,.45)';
+  ctx.fillRect(COURT.left + 6, CY - 68, 108, 136);
+  ctx.fillRect(COURT.right - 6 - 108, CY - 68, 108, 136);
+
+  // Marquage de basket : touche, médiane, rond central et arcs à 3 points.
+  ctx.strokeStyle = th.line; ctx.lineWidth = 3;
+  ctx.strokeRect(COURT.left + 6, COURT.top + 6, cw - 12, chh - 12);
+  ctx.beginPath(); ctx.moveTo(CX, COURT.top); ctx.lineTo(CX, COURT.bottom); ctx.stroke();
+  ctx.beginPath(); ctx.arc(CX, CY, 62, 0, TAU); ctx.stroke();
+  ctx.beginPath(); ctx.arc(CX, CY, 14, 0, TAU); ctx.stroke();
+  for (const side of [1, 2]) {
+    const x = side === 1 ? COURT.left + 6 : COURT.right - 6;
+    const vers = side === 1 ? 1 : -1;
+    ctx.beginPath();
+    ctx.arc(x, CY, 168, -Math.PI / 2 * vers, Math.PI / 2 * vers, vers < 0);
+    ctx.stroke();
+    // Raquette.
+    ctx.strokeRect(side === 1 ? COURT.left + 6 : COURT.right - 6 - 108, CY - 68, 108, 136);
+  }
+  drawZonesSol();
+  ctx.restore();
+
+  // Cages chromées, avec leurs volets de points.
+  const m = getMap();
+  for (const side of [1, 2]) {
+    const x = side === 1 ? COURT.left : COURT.right;
+    const gx = side === 1 ? x - GOAL_DEPTH : x;
+    for (const z of m.zones) {
+      ctx.fillStyle = z.color; ctx.globalAlpha = .45;
+      ctx.fillRect(gx, CY + z.from, GOAL_DEPTH, z.to - z.from);
+      ctx.globalAlpha = 1;
+    }
+    ctx.strokeStyle = th.goalStroke; ctx.lineWidth = 4;
+    ctx.strokeRect(gx, GOAL_TOP, GOAL_DEPTH, GOAL_BOTTOM - GOAL_TOP);
+    drawPanier(side);
+  }
+  drawEcranGeant();
+}
+
 function drawCourt() {
+  if (getMap().style === 'stade') { drawCourtStade(); return; }
   if (getMap().style === 'nu') { drawCourtNu(); return; }
   const th = getMap().theme;
   const cw = COURT.right - COURT.left, chh = COURT.bottom - COURT.top;

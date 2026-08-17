@@ -66,30 +66,34 @@ MAPS.push({
   }
 });
 
-// Terrain secret, récompense du tutoriel : un gymnase de collège, écho direct
-// à la copie d'examen du disque « 20/20 ». Verrouillé jusqu'au dernier chapitre.
+// Terrain de prestige, récompense du tutoriel : une salle de basket de gala.
+// `zonesSol` active ses règles propres — cercles bonus au sol et zone de dunk
+// devant les cages — que les autres terrains ignorent.
 MAPS.push({
-  id: 'gymnase',
-  name: 'GYMNASE DU COLLÈGE',
+  id: 'stadium',
+  name: 'SWAG FRISBEE STADIUM',
   verrou: 'tuto',
   aide: 'Termine les 5 chapitres du tutoriel pour le débloquer.',
   ost: 'menu-ost',
   court: { left: 70, right: 890, top: 84, bottom: 560 },
   goal: { height: 210, depth: 48 },
   zones: [
-    { from: -105, to: -28, points: 3, color: '#4aa3df' },
-    { from: -28, to: 28, points: 5, color: '#f2b134' },
-    { from: 28, to: 105, points: 3, color: '#4aa3df' }
+    { from: -105, to: -30, points: 3, color: '#2f6bff' },
+    { from: -30, to: 30, points: 5, color: '#ffd23e' },
+    { from: 30, to: 105, points: 3, color: '#2f6bff' }
   ],
-  style: 'nu',
+  style: 'stade',
+  zonesSol: true,
   theme: {
-    bgInner: '#3c3128',
-    bgOuter: '#2a221b',
-    floor: '#e0b878',        // parquet clair de gymnase
-    line: 'rgba(120,70,40,.55)',
-    goalFill: 'rgba(74,163,223,.16)',
-    goalStroke: '#8a5a33',
-    crowdColors: ['#4aa3df'],
+    bgInner: '#241a12',
+    bgOuter: '#120c08',
+    floor: '#d99a53',        // parquet verni, chaud
+    floorClair: '#e8b471',   // lattes éclairées par les projecteurs
+    line: 'rgba(255,255,255,.85)',
+    goalFill: 'rgba(47,107,255,.16)',
+    goalStroke: '#cfd6e2',   // chrome
+    gradins: '#1b1f2b',
+    crowdColors: ['#ff5340', '#35e0ff', '#ffd23e', '#5df08a', '#ff8c1f', '#d9b8f5'],
     starColor: 'rgba(0,0,0,0)'
   }
 });

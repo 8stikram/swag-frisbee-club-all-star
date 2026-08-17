@@ -5,6 +5,7 @@ import {
 } from '../core/constants.js';
 import { norm, gauss, clamp, rand } from '../core/utils.js';
 import { sfx } from '../audio/audio.js';
+import { disqueImmobile } from './zones.js';
 import { burst, dust, addPopup } from './fx.js';
 import { onCatch, scoreGoal, ownFoul, setupServe } from './actions.js';
 
@@ -83,7 +84,14 @@ export function updateDisc(dt) {
   }
   if (sp < 70 && !d.big) {
     d.stall += dt;
-    if (d.stall > 1.6) { addPopup('DISQUE MORT', '#9fb4dd', 13, 1); setupServe(d.thrower === G.p1 ? 2 : 1); }
+    if (d.stall > 1.6) {
+      // Au Stadium, un disque qui s'arrête dans un cercle ou dans la zone de
+      // dunk rapporte des points au lieu d'être perdu : c'est tout l'intérêt
+      // d'y placer son tir plutôt que de viser la cage à tout prix.
+      const recompense = disqueImmobile(d);
+      if (!recompense) addPopup('DISQUE MORT', '#9fb4dd', 13, 1);
+      setupServe(d.thrower === G.p1 ? 2 : 1);
+    }
   } else d.stall = 0;
   for (const p of [G.p1, G.p2]) {
     if (p.holding || p.throwCd > 0 || p.stun > 0) continue;
