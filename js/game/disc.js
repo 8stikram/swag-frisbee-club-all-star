@@ -1,7 +1,7 @@
 import { G } from './state.js';
 import {
   COURT, GOAL_TOP, GOAL_BOTTOM, DISC_RADIUS, DISC_BIG_RADIUS, DASH_CATCH_MULT,
-  FEINT_TIME, FEINT_FREE, FEINT_CD, FEINT_REACH
+  FEINT_TIME, FEINT_FREE, FEINT_CD, FEINT_REACH, METER_GAIN, CATCH_RADIUS
 } from '../core/constants.js';
 import { norm, gauss, clamp, rand } from '../core/utils.js';
 import { sfx } from '../audio/audio.js';
@@ -28,7 +28,7 @@ export function updateDisc(dt) {
         const foe = h.foe;
         if (foe && !foe.holding && foe.throwCd <= 0 && foe.stun <= 0
           && foe.diveT <= 0 && foe.diveDown <= 0
-          && Math.hypot(d.x - foe.x, d.y - foe.y) < foe.char.catchR * .8) {
+          && Math.hypot(d.x - foe.x, d.y - foe.y) < foe.char.catchR * CATCH_RADIUS * .8) {
           h.holding = false; h.feintT = 0; h.charging = false; h.charge = 0;
           d.heldBy = null; d.free = true; d.thrower = h; d.thrownAt = G.now - 1;
           addPopup('INTERCEPTION !', '#ff5340', 15, .9, foe.y - 56);
@@ -62,6 +62,9 @@ export function updateDisc(dt) {
   if (d.y < COURT.top + r) { d.y = COURT.top + r; d.vy = Math.abs(d.vy) * rest; onBounce(d); }
   if (d.y > COURT.bottom - r) { d.y = COURT.bottom - r; d.vy = -Math.abs(d.vy) * rest; onBounce(d); }
   const inGoalY = d.y > GOAL_TOP && d.y < GOAL_BOTTOM;
+  // Un disque qui revient de ricochet peut parfaitement finir dans sa propre
+  // cage, même si c'est soi qui l'a lancé : c'est le risque des tirs par la
+  // bande. Ce qui est interdit, c'est de VISER en arrière — voir viseVersAvant().
   if (d.x < COURT.left + r) {
     if (inGoalY) { if (d.x < COURT.left - r) { scoreGoal(G.p2, d.y); return; } }
     else {
@@ -91,7 +94,7 @@ export function updateDisc(dt) {
     // récompense du joueur qui va le chercher.
     // La hitbox élargie vaut pendant le dash et survit brièvement à un Cancel Dash.
     const dashBonus = (p.dashT > 0 || p.cancelCatchT > 0) ? DASH_CATCH_MULT : 1;
-    const r2 = p.char.catchR * (d.kind === 'kurama' ? .5 : 1) * (p.lunge > 0 ? 1.45 : 1) * dashBonus + (d.big ? 8 : 0);
+    const r2 = p.char.catchR * CATCH_RADIUS * (d.kind === 'kurama' ? .5 : 1) * (p.lunge > 0 ? 1.45 : 1) * dashBonus + (d.big ? 8 : 0);
     if (Math.hypot(d.x - p.x, d.y - p.y) < r2) { onCatch(p, sp, dirB.x, dirB.y); break; }
   }
 }
@@ -102,7 +105,7 @@ export function onBounce(d) {
   else { sfx('bounce'); dust(d.x, d.y, 6); G.shake = Math.max(G.shake, 3); }
   if (d.thrower) {
     const ownSideWall = (d.x <= COURT.left + DISC_R() && d.thrower.side === 1) || (d.x >= COURT.right - DISC_R() && d.thrower.side === 2);
-    if (!ownSideWall) { d.thrower.meter = clamp(d.thrower.meter + 5, 0, 100); }
+    if (!ownSideWall) { d.thrower.meter = clamp(d.thrower.meter + 5 * METER_GAIN, 0, 100); }
   }
 }
 
@@ -115,7 +118,7 @@ export function updateDecoys(dt) {
     if (o.x < COURT.left - DISC_R() && inGoalY) { scoreGoal(G.p2, o.y); G.decoys.splice(i, 1); continue; }
     if (o.x > COURT.right + DISC_R() && inGoalY) { scoreGoal(G.p1, o.y); G.decoys.splice(i, 1); continue; }
     const foe = o.thrower.foe;
-    if (foe && !foe.holding && Math.hypot(o.x - foe.x, o.y - foe.y) < foe.char.catchR) {
+    if (foe && !foe.holding && Math.hypot(o.x - foe.x, o.y - foe.y) < foe.char.catchR * CATCH_RADIUS) {
       sfx('catch');
       addPopup('DÉCOY DÉTRUIT !', '#9fe8ff', 12, .6, foe.y - 40);
       G.decoys.splice(i, 1); continue;

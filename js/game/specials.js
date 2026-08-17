@@ -24,6 +24,11 @@ export function launchCine(cine) {
 // perturbe l'adversaire : sa visée part de travers un court instant. On agit
 // sur son contrôle plutôt que sur le cadrage de sa moitié de terrain, qui
 // aurait laissé apparaître des bords noirs en décalant l'image.
+// Vitesse du balancement. La cloche sonne à chaque extrême de sa course, donc
+// un coup tous les π/OSC ≈ 0,92 s — le rythme est porté par l'animation
+// elle-même plutôt que par un minuteur qui vivrait à côté.
+const OSC = 3.4;
+
 export function updateBell(dt) {
   const b = G.bell;
   if (!b) return;
@@ -33,12 +38,16 @@ export function updateBell(dt) {
     addPopup('LA CLOCHE SE TAIT', '#f5c542', 13, .9);
     return;
   }
-  // Un coup toutes les 0,9 s : secousse et désorientation de l'adversaire.
-  if (b.t >= b.next) {
-    b.next = b.t + .9;
+  // L'angle est calculé ici et lu par le rendu : les deux ne peuvent donc pas
+  // se désynchroniser, et le son tombe pile sur le changement de côté.
+  b.bal = Math.sin(b.t * OSC);
+  const sens = Math.cos(b.t * OSC) >= 0 ? 1 : -1;
+  if (b.sens === undefined) b.sens = sens;
+  if (sens !== b.sens) {               // elle vient de basculer : elle sonne
+    b.sens = sens;
     b.ring = 1;
     G.shake = Math.max(G.shake, 7);
-    sfx('bigbounce');
+    sfx('bell');
     const foe = b.owner.foe;
     if (foe) {
       foe.dizzy = .55;                 // sa course dérive pendant ce temps

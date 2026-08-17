@@ -20,11 +20,16 @@ export function isAdminMode() { return adminMode; }
 export function setAdminMode(v) { adminMode = v; G.adminMode = v; $('admin-panel').classList.toggle('visible', v); }
 
 /* ---------- outils de dessin ---------- */
+// ck à null : on garde le gabarit du canvas mais on ne dessine rien. C'est ce
+// qui masque un camp tiré au sort — le « ? » posé par-dessus est translucide,
+// il ne suffisait pas à cacher la silhouette.
 function drawSprite(canvasEl, ck, scale) {
-  const src = CHARS[ck].frames.idle;
+  const src = CHARS[ck || ROSTER[0]].frames.idle;
   canvasEl.width = src.width * scale;
   canvasEl.height = src.height * scale;
   const c = canvasEl.getContext('2d');
+  c.clearRect(0, 0, canvasEl.width, canvasEl.height);
+  if (!ck) return;
   c.imageSmoothingEnabled = false;
   c.drawImage(src, 0, 0, canvasEl.width, canvasEl.height);
 }
@@ -135,13 +140,6 @@ export function resetSelectTurn() {
   label();
 })();
 
-// Les deux boutons VALIDER, sous le nom de chaque camp.
-(function () {
-  const b1 = $('okP1'), b2 = $('okP2');
-  if (b1) b1.addEventListener('click', e => { e.stopPropagation(); validate(1); });
-  if (b2) b2.addEventListener('click', e => { e.stopPropagation(); validate(2); });
-})();
-
 // « Clac » doux de validation : deux notes courtes et rondes, sans agressivité.
 function clac() { sfx('select'); }
 
@@ -149,13 +147,14 @@ function clac() { sfx('select'); }
 // n'est figé tant que le joueur n'a pas appuyé sur VALIDER sous son nom.
 let previewP1 = false, previewP2 = false;
 
+// Un clic suffit : le personnage est choisi et verrouillé dans la foulée, et
+// la main passe aussitôt au camp suivant. Il n'y a plus d'étape de
+// confirmation à part — on revient en arrière avec RETOUR si on s'est trompé.
 function preselect(ck) {
   if (turn === 1) { selCharPlayer = ck; previewP1 = true; rndP1 = false; }
   else if (turn === 2) { selCharCPU = ck; previewP2 = true; rndP2 = false; }
   else return;
-  sfx('move');
-  refreshSelect();
-  punchHero(turn);
+  validate(turn);
 }
 
 function preselectRandom() {
@@ -163,13 +162,10 @@ function preselectRandom() {
   if (turn === 1) { selCharPlayer = pick; previewP1 = true; rndP1 = true; }
   else if (turn === 2) { selCharCPU = pick; previewP2 = true; rndP2 = true; }
   else return;
-  sfx('move');
-  refreshSelect();
-  punchHero(turn);
+  validate(turn);
 }
 
-// Confirmation : c'est ici seulement que le choix est verrouillé et que la
-// main passe au camp suivant.
+// Verrouille le choix et passe la main au camp suivant.
 function validate(side) {
   if (side === 1) { if (!previewP1 || lockedP1) return; lockedP1 = true; turn = 2; }
   else { if (!previewP2 || lockedP2) return; lockedP2 = true; turn = 0; }
@@ -206,8 +202,12 @@ function pickPlayer(c) { selCharPlayer = c; sfx('move'); refreshSelect(); }
 function pickCPU(c) { selCharCPU = c; sfx('move'); refreshSelect(); }
 function changeDiff(d) { diffIdx = (diffIdx + d + DIFFS.length) % DIFFS.length; sfx('move'); refreshSelect(); }
 
+// ch à null : barres vides et grises, pour ne pas trahir un camp tiré au sort
+// — un profil de statistiques identifie un personnage aussi sûrement qu'un nom.
 function renderStats(el, ch) {
-  const rows = [['VITESSE', ch.stats.spd, '#5df08a'], ['PUISSANCE', ch.stats.pow, '#ff5f6d'], ['CONTRÔLE', ch.stats.ctl, '#35e0ff']];
+  const rows = ch
+    ? [['VITESSE', ch.stats.spd, '#5df08a'], ['PUISSANCE', ch.stats.pow, '#ff5f6d'], ['CONTRÔLE', ch.stats.ctl, '#35e0ff']]
+    : [['VITESSE', 0, '#6b7280'], ['PUISSANCE', 0, '#6b7280'], ['CONTRÔLE', 0, '#6b7280']];
   el.innerHTML = rows.map(([label, val, col]) =>
     `<div class="statRow"><span class="lbl">${label}</span>` +
     `<div class="bar"><i style="width:${val / 5 * 100}%;background:${col}"></i></div></div>`
@@ -224,8 +224,10 @@ function renderCharGrid() {
     drawSprite(cv, ck, 5);
     cell.appendChild(cv);
     // Contour dessiné + tag de la couleur du camp, posé à la validation.
-    if (lockedP1 && selCharPlayer === ck) markPicked(cell, 'p1', '1P');
-    if (lockedP2 && selCharCPU === ck) markPicked(cell, modeJ2J ? 'p2' : 'cpu', modeJ2J ? '2P' : 'CPU');
+    // Un camp tiré au sort ne pose son étiquette que sur la case « ? » : la
+    // poser aussi sur le personnage réellement tiré vendait la mèche.
+    if (lockedP1 && !rndP1 && selCharPlayer === ck) markPicked(cell, 'p1', '1P');
+    if (lockedP2 && !rndP2 && selCharCPU === ck) markPicked(cell, modeJ2J ? 'p2' : 'cpu', modeJ2J ? '2P' : 'CPU');
     cell.addEventListener('click', () => preselect(ck));
     grid.appendChild(cell);
   }
@@ -255,44 +257,47 @@ function markPicked(cell, kind, label) {
 
 export function refreshSelect() {
   const p1 = CHARS[selCharPlayer], p2 = CHARS[selCharCPU];
-  $('selUni1').textContent = p1.universe;
-  $('selUni2').textContent = p2.universe;
-  // Un camp tiré au sort reste caché derrière un « ? » arc-en-ciel : la
-  // révélation n'a lieu qu'au lancement du match.
+  // Un camp tiré au sort est masqué de bout en bout jusqu'au coup d'envoi :
+  // sprite, univers, statistiques, ultime et couleur d'ambiance. Chacun de ces
+  // détails suffisait à reconnaître le personnage malgré le « ? ».
+  $('selUni1').textContent = rndP1 ? '???' : p1.universe;
+  $('selUni2').textContent = rndP2 ? '???' : p2.universe;
   $('selName1').textContent = rndP1 ? '???' : p1.short;
   $('selName2').textContent = rndP2 ? '???' : p2.short;
-  drawSprite($('selHero1'), selCharPlayer, 12);
-  drawSprite($('selHero2'), selCharCPU, 12);
+  drawSprite($('selHero1'), rndP1 ? null : selCharPlayer, 12);
+  drawSprite($('selHero2'), rndP2 ? null : selCharCPU, 12);
   showRandomMask(0, rndP1);
   showRandomMask(1, rndP2);
 
   // Plus de grisage : le camp en cours se lit au bandeau clignotant et aux
-  // contours posés sur les cases. Le bouton VALIDER n'apparaît que pour le
-  // camp dont c'est le tour, et seulement s'il a présélectionné un personnage.
-  const b1 = $('okP1'), b2 = $('okP2');
-  if (b1) b1.classList.toggle('hidden', !(turn === 1 && previewP1));
-  if (b2) b2.classList.toggle('hidden', !(turn === 2 && previewP2));
+  // contours posés sur les cases. COMBATTRE n'apparaît qu'une fois les deux
+  // camps verrouillés — avant, il n'y a rien à lancer.
+  const fight = $('fightBtn');
+  if (fight) fight.classList.toggle('hidden', !(lockedP1 && lockedP2));
   const hint = $('turnHint');
   if (hint) {
     hint.className = 'turnHint ' + (turn === 1 ? 'p1' : turn === 2 ? 'p2' : 'done');
     hint.textContent = turn === 1 ? 'AU TOUR DE 1P'
       : turn === 2 ? (modeJ2J ? 'AU TOUR DE 2P' : 'AU TOUR DU CPU') : '';
   }
-  renderStats($('selStats1'), p1);
-  renderStats($('selStats2'), p2);
+  renderStats($('selStats1'), rndP1 ? null : p1);
+  renderStats($('selStats2'), rndP2 ? null : p2);
   renderCharGrid();
 
-  const sp = SPECIALS[p1.ult];
-  $('specialName').textContent = sp.name;
-  $('specialDesc').textContent = sp.desc;
+  const sp = rndP1 ? null : SPECIALS[p1.ult];
+  $('specialName').textContent = sp ? sp.name : '???';
+  $('specialDesc').textContent = sp ? sp.desc : 'Tirage au sort — révélé au coup d\'envoi.';
   $('diffName').textContent = DIFFS[diffIdx].label;
 
-  // Halos + fond en dégradé de la couleur J1 vers celle de J2.
-  $('selGlow1').style.background = p1.color;
-  $('selGlow2').style.background = p2.color;
+  // Halos + fond en dégradé de la couleur J1 vers celle de J2. Un camp masqué
+  // vire au gris neutre : sa couleur d'ambiance le désignait aussi sûrement.
+  const NEUTRE = '#6b7280';
+  const c1 = rndP1 ? NEUTRE : p1.color, c2 = rndP2 ? NEUTRE : p2.color;
+  $('selGlow1').style.background = c1;
+  $('selGlow2').style.background = c2;
   document.querySelector('.bg-select').style.background =
-    `linear-gradient(100deg, ${pale(p1.color, .55)} 0%, ${pale(p1.color, .44)} 26%, ` +
-    `${pale(p2.color, .44)} 74%, ${pale(p2.color, .55)} 100%)`;
+    `linear-gradient(100deg, ${pale(c1, .55)} 0%, ${pale(c1, .44)} 26%, ` +
+    `${pale(c2, .44)} 74%, ${pale(c2, .55)} 100%)`;
 }
 
 export function selectScreenKey(code) {
@@ -463,13 +468,30 @@ function renderMusic() {
   $('musicName').textContent = c.name;
   if (c.id) playTrack(c.id); else stopTrack();
 }
-// Bascule sur une piste donnée sans passer par les flèches — utilisé quand un
-// terrain impose son OST.
+
+// Les écrans de navigation ont leur propre thème : la piste choisie pour le
+// match ne prend le relais qu'au coup d'envoi. L'écran des terrains fait
+// exception, il la joue en aperçu pour qu'on puisse la choisir à l'oreille.
+// playTrack() relance la lecture depuis le début : on ne l'appelle donc que si
+// la piste change vraiment, sinon la musique repartirait à chaque écran.
+const PISTE_MENU = 'menu-ost';
+function musiqueDeMenu() {
+  if (getTrackId() !== PISTE_MENU) playTrack(PISTE_MENU);
+}
+// Piste retenue pour le match, lancée au coup d'envoi.
+function musiqueDuMatch() {
+  const c = MUSIC_CHOICES[musicIdx];
+  if (!c.id) { stopTrack(); return; }
+  if (getTrackId() !== c.id) playTrack(c.id);
+}
+// Retient la piste d'un terrain sans la lancer : on est encore dans les menus,
+// qui gardent leur propre thème. Elle ne se fera entendre qu'au coup d'envoi —
+// ou tout de suite si le joueur va la chercher lui-même avec les flèches.
 function selectTrack(id) {
   const i = MUSIC_CHOICES.findIndex(t => t.id === id);
-  if (i < 0 || i === musicIdx) return;
+  if (i < 0) return;
   musicIdx = i;
-  renderMusic();
+  $('musicName').textContent = MUSIC_CHOICES[i].name;
 }
 function cycleMusic(d) {
   musicIdx = (musicIdx + d + MUSIC_CHOICES.length) % MUSIC_CHOICES.length;
@@ -483,6 +505,7 @@ export function pauseGame() { Mouse.down = false; duckMusic(true); showScreen('p
 function startMatch() {
   resolveSkin();
   resolveMap();
+  musiqueDuMatch();
   showScreen(null);
   initMatch(false, selCharPlayer, selCharCPU, diffIdx, modeJ2J);
   requestLock();
@@ -491,10 +514,10 @@ function startMatch() {
 
 export function doAct(act) {
   switch (act) {
-    case 'play': sfx('select'); modeJ2J = false; resetSelectTurn(); showScreen('select'); refreshSelect(); break;
-    case 'j2j': sfx('select'); modeJ2J = true; resetSelectTurn(); showScreen('select'); refreshSelect(); break;
-    case 'options': sfx('select'); showScreen('options'); refreshKeysUI(); break;
-    case 'back': sfx('select'); showScreen('title'); break;
+    case 'play': sfx('select'); modeJ2J = false; musiqueDeMenu(); resetSelectTurn(); showScreen('select'); refreshSelect(); break;
+    case 'j2j': sfx('select'); modeJ2J = true; musiqueDeMenu(); resetSelectTurn(); showScreen('select'); refreshSelect(); break;
+    case 'options': sfx('select'); musiqueDeMenu(); showScreen('options'); refreshKeysUI(); break;
+    case 'back': sfx('select'); musiqueDeMenu(); showScreen('title'); break;
     case 'fight': sfx('select'); showScreen('maps'); refreshMaps(); break;
     case 'startMatch': sfx('select'); startMatch(); break;
     case 'resume': sfx('select'); duckMusic(false); showScreen(null); requestLock(); break;

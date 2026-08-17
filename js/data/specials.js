@@ -3,7 +3,7 @@ import { COURT, CY, GOAL_TOP, GOAL_BOTTOM } from '../core/constants.js';
 import { norm, gauss, clamp } from '../core/utils.js';
 import { sfx } from '../audio/audio.js';
 import { burst } from '../game/fx.js';
-import { throwDisc } from '../game/actions.js';
+import { throwDisc, viseVersAvant } from '../game/actions.js';
 import { buildSprite } from './characters.js';
 
 // Sprite pixel-art de la Jambe de Maman (référence Binding of Isaac : chair
@@ -26,6 +26,18 @@ const LEG_ROWS = [
 export const LEG_SPRITE = buildSprite(LEG_ROWS, PAL_LEG);
 export const LEG_SPRITE_SCALE = 4;
 
+// Cloche de Minuit : la tête de Jingle Bells, devenue géante. Dessinée en pixel
+// art comme le reste du jeu plutôt qu'au vectoriel, pour rester dans le même
+// langage visuel. 24 de large, du crochet jusqu'au battant.
+// C'est la seule image importée du jeu : tous les autres sprites sont peints
+// pixel par pixel ici. L'ultime a le droit de trancher — la cloche reste sept
+// secondes à l'écran, en grand, c'est le moment spectaculaire du personnage.
+// Elle se charge de façon asynchrone : le rendu vérifie donc `complete` avant
+// de la dessiner, pour ne pas cracher si l'ultime part avant la fin du
+// chargement.
+export const BELL_SPRITE = new Image();
+BELL_SPRITE.src = 'assets/img/cloche-ulti.png';
+
 // Registre des attaques spéciales. Pour ajouter une spéciale : une entrée ici,
 // puis `ult:'<clé>'` sur le personnage dans data/characters.js.
 //   needsDisc : refuse le cast si le perso n'a pas le disque
@@ -46,8 +58,13 @@ export const SPECIALS = {
     },
     launch(p) {
       let dir;
-      if (p.human) { dir = norm(Mouse.x - p.x, Mouse.y - p.y); }
-      else {
+      if (p.human) {
+        dir = norm(Mouse.x - p.x, Mouse.y - p.y);
+        // L'ultime est déjà consommé quand on arrive ici : contrairement à un
+        // tir ordinaire, on ne peut pas simplement l'annuler. Une visée partie
+        // vers l'arrière est donc retournée vers la cage adverse.
+        if (!viseVersAvant(p, dir)) dir = norm(-dir.x, dir.y);
+      } else {
         const zy = [GOAL_TOP + 34, GOAL_BOTTOM - 34, CY][(Math.random() * 3) | 0];
         const tx = p.side === 1 ? COURT.right : COURT.left;
         dir = norm(tx - p.x, zy + gauss() * 40 - p.y);
@@ -85,6 +102,7 @@ export const SPECIALS = {
     }
   },
 
+  // eslint-disable-next-line no-unused-vars
   bell: {
     name: 'CLOCHE DE MINUIT',
     desc: 'Sa tête devient une cloche géante qui protège sa cage.',
@@ -95,7 +113,7 @@ export const SPECIALS = {
       G.bell = {
         owner: p, side: p.side, t: 0, dur: 7,
         x: p.side === 1 ? COURT.left + 54 : COURT.right - 54,
-        y: CY, ring: 0, next: 0
+        y: CY, ring: 0, bal: 0, sens: undefined
       };
       G.banner = { text: 'CLOCHE DE MINUIT !!', color: '#f5c542', t: 0, dur: 1.3 };
       G.shake = 12;

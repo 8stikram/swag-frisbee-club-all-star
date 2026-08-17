@@ -244,8 +244,10 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
 
-/* Bouton de lancement : plus grand, avec un dégradé qui défile en continu. */
-.mapGoBtn.big{
+/* Boutons de lancement : plus grands, avec un dégradé qui défile en continu.
+   COMBATTRE et LANCER LE MATCH partagent exactement le même habillage — ce
+   sont les deux boutons qui font passer à l'écran suivant. */
+.mapGoBtn.big, .fightBtn{
   font-size:clamp(14px,2.6cqh,26px);padding:1.6cqh 3cqw;border-radius:18px;
   color:var(--ink);
   background:linear-gradient(100deg,#ffe259,#ffa751,#5df08a,#35e0ff,#ffe259);
@@ -443,7 +445,6 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 
 .diffRow{display:flex;align-items:center;gap:.8cqw}
 .diffLabel{font-family:'Archivo Black',sans-serif;font-size:clamp(9px,1.7cqh,13px);color:var(--ink)}
-.fightBtn{font-size:clamp(12px,2.2cqh,18px);padding:1.2cqh 2.4cqw}
 
 .discbar{
   position:absolute;left:50%;bottom:2.4cqh;transform:translateX(-50%);z-index:6;

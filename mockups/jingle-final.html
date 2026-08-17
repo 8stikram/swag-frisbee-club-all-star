@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Jingle Bells — bandoulière symétrique + relief</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; --bad:#ff5340; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 60px}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:14px;margin:28px 0 10px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .sub{color:#8fa4c4;font-size:13px;margin:0 0 6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:800px;line-height:1.6;margin:0 0 14px}
+  .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px}
+  .card.pick{border-color:var(--ok)}
+  .lbl{font-size:11px;color:#8fa4c4;text-transform:uppercase;letter-spacing:1.1px;
+       margin-bottom:8px;text-align:center;min-height:34px}
+  .lbl b{display:block;font-size:15px;color:#f5c542;letter-spacing:1px}
+  .lbl em{font-style:normal;display:block;margin-top:2px;line-height:1.3}
+  canvas{display:block;image-rendering:pixelated;margin:0 auto}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok);white-space:pre-wrap}
+  #errs.bad{color:var(--bad)}
+</style>
+</head>
+<body>
+
+<h1>Jingle Bells — bandoulière symétrique + relief</h1>
+<p class="note">Sur la base validée (cloche C + tenue C) : la bandoulière est reprise en miroir des deux
+côtés (au lieu d'une seule diagonale) pour former une boucle symétrique, et la ligne juste sous l'écharpe
+est assombrie pour marquer le relief. Toujours aucun pixel ajouté, uniquement des recolorations.</p>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>Comparaison</h2>
+<div class="row" id="compare"></div>
+
+<h2>À la taille réelle du jeu</h2>
+<div class="row" id="reel"></div>
+
+<script>
+const PAL = { G:'#f5c542', g:'#c9992a', W:'#ffe9a0', d:'#8a6a15',
+  R:'#a8232f', r:'#7a1620', V:'#1f5c3a', v:'#143f28', l:'#3fae70',
+  S:'#b9c0cb', s:'#7e8794' };
+
+const HEAD_ORIG = ["......GG........",".....GgGG.......",".....GGGG.......","....GGGGGG......","....GWGGGg......","...GGGGGGGG.....","...GWGGGGgg.....","..GGGGGGGGGG....","..gGGGGGGGGg....","..RVRVRVRVRV...."];
+const IDLE_ORIG  = ["....RRRRRR......","..SSRRVVRRSS....",".SSRRRVVRRRSS...",".SSRRRVVRRRSS...","..RRRRVVRRRR....","..rRRRVVRRRr....","...RRRRRRRR.....","...SS....SS.....","...SS....SS.....","..GSS....SSG...."];
+
+function reshade(rows, map) {
+  return rows.map((row, r) => {
+    let out = '';
+    for (let c = 0; c < row.length; c++) {
+      const ch = row[c];
+      if (ch === '.') { out += '.'; continue; }
+      const k = r + ',' + c;
+      out += (map[k] !== undefined) ? map[k] : ch;
+    }
+    return out;
+  });
+}
+function memeSilhouette(a, b) {
+  for (let r = 0; r < a.length; r++) for (let c = 0; c < a[r].length; c++) {
+    if ((a[r][c] === '.') !== (b[r][c] === '.')) return false;
+  }
+  return true;
+}
+
+const HEAD_C = reshade(HEAD_ORIG, {
+  '0,6':'W', '1,5':'W','1,7':'G','1,8':'g',
+  '2,5':'W','2,6':'G','2,7':'G','2,8':'g',
+  '3,4':'W','3,5':'G','3,6':'G','3,7':'G','3,8':'g','3,9':'g',
+  '4,4':'W','4,5':'G','4,6':'G','4,7':'G','4,8':'g','4,9':'d',
+  '5,3':'W','5,4':'G','5,5':'G','5,6':'G','5,7':'G','5,8':'g','5,9':'g','5,10':'d',
+  '6,3':'W','6,4':'G','6,5':'G','6,6':'G','6,7':'G','6,8':'g','6,9':'g','6,10':'d',
+  '7,2':'g','7,3':'W','7,4':'G','7,5':'G','7,6':'G','7,7':'G','7,8':'g','7,9':'g','7,10':'g','7,11':'d',
+  '8,2':'d','8,3':'g','8,4':'G','8,5':'G','8,6':'G','8,7':'g','8,8':'g','8,9':'g','8,10':'d'
+});
+// Boucle au sommet : la pointe pleine devient un anneau ouvert — deux montants
+// dorés séparés par un trou, refermés en bas par le dôme. C'est le seul
+// endroit où un pixel est ajouté (colonne 8), tout le reste est inchangé.
+const HEAD_BOUCLE = HEAD_C.map((row, i) => i === 0 ? "......G.G......." : row);
+
+const IDLE_C = reshade(IDLE_ORIG, {
+  '1,3':'V', '1,4':'v', '1,9':'v', '1,10':'V',
+  '2,3':'V', '2,4':'v', '2,5':'V', '2,8':'V', '2,9':'v', '2,10':'V',
+  '3,4':'v', '3,5':'V', '3,8':'V', '3,9':'v',
+  '4,5':'S', '4,6':'s', '4,7':'s', '4,8':'S',
+  '5,6':'s', '5,7':'S'
+});
+
+// Bandoulière en miroir des deux côtés (boucle symétrique, comme demandé) +
+// assombrissement de la ligne juste sous l'écharpe (relief). Uniquement des
+// recolorations de pixels déjà remplis dans IDLE_C — aucun ajout.
+const IDLE_FINAL = reshade(IDLE_C, {
+  '3,10':'l', '4,9':'l', '5,8':'l', '6,7':'l',   // bandoulière, côté droit
+  '3,3':'l',  '4,4':'l', '5,5':'l', '6,6':'l',   // bandoulière, côté gauche (miroir)
+  '4,2':'r',  '4,3':'r', '4,10':'r','4,11':'r'   // relief : rouge assombri sous l'écharpe
+});
+
+// L'écharpe passe à deux pixels d'épaisseur : la rangée du cou (dernière ligne
+// de la tête) est doublée par la première rangée du corps, rayures alignées
+// verticalement pour rester nettes.
+//   A — mêmes tons : écharpe bien à plat.
+//   B — tons foncés en dessous : l'épaisseur donne aussi le relief.
+const ECHARPE_A = reshade(IDLE_FINAL, {
+  '0,4':'R', '0,5':'V', '0,6':'R', '0,7':'V', '0,8':'R', '0,9':'V'
+});
+const ECHARPE_B = reshade(IDLE_FINAL, {
+  '0,4':'r', '0,5':'v', '0,6':'r', '0,7':'v', '0,8':'r', '0,9':'v'
+});
+
+// ------------------------------------------------------------------ outils
+function build(rows) {
+  const c = document.createElement('canvas');
+  c.width = 16; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x]; if (ch !== '.' && PAL[ch]) { g.fillStyle = PAL[ch]; g.fillRect(x, y, 1, 1); }
+  }});
+  return c;
+}
+function show(parent, rows, label, scale, pick) {
+  const card = document.createElement('div');
+  card.className = 'card' + (pick ? ' pick' : '');
+  const l = document.createElement('div'); l.className = 'lbl'; l.innerHTML = label;
+  const cv = document.createElement('canvas');
+  cv.width = 16 * scale; cv.height = rows.length * scale;
+  const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, cv.width, cv.height);
+  g.drawImage(build(rows), 0, 0, cv.width, cv.height);
+  card.appendChild(l); card.appendChild(cv); parent.appendChild(card);
+}
+
+// ------------------------------------------------------------------ validation
+(function () {
+  const bad = [];
+  [['HEAD_C', HEAD_C], ['HEAD_BOUCLE', HEAD_BOUCLE], ['IDLE_C', IDLE_C],
+   ['IDLE_FINAL', IDLE_FINAL], ['ECHARPE_A', ECHARPE_A], ['ECHARPE_B', ECHARPE_B]].forEach(([k, rows]) => {
+    rows.forEach((r, i) => { if (r.length !== 16) bad.push(k + '[' + i + '] largeur ' + r.length); });
+    rows.forEach((r, i) => { for (const ch of r) if (ch !== '.' && !PAL[ch]) bad.push(k + '[' + i + '] couleur inconnue "' + ch + '"'); });
+  });
+  if (!memeSilhouette(HEAD_ORIG, HEAD_C)) bad.push('HEAD_C : silhouette différente de l\'originale !');
+  if (!memeSilhouette(IDLE_ORIG, IDLE_C)) bad.push('IDLE_C : silhouette différente de l\'originale !');
+  if (!memeSilhouette(IDLE_C, IDLE_FINAL)) bad.push('IDLE_FINAL : silhouette différente de la tenue validée ! (ne devrait ajouter aucun pixel)');
+  const box = document.getElementById('errs');
+  if (bad.length) { box.className = 'bad'; box.textContent = bad.join('\n'); }
+  else box.textContent = 'OK — silhouette identique à ce qui est déjà validé, seules les couleurs de la bandoulière et de la ligne de relief changent.';
+})();
+
+// ------------------------------------------------------------------ rendus
+const cmp = document.getElementById('compare');
+show(cmp, [...HEAD_BOUCLE, ...IDLE_FINAL], '<b>Avant</b><em>écharpe sur<br>une seule rangée</em>', 9);
+show(cmp, [...HEAD_BOUCLE, ...ECHARPE_A], '<b>A</b><em>écharpe 2 px,<br>mêmes tons</em>', 9);
+show(cmp, [...HEAD_BOUCLE, ...ECHARPE_B], '<b>B</b><em>écharpe 2 px,<br>rangée du bas foncée</em>', 9, true);
+
+const r = document.getElementById('reel');
+show(r, [...HEAD_BOUCLE, ...IDLE_FINAL], 'avant · ×2,4', 2.4);
+show(r, [...HEAD_BOUCLE, ...ECHARPE_A], 'A · ×2,4', 2.4);
+show(r, [...HEAD_BOUCLE, ...ECHARPE_B], 'B · ×2,4', 2.4, true);
+show(r, [...HEAD_BOUCLE, ...ECHARPE_A], 'A · ×6', 6);
+show(r, [...HEAD_BOUCLE, ...ECHARPE_B], 'B · ×6', 6, true);
+</script>
+</body>
+</html>

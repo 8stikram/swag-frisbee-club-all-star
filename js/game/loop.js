@@ -1,6 +1,6 @@
 import { G, comment } from './state.js';
 import { W, curScreen } from '../core/dom.js';
-import { CX } from '../core/constants.js';
+import { CX, METER_GAIN } from '../core/constants.js';
 import { lerp, gauss, rand, pick, clamp } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { updatePlayerHuman, updatePlayer2, integratePlayer } from './input.js';
@@ -73,7 +73,7 @@ export function update(dt) {
   }
   updateLeg(wdt);
   updateBell(wdt);
-  for (const p of [G.p1, G.p2]) p.meter = clamp(p.meter + (G.state === 'play' ? 1.5 : 0) * wdt, 0, 100);
+  for (const p of [G.p1, G.p2]) p.meter = clamp(p.meter + (G.state === 'play' ? 1.5 * METER_GAIN : 0) * wdt, 0, 100);
   switch (G.state) {
     case 'countdown': {
       G.cdT -= dt;

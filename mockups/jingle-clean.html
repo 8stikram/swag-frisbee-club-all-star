@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Jingle Bells — reprise propre (blocs pleins)</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 60px}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:14px;margin:28px 0 10px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .sub{color:#8fa4c4;font-size:13px;margin:0 0 6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:800px;line-height:1.6;margin:0 0 14px}
+  .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px}
+  .card.pick{border-color:var(--ok)}
+  .lbl{font-size:11px;color:#8fa4c4;text-transform:uppercase;letter-spacing:1.1px;
+       margin-bottom:8px;text-align:center;min-height:34px}
+  .lbl b{display:block;font-size:15px;color:#f5c542;letter-spacing:1px}
+  .lbl em{font-style:normal;display:block;margin-top:2px;line-height:1.3}
+  canvas{display:block;image-rendering:pixelated;margin:0 auto}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok);white-space:pre-wrap}
+  #errs.bad{color:#ff5340}
+  ul{font-size:12.5px;color:#8fa4c4;line-height:1.8;max-width:800px;margin:0 0 14px;padding-left:20px}
+</style>
+</head>
+<body>
+
+<h1>Jingle Bells — reprise propre</h1>
+<p class="sub">Fini les pixels dispersés : chaque élément est un bloc plein et lisible.</p>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>Ce qui change par rapport à l'essai précédent</h2>
+<ul>
+  <li><b>Col</b> : deux bandes pleines rouge puis vert (une vraie rayure, plus un damier de pixels).</li>
+  <li><b>Bras</b> : colonnes grises pleines sur toute la hauteur du torse, des deux côtés — impossible à manquer.</li>
+  <li><b>Bandoulière</b> : une seule ligne verte claire, diagonale nette, qui ne touche jamais les pans ni les jambes.</li>
+  <li><b>Plastron</b> : un vrai bloc gris 2×2, pas des pixels isolés.</li>
+  <li><b>Bottes</b> : gris métal comme les bras (plus de noir), boucle dorée qui ressort dessus.</li>
+</ul>
+
+<h2>5 versions</h2>
+<p class="note">Même casque et même principe partout. Chaque version change UNE chose clairement identifiable.</p>
+<div class="row" id="versions"></div>
+
+<h2>À la taille réelle du jeu</h2>
+<div class="row" id="reel"></div>
+
+<script>
+const PAL = { G:'#f5c542', g:'#c9992a', W:'#ffe9a0', d:'#8a6a15',
+  R:'#a8232f', V:'#1f5c3a', v:'#143f28', l:'#3fae70',
+  S:'#b9c0cb', s:'#7e8794' };
+
+const HEAD = [
+  "......d.........",
+  ".....WGGg.......",
+  ".....WGGg.......",
+  "....WGGGgg......",
+  "....WGGGgd......",
+  "...WGGGGggd.....",
+  "...WGGGGggd.....",
+  "..WGGGGGGggd....",
+  "..gGGGGGGGgd....",
+  "..RRRRRRRRRR...."     // collar : bande pleine rouge, pas de damier
+];
+
+// A — référence : sash droite→gauche, pans fins, plastron haut.
+const A = [
+  ".SSVVVVVVVVVSS..",
+  ".SSRRRRRRRRRSS..",
+  ".SSRRRVRVRRRSS..",
+  ".SSRRRSSRlRRSS..",
+  ".SSRRRsslRRRSS..",
+  ".SSRRVVlVVRRSS..",
+  ".SSRRVVVVVRRSS..",
+  "....SS.V.SS.....",
+  "....SS.v.SS.....",
+  "...sGs...sGs...."
+];
+
+// B — sash inversée (gauche → droite).
+function miroirH(rows) { return rows.map(r => r.split('').reverse().join('')); }
+const B = miroirH(A);
+
+// C — pans plus larges (2 px au lieu d'1).
+const C = A.map((r, i) => i === 2 ? ".SSRRVVRRVVRSS.." : r);
+
+// D — ceinture inversée : vert sur les côtés, rouge au centre.
+const D = A.map((r, i) => i === 6 ? ".SSVVRRRRRVVSS.." : r);
+
+// E — plastron plus grand, sur deux rangs pleins.
+const E = A.map((r, i) => {
+  if (i === 3) return ".SSRRRSSRlRRSS..";
+  if (i === 4) return ".SSRRRSSlRRRSS..";
+  return r;
+});
+
+// ------------------------------------------------------------------ outils
+function build(rows) {
+  const c = document.createElement('canvas');
+  c.width = 16; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x]; if (ch !== '.' && PAL[ch]) { g.fillStyle = PAL[ch]; g.fillRect(x, y, 1, 1); }
+  }});
+  return c;
+}
+function show(parent, rows, label, scale, pick) {
+  const card = document.createElement('div');
+  card.className = 'card' + (pick ? ' pick' : '');
+  const l = document.createElement('div'); l.className = 'lbl'; l.innerHTML = label;
+  const cv = document.createElement('canvas');
+  cv.width = 16 * scale; cv.height = rows.length * scale;
+  const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, cv.width, cv.height);
+  g.drawImage(build(rows), 0, 0, cv.width, cv.height);
+  card.appendChild(l); card.appendChild(cv); parent.appendChild(card);
+}
+
+// ------------------------------------------------------------------ validation
+(function () {
+  const bad = [];
+  [['HEAD', HEAD], ['A', A], ['B', B], ['C', C], ['D', D], ['E', E]].forEach(([k, rows]) => {
+    if (rows.length !== 10) bad.push(k + ' a ' + rows.length + ' lignes au lieu de 10');
+    rows.forEach((r, i) => { if (r.length !== 16) bad.push(k + '[' + i + '] largeur ' + r.length); });
+    rows.forEach((r, i) => { for (const ch of r) if (ch !== '.' && !PAL[ch]) bad.push(k + '[' + i + '] couleur "' + ch + '" inconnue'); });
+  });
+  const box = document.getElementById('errs');
+  if (bad.length) { box.className = 'bad'; box.textContent = bad.join('\n'); }
+  else box.textContent = 'OK — 10+10 lignes de 16 px pour les cinq versions, toutes les couleurs définies.';
+})();
+
+// ------------------------------------------------------------------ rendus
+const v = document.getElementById('versions');
+show(v, [...HEAD, ...A], '<b>A</b><em>référence</em>', 9, true);
+show(v, [...HEAD, ...B], '<b>B</b><em>sash inversée</em>', 9);
+show(v, [...HEAD, ...C], '<b>C</b><em>pans plus larges</em>', 9);
+show(v, [...HEAD, ...D], '<b>D</b><em>ceinture inversée</em>', 9);
+show(v, [...HEAD, ...E], '<b>E</b><em>plastron agrandi</em>', 9);
+
+const r = document.getElementById('reel');
+show(r, [...HEAD, ...A], 'A · ×2,4', 2.4, true);
+show(r, [...HEAD, ...E], 'E · ×2,4', 2.4);
+show(r, [...HEAD, ...A], 'A · ×6', 6, true);
+show(r, [...HEAD, ...E], 'E · ×6', 6);
+</script>
+</body>
+</html>

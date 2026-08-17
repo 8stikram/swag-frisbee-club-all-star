@@ -81,19 +81,23 @@ const I_DASH_B = ["....bbbbbb......", "aaaSSSSSSaa.....", "aSSSSSSSSSSa....", ".
 // G : l'or de la cloche qui lui tient lieu de tête. R : la bure cramoisie.
 // V : le vert sapin de l'écharpe et du drapé. S : les pièces d'armure.
 // Son visage n'existe pas : toute sa lisibilité tient à la silhouette de cloche.
-const PAL_J = { G: '#f5c542', g: '#c9992a', W: '#ffe9a0', R: '#a8232f', r: '#7a1620', V: '#1f5c3a', v: '#143f28', S: '#b9c0cb', s: '#7e8794', K: '#241318' };
+// l : le vert clair de la bandoulière, qui doit trancher sur le vert sapin.
+// d : l'or le plus sombre, réservé au bord droit de la cloche.
+const PAL_J = { G: '#f5c542', g: '#c9992a', W: '#ffe9a0', d: '#8a6a15', R: '#a8232f', r: '#7a1620', V: '#1f5c3a', v: '#143f28', l: '#3fae70', S: '#b9c0cb', s: '#7e8794', K: '#241318' };
 
-// Tête partagée : la cloche s'évase jusqu'au rebord, puis l'écharpe rayée
-// rouge et verte fait la jonction avec les épaules.
-const J_HEAD = ["......GG........", ".....GgGG.......", ".....GGGG.......", "....GGGGGG......", "....GWGGGg......", "...GGGGGGGG.....", "...GWGGGGgg.....", "..GGGGGGGGGG....", "..gGGGGGGGGg....", "..RVRVRVRVRV...."];
-// Bure cramoisie évasée, écharpe verte qui descend au centre, épaulières et
-// bottes d'acier.
-const J_IDLE_B = ["....RRRRRR......", "..SSRRVVRRSS....", ".SSRRRVVRRRSS...", ".SSRRRVVRRRSS...", "..RRRRVVRRRR....", "..rRRRVVRRRr....", "...RRRRRRRR.....", "...SS....SS.....", "...SS....SS.....", "..GSS....SSG...."];
-const J_RUN1_B = ["....RRRRRR......", "..SSRRVVRRSS....", ".SSRRRVVRRRS....", "..SRRRVVRRRSS...", "..RRRRVVRRRR....", "..rRRRVVRRRr....", "..RRRRRRRRRR....", "..SS......SS....", ".SS........SS...", "GSS........SSG.."];
-const J_RUN2_B = ["....RRRRRR......", "..SSRRVVRRSS....", "..SRRRVVRRRSS...", ".SSRRRVVRRRS....", "..RRRRVVRRRR....", "..rRRRVVRRRr....", "...RRRRRRRR.....", "...SS....SS.....", "...SS....SS.....", "..GSS....SSG...."];
-const J_THROW_B = ["....RRRRRR......", "..SSRRVVRRSS....", "..SRRRVVRRRSSS..", "..SRRRVVRRRSSS..", "..RRRRVVRRRR....", "..rRRRVVRRRr....", "...RRRRRRRR.....", "..SS.....SS.....", "..SS......SS....", ".GSS......SSG..."];
-const J_DIVE_B = ["....RRRRRR......", "..SSRRVVRRSSS...", "..SRRRVVRRRSSS..", "..SRRRVVRRRSSS..", "..RRRRVVRRRR....", "..rRRRVVRRRr....", ".RRRRRRRRRR.....", ".SS......SS.....", "GS........SG....", "................"];
-const J_DASH_B = ["....RRRRRR......", "SSSRRVVRRRRR....", "SSSRRRVVRRRR....", "..RRRRVVRRRR....", "..RRRRVVRRRR....", "..rRRRVVRRRr....", "..RRRRRRRR......", "..SS..SS........", ".SS..SS.........", "GSS.GSS........."];
+// Tête partagée : la cloche s'évase jusqu'au rebord, éclairée en haut à gauche
+// et assombrie vers la droite pour lire comme du métal courbe. La dernière
+// rangée ouvre l'écharpe rayée, qui se poursuit sur la première ligne du corps.
+const J_HEAD = ["......WG........", ".....WgGg.......", ".....WGGg.......", "....WGGGgg......", "....WGGGgd......", "...WGGGGggd.....", "...WGGGGggd.....", "..gWGGGGgggd....", "..dgGGGgggdg....", "..RVRVRVRVRV...."];
+// Écharpe rayée sur deux rangées (la seconde en tons foncés, ce qui lui donne
+// son épaisseur), pans de cape verts sur les épaules, bandoulière vert clair
+// en diagonale symétrique, plastron d'acier au centre, épaulières et bottes.
+const J_IDLE_B = ["....rvrvrv......", "..SVvRVVRvVS....", ".SSVvVVVVvVSS...", ".SSlvVVVVvlSS...", "..rrlSssSlrr....", "..rRRlsSlRRr....", "...RRRllRRR.....", "...SS....SS.....", "...SS....SS.....", "..GSS....SSG...."];
+const J_RUN1_B = ["....rvrvrv......", "..SVvRVVRvVS....", ".SSVvVVVVvVS....", "..SlvVVVVvlSS...", "..rrlSssSlrr....", "..rRRlsSlRRr....", "..RRRRllRRRR....", "..SS......SS....", ".SS........SS...", "GSS........SSG.."];
+const J_RUN2_B = ["....rvrvrv......", "..SVvRVVRvVS....", "..SVvVVVVvVSS...", ".SSlvVVVVvlS....", "..rrlSssSlrr....", "..rRRlsSlRRr....", "...RRRllRRR.....", "...SS....SS.....", "...SS....SS.....", "..GSS....SSG...."];
+const J_THROW_B = ["....rvrvrv......", "..SVvRVVRvVS....", "..SVvVVVVvVSSS..", "..SlvVVVVvlSSS..", "..rrlSssSlrr....", "..rRRlsSlRRr....", "...RRRllRRR.....", "..SS.....SS.....", "..SS......SS....", ".GSS......SSG..."];
+const J_DIVE_B = ["....rvrvrv......", "..SVvRVVRvVSS...", "..SVvVVVVvVSSS..", "..SlvVVVVvlSSS..", "..rrlSssSlrr....", "..rRRlsSlRRr....", ".RRRRRllRRR.....", ".SS......SS.....", "GS........SG....", "................"];
+const J_DASH_B = ["....rvrvrv......", "SSSVvVVRRvVR....", "SSSVvVVVVvVR....", "..RlvVVVVvlR....", "..rrlSssSlrr....", "..rRRlsSlRRr....", "..RRRRllRR......", "..SS..SS........", ".SS..SS.........", "GSS.GSS........."];
 
 export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle'];
 
@@ -144,11 +148,13 @@ export const CHARS = {
     }
   },
   jingle: {
-    name: 'JINGLE BELLS', short: 'JINGLE', icon: '🔔', universe: 'PÔLE NORD',
+    name: 'JINGLE BELLS', short: 'JINGLE BELLS', icon: '🔔', universe: 'PÔLE NORD',
     // Profil défensif : lent et lourd, mais très sûr à la réception — sa large
     // bure lui donne la meilleure zone d'attrapé du jeu.
     speed: 296, power: 1.1, catchR: 33, chargeT: .95,
-    color: '#1f5c3a', accent: '#f5c542',
+    // Sapin volontairement plus lumineux que le vert de sa tenue : délavé pour
+    // le fond de sélection, l'ancien #1f5c3a virait au gris-vert terne.
+    color: '#1f8a4d', accent: '#f5c542',
     stats: { spd: 2, pow: 4, ctl: 5 },
     ult: 'bell',
     frames: {
@@ -157,10 +163,9 @@ export const CHARS = {
       run2: buildSprite([...J_HEAD, ...J_RUN2_B], PAL_J),
       throw: buildSprite([...J_HEAD, ...J_THROW_B], PAL_J),
       dive: buildSprite([...J_HEAD, ...J_DIVE_B], PAL_J),
-      dash: buildSprite([...J_HEAD, ...J_DASH_B], PAL_J),
-      // Pendant son ultime, sa tête part devenir la cloche géante : le corps
-      // reste seul sur le terrain.
-      headless: buildSprite([...J_HEAD.map(() => '................'), ...J_IDLE_B], PAL_J)
+      dash: buildSprite([...J_HEAD, ...J_DASH_B], PAL_J)
+      // Sa tête qui lévite n'a pas besoin de frame dédiée : le rendu découpe
+      // directement la pose courante entre la cloche et les épaules.
     }
   }
 };

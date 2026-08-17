@@ -9,7 +9,7 @@ import { getKey } from '../data/keymap.js';
 import { getDashAim, toggleDashAim } from '../data/settings.js';
 import { initAudio, sfx, toggleMusic } from '../audio/audio.js';
 import { addPopup, dust } from './fx.js';
-import { doThrowHuman, throwDisc, skipReplay, doDive } from './actions.js';
+import { doThrowHuman, throwDisc, skipReplay, doDive, viseVersAvant } from './actions.js';
 import { trySpecial } from './specials.js';
 import { isCapturing } from '../ui/keybind-ui.js';
 import { doAct, pauseGame, selectScreenKey } from '../ui/menus.js';
@@ -173,10 +173,14 @@ export function cancelDash(p) {
 
 // Feinte de tir : le geste part, le disque avance à peine puis claque dans la
 // main. Impossible d'annuler un Dash Throw ainsi — c'est le prix de sa puissance.
-export function doFeint(p) {
+export function doFeint(p, dirVoulue) {
   if (!p.holding || p.feintT > 0 || p.feintCd > 0) return;
   if (p.dashThrowT > 0) return;
-  const dir = norm(Mouse.x - p.x, Mouse.y - p.y);
+  // Le joueur feinte vers son curseur ; l'IA fournit sa propre direction.
+  const dir = dirVoulue || norm(Mouse.x - p.x, Mouse.y - p.y);
+  // Même règle que le tir : on ne feinte pas vers son propre camp, sinon la
+  // feinte deviendrait un moyen détourné d'armer un geste vers l'arrière.
+  if (!viseVersAvant(p, dir)) return;
   p.feintT = FEINT_TIME; p.feintCd = FEINT_TIME + FEINT_CD;
   p.feintDir = dir;
   p.face = dir.x >= 0 ? 1 : -1;

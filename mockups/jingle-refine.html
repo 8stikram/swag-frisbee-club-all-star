@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Jingle Bells — cloche ombrée et tenue croisée</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 60px}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:14px;margin:28px 0 10px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .sub{color:#8fa4c4;font-size:13px;margin:0 0 6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:780px;line-height:1.6;margin:0 0 14px}
+  .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px}
+  .card.pick{border-color:var(--ok)}
+  .lbl{font-size:11px;color:#8fa4c4;text-transform:uppercase;letter-spacing:1.1px;
+       margin-bottom:8px;text-align:center;min-height:32px}
+  .lbl b{display:block;font-size:15px;color:#f5c542;letter-spacing:1px}
+  .lbl em{font-style:normal;display:block;margin-top:2px;line-height:1.3}
+  canvas{display:block;image-rendering:pixelated;margin:0 auto}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok);white-space:pre-wrap}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>Jingle Bells — cloche mieux ombrée, tenue à bandes croisées</h1>
+<p class="sub">Même silhouette de cloche qu'actuellement en jeu — seules les teintes changent, pixel par pixel.
+La tenue suit ta photo : écharpe qui se croise sur le torse, plastron qui affleure au centre.</p>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>La cloche : même forme, ombrage retravaillé</h2>
+<p class="note">Les trois variantes ci-dessous ont EXACTEMENT le même contour que la tête actuelle du jeu
+(vérifié pixel par pixel ci-dessus) : je n'ai touché qu'aux teintes, pas à la forme.</p>
+<div class="row" id="cloches"></div>
+
+<h2>La tenue : écharpe croisée + plastron au centre</h2>
+<p class="note">Même gabarit de corps (bras, jambes identiques). Ce qui change : des pans d'écharpe verte qui
+se croisent en pointe vers le centre du torse, avec un accent d'armure qui affleure au point de croisement.</p>
+<div class="row" id="tenues"></div>
+
+<h2>Rendu combiné, à la taille du jeu</h2>
+<p class="note">Cloche C + tenue B, celles que je recommande, comparées à la version actuelle.</p>
+<div class="row" id="reel"></div>
+
+<script>
+const PAL = { G:'#f5c542', g:'#c9992a', W:'#ffe9a0', d:'#8a6a15',
+  R:'#a8232f', r:'#7a1620', V:'#1f5c3a', v:'#143f28',
+  S:'#b9c0cb', s:'#7e8794', K:'#241318' };
+
+// Exactement les lignes en jeu aujourd'hui — la référence de silhouette.
+const HEAD_ORIG = ["......GG........",".....GgGG.......",".....GGGG.......","....GGGGGG......","....GWGGGg......","...GGGGGGGG.....","...GWGGGGgg.....","..GGGGGGGGGG....","..gGGGGGGGGg....","..RVRVRVRVRV...."];
+const IDLE_ORIG  = ["....RRRRRR......","..SSRRVVRRSS....",".SSRRRVVRRRSS...",".SSRRRVVRRRSS...","..RRRRVVRRRR....","..rRRRVVRRRr....","...RRRRRRRR.....","...SS....SS.....","...SS....SS.....","..GSS....SSG...."];
+
+// Ne change QUE la couleur d'un pixel déjà rempli, jamais sa présence : la
+// silhouette est donc mathématiquement identique à l'original.
+function reshade(rows, map) {
+  return rows.map((row, r) => {
+    let out = '';
+    for (let c = 0; c < row.length; c++) {
+      const ch = row[c];
+      if (ch === '.') { out += '.'; continue; }
+      const k = r + ',' + c;
+      out += (map[k] !== undefined) ? map[k] : ch;
+    }
+    return out;
+  });
+}
+function memeSilhouette(a, b) {
+  for (let r = 0; r < a.length; r++) for (let c = 0; c < a[r].length; c++) {
+    if ((a[r][c] === '.') !== (b[r][c] === '.')) return false;
+  }
+  return true;
+}
+
+// ---------------------------------------------------------------- cloches
+// A — lumière douce en haut à gauche, ombre discrète en bas à droite.
+const HEAD_A = reshade(HEAD_ORIG, {
+  '0,6':'W', '1,5':'W','1,7':'g', '2,5':'W','2,8':'g',
+  '3,4':'W','3,8':'g','3,9':'g', '4,4':'W','4,9':'d',
+  '5,3':'W','5,9':'g','5,10':'g', '6,3':'W','6,9':'g','6,10':'d',
+  '7,2':'g','7,3':'W','7,10':'g','7,11':'d', '8,2':'d','8,9':'g','8,10':'d'
+});
+// B — contraste plus marqué, bande de reflet nette façon métal poli.
+const HEAD_B = reshade(HEAD_ORIG, {
+  '1,5':'W','1,6':'W', '2,5':'W', '3,4':'W','3,5':'W','3,8':'g','3,9':'d',
+  '4,4':'W','4,5':'G','4,9':'d', '5,3':'W','5,4':'W','5,9':'g','5,10':'d',
+  '6,3':'W','6,4':'W','6,9':'g','6,10':'d',
+  '7,2':'g','7,3':'W','7,4':'W','7,10':'g','7,11':'d',
+  '8,2':'d','8,3':'g','8,9':'g','8,10':'d'
+});
+// C — dégradé progressif sur toute la largeur, le plus proche d'un vrai
+// rendu de métal courbe. Recommandée.
+const HEAD_C = reshade(HEAD_ORIG, {
+  '0,6':'W', '1,5':'W','1,7':'G','1,8':'g',
+  '2,5':'W','2,6':'G','2,7':'G','2,8':'g',
+  '3,4':'W','3,5':'G','3,6':'G','3,7':'G','3,8':'g','3,9':'g',
+  '4,4':'W','4,5':'G','4,6':'G','4,7':'G','4,8':'g','4,9':'d',
+  '5,3':'W','5,4':'G','5,5':'G','5,6':'G','5,7':'G','5,8':'g','5,9':'g','5,10':'d',
+  '6,3':'W','6,4':'G','6,5':'G','6,6':'G','6,7':'G','6,8':'g','6,9':'g','6,10':'d',
+  '7,2':'g','7,3':'W','7,4':'G','7,5':'G','7,6':'G','7,7':'G','7,8':'g','7,9':'g','7,10':'g','7,11':'d',
+  '8,2':'d','8,3':'g','8,4':'G','8,5':'G','8,6':'G','8,7':'g','8,8':'g','8,9':'g','8,10':'d'
+});
+
+// ---------------------------------------------------------------- tenues
+// A — croisement discret : deux points de sash qui pointent vers le centre.
+const IDLE_A = reshade(IDLE_ORIG, {
+  '2,3':'V', '2,10':'V',
+  '3,4':'V', '3,9':'V',
+  '4,5':'S', '4,8':'s'
+});
+// B — croisement net + petit plastron gris au centre. Recommandée : c'est
+// celle qui se rapproche le plus de la photo (bandes qui se croisent, plaque
+// qui affleure pile au point de croisement).
+const IDLE_B = reshade(IDLE_ORIG, {
+  '1,4':'V', '1,9':'v',
+  '2,3':'V', '2,4':'v', '2,9':'v', '2,10':'V',
+  '3,4':'v', '3,5':'V', '3,8':'V', '3,9':'v',
+  '4,5':'S', '4,6':'S', '4,7':'s', '4,8':'s',
+  '5,6':'s', '5,7':'s'
+});
+// C — bandes larges, look plus « bardé de tissu » comme la cape sur la photo.
+const IDLE_C = reshade(IDLE_ORIG, {
+  '1,3':'V', '1,4':'v', '1,9':'v', '1,10':'V',
+  '2,3':'V', '2,4':'v', '2,5':'V', '2,8':'V', '2,9':'v', '2,10':'V',
+  '3,4':'v', '3,5':'V', '3,8':'V', '3,9':'v',
+  '4,5':'S', '4,6':'s', '4,7':'s', '4,8':'S',
+  '5,6':'s', '5,7':'S'
+});
+
+// ---------------------------------------------------------------- outils
+function build(rows, pal) {
+  const c = document.createElement('canvas');
+  c.width = 16; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x]; if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x, y, 1, 1); }
+  }});
+  return c;
+}
+function show(parent, rows, label, scale, pick) {
+  const card = document.createElement('div');
+  card.className = 'card' + (pick ? ' pick' : '');
+  const l = document.createElement('div');
+  l.className = 'lbl'; l.innerHTML = label;
+  const cv = document.createElement('canvas');
+  cv.width = 16 * scale; cv.height = rows.length * scale;
+  const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, cv.width, cv.height);
+  g.drawImage(build(rows, PAL), 0, 0, cv.width, cv.height);
+  card.appendChild(l); card.appendChild(cv); parent.appendChild(card);
+}
+
+// ---------------------------------------------------------------- validation
+(function () {
+  const bad = [];
+  [['A',HEAD_A],['B',HEAD_B],['C',HEAD_C]].forEach(([k,rows]) => {
+    rows.forEach((r,i) => { if (r.length !== 16) bad.push('tête '+k+'['+i+'] largeur '+r.length); });
+    if (!memeSilhouette(HEAD_ORIG, rows)) bad.push('tête '+k+' : silhouette différente de l\'originale !');
+  });
+  [['A',IDLE_A],['B',IDLE_B],['C',IDLE_C]].forEach(([k,rows]) => {
+    rows.forEach((r,i) => { if (r.length !== 16) bad.push('tenue '+k+'['+i+'] largeur '+r.length); });
+    if (!memeSilhouette(IDLE_ORIG, rows)) bad.push('tenue '+k+' : silhouette différente de l\'originale !');
+  });
+  const box = document.getElementById('errs');
+  if (bad.length) { box.className = 'bad'; box.textContent = bad.join('\n'); }
+  else box.textContent = 'OK — toutes les variantes ont exactement la même silhouette que ce qui est en jeu, seules les teintes changent.';
+})();
+
+// ---------------------------------------------------------------- rendus
+const c = document.getElementById('cloches');
+show(c, [...HEAD_ORIG, ...IDLE_ORIG], '<b>ACTUEL</b><em>en jeu</em>', 9);
+show(c, [...HEAD_A, ...IDLE_ORIG], '<b>A</b><em>lumière douce</em>', 9);
+show(c, [...HEAD_B, ...IDLE_ORIG], '<b>B</b><em>reflet net</em>', 9);
+show(c, [...HEAD_C, ...IDLE_ORIG], '<b>C</b><em>dégradé complet</em>', 9, true);
+
+const t = document.getElementById('tenues');
+show(t, [...HEAD_ORIG, ...IDLE_ORIG], '<b>ACTUEL</b><em>en jeu</em>', 9);
+show(t, [...HEAD_ORIG, ...IDLE_A], '<b>A</b><em>croisement discret</em>', 9);
+show(t, [...HEAD_ORIG, ...IDLE_B], '<b>B</b><em>croisement + plastron</em>', 9, true);
+show(t, [...HEAD_ORIG, ...IDLE_C], '<b>C</b><em>bandes larges</em>', 9);
+
+const r = document.getElementById('reel');
+show(r, [...HEAD_ORIG, ...IDLE_ORIG], 'actuel · ×2,4', 2.4);
+show(r, [...HEAD_C, ...IDLE_B], 'C + B · ×2,4', 2.4, true);
+show(r, [...HEAD_ORIG, ...IDLE_ORIG], 'actuel · ×6', 6);
+show(r, [...HEAD_C, ...IDLE_B], 'C + B · ×6', 6, true);
+</script>
+</body>
+</html>

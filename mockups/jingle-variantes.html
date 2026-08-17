@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Jingle Bells — variantes</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 60px}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:14px;margin:28px 0 10px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .sub{color:#8fa4c4;font-size:13px;margin:0 0 6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:780px;line-height:1.6;margin:0 0 14px}
+  .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px}
+  .card.actuel{border-color:var(--ok)}
+  .lbl{font-size:11px;color:#8fa4c4;text-transform:uppercase;letter-spacing:1.1px;
+       margin-bottom:8px;text-align:center;min-height:34px}
+  .lbl b{display:block;font-size:16px;color:#f5c542;letter-spacing:2px}
+  .lbl em{font-style:normal;display:block;margin-top:2px;line-height:1.3}
+  canvas{display:block;image-rendering:pixelated;margin:0 auto}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok)}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>Jingle Bells — variantes de tenue et de cloche</h1>
+<p class="sub">Chevalier du Pôle Nord : tête-cloche en or à boucle, armure d'acier, cape cramoisie et écharpe rayée qui retombe.</p>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>La tête-cloche — A à F</h2>
+<p class="note">Toutes portent désormais la <b>boucle</b> en haut, le <b>relief du rebord</b> en bas et le
+<b>battant</b> visible dessous. Ce qui change entre elles : la silhouette du dôme et le traitement du rebord.</p>
+<div class="row" id="cloches"></div>
+
+<h2>La tenue — A à F</h2>
+<p class="note">Même gabarit de corps partout. Ce qui change : la façon dont se superposent l'écharpe, la cape
+et l'armure. L'écharpe <b>retombe jusqu'au ventre</b> comme sur la référence.</p>
+<div class="row" id="tenues"></div>
+
+<h2>La cloche géante de l'ultime — A à F</h2>
+<p class="note">Sa tête, agrandie, avec la boucle en haut et la boule du battant dessous. Affichée à ×4.</p>
+<div class="row" id="ultis"></div>
+
+<script>
+const PAL = { G:'#f5c542', g:'#c9992a', W:'#ffe9a0', d:'#8a6a15',
+  R:'#a8232f', r:'#7a1620', c:'#c9313f', V:'#1f5c3a', v:'#143f28',
+  S:'#b9c0cb', s:'#7e8794', w:'#e4e9f0', K:'#241318' };
+
+// ---------------------------------------------------------------- têtes-cloches
+// Chacune : boucle (K) en haut, dôme doré, rebord, battant (d) dessous.
+// Palette resserrée sur l'or (G/g/W/d), plus de contour K sombre autour du
+// dôme — c'est ce qui alourdissait tout. Six vraies silhouettes différentes,
+// pas des variantes de largeur d'une même forme.
+const TETES = {
+  A: { nom:'dôme classique,<br>anse fine', rows:[
+    ".......gg.......",".......GG.......","......GGGG......",".....GGWGGg.....",
+    "....GGGGGGGg....","...GGWGGGGGGg...","..GGGGGGGGGGGg..","..gGGGGGGGGGGg..",
+    "..ddGGGGGGGdd...","..RVRVRVRVRV...."] },
+  B: { nom:'bulbe rond,<br>très arrondi', rows:[
+    "........g.......",".......GGg......",".....GGGGGGg....","....GGGGGGGGG...",
+    "....GWGGGGGG....","...GGGGGGGGGG...","...GGGGGGGGGG...","...gGGGGGGGGg...",
+    "....ddGGGdd.....","..RVRVRVRVRV...."] },
+  C: { nom:'silhouette gothique,<br>flanc concave', rows:[
+    "........g.......",".......GG.......","......GgGG......",".....Gg..Gg.....",
+    "....Gg....Gg....","...Gg......Gg...","..GGWGGGGGGGGg..","..gGGGGGGGGGGg..",
+    "...ddGGGGGdd....","..RVRVRVRVRV...."] },
+  D: { nom:'panse basse,<br>épaules marquées', rows:[
+    ".......gg.......",".......GG.......","......GGGG......","......GGGG......",
+    ".....GWGGGg.....","....GGGGGGGg....","...GGGGGGGGGg...","..GGGGGGGGGGGg..",
+    "..ddGGGGGGGdd...","..RVRVRVRVRV...."] },
+  E: { nom:'facettée,<br>reflets nets', rows:[
+    ".......gg.......",".......GG.......","......GgWg......",".....GgGWGg.....",
+    "....GgGGWGgg....","...GgGGGWGGg....","..GgGGGGWGGgg...","..gGGGGGGGGGg...",
+    "..ddGGGGGGGdd...","..RVRVRVRVRV...."] },
+  F: { nom:'étirée,<br>silhouette élancée', rows:[
+    "........g.......","........G.......",".......GGg......",".......GWG......",
+    "......GGWGg.....",".....GGGWGGg....","....GGGGWGGGg...","...gGGGGGGGGg...",
+    "...ddGGGGGdd....","..RVRVRVRVRV...."] }
+};
+
+// ---------------------------------------------------------------- tenues
+// Gabarit identique : épaules cols 2-11, bras jusqu'aux cols 1 et 12,
+// jambes cols 3-4 et 9-10. Seule la superposition des matières change.
+const TENUES = {
+  A: { nom:'écharpe centrale<br>+ épaulières', rows:[
+    "....RRRRRR......","..SSRRVVRRSS....",".SwSRRVVRRSwS...",".SsSRRVVRRSsS...",
+    "..RcRRVVRRcR....","..rRRRVVRRRr....","...RRRVVRRR.....","...SS....SS.....",
+    "...sS....Ss.....","..GSs....sSG...."] },
+  B: { nom:'écharpe croisée<br>en bandoulière', rows:[
+    "....RRRRRR......","..SSRVVVVRSS....",".SwSVVRRVVSwS...",".SsSRVVVVRSsS...",
+    "..RcRRVVRRcR....","..rRRRVVRRRr....","...RRRVVRRR.....","...SS....SS.....",
+    "...sS....Ss.....","..GSs....sSG...."] },
+  C: { nom:'cape ample,<br>pans qui tombent', rows:[
+    "....RRRRRR......","..SSRRVVRRSS....","rSwSRRVVRRSwSr..","rSsSRRVVRRSsSr..",
+    "rRcRRRVVRRRcRr..","rrRRRRVVRRRRrr..","..RRRRVVRRRR....","...SS....SS.....",
+    "...sS....Ss.....","..GSs....sSG...."] },
+  D: { nom:'armure lourde,<br>plastron d\'acier', rows:[
+    "....SSSSSS......","..SSSwVVwSSS....",".SwSSSVVSSSwS...",".SsSSSVVSSSsS...",
+    "..RcSSVVSScR....","..rRRRVVRRRr....","...RRRVVRRR.....","...SS....SS.....",
+    "...sS....Ss.....","..GSs....sSG...."] },
+  E: { nom:'écharpe longue,<br>jusqu\'aux genoux', rows:[
+    "....RRRRRR......","..SSRRVVRRSS....",".SwSRRVVRRSwS...",".SsSRRVVRRSsS...",
+    "..RcRRVVRRcR....","..rRRRVVRRRr....","...RRRVVRRR.....","...SSVVSS.......",
+    "...sSVVSs.......","..GSs..sSG......"] },
+  F: { nom:'bure sombre,<br>acier apparent', rows:[
+    "....rrrrrr......","..SSrrVVrrSS....",".SwSrrVVrrSwS...",".SsSrrVVrrSsS...",
+    "..rcrrVVrrcr....","..rrrrVVrrrr....","...rrrVVrrr.....","...SS....SS.....",
+    "...ww....ww.....","..GSw....wSG...."] }
+};
+
+// ---------------------------------------------------------------- cloches d'ultime (24 large)
+// Tout en tons d'or (G/g/W/d) : aucun contour noir autour du dôme, seule
+// l'anse (petite, K) marque le haut. Six silhouettes vraiment différentes.
+const PAL_B = { K:'#241318', G:'#f5c542', W:'#ffe9a0', g:'#c9992a', d:'#8a6a15' };
+
+const CLOCHES = {
+  A: { nom:'dôme classique,<br>rebord droit', rows:[
+    "...........KK...........","..........K..K..........","...........KK...........",
+    "..........gGGg..........",".........gGWGGg.........","........gGWGGGGg........",
+    ".......gGWGGGGGGg.......","......gGWGGGGGGGGg......",".....gGWGGGGGGGGGGg.....",
+    "....gGWGGGGGGGGGGGGg....","....gGGGGGGGGGGGGGGg....","...gGGGGGGGGGGGGGGGGg...",
+    "...gGGGGGGGGGGGGGGGGg...","..gGGGGGGGGGGGGGGGGGGg..","..gGGGGGGGGGGGGGGGGGGg..",
+    ".gGGGGGGGGGGGGGGGGGGGGg.","gggggggggggggggggggggggg","GGGGGGGGGGGGGGGGGGGGGGGG",
+    "ddddddddddddddddddddddd","..........gddg..........",".........gddddg.........",
+    "........gddddddg........","........gdWWddg.........","........ggddgg.........."] },
+  B: { nom:'bulbe rond,<br>très renflé', rows:[
+    "............K...........","...........KGK..........","..........GGGGg.........",
+    ".........GGWGGGg........","........GGGGGGGGg.......","......gGGGGGGGGGGg......",
+    ".....gGGGGGGGGGGGGg.....","....gGGGGGGGGGGGGGGg....","...gGGGGGGGGGGGGGGGGg...",
+    "..gGGGGGGGGGGGGGGGGGGg..","..gGGGGGGGGGGGGGGGGGGg..",".gGGGGGGGGGGGGGGGGGGGGg.",
+    ".gGGGGGGGGGGGGGGGGGGGGg.","gggggggggggggggggggggggg","GGGGGGGGGGGGGGGGGGGGGGGG",
+    "ddddddddddddddddddddddd","...........ddd..........","..........gdddg.........",
+    "..........gdddg.........",".........gdWWdg.........","..........ggdgg.........",
+    ".........................","......................... ","........................."] },
+  C: { nom:'silhouette gothique,<br>flèche élancée', rows:[
+    "............K...........","............K...........","...........GGg..........",
+    "...........GWg..........","..........GGWGg.........","..........GgWGg.........",
+    ".........GgGWGGg........",".........GgGWGGg........","........GgGGWGGGg.......",
+    "........GgGGWGGGg.......","......ggGGGWGGGGgg......","......ggGGGGGGGGGgg.....",
+    "....ggGGGGGGGGGGGGgg....","....ggGGGGGGGGGGGGgg....","..ggGGGGGGGGGGGGGGGGgg..",
+    "..ggGGGGGGGGGGGGGGGGgg..","gggggggggggggggggggggggg","GGGGGGGGGGGGGGGGGGGGGGGG",
+    "ddddddddddddddddddddddd","...........gdg..........","..........gdddg.........",
+    "..........gdWdg.........","...........gdg..........","........................."] },
+  D: { nom:'panse basse,<br>épaules carrées', rows:[
+    "...........KK...........","..........K..K..........","...........KK...........",
+    ".........gGGGGg.........","........gGGGGGGg........","........gGWGGGGg........",
+    ".......gGGGGGGGGg.......","......ggGGGGGGGGgg......","......ggGGGGGGGGgg......",
+    ".....gGGGGGGGGGGGGg.....","....gGGGGGGGGGGGGGGg....","....gGGGGGGGGGGGGGGg....",
+    "...gGGGGGGGGGGGGGGGGg...","..gGGGGGGGGGGGGGGGGGGg..","..gGGGGGGGGGGGGGGGGGGg..",
+    ".gGGGGGGGGGGGGGGGGGGGGg.","gggggggggggggggggggggggg","GGGGGGGGGGGGGGGGGGGGGGGG",
+    "ddddddddddddddddddddddd","..........gdddg.........",".........gddddddg.......",
+    "........gdd.WW.ddg......","..........ggggg.........","........................."] },
+  E: { nom:'facettée,<br>pans anguleux', rows:[
+    "...........KK...........","..........K..K..........","...........KK...........",
+    "..........gGGg..........",".........g.GW.g.........","........g..GW..g........",
+    ".......g...GW...g.......","......g....GW....g......","......g...GGWGG...g.....",
+    ".....g...GGGWGGG...g....","....g...GGGGWGGGG...g...","....g..GGGGGWGGGGG..g...",
+    "...g..GGGGGGWGGGGGG..g..","..g..GGGGGGGWGGGGGGG..g.","..g.GGGGGGGGWGGGGGGGG.g.",
+    ".g.GGGGGGGGGWGGGGGGGGG.g","gggggggggggggggggggggggg","GGGGGGGGGGGGGGGGGGGGGGGG",
+    "ddddddddddddddddddddddd","..........gddg..........",".........gdddddg........",
+    "........gddddddddg......","........................." ,"........................."] },
+  F: { nom:'étirée,<br>fine et haute', rows:[
+    ".............K..........",".............K..........","............KGK.........",
+    "............GWg.........","...........GGWGg........","...........gGWGg........",
+    "..........gGGWGGg.......","..........gGGWGGg.......",".........gGGGWGGGg......",
+    ".........gGGGWGGGg......","........gGGGGWGGGGg.....","........gGGGGGGGGGg.....",
+    ".......gGGGGGGGGGGGg....","......ggGGGGGGGGGGGgg...","......ggGGGGGGGGGGGgg...",
+    ".....gggGGGGGGGGGGGggg..","gggggggggggggggggggggggg","GGGGGGGGGGGGGGGGGGGGGGGG",
+    "ddddddddddddddddddddddd","...........gddg.........","..........gdddddg.......",
+    ".........gddddddg.......","........................." ,"........................."] }
+};
+// Sécurité : force chaque ligne à 24 caractères pile (tronque ou complète par
+// des points), pour ne jamais laisser une coquille de saisie décaler le sprite.
+function pad24(r) { return (r.length > 24 ? r.slice(0, 24) : r + '.'.repeat(24 - r.length)); }
+function cloche(v) { return CLOCHES[v].rows.map(pad24); }
+
+// ---------------------------------------------------------------- outils
+function build(rows, pal, w) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x]; if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x, y, 1, 1); }
+  }});
+  return c;
+}
+function show(parent, rows, pal, w, lettre, nom, scale, actuel) {
+  const card = document.createElement('div');
+  card.className = 'card' + (actuel ? ' actuel' : '');
+  const l = document.createElement('div');
+  l.className = 'lbl';
+  l.innerHTML = '<b>' + lettre + '</b><em>' + nom + '</em>';
+  const cv = document.createElement('canvas');
+  cv.width = w * scale; cv.height = rows.length * scale;
+  const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, cv.width, cv.height);
+  g.drawImage(build(rows, pal, w), 0, 0, cv.width, cv.height);
+  card.appendChild(l); card.appendChild(cv); parent.appendChild(card);
+}
+
+// ---------------------------------------------------------------- validation
+(function () {
+  const bad = [];
+  for (const [k, v] of Object.entries(TETES)) v.rows.forEach((r, i) => { if (r.length !== 16) bad.push('tête ' + k + '[' + i + ']=' + r.length); });
+  for (const [k, v] of Object.entries(TENUES)) v.rows.forEach((r, i) => { if (r.length !== 16) bad.push('tenue ' + k + '[' + i + ']=' + r.length); });
+  for (const k of 'ABCDEF') cloche(k).forEach((r, i) => { if (r.length !== 24) bad.push('ulti ' + k + '[' + i + ']=' + r.length); });
+  const box = document.getElementById('errs');
+  if (bad.length) { box.className = 'bad'; box.textContent = 'Largeurs incorrectes : ' + bad.join(', '); }
+  else box.textContent = 'OK — têtes et tenues en 16 px, cloches d\'ultime en 24 px, toutes les lignes valides.';
+})();
+
+// ---------------------------------------------------------------- rendus
+const c = document.getElementById('cloches');
+for (const k of 'ABCDEF') show(c, [...TETES[k].rows, ...TENUES.A.rows], PAL, 16, k, TETES[k].nom, 9);
+
+const t = document.getElementById('tenues');
+for (const k of 'ABCDEF') show(t, [...TETES.A.rows, ...TENUES[k].rows], PAL, 16, k, TENUES[k].nom, 9);
+
+const u = document.getElementById('ultis');
+for (const k of 'ABCDEF') show(u, cloche(k), PAL_B, 24, k, CLOCHES[k].nom, 4);
+</script>
+</body>
+</html>

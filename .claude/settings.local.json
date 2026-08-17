@@ -5,7 +5,16 @@
       "Bash(git init *)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "Bash(git commit -m ' *)",
+      "Bash(python3 -c ' *)",
+      "Bash(python -c ' *)",
+      "PowerShell(Set-Location \"C:\\\\Jeu mata label\\\\Jeu frisbee\\\\claude local\"; Start-Process -FilePath \"python\" -ArgumentList \"-m\",\"http.server\",\"8000\" -WindowStyle Hidden; Start-Sleep -Seconds 2; try { \\(Invoke-WebRequest -Uri \"http://localhost:8000/mockups/title-screen-wj2.html\" -UseBasicParsing -TimeoutSec 5\\).StatusCode } catch { \"ERREUR: $_\" })",
+      "Bash(mkdir -p \"C:/Jeu mata label/Jeu frisbee/claude local/assets\" && cp \"C:/Users/Nono/Downloads/f2ba9618-a380-4908-8bae-45f89214c325.png\" \"C:/Jeu mata label/Jeu frisbee/claude local/assets/logo.png\" && ls -l \"C:/Jeu mata label/Jeu frisbee/claude local/assets/\")",
+      "PowerShell(python -c \"import PIL; print\\('PIL', PIL.__version__\\)\")",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force; \"arrete PID $_\" } catch { \"echec PID $_\" } })",
+      "PowerShell(Set-Location \"C:\\\\Jeu mata label\\\\Jeu frisbee\\\\claude local\"; Start-Process -FilePath \"python\" -ArgumentList \"serve.py\",\"8000\" -WindowStyle Hidden; Start-Sleep -Seconds 2; try { $r = Invoke-WebRequest -Uri \"http://localhost:8000/index.html\" -UseBasicParsing -TimeoutSec 5; \"Status: $\\($r.StatusCode\\) | Cache-Control: $\\($r.Headers['Cache-Control']\\)\" } catch { \"ERREUR: $_\" })",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:8000/js/core/dom.js\" -UseBasicParsing -TimeoutSec 5; \"Status: $\\($r.StatusCode\\)\"; \"Headers:\"; $r.Headers.GetEnumerator\\(\\) | ForEach-Object { \"  $\\($_.Key\\) = $\\($_.Value\\)\" } } catch { \"ERREUR: $_\" })"
     ]
   }
 }

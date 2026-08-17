@@ -5,12 +5,33 @@ export const DASH_SPEED = 480, DASH_DECAY = 3.1, DASH_CD = 0.9;
 export const DISC_RADIUS = 14, DISC_BIG_RADIUS = 26;
 export const TARGET = 35;
 
+// --- Jauge spéciale : facteur appliqué à TOUS les gains, où qu'ils soient.
+// Les valeurs de base gardent leurs proportions d'origine (un attrapé vaut
+// toujours le même poids relatif face à un but), seul ce curseur décide de la
+// fréquence des ultimes. À 1 on tournait autour de quatre ultimes par match,
+// ce qui les banalisait.
+export const METER_GAIN = .75;
+
+// --- Équilibrage défense / attaque. Mesuré en match : le disque filait à
+// ~710 px/s quand un joueur se replace à ~220 px/s, soit trois fois moins vite.
+// Résultat, le défenseur était encore à 215 px de sa ligne au moment du but et
+// il tombait un but tous les 1,4 tirs — il n'y avait pas d'échange.
+// Le gros du travail est fait par la zone d'attrapé. Côté vitesse du disque,
+// −15 % rendait le jeu mou manette en main : on se contente donc d'un léger
+// freinage, juste de quoi laisser une chance de se replacer sans casser la
+// nervosité qui fait tout l'intérêt du jeu.
+export const CATCH_RADIUS = 1.7;   // multiplie le rayon d'attrapé de chaque perso
+export const DISC_SPEED = .93;     // facteur global sur tout ce qui est lancé
+
 // --- Dash : distance fixe vers la souris.
 // DASH_GAP est l'anti-spam : sans lui, marteler la touche permet d'avancer plus
 // vite qu'en courant et le déplacement normal ne sert plus à rien. Le dash durant
 // DASH_TIME, il reste ~0,33 s de course entre deux dashs — de quoi enchaîner.
 export const DASH_DIST = 155, DASH_TIME = .17, DASH_GAP = .5;
-export const DASH_CATCH_MULT = 1.9;   // hitbox de catch élargie pendant le dash
+// Bonus d'attrapé pendant le dash. Il se cumule avec CATCH_RADIUS : à 1,9 le
+// dash aspirait le disque de très loin, puisque la zone de base est déjà
+// élargie. Réduit pour que le dash reste un placement, pas un aimant.
+export const DASH_CATCH_MULT = 1.4;
 // Part de vitesse conservée en fin de dash : un arrêt net paraissait mécanique.
 // 12 % donne une glissade d'une trentaine de pixels, assez pour arrondir le
 // mouvement sans rallonger la distance de façon sensible.

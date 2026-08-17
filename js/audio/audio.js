@@ -93,8 +93,38 @@ export function initAudio() {
     noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.5, AC.sampleRate);
     const d = noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    loadSamples();
     resumeSavedTrack();
   } catch (e) { }
+}
+
+// ---- Échantillons : presque tous les bruitages sont synthétisés ici, mais
+// certains sons ne s'imitent pas correctement à l'oscillateur. Ils passent par
+// le même gain que le reste, donc le réglage de volume, le mode solo et le
+// filtre feutré du replay s'y appliquent aussi.
+const SAMPLES = { bell: 'assets/audio/bell.wav' };
+const bufs = {};
+
+function loadSamples() {
+  Object.entries(SAMPLES).forEach(([nom, url]) => {
+    fetch(url)
+      .then(r => r.arrayBuffer())
+      .then(b => AC.decodeAudioData(b))
+      .then(buf => { bufs[nom] = buf; })
+      .catch(() => { });        // en cas d'échec, sfx() retombe sur le synthé
+  });
+}
+
+// Chaque coup ouvre sa propre voix et personne ne coupe la précédente : les
+// traînes s'additionnent, comme les résonances d'une vraie cloche.
+function sample(nom, vol = .55) {
+  const buf = bufs[nom];
+  if (!AC || !buf) return false;
+  const s = AC.createBufferSource(); s.buffer = buf;
+  const g = AC.createGain(); g.gain.value = vol;
+  s.connect(g); g.connect(sfxGain);
+  s.start();
+  return true;
 }
 
 function beep(f0, f1, dur, type = 'square', vol = .15, delay = 0) {
@@ -153,6 +183,11 @@ export function sfx(n) {
     case 'skid': noise(.16, .07, 3200); noise(.12, .05, 1600, .03); break;
     // Claquement sec du disque qui revient en main à la fin d'une feinte.
     case 'swish': noise(.07, .06, 5200); beep(1500, 900, .06, 'sine', .06); break;
+    // Cloche de Minuit : un vrai échantillon, avec repli sur le synthé si le
+    // fichier n'a pas encore fini de charger.
+    case 'bell':
+      if (!sample('bell')) { beep(1320, 660, .6, 'sine', .18); beep(1980, 990, .4, 'sine', .08); }
+      break;
   }
 }
 

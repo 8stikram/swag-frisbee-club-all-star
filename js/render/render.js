@@ -1,11 +1,11 @@
 import { G, Mouse } from '../game/state.js';
 import { ctx, W, H } from '../core/dom.js';
-import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG_RADIUS, TARGET, DIVE_TIME, DIVE_RANGE, DASH_CATCH_MULT, DASH_GAP } from '../core/constants.js';
+import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG_RADIUS, TARGET, DIVE_TIME, DIVE_RANGE, DASH_CATCH_MULT, DASH_GAP, CATCH_RADIUS } from '../core/constants.js';
 import { dbg } from '../ui/admin.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { getSkinId, drawSkinDisc } from '../data/skins.js';
-import { LEG_SPRITE, LEG_SPRITE_SCALE } from '../data/specials.js';
+import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE } from '../data/specials.js';
 
 ctx.imageSmoothingEnabled = false;
 const SCALE = 1.6;
@@ -408,21 +408,31 @@ function drawPlayer(p) {
   // un décalage propre — elle flotte, oscille et prend du retard sur les
   // déplacements, ce qui se voit surtout quand il court ou dashe.
   if (p.ck === 'jingle' && !G.replay) {
-    const sansTete = c.frames.headless;
-    ctx.drawImage(sansTete, -24 * SCALE, 0, 48 * SCALE, 60 * SCALE);
+    // On découpe la pose courante en deux au lieu de piocher dans une frame
+    // figée : sinon son corps restait planté en position debout pendant qu'il
+    // courait ou dashait. OR vaut 9 car seules ces rangées sont en or — la
+    // dixième porte l'écharpe, qui appartient aux épaules et ne doit donc pas
+    // s'envoler avec la cloche.
+    const OR = 9, LIGNE = 3 * SCALE;
+    ctx.drawImage(img, 0, OR, 16, 20 - OR,
+      -24 * SCALE, OR * LIGNE, 48 * SCALE, (20 - OR) * LIGNE);
     // Retard sur le mouvement + oscillation lente et rotation légère.
     p.bellLag = p.bellLag || { x: 0, y: 0, a: 0 };
     const vx = p.vx + p.dashV.x, vy = p.vy + p.dashV.y;
     p.bellLag.x += (-vx * .012 - p.bellLag.x) * .18;
     p.bellLag.y += (-vy * .010 - p.bellLag.y) * .18;
     p.bellLag.a += (clamp(-vx * .0006, -.22, .22) - p.bellLag.a) * .15;
-    const flot = Math.sin(G.now * 2.4 + p.side) * 2.4;
-    ctx.save();
-    ctx.translate(p.bellLag.x * SCALE, p.bellLag.y * SCALE + flot - 3);
-    ctx.rotate(p.bellLag.a + Math.sin(G.now * 1.7) * .05);
-    // Seules les 10 premières lignes du sprite portent la cloche.
-    ctx.drawImage(img, 0, 0, 16, 10, -24 * SCALE, 0, 48 * SCALE, 30 * SCALE);
-    ctx.restore();
+    // Pendant son ultime, sa tête est justement partie devenir la cloche
+    // géante devant sa cage : il reste donc décapité le temps du sort.
+    const enUlti = G.bell && G.bell.owner === p;
+    if (!enUlti) {
+      const flot = Math.sin(G.now * 2.4 + p.side) * 2.4;
+      ctx.save();
+      ctx.translate(p.bellLag.x * SCALE, p.bellLag.y * SCALE + flot - 6);
+      ctx.rotate(p.bellLag.a + Math.sin(G.now * 1.7) * .05);
+      ctx.drawImage(img, 0, 0, 16, OR, -24 * SCALE, 0, 48 * SCALE, OR * LIGNE);
+      ctx.restore();
+    }
   } else {
     ctx.drawImage(img, -24 * SCALE, 0, 48 * SCALE, 60 * SCALE);
   }
@@ -719,52 +729,54 @@ function drawReplayOverlay() {
    rester nette à cette taille. */
 function drawBell() {
   const b = G.bell;
+  // L'image se charge de façon asynchrone : tant qu'elle n'est pas prête on ne
+  // dessine rien plutôt que de risquer un drawImage sur une image vide.
+  if (!BELL_SPRITE.complete || !BELL_SPRITE.naturalWidth) return;
   const k = Math.min(1, b.t / .4);                 // apparition
   const fin = Math.min(1, (b.dur - b.t) / .5);     // disparition
   const a = Math.min(k, fin);
-  const bal = Math.sin(b.t * 3.4) * .18;           // balancement
   const R = 58 * (0.8 + 0.2 * k);
+
+  // Trajet de la tête : elle quitte les épaules de Jingle et rejoint la cage
+  // en grossissant, au lieu d'apparaître d'un coup à destination.
+  const vol = Math.min(1, b.t / .45);
+  const e = 1 - Math.pow(1 - vol, 3);
+  // Elle finit centrée pile au milieu de la cage — c'est de ce point que
+  // partent le halo et les ondes.
+  const ox = b.owner ? b.owner.x + (b.x - b.owner.x) * e : b.x;
+  const oy = b.owner ? (b.owner.y - 30) + (b.y - (b.owner.y - 30)) * e : b.y;
+  // Un peu plus courte que la cage, pour la garder lisible sans l'avaler.
+  const bh = (GOAL_BOTTOM - GOAL_TOP) * .88 * (0.35 + 0.65 * e);
+  const bw = bh * (BELL_SPRITE.naturalWidth / BELL_SPRITE.naturalHeight);
 
   ctx.save();
   ctx.globalAlpha = a;
-  ctx.translate(b.x, b.y - 30);
-  ctx.rotate(bal);
 
   // Halo doré, plus intense au moment où elle sonne.
-  const halo = ctx.createRadialGradient(0, 0, 8, 0, 0, R * 2.2);
+  const halo = ctx.createRadialGradient(ox, oy, 8, ox, oy, R * 2.2);
   halo.addColorStop(0, `rgba(245,197,66,${.34 + b.ring * .4})`);
   halo.addColorStop(1, 'rgba(245,197,66,0)');
   ctx.fillStyle = halo;
-  ctx.beginPath(); ctx.arc(0, 0, R * 2.2, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(ox, oy, R * 2.2, 0, TAU); ctx.fill();
 
-  // Corps de la cloche : anse, dôme évasé, rebord, battant.
-  ctx.strokeStyle = '#241318'; ctx.lineWidth = 4;
-  ctx.fillStyle = '#c9992a';
-  ctx.beginPath(); ctx.arc(0, -R * .95, R * .16, 0, TAU); ctx.fill(); ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(-R * .12, -R * .82);
-  ctx.quadraticCurveTo(-R * .95, -R * .2, -R, R * .55);
-  ctx.lineTo(R, R * .55);
-  ctx.quadraticCurveTo(R * .95, -R * .2, R * .12, -R * .82);
-  ctx.closePath();
-  const cor = ctx.createLinearGradient(-R, 0, R, 0);
-  cor.addColorStop(0, '#c9992a'); cor.addColorStop(.38, '#ffe9a0'); cor.addColorStop(1, '#a87f1e');
-  ctx.fillStyle = cor; ctx.fill(); ctx.stroke();
-
-  ctx.fillStyle = '#f5c542';
-  ctx.beginPath(); ctx.ellipse(0, R * .55, R * 1.04, R * .2, 0, 0, TAU); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#8a6a15';
-  ctx.beginPath(); ctx.ellipse(Math.sin(b.t * 3.4) * R * .3, R * .68, R * .17, R * .2, 0, 0, TAU); ctx.fill(); ctx.stroke();
-
-  // Ondes sonores à chaque coup.
+  // Ondes sonores à chaque coup, tracées avant la cloche pour qu'elles semblent
+  // en émaner plutôt que de lui passer devant.
   if (b.ring > .02) {
     ctx.strokeStyle = `rgba(255,233,160,${b.ring * .8})`;
     ctx.lineWidth = 3;
     for (const m of [1.3, 1.7, 2.1]) {
-      ctx.beginPath(); ctx.arc(0, 0, R * m * (1 + (1 - b.ring) * .4), 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.arc(ox, oy, R * m * (1 + (1 - b.ring) * .4), 0, TAU); ctx.stroke();
     }
   }
+
+  // Elle pivote sur son anneau, comme une cloche vraiment suspendue : en la
+  // faisant tourner sur son centre, le balancement ressemblait à une toupie.
+  const ANCRE = .12;                               // hauteur de l'anneau dans l'image
+  ctx.translate(ox, oy - bh * (.5 - ANCRE));
+  ctx.rotate(b.bal * .2 * vol);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(BELL_SPRITE, -bw / 2, -bh * ANCRE, bw, bh);
+
   ctx.restore();
   ctx.globalAlpha = 1;
 }
@@ -817,7 +829,7 @@ function drawDebug() {
       if (!p) continue;
       const bonus = (p.dashT > 0 || p.cancelCatchT > 0) ? DASH_CATCH_MULT : 1;
       ctx.strokeStyle = bonus > 1 ? 'rgba(93,240,138,.9)' : 'rgba(255,255,255,.55)';
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.char.catchR * bonus, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.char.catchR * CATCH_RADIUS * bonus, 0, TAU); ctx.stroke();
       if (p.diveT > 0) {
         ctx.strokeStyle = 'rgba(255,83,64,.9)';
         ctx.beginPath(); ctx.arc(p.x, p.y, DIVE_RANGE, 0, TAU); ctx.stroke();

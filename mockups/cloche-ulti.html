@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Cloche de Minuit — nouveau sprite animé</title>
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --ok:#5df08a; --bad:#ff5340; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 60px}
+  h1{font-size:21px;margin:0 0 4px}
+  h2{font-size:14px;margin:28px 0 10px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:820px;line-height:1.6;margin:0 0 14px}
+  .row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px}
+  .lbl{font-size:11px;color:#8fa4c4;text-transform:uppercase;letter-spacing:1.1px;
+       margin-bottom:8px;text-align:center}
+  canvas{display:block;image-rendering:pixelated;margin:0 auto}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:var(--ok);white-space:pre-wrap}
+  #errs.bad{color:var(--bad)}
+</style>
+</head>
+<body>
+
+<h1>Cloche de Minuit — nouveau sprite</h1>
+<p class="note">Reprise de ta référence : anneau ajouré avec le petit bouton au-dessus, ruban rouge noué
+sur la droite, bande à chevrons sur le corps, lèvre évasée et intérieur sombre. 28 × 34, éclairée en haut
+à gauche comme le reste du jeu.</p>
+
+<h2>Contrôle technique</h2>
+<div id="errs"></div>
+
+<h2>Le sprite</h2>
+<div class="row" id="statique"></div>
+
+<h2>Le balancement (elle sonne à chaque extrême)</h2>
+<p class="note">Le point doré s'allume au moment exact où le son se déclenche — c'est-à-dire quand elle
+change de côté. Les ondes partent à ce moment-là.</p>
+<div class="row" id="anim"></div>
+
+<script>
+const PAL = { K:'#241318', W:'#ffe9a0', G:'#f5c542', g:'#c9992a', d:'#8a6a15',
+              R:'#c1272d', r:'#8c1a1f' };
+
+const ROWS = [
+  "............KKKK............",
+  "...........KGGGgK...........",
+  "...........KGGGgK...........",
+  "............KKKK............",
+  ".........KKKKKKKKKK.........",
+  "........KWGGKKKKGgKKRRK.....",
+  "........KWGK....KGgKRrRRK...",
+  "........KWGK....KGgKRrRRRK..",
+  "........KWGK....KGgKKRrRK...",
+  "........KWGGK..KGGgKKRRK....",
+  ".........KGGGKKGGgK.........",
+  "..........KGGGGGgK..........",
+  "..........KKKKKKKK..........",
+  ".........KWGGGGGGgK.........",
+  "........KWGGGGGGGGgK........",
+  "........KWGGGGGGGGgK........",
+  ".......KWGGGGGGGGGGgK.......",
+  ".......KWGGGGGGGGGGgK.......",
+  "......KWGGGGGGGGGGGGgK......",
+  "......KWGGGGGGGGGGGGgK......",
+  ".....KWGGGGGGGGGGGGGGgK.....",
+  ".....KWGGGGGGGGGGGGGGgK.....",
+  "....KWGGGGGGGGGGGGGGGGgK....",
+  "....KWGGGGGGGGGGGGGGGGgK....",
+  "....KWGdGGdGGdGGdGGdGGgK....",
+  "....KWdGGdGGdGGdGGdGGGgK....",
+  "...KWGGGGGGGGGGGGGGGGGGgK...",
+  "...KWGGGGGGGGGGGGGGGGGGgK...",
+  "..KWGGGGGGGGGGGGGGGGGGGGgK..",
+  "..KKKKKKKKKKKKKKKKKKKKKKKK..",
+  ".KWGGGGGGGGGGGGGGGGGGGGGGgK.",
+  ".KKKKKKKKKKKKKKKKKKKKKKKKKK.",
+  "...KKddddddddddddddddddKK...",
+  "....KKKKKKKKKKKKKKKKKKKK...."
+];
+
+const L = 28;
+
+function build(rows) {
+  const c = document.createElement('canvas');
+  c.width = L; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x]; if (ch !== '.' && PAL[ch]) { g.fillStyle = PAL[ch]; g.fillRect(x, y, 1, 1); }
+  }});
+  return c;
+}
+
+(function () {
+  const bad = [];
+  ROWS.forEach((r, i) => {
+    if (r.length !== L) bad.push('ligne ' + i + ' : largeur ' + r.length + ' au lieu de ' + L);
+    for (const ch of r) if (ch !== '.' && !PAL[ch]) bad.push('ligne ' + i + ' : couleur inconnue "' + ch + '"');
+  });
+  const box = document.getElementById('errs');
+  if (bad.length) { box.className = 'bad'; box.textContent = bad.join('\n'); }
+  else box.textContent = 'OK — ' + ROWS.length + ' lignes de ' + L + ' px, toutes les couleurs définies.';
+})();
+
+const SPRITE = build(ROWS);
+
+function vignette(parent, scale, label) {
+  const card = document.createElement('div'); card.className = 'card';
+  const l = document.createElement('div'); l.className = 'lbl'; l.textContent = label;
+  const cv = document.createElement('canvas');
+  cv.width = L * scale; cv.height = ROWS.length * scale;
+  const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, cv.width, cv.height);
+  g.drawImage(SPRITE, 0, 0, cv.width, cv.height);
+  card.appendChild(l); card.appendChild(cv); parent.appendChild(card);
+}
+const st = document.getElementById('statique');
+vignette(st, 8, 'zoom ×8');
+vignette(st, 4.6, 'taille en jeu (×4,6)');
+
+// ---------------------------------------------------------------- balancement
+// Même formule que le jeu : l'angle suit un sinus, et elle sonne quand elle
+// atteint un extrême — c'est-à-dire quand son sens de rotation s'inverse.
+const OSC = 3.4;
+const card = document.createElement('div'); card.className = 'card';
+const lab = document.createElement('div'); lab.className = 'lbl'; lab.textContent = 'animation en direct';
+const cv = document.createElement('canvas'); cv.width = 340; cv.height = 300;
+card.appendChild(lab); card.appendChild(cv);
+document.getElementById('anim').appendChild(card);
+
+const g = cv.getContext('2d');
+let t = 0, sens = 1, ring = 0, last = performance.now();
+(function boucle(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+  const bal = Math.sin(t * OSC);
+  const s = Math.cos(t * OSC) >= 0 ? 1 : -1;
+  if (s !== sens) { sens = s; ring = 1; }      // extrême atteint : elle sonne
+  ring = Math.max(0, ring - dt * 2.2);
+
+  g.clearRect(0, 0, cv.width, cv.height);
+  g.fillStyle = '#101a2e'; g.fillRect(0, 0, cv.width, cv.height);
+  g.save();
+  g.translate(cv.width / 2, 30);
+  g.rotate(bal * .18);                          // pivot sur l'anneau, en haut
+  const ech = 5.6;
+  g.imageSmoothingEnabled = false;
+  g.drawImage(SPRITE, -L * ech / 2, 0, L * ech, ROWS.length * ech);
+  g.restore();
+
+  if (ring > .02) {
+    g.strokeStyle = `rgba(255,233,160,${ring * .8})`;
+    g.lineWidth = 3;
+    for (const m of [1, 1.35, 1.7]) {
+      g.beginPath();
+      g.arc(cv.width / 2, 130, 70 * m * (1 + (1 - ring) * .4), 0, Math.PI * 2);
+      g.stroke();
+    }
+  }
+  requestAnimationFrame(boucle);
+})(last);
+</script>
+</body>
+</html>

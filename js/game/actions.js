@@ -2,7 +2,7 @@ import { G, Mouse, resetDisc, initMatch, comment } from './state.js';
 import {
   COURT, CY, TARGET, GOAL_MID1, GOAL_MID2, throwSpeed,
   DIVE_TIME, DIVE_RANGE, DIVE_WHIFF_DOWN, DIVE_POWER,
-  PERFECT_WINDOW, PERFECT_SPEED, DISC_RADIUS, DASH_THROW_WINDOW
+  PERFECT_WINDOW, PERFECT_SPEED, DISC_RADIUS, DASH_THROW_WINDOW, METER_GAIN, DISC_SPEED
 } from '../core/constants.js';
 import { clamp, norm, gauss, pick, rand } from '../core/utils.js';
 import { zoneByY } from '../data/maps.js';
@@ -37,7 +37,9 @@ export function throwDisc(p, dir, speed, kind = 'normal') {
     bonus = 1.6; G.lungeBonus = false; G.lungeBonusTimer = 0;
     burst(p.x + dir.x * 20, p.y + dir.y * 20, '#35e0ff', 10);
   }
-  const finalSpeed = speed * bonus;
+  // Tous les tirs passent par ici — lancers, plongeons, Perfect Dive et
+  // ultimes — donc un seul facteur suffit à régler la vitesse du disque.
+  const finalSpeed = speed * bonus * DISC_SPEED;
   d.x = p.x + dir.x * 22; d.y = p.y + dir.y * 22;
   d.vx = dir.x * finalSpeed; d.vy = dir.y * finalSpeed;
   d.heldBy = null; d.free = true; d.thrower = p; d.thrownAt = G.now; d.bounced = false;
@@ -57,13 +59,30 @@ export function throwDisc(p, dir, speed, kind = 'normal') {
     else if (Mouse.y > GOAL_MID2) G.mem.b++;
     else G.mem.m++;
   }
+  // Le service est fini dès que le disque quitte la main : l'échange commence.
+  // Sans cette bascule l'état restait bloqué sur 'serve' toute la partie, et
+  // tout ce qui est conditionné à 'play' ne se déclenchait jamais — le contre
+  // son camp n'était pas sanctionné, les commentaires se taisaient et la jauge
+  // ne montait plus passivement.
+  if (G.state === 'serve') G.state = 'play';
   G.idleT = 0;
   onThrowEvent(p);
+}
+
+// On ne tire que vers l'avant, c'est-à-dire vers la cage adverse. Viser
+// derrière soi ne déclenche rien : le disque reste en main plutôt que d'être
+// redirigé d'office, pour que le joueur garde la main sur son tir. Un disque
+// peut toujours revenir dans sa propre cage par ricochet — c'est le risque des
+// tirs par la bande, pas une visée en arrière.
+export function viseVersAvant(p, dir) {
+  const versAdversaire = p.side === 1 ? 1 : -1;
+  return dir.x * versAdversaire > 0;
 }
 
 export function doThrowHuman(p) {
   if (!p.holding) return;
   const dir = norm(Mouse.x - p.x, Mouse.y - p.y);
+  if (!viseVersAvant(p, dir)) return;
   p.face = dir.x >= 0 ? 1 : -1;
   // Dash Throw : attraper pendant un dash puis tirer dans la foulée envoie le
   // disque à pleine puissance sans avoir eu besoin de charger.
@@ -122,7 +141,7 @@ function perfectDive(p) {
   const dir = norm(gx - p.x, CY - p.y);
   throwDisc(p, dir, PERFECT_SPEED * p.char.power);
   G.disc.super = true;
-  p.meter = clamp(p.meter + 30, 0, 100);
+  p.meter = clamp(p.meter + 30 * METER_GAIN, 0, 100);
   G.timescale = .3; G.tsTimer = .3;
   G.zoom = { t: 0, dur: .45, x: p.x, y: p.y };
   G.flash = .35;
@@ -156,7 +175,7 @@ export function onCatch(p, sp, dirx, diry) {
   G.trail.length = 0;
   p.holding = true; p.charge = 0; p.stats.catches++;
   if (enDash) p.stats.dashCatches++;
-  p.meter = clamp(p.meter + 12, 0, 100);
+  p.meter = clamp(p.meter + 12 * METER_GAIN, 0, 100);
   p.holdTimer = 0;
   G.rally++; G.maxRally = Math.max(G.maxRally, G.rally); G.idleT = 0;
   G.lastCatchIdx = G.rec.length;   // point de départ du prochain replay
@@ -166,7 +185,7 @@ export function onCatch(p, sp, dirx, diry) {
   if (p.dashT > 0 || p.cancelCatchT > 0) p.dashThrowT = DASH_THROW_WINDOW;
   sfx('catch'); ring(p.x, p.y, p.char.accent);
   if (sp > 780) {
-    p.meter = clamp(p.meter + 20, 0, 100);
+    p.meter = clamp(p.meter + 20 * METER_GAIN, 0, 100);
     addPopup('PERFECT CATCH !', '#ffffff', 14, .9, p.y - 56);
     G.timescale = .3; G.tsTimer = .18; sfx('perfect');
     G.shake = Math.max(G.shake, 7);
@@ -198,8 +217,8 @@ export function scoreGoal(scorer, y) {
   scorer.score += pts;
   scorer.stats.buts++;
   if (pts >= 5) scorer.stats.z5++; else scorer.stats.z3++;
-  scorer.meter = clamp(scorer.meter + 25, 0, 100);
-  scorer.foe.meter = clamp(scorer.foe.meter + 15, 0, 100);
+  scorer.meter = clamp(scorer.meter + 25 * METER_GAIN, 0, 100);
+  scorer.foe.meter = clamp(scorer.foe.meter + 15 * METER_GAIN, 0, 100);
   G.state = 'goal'; G.goalT = 1.1; G.timescale = .28; G.tsTimer = .5; G.shake = 14;
   G.goalFlash[scorer.side === 1 ? 1 : 0] = 1;
   const gx = scorer.side === 1 ? COURT.right : COURT.left;
