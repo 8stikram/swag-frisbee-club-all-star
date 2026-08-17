@@ -52,7 +52,9 @@ export function update(dt) {
     const c = G.cine;
     c.t += dt;
     const p = c.p;
-    if (Math.random() < .5) G.particles.push({ x: p.x + gauss() * 34, y: p.y - 20 + gauss() * 40, vx: gauss() * 40, vy: -rand(40, 140), life: .5, c: Math.random() < .5 ? '#ff5a1a' : '#ffd23e', s: 3, g: 0 });
+    // Particules de la transformation : dorées comme la tenue. L'orange qu'il y
+    // avait ici venait de Kurama et jurait avec le manteau doré.
+    if (Math.random() < .5) G.particles.push({ x: p.x + gauss() * 34, y: p.y - 20 + gauss() * 40, vx: gauss() * 40, vy: -rand(40, 140), life: .5, c: Math.random() < .5 ? '#ffe89a' : '#ffd23e', s: 3, g: 0 });
     if (!c.launched && c.t >= 0.4) { c.launched = true; launchCine(c); }
     if (c.t > 1.3) G.cine = null;
   }

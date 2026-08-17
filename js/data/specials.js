@@ -43,6 +43,10 @@ BELL_SPRITE.src = 'assets/img/cloche-ulti.png';
 //   needsDisc : refuse le cast si le perso n'a pas le disque
 //   cast(p)   : déclenche la spéciale
 //   launch(p) : optionnel, appelé par la boucle à la fin de la cinématique
+// Le bleu du Rasengan, porté par le tir : traînée, disque et impacts. La tenue
+// et les orbes restent dorées — le chakra ne vire au bleu qu'au moment du tir.
+export const RASENGAN = '#5ad2ff';
+
 // Durée de la tenue Six Paths après le cast. Assez long pour couvrir l'échange
 // qui suit le tir, assez court pour rester un moment et pas un état.
 export const SIX_DUREE = 4.2;
@@ -88,7 +92,7 @@ export const SPECIALS = {
       G.flash = 2.9;
       // Tenue dorée et six orbes, le temps que l'échange se joue.
       p.sixT = SIX_DUREE; p.sixA = 0;
-      sfx('roar'); comment('LES SIX CHEMINS !!');
+      sfx('sixpaths'); comment('LES SIX CHEMINS !!');
     },
     launch(p) {
       let dir;
@@ -105,7 +109,7 @@ export const SPECIALS = {
       }
       p.face = dir.x >= 0 ? 1 : -1;
       throwDisc(p, dir, 1150 * p.char.power, 'kurama');
-      burst(p.x + dir.x * 30, p.y + dir.y * 30, '#ff8c1a', 30);
+      burst(p.x + dir.x * 30, p.y + dir.y * 30, RASENGAN, 30);
       G.shake = 16; sfx('special');
     }
   },

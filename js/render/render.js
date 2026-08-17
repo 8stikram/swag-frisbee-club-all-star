@@ -7,7 +7,7 @@ import { centreDunk, centrePanier, ZONES } from '../game/zones.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { getSkinId, drawSkinDisc } from '../data/skins.js';
-import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE } from '../data/specials.js';
+import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN } from '../data/specials.js';
 
 ctx.imageSmoothingEnabled = false;
 const SCALE = 1.6;
@@ -853,8 +853,11 @@ function drawDisc() {
   drawTrail();
   if (!d.heldBy) drawShadow(d.x, d.y - 12, r + 2);
   if (d.kind === 'kurama') {
-    drawDiscObj(d.x, d.y, d.spin, 1, '#ff8c1a', r);
-    ctx.strokeStyle = 'rgba(255,140,26,.85)'; ctx.lineWidth = 3;
+    // Le tir du mode Six Paths part en bleu Rasengan. La tenue et les orbes
+    // restent dorées : c'est au moment du tir, et à ce moment-là seulement,
+    // que le chakra prend cette couleur.
+    drawDiscObj(d.x, d.y, d.spin, 1, RASENGAN, r);
+    ctx.strokeStyle = 'rgba(90,210,255,.85)'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(d.x, d.y, r + 8 + Math.sin(G.now * 20) * 4, G.now * 9, G.now * 9 + 4.2); ctx.stroke();
   } else if (d.super) {
     drawDiscObj(d.x, d.y, d.spin, 1, '#ff5340', r);

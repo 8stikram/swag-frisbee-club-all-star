@@ -173,6 +173,17 @@ export function sfx(n) {
     case 'superthrow': noise(.2, .2, 2000); beep(200, 900, .16, 'sawtooth', .12); beep(900, 400, .1, 'square', .08, .05); break;
     case 'perfect': [990, 1320, 1760].forEach((f, i) => beep(f, f, .1, 'square', .13, i * .05)); break;
     case 'roar': beep(90, 55, .5, 'sawtooth', .22); noise(.5, .16, 300); break;
+    // Six Paths : une montée d'énergie, pas un cri de bête. Deux sinus qui
+    // montent à la quinte donnent l'afflux, un souffle aigu remplace le
+    // grondement du renard, un scintillement arrive au sommet, et un grave
+    // sourd tombe pile quand l'écran sature en blanc.
+    case 'sixpaths':
+      beep(180, 900, .45, 'sine', .18);
+      beep(270, 1350, .45, 'sine', .10);
+      noise(.5, .10, 5200);
+      beep(1600, 2400, .18, 'triangle', .07, .30);
+      beep(70, 55, .5, 'sine', .20, .42);
+      break;
     case 'special': [700, 990, 1320, 1760].forEach((f, i) => beep(f, f, .1, 'square', .14, i * .06)); noise(.3, .1, 1200); break;
     case 'legcast': beep(180, 90, .4, 'sawtooth', .16); break;
     case 'splat': noise(.18, .22, 400); beep(160, 70, .16, 'sine', .18); break;

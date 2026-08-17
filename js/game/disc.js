@@ -8,6 +8,7 @@ import { sfx } from '../audio/audio.js';
 import { disqueImmobile, testerPanier } from './zones.js';
 import { burst, dust, addPopup } from './fx.js';
 import { onCatch, scoreGoal, ownFoul, setupServe } from './actions.js';
+import { RASENGAN } from '../data/specials.js';
 
 export const DISC_R = () => G.disc.big ? DISC_BIG_RADIUS : DISC_RADIUS;
 
@@ -49,12 +50,13 @@ export function updateDisc(dt) {
   if (d.kind === 'kurama') {
     const s = Math.hypot(d.vx, d.vy) || 1;
     d.vx *= d.kSpeed / s; d.vy *= d.kSpeed / s;
-    if (Math.random() < .7) G.particles.push({ x: d.x, y: d.y, vx: gauss() * 70, vy: gauss() * 70, life: .35, c: Math.random() < .5 ? '#ff8c1a' : '#ffd23e', s: 3, g: 0 });
+    // Étincelles semées par le tir en vol : bleu Rasengan, comme le disque.
+    if (Math.random() < .7) G.particles.push({ x: d.x, y: d.y, vx: gauss() * 70, vy: gauss() * 70, life: .35, c: Math.random() < .5 ? RASENGAN : '#c8f0ff', s: 3, g: 0 });
   } else { d.vx *= Math.exp(-.08 * dt); d.vy *= Math.exp(-.08 * dt); }
   if (d.super && Math.random() < .6) G.particles.push({ x: d.x, y: d.y, vx: gauss() * 50, vy: gauss() * 50, life: .3, c: '#ff5340', s: 2.5, g: 0 });
   if (d.thrower && d.thrower.ck === 'isaac' && Math.random() < .35) G.particles.push({ x: d.x, y: d.y, vx: gauss() * 30, vy: rand(20, 90), life: .5, c: '#7fd8ff', s: 2, g: 400 });
   d.x += d.vx * dt; d.y += d.vy * dt;
-  G.trail.push({ x: d.x, y: d.y, c: d.kind === 'kurama' ? '#ff8c1a' : (d.super ? '#ff5340' : (d.kind === 'matilda' ? '#8dff6a' : '#ffd23e')) });
+  G.trail.push({ x: d.x, y: d.y, c: d.kind === 'kurama' ? RASENGAN : (d.super ? '#ff5340' : (d.kind === 'matilda' ? '#8dff6a' : '#ffd23e')) });
   if (G.trail.length > 26) G.trail.shift();
   const sp = Math.hypot(d.vx, d.vy);
   const rest = d.kind === 'kurama' ? 1 : .99;
@@ -110,7 +112,7 @@ export function updateDisc(dt) {
 
 export function onBounce(d) {
   d.bounced = true;
-  if (d.kind === 'kurama') { sfx('bigbounce'); G.shake = Math.max(G.shake, 8); burst(d.x, d.y, '#ff8c1a', 16); }
+  if (d.kind === 'kurama') { sfx('bigbounce'); G.shake = Math.max(G.shake, 8); burst(d.x, d.y, RASENGAN, 16); }
   else { sfx('bounce'); dust(d.x, d.y, 6); G.shake = Math.max(G.shake, 3); }
   if (d.thrower) {
     const ownSideWall = (d.x <= COURT.left + DISC_R() && d.thrower.side === 1) || (d.x >= COURT.right - DISC_R() && d.thrower.side === 2);
