@@ -3,6 +3,9 @@ import { keys, keysP2, inputDir } from './input.js';
 import { getKey } from '../data/keymap.js';
 import { getDashAim } from '../data/settings.js';
 import { norm, clamp } from '../core/utils.js';
+import { doDive } from './actions.js';
+import { doFeint } from './input.js';
+import { trySpecial } from './specials.js';
 
 // ---------------------------------------------------------------------------
 // La fiche d'intentions d'un joueur.
@@ -57,6 +60,34 @@ export function commandeClavier2(p, dt) {
   c.viseeDash.x = c.visee.x; c.viseeDash.y = c.visee.y;
   c.tir = keysP2.has('Enter');
   c.dash = keysP2.has('ShiftRight');
+}
+
+// Touches d'action du deuxième joueur, à droite du clavier pour ne jamais
+// croiser celles du premier. Appelé sur l'appui, pas à chaque image : ce sont
+// des gestes ponctuels, pas des états maintenus.
+export function toucheActionJ2(code) {
+  const p = G.p2;
+  if (!p || !p.cmd || !G.isJ2J || !p.human) return false;
+  if (code === 'ControlRight') { p.cmd.plongeon = true; return true; }
+  if (code === 'Delete') { p.cmd.feinte = true; return true; }
+  if (code === 'PageDown') { p.cmd.special = true; return true; }
+  return false;
+}
+
+// Exécute les gestes ponctuels déposés dans la fiche, puis les efface.
+// C'est par ici que passeront les actions d'un joueur distant : lui n'aura pas
+// d'événement clavier sur cette machine, seulement une fiche qui arrive.
+export function appliquerActions(p) {
+  const c = p.cmd;
+  if (c.plongeon) {
+    c.plongeon = false;
+    if (!G.cine && p.stun <= 0 && p.diveT <= 0 && p.diveDown <= 0) {
+      if (p.holding) p.charging = true;
+      else doDive(p, { x: c.visee.x, y: c.visee.y });
+    }
+  }
+  if (c.feinte) { c.feinte = false; doFeint(p, { x: c.visee.x, y: c.visee.y }); }
+  if (c.special) { c.special = false; trySpecial(p); }
 }
 
 // --- Joueur piloté par l'ordinateur ---------------------------------------

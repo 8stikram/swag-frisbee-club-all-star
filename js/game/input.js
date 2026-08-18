@@ -18,6 +18,7 @@ import {
   resetEntrainement, quitterEntrainement, demanderSortie, sortieOuverte, annulerSortie
 } from '../ui/training.js';
 import { enTutoriel, quitterTutoriel } from './../ui/tutoriel.js';
+import { toucheActionJ2 } from './commandes.js';
 
 export const keys = new Set();
 export const keysP2 = new Set();
@@ -97,6 +98,9 @@ window.addEventListener('keydown', e => {
   if (e.repeat) { keys.add(e.code); return; }
   keys.add(e.code);
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'ShiftRight'].includes(e.code)) keysP2.add(e.code);
+  // Gestes ponctuels du deuxième joueur : ils ne font que déposer une intention
+  // dans sa fiche, la boucle s'occupe du reste.
+  if (!curScreen && toucheActionJ2(e.code)) { e.preventDefault(); return; }
   if (e.code === 'KeyM') { addPopup(toggleMusic() ? '♪ MUSIQUE ON' : '♪ MUSIQUE OFF', '#9fb4dd', 13); return; }
   // Le skip consomme la touche : sans ça, la même pression relancerait une
   // charge ou un tir dès le retour au jeu.

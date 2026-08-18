@@ -4,7 +4,7 @@ import { CX, METER_GAIN } from '../core/constants.js';
 import { lerp, gauss, rand, pick, clamp } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { updatePlayerHuman, updatePlayer2, integratePlayer } from './input.js';
-import { majCommandes } from './commandes.js';
+import { majCommandes, appliquerActions } from './commandes.js';
 import { updateAI } from './ai.js';
 import { updateDisc, updateDecoys } from './disc.js';
 import { updateLeg, updateBell, launchCine } from './specials.js';
@@ -120,6 +120,10 @@ export function update(dt) {
       // Les fiches d'intentions se remplissent d'abord, une fois pour toutes :
       // ensuite le jeu ne consulte plus qu'elles.
       majCommandes(wdt);
+      // Gestes ponctuels : plongeon, feinte, ultime. Le joueur à la souris les
+      // déclenche par ses événements ; tout autre joueur — le second clavier
+      // aujourd'hui, un joueur distant demain — passe par ici.
+      for (const p of [G.p1, G.p2]) if (p && p.cmd) appliquerActions(p);
       for (const p of [G.p1, G.p2]) {
         const locked = G.cine && G.cine.p === p && !G.cine.launched;
         if (!locked) {

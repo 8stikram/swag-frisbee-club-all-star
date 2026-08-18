@@ -20,6 +20,10 @@ function nouvelleCommande(side) {
     viseeDash: { x: side === 1 ? 1 : -1, y: 0 },
     tir: false,        // touche de tir maintenue
     dash: false,
+    // Actions ponctuelles : posées par ce qui remplit la fiche, consommées par
+    // le jeu qui les remet aussitôt à faux. Une intention qui resterait collée
+    // se rejouerait à l'image suivante.
+    plongeon: false, feinte: false, special: false,
     angle: 0           // visée au clavier : angle courant, en radians
   };
 }
