@@ -1350,27 +1350,32 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .heroBox{cursor:pointer}
 .heroBox.punchSkin{animation:tuPop .4s ease-out}
 
-/* ================= MATCH EN LIGNE ================= */
+/* ================= MATCH EN LIGNE =================
+   Même structure que l'écran d'entraînement, décliné en bleu pastel : c'est
+   le mode le plus calme du jeu, il n'a pas à crier comme un écran de match. */
 .scr-online{ display:flex; align-items:center; justify-content:center;
-  background:radial-gradient(120cqh 90cqh at 50% 42%,#101a2e 0%,#070c16 62%,#02040a 100%) }
+  background:radial-gradient(120cqh 90cqh at 50% 40%,#1b3550 0%,#101f31 58%,#060d16 100%) }
 .onWrap{ width:min(74cqw,760px); max-height:88cqh; overflow-y:auto;
-  display:flex; flex-direction:column; align-items:center; gap:1.6cqh; padding:2cqh 1cqw }
+  display:flex; flex-direction:column; align-items:center; gap:1.5cqh; padding:2cqh 1cqw }
 .onTitre{ font-family:'Archivo Black',sans-serif; font-size:clamp(16px,3.4cqh,30px);
-  color:var(--ink); margin:0; letter-spacing:1px }
-.onChoix{ display:flex; flex-direction:column; align-items:center; gap:1.2cqh; width:100% }
-.onAide{ font-family:'Barlow',sans-serif; font-size:clamp(9px,1.7cqh,14px); color:#8fa4c4;
+  color:#cfeaff; margin:0; letter-spacing:1px; text-shadow:0 3px 0 rgba(8,20,34,.7) }
+.onChoix{ display:flex; flex-direction:column; align-items:center; gap:1.1cqh; width:100% }
+.onAide{ font-family:'Barlow',sans-serif; font-size:clamp(9px,1.7cqh,14px); color:#9fc4e2;
   line-height:1.7; max-width:46cqw; text-align:center; margin:.6cqh 0 0 }
 .onEtape{ display:flex; flex-direction:column; align-items:center; gap:.9cqh; width:100% }
 .onEtape.hidden,.onChoix.hidden,.onPas.hidden,.onZone.hidden,.mbtn.hidden{ display:none }
-.onPas{ font-family:'Barlow',sans-serif; font-size:clamp(9px,1.7cqh,14px); color:#c8d6ee; margin:0 }
-.onPas b{ color:var(--or,#ffd23e) }
+.onPas{ font-family:'Barlow',sans-serif; font-size:clamp(9px,1.7cqh,14px); color:#d6ecff; margin:0 }
+.onPas b{ color:#8fd0ff }
 /* Le code est long : une zone qui défile vaut mieux qu'un pavé qui déborde. */
-.onZone{ width:100%; height:9cqh; resize:none; border-radius:8px;
-  border:3px solid rgba(255,255,255,.18); background:rgba(8,12,22,.9);
-  color:#9fe8ff; font-family:Consolas,monospace; font-size:clamp(7px,1.3cqh,11px);
+.onZone{ width:100%; height:9cqh; resize:none; border-radius:10px;
+  border:3px solid rgba(143,208,255,.32); background:rgba(12,26,42,.9);
+  color:#a8d8ff; font-family:Consolas,monospace; font-size:clamp(7px,1.3cqh,11px);
   padding:.8cqh 1cqw; word-break:break-all }
-.onZone:focus{ outline:none; border-color:var(--accent,#35e0ff) }
+.onZone:focus{ outline:none; border-color:#8fd0ff; box-shadow:0 0 0 3px rgba(143,208,255,.18) }
 .onEtat{ font-family:'DotGothic16',monospace; font-size:clamp(9px,1.7cqh,14px);
-  color:#5df08a; min-height:2cqh; margin:0; text-align:center }
-.onEtat.bad{ color:#ff5340 }
+  color:#8fd0ff; min-height:2cqh; margin:0; text-align:center }
+.onEtat.bad{ color:#ff9aa2 }
+.scr-online .mbtn{ background:linear-gradient(180deg,#9fd4f7,#6aa8d8); border-color:#0f2438; color:#0b1a2a }
+.scr-online .mbtn:hover,.scr-online .mbtn.sel{ background:linear-gradient(180deg,#cbeaff,#8cc4ea) }
+.scr-online .mbtn.c-green{ background:linear-gradient(180deg,#b6e6ff,#79b8e6) }
 .mbtn.mini{ font-size:clamp(8px,1.4cqh,12px); padding:.5cqh 1.4cqw }
