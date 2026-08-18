@@ -157,7 +157,9 @@ window.addEventListener('keyup', e => {
   // charge), pas tant qu'elle reste enfoncée — sinon impossible de charger.
   if (e.code === 'Enter' && G.isJ2J && G.p2 && G.p2.human && G.p2.holding && G.p2.wasCharging && G.p2.charge > 0) {
     const p = G.p2;
-    const dir = norm(G.p1.x - p.x, G.p1.y - p.y);
+    // Le tir partait droit sur le joueur 1, faute de visée : impossible de
+    // marquer autrement que par accident. Il suit maintenant son viseur.
+    const dir = { x: p.cmd.visee.x, y: p.cmd.visee.y };
     throwDisc(p, dir, throwSpeed(p.charge, p.char.power));
   }
   keysP2.delete(e.code);
@@ -245,25 +247,25 @@ export function updatePlayerHuman(p, dt) {
   if (p.stun > 0) { p.vx = approach(p.vx, 0, 20, dt); p.vy = approach(p.vy, 0, 20, dt); return; }
   // Au sol après un plongeon dans le vide : le joueur ne contrôle plus rien.
   if (p.diveDown > 0) { p.vx = approach(p.vx, 0, 12, dt); p.vy = approach(p.vy, 0, 12, dt); return; }
-  const d = inputDir();
+  // Le jeu ne lit plus la souris : il lit la fiche d'intentions du joueur.
+  // C'est ce qui permet qu'un deuxième joueur existe — sa fiche est remplie
+  // par son clavier, et cette fonction ne fait pas la différence.
+  const c = p.cmd, d = c.dep;
   // Touche de dash maintenue : distance fixe, soumise à l'anti-spam. La visée
-  // dépend du réglage (curseur ou sens du déplacement) ; sans direction de
-  // déplacement on retombe sur la souris pour ne jamais dasher sur place.
-  if (keys.has(getKey('dash')) && p.dashT <= 0 && p.dashGap <= 0 && p.diveT <= 0 && p.diveDown <= 0) {
-    let aim = norm(Mouse.x - p.x, Mouse.y - p.y);
-    if (getDashAim() === 'move' && (d.x || d.y)) aim = norm(d.x, d.y);
-    startDash(p, aim);
+  // du dash est déjà arbitrée dans la fiche, selon le réglage du joueur.
+  if (c.dash && p.dashT <= 0 && p.dashGap <= 0 && p.diveT <= 0 && p.diveDown <= 0) {
+    startDash(p, { x: c.viseeDash.x, y: c.viseeDash.y });
   }
   let mx = d.x, my = d.y;
   const l = Math.hypot(mx, my);
   if (l) { mx /= l; my /= l; }
-  p.face = (Mouse.x >= p.x) ? 1 : -1;
+  p.face = (c.visee.x >= 0) ? 1 : -1;
   const spd = p.speed * (p.charging ? .55 : 1);
   const tx = mx * spd, ty = my * spd;
   const rate = l ? 13 : 5;
   p.vx = approach(p.vx, tx, rate, dt);
   p.vy = approach(p.vy, ty, rate, dt);
-  if (p.holding && (keys.has(getKey('charge')) || Mouse.down)) {
+  if (p.holding && c.tir) {
     p.charging = true;
     const prev = p.charge;
     p.charge = clamp(p.charge + dt / p.char.chargeT, 0, 1);
@@ -280,19 +282,17 @@ export function updatePlayer2(dt) {
   if (!G.isJ2J || !G.p2 || !G.p2.human) return;
   const p = G.p2;
   if (p.stun > 0) { p.vx = approach(p.vx, 0, 20, dt); p.vy = approach(p.vy, 0, 20, dt); return; }
-  let x = 0, y = 0;
-  if (keysP2.has('ArrowUp')) y -= 1;
-  if (keysP2.has('ArrowDown')) y += 1;
-  if (keysP2.has('ArrowLeft')) x -= 1;
-  if (keysP2.has('ArrowRight')) x += 1;
+  // Même fiche, même logique que le joueur 1 : seul ce qui la remplit change.
+  const c = p.cmd;
+  let x = c.dep.x, y = c.dep.y;
   const l = Math.hypot(x, y); if (l) { x /= l; y /= l; }
-  p.face = (G.p1.x > p.x) ? 1 : -1;
+  p.face = (c.visee.x >= 0) ? 1 : -1;
   const spd = p.speed * (p.charging ? .55 : 1);
   const tx = x * spd, ty = y * spd;
   const rate = l ? 13 : 5;
   p.vx = approach(p.vx, tx, rate, dt);
   p.vy = approach(p.vy, ty, rate, dt);
-  if (p.holding && keysP2.has('Enter')) {
+  if (p.holding && c.tir) {
     p.charging = true;
     const prev = p.charge;
     p.charge = clamp(p.charge + dt / p.char.chargeT, 0, 1);
@@ -303,9 +303,10 @@ export function updatePlayer2(dt) {
     }
     p.wasCharging = true;
   } else p.charging = false;
-  if (keysP2.has('ShiftRight') && p.dashCd <= 0) {
-    const d = norm(G.p1.x - p.x, G.p1.y - p.y);
-    p.dashV.x = d.x * DASH_SPEED * 0.7; p.dashV.y = d.y * DASH_SPEED * 0.7;
+  // Le dash suivait le viseur… qui n'existait pas : il fonçait donc toujours
+  // droit sur l'adversaire. Il suit maintenant la visée du joueur.
+  if (c.dash && p.dashCd <= 0) {
+    p.dashV.x = c.viseeDash.x * DASH_SPEED * 0.7; p.dashV.y = c.viseeDash.y * DASH_SPEED * 0.7;
     p.dashCd = DASH_CD; sfx('dash'); dust(p.x, p.y + 22, 8);
   }
   // Le tir part au relâchement de la touche (keyup), pas ici : voir plus bas.

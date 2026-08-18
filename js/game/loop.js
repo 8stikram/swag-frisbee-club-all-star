@@ -4,6 +4,7 @@ import { CX, METER_GAIN } from '../core/constants.js';
 import { lerp, gauss, rand, pick, clamp } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { updatePlayerHuman, updatePlayer2, integratePlayer } from './input.js';
+import { majCommandes } from './commandes.js';
 import { updateAI } from './ai.js';
 import { updateDisc, updateDecoys } from './disc.js';
 import { updateLeg, updateBell, launchCine } from './specials.js';
@@ -116,6 +117,9 @@ export function update(dt) {
     }
     case 'serve':
     case 'play': {
+      // Les fiches d'intentions se remplissent d'abord, une fois pour toutes :
+      // ensuite le jeu ne consulte plus qu'elles.
+      majCommandes(wdt);
       for (const p of [G.p1, G.p2]) {
         const locked = G.cine && G.cine.p === p && !G.cine.launched;
         if (!locked) {

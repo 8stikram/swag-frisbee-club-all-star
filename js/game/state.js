@@ -9,6 +9,21 @@ import { setupServe } from './actions.js';
 
 export const Mouse = { x: COURT.left + 120, y: CY, down: false, locked: false };
 
+// Fiche d'intentions d'un joueur : ce qu'il veut faire, sans dire d'où ça
+// vient. Définie ici et pas dans commandes.js à dessein — state.js ne doit
+// importer personne qui le réimporte, ce genre de boucle a déjà cassé le jeu
+// en production une fois.
+function nouvelleCommande(side) {
+  return {
+    dep: { x: 0, y: 0 },                       // déplacement voulu, normalisé
+    visee: { x: side === 1 ? 1 : -1, y: 0 },   // direction de tir voulue
+    viseeDash: { x: side === 1 ? 1 : -1, y: 0 },
+    tir: false,        // touche de tir maintenue
+    dash: false,
+    angle: 0           // visée au clavier : angle courant, en radians
+  };
+}
+
 export const G = {
   state: 'menu', demo: true, now: 0,
   p1: null, p2: null, disc: null,
@@ -88,6 +103,9 @@ export function makePlayer(ck, side, human, diffIdx) {
     diveT: 0, diveDown: 0, diveDir: { x: 1, y: 0 }, diveHit: false,
     // Désorienté par la cloche de Jingle : sa course dérive un court instant.
     dizzy: 0,
+    // Fiche d'intentions : ce que ce joueur veut faire, quelle que soit la
+    // provenance — souris, clavier du J2, ou réseau plus tard.
+    cmd: nouvelleCommande(side),
     // Mode Six Paths de Naruto : temps restant, et angle de l'anneau d'orbes.
     sixT: 0, sixA: 0,
     // Bras tendu de Leon pendant le Tir Matilda : durée de la pose.

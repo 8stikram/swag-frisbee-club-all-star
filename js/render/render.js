@@ -811,11 +811,12 @@ function drawPlayer(p) {
     // Petite flèche posée sur l'anneau de charge, dans la direction visée :
     // l'adversaire voit où part le tir, ce qui donne tout leur sens au dash et
     // à la feinte pour le prendre de vitesse.
-    const aim = p.human && !p.ai
-      ? Math.atan2(Mouse.y - p.y, Mouse.x - p.x)
-      : (p.ai && p.ai.emaTarget && p.ai.emaTarget.x
-        ? Math.atan2(p.ai.emaTarget.y - p.y, p.ai.emaTarget.x - p.x)
-        : (p.face >= 0 ? 0 : Math.PI));
+    // Une seule source pour tout le monde : la fiche d'intentions. Avant, seul
+    // le joueur à la souris avait une flèche juste — le deuxième joueur, qui
+    // n'a pas de curseur, en a bien plus besoin encore.
+    const aim = (p.cmd && (p.cmd.visee.x || p.cmd.visee.y))
+      ? Math.atan2(p.cmd.visee.y, p.cmd.visee.x)
+      : (p.face >= 0 ? 0 : Math.PI);
     ctx.save();
     ctx.translate(p.x + Math.cos(aim) * r, p.y + Math.sin(aim) * r);
     ctx.rotate(aim);
