@@ -6,6 +6,7 @@ import { lancerIntro } from './ui/intro.js';
 import './game/input.js';
 import './ui/keybind-ui.js';
 import './ui/admin.js';
+import './ui/online-ui.js';
 
 initMatch(true);
 showScreen('title');

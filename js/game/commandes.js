@@ -6,6 +6,7 @@ import { norm, clamp } from '../core/utils.js';
 import { doDive } from './actions.js';
 import { doFeint } from './input.js';
 import { trySpecial } from './specials.js';
+import { Partie } from '../reseau/partie.js';
 
 // ---------------------------------------------------------------------------
 // La fiche d'intentions d'un joueur.
@@ -105,6 +106,13 @@ export function commandeIA(p) {
 export function majCommandes(dt) {
   for (const p of [G.p1, G.p2]) {
     if (!p || !p.cmd) continue;
+    // En ligne, chacun ne remplit que sa propre fiche. Celle d'en face arrive
+    // par la liaison : la remplir ici l'écraserait avec les commandes de la
+    // mauvaise personne — l'adversaire se mettrait à jouer avec ta souris.
+    if (Partie.active) {
+      if (p === (Partie.role === 'hote' ? G.p1 : G.p2)) commandeSouris(p);
+      continue;
+    }
     if (p.ai) commandeIA(p);
     else if (G.isJ2J && p.side === 2) commandeClavier2(p, dt);
     else commandeSouris(p);

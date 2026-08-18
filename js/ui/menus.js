@@ -16,6 +16,7 @@ import { lancerEntrainement } from './training.js';
 import { lancerChapitre } from './tutoriel.js';
 import { skinActif } from '../data/skins-perso.js';
 import { ouvrirPanneauSkins, brancherSkins } from './skins-ui.js';
+import { ouvrirEnLigne } from './online-ui.js';
 
 let selCharPlayer = 'naruto', selCharCPU = 'leon', diffIdx = 1;
 let modeJ2J = false;
@@ -687,6 +688,7 @@ export function doAct(act) {
     case 'play': sfx('select'); modeJ2J = false; musiqueDeMenu(); resetSelectTurn(); showScreen('select'); refreshSelect(); break;
     case 'j2j': sfx('select'); modeJ2J = true; musiqueDeMenu(); resetSelectTurn(); showScreen('select'); refreshSelect(); break;
     case 'options': sfx('select'); musiqueDeMenu(); showScreen('options'); refreshKeysUI(); break;
+    case 'online': sfx('select'); musiqueDeMenu(); ouvrirEnLigne(); break;
     case 'learn': sfx('select'); musiqueDeMenu(); ouvrirApprentissage(); break;
     case 'training': sfx('select'); jouerMusiqueEntrainement(); lancerEntrainement(); break;
     case 'tuto': sfx('select'); musiqueDeMenu(); ouvrirChapitres(); break;

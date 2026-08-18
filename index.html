@@ -63,6 +63,10 @@
           <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 19c0-3 2.7-5 6-5M22 19c0-3-2.7-5-6-5"/></svg></span>
           MATCH JCJ
         </button>
+        <button class="mbtn c-online" data-act="online">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15 0 18M12 3c-2.5 2.7-2.5 15 0 18"/></svg></span>
+          MATCH EN LIGNE
+        </button>
         <button class="mbtn c-learn" data-act="learn">
           <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5c3-1.6 6-1.6 9 0v13c-3-1.6-6-1.6-9 0z"/><path d="M21 6.5c-3-1.6-6-1.6-9 0v13c3-1.6 6-1.6 9 0z"/></svg></span>
           ENTRAÎNEMENT
@@ -277,6 +281,42 @@
   </div>
 
   <!-- ============ SÉLECTION DU TERRAIN ============ -->
+  <!-- Match en ligne. Les deux navigateurs se parlent en direct : ces deux
+       pavés de texte ne servent qu'à faire les présentations, une fois. -->
+  <div class="screen scr-online hidden" id="scr-online">
+    <div class="onWrap">
+      <h2 class="onTitre">MATCH EN LIGNE</h2>
+      <div class="onChoix" id="onChoix">
+        <button class="mbtn c-green" id="onHeberger">HÉBERGER UNE ARÈNE</button>
+        <button class="mbtn" id="onRejoindre">REJOINDRE UNE ARÈNE</button>
+        <p class="onAide">Un de vous héberge, l'autre rejoint. Vous échangez deux
+          codes par Discord, et le match se joue en direct entre vos deux
+          navigateurs — sans passer par personne.</p>
+      </div>
+
+      <div class="onEtape hidden" id="onEtapeHote">
+        <p class="onPas"><b>1.</b> Envoie ce code à ton adversaire.</p>
+        <textarea class="onZone" id="onMonCode" readonly></textarea>
+        <button class="mbtn mini" id="onCopier">COPIER</button>
+        <p class="onPas"><b>2.</b> Colle ici la réponse qu'il te renvoie.</p>
+        <textarea class="onZone" id="onReponse" placeholder="colle la réponse ici"></textarea>
+        <button class="mbtn c-green" id="onValiderReponse">CONNECTER</button>
+      </div>
+
+      <div class="onEtape hidden" id="onEtapeInvite">
+        <p class="onPas"><b>1.</b> Colle le code que l'hôte t'a envoyé.</p>
+        <textarea class="onZone" id="onCodeHote" placeholder="colle le code de l'hôte ici"></textarea>
+        <button class="mbtn c-green" id="onValiderHote">CONTINUER</button>
+        <p class="onPas hidden" id="onPas2Invite"><b>2.</b> Renvoie-lui cette réponse.</p>
+        <textarea class="onZone hidden" id="onMaReponse" readonly></textarea>
+        <button class="mbtn mini hidden" id="onCopier2">COPIER</button>
+      </div>
+
+      <p class="onEtat" id="onEtat"></p>
+      <button class="mbtn" data-act="back">RETOUR</button>
+    </div>
+  </div>
+
   <div class="screen scr-maps hidden" id="scr-maps">
     <div class="bg bg-maps" id="mapsBg">
       <div class="blueprint"></div>

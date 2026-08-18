@@ -1349,3 +1349,28 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 /* Le grand portrait devient cliquable, et le dit. */
 .heroBox{cursor:pointer}
 .heroBox.punchSkin{animation:tuPop .4s ease-out}
+
+/* ================= MATCH EN LIGNE ================= */
+.scr-online{ display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(120cqh 90cqh at 50% 42%,#101a2e 0%,#070c16 62%,#02040a 100%) }
+.onWrap{ width:min(74cqw,760px); max-height:88cqh; overflow-y:auto;
+  display:flex; flex-direction:column; align-items:center; gap:1.6cqh; padding:2cqh 1cqw }
+.onTitre{ font-family:'Archivo Black',sans-serif; font-size:clamp(16px,3.4cqh,30px);
+  color:var(--ink); margin:0; letter-spacing:1px }
+.onChoix{ display:flex; flex-direction:column; align-items:center; gap:1.2cqh; width:100% }
+.onAide{ font-family:'Barlow',sans-serif; font-size:clamp(9px,1.7cqh,14px); color:#8fa4c4;
+  line-height:1.7; max-width:46cqw; text-align:center; margin:.6cqh 0 0 }
+.onEtape{ display:flex; flex-direction:column; align-items:center; gap:.9cqh; width:100% }
+.onEtape.hidden,.onChoix.hidden,.onPas.hidden,.onZone.hidden,.mbtn.hidden{ display:none }
+.onPas{ font-family:'Barlow',sans-serif; font-size:clamp(9px,1.7cqh,14px); color:#c8d6ee; margin:0 }
+.onPas b{ color:var(--or,#ffd23e) }
+/* Le code est long : une zone qui défile vaut mieux qu'un pavé qui déborde. */
+.onZone{ width:100%; height:9cqh; resize:none; border-radius:8px;
+  border:3px solid rgba(255,255,255,.18); background:rgba(8,12,22,.9);
+  color:#9fe8ff; font-family:Consolas,monospace; font-size:clamp(7px,1.3cqh,11px);
+  padding:.8cqh 1cqw; word-break:break-all }
+.onZone:focus{ outline:none; border-color:var(--accent,#35e0ff) }
+.onEtat{ font-family:'DotGothic16',monospace; font-size:clamp(9px,1.7cqh,14px);
+  color:#5df08a; min-height:2cqh; margin:0; text-align:center }
+.onEtat.bad{ color:#ff5340 }
+.mbtn.mini{ font-size:clamp(8px,1.4cqh,12px); padding:.5cqh 1.4cqw }

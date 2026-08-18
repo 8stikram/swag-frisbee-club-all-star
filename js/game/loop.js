@@ -17,6 +17,7 @@ import { render } from '../render/render.js';
 import { updateTraining, pilotageDummy } from '../ui/training.js';
 import { updateTutoriel, enTutoriel } from '../ui/tutoriel.js';
 import { updateZones } from './zones.js';
+import { majReseau, Partie } from '../reseau/partie.js';
 
 export function update(dt) {
   setDemoMuted(G.demo);
@@ -120,6 +121,12 @@ export function update(dt) {
       // Les fiches d'intentions se remplissent d'abord, une fois pour toutes :
       // ensuite le jeu ne consulte plus qu'elles.
       majCommandes(wdt);
+      // L'invité ne simule rien du tout : c'est l'hôte qui fait foi. Il remplit
+      // quand même sa fiche — c'est la seule chose qu'il envoie — puis s'arrête
+      // là et se contente d'afficher ce qu'on lui renvoie. Le laisser calculer
+      // en parallèle ferait lutter sa physique contre celle d'en face, et les
+      // deux écrans finiraient par ne plus être d'accord sur qui a attrapé.
+      if (Partie.active && Partie.role === 'invite') break;
       // Gestes ponctuels : plongeon, feinte, ultime. Le joueur à la souris les
       // déclenche par ses événements ; tout autre joueur — le second clavier
       // aujourd'hui, un joueur distant demain — passe par ici.
@@ -168,6 +175,8 @@ export function update(dt) {
   }
   capture();
   updateFX(dt);
+  // Ce que le match doit à l'autre bout de la liaison, une fois tout à jour.
+  majReseau();
 }
 
 let lastT = 0;
