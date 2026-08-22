@@ -136,11 +136,6 @@ create policy "arenes repondables" on arenes for update using (true);
 drop policy if exists "arenes supprimables" on arenes;
 create policy "arenes supprimables" on arenes for delete using (true);
 
--- Ménage : une arène abandonnée n'a plus aucune valeur passé une heure. On la
--- fait au moment de créer, plutôt que de laisser la table grossir sans fin.
-create or replace function creer_arene(p_code text, p_offre text, p_hote text)
-returns void language plpgsql security definer as $$
-begin
-  delete from arenes where cree_le < now() - interval '1 hour';
-  insert into arenes (code, offre, hote) values (p_code, p_offre, p_hote);
-end; $$;
+-- Le ménage des arènes abandonnées se fait depuis le jeu, au moment d'en créer
+-- une nouvelle : la règle de suppression ci-dessus suffit, et cela évite de
+-- dépendre d'une fonction qu'il faudrait tenir à jour de son côté.

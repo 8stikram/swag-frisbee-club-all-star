@@ -50,16 +50,26 @@ export function codeValide(c) {
 // Depose l'invitation sous un code libre. Une collision est possible mais rare :
 // on retente plutot que d'echouer sous le nez du joueur.
 export async function ouvrirArene(offre, pseudo) {
+  // Ménage d'abord : une arène abandonnée n'a plus aucune valeur passé une
+  // heure, et sans ce balayage la table grossirait indéfiniment de parties
+  // jamais jouées. Un échec ici ne doit pas empêcher d'héberger.
+  const limite = new Date(Date.now() - 3600000).toISOString();
+  try {
+    await appel('/rest/v1/arenes?cree_le=lt.' + encodeURIComponent(limite), { method: 'DELETE' });
+  } catch (e) { /* sans importance */ }
+
   for (let essai = 0; essai < 5; essai++) {
     const code = codeAuHasard();
     try {
-      await appel('/rest/v1/rpc/creer_arene', {
+      await appel('/rest/v1/arenes', {
         method: 'POST',
-        body: JSON.stringify({ p_code: code, p_offre: offre, p_hote: pseudo || null })
+        body: JSON.stringify({ code, offre, hote: pseudo || null })
       });
       return code;
     } catch (e) {
-      if (!/duplicate|unique/i.test(e.message)) throw e;
+      // Deux joueurs peuvent tirer le même code au même instant : c'est rare,
+      // et on retente plutôt que d'échouer sous le nez du joueur.
+      if (!/duplicate|unique|23505/i.test(e.message)) throw e;
     }
   }
   throw new Error('impossible de trouver un code libre');
