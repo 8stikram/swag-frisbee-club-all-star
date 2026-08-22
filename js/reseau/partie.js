@@ -15,7 +15,7 @@ import { setMapId, getMapId } from '../data/maps.js';
 // le prix à payer pour n'avoir aucun serveur à faire tourner.
 // ---------------------------------------------------------------------------
 
-export const Partie = { active: false, role: null, dernierEtat: 0, adversaire: null, monTerrain: null };
+export const Partie = { active: false, role: null, dernierEtat: 0, adversaire: null, monTerrain: null, monPerso: null };
 
 // L'invité n'envoie que sa fiche d'intentions : cinq nombres et deux
 // booléens. C'est tout ce dont l'hôte a besoin pour le faire jouer.
@@ -113,6 +113,11 @@ export function demarrerPartieReseau(role) {
     if (m.t === 'moi') { recevoirIdentite(m); return; }
     // L'hote a tranche : l'invite se range a son terrain, sans discuter.
     if (m.t === 'terrain') { setMapId(m.terrain); return; }
+    if (m.t === 'go') {
+      setMapId(m.terrain);
+      if (auCoupDEnvoi) auCoupDEnvoi(m.p1, m.p2, m.terrain);
+      return;
+    }
     if (role === 'hote' && m.t === 'c' && G.p2) appliquerFiche(G.p2, m);
     else if (role === 'invite' && m.t === 'e') appliquerEtat(m);
   });
@@ -146,6 +151,7 @@ export function majReseau() {
 // ---------------------------------------------------------------------------
 export function annoncerIdentite(perso) {
   Partie.monTerrain = getMapId();
+  Partie.monPerso = perso;
   envoyer({
     t: 'moi',
     id: monId() || null,
@@ -160,12 +166,13 @@ function recevoirIdentite(m) {
     id: m.id || null, pseudo: m.pseudo || null,
     perso: m.perso || null, terrain: m.terrain || null
   };
-  // L'hôte seul tranche, puis annonce. Deux tirages indépendants donneraient
-  // deux terrains différents, et les joueurs ne verraient pas le même match.
-  if (Partie.role === 'hote' && Partie.monTerrain) {
-    const choisi = terrainDuMatch(Partie.monTerrain, m.terrain);
-    setMapId(choisi);
-    annoncerTerrain(choisi);
+  // L'hôte seul tranche, puis donne le coup d'envoi avec les deux personnages
+  // et le terrain retenu. Deux décisions indépendantes donneraient deux matchs
+  // différents, et les joueurs ne verraient pas la même chose.
+  if (Partie.role === 'hote' && Partie.monPerso) {
+    const terrain = terrainDuMatch(Partie.monTerrain || getMapId(), m.terrain);
+    setMapId(terrain);
+    annoncerCoupDEnvoi(Partie.monPerso, m.perso || 'leon', terrain);
   }
 }
 
@@ -186,3 +193,17 @@ export function terrainDuMatch(mien, sien) {
 }
 
 export function annoncerTerrain(terrain) { envoyer({ t: 'terrain', terrain }); }
+
+// ---------------------------------------------------------------------------
+// Coup d'envoi. L'hote attend de connaitre le choix d'en face, puis annonce
+// d'un coup les deux personnages et le terrain. Les deux cotes demarrent alors
+// sur exactement la meme base — sans cette annonce commune, chacun lancerait
+// son match avec ses propres suppositions.
+// ---------------------------------------------------------------------------
+let auCoupDEnvoi = null;
+export function surCoupDEnvoi(fn) { auCoupDEnvoi = fn; }
+
+export function annoncerCoupDEnvoi(persoHote, persoInvite, terrain) {
+  envoyer({ t: 'go', p1: persoHote, p2: persoInvite, terrain });
+  if (auCoupDEnvoi) auCoupDEnvoi(persoHote, persoInvite, terrain);
+}

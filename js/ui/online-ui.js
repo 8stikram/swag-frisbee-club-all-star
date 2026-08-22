@@ -1,7 +1,7 @@
 import { $, showScreen } from '../core/dom.js';
 import { sfx } from '../audio/audio.js';
 import { heberger, rejoindre, accepterReponse, surChangement, fermer, Reseau } from '../reseau/connexion.js';
-import { demarrerPartieReseau, arreterPartieReseau, annoncerIdentite } from '../reseau/partie.js';
+import { demarrerPartieReseau, arreterPartieReseau, annoncerIdentite, surCoupDEnvoi } from '../reseau/partie.js';
 import { initMatch, G } from '../game/state.js';
 import { montrerPanneau } from './profil-ui.js';
 import { ouvrirArene, lireArene, repondreArene, fermerArene, attendreReponse, codeValide } from '../reseau/arene.js';
@@ -40,14 +40,20 @@ export function ouvrirEnLigne() {
 // Une fois la liaison ouverte, on lance le match des deux côtés. L'hôte tient
 // le joueur de gauche, l'invité celui de droite — c'est la seule répartition
 // possible : le camp qui simule ne peut pas être celui qu'on téléguide.
-function lancerMatch(role) {
+// La liaison est ouverte : chacun annonce qui il est et quel personnage il a
+// choisi. Le match ne démarre qu'au coup d'envoi de l'hôte, une fois les deux
+// choix connus — sinon chacun lancerait le sien avec ses suppositions.
+function preparerMatch(role) {
   demarrerPartieReseau(role);
-  initMatch(false, G.matchChar || 'naruto', G.matchCPU || 'leon', 1, true);
-  // Les deux personnages sont humains : aucun des deux n'est piloté par l'IA.
+  dire('adversaire trouve — mise en place...');
+  annoncerIdentite(G.matchChar || 'naruto');
+}
+
+function lancerMatch(persoHote, persoInvite) {
+  // L'hôte tient toujours le joueur de gauche : le camp qui simule ne peut pas
+  // être celui qu'on téléguide.
+  initMatch(false, persoHote, persoInvite, 1, true);
   G.p2.human = true; G.p2.ai = null;
-  // Les presentations, des que le match demarre : c'est ce qui permettra
-  // d'inscrire le bon adversaire dans l'historique a la fin.
-  annoncerIdentite(role === 'hote' ? G.p1.ck : G.p2.ck);
   showScreen(null);
   dire('');
 }
@@ -110,7 +116,7 @@ function lancerMatch(role) {
   });
 
   surChangement(e => {
-    if (e === 'connecte') { sfx('go'); lancerMatch(Reseau.role); }
+    if (e === 'connecte') { sfx('go'); preparerMatch(Reseau.role); }
     else if (e === 'perdu') {
       arreterPartieReseau();
       dire('liaison perdue.', true);
@@ -189,3 +195,36 @@ export async function rejoindreDepuisAmi(code) {
   if (champ) champ.value = code;
   await rejoindreAvecCode();
 }
+
+// Coup d'envoi commun : les deux cotes demarrent sur les memes personnages et
+// le meme terrain, annonces par l'hote.
+surCoupDEnvoi((p1, p2) => { sfx('go'); lancerMatch(p1, p2); });
+
+// --- Choix du personnage ---------------------------------------------------
+// Chacun choisit le sien avant d'entrer : le choix part avec l'identite au
+// moment de se connecter, et l'hote assemble les deux au coup d'envoi.
+(function cablerPersos() {
+  const zone = $('persoChoix');
+  if (!zone) return;
+  const cases = {};
+  const choisir = ck => {
+    G.matchChar = ck;
+    for (const [k, el] of Object.entries(cases)) el.classList.toggle('on', k === ck);
+  };
+  import('../data/characters.js').then(({ CHARS, ROSTER }) => {
+    for (const ck of ROSTER) {
+      const b = document.createElement('button');
+      b.className = 'persoCase';
+      const cv = document.createElement('canvas');
+      cv.width = 16; cv.height = 20;
+      cv.getContext('2d').drawImage(CHARS[ck].frames.idle, 0, 0);
+      const nom = document.createElement('span');
+      nom.textContent = CHARS[ck].short;
+      b.append(cv, nom);
+      b.addEventListener('click', () => { sfx('move'); choisir(ck); });
+      cases[ck] = b;
+      zone.appendChild(b);
+    }
+    choisir(G.matchChar && cases[G.matchChar] ? G.matchChar : ROSTER[0]);
+  });
+})();

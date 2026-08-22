@@ -1705,3 +1705,16 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .murEcrire .onChamp{ flex:1 1 auto; width:auto }
 .murVide{ font-family:'DotGothic16',monospace; font-size:clamp(7px,1.3cqh,11px);
   color:rgba(255,255,255,.85); text-align:center; text-shadow:0 2px 0 rgba(20,26,38,.5) }
+
+/* Choix du personnage avant d'entrer dans une arene. */
+.persoChoix{ display:flex; gap:1.2cqw; align-items:flex-end; justify-content:center;
+  margin-bottom:1.4cqh }
+.persoCase{ background:none; border:3px solid transparent; border-radius:12px;
+  padding:.4cqh .6cqw; cursor:pointer; display:flex; flex-direction:column;
+  align-items:center; gap:.2cqh; transition:transform .12s, border-color .12s }
+.persoCase canvas{ image-rendering:pixelated; height:8cqh; width:auto }
+.persoCase span{ font-family:'Russo One',sans-serif; font-size:clamp(7px,1.3cqh,11px);
+  color:#fff; text-shadow:0 2px 0 var(--ink) }
+.persoCase:hover{ transform:translateY(-.4cqh) }
+.persoCase.on{ border-color:#ffd23e; background:rgba(255,210,62,.16) }
+.persoCase.on span{ color:#ffd23e }
