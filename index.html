@@ -397,22 +397,33 @@
       </div>
 
       <div class="onEtape hidden" id="onEtapeHote">
-        <p class="onPas"><b>1.</b> Envoie ce code à ton adversaire.</p>
-        <textarea class="onZone" id="onMonCode" readonly></textarea>
-        <button class="mbtn mini" id="onCopier">COPIER</button>
-        <p class="onPas"><b>2.</b> Colle ici la réponse qu'il te renvoie.</p>
-        <textarea class="onZone" id="onReponse" placeholder="colle la réponse ici"></textarea>
-        <button class="mbtn c-green" id="onValiderReponse">CONNECTER</button>
+        <p class="onPas"><b>Ton code d'arène</b> — donne-le à ton adversaire.</p>
+        <div class="areneCode" id="areneCode">·····</div>
+        <button class="mbtn mini" id="onCopier">COPIER LE CODE</button>
+        <p class="onAide" id="onAttente">En attente d'un adversaire…</p>
+        <details class="onRepli">
+          <summary>Pas de connexion ? Échange manuel</summary>
+          <textarea class="onZone" id="onMonCode" readonly></textarea>
+          <textarea class="onZone" id="onReponse" placeholder="colle sa réponse ici"></textarea>
+          <button class="mbtn c-green" id="onValiderReponse">CONNECTER</button>
+        </details>
       </div>
 
       <div class="onEtape hidden" id="onEtapeInvite">
-        <p class="onPas"><b>1.</b> Colle le code que l'hôte t'a envoyé.</p>
-        <textarea class="onZone" id="onCodeHote" placeholder="colle le code de l'hôte ici"></textarea>
-        <button class="mbtn c-green" id="onValiderHote">CONTINUER</button>
-        <p class="onPas hidden" id="onPas2Invite"><b>2.</b> Renvoie-lui cette réponse.</p>
-        <textarea class="onZone hidden" id="onMaReponse" readonly></textarea>
-        <button class="mbtn mini hidden" id="onCopier2">COPIER</button>
+        <p class="onPas"><b>Le code de l'arène</b> — cinq caractères.</p>
+        <input class="onChamp areneChamp" id="areneEntree" maxlength="5" placeholder="ABC42"
+               autocapitalize="characters" autocomplete="off" spellcheck="false">
+        <button class="mbtn c-green" id="onRejoindreCode">REJOINDRE</button>
+        <details class="onRepli">
+          <summary>Pas de connexion ? Échange manuel</summary>
+          <textarea class="onZone" id="onCodeHote" placeholder="colle le code de l'hôte ici"></textarea>
+          <button class="mbtn c-green" id="onValiderHote">CONTINUER</button>
+          <p class="onPas hidden" id="onPas2Invite">Renvoie-lui cette réponse.</p>
+          <textarea class="onZone hidden" id="onMaReponse" readonly></textarea>
+          <button class="mbtn mini hidden" id="onCopier2">COPIER</button>
+        </details>
       </div>
+
 
       <p class="onEtat" id="onEtat"></p>
     </div>

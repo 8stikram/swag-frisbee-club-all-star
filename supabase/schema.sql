@@ -105,3 +105,42 @@ begin
               to_jsonb(coalesce((persos ->> perso)::int, 0) + 1), true)
   where id = auth.uid();
 end; $$;
+
+-- ===========================================================================
+-- Arènes : le code à cinq caractères qui remplace le copier-coller.
+--
+-- Cette table ne sert qu'aux présentations. Elle porte l'invitation de l'hôte
+-- et la réponse de l'invité, le temps que les deux navigateurs se trouvent —
+-- ensuite ils se parlent en direct et plus rien ne passe par ici. Aucune
+-- image de jeu ne transite par cette table.
+-- ===========================================================================
+create table if not exists arenes (
+  code text primary key check (char_length(code) = 5),
+  offre text not null,          -- l'invitation fabriquée par l'hôte
+  reponse text,                 -- la réponse de l'invité, quand il arrive
+  hote text,                    -- pseudo affiché à l'invité avant d'entrer
+  cree_le timestamptz default now()
+);
+
+alter table arenes enable row level security;
+
+-- Ouvert : il faut pouvoir héberger et rejoindre sans compte, et un code tiré
+-- au hasard parmi trente-trois millions ne se devine pas. Rien de personnel
+-- n'y est stocké — seulement de quoi établir une liaison, périmé en une heure.
+drop policy if exists "arenes lisibles" on arenes;
+create policy "arenes lisibles" on arenes for select using (true);
+drop policy if exists "arenes creables" on arenes;
+create policy "arenes creables" on arenes for insert with check (true);
+drop policy if exists "arenes repondables" on arenes;
+create policy "arenes repondables" on arenes for update using (true);
+drop policy if exists "arenes supprimables" on arenes;
+create policy "arenes supprimables" on arenes for delete using (true);
+
+-- Ménage : une arène abandonnée n'a plus aucune valeur passé une heure. On la
+-- fait au moment de créer, plutôt que de laisser la table grossir sans fin.
+create or replace function creer_arene(p_code text, p_offre text, p_hote text)
+returns void language plpgsql security definer as $$
+begin
+  delete from arenes where cree_le < now() - interval '1 hour';
+  insert into arenes (code, offre, hote) values (p_code, p_offre, p_hote);
+end; $$;

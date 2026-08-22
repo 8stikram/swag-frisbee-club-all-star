@@ -1357,94 +1357,17 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .heroBox.punchSkin{animation:tuPop .4s ease-out}
 
 /* ================= MATCH EN LIGNE =================
-   Même structure que l'écran d'entraînement, décliné en bleu pastel : c'est
-   le mode le plus calme du jeu, il n'a pas à crier comme un écran de match. */
-.scr-online{ display:flex; align-items:center; justify-content:center;
-  background:radial-gradient(120cqh 90cqh at 50% 40%,#1b3550 0%,#101f31 58%,#060d16 100%) }
-/* Positionné et au-dessus du fond : sans ça le fond de l'écran, lui-même
-   positionné, se peignait par-dessus les panneaux et il ne restait que du
-   bleu. Les clics ne traversent que le vide, pour ne pas voler ceux des
-   cartes quand le panneau est fermé. */
+   Même langage que les autres écrans : fond clair et saturé, cartes blanches
+   à gros contour, texte encre. Le bleu identifie le mode, il ne l'assombrit
+   pas — un fond sombre sortait cet écran du reste du jeu. */
+.scr-online{ display:flex; align-items:center; justify-content:center }
+.bg-online{ position:absolute; inset:0;
+  background:radial-gradient(90cqh 70cqh at 50% 36%, #e6f6ff 0%, #b7ddf7 46%, #86c2ea 100%) }
+.scr-online .titlebar{ background:#1f6aa8 }
 .onWrap{ width:min(74cqw,760px); max-height:88cqh; overflow-y:auto;
   position:relative; z-index:6; pointer-events:none;
   display:flex; flex-direction:column; align-items:center; gap:1.5cqh; padding:2cqh 1cqw }
 .onWrap>*{ pointer-events:auto }
-.onTitre{ font-family:'Archivo Black',sans-serif; font-size:clamp(16px,3.4cqh,30px);
-  color:#cfeaff; margin:0; letter-spacing:1px; text-shadow:0 3px 0 rgba(8,20,34,.7) }
-.onChoix{ display:flex; flex-direction:column; align-items:center; gap:1.1cqh; width:100% }
-.onAide{ font-family:'Barlow',sans-serif; font-size:clamp(9px,1.7cqh,14px); color:#9fc4e2;
-  line-height:1.7; max-width:46cqw; text-align:center; margin:.6cqh 0 0 }
-.onEtape{ display:flex; flex-direction:column; align-items:center; gap:.9cqh; width:100% }
-.onEtape.hidden,.onChoix.hidden,.onPas.hidden,.onZone.hidden,.mbtn.hidden{ display:none !important }
-.onPas{ font-family:'Barlow',sans-serif; font-size:clamp(9px,1.7cqh,14px); color:#d6ecff; margin:0 }
-.onPas b{ color:#8fd0ff }
-/* Le code est long : une zone qui défile vaut mieux qu'un pavé qui déborde. */
-.onZone{ width:100%; height:9cqh; resize:none; border-radius:10px;
-  border:3px solid rgba(143,208,255,.32); background:rgba(12,26,42,.9);
-  color:#a8d8ff; font-family:Consolas,monospace; font-size:clamp(7px,1.3cqh,11px);
-  padding:.8cqh 1cqw; word-break:break-all }
-.onZone:focus{ outline:none; border-color:#8fd0ff; box-shadow:0 0 0 3px rgba(143,208,255,.18) }
-.onEtat{ font-family:'DotGothic16',monospace; font-size:clamp(9px,1.7cqh,14px);
-  color:#8fd0ff; min-height:2cqh; margin:0; text-align:center }
-.onEtat.bad{ color:#ff9aa2 }
-.mbtn.mini{ font-size:clamp(8px,1.4cqh,12px); padding:.5cqh 1.4cqw }
-
-/* --- Compte, fiche de profil et classement, dans le même bleu pastel --- */
-.onRangee{ display:flex; gap:.8cqw; align-items:center; justify-content:center; flex-wrap:wrap }
-.onChamp{ width:min(38cqw,340px); border-radius:10px; padding:.9cqh 1cqw;
-  border:3px solid rgba(143,208,255,.32); background:rgba(12,26,42,.9); color:#d6ecff;
-  font-family:'Barlow',sans-serif; font-size:clamp(10px,1.9cqh,15px) }
-.onChamp:focus{ outline:none; border-color:#8fd0ff; box-shadow:0 0 0 3px rgba(143,208,255,.18) }
-.onCouleur{ width:4.4cqh; height:4.4cqh; padding:0; border:3px solid #0f2438; border-radius:8px;
-  background:none; cursor:pointer }
-
-/* La carte porte le dégradé choisi par le joueur : c'est sa signature. */
-.ficheCarte{ width:min(50cqw,460px); border-radius:16px; padding:2.2cqh 2cqw;
-  border:4px solid #0f2438; box-shadow:0 0 0 2px rgba(143,208,255,.35), 8px 8px 0 #0a1725;
-  background:linear-gradient(150deg,var(--c1,#35e0ff),var(--c2,#7b2ff7));
-  display:flex; flex-direction:column; align-items:center; gap:1.2cqh }
-.ficheHaut{ display:flex; justify-content:center }
-.ficheAvatar{ width:11cqh; height:11cqh; border-radius:50%; object-fit:cover;
-  border:4px solid rgba(255,255,255,.9); background:#0b1a2a }
-.ficheAvatarVide{ display:flex; align-items:center; justify-content:center;
-  font-family:'Archivo Black',sans-serif; font-size:4cqh; color:rgba(255,255,255,.7) }
-.fichePseudo{ font-family:'Archivo Black',sans-serif; font-size:clamp(14px,3cqh,26px);
-  color:#fff; text-shadow:0 3px 0 rgba(8,20,34,.55); letter-spacing:.5px }
-.ficheStats{ display:grid; grid-template-columns:repeat(3,1fr); gap:.6cqh 1cqw; width:100% }
-.ficheStat{ background:rgba(6,14,24,.42); border-radius:10px; padding:.7cqh .6cqw; text-align:center }
-.ficheStat b{ display:block; font-family:'Russo One',sans-serif; font-size:clamp(11px,2.2cqh,19px); color:#fff }
-.ficheStat span{ font-family:'Barlow',sans-serif; font-size:clamp(7px,1.3cqh,11px); color:rgba(255,255,255,.8) }
-.fichePodium{ display:flex; gap:1cqw; align-items:flex-end; justify-content:center; min-height:9cqh }
-.fichePerso{ display:flex; flex-direction:column; align-items:center; gap:.3cqh }
-.fichePerso canvas{ image-rendering:pixelated; height:7cqh; width:auto }
-.fichePerso em{ font-style:normal; font-family:'Barlow',sans-serif; font-weight:700;
-  font-size:clamp(7px,1.3cqh,11px); color:rgba(255,255,255,.9) }
-
-.clPodium{ display:flex; gap:1.2cqw; align-items:flex-end; justify-content:center; min-height:16cqh }
-.clMarche{ display:flex; flex-direction:column; align-items:center; gap:.4cqh }
-.clMarche img,.clMarche .vide{ width:8cqh; height:8cqh; border-radius:50%; object-fit:cover;
-  border:3px solid #cfeaff; background:#0b1a2a; display:flex; align-items:center;
-  justify-content:center; color:#8fd0ff; font-family:'Archivo Black',sans-serif }
-.clMarche b{ font-family:'Russo One',sans-serif; font-size:clamp(9px,1.7cqh,14px); color:#d6ecff }
-.clMarche span{ font-family:'Barlow',sans-serif; font-size:clamp(7px,1.3cqh,11px); color:#9fc4e2 }
-.clSocle{ background:linear-gradient(180deg,#9fd4f7,#5f9bcb); border:3px solid #0f2438;
-  border-radius:8px 8px 0 0; width:9cqh; color:#0b1a2a; font-family:'Archivo Black',sans-serif;
-  font-size:2.2cqh; text-align:center; padding:.3cqh 0 }
-.clListe{ width:min(56cqw,540px); display:flex; flex-direction:column; gap:.4cqh }
-.clLigne{ display:grid; grid-template-columns:2.6cqw 1fr auto auto; gap:.8cqw; align-items:center;
-  background:rgba(12,26,42,.72); border:2px solid rgba(143,208,255,.2); border-radius:8px;
-  padding:.5cqh .8cqw; font-family:'Barlow',sans-serif; font-size:clamp(8px,1.5cqh,13px); color:#d6ecff }
-.clLigne .rang{ font-family:'Russo One',sans-serif; color:#8fd0ff }
-.clLigne .taux{ color:#9fc4e2 }
-
-/* Fond et cartes du mode en ligne.
-   La carte reste celle du jeu — fond clair, gros contour, ombre portée dure.
-   Le bleu ne sert que d'accent, comme le vert sert à l'entraînement : teinter
-   les cartes elles-mêmes les sortait de la direction artistique du reste. */
-.bg-online{ position:absolute; inset:0;
-  background:radial-gradient(120cqh 90cqh at 50% 40%,#123a63 0%,#0a1e38 58%,#040a14 100%) }
-/* Quatre cartes : deux par ligne. En colonne elles débordaient de l'écran et
-   la première passait carrément au-dessus du cadre. */
 .onChoix{ position:absolute; inset:0; z-index:5; display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr)); gap:2.2cqh 2.5cqw;
   align-content:center; justify-items:center; align-items:stretch;
@@ -1457,9 +1380,29 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .onChoix .onCard:nth-child(2){animation-delay:.06s}
 .onChoix .onCard:nth-child(3){animation-delay:.12s}
 .onChoix .onCard:nth-child(4){animation-delay:.18s}
-/* Retour posé par-dessus la grille : dans le flux, les cartes le recouvraient
-   et il devenait impossible de sortir autrement qu'en rechargeant. */
+.onEtape{ display:flex; flex-direction:column; align-items:center; gap:.9cqh; width:100% }
+.onEtape.hidden,.onChoix.hidden,.onPas.hidden,.onZone.hidden,.mbtn.hidden{ display:none !important }
+/* Les panneaux vivent sur une carte claire, comme tout le reste du jeu :
+   à même le fond, le texte flottait sans support. */
+.onEtape:not(.hidden){ background:rgba(255,255,255,.94); border:4px solid var(--ink);
+  border-radius:16px; box-shadow:6px 6px 0 var(--ink); padding:1.8cqh 1.6cqw; width:auto;
+  max-width:62cqw; min-width:min(46cqw,460px) }
+.onPas{ font-family:'Barlow',sans-serif; font-weight:700;
+  font-size:clamp(9px,1.7cqh,14px); color:var(--ink); margin:0 }
+.onPas b{ color:#1f6aa8 }
+.onAide{ font-family:'DotGothic16',monospace; font-size:clamp(8px,1.4cqh,12px);
+  color:#5b6478; line-height:1.7; max-width:40ch; text-align:center; margin:.4cqh 0 0 }
+.onZone{ width:min(52cqw,520px); height:9cqh; resize:none; border-radius:10px;
+  border:3px solid var(--ink); background:#f2f6fb; color:#1c3550;
+  font-family:Consolas,monospace; font-size:clamp(7px,1.3cqh,11px);
+  padding:.8cqh 1cqw; word-break:break-all }
+.onZone:focus{ outline:none; box-shadow:0 0 0 3px rgba(31,106,168,.28) }
+.onEtat{ font-family:'DotGothic16',monospace; font-size:clamp(9px,1.6cqh,13px);
+  color:#1c5c38; min-height:2cqh; margin:0; text-align:center;
+  background:rgba(255,255,255,.86); border-radius:8px; padding:0 .8cqw }
+.onEtat.bad{ color:#c02a1c }
 .onRetour{ position:absolute; left:50%; bottom:2.6cqh; transform:translateX(-50%); z-index:7 }
+
 /* Le bouton de compte porte du texte : il s'élargit, sans quoi le pseudo
    déborderait d'un carré prévu pour une icône. */
 .compteBtn{ width:auto; min-width:0; padding:0 1.1cqw; gap:.5cqw;
@@ -1508,3 +1451,73 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
    pour rester lisible quel que soit le couple de couleurs choisi. */
 .compteBtn.connecte{ color:#fff; text-shadow:0 2px 0 rgba(8,16,28,.6) }
 .compteBtn.connecte:hover{ filter:brightness(1.12) }
+
+/* --- Compte, fiche de profil et classement ---------------------------------
+   Texte encre sur carte claire, comme partout ailleurs dans le jeu. Seule la
+   fiche fait exception : elle porte le dégradé choisi par le joueur. */
+.onRangee{ display:flex; gap:.8cqw; align-items:center; justify-content:center; flex-wrap:wrap }
+.onChamp{ width:min(38cqw,340px); border-radius:10px; padding:.9cqh 1cqw;
+  border:3px solid var(--ink); background:#f2f6fb; color:#1c3550;
+  font-family:'Barlow',sans-serif; font-weight:700; font-size:clamp(10px,1.9cqh,15px) }
+.onChamp:focus{ outline:none; box-shadow:0 0 0 3px rgba(31,106,168,.28) }
+.onCouleur{ width:4.4cqh; height:4.4cqh; padding:0; border:3px solid var(--ink);
+  border-radius:8px; background:none; cursor:pointer }
+
+.ficheCarte{ width:min(46cqw,440px); border-radius:16px; padding:2cqh 1.8cqw;
+  border:4px solid var(--ink); box-shadow:6px 6px 0 var(--ink);
+  background:linear-gradient(150deg,var(--c1,#35e0ff),var(--c2,#7b2ff7));
+  display:flex; flex-direction:column; align-items:center; gap:1.1cqh }
+.ficheHaut{ display:flex; justify-content:center }
+.ficheAvatar{ width:10cqh; height:10cqh; min-width:68px; min-height:68px; border-radius:50%;
+  object-fit:cover; border:4px solid #fff; background:#dfe8f2 }
+.ficheAvatarVide{ display:flex; align-items:center; justify-content:center;
+  font-family:'Archivo Black',sans-serif; font-size:3.6cqh; color:rgba(255,255,255,.8) }
+.fichePseudo{ font-family:'Archivo Black',sans-serif; font-size:clamp(14px,2.8cqh,24px);
+  color:#fff; text-shadow:0 3px 0 rgba(20,26,38,.5) }
+.ficheStats{ display:grid; grid-template-columns:repeat(3,1fr); gap:.6cqh .8cqw; width:100% }
+.ficheStat{ background:rgba(255,255,255,.88); border:2px solid var(--ink);
+  border-radius:9px; padding:.6cqh .5cqw; text-align:center }
+.ficheStat b{ display:block; font-family:'Russo One',sans-serif;
+  font-size:clamp(11px,2.1cqh,18px); color:var(--ink) }
+.ficheStat span{ font-family:'Barlow',sans-serif; font-weight:700;
+  font-size:clamp(7px,1.2cqh,10px); color:#5b6478 }
+.fichePodium{ display:flex; gap:1cqw; align-items:flex-end; justify-content:center; min-height:8cqh }
+.fichePerso{ display:flex; flex-direction:column; align-items:center; gap:.3cqh }
+.fichePerso canvas{ image-rendering:pixelated; height:6.4cqh; width:auto }
+.fichePerso em{ font-style:normal; font-family:'Barlow',sans-serif; font-weight:800;
+  font-size:clamp(7px,1.2cqh,11px); color:#fff; text-shadow:0 2px 0 rgba(20,26,38,.45) }
+
+.clPodium{ display:flex; gap:1.2cqw; align-items:flex-end; justify-content:center; min-height:15cqh }
+.clMarche{ display:flex; flex-direction:column; align-items:center; gap:.3cqh }
+.clMarche img,.clMarche .vide{ width:7.4cqh; height:7.4cqh; min-width:52px; min-height:52px;
+  border-radius:50%; object-fit:cover; border:3px solid var(--ink); background:#dfe8f2;
+  display:flex; align-items:center; justify-content:center; color:#5b6478;
+  font-family:'Archivo Black',sans-serif }
+.clMarche canvas{ image-rendering:pixelated }
+.clMarche b{ font-family:'Russo One',sans-serif; font-size:clamp(9px,1.7cqh,14px); color:var(--ink) }
+.clMarche span{ font-family:'Barlow',sans-serif; font-weight:700;
+  font-size:clamp(7px,1.2cqh,11px); color:#5b6478 }
+.clSocle{ background:linear-gradient(180deg,#ffd23e,#e0a017); border:3px solid var(--ink);
+  border-radius:8px 8px 0 0; width:8cqh; color:var(--ink);
+  font-family:'Archivo Black',sans-serif; font-size:2cqh; text-align:center; padding:.2cqh 0 }
+.clListe{ width:min(54cqw,520px); display:flex; flex-direction:column; gap:.4cqh }
+.clLigne{ display:grid; grid-template-columns:2.6cqw 1fr auto auto; gap:.8cqw; align-items:center;
+  background:#f2f6fb; border:2px solid var(--ink); border-radius:8px;
+  padding:.5cqh .8cqw; font-family:'Barlow',sans-serif; font-weight:700;
+  font-size:clamp(8px,1.5cqh,13px); color:var(--ink) }
+.clLigne .rang{ font-family:'Russo One',sans-serif; color:#1f6aa8 }
+.clLigne .taux{ color:#5b6478 }
+
+/* Le code d'arene : c'est ce qu'on lit et qu'on dicte, il doit dominer. */
+.areneCode{ font-family:'Archivo Black',sans-serif; font-size:clamp(26px,7cqh,58px);
+  letter-spacing:.16em; color:var(--ink); background:#ffd23e;
+  border:4px solid var(--ink); border-radius:14px; box-shadow:5px 5px 0 var(--ink);
+  padding:.6cqh 1.6cqw; margin:.4cqh 0 }
+.areneChamp{ width:min(24cqw,240px); text-align:center; text-transform:uppercase;
+  font-family:'Archivo Black',sans-serif; font-size:clamp(18px,4cqh,34px); letter-spacing:.18em }
+/* L'echange manuel reste disponible, mais replie : il ne sert que si le
+   service est injoignable, et il ferait peur en premier plan. */
+.onRepli{ width:100%; margin-top:.6cqh }
+.onRepli summary{ cursor:pointer; font-family:'DotGothic16',monospace;
+  font-size:clamp(7px,1.3cqh,11px); color:#5b6478; text-align:center }
+.onRepli[open]{ display:flex; flex-direction:column; align-items:center; gap:.7cqh }

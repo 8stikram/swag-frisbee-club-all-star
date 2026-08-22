@@ -4,6 +4,8 @@ import { heberger, rejoindre, accepterReponse, surChangement, fermer, Reseau } f
 import { demarrerPartieReseau, arreterPartieReseau } from '../reseau/partie.js';
 import { initMatch, G } from '../game/state.js';
 import { montrerPanneau } from './profil-ui.js';
+import { ouvrirArene, lireArene, repondreArene, fermerArene, attendreReponse, codeValide } from '../reseau/arene.js';
+import { Compte } from '../reseau/compte.js';
 
 // ---------------------------------------------------------------------------
 // Écran du match en ligne. Il ne fait que porter deux bouts de texte d'un
@@ -29,8 +31,8 @@ export function ouvrirEnLigne() {
   fermer(); arreterPartieReseau();
   montrerPanneau('onChoix');
   montrer('onPas2Invite', false); montrer('onMaReponse', false); montrer('onCopier2', false);
-  const r = $('onReponse'), h = $('onCodeHote');
-  if (r) r.value = ''; if (h) h.value = '';
+  for (const id of ['onReponse', 'onCodeHote', 'areneEntree']) { const e = $(id); if (e) e.value = ''; }
+  abandonnerArene();
   dire('');
   showScreen('online');
 }
@@ -51,23 +53,34 @@ function lancerMatch(role) {
   const bh = $('onHeberger'), br = $('onRejoindre');
   if (!bh || !br) return;
 
-  bh.addEventListener('click', async () => {
+  bh.addEventListener('click', () => {
     sfx('select');
     montrerPanneau('onEtapeHote');
-    dire('préparation de l\'arène…');
-    try {
-      $('onMonCode').value = await heberger();
-      dire('envoie ce code, puis colle sa réponse.');
-    } catch (e) { dire('impossible d\'ouvrir l\'arène : ' + e.message, true); }
+    hebergerAvecCode();
   });
 
   br.addEventListener('click', () => {
     sfx('select');
     montrerPanneau('onEtapeInvite');
-    dire('colle le code de l\'hôte.');
+    dire('tape le code que ton adversaire t\'a donné.');
+    const c = $('areneEntree');
+    if (c) { c.value = ''; c.focus(); }
   });
 
-  $('onCopier')?.addEventListener('click', e => copier('onMonCode', e.currentTarget));
+  $('onRejoindreCode')?.addEventListener('click', () => { sfx('select'); rejoindreAvecCode(); });
+  $('areneEntree')?.addEventListener('keydown', e => {
+    e.stopPropagation();
+    if (e.key === 'Enter') rejoindreAvecCode();
+  });
+
+  // On copie le code lui-même, pas le pavé technique : c'est lui qu'on envoie.
+  $('onCopier')?.addEventListener('click', e => {
+    const t = $('areneCode').textContent.trim();
+    navigator.clipboard?.writeText(t).catch(() => { });
+    e.currentTarget.textContent = 'COPIÉ';
+    setTimeout(() => { e.currentTarget.textContent = 'COPIER LE CODE'; }, 900);
+    sfx('select');
+  });
   $('onCopier2')?.addEventListener('click', e => copier('onMaReponse', e.currentTarget));
 
   $('onValiderHote')?.addEventListener('click', async () => {
@@ -98,3 +111,52 @@ function lancerMatch(role) {
     }
   });
 })();
+
+// --- Code d'arene ----------------------------------------------------------
+// Le copier-coller marche toujours, mais il reste replie : il ne sert que si
+// le service est injoignable. Ce qu'on montre d'abord, c'est le code.
+let areneCourante = null, arretAttente = null;
+
+export function abandonnerArene() {
+  if (arretAttente) { arretAttente(); arretAttente = null; }
+  if (areneCourante) { fermerArene(areneCourante); areneCourante = null; }
+}
+
+async function hebergerAvecCode() {
+  dire('preparation de l arene...');
+  $('areneCode').textContent = '·····';
+  $('onAttente').textContent = 'preparation...';
+  try {
+    const offre = await heberger();
+    $('onMonCode').value = offre;
+    const pseudo = (Compte.profil && Compte.profil.pseudo) || null;
+    areneCourante = await ouvrirArene(offre, pseudo);
+    $('areneCode').textContent = areneCourante;
+    $('onAttente').textContent = 'En attente d un adversaire...';
+    dire('donne ce code a ton adversaire.');
+    arretAttente = attendreReponse(areneCourante, async (reponse, souci) => {
+      if (souci || !reponse) { dire(souci || 'personne n a rejoint.', true); return; }
+      dire('adversaire trouve, connexion...');
+      try { await accepterReponse(reponse); fermerArene(areneCourante); areneCourante = null; }
+      catch (e) { dire('sa reponse est illisible.', true); }
+    });
+  } catch (e) {
+    $('areneCode').textContent = '—';
+    $('onAttente').textContent = 'service injoignable : passe par l echange manuel.';
+    dire(e.message, true);
+  }
+}
+
+async function rejoindreAvecCode() {
+  const code = ($('areneEntree').value || '').trim().toUpperCase();
+  if (!codeValide(code)) { dire('un code fait cinq caracteres.', true); return; }
+  dire('recherche de l arene...');
+  try {
+    const a = await lireArene(code);
+    if (!a) { dire('aucune arene sous ce code.', true); return; }
+    const reponse = await rejoindre(a.offre);
+    $('onMaReponse').value = reponse;
+    await repondreArene(code, reponse);
+    dire(a.hote ? ('arene de ' + a.hote + ' — connexion...') : 'connexion...');
+  } catch (e) { dire(e.message, true); }
+}
