@@ -22,7 +22,12 @@ alter table profils add column if not exists preferences jsonb default '{}'::jso
 -- signe de vie régulier ; deux minutes sans nouvelle et il passe hors ligne.
 -- Une vraie présence temps réel demanderait une connexion permanente : pour
 -- une pastille verte, ce serait payer très cher un détail.
-create or replace view profils_publics as
+-- Supprimée puis recréée, jamais remplacée : remplacer une vue interdit
+-- d'ajouter ou de retirer une colonne ailleurs qu'à la fin, et ce fichier doit
+-- pouvoir être relancé après avoir été enrichi plus bas. Une vue ne contient
+-- aucune donnée, la supprimer ne coûte rien.
+drop view if exists profils_publics;
+create view profils_publics as
   select id, pseudo, avatar, banniere, couleur1, couleur2,
          statut, titre_actif, main, vu_le,
          (vu_le > now() - interval '2 minutes') as en_ligne,
@@ -310,7 +315,13 @@ alter table profils add column if not exists texte_sombre boolean default false;
 
 -- La vue publique reprend le réglage de couleur : c'est le visiteur qui doit
 -- voir le profil tel que son propriétaire l'a réglé.
-create or replace view profils_publics as
+--
+-- On la supprime avant de la recréer : remplacer une vue n'autorise pas à
+-- insérer une colonne au milieu des autres, PostgreSQL comprend alors qu'on
+-- renomme celles qui suivent et refuse. Une vue ne contient aucune donnée,
+-- la supprimer ne coûte rien.
+drop view if exists profils_publics;
+create view profils_publics as
   select id, pseudo, avatar, banniere, couleur1, couleur2,
          statut, titre_actif, main, vu_le, texte_sombre,
          (vu_le > now() - interval '2 minutes') as en_ligne,
