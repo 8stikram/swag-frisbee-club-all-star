@@ -399,7 +399,9 @@ export function gameOver() {
     enregistrerMatchComplet({
       adversaireId: adv.id, adversairePseudo: adv.pseudo,
       score: moi.score, scoreAdv: moi.foe.score,
-      perso: moi.ck, persoAdv: moi.foe.ck, mode: 'en_ligne'
+      perso: moi.ck, persoAdv: moi.foe.ck, mode: 'en_ligne',
+      // Duree reelle du match, pour la moyenne affichee sur le profil.
+      duree: G.debutMatch ? (performance.now() - G.debutMatch) / 1000 : null
     }).catch(() => { /* le classement peut attendre, pas la fin de match */ });
   }
 

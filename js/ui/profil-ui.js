@@ -6,7 +6,7 @@ import {
   creerProfil, majProfil, envoyerAvatar, classement, podiumPersos,
   profilPublic, derniersMatchs, catalogueTitres, mesTitres, envoyerBanniere,
   demarrerPresence, monId, lireCommentaires, ecrireCommentaire, supprimerCommentaire,
-  pousserPreferences
+  pousserPreferences, dureeMoyenne
 } from '../reseau/compte.js';
 
 // ---------------------------------------------------------------------------
@@ -55,17 +55,12 @@ export function afficherFiche() {
   $('onCoul1').value = p.couleur1 || '#35e0ff';
   $('onCoul2').value = p.couleur2 || '#7b2ff7';
 
-  // Un ratio parle plus qu'un total : marquer 300 points en 50 matchs n'a rien
-  // a voir avec les marquer en 5.
-  const diff = (p.points_marques || 0) - (p.points_encaisses || 0);
-  const taux = p.matchs ? Math.round((p.victoires || 0) / p.matchs * 100) : 0;
-  const stats = [
-    [p.matchs || 0, 'matchs'], [p.victoires || 0, 'victoires'], [taux + '%', 'de reussite'],
-    [p.points_marques || 0, 'points mis'], [p.points_encaisses || 0, 'encaisses'],
-    [(diff >= 0 ? '+' : '') + diff, 'difference']
-  ];
-  $('ficheStats').innerHTML = stats
-    .map(([v, l]) => '<div class="ficheStat"><b>' + v + '</b><span>' + l + '</span></div>').join('');
+  // Le texte du profil peut passer en noir : sur un dégradé clair, le blanc
+  // devient illisible, et c'est le propriétaire qui sait ce qu'il a choisi.
+  carte.classList.toggle('sombre', !!p.texte_sombre);
+  // Les quatre chiffres et le main sont posés par afficherStats, appelé juste
+  // après : la durée moyenne demande une requête de plus.
+  afficherStats(p, 0);
 
   const pod = $('fichePodium');
   pod.innerHTML = '';
@@ -146,7 +141,7 @@ export async function ouvrirProfil() {
     // verront, donc on l'affiche a son proprietaire tel quel.
     const pub = await profilPublic(monId());
     const rec = await derniersMatchs(monId(), 3).catch(() => []);
-    if (pub) afficherEnrichi(pub, rec);
+    if (pub) { afficherEnrichi(pub, rec); afficherStats(pub, await dureeMoyenne(monId())); }
     setProfilVu(monId());
     for (const sel of ['#onEditer', '#onDeconnexion', '.ficheChangeBan']) {
       const e = document.querySelector(sel);
@@ -229,6 +224,9 @@ export function rafraichirBoutonCompte() {
   const p = Compte.profil;
   const dedans = !!(connecte() && p);
   b.classList.toggle('connecte', dedans);
+  // Même réglage pour la pastille du haut : elle porte le dégradé, donc elle a
+  // le même problème de lisibilité sur les couleurs claires.
+  b.classList.toggle('sombre', dedans && !!p.texte_sombre);
   b.textContent = '';
   // Le bouton porte les couleurs choisies dans la fiche : c'est la signature du
   // joueur, elle doit le suivre partout plutot que rester dans son profil.
@@ -339,6 +337,7 @@ let titresCharges = false;
 
 async function remplirReglages(p) {
   const st = $('onStatut'); if (st) st.value = p.statut || '';
+  const ts = $('onTexteSombre'); if (ts) ts.checked = !!p.texte_sombre;
 
   const mc = $('onMainChoix');
   if (mc && !mc.options.length) {
@@ -394,7 +393,8 @@ async function remplirReglages(p) {
       await majProfil({
         statut: $('onStatut').value.trim() || null,
         titre_actif: $('onTitreChoix').value || null,
-        main: $('onMainChoix').value || null
+        main: $('onMainChoix').value || null,
+        texte_sombre: $('onTexteSombre').checked
       });
       await ouvrirProfil();
       $('ficheReglages').classList.add('hidden');
@@ -405,10 +405,15 @@ async function remplirReglages(p) {
   $('onBanniere').addEventListener('change', async ev => {
     const f = ev.target.files && ev.target.files[0];
     if (!f) return;
-    dire('envoi de la banniere...');
-    try { await envoyerBanniere(f); await ouvrirProfil(); dire('banniere mise a jour.'); }
-    catch (e) { dire(e.message, true); }
+    const { cadrer } = await import('./cadrage.js');
+    // La banniere est large et basse : on lui donne ses vraies proportions,
+    // sinon on cadre a l'aveugle et le sujet se retrouve coupe.
+    const cadre = await cadrer(f, { forme: 'rect', taille: 1024, hauteur: 288 });
     ev.target.value = '';
+    if (!cadre) return;
+    dire('envoi de la banniere...');
+    try { await envoyerBanniere(cadre); await ouvrirProfil(); dire('banniere mise a jour.'); }
+    catch (e) { dire(e.message, true); }
   });
 })();
 
@@ -537,6 +542,8 @@ export async function voirProfil(id) {
       d.appendChild(e); pod.appendChild(d);
     }
     afficherEnrichi(p, await derniersMatchs(id, 3).catch(() => []));
+    carte.classList.toggle('sombre', !!p.texte_sombre);
+    afficherStats(p, await dureeMoyenne(id));
     await chargerMur(id);
     dire('');
   } catch (e) { dire(e.message, true); }
@@ -573,3 +580,53 @@ export async function voirProfil(id) {
   const b = document.querySelector('.scr-options [data-act="back"]');
   if (b) b.addEventListener('click', pousser);
 })();
+
+// ---------------------------------------------------------------------------
+// Les quatre chiffres qui comptent, et le main a cote.
+//
+// Quatre plutot que six : un profil se lit d'un coup d'oeil, et six cases en
+// deux rangees de trois se parcourent au lieu de se voir. Ce sont des rapports
+// et non des totaux — « 240 points marques » ne dit rien sans savoir en combien
+// de matchs.
+// ---------------------------------------------------------------------------
+function dureeLisible(s) {
+  if (!s) return '—';
+  const m = Math.floor(s / 60), r = Math.round(s % 60);
+  return m ? (m + 'm' + (r ? String(r).padStart(2, '0') : '')) : (r + 's');
+}
+
+export function afficherStats(p, moyenne) {
+  const zone = $('ficheStats');
+  if (!zone) return;
+  const taux = p.matchs ? Math.round((p.victoires || 0) / p.matchs * 100) : 0;
+  const mis = p.points_marques || 0, pris = p.points_encaisses || 0;
+  // Un ratio se lit mieux que deux totaux : au-dessus de 1, on marque plus
+  // qu'on n'encaisse, et c'est tout ce qu'on veut savoir.
+  const ratio = pris ? (mis / pris).toFixed(2) : (mis ? '∞' : '—');
+  const cases = [
+    [p.matchs || 0, 'matchs joues'],
+    [taux + '%', 'de victoires'],
+    [ratio, 'buts mis / pris'],
+    [dureeLisible(moyenne), 'duree moyenne']
+  ];
+  zone.innerHTML = '';
+  for (const [v, l] of cases) {
+    const d = document.createElement('div'); d.className = 'ficheStat';
+    const b = document.createElement('b'); b.textContent = v;
+    const s = document.createElement('span'); s.textContent = l;
+    d.append(b, s); zone.appendChild(d);
+  }
+
+  // Le main, en grand, a cote des chiffres.
+  const mn = $('ficheMainGrand');
+  if (!mn) return;
+  mn.innerHTML = '';
+  if (p.main && CHARS[p.main]) {
+    const cv = dessinerPerso(p.main);
+    const nom = document.createElement('b');
+    nom.textContent = CHARS[p.main].short;
+    const tag = document.createElement('span');
+    tag.textContent = 'MAIN';
+    mn.append(tag, cv, nom);
+  }
+}

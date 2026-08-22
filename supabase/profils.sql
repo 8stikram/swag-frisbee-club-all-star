@@ -301,3 +301,67 @@ returns table (
   where a.demandeur = auth.uid() or a.destinataire = auth.uid()
   order by en_ligne desc, p.pseudo;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- 10. Durée des matchs et couleur du texte du profil.
+-- ---------------------------------------------------------------------------
+alter table matchs add column if not exists duree int;                 -- en secondes
+alter table profils add column if not exists texte_sombre boolean default false;
+
+-- La vue publique reprend le réglage de couleur : c'est le visiteur qui doit
+-- voir le profil tel que son propriétaire l'a réglé.
+create or replace view profils_publics as
+  select id, pseudo, avatar, banniere, couleur1, couleur2,
+         statut, titre_actif, main, vu_le, texte_sombre,
+         (vu_le > now() - interval '2 minutes') as en_ligne,
+         matchs, victoires, defaites, points_marques, points_encaisses,
+         case when matchs > 0
+              then round(victoires::numeric / matchs * 100, 1)
+              else 0 end as taux_victoire,
+         persos, cree_le
+  from profils;
+
+-- Durée moyenne, en secondes. Ne compte que les matchs qui l'ont enregistrée :
+-- les anciens n'en ont pas, et les inclure comme s'ils avaient duré zéro
+-- fausserait la moyenne vers le bas.
+create or replace function duree_moyenne(p_joueur uuid)
+returns int language sql security definer as $$
+  select coalesce(round(avg(duree))::int, 0)
+  from matchs where joueur = p_joueur and duree is not null and duree > 0;
+$$;
+
+-- La fin de match enregistre désormais la durée.
+create or replace function enregistrer_match_complet(
+  p_adversaire uuid, p_adversaire_pseudo text,
+  p_score int, p_score_adv int,
+  p_perso text, p_perso_adv text, p_mode text, p_duree int default null
+) returns void language plpgsql security definer as $$
+declare v_gagne boolean; v_m int; v_v int; v_p int;
+begin
+  v_gagne := p_score > p_score_adv;
+
+  insert into matchs (joueur, adversaire, adversaire_pseudo, score_joueur,
+                      score_adversaire, perso_joueur, perso_adversaire, mode, gagne, duree)
+  values (auth.uid(), p_adversaire, p_adversaire_pseudo, greatest(p_score, 0),
+          greatest(p_score_adv, 0), p_perso, p_perso_adv,
+          coalesce(p_mode, 'en_ligne'), v_gagne, nullif(greatest(coalesce(p_duree, 0), 0), 0));
+
+  update profils set
+    matchs = matchs + 1,
+    victoires = victoires + case when v_gagne then 1 else 0 end,
+    defaites = defaites + case when v_gagne then 0 else 1 end,
+    points_marques = points_marques + greatest(p_score, 0),
+    points_encaisses = points_encaisses + greatest(p_score_adv, 0),
+    persos = jsonb_set(persos, array[p_perso],
+              to_jsonb(coalesce((persos ->> p_perso)::int, 0) + 1), true),
+    vu_le = now()
+  where id = auth.uid()
+  returning matchs, victoires, points_marques into v_m, v_v, v_p;
+
+  insert into titres_debloques (joueur, titre)
+  select auth.uid(), t.id from (values
+    ('debutant', true), ('habitue', v_m >= 10), ('veteran', v_m >= 50),
+    ('tireur', v_p >= 100), ('invaincu', v_v >= 10), ('legende', v_v >= 50)
+  ) as t(id, gagne) where t.gagne
+  on conflict do nothing;
+end; $$;

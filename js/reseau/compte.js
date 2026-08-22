@@ -288,7 +288,8 @@ export async function enregistrerMatchComplet(o) {
       p_adversaire_pseudo: o.adversairePseudo || null,
       p_score: o.score | 0, p_score_adv: o.scoreAdv | 0,
       p_perso: o.perso, p_perso_adv: o.persoAdv || null,
-      p_mode: o.mode || 'en_ligne'
+      p_mode: o.mode || 'en_ligne',
+      p_duree: o.duree ? Math.round(o.duree) : null
     })
   });
 }
@@ -440,4 +441,17 @@ export async function tirerPreferences() {
   const avant = JSON.stringify(lireLocales());
   ecrireLocales(prefs);
   return JSON.stringify(lireLocales()) !== avant;
+}
+
+// Duree moyenne des matchs, en secondes. Calculee par la base : c'est elle qui
+// detient l'historique complet, le jeu n'en garde rien. Les matchs anterieurs
+// a cette mesure n'ont pas de duree et sont ecartes du calcul, sinon ils
+// compteraient comme des matchs de zero seconde et fausseraient la moyenne.
+export async function dureeMoyenne(id) {
+  try {
+    const r = await appel('/rest/v1/rpc/duree_moyenne', {
+      method: 'POST', headers: entetes(), body: JSON.stringify({ p_joueur: id })
+    });
+    return Number(r) || 0;
+  } catch (e) { return 0; }
 }

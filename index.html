@@ -122,6 +122,20 @@
 
   <!-- Fenêtre de compte : se connecter, créer un compte, choisir son pseudo.
        Posée par-dessus n'importe quel écran, elle ne fait quitter nulle part. -->
+  <!-- Cadrage d'image : on choisit ce qu'on garde avant d'envoyer. -->
+  <div class="comptePop hidden" id="cadPop">
+    <div class="compteCarte">
+      <b>CADRE TA PHOTO</b>
+      <p class="cpAide">Déplace l'image et zoome. Seul ce qui tient dans le cadre sera envoyé.</p>
+      <canvas id="cadCanevas"></canvas>
+      <input type="range" id="cadZoom" class="cadZoom">
+      <div class="cpBtns">
+        <button class="mbtn c-green" id="cadValider">VALIDER</button>
+        <button class="mbtn" id="cadAnnuler">ANNULER</button>
+      </div>
+    </div>
+  </div>
+
   <div class="comptePop hidden" id="comptePop">
     <div class="compteCarte">
       <b id="cpTitre">SE CONNECTER</b>
@@ -392,8 +406,13 @@
           <div class="fichePseudo" id="fichePseudo"></div>
           <div class="ficheTitre" id="ficheTitre"></div>
           <div class="ficheStatut" id="ficheStatut"></div>
-          <div class="ficheMain" id="ficheMain"></div>
-          <div class="ficheStats" id="ficheStats"></div>
+          <!-- Quatre chiffres en carre a gauche, le main en grand a droite :
+               les stats se lisent d'un bloc, et le personnage prend la place
+               qu'il merite au lieu d'etre une ligne de plus. -->
+          <div class="ficheCorps">
+            <div class="ficheStats" id="ficheStats"></div>
+            <div class="ficheMainGrand" id="ficheMainGrand"></div>
+          </div>
           <div class="ficheRecents" id="ficheRecents"></div>
           <div class="fichePodium" id="fichePodium"></div>
         </div>
@@ -423,6 +442,9 @@
           <select class="onChamp" id="onTitreChoix"></select>
           <label class="onPas">Personnage principal</label>
           <select class="onChamp" id="onMainChoix"></select>
+          <label class="onPas onCoche">
+            <input type="checkbox" id="onTexteSombre"> Texte en noir
+          </label>
           <button class="mbtn c-green" id="onEnregistrer">ENREGISTRER</button>
         </div>
       </div>

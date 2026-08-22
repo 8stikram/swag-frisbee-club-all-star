@@ -1718,3 +1718,35 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .persoCase:hover{ transform:translateY(-.4cqh) }
 .persoCase.on{ border-color:#ffd23e; background:rgba(255,210,62,.16) }
 .persoCase.on span{ color:#ffd23e }
+
+/* --- Corps de la fiche : quatre chiffres a gauche, le main a droite -------- */
+.ficheCorps{ display:grid; grid-template-columns:1fr auto; gap:1.2cqw;
+  align-items:center; width:calc(100% - 3.6cqw); margin:0 1.8cqw }
+.ficheCorps .ficheStats{ grid-template-columns:repeat(2,1fr); width:auto; margin:0 }
+.ficheMainGrand{ display:flex; flex-direction:column; align-items:center; gap:.3cqh;
+  background:rgba(255,255,255,.88); border:3px solid var(--ink); border-radius:12px;
+  padding:.8cqh 1cqw; min-width:11cqh }
+.ficheMainGrand canvas{ image-rendering:pixelated; height:11cqh; width:auto }
+.ficheMainGrand b{ font-family:'Russo One',sans-serif;
+  font-size:clamp(8px,1.5cqh,13px); color:var(--ink) }
+.ficheMainGrand span{ font-family:'Barlow',sans-serif; font-weight:700;
+  font-size:clamp(6px,1.1cqh,10px); color:#5b6478; letter-spacing:.1em }
+.ficheMainGrand:empty{ display:none }
+.onCoche{ display:flex; align-items:center; gap:.5cqw; cursor:pointer }
+.onCoche input{ width:2.2cqh; height:2.2cqh; min-width:16px; min-height:16px; cursor:pointer }
+
+/* Texte du profil en noir : sur un degrade clair, le blanc devient illisible.
+   Le reglage suit le profil, donc les visiteurs le voient comme son
+   proprietaire l'a voulu. */
+.ficheCarte.sombre .fichePseudo{ color:var(--ink); text-shadow:0 3px 0 rgba(255,255,255,.45) }
+.ficheCarte.sombre .ficheStatut{ color:var(--ink); text-shadow:0 2px 0 rgba(255,255,255,.4) }
+.ficheCarte.sombre .fichePerso em{ color:var(--ink); text-shadow:0 2px 0 rgba(255,255,255,.4) }
+.ficheCarte.sombre .murVide{ color:var(--ink); text-shadow:none }
+.compteBtn.connecte.sombre{ color:var(--ink); text-shadow:0 2px 0 rgba(255,255,255,.5) }
+
+/* Cadreur d'image : le cadre montre exactement ce qui sera garde. */
+#cadCanevas{ border:3px solid var(--ink); border-radius:10px; background:#0b1a2a;
+  cursor:grab; touch-action:none; max-width:100% }
+#cadCanevas:active{ cursor:grabbing }
+#cadCanevas.rond{ border-radius:50% }
+.cadZoom{ width:min(30cqw,300px); accent-color:#1f6aa8 }
