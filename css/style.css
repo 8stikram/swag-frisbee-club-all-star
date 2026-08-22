@@ -1375,9 +1375,6 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .onEtat{ font-family:'DotGothic16',monospace; font-size:clamp(9px,1.7cqh,14px);
   color:#8fd0ff; min-height:2cqh; margin:0; text-align:center }
 .onEtat.bad{ color:#ff9aa2 }
-.scr-online .mbtn{ background:linear-gradient(180deg,#9fd4f7,#6aa8d8); border-color:#0f2438; color:#0b1a2a }
-.scr-online .mbtn:hover,.scr-online .mbtn.sel{ background:linear-gradient(180deg,#cbeaff,#8cc4ea) }
-.scr-online .mbtn.c-green{ background:linear-gradient(180deg,#b6e6ff,#79b8e6) }
 .mbtn.mini{ font-size:clamp(8px,1.4cqh,12px); padding:.5cqh 1.4cqw }
 
 /* --- Compte, fiche de profil et classement, dans le même bleu pastel --- */
@@ -1428,15 +1425,26 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .clLigne .rang{ font-family:'Russo One',sans-serif; color:#8fd0ff }
 .clLigne .taux{ color:#9fc4e2 }
 
-/* Fond et cartes du mode en ligne : la mise en page de l'écran
-   d'entraînement, déclinée en bleu pastel. */
+/* Fond et cartes du mode en ligne.
+   La carte reste celle du jeu — fond clair, gros contour, ombre portée dure.
+   Le bleu ne sert que d'accent, comme le vert sert à l'entraînement : teinter
+   les cartes elles-mêmes les sortait de la direction artistique du reste. */
 .bg-online{ position:absolute; inset:0;
-  background:radial-gradient(120cqh 90cqh at 50% 38%,#1e3d5c 0%,#122336 58%,#060d16 100%) }
-.scr-online .titlebar span{ color:#cfeaff }
-.onCard{ border-color:#0f2438;
-  background:linear-gradient(170deg,rgba(159,212,247,.96),rgba(106,168,216,.92));
-  color:#0b1a2a; box-shadow:0 0 0 2px rgba(207,234,255,.4), 8px 8px 0 #0a1725 }
-.onCard b{ color:#0b1a2a }
-.onCard em{ color:#123049 }
-.onCard .learnProg{ background:rgba(11,26,42,.22); color:#0b1a2a }
-.onCard:hover,.onCard.sel{ background:linear-gradient(170deg,#d5efff,#93c9ec) }
+  background:radial-gradient(120cqh 90cqh at 50% 40%,#123a63 0%,#0a1e38 58%,#040a14 100%) }
+/* Quatre cartes : deux par ligne. En colonne elles débordaient de l'écran et
+   la première passait carrément au-dessus du cadre. */
+.onChoix{ position:absolute; inset:0; z-index:5; display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)); gap:2.2cqh 2.5cqw;
+  align-content:center; justify-items:center; align-items:stretch;
+  padding:9cqh 6cqw 7cqh }
+.onCard{ width:100%; max-width:30cqw; min-height:0 !important; gap:.8cqh !important;
+  padding:1.8cqh 1.6cqw !important; --learn:#7ec8ff }
+.onCard .learnIco{ font-size:clamp(22px,4.4cqh,38px) }
+.onCard b{ font-size:clamp(11px,2.2cqh,19px) }
+.onCard em{ font-size:clamp(8px,1.4cqh,12px); max-width:30ch }
+.onChoix .onCard:nth-child(2){animation-delay:.06s}
+.onChoix .onCard:nth-child(3){animation-delay:.12s}
+.onChoix .onCard:nth-child(4){animation-delay:.18s}
+/* Retour posé par-dessus la grille : dans le flux, les cartes le recouvraient
+   et il devenait impossible de sortir autrement qu'en rechargeant. */
+.onRetour{ position:absolute; left:50%; bottom:2.6cqh; transform:translateX(-50%); z-index:7 }

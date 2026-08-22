@@ -121,6 +121,9 @@ window.addEventListener('keydown', e => {
     // sous-menu — sans quoi on s'y retrouvait coincé au clavier.
     else if (curScreen === 'chap' && e.code === getKey('pause')) doAct('learn');
     else if ((curScreen === 'learn' || curScreen === 'firstrun') && e.code === getKey('pause')) doAct('back');
+    // L'écran en ligne n'était dans aucune branche : Échap n'y faisait rien et
+    // on ne pouvait en sortir qu'à la souris.
+    else if (curScreen === 'online' && e.code === getKey('pause')) doAct('back');
     return;
   }
   // Entraînement : R remet tout en place instantanément, Échap rend la main au
