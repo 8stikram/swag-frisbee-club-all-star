@@ -340,6 +340,7 @@
     <div class="onChoix" id="onChoix">
       <button class="onLigne grand" id="onArene">ARÈNE</button>
       <button class="onLigne" id="onProfil">PROFIL</button>
+      <button class="onLigne" id="onAmis">AMIS</button>
       <button class="onLigne" id="onClassement">CLASSEMENT</button>
       <button class="onLigne bas" data-act="back">RETOUR</button>
     </div>
@@ -414,6 +415,19 @@
         </div>
       </div>
 
+
+      <!-- Liste d'amis : les demandes en attente d'abord, puis les amis, en
+           ligne en tête. Ce qui appelle une décision passe avant le reste. -->
+      <div class="onEtape hidden" id="onEtapeAmis">
+        <p class="onPas"><b>Mes amis</b></p>
+        <div class="onRangee">
+          <input class="onChamp" id="amiRecherche" maxlength="16" placeholder="chercher un pseudo">
+          <button class="mbtn mini" id="amiChercher">CHERCHER</button>
+        </div>
+        <div class="amiListe" id="amiResultats"></div>
+        <div class="amiListe" id="amiDemandes"></div>
+        <div class="amiListe" id="amiListe"></div>
+      </div>
 
       <!-- Classement mondial : podium des trois premiers, puis la liste. -->
       <div class="onEtape hidden" id="onEtapeClassement">

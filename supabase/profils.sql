@@ -254,3 +254,50 @@ language sql security definer as $$
   select count(*) filter (where gagne), count(*) filter (where not gagne)
   from matchs where joueur = auth.uid() and adversaire = p_adversaire;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- 9. Invitations à jouer. Un ami dépose un code d'arène chez un autre, qui le
+-- voit apparaître dans sa liste d'amis. Ce n'est pas une notification de
+-- connexion — c'est une porte ouverte qu'on laisse à quelqu'un.
+-- ---------------------------------------------------------------------------
+create table if not exists invitations (
+  de uuid references auth.users on delete cascade,
+  vers uuid references auth.users on delete cascade,
+  code text not null,
+  cree_le timestamptz default now(),
+  primary key (de, vers)
+);
+alter table invitations enable row level security;
+
+-- On ne voit que celles qui nous concernent.
+drop policy if exists "invitations les siennes" on invitations;
+create policy "invitations les siennes" on invitations for select
+  using (auth.uid() = de or auth.uid() = vers);
+drop policy if exists "invitations envoyer" on invitations;
+create policy "invitations envoyer" on invitations for insert with check (auth.uid() = de);
+drop policy if exists "invitations remplacer" on invitations;
+create policy "invitations remplacer" on invitations for update using (auth.uid() = de);
+-- Chacun peut la retirer : celui qui l'a envoyée comme celui qui la refuse.
+drop policy if exists "invitations retirer" on invitations;
+create policy "invitations retirer" on invitations for delete
+  using (auth.uid() = de or auth.uid() = vers);
+
+-- Ma liste d'amis, avec l'état de chacun et le bilan face à lui. Une fonction
+-- plutôt que trois requêtes : la liste se lit d'un coup, sans aller-retour.
+create or replace function mes_amis()
+returns table (
+  id uuid, pseudo text, avatar text, en_ligne boolean, vu_le timestamptz,
+  etat text, je_demande boolean, victoires bigint, defaites bigint, invitation text
+) language sql security definer as $$
+  select p.id, p.pseudo, p.avatar,
+         (p.vu_le > now() - interval '2 minutes') as en_ligne, p.vu_le,
+         a.etat,
+         (a.demandeur = auth.uid()) as je_demande,
+         (select count(*) from matchs m where m.joueur = auth.uid() and m.adversaire = p.id and m.gagne),
+         (select count(*) from matchs m where m.joueur = auth.uid() and m.adversaire = p.id and not m.gagne),
+         (select i.code from invitations i where i.de = p.id and i.vers = auth.uid())
+  from amis a
+  join profils p on p.id = case when a.demandeur = auth.uid() then a.destinataire else a.demandeur end
+  where a.demandeur = auth.uid() or a.destinataire = auth.uid()
+  order by en_ligne desc, p.pseudo;
+$$;

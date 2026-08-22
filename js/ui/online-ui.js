@@ -168,3 +168,24 @@ async function rejoindreAvecCode() {
     dire(a.hote ? ('arene de ' + a.hote + ' — connexion...') : 'connexion...');
   } catch (e) { dire(e.message, true); }
 }
+
+// --- Invitations entre amis ------------------------------------------------
+// Inviter, c'est ouvrir une arene et deposer le code chez l'ami : il le verra
+// dans sa liste et entrera d'un clic, sans rien recopier.
+export async function inviterAmi(id, pseudo) {
+  const { inviter } = await import('../reseau/compte.js');
+  montrerPanneau('onEtapeHote');
+  await hebergerAvecCode();
+  if (!areneCourante) { dire('impossible d ouvrir l arene.', true); return; }
+  try {
+    await inviter(id, areneCourante);
+    dire(pseudo + ' est invite — il verra le code dans sa liste d amis.');
+  } catch (e) { dire('invitation impossible : ' + e.message, true); }
+}
+
+export async function rejoindreDepuisAmi(code) {
+  montrerPanneau('onEtapeInvite');
+  const champ = $('areneEntree');
+  if (champ) champ.value = code;
+  await rejoindreAvecCode();
+}

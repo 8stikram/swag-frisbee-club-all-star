@@ -36,13 +36,56 @@ function entetes(json = true) {
   return h;
 }
 
-async function appel(chemin, options = {}) {
+// Un jeton d'accès ne vit qu'une heure. Passé ce délai, tout échouait sur un
+// « JWT expired » incompréhensible et il fallait se reconnecter à la main. On
+// le renouvelle donc en silence, avec le jeton de rafraîchissement fourni à la
+// connexion, puis on rejoue la requête. Le joueur ne voit rien.
+let renouvellement = null;
+
+async function renouveler() {
+  if (!Compte.session || !Compte.session.refresh_token) return false;
+  // Une seule tentative à la fois : sans ce garde, dix requêtes qui expirent
+  // ensemble lanceraient dix renouvellements concurrents.
+  if (!renouvellement) {
+    renouvellement = (async () => {
+      try {
+        const r = await fetch(BASE + '/auth/v1/token?grant_type=refresh_token', {
+          method: 'POST',
+          headers: { apikey: CLE, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: Compte.session.refresh_token })
+        });
+        if (!r.ok) return false;
+        const s = await r.json();
+        if (!s || !s.access_token) return false;
+        Compte.session = s; sauver();
+        return true;
+      } catch (e) { return false; }
+      finally { setTimeout(() => { renouvellement = null; }, 0); }
+    })();
+  }
+  return renouvellement;
+}
+
+async function appel(chemin, options = {}, deuxieme = false) {
   const r = await fetch(BASE + chemin, options);
   const txt = await r.text();
   let corps = null;
   try { corps = txt ? JSON.parse(txt) : null; } catch (e) { corps = txt; }
   if (!r.ok) {
     const msg = (corps && (corps.msg || corps.message || corps.error_description || corps.error)) || ('erreur ' + r.status);
+    // Jeton périmé : on le renouvelle et on rejoue une fois, en remettant
+    // l'en-tête d'autorisation à jour.
+    if (!deuxieme && (r.status === 401 || /jwt|expired/i.test(msg)) && await renouveler()) {
+      const o = { ...options };
+      if (o.headers && o.headers.Authorization) {
+        o.headers = { ...o.headers, Authorization: 'Bearer ' + Compte.session.access_token };
+      }
+      return appel(chemin, o, true);
+    }
+    if (r.status === 401 || /jwt|expired/i.test(msg)) {
+      deconnecter();
+      throw new Error('session expiree — reconnecte-toi');
+    }
     throw new Error(msg);
   }
   return corps;
@@ -252,4 +295,51 @@ export async function faceAFace(adversaireId) {
     body: JSON.stringify({ p_adversaire: adversaireId })
   });
   return (r && r[0]) || { victoires: 0, defaites: 0 };
+}
+
+// ---------------------------------------------------------------------------
+// Amis. Une demande part dans un sens, seul le destinataire l'accepte.
+// ---------------------------------------------------------------------------
+export async function mesAmis() {
+  if (!connecte()) return [];
+  return appel('/rest/v1/rpc/mes_amis', { method: 'POST', headers: entetes(), body: '{}' });
+}
+
+export async function demanderAmi(id) {
+  return appel('/rest/v1/amis', {
+    method: 'POST', headers: entetes(),
+    body: JSON.stringify({ demandeur: monId(), destinataire: id, etat: 'attente' })
+  });
+}
+
+export async function accepterAmi(id) {
+  // On n'accepte que la demande qui vient vers soi : l'autre sens n'existe pas.
+  return appel('/rest/v1/amis?demandeur=eq.' + id + '&destinataire=eq.' + monId(), {
+    method: 'PATCH', headers: entetes(), body: JSON.stringify({ etat: 'accepte' })
+  });
+}
+
+export async function retirerAmi(id) {
+  const moi = monId();
+  await appel('/rest/v1/amis?demandeur=eq.' + moi + '&destinataire=eq.' + id,
+    { method: 'DELETE', headers: entetes() }).catch(() => { });
+  await appel('/rest/v1/amis?demandeur=eq.' + id + '&destinataire=eq.' + moi,
+    { method: 'DELETE', headers: entetes() }).catch(() => { });
+}
+
+// --- Invitations a jouer ---------------------------------------------------
+// On depose un code d'arene chez un ami. Il le verra dans sa liste, et pourra
+// entrer d'un clic sans avoir a recopier quoi que ce soit.
+export async function inviter(id, code) {
+  await appel('/rest/v1/invitations?de=eq.' + monId() + '&vers=eq.' + id,
+    { method: 'DELETE', headers: entetes() }).catch(() => { });
+  return appel('/rest/v1/invitations', {
+    method: 'POST', headers: entetes(),
+    body: JSON.stringify({ de: monId(), vers: id, code })
+  });
+}
+
+export async function retirerInvitation(deId) {
+  return appel('/rest/v1/invitations?de=eq.' + deId + '&vers=eq.' + monId(),
+    { method: 'DELETE', headers: entetes() }).catch(() => { });
 }

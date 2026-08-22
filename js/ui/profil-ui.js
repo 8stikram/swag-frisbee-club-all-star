@@ -12,7 +12,7 @@ import {
 // Compte, fiche de profil et classement. Trois panneaux qui vivent dans
 // l'écran du mode en ligne, dans le même bleu pastel que le reste.
 // ---------------------------------------------------------------------------
-const PANNEAUX = ['onChoix', 'onChoixArene', 'onEtapeHote', 'onEtapeInvite', 'onEtapeCompte',
+const PANNEAUX = ['onChoix', 'onChoixArene', 'onEtapeHote', 'onEtapeInvite', 'onEtapeCompte', 'onEtapeAmis',
   'onEtapePseudo', 'onEtapeFiche', 'onEtapeClassement'];
 
 export function montrerPanneau(id) {

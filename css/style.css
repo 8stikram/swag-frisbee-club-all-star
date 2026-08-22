@@ -1664,3 +1664,19 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
    blanche des panneaux faisait un cadre dans un cadre, sans rien ajouter. */
 #onEtapeFiche:not(.hidden){ background:none; border:0; box-shadow:none;
   padding:0; max-width:none; min-width:0 }
+
+/* --- Liste d'amis ---------------------------------------------------------- */
+.amiListe{ width:min(52cqw,520px); display:flex; flex-direction:column; gap:.4cqh }
+.amiListe:empty{ display:none }
+.amiLigne{ display:grid; grid-template-columns:auto auto 1fr auto auto; gap:.7cqw;
+  align-items:center; background:#f2f6fb; border:2px solid var(--ink); border-radius:9px;
+  padding:.45cqh .8cqw; font-family:'Barlow',sans-serif; font-weight:700;
+  font-size:clamp(8px,1.5cqh,13px); color:var(--ink) }
+.amiLigne.attente{ background:#fff4d6 }
+.amiPastille{ width:1.6cqh; height:1.6cqh; min-width:11px; min-height:11px;
+  border-radius:50%; background:#8a94a6; border:2px solid var(--ink) }
+.amiPastille.enligne{ background:#5df08a }
+.amiPhoto{ width:3.2cqh; height:3.2cqh; min-width:24px; min-height:24px;
+  border-radius:50%; object-fit:cover; border:2px solid var(--ink); background:#dfe8f2 }
+.amiBilan{ color:#5b6478; font-size:clamp(7px,1.2cqh,11px); white-space:nowrap }
+.amiLigne .mbtn{ padding:.25cqh .7cqw; font-size:clamp(7px,1.2cqh,11px) }
