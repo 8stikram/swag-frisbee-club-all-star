@@ -120,6 +120,36 @@
   </div>
   <div class="skinsMsg hidden" id="skinsMsg"></div>
 
+  <!-- Fenêtre de compte : se connecter, créer un compte, choisir son pseudo.
+       Posée par-dessus n'importe quel écran, elle ne fait quitter nulle part. -->
+  <div class="comptePop hidden" id="comptePop">
+    <div class="compteCarte">
+      <b id="cpTitre">SE CONNECTER</b>
+      <p class="cpAide" id="cpAide">Ton compte sert au classement et à ton profil en ligne.</p>
+      <div id="cpForm">
+        <input class="onChamp" id="cpEmail" type="email" placeholder="adresse mail" autocomplete="email">
+        <input class="onChamp" id="cpMdp" type="password" placeholder="mot de passe" autocomplete="current-password">
+        <div class="cpBtns">
+          <button class="mbtn c-green" id="cpConnexion">SE CONNECTER</button>
+          <button class="mbtn" id="cpInscription">CRÉER UN COMPTE</button>
+        </div>
+      </div>
+      <div id="cpPseudoBloc" class="hidden">
+        <input class="onChamp" id="cpPseudo" maxlength="16" placeholder="ton pseudo">
+        <div class="cpBtns"><button class="mbtn c-green" id="cpValiderPseudo">VALIDER</button></div>
+      </div>
+      <div id="cpConnecte" class="hidden">
+        <div class="cpMoi"><img id="cpAvatar" alt=""><b id="cpPseudoAff"></b></div>
+        <div class="cpBtns">
+          <button class="mbtn c-green" id="cpVoirProfil">VOIR MON PROFIL</button>
+          <button class="mbtn" id="cpDeconnexion">DÉCONNEXION</button>
+        </div>
+      </div>
+      <p class="cpEtat" id="cpEtat"></p>
+      <span class="skinsAstuce">Clique à côté ou appuie sur Échap pour fermer</span>
+    </div>
+  </div>
+
   <!-- Confirmation de sortie, partagée par l'entraînement et le tutoriel :
        Échap est trop facile à presser par réflexe pour tout perdre d'un coup. -->
   <div class="quitBox hidden" id="quitBox">

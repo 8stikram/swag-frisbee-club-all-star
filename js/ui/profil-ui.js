@@ -207,12 +207,17 @@ export function rafraichirBoutonCompte() {
   if (!b) return;
   b.addEventListener('click', async () => {
     sfx('select');
-    const { doAct } = await import('./menus.js');
-    doAct('online');
-    ouvrirProfil();
+    // Se connecter n'est pas un mode de jeu : on ouvre une fenetre par-dessus
+    // l'ecran courant au lieu d'emmener le joueur ailleurs.
+    const { ouvrirPop } = await import('./compte-pop.js');
+    ouvrirPop();
   });
   // Une session peut survivre a un rechargement : on va chercher le profil
   // pour afficher le pseudo tout de suite, sans attendre un clic.
   if (connecte()) chargerProfil().then(rafraichirBoutonCompte).catch(() => { });
   rafraichirBoutonCompte();
 })();
+
+// Le bouton du haut suit l'etat du compte, quel que soit l'endroit ou il a
+// change : la fenetre du haut, ou la fiche de l'ecran en ligne.
+import('./compte-pop.js').then(m => m.surCompteChange(rafraichirBoutonCompte));

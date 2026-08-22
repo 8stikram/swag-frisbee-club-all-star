@@ -1369,7 +1369,7 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .onAide{ font-family:'Barlow',sans-serif; font-size:clamp(9px,1.7cqh,14px); color:#9fc4e2;
   line-height:1.7; max-width:46cqw; text-align:center; margin:.6cqh 0 0 }
 .onEtape{ display:flex; flex-direction:column; align-items:center; gap:.9cqh; width:100% }
-.onEtape.hidden,.onChoix.hidden,.onPas.hidden,.onZone.hidden,.mbtn.hidden{ display:none }
+.onEtape.hidden,.onChoix.hidden,.onPas.hidden,.onZone.hidden,.mbtn.hidden{ display:none !important }
 .onPas{ font-family:'Barlow',sans-serif; font-size:clamp(9px,1.7cqh,14px); color:#d6ecff; margin:0 }
 .onPas b{ color:#8fd0ff }
 /* Le code est long : une zone qui défile vaut mieux qu'un pavé qui déborde. */
@@ -1439,7 +1439,7 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   background:radial-gradient(120cqh 90cqh at 50% 40%,#123a63 0%,#0a1e38 58%,#040a14 100%) }
 /* Quatre cartes : deux par ligne. En colonne elles débordaient de l'écran et
    la première passait carrément au-dessus du cadre. */
-.onChoix{ position:absolute; inset:0; z-index:5; display:grid !important;
+.onChoix{ position:absolute; inset:0; z-index:5; display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr)); gap:2.2cqh 2.5cqw;
   align-content:center; justify-items:center; align-items:stretch;
   padding:9cqh 6cqw 7cqh }
@@ -1462,3 +1462,29 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .compteBtn img{ width:2.9cqh; height:2.9cqh; min-width:22px; min-height:22px;
   border-radius:50%; object-fit:cover; border:2px solid var(--ink) }
 .compteBtn.connecte{ background:var(--yellow) }
+
+/* Fenêtre de compte : même langage que le panneau des skins — carte claire,
+   gros contour, ombre dure. Au-dessus des écrans, sous le filtre CRT. */
+.comptePop{ position:absolute; inset:0; z-index:26; display:flex;
+  align-items:center; justify-content:center; background:rgba(6,10,18,.68) }
+.comptePop.hidden{ display:none }
+.compteCarte{ background:rgba(255,255,255,.96); border:4px solid var(--ink);
+  border-radius:18px; box-shadow:7px 7px 0 var(--ink); padding:2.6cqh 2.4cqw;
+  max-width:48cqw; display:flex; flex-direction:column; align-items:center; gap:1.2cqh;
+  animation:learnSlide .22s cubic-bezier(.2,.9,.3,1.2) backwards }
+.compteCarte>b{ font-family:'Russo One',sans-serif; font-size:clamp(13px,2.6cqh,22px); color:var(--ink) }
+.cpAide{ font-family:'DotGothic16',monospace; font-size:clamp(8px,1.4cqh,12px);
+  color:#5b6478; text-align:center; margin:0; max-width:34ch; line-height:1.6 }
+#cpForm,#cpPseudoBloc,#cpConnecte{ display:flex; flex-direction:column; align-items:center; gap:1cqh; width:100% }
+#cpForm.hidden,#cpPseudoBloc.hidden,#cpConnecte.hidden{ display:none }
+.compteCarte .onChamp{ width:min(30cqw,300px); background:#f2f5fa; color:var(--ink);
+  border-color:var(--ink) }
+.cpBtns{ display:flex; gap:.8cqw; flex-wrap:wrap; justify-content:center }
+.cpEtat{ font-family:'DotGothic16',monospace; font-size:clamp(8px,1.4cqh,12px);
+  color:#2e7d4f; margin:0; min-height:1.6cqh; text-align:center }
+.cpEtat.bad{ color:#c02a1c }
+.cpMoi{ display:flex; align-items:center; gap:1cqw }
+.cpMoi img{ width:6cqh; height:6cqh; min-width:44px; min-height:44px; border-radius:50%;
+  object-fit:cover; border:3px solid var(--ink) }
+.cpMoi img.hidden{ display:none }
+.cpMoi b{ font-family:'Russo One',sans-serif; font-size:clamp(12px,2.4cqh,20px); color:var(--ink) }
