@@ -1361,13 +1361,46 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
    à gros contour, texte encre. Le bleu identifie le mode, il ne l'assombrit
    pas — un fond sombre sortait cet écran du reste du jeu. */
 .scr-online{ display:flex; align-items:center; justify-content:center }
-/* Fond vif, dans la lignee des autres ecrans : le bleu identifie le mode,
-   les rayures et l'anneau lui donnent la meme vie qu'au titre. */
-.bg-online{ position:absolute; inset:0;
-  background:radial-gradient(110cqh 85cqh at 50% 40%, #1f7fc4 0%, #14568c 52%, #0a2e52 100%) }
-.bg-online .streaks{ background:repeating-linear-gradient(-14deg,rgba(255,255,255,.14) 0 3px,transparent 3px 54px) }
-.bg-online .arc{ border-color:rgba(255,120,160,.42) }
-.bg-online .watermark{ color:rgba(255,255,255,.07) }
+/* Fond pétrole étoilé de la maquette : le bleu profond fait ressortir le rose,
+   et les étoiles rappellent l'arène spatiale du jeu. */
+.bg-online{ position:absolute; inset:0; overflow:hidden;
+  background:radial-gradient(120cqh 90cqh at 50% 42%, #14708f 0%, #0d5a76 55%, #073b52 100%) }
+.onEtoiles{ position:absolute; inset:-10%;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 78% 9%, #bff3ff 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 34% 62%, #9df0c0 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 62% 78%, #fff 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 88% 54%, #bff3ff 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 22% 88%, #fff 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 50% 32%, #9df0c0 50%, transparent 50%);
+  background-size:24cqh 24cqh; opacity:.85;
+  animation:onScintille 4.5s ease-in-out infinite alternate }
+@keyframes onScintille{from{opacity:.55}to{opacity:.95}}
+
+/* Globe, bandes et ondes : les trois éléments roses de la maquette. */
+.onGlobe{ position:absolute; top:3cqh; left:50%; transform:translateX(-50%);
+  width:19cqh; height:19cqh; filter:drop-shadow(0 4px 0 rgba(8,32,45,.35));
+  animation:onFlotte 5s ease-in-out infinite alternate }
+@keyframes onFlotte{from{transform:translate(-50%,0)}to{transform:translate(-50%,-1.4cqh)}}
+.onBande{ position:absolute; left:-4%; width:108%; height:4.6cqh; background:#f2698c }
+.onBande.haut{ top:27cqh }
+.onBande.bas{ top:34cqh }
+/* Le titre chevauche les bandes, comme sur la maquette : c'est lui qui les
+   coupe, et c'est ce chevauchement qui donne l'effet peint à la main. */
+.onTitre{ position:absolute; top:24.5cqh; left:50%; transform:translateX(-50%) rotate(-1.2deg);
+  font-family:'Archivo Black',sans-serif; font-size:15cqh; line-height:1;
+  color:#fff; letter-spacing:.02em; white-space:nowrap;
+  text-shadow:0 0 6px rgba(255,255,255,.35) }
+.onOnde{ position:absolute; bottom:2cqh; width:26cqh; height:19cqh; opacity:.95 }
+.onOnde.gauche{ left:2cqw }
+.onOnde.droite{ right:2cqw }
+
+/* Le menu descend sous le titre, comme sur la maquette. */
+.onChoix{ position:absolute; inset:0; z-index:5;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+  gap:.6cqh; padding:0 4cqw 5cqh }
+
 .scr-online .titlebar{ background:#1f6aa8 }
 .onWrap{ width:min(74cqw,760px); max-height:88cqh; overflow-y:auto;
   position:relative; z-index:6; pointer-events:none;
@@ -1376,9 +1409,6 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 /* Menu du mode en ligne : une liste de texte, comme une borne d'arcade.
    Les cartes disaient trop de choses avant qu'on ait choisi ; une liste va
    droit au but, et ARÈNE domine parce que c'est ce pour quoi on vient. */
-.onChoix{ position:absolute; inset:0; z-index:5;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:1.4cqh; padding:11cqh 4cqw 6cqh }
 .onLigne{
   background:none; border:0; cursor:pointer; padding:.2cqh 1cqw;
   font-family:'Archivo Black',sans-serif; letter-spacing:.06em;
