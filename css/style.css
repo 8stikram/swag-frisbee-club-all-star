@@ -1361,25 +1361,45 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
    à gros contour, texte encre. Le bleu identifie le mode, il ne l'assombrit
    pas — un fond sombre sortait cet écran du reste du jeu. */
 .scr-online{ display:flex; align-items:center; justify-content:center }
+/* Fond vif, dans la lignee des autres ecrans : le bleu identifie le mode,
+   les rayures et l'anneau lui donnent la meme vie qu'au titre. */
 .bg-online{ position:absolute; inset:0;
-  background:radial-gradient(90cqh 70cqh at 50% 36%, #e6f6ff 0%, #b7ddf7 46%, #86c2ea 100%) }
+  background:radial-gradient(110cqh 85cqh at 50% 40%, #1f7fc4 0%, #14568c 52%, #0a2e52 100%) }
+.bg-online .streaks{ background:repeating-linear-gradient(-14deg,rgba(255,255,255,.14) 0 3px,transparent 3px 54px) }
+.bg-online .arc{ border-color:rgba(255,120,160,.42) }
+.bg-online .watermark{ color:rgba(255,255,255,.07) }
 .scr-online .titlebar{ background:#1f6aa8 }
 .onWrap{ width:min(74cqw,760px); max-height:88cqh; overflow-y:auto;
   position:relative; z-index:6; pointer-events:none;
   display:flex; flex-direction:column; align-items:center; gap:1.5cqh; padding:2cqh 1cqw }
 .onWrap>*{ pointer-events:auto }
-.onChoix{ position:absolute; inset:0; z-index:5; display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr)); gap:2.2cqh 2.5cqw;
-  align-content:center; justify-items:center; align-items:stretch;
-  padding:9cqh 6cqw 7cqh }
-.onCard{ width:100%; max-width:30cqw; min-height:0 !important; gap:.8cqh !important;
-  padding:1.8cqh 1.6cqw !important; --learn:#7ec8ff }
-.onCard .learnIco{ font-size:clamp(22px,4.4cqh,38px) }
-.onCard b{ font-size:clamp(11px,2.2cqh,19px) }
-.onCard em{ font-size:clamp(8px,1.4cqh,12px); max-width:30ch }
-.onChoix .onCard:nth-child(2){animation-delay:.06s}
-.onChoix .onCard:nth-child(3){animation-delay:.12s}
-.onChoix .onCard:nth-child(4){animation-delay:.18s}
+/* Menu du mode en ligne : une liste de texte, comme une borne d'arcade.
+   Les cartes disaient trop de choses avant qu'on ait choisi ; une liste va
+   droit au but, et ARÈNE domine parce que c'est ce pour quoi on vient. */
+.onChoix{ position:absolute; inset:0; z-index:5;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:1.4cqh; padding:11cqh 4cqw 6cqh }
+.onLigne{
+  background:none; border:0; cursor:pointer; padding:.2cqh 1cqw;
+  font-family:'Archivo Black',sans-serif; letter-spacing:.06em;
+  font-size:clamp(15px,3.6cqh,32px); color:#fff;
+  text-shadow:0 4px 0 var(--ink), 0 0 18px rgba(255,255,255,.25);
+  transition:transform .12s, color .12s, text-shadow .12s;
+  /* Entrée décalée, comme les cartes de l'entraînement. */
+  animation:onLigneEntre .32s cubic-bezier(.2,.9,.3,1.2) backwards;
+}
+.onLigne.grand{ font-size:clamp(24px,6.4cqh,58px); color:#ffd23e;
+  text-shadow:0 6px 0 var(--ink), 0 0 26px rgba(255,210,62,.4) }
+.onLigne.bas{ margin-top:2.4cqh; font-size:clamp(12px,2.6cqh,22px); color:#ffd9e6 }
+.onLigne:hover,.onLigne:focus-visible{ outline:none; transform:scale(1.07); color:#ff5f8d;
+  text-shadow:0 5px 0 var(--ink), 0 0 26px rgba(255,95,141,.6) }
+.onLigne.grand:hover{ transform:scale(1.09) }
+.onLigne:active{ transform:scale(.98) }
+.onChoix .onLigne:nth-child(2){animation-delay:.05s}
+.onChoix .onLigne:nth-child(3){animation-delay:.1s}
+.onChoix .onLigne:nth-child(4){animation-delay:.15s}
+@keyframes onLigneEntre{from{opacity:0;transform:translateY(18%) scale(.94)}to{opacity:1;transform:none}}
+
 .onEtape{ display:flex; flex-direction:column; align-items:center; gap:.9cqh; width:100% }
 .onEtape.hidden,.onChoix.hidden,.onPas.hidden,.onZone.hidden,.mbtn.hidden{ display:none !important }
 /* Les panneaux vivent sur une carte claire, comme tout le reste du jeu :

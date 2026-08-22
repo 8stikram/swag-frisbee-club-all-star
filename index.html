@@ -317,36 +317,27 @@
   <!-- Match en ligne. Les deux navigateurs se parlent en direct : ces deux
        pavés de texte ne servent qu'à faire les présentations, une fois. -->
   <div class="screen scr-online hidden" id="scr-online">
-    <div class="bg bg-online"></div>
+    <div class="bg bg-online">
+      <div class="watermark" data-wm="MATCH EN LIGNE"></div>
+      <div class="streaks"></div>
+      <div class="arc"></div>
+    </div>
     <div class="titlebar"><span id="onBandeau">MATCH EN LIGNE</span></div>
     <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
-    <!-- La grille des cartes est une couche à part, calée sur l'écran entier.
-         Dans le wrap, elle se calait sur lui et s'écrasait à sa hauteur. -->
+    <!-- Menu du mode en ligne : une liste de texte, comme une borne d'arcade.
+         ARÈNE domine parce que c'est ce pour quoi on vient ; le reste suit. -->
     <div class="onChoix" id="onChoix">
-        <button class="learnCard onCard" id="onHeberger">
-          <span class="learnIco">📡</span>
-          <b>HÉBERGER UNE ARÈNE</b>
-          <em>Tu ouvres la partie et tu envoies ton code. C'est ta machine qui fait tourner le match.</em>
-          <span class="learnProg">Tu joues sans aucun délai</span>
-        </button>
-        <button class="learnCard onCard" id="onRejoindre">
-          <span class="learnIco">🎮</span>
-          <b>REJOINDRE UNE ARÈNE</b>
-          <em>Colle le code que ton adversaire t'a envoyé et renvoie-lui ta réponse.</em>
-          <span class="learnProg">Chacun sa souris, chacun son clavier</span>
-        </button>
-        <button class="learnCard onCard" id="onProfil">
-          <span class="learnIco">🪪</span>
-          <b>MON PROFIL</b>
-          <em>Ta photo, ton pseudo, tes couleurs, tes statistiques et tes persos les plus joués.</em>
-          <span class="learnProg" id="onProgProfil">Compte requis</span>
-        </button>
-        <button class="learnCard onCard" id="onClassement">
-          <span class="learnIco">🏆</span>
-          <b>CLASSEMENT</b>
-          <em>Le podium des trois meilleurs et la suite du classement mondial.</em>
-          <span class="learnProg">Seuls les matchs en ligne comptent</span>
-        </button>
+      <button class="onLigne grand" id="onArene">ARÈNE</button>
+      <button class="onLigne" id="onProfil">PROFIL</button>
+      <button class="onLigne" id="onClassement">CLASSEMENT</button>
+      <button class="onLigne bas" data-act="back">RETOUR</button>
+    </div>
+
+    <!-- Deux façons d'entrer dans une arène, même langage que le menu. -->
+    <div class="onChoix hidden" id="onChoixArene">
+      <button class="onLigne grand" id="onHeberger">HÉBERGER</button>
+      <button class="onLigne grand" id="onRejoindre">REJOINDRE</button>
+      <button class="onLigne bas" id="onRetourMenu">RETOUR</button>
     </div>
 
     <div class="onWrap">

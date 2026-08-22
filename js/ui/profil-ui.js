@@ -10,11 +10,15 @@ import {
 // Compte, fiche de profil et classement. Trois panneaux qui vivent dans
 // l'écran du mode en ligne, dans le même bleu pastel que le reste.
 // ---------------------------------------------------------------------------
-const PANNEAUX = ['onChoix', 'onEtapeHote', 'onEtapeInvite', 'onEtapeCompte',
+const PANNEAUX = ['onChoix', 'onChoixArene', 'onEtapeHote', 'onEtapeInvite', 'onEtapeCompte',
   'onEtapePseudo', 'onEtapeFiche', 'onEtapeClassement'];
 
 export function montrerPanneau(id) {
   for (const p of PANNEAUX) { const e = $(p); if (e) e.classList.toggle('hidden', p !== id); }
+  // Les listes portent deja leur propre RETOUR : le gros bouton du bas ferait
+  // doublon. Il ne sert qu'aux panneaux, qui n'en ont pas.
+  const r = document.querySelector('.onRetour');
+  if (r) r.classList.toggle('hidden', id === 'onChoix' || id === 'onChoixArene');
 }
 const dire = (t, mauvais) => {
   const e = $('onEtat'); if (!e) return;

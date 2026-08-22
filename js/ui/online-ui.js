@@ -59,6 +59,11 @@ function lancerMatch(role) {
     hebergerAvecCode();
   });
 
+  // ARENE ouvre le choix entre heberger et rejoindre : deux gestes differents,
+  // mais une seule entree au menu, parce qu'on vient pour la meme chose.
+  $('onArene')?.addEventListener('click', () => { sfx('select'); montrerPanneau('onChoixArene'); dire(''); });
+  $('onRetourMenu')?.addEventListener('click', () => { sfx('select'); montrerPanneau('onChoix'); dire(''); });
+
   br.addEventListener('click', () => {
     sfx('select');
     montrerPanneau('onEtapeInvite');
