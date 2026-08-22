@@ -110,6 +110,10 @@ export async function connecterSe(email, motDePasse) {
   });
   Compte.session = s; sauver();
   await chargerProfil();
+  // Les reglages du compte reprennent la main sur ceux de la machine : c'est
+  // tout l'interet de les avoir mis en ligne, et sans regle claire deux
+  // ordinateurs se renverraient leurs reglages sans fin.
+  await tirerPreferences().catch(() => false);
   return s;
 }
 
@@ -348,11 +352,22 @@ export async function retirerInvitation(deId) {
 // Commentaires de profil. Un mur public, avec des reponses d'un niveau.
 // ---------------------------------------------------------------------------
 export async function lireCommentaires(profilId, combien = 40) {
-  // On rapatrie le pseudo et la photo de l'auteur d'un coup : sans ca il
-  // faudrait une requete par commentaire pour savoir qui parle.
-  return appel('/rest/v1/commentaires?profil=eq.' + profilId +
-    '&select=id,auteur,parent,texte,ecrit_le,profils!commentaires_auteur_fkey(pseudo,avatar)' +
-    '&order=ecrit_le.asc&limit=' + combien, { headers: entetes() });
+  const mots = await appel('/rest/v1/commentaires?profil=eq.' + profilId +
+    '&select=id,auteur,parent,texte,ecrit_le&order=ecrit_le.asc&limit=' + combien,
+    { headers: entetes() });
+  if (!mots || !mots.length) return [];
+  // Les auteurs en une seule requete plutot qu'une par commentaire. La clef
+  // etrangere pointe vers les comptes et non vers les profils, donc la base ne
+  // sait pas faire la jointure elle-meme : on la fait ici, ce qui evite de
+  // toucher au schema pour si peu.
+  const ids = [...new Set(mots.map(m => m.auteur).filter(Boolean))];
+  let gens = {};
+  if (ids.length) {
+    const r = await appel('/rest/v1/profils?id=in.(' + ids.join(',') + ')&select=id,pseudo,avatar',
+      { headers: entetes() }).catch(() => []);
+    for (const p of r || []) gens[p.id] = p;
+  }
+  return mots.map(m => ({ ...m, profils: gens[m.auteur] || {} }));
 }
 
 export async function ecrireCommentaire(profilId, texte, parent = null) {
@@ -368,4 +383,61 @@ export async function ecrireCommentaire(profilId, texte, parent = null) {
 
 export async function supprimerCommentaire(id) {
   return appel('/rest/v1/commentaires?id=eq.' + id, { method: 'DELETE', headers: entetes() });
+}
+
+// ---------------------------------------------------------------------------
+// Preferences en ligne : touches, disque prefere, difficulte contre l'IA.
+//
+// Elles restent d'abord dans le navigateur — le jeu doit marcher sans compte.
+// Le compte ne fait que les transporter d'une machine a l'autre.
+//
+// Regle de conflit : a la connexion, ce qui est en ligne gagne. Sans regle
+// claire, deux ordinateurs se renvoient leurs reglages a tour de role et on ne
+// sait jamais lequel a raison.
+// ---------------------------------------------------------------------------
+const CLES_LOCALES = {
+  touches: 'sbcbKeys',
+  disque: 'sbcbFavSkin',
+  difficulte: 'sbcbDiff',
+  viseeDash: 'sbcbDashAim',
+  piste: 'sbcbTrack'
+};
+
+function lireLocales() {
+  const o = {};
+  for (const [nom, cle] of Object.entries(CLES_LOCALES)) {
+    try { const v = localStorage.getItem(cle); if (v !== null) o[nom] = v; } catch (e) { }
+  }
+  return o;
+}
+
+function ecrireLocales(prefs) {
+  if (!prefs) return;
+  for (const [nom, cle] of Object.entries(CLES_LOCALES)) {
+    if (prefs[nom] === undefined || prefs[nom] === null) continue;
+    try { localStorage.setItem(cle, prefs[nom]); } catch (e) { }
+  }
+}
+
+// Envoie les reglages de cette machine vers le compte.
+export async function pousserPreferences() {
+  if (!connecte()) return null;
+  return majProfil({ preferences: lireLocales() });
+}
+
+// Rapatrie les reglages du compte sur cette machine. Renvoie vrai si quelque
+// chose a change, pour que l'interface se rafraichisse.
+export async function tirerPreferences() {
+  if (!connecte()) return false;
+  const p = Compte.profil || await chargerProfil();
+  const prefs = p && p.preferences;
+  if (!prefs || !Object.keys(prefs).length) {
+    // Premiere connexion sur ce compte : on y depose ce qu'on a sous la main
+    // plutot que de laisser le profil vide.
+    await pousserPreferences();
+    return false;
+  }
+  const avant = JSON.stringify(lireLocales());
+  ecrireLocales(prefs);
+  return JSON.stringify(lireLocales()) !== avant;
 }

@@ -5,7 +5,8 @@ import {
   Compte, connecte, inscrire, connecterSe, deconnecter, chargerProfil,
   creerProfil, majProfil, envoyerAvatar, classement, podiumPersos,
   profilPublic, derniersMatchs, catalogueTitres, mesTitres, envoyerBanniere,
-  demarrerPresence, monId, lireCommentaires, ecrireCommentaire, supprimerCommentaire
+  demarrerPresence, monId, lireCommentaires, ecrireCommentaire, supprimerCommentaire,
+  pousserPreferences
 } from '../reseau/compte.js';
 
 // ---------------------------------------------------------------------------
@@ -560,4 +561,15 @@ export async function voirProfil(id) {
     e.stopPropagation();
     if (e.key === 'Enter') envoyer();
   });
+})();
+
+// Les reglages du jeu suivent le compte. On pousse a chaque fermeture des
+// options : c'est le moment ou l'on vient de changer quelque chose.
+(function cablerPreferences() {
+  const pousser = () => { if (connecte()) pousserPreferences().catch(() => { }); };
+  // Options fermees, ou onglet quitte : deux moments ou l'on a fini de regler.
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pousser(); });
+  window.addEventListener('beforeunload', pousser);
+  const b = document.querySelector('.scr-options [data-act="back"]');
+  if (b) b.addEventListener('click', pousser);
 })();

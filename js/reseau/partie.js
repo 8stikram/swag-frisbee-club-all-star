@@ -1,6 +1,7 @@
 import { G } from '../game/state.js';
 import { Reseau, envoyer, connecte, surMessage } from './connexion.js';
 import { Compte, monId } from './compte.js';
+import { setMapId, getMapId } from '../data/maps.js';
 
 // ---------------------------------------------------------------------------
 // Circulation d'un match sur la liaison directe.
@@ -14,7 +15,7 @@ import { Compte, monId } from './compte.js';
 // le prix à payer pour n'avoir aucun serveur à faire tourner.
 // ---------------------------------------------------------------------------
 
-export const Partie = { active: false, role: null, dernierEtat: 0, adversaire: null };
+export const Partie = { active: false, role: null, dernierEtat: 0, adversaire: null, monTerrain: null };
 
 // L'invité n'envoie que sa fiche d'intentions : cinq nombres et deux
 // booléens. C'est tout ce dont l'hôte a besoin pour le faire jouer.
@@ -110,6 +111,8 @@ export function demarrerPartieReseau(role) {
   surMessage(m => {
     if (!Partie.active) return;
     if (m.t === 'moi') { recevoirIdentite(m); return; }
+    // L'hote a tranche : l'invite se range a son terrain, sans discuter.
+    if (m.t === 'terrain') { setMapId(m.terrain); return; }
     if (role === 'hote' && m.t === 'c' && G.p2) appliquerFiche(G.p2, m);
     else if (role === 'invite' && m.t === 'e') appliquerEtat(m);
   });
@@ -142,14 +145,44 @@ export function majReseau() {
 // a un profil.
 // ---------------------------------------------------------------------------
 export function annoncerIdentite(perso) {
+  Partie.monTerrain = getMapId();
   envoyer({
     t: 'moi',
     id: monId() || null,
     pseudo: (Compte.profil && Compte.profil.pseudo) || null,
-    perso: perso || null
+    perso: perso || null,
+    terrain: Partie.monTerrain
   });
 }
 
 function recevoirIdentite(m) {
-  Partie.adversaire = { id: m.id || null, pseudo: m.pseudo || null, perso: m.perso || null };
+  Partie.adversaire = {
+    id: m.id || null, pseudo: m.pseudo || null,
+    perso: m.perso || null, terrain: m.terrain || null
+  };
+  // L'hôte seul tranche, puis annonce. Deux tirages indépendants donneraient
+  // deux terrains différents, et les joueurs ne verraient pas le même match.
+  if (Partie.role === 'hote' && Partie.monTerrain) {
+    const choisi = terrainDuMatch(Partie.monTerrain, m.terrain);
+    setMapId(choisi);
+    annoncerTerrain(choisi);
+  }
 }
+
+// ---------------------------------------------------------------------------
+// Choix du terrain.
+//
+// Chacun annonce le sien avec son identite. S'ils tombent d'accord, c'est
+// celui-la ; sinon on tire au sort entre les deux — jamais un troisieme, que
+// personne n'aurait choisi.
+//
+// Le tirage est fait par l'hote seul, puis annonce : deux tirages independants
+// donneraient deux terrains differents, et les deux joueurs ne verraient pas
+// le meme match.
+// ---------------------------------------------------------------------------
+export function terrainDuMatch(mien, sien) {
+  if (!sien || sien === mien) return mien;
+  return Math.random() < .5 ? mien : sien;
+}
+
+export function annoncerTerrain(terrain) { envoyer({ t: 'terrain', terrain }); }
