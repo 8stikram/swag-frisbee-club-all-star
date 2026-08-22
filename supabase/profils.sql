@@ -365,3 +365,13 @@ begin
   ) as t(id, gagne) where t.gagne
   on conflict do nothing;
 end; $$;
+
+-- ---------------------------------------------------------------------------
+-- 11. Bannières animées. Le GIF rejoint les formats acceptés, et la limite
+-- passe à 4 Mo : une animation pèse bien plus qu'une image fixe, et 2 Mo
+-- rejetaient presque tout ce qui bouge.
+-- ---------------------------------------------------------------------------
+update storage.buckets
+   set allowed_mime_types = array['image/png','image/jpeg','image/webp','image/gif'],
+       file_size_limit = 4194304
+ where id = 'bannieres';

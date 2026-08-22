@@ -253,13 +253,18 @@ export async function mesTitres() {
 }
 
 // --- Banniere --------------------------------------------------------------
-export const POIDS_BANNIERE = 2 * 1024 * 1024;
+// Une banniere animee pese bien plus qu'une image fixe : 2 Mo rejetaient
+// presque tout ce qui bouge.
+export const POIDS_BANNIERE = 4 * 1024 * 1024;
 
 export async function envoyerBanniere(fichier) {
   if (!connecte()) throw new Error('connecte-toi d abord');
   if (!/^image\//.test(fichier.type)) throw new Error('il faut une image');
-  if (fichier.size > POIDS_BANNIERE) throw new Error('image trop lourde (2 Mo maximum)');
-  const ext = (fichier.name.split('.').pop() || 'png').toLowerCase().slice(0, 4);
+  if (fichier.size > POIDS_BANNIERE) throw new Error('image trop lourde (4 Mo maximum)');
+  // L'extension vient du type réel du fichier et non de son nom : un GIF animé
+  // renommé en .png serait servi comme une image fixe et cesserait de bouger.
+  const parType = { 'image/gif': 'gif', 'image/png': 'png', 'image/webp': 'webp' };
+  const ext = parType[fichier.type] || 'jpg';
   const chemin = monId() + '/banniere.' + ext;
   await appel('/storage/v1/object/bannieres/' + chemin, {
     method: 'POST',

@@ -405,10 +405,18 @@ async function remplirReglages(p) {
   $('onBanniere').addEventListener('change', async ev => {
     const f = ev.target.files && ev.target.files[0];
     if (!f) return;
-    const { cadrer } = await import('./cadrage.js');
-    // La banniere est large et basse : on lui donne ses vraies proportions,
-    // sinon on cadre a l'aveugle et le sujet se retrouve coupe.
-    const cadre = await cadrer(f, { forme: 'rect', taille: 1024, hauteur: 288 });
+    let cadre = f;
+    // Un GIF anime passe tel quel : le cadreur redessine l'image sur une toile,
+    // ce qui n'en garderait que la premiere image et figerait l'animation.
+    // Entre cadrer et bouger, une banniere animee a plus a gagner a bouger.
+    if (/gif$/i.test(f.type)) {
+      dire('gif anime : envoye tel quel, sans cadrage.');
+    } else {
+      const { cadrer } = await import('./cadrage.js');
+      // La banniere est large et basse : on lui donne ses vraies proportions,
+      // sinon on cadre a l'aveugle et le sujet se retrouve coupe.
+      cadre = await cadrer(f, { forme: 'rect', taille: 1024, hauteur: 288 });
+    }
     ev.target.value = '';
     if (!cadre) return;
     dire('envoi de la banniere...');
