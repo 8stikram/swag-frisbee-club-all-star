@@ -153,3 +153,103 @@ export function podiumPersos(profil = Compte.profil) {
   return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 3)
     .map(([ck, n]) => ({ ck, n }));
 }
+
+// ---------------------------------------------------------------------------
+// Profil public enrichi : banniere, statut, titre, main, presence, historique.
+// ---------------------------------------------------------------------------
+
+// Signe de vie. Le jeu l'envoie regulierement : deux minutes sans nouvelle et
+// la base considere le joueur hors ligne. Pas de connexion permanente a tenir
+// ouverte pour une pastille verte.
+export async function signeDeVie() {
+  if (!connecte()) return;
+  try { await appel('/rest/v1/rpc/signe_de_vie', { method: 'POST', headers: entetes(), body: '{}' }); }
+  catch (e) { /* sans importance : on reessaiera au prochain tour */ }
+}
+
+let batteur = null;
+export function demarrerPresence(cadence = 60000) {
+  arreterPresence();
+  signeDeVie();
+  batteur = setInterval(signeDeVie, cadence);
+}
+export function arreterPresence() { if (batteur) { clearInterval(batteur); batteur = null; } }
+
+// Le profil vu par les autres, avec la pastille en ligne deja calculee.
+export async function profilPublic(id) {
+  const r = await appel('/rest/v1/profils_publics?id=eq.' + id + '&select=*', { headers: entetes() });
+  return (r && r[0]) || null;
+}
+
+export async function chercherPseudo(bout) {
+  const q = encodeURIComponent('*' + bout + '*');
+  return appel('/rest/v1/profils_publics?pseudo=ilike.' + q + '&select=id,pseudo,avatar,en_ligne&limit=10',
+    { headers: entetes() });
+}
+
+// Les derniers matchs d'un joueur, pour son profil.
+export async function derniersMatchs(id, combien = 3) {
+  return appel('/rest/v1/matchs?joueur=eq.' + id +
+    '&select=adversaire,adversaire_pseudo,score_joueur,score_adversaire,gagne,joue_le' +
+    '&order=joue_le.desc&limit=' + combien, { headers: entetes() });
+}
+
+// --- Titres ----------------------------------------------------------------
+export async function catalogueTitres() {
+  return appel('/rest/v1/titres?select=*', { headers: entetes() });
+}
+export async function mesTitres() {
+  if (!connecte()) return [];
+  const r = await appel('/rest/v1/titres_debloques?joueur=eq.' + monId() + '&select=titre',
+    { headers: entetes() });
+  return (r || []).map(x => x.titre);
+}
+
+// --- Banniere --------------------------------------------------------------
+export const POIDS_BANNIERE = 2 * 1024 * 1024;
+
+export async function envoyerBanniere(fichier) {
+  if (!connecte()) throw new Error('connecte-toi d abord');
+  if (!/^image\//.test(fichier.type)) throw new Error('il faut une image');
+  if (fichier.size > POIDS_BANNIERE) throw new Error('image trop lourde (2 Mo maximum)');
+  const ext = (fichier.name.split('.').pop() || 'png').toLowerCase().slice(0, 4);
+  const chemin = monId() + '/banniere.' + ext;
+  await appel('/storage/v1/object/bannieres/' + chemin, {
+    method: 'POST',
+    headers: {
+      apikey: CLE,
+      Authorization: 'Bearer ' + Compte.session.access_token,
+      'x-upsert': 'true'
+    },
+    body: fichier
+  });
+  const url = BASE + '/storage/v1/object/public/bannieres/' + chemin + '?v=' + Date.now();
+  await majProfil({ banniere: url });
+  return url;
+}
+
+// --- Fin de match ----------------------------------------------------------
+// Remplace enregistrerMatch : ecrit d'un coup l'historique, les compteurs et
+// les titres gagnes, par une seule fonction que le navigateur ne peut pas
+// contourner.
+export async function enregistrerMatchComplet(o) {
+  if (!connecte()) return null;
+  return appel('/rest/v1/rpc/enregistrer_match_complet', {
+    method: 'POST', headers: entetes(),
+    body: JSON.stringify({
+      p_adversaire: o.adversaireId || null,
+      p_adversaire_pseudo: o.adversairePseudo || null,
+      p_score: o.score | 0, p_score_adv: o.scoreAdv | 0,
+      p_perso: o.perso, p_perso_adv: o.persoAdv || null,
+      p_mode: o.mode || 'en_ligne'
+    })
+  });
+}
+
+export async function faceAFace(adversaireId) {
+  const r = await appel('/rest/v1/rpc/face_a_face', {
+    method: 'POST', headers: entetes(),
+    body: JSON.stringify({ p_adversaire: adversaireId })
+  });
+  return (r && r[0]) || { victoires: 0, defaites: 0 };
+}

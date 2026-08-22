@@ -374,22 +374,46 @@
       <!-- Fiche de profil : photo, pseudo, stats, podium des persos. -->
       <div class="onEtape hidden" id="onEtapeFiche">
         <div class="ficheCarte" id="ficheCarte">
+          <!-- Bannière en haut, la photo mord dessus : c'est ce qui donne à la
+               fiche son air de page personnelle plutôt que de formulaire. -->
+          <div class="ficheBanniere" id="ficheBanniere">
+            <label class="ficheChangeBan" for="onBanniere" title="Changer la bannière">✎</label>
+            <input type="file" id="onBanniere" accept="image/*" hidden>
+          </div>
           <div class="ficheHaut">
             <img class="ficheAvatar" id="ficheAvatar" alt="">
             <div class="ficheAvatar ficheAvatarVide" id="ficheAvatarVide">?</div>
+            <span class="fichePastille" id="fichePastille" title="Statut"></span>
           </div>
           <div class="fichePseudo" id="fichePseudo"></div>
+          <div class="ficheTitre" id="ficheTitre"></div>
+          <div class="ficheStatut" id="ficheStatut"></div>
+          <div class="ficheMain" id="ficheMain"></div>
           <div class="ficheStats" id="ficheStats"></div>
+          <div class="ficheRecents" id="ficheRecents"></div>
           <div class="fichePodium" id="fichePodium"></div>
         </div>
         <div class="onRangee">
-          <label class="mbtn mini" for="onFichier">CHANGER LA PHOTO</label>
+          <label class="mbtn mini" for="onFichier">PHOTO</label>
           <input type="file" id="onFichier" accept="image/*" hidden>
           <input type="color" class="onCouleur" id="onCoul1" title="première couleur">
           <input type="color" class="onCouleur" id="onCoul2" title="seconde couleur">
+          <button class="mbtn mini" id="onEditer">MODIFIER</button>
           <button class="mbtn mini" id="onDeconnexion">DÉCONNEXION</button>
         </div>
+        <!-- Réglages du profil, repliés : on les ouvre quand on veut changer
+             quelque chose, ils n'encombrent pas la fiche le reste du temps. -->
+        <div class="ficheReglages hidden" id="ficheReglages">
+          <label class="onPas">Statut</label>
+          <input class="onChamp" id="onStatut" maxlength="40" placeholder="ce que tu veux dire">
+          <label class="onPas">Titre affiché</label>
+          <select class="onChamp" id="onTitreChoix"></select>
+          <label class="onPas">Personnage principal</label>
+          <select class="onChamp" id="onMainChoix"></select>
+          <button class="mbtn c-green" id="onEnregistrer">ENREGISTRER</button>
+        </div>
       </div>
+
 
       <!-- Classement mondial : podium des trois premiers, puis la liste. -->
       <div class="onEtape hidden" id="onEtapeClassement">

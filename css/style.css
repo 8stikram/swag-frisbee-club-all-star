@@ -1619,3 +1619,44 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 /* Vide, le bandeau de message laissait une pastille blanche en plein milieu
    de l'ecran : sans texte, il n'a aucune raison d'occuper de la place. */
 .onEtat:empty{ display:none }
+
+/* --- Profil enrichi : banniere, pastille, titre, statut, main, recents --- */
+.ficheCarte{ padding:0 0 1.6cqh; overflow:hidden }
+.ficheBanniere{ position:relative; width:100%; height:12cqh; background:rgba(255,255,255,.18);
+  background-size:cover; background-position:center; border-bottom:3px solid var(--ink) }
+.ficheChangeBan{ position:absolute; right:.6cqw; bottom:.6cqh; width:3.2cqh; height:3.2cqh;
+  min-width:24px; min-height:24px; display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.92); border:2px solid var(--ink); border-radius:7px;
+  cursor:pointer; font-size:1.8cqh; color:var(--ink) }
+/* La photo mord sur la banniere : c'est ce chevauchement qui fait une page
+   personnelle plutot qu'un empilement de blocs. */
+.ficheHaut{ position:relative; margin-top:-5.5cqh }
+.fichePastille{ position:absolute; right:calc(50% - 5.6cqh); bottom:.4cqh;
+  width:2.6cqh; height:2.6cqh; min-width:18px; min-height:18px; border-radius:50%;
+  border:3px solid var(--ink); background:#8a94a6 }
+.fichePastille.enligne{ background:#5df08a; box-shadow:0 0 10px rgba(93,240,138,.8) }
+.ficheTitre{ font-family:'Russo One',sans-serif; font-size:clamp(8px,1.5cqh,13px);
+  letter-spacing:.12em; color:var(--ink); background:#ffd23e;
+  border:2px solid var(--ink); border-radius:999px; padding:.2cqh .9cqw }
+.ficheTitre:empty{ display:none }
+.ficheStatut{ font-family:'DotGothic16',monospace; font-size:clamp(8px,1.5cqh,13px);
+  color:#fff; text-shadow:0 2px 0 rgba(20,26,38,.5); max-width:34ch; text-align:center }
+.ficheStatut:empty{ display:none }
+.ficheMain{ display:flex; align-items:center; gap:.5cqw }
+.ficheMain canvas{ image-rendering:pixelated; height:5.6cqh }
+.ficheMain span{ font-family:'Barlow',sans-serif; font-weight:800;
+  font-size:clamp(7px,1.2cqh,11px); color:#fff; text-shadow:0 2px 0 rgba(20,26,38,.45) }
+.ficheStats,.ficheRecents,.fichePodium{ width:calc(100% - 3.6cqw); margin:0 1.8cqw }
+.ficheRecents{ display:flex; flex-direction:column; gap:.3cqh }
+.ficheRecent{ display:grid; grid-template-columns:auto 1fr auto auto; gap:.6cqw;
+  align-items:center; background:rgba(255,255,255,.86); border:2px solid var(--ink);
+  border-radius:8px; padding:.35cqh .7cqw;
+  font-family:'Barlow',sans-serif; font-weight:700; font-size:clamp(7px,1.3cqh,11px);
+  color:var(--ink) }
+.ficheRecent .issue{ font-family:'Russo One',sans-serif }
+.ficheRecent .issue.v{ color:#1c8a4f } .ficheRecent .issue.d{ color:#c02a1c }
+.ficheRecent .quand{ color:#5b6478 }
+.ficheReglages{ display:flex; flex-direction:column; align-items:center; gap:.6cqh;
+  width:100%; margin-top:.8cqh }
+.ficheReglages.hidden{ display:none }
+.ficheReglages .onPas{ font-size:clamp(8px,1.4cqh,12px) }
