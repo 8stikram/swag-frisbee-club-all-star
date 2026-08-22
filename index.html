@@ -320,8 +320,9 @@
     <div class="bg bg-online"></div>
     <div class="titlebar"><span id="onBandeau">MATCH EN LIGNE</span></div>
     <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
-    <div class="onWrap">
-      <div class="onChoix" id="onChoix">
+    <!-- La grille des cartes est une couche à part, calée sur l'écran entier.
+         Dans le wrap, elle se calait sur lui et s'écrasait à sa hauteur. -->
+    <div class="onChoix" id="onChoix">
         <button class="learnCard onCard" id="onHeberger">
           <span class="learnIco">📡</span>
           <b>HÉBERGER UNE ARÈNE</b>
@@ -346,8 +347,9 @@
           <em>Le podium des trois meilleurs et la suite du classement mondial.</em>
           <span class="learnProg">Seuls les matchs en ligne comptent</span>
         </button>
-      </div>
+    </div>
 
+    <div class="onWrap">
       <!-- Compte : inscription et connexion. Le mot de passe part directement
            au service d'authentification, rien n'est conservé par le jeu. -->
       <div class="onEtape hidden" id="onEtapeCompte">

@@ -1361,8 +1361,14 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
    le mode le plus calme du jeu, il n'a pas à crier comme un écran de match. */
 .scr-online{ display:flex; align-items:center; justify-content:center;
   background:radial-gradient(120cqh 90cqh at 50% 40%,#1b3550 0%,#101f31 58%,#060d16 100%) }
+/* Positionné et au-dessus du fond : sans ça le fond de l'écran, lui-même
+   positionné, se peignait par-dessus les panneaux et il ne restait que du
+   bleu. Les clics ne traversent que le vide, pour ne pas voler ceux des
+   cartes quand le panneau est fermé. */
 .onWrap{ width:min(74cqw,760px); max-height:88cqh; overflow-y:auto;
+  position:relative; z-index:6; pointer-events:none;
   display:flex; flex-direction:column; align-items:center; gap:1.5cqh; padding:2cqh 1cqw }
+.onWrap>*{ pointer-events:auto }
 .onTitre{ font-family:'Archivo Black',sans-serif; font-size:clamp(16px,3.4cqh,30px);
   color:#cfeaff; margin:0; letter-spacing:1px; text-shadow:0 3px 0 rgba(8,20,34,.7) }
 .onChoix{ display:flex; flex-direction:column; align-items:center; gap:1.1cqh; width:100% }
