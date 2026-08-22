@@ -292,6 +292,56 @@
         <p class="onAide">Un de vous héberge, l'autre rejoint. Vous échangez deux
           codes par Discord, et le match se joue en direct entre vos deux
           navigateurs — sans passer par personne.</p>
+        <div class="onRangee">
+          <button class="mbtn mini" id="onProfil">PROFIL</button>
+          <button class="mbtn mini" id="onClassement">CLASSEMENT</button>
+        </div>
+      </div>
+
+      <!-- Compte : inscription et connexion. Le mot de passe part directement
+           au service d'authentification, rien n'est conservé par le jeu. -->
+      <div class="onEtape hidden" id="onEtapeCompte">
+        <p class="onPas" id="onCompteTitre"><b>Connexion</b></p>
+        <input class="onChamp" id="onEmail" type="email" placeholder="ton adresse mail" autocomplete="email">
+        <input class="onChamp" id="onMdp" type="password" placeholder="mot de passe" autocomplete="current-password">
+        <div class="onRangee">
+          <button class="mbtn c-green" id="onSeConnecter">SE CONNECTER</button>
+          <button class="mbtn" id="onSInscrire">CRÉER UN COMPTE</button>
+        </div>
+      </div>
+
+      <!-- Choix du pseudo, une seule fois, juste après l'inscription. -->
+      <div class="onEtape hidden" id="onEtapePseudo">
+        <p class="onPas"><b>Choisis ton pseudo</b> — 2 à 16 caractères, unique.</p>
+        <input class="onChamp" id="onPseudo" maxlength="16" placeholder="ton pseudo">
+        <button class="mbtn c-green" id="onValiderPseudo">VALIDER</button>
+      </div>
+
+      <!-- Fiche de profil : photo, pseudo, stats, podium des persos. -->
+      <div class="onEtape hidden" id="onEtapeFiche">
+        <div class="ficheCarte" id="ficheCarte">
+          <div class="ficheHaut">
+            <img class="ficheAvatar" id="ficheAvatar" alt="">
+            <div class="ficheAvatar ficheAvatarVide" id="ficheAvatarVide">?</div>
+          </div>
+          <div class="fichePseudo" id="fichePseudo"></div>
+          <div class="ficheStats" id="ficheStats"></div>
+          <div class="fichePodium" id="fichePodium"></div>
+        </div>
+        <div class="onRangee">
+          <label class="mbtn mini" for="onFichier">CHANGER LA PHOTO</label>
+          <input type="file" id="onFichier" accept="image/*" hidden>
+          <input type="color" class="onCouleur" id="onCoul1" title="première couleur">
+          <input type="color" class="onCouleur" id="onCoul2" title="seconde couleur">
+          <button class="mbtn mini" id="onDeconnexion">DÉCONNEXION</button>
+        </div>
+      </div>
+
+      <!-- Classement mondial : podium des trois premiers, puis la liste. -->
+      <div class="onEtape hidden" id="onEtapeClassement">
+        <p class="onPas"><b>Classement mondial</b></p>
+        <div class="clPodium" id="clPodium"></div>
+        <div class="clListe" id="clListe"></div>
       </div>
 
       <div class="onEtape hidden" id="onEtapeHote">

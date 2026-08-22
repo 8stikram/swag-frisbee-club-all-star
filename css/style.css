@@ -1379,3 +1379,51 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .scr-online .mbtn:hover,.scr-online .mbtn.sel{ background:linear-gradient(180deg,#cbeaff,#8cc4ea) }
 .scr-online .mbtn.c-green{ background:linear-gradient(180deg,#b6e6ff,#79b8e6) }
 .mbtn.mini{ font-size:clamp(8px,1.4cqh,12px); padding:.5cqh 1.4cqw }
+
+/* --- Compte, fiche de profil et classement, dans le même bleu pastel --- */
+.onRangee{ display:flex; gap:.8cqw; align-items:center; justify-content:center; flex-wrap:wrap }
+.onChamp{ width:min(38cqw,340px); border-radius:10px; padding:.9cqh 1cqw;
+  border:3px solid rgba(143,208,255,.32); background:rgba(12,26,42,.9); color:#d6ecff;
+  font-family:'Barlow',sans-serif; font-size:clamp(10px,1.9cqh,15px) }
+.onChamp:focus{ outline:none; border-color:#8fd0ff; box-shadow:0 0 0 3px rgba(143,208,255,.18) }
+.onCouleur{ width:4.4cqh; height:4.4cqh; padding:0; border:3px solid #0f2438; border-radius:8px;
+  background:none; cursor:pointer }
+
+/* La carte porte le dégradé choisi par le joueur : c'est sa signature. */
+.ficheCarte{ width:min(50cqw,460px); border-radius:16px; padding:2.2cqh 2cqw;
+  border:4px solid #0f2438; box-shadow:0 0 0 2px rgba(143,208,255,.35), 8px 8px 0 #0a1725;
+  background:linear-gradient(150deg,var(--c1,#35e0ff),var(--c2,#7b2ff7));
+  display:flex; flex-direction:column; align-items:center; gap:1.2cqh }
+.ficheHaut{ display:flex; justify-content:center }
+.ficheAvatar{ width:11cqh; height:11cqh; border-radius:50%; object-fit:cover;
+  border:4px solid rgba(255,255,255,.9); background:#0b1a2a }
+.ficheAvatarVide{ display:flex; align-items:center; justify-content:center;
+  font-family:'Archivo Black',sans-serif; font-size:4cqh; color:rgba(255,255,255,.7) }
+.fichePseudo{ font-family:'Archivo Black',sans-serif; font-size:clamp(14px,3cqh,26px);
+  color:#fff; text-shadow:0 3px 0 rgba(8,20,34,.55); letter-spacing:.5px }
+.ficheStats{ display:grid; grid-template-columns:repeat(3,1fr); gap:.6cqh 1cqw; width:100% }
+.ficheStat{ background:rgba(6,14,24,.42); border-radius:10px; padding:.7cqh .6cqw; text-align:center }
+.ficheStat b{ display:block; font-family:'Russo One',sans-serif; font-size:clamp(11px,2.2cqh,19px); color:#fff }
+.ficheStat span{ font-family:'Barlow',sans-serif; font-size:clamp(7px,1.3cqh,11px); color:rgba(255,255,255,.8) }
+.fichePodium{ display:flex; gap:1cqw; align-items:flex-end; justify-content:center; min-height:9cqh }
+.fichePerso{ display:flex; flex-direction:column; align-items:center; gap:.3cqh }
+.fichePerso canvas{ image-rendering:pixelated; height:7cqh; width:auto }
+.fichePerso em{ font-style:normal; font-family:'Barlow',sans-serif; font-weight:700;
+  font-size:clamp(7px,1.3cqh,11px); color:rgba(255,255,255,.9) }
+
+.clPodium{ display:flex; gap:1.2cqw; align-items:flex-end; justify-content:center; min-height:16cqh }
+.clMarche{ display:flex; flex-direction:column; align-items:center; gap:.4cqh }
+.clMarche img,.clMarche .vide{ width:8cqh; height:8cqh; border-radius:50%; object-fit:cover;
+  border:3px solid #cfeaff; background:#0b1a2a; display:flex; align-items:center;
+  justify-content:center; color:#8fd0ff; font-family:'Archivo Black',sans-serif }
+.clMarche b{ font-family:'Russo One',sans-serif; font-size:clamp(9px,1.7cqh,14px); color:#d6ecff }
+.clMarche span{ font-family:'Barlow',sans-serif; font-size:clamp(7px,1.3cqh,11px); color:#9fc4e2 }
+.clSocle{ background:linear-gradient(180deg,#9fd4f7,#5f9bcb); border:3px solid #0f2438;
+  border-radius:8px 8px 0 0; width:9cqh; color:#0b1a2a; font-family:'Archivo Black',sans-serif;
+  font-size:2.2cqh; text-align:center; padding:.3cqh 0 }
+.clListe{ width:min(56cqw,540px); display:flex; flex-direction:column; gap:.4cqh }
+.clLigne{ display:grid; grid-template-columns:2.6cqw 1fr auto auto; gap:.8cqw; align-items:center;
+  background:rgba(12,26,42,.72); border:2px solid rgba(143,208,255,.2); border-radius:8px;
+  padding:.5cqh .8cqw; font-family:'Barlow',sans-serif; font-size:clamp(8px,1.5cqh,13px); color:#d6ecff }
+.clLigne .rang{ font-family:'Russo One',sans-serif; color:#8fd0ff }
+.clLigne .taux{ color:#9fc4e2 }

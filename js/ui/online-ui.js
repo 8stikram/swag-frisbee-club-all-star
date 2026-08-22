@@ -3,6 +3,7 @@ import { sfx } from '../audio/audio.js';
 import { heberger, rejoindre, accepterReponse, surChangement, fermer, Reseau } from '../reseau/connexion.js';
 import { demarrerPartieReseau, arreterPartieReseau } from '../reseau/partie.js';
 import { initMatch, G } from '../game/state.js';
+import { montrerPanneau } from './profil-ui.js';
 
 // ---------------------------------------------------------------------------
 // Écran du match en ligne. Il ne fait que porter deux bouts de texte d'un
@@ -26,7 +27,7 @@ function copier(idZone, bouton) {
 
 export function ouvrirEnLigne() {
   fermer(); arreterPartieReseau();
-  montrer('onChoix', true); montrer('onEtapeHote', false); montrer('onEtapeInvite', false);
+  montrerPanneau('onChoix');
   montrer('onPas2Invite', false); montrer('onMaReponse', false); montrer('onCopier2', false);
   const r = $('onReponse'), h = $('onCodeHote');
   if (r) r.value = ''; if (h) h.value = '';
@@ -52,7 +53,7 @@ function lancerMatch(role) {
 
   bh.addEventListener('click', async () => {
     sfx('select');
-    montrer('onChoix', false); montrer('onEtapeHote', true);
+    montrerPanneau('onEtapeHote');
     dire('préparation de l\'arène…');
     try {
       $('onMonCode').value = await heberger();
@@ -62,7 +63,7 @@ function lancerMatch(role) {
 
   br.addEventListener('click', () => {
     sfx('select');
-    montrer('onChoix', false); montrer('onEtapeInvite', true);
+    montrerPanneau('onEtapeInvite');
     dire('colle le code de l\'hôte.');
   });
 
@@ -93,7 +94,7 @@ function lancerMatch(role) {
       arreterPartieReseau();
       dire('liaison perdue.', true);
       showScreen('online');
-      montrer('onChoix', true); montrer('onEtapeHote', false); montrer('onEtapeInvite', false);
+      montrerPanneau('onChoix');
     }
   });
 })();

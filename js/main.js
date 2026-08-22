@@ -7,6 +7,7 @@ import './game/input.js';
 import './ui/keybind-ui.js';
 import './ui/admin.js';
 import './ui/online-ui.js';
+import './ui/profil-ui.js';
 
 initMatch(true);
 showScreen('title');

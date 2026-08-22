@@ -1,4 +1,6 @@
 import { G, Mouse, resetDisc, initMatch, comment } from './state.js';
+import { Partie } from '../reseau/partie.js';
+import { enregistrerMatch } from '../reseau/compte.js';
 import {
   COURT, CY, TARGET, GOAL_MID1, GOAL_MID2, throwSpeed,
   DIVE_TIME, DIVE_RANGE, DIVE_WHIFF_DOWN, DIVE_POWER,
@@ -388,6 +390,14 @@ export function gameOver() {
   const winner = G.winner, loser = winner.foe;
   const winnerIsP1 = winner === G.p1;
   bilanSkins(win);
+  // Match en ligne : chacun enregistre le sien, de son point de vue. Seuls les
+  // matchs en ligne comptent au classement — sinon il suffirait de battre l'IA
+  // en très facile en boucle pour trôner en tête.
+  if (Partie.active) {
+    const moi = Partie.role === 'hote' ? G.p1 : G.p2;
+    enregistrerMatch(G.winner === moi, moi.score, moi.foe.score, moi.ck)
+      .catch(() => { /* le classement peut attendre, pas la fin de match */ });
+  }
 
   buildPerspectiveTitle($('vicName'), winner.char.short);
   // L'écran met en scène le VAINQUEUR : afficher « DÉFAITE » quand le CPU
