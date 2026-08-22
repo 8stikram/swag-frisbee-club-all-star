@@ -1427,3 +1427,16 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   padding:.5cqh .8cqw; font-family:'Barlow',sans-serif; font-size:clamp(8px,1.5cqh,13px); color:#d6ecff }
 .clLigne .rang{ font-family:'Russo One',sans-serif; color:#8fd0ff }
 .clLigne .taux{ color:#9fc4e2 }
+
+/* Fond et cartes du mode en ligne : la mise en page de l'écran
+   d'entraînement, déclinée en bleu pastel. */
+.bg-online{ position:absolute; inset:0;
+  background:radial-gradient(120cqh 90cqh at 50% 38%,#1e3d5c 0%,#122336 58%,#060d16 100%) }
+.scr-online .titlebar span{ color:#cfeaff }
+.onCard{ border-color:#0f2438;
+  background:linear-gradient(170deg,rgba(159,212,247,.96),rgba(106,168,216,.92));
+  color:#0b1a2a; box-shadow:0 0 0 2px rgba(207,234,255,.4), 8px 8px 0 #0a1725 }
+.onCard b{ color:#0b1a2a }
+.onCard em{ color:#123049 }
+.onCard .learnProg{ background:rgba(11,26,42,.22); color:#0b1a2a }
+.onCard:hover,.onCard.sel{ background:linear-gradient(170deg,#d5efff,#93c9ec) }

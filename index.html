@@ -284,18 +284,35 @@
   <!-- Match en ligne. Les deux navigateurs se parlent en direct : ces deux
        pavés de texte ne servent qu'à faire les présentations, une fois. -->
   <div class="screen scr-online hidden" id="scr-online">
+    <div class="bg bg-online"></div>
+    <div class="titlebar"><span id="onBandeau">MATCH EN LIGNE</span></div>
+    <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
     <div class="onWrap">
-      <h2 class="onTitre">MATCH EN LIGNE</h2>
       <div class="onChoix" id="onChoix">
-        <button class="mbtn c-green" id="onHeberger">HÉBERGER UNE ARÈNE</button>
-        <button class="mbtn" id="onRejoindre">REJOINDRE UNE ARÈNE</button>
-        <p class="onAide">Un de vous héberge, l'autre rejoint. Vous échangez deux
-          codes par Discord, et le match se joue en direct entre vos deux
-          navigateurs — sans passer par personne.</p>
-        <div class="onRangee">
-          <button class="mbtn mini" id="onProfil">PROFIL</button>
-          <button class="mbtn mini" id="onClassement">CLASSEMENT</button>
-        </div>
+        <button class="learnCard onCard" id="onHeberger">
+          <span class="learnIco">📡</span>
+          <b>HÉBERGER UNE ARÈNE</b>
+          <em>Tu ouvres la partie et tu envoies ton code. C'est ta machine qui fait tourner le match.</em>
+          <span class="learnProg">Tu joues sans aucun délai</span>
+        </button>
+        <button class="learnCard onCard" id="onRejoindre">
+          <span class="learnIco">🎮</span>
+          <b>REJOINDRE UNE ARÈNE</b>
+          <em>Colle le code que ton adversaire t'a envoyé et renvoie-lui ta réponse.</em>
+          <span class="learnProg">Chacun sa souris, chacun son clavier</span>
+        </button>
+        <button class="learnCard onCard" id="onProfil">
+          <span class="learnIco">🪪</span>
+          <b>MON PROFIL</b>
+          <em>Ta photo, ton pseudo, tes couleurs, tes statistiques et tes persos les plus joués.</em>
+          <span class="learnProg" id="onProgProfil">Compte requis</span>
+        </button>
+        <button class="learnCard onCard" id="onClassement">
+          <span class="learnIco">🏆</span>
+          <b>CLASSEMENT</b>
+          <em>Le podium des trois meilleurs et la suite du classement mondial.</em>
+          <span class="learnProg">Seuls les matchs en ligne comptent</span>
+        </button>
       </div>
 
       <!-- Compte : inscription et connexion. Le mot de passe part directement

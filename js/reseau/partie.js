@@ -46,21 +46,49 @@ function etatPourLeReseau() {
 function appliquerEtat(m) {
   const pose = (p, a) => {
     if (!p || !a) return;
-    p.x = a[0]; p.y = a[1]; p.face = a[2]; p.meter = a[3];
+    // On ne pose pas la position : on pose une destination. Se téléporter à
+    // chaque nouvelle du réseau donnait une image qui sautait soixante fois
+    // par seconde ; on s'y rend en glissant, ce qui rend le mouvement continu
+    // même quand une nouvelle se perd en route.
+    p.cible = { x: a[0], y: a[1] };
+    if (p._neuf === undefined) { p.x = a[0]; p.y = a[1]; p._neuf = 1; }
+    p.face = a[2]; p.meter = a[3];
     p.score = a[4]; p.holding = !!a[5]; p.charge = a[6];
     p.diveT = a[7]; p.dashT = a[8]; p.sixT = a[9];
-    // Le personnage doit continuer à s'animer entre deux nouvelles : sans ça
-    // il glisse sur le terrain, raide, au lieu de courir.
-    p.moving = Math.abs(p.x - (p._rx ?? p.x)) + Math.abs(p.y - (p._ry ?? p.y)) > 1;
-    p._rx = p.x; p._ry = p.y;
   };
   pose(G.p1, m.p1); pose(G.p2, m.p2);
   const d = G.disc;
-  d.x = m.d[0]; d.y = m.d[1]; d.spin = m.d[2]; d.kind = m.d[3];
+  d.cible = { x: m.d[0], y: m.d[1] };
+  if (d._neuf === undefined) { d.x = m.d[0]; d.y = m.d[1]; d._neuf = 1; }
+  d.spin = m.d[2]; d.kind = m.d[3];
   d.heldBy = m.d[4] === 1 ? G.p1 : (m.d[4] === 2 ? G.p2 : null);
   d.free = !d.heldBy;
   d.big = d.kind === 'kurama';
   G.state = m.st;
+}
+
+// Rapproche l'image de sa destination. Un disque lancé traverse le terrain :
+// on le rattrape plus vite qu'un personnage, sinon il traînerait derrière sa
+// vraie position au moment précis où on essaie de l'attraper.
+function glisser(o, dt, vitesse) {
+  if (!o || !o.cible) return;
+  const k = 1 - Math.exp(-vitesse * dt);
+  o.x += (o.cible.x - o.x) * k;
+  o.y += (o.cible.y - o.y) * k;
+}
+
+export function lisserAffichage(dt) {
+  if (!Partie.active || Partie.role !== 'invite') return;
+  for (const p of [G.p1, G.p2]) {
+    if (!p) continue;
+    const ax = p.x, ay = p.y;
+    glisser(p, dt, 18);
+    // L'animation de course se déduit du déplacement réel à l'écran : sans
+    // elle, les deux personnages glisseraient sur le terrain, raides.
+    p.moving = Math.hypot(p.x - ax, p.y - ay) > .35;
+    p.walk += p.moving ? dt * 9 : 0;
+  }
+  glisser(G.disc, dt, 26);
 }
 
 function appliquerFiche(p, m) {

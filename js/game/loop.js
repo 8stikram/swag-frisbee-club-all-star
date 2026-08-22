@@ -17,7 +17,7 @@ import { render } from '../render/render.js';
 import { updateTraining, pilotageDummy } from '../ui/training.js';
 import { updateTutoriel, enTutoriel } from '../ui/tutoriel.js';
 import { updateZones } from './zones.js';
-import { majReseau, Partie } from '../reseau/partie.js';
+import { majReseau, lisserAffichage, Partie } from '../reseau/partie.js';
 
 export function update(dt) {
   setDemoMuted(G.demo);
@@ -175,7 +175,9 @@ export function update(dt) {
   }
   capture();
   updateFX(dt);
-  // Ce que le match doit à l'autre bout de la liaison, une fois tout à jour.
+  // L'invité rapproche son image de ce qu'on lui a dit, puis chacun envoie ce
+  // qu'il doit à l'autre bout de la liaison.
+  lisserAffichage(dt);
   majReseau();
 }
 
