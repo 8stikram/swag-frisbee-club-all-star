@@ -1660,3 +1660,7 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   width:100%; margin-top:.8cqh }
 .ficheReglages.hidden{ display:none }
 .ficheReglages .onPas{ font-size:clamp(8px,1.4cqh,12px) }
+/* La fiche porte deja son cadre et son degrade : l'envelopper dans la carte
+   blanche des panneaux faisait un cadre dans un cadre, sans rien ajouter. */
+#onEtapeFiche:not(.hidden){ background:none; border:0; box-shadow:none;
+  padding:0; max-width:none; min-width:0 }

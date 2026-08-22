@@ -1,6 +1,6 @@
 import { G, Mouse, resetDisc, initMatch, comment } from './state.js';
 import { Partie } from '../reseau/partie.js';
-import { enregistrerMatch } from '../reseau/compte.js';
+import { enregistrerMatchComplet } from '../reseau/compte.js';
 import {
   COURT, CY, TARGET, GOAL_MID1, GOAL_MID2, throwSpeed,
   DIVE_TIME, DIVE_RANGE, DIVE_WHIFF_DOWN, DIVE_POWER,
@@ -395,8 +395,12 @@ export function gameOver() {
   // en très facile en boucle pour trôner en tête.
   if (Partie.active) {
     const moi = Partie.role === 'hote' ? G.p1 : G.p2;
-    enregistrerMatch(G.winner === moi, moi.score, moi.foe.score, moi.ck)
-      .catch(() => { /* le classement peut attendre, pas la fin de match */ });
+    const adv = Partie.adversaire || {};
+    enregistrerMatchComplet({
+      adversaireId: adv.id, adversairePseudo: adv.pseudo,
+      score: moi.score, scoreAdv: moi.foe.score,
+      perso: moi.ck, persoAdv: moi.foe.ck, mode: 'en_ligne'
+    }).catch(() => { /* le classement peut attendre, pas la fin de match */ });
   }
 
   buildPerspectiveTitle($('vicName'), winner.char.short);

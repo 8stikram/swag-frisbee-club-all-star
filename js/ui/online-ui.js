@@ -1,7 +1,7 @@
 import { $, showScreen } from '../core/dom.js';
 import { sfx } from '../audio/audio.js';
 import { heberger, rejoindre, accepterReponse, surChangement, fermer, Reseau } from '../reseau/connexion.js';
-import { demarrerPartieReseau, arreterPartieReseau } from '../reseau/partie.js';
+import { demarrerPartieReseau, arreterPartieReseau, annoncerIdentite } from '../reseau/partie.js';
 import { initMatch, G } from '../game/state.js';
 import { montrerPanneau } from './profil-ui.js';
 import { ouvrirArene, lireArene, repondreArene, fermerArene, attendreReponse, codeValide } from '../reseau/arene.js';
@@ -45,6 +45,9 @@ function lancerMatch(role) {
   initMatch(false, G.matchChar || 'naruto', G.matchCPU || 'leon', 1, true);
   // Les deux personnages sont humains : aucun des deux n'est piloté par l'IA.
   G.p2.human = true; G.p2.ai = null;
+  // Les presentations, des que le match demarre : c'est ce qui permettra
+  // d'inscrire le bon adversaire dans l'historique a la fin.
+  annoncerIdentite(role === 'hote' ? G.p1.ck : G.p2.ck);
   showScreen(null);
   dire('');
 }

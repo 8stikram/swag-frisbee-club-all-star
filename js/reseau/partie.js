@@ -1,5 +1,6 @@
 import { G } from '../game/state.js';
 import { Reseau, envoyer, connecte, surMessage } from './connexion.js';
+import { Compte, monId } from './compte.js';
 
 // ---------------------------------------------------------------------------
 // Circulation d'un match sur la liaison directe.
@@ -13,7 +14,7 @@ import { Reseau, envoyer, connecte, surMessage } from './connexion.js';
 // le prix à payer pour n'avoir aucun serveur à faire tourner.
 // ---------------------------------------------------------------------------
 
-export const Partie = { active: false, role: null, dernierEtat: 0 };
+export const Partie = { active: false, role: null, dernierEtat: 0, adversaire: null };
 
 // L'invité n'envoie que sa fiche d'intentions : cinq nombres et deux
 // booléens. C'est tout ce dont l'hôte a besoin pour le faire jouer.
@@ -108,12 +109,13 @@ export function demarrerPartieReseau(role) {
   Partie.active = true; Partie.role = role;
   surMessage(m => {
     if (!Partie.active) return;
+    if (m.t === 'moi') { recevoirIdentite(m); return; }
     if (role === 'hote' && m.t === 'c' && G.p2) appliquerFiche(G.p2, m);
     else if (role === 'invite' && m.t === 'e') appliquerEtat(m);
   });
 }
 
-export function arreterPartieReseau() { Partie.active = false; Partie.role = null; }
+export function arreterPartieReseau() { Partie.active = false; Partie.role = null; Partie.adversaire = null; }
 
 // Appelé à chaque image, une fois le reste du jeu à jour.
 export function majReseau() {
@@ -128,4 +130,26 @@ export function majReseau() {
     G.p2.cmd.plongeon = false; G.p2.cmd.feinte = false; G.p2.cmd.special = false;
   }
   Partie.dernierEtat = Reseau.ping;
+}
+
+// ---------------------------------------------------------------------------
+// Presentations. Chacun annonce qui il est des l'ouverture de la liaison :
+// sans ca, l'historique ne saurait pas contre qui on a joue, et le face-a-face
+// entre amis n'aurait aucun sens.
+//
+// On envoie l'identifiant du compte, pas seulement le pseudo : deux joueurs
+// peuvent porter le meme nom affiche, et c'est l'identifiant qui relie un match
+// a un profil.
+// ---------------------------------------------------------------------------
+export function annoncerIdentite(perso) {
+  envoyer({
+    t: 'moi',
+    id: monId() || null,
+    pseudo: (Compte.profil && Compte.profil.pseudo) || null,
+    perso: perso || null
+  });
+}
+
+function recevoirIdentite(m) {
+  Partie.adversaire = { id: m.id || null, pseudo: m.pseudo || null, perso: m.perso || null };
 }
