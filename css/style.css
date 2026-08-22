@@ -1380,32 +1380,34 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   animation:onScintille 4.5s ease-in-out infinite alternate }
 @keyframes onScintille{from{opacity:.55}to{opacity:.95}}
 
-/* Mise en page en tranches nettes plutot qu'au juge : chaque element a la
-   sienne, et rien n'en deborde.
-     globe   4 -> 20 cqh
-     bandes  27 et 34 cqh, titre 25 -> 38
-     menu    38 -> 100, centre dans ce qui reste sous le titre */
-.onGlobe{ position:absolute; top:4cqh; left:50%; width:16cqh; height:16cqh;
+/* Mise en page en tranches nettes, et une echelle typographique qui descend
+   par paliers reguliers plutot qu'au hasard : chaque niveau vaut environ les
+   deux tiers du precedent, ce qui rend la hierarchie lisible d'un coup d'oeil.
+     ONLINE   13   cqh
+     ARENE     9   cqh   (~0,69x)
+     PROFIL    5,6 cqh   (~0,62x)
+     RETOUR    3,8 cqh   (~0,68x) */
+.onGlobe{ position:absolute; top:3.5cqh; left:50%; width:15cqh; height:15cqh;
   transform:translateX(-50%); filter:drop-shadow(0 4px 0 rgba(8,32,45,.35));
   animation:onFlotte 5s ease-in-out infinite alternate }
 @keyframes onFlotte{from{transform:translate(-50%,0)}to{transform:translate(-50%,-1.4cqh)}}
 
-/* Les bandes traversent tout l'ecran, comme sur la maquette. */
+/* Les deux bandes encadrent le titre : 26->30,4 et 33->37,4. Leur milieu
+   commun tombe donc a 31,7 cqh, et c'est la que le titre se centre. */
 .onBande{ position:absolute; left:0; width:100%; height:4.4cqh; background:#f2698c }
-.onBande.haut{ top:27cqh }
-.onBande.bas{ top:34cqh }
-/* Le titre chevauche les bandes : c'est lui qui les coupe. Droit, sans
-   inclinaison — de travers il donnait l'impression d'un texte mal pose. */
-.onTitre{ position:absolute; top:25cqh; left:50%; height:13cqh; line-height:13cqh;
-  transform:translateX(-50%);
-  font-family:'Archivo Black',sans-serif; font-size:12.5cqh;
+.onBande.haut{ top:26cqh }
+.onBande.bas{ top:33cqh }
+.onTitre{ position:absolute; top:31.7cqh; left:50%;
+  transform:translate(-50%,-50%);
+  font-family:'Archivo Black',sans-serif; font-size:13cqh; line-height:1;
   color:#fff; letter-spacing:.02em; white-space:nowrap;
   text-shadow:0 0 6px rgba(255,255,255,.35) }
 
-/* Le menu occupe tout ce qui reste sous le titre, et s'y centre. */
-.onChoix{ position:absolute; left:0; right:0; top:38cqh; bottom:0; z-index:5;
+/* Le menu occupe tout ce qui reste sous les bandes, et s'y centre. */
+.onChoix{ position:absolute; left:0; right:0; top:40cqh; bottom:0; z-index:5;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:.6cqh; padding:0 4cqw }
+  gap:1.1cqh; padding:0 4cqw }
+
 
 
 
@@ -1420,15 +1422,15 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .onLigne{
   background:none; border:0; cursor:pointer; padding:.2cqh 1cqw;
   font-family:'Archivo Black',sans-serif; letter-spacing:.06em;
-  font-size:clamp(15px,3.6cqh,32px); color:#fff;
-  text-shadow:0 4px 0 var(--ink), 0 0 18px rgba(255,255,255,.25);
+  font-size:clamp(20px,5.6cqh,46px); color:#fff;
+  text-shadow:0 5px 0 var(--ink), 0 0 20px rgba(255,255,255,.28);
   transition:transform .12s, color .12s, text-shadow .12s;
   /* Entrée décalée, comme les cartes de l'entraînement. */
   animation:onLigneEntre .32s cubic-bezier(.2,.9,.3,1.2) backwards;
 }
-.onLigne.grand{ font-size:clamp(24px,6.4cqh,58px); color:#ffd23e;
-  text-shadow:0 6px 0 var(--ink), 0 0 26px rgba(255,210,62,.4) }
-.onLigne.bas{ margin-top:2.4cqh; font-size:clamp(12px,2.6cqh,22px); color:#ffd9e6 }
+.onLigne.grand{ font-size:clamp(32px,9cqh,76px); color:#ffd23e;
+  text-shadow:0 8px 0 var(--ink), 0 0 30px rgba(255,210,62,.45) }
+.onLigne.bas{ margin-top:2.8cqh; font-size:clamp(15px,3.8cqh,32px); color:#ffd9e6 }
 .onLigne:hover,.onLigne:focus-visible{ outline:none; transform:scale(1.07); color:#ff5f8d;
   text-shadow:0 5px 0 var(--ink), 0 0 26px rgba(255,95,141,.6) }
 .onLigne.grand:hover{ transform:scale(1.09) }
