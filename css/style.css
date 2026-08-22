@@ -1396,10 +1396,11 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .onOnde.gauche{ left:2cqw }
 .onOnde.droite{ right:2cqw }
 
-/* Le menu descend sous le titre, comme sur la maquette. */
+/* Le menu commence juste sous les bandes, comme sur la maquette : plus bas il
+   se retrouvait coince entre les deux ondes wifi. */
 .onChoix{ position:absolute; inset:0; z-index:5;
-  display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
-  gap:.6cqh; padding:0 4cqw 5cqh }
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  gap:.5cqh; padding:44cqh 4cqw 4cqh }
 
 .scr-online .titlebar{ background:#1f6aa8 }
 .onWrap{ width:min(74cqw,760px); max-height:88cqh; overflow-y:auto;
