@@ -1488,3 +1488,12 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   object-fit:cover; border:3px solid var(--ink) }
 .cpMoi img.hidden{ display:none }
 .cpMoi b{ font-family:'Russo One',sans-serif; font-size:clamp(12px,2.4cqh,20px); color:var(--ink) }
+
+/* Bandeau d'erreur : au-dessus de tout, y compris du panneau admin, parce
+   qu'une panne doit se voir même quand elle casse l'interface. */
+.alerteJeu{ position:absolute; left:50%; bottom:3cqh; transform:translateX(-50%);
+  z-index:9500; max-width:80cqw; background:#c02a1c; color:#fff;
+  border:3px solid var(--ink); border-radius:10px; box-shadow:5px 5px 0 var(--ink);
+  padding:.9cqh 1.4cqw; cursor:pointer;
+  font-family:Consolas,monospace; font-size:clamp(8px,1.4cqh,12px); line-height:1.5;
+  word-break:break-word; text-align:center }

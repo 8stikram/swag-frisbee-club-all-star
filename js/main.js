@@ -9,6 +9,7 @@ import './ui/admin.js';
 import './ui/online-ui.js';
 import './ui/profil-ui.js';
 import './ui/compte-pop.js';
+import './ui/alerte.js';
 
 initMatch(true);
 showScreen('title');
