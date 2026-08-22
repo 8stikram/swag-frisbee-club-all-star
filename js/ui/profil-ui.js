@@ -170,8 +170,13 @@ export async function ouvrirProfil() {
   });
 
   const couleur = async () => {
-    try { await majProfil({ couleur1: $('onCoul1').value, couleur2: $('onCoul2').value }); afficherFiche(); }
-    catch (err) { dire(err.message, true); }
+    try {
+      await majProfil({ couleur1: $('onCoul1').value, couleur2: $('onCoul2').value });
+      afficherFiche();
+      // Le bouton du haut porte les memes couleurs : il doit suivre tout de
+      // suite, sinon on croit que le choix n'a pas pris.
+      rafraichirBoutonCompte();
+    } catch (err) { dire(err.message, true); }
   };
   $('onCoul1').addEventListener('change', couleur);
   $('onCoul2').addEventListener('change', couleur);
@@ -190,9 +195,15 @@ export function rafraichirBoutonCompte() {
   const b = $('compteBtn');
   if (!b) return;
   const p = Compte.profil;
-  b.classList.toggle('connecte', !!(connecte() && p));
+  const dedans = !!(connecte() && p);
+  b.classList.toggle('connecte', dedans);
   b.textContent = '';
-  if (connecte() && p) {
+  // Le bouton porte les couleurs choisies dans la fiche : c'est la signature du
+  // joueur, elle doit le suivre partout plutot que rester dans son profil.
+  b.style.background = dedans
+    ? 'linear-gradient(140deg,' + (p.couleur1 || '#35e0ff') + ',' + (p.couleur2 || '#7b2ff7') + ')'
+    : '';
+  if (dedans) {
     if (p.avatar) { const i = document.createElement('img'); i.src = p.avatar; b.appendChild(i); }
     b.appendChild(document.createTextNode(p.pseudo || 'MON PROFIL'));
     b.title = 'Voir mon profil';

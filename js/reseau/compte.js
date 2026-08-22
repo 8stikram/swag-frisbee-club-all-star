@@ -114,9 +114,17 @@ export async function envoyerAvatar(fichier) {
   if (fichier.size > POIDS_MAX) throw new Error('image trop lourde (1 Mo maximum)');
   const ext = (fichier.name.split('.').pop() || 'png').toLowerCase().slice(0, 4);
   const chemin = monId() + '/avatar.' + ext;
-  await appel('/storage/v1/object/avatars/' + chemin + '?upsert=true', {
+  // x-upsert : sans lui le service refuse toute photo suivante avec « la
+  // ressource existe déjà ». Le chemin est fixe par compte, donc changer de
+  // photo revient toujours à écraser la précédente — c'est le comportement
+  // voulu, et ça évite d'accumuler les anciennes indéfiniment.
+  await appel('/storage/v1/object/avatars/' + chemin, {
     method: 'POST',
-    headers: { apikey: CLE, Authorization: 'Bearer ' + Compte.session.access_token },
+    headers: {
+      apikey: CLE,
+      Authorization: 'Bearer ' + Compte.session.access_token,
+      'x-upsert': 'true'
+    },
     body: fichier
   });
   // On range l'adresse publique dans le profil, avec un numéro de version :

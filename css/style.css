@@ -1503,3 +1503,8 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   padding:.9cqh 1.4cqw; cursor:pointer;
   font-family:Consolas,monospace; font-size:clamp(8px,1.4cqh,12px); line-height:1.5;
   word-break:break-word; text-align:center }
+
+/* Connecte : le bouton porte le degrade du profil. Texte blanc a ombre portee,
+   pour rester lisible quel que soit le couple de couleurs choisi. */
+.compteBtn.connecte{ color:#fff; text-shadow:0 2px 0 rgba(8,16,28,.6) }
+.compteBtn.connecte:hover{ filter:brightness(1.12) }
