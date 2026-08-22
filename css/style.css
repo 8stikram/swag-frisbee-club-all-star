@@ -1363,8 +1363,10 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .scr-online{ display:flex; align-items:center; justify-content:center }
 /* Fond pétrole étoilé de la maquette : le bleu profond fait ressortir le rose,
    et les étoiles rappellent l'arène spatiale du jeu. */
+/* Le fond laisse passer le match qui tourne derriere : c'est le jeu lui-meme
+   qui anime l'ecran, pas un decor invente pour l'occasion. */
 .bg-online{ position:absolute; inset:0; overflow:hidden;
-  background:radial-gradient(120cqh 90cqh at 50% 42%, #14708f 0%, #0d5a76 55%, #073b52 100%) }
+  background:radial-gradient(120cqh 90cqh at 50% 42%, rgba(20,112,143,.86) 0%, rgba(13,90,118,.9) 55%, rgba(7,59,82,.94) 100%) }
 .onEtoiles{ position:absolute; inset:-10%;
   background-image:
     radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 50%),
@@ -1383,7 +1385,10 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   width:19cqh; height:19cqh; filter:drop-shadow(0 4px 0 rgba(8,32,45,.35));
   animation:onFlotte 5s ease-in-out infinite alternate }
 @keyframes onFlotte{from{transform:translate(-50%,0)}to{transform:translate(-50%,-1.4cqh)}}
-.onBande{ position:absolute; left:-4%; width:108%; height:4.6cqh; background:#f2698c }
+/* Les bandes s'arretent avant les bords : d'un cote a l'autre de l'ecran elles
+   ecrasaient tout et cachaient le match qui tourne derriere. */
+.onBande{ position:absolute; left:50%; transform:translateX(-50%);
+  width:min(66cqw,660px); height:4.6cqh; background:#f2698c; border-radius:3px }
 .onBande.haut{ top:27cqh }
 .onBande.bas{ top:34cqh }
 /* Le titre chevauche les bandes, comme sur la maquette : c'est lui qui les
@@ -1572,3 +1577,8 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .onRepli summary{ cursor:pointer; font-family:'DotGothic16',monospace;
   font-size:clamp(7px,1.3cqh,11px); color:#5b6478; text-align:center }
 .onRepli[open]{ display:flex; flex-direction:column; align-items:center; gap:.7cqh }
+/* L'anneau rose qui tourne, repris de l'essai precedent : il donnait du
+   mouvement sans rien cacher. */
+.onArc{ position:absolute; top:34cqh; left:50%; width:64cqh; height:64cqh;
+  transform:translate(-50%,-50%); border:3px dashed rgba(242,105,140,.55);
+  border-radius:50%; animation:spin 48s linear infinite reverse }

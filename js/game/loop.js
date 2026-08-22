@@ -187,7 +187,9 @@ export function frame(t) {
   const dt = Math.min(.033, (t - lastT) / 1000 || .016);
   lastT = t;
   const playing = curScreen === null;
-  const demoBehind = ['title', 'select', 'options'].includes(curScreen);
+  // L'ecran en ligne laisse voir le match : le fond y est translucide, autant
+  // que ce soit le jeu qui l'anime plutot qu'un decor invente.
+  const demoBehind = ['title', 'select', 'options', 'online'].includes(curScreen);
   if (playing || demoBehind) update(dt);
   render();
 }
