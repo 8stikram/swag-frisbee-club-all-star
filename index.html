@@ -394,6 +394,15 @@
           <div class="ficheRecents" id="ficheRecents"></div>
           <div class="fichePodium" id="fichePodium"></div>
         </div>
+        <!-- Mur de commentaires, sous la fiche : c'est une page qu'on visite,
+             donc on doit pouvoir y laisser un mot. -->
+        <div class="murBloc" id="murBloc">
+          <div class="murListe" id="murListe"></div>
+          <div class="murEcrire">
+            <input class="onChamp" id="murTexte" maxlength="300" placeholder="laisser un mot">
+            <button class="mbtn mini c-green" id="murEnvoyer">ENVOYER</button>
+          </div>
+        </div>
         <div class="onRangee">
           <label class="mbtn mini" for="onFichier">PHOTO</label>
           <input type="file" id="onFichier" accept="image/*" hidden>

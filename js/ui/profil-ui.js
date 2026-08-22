@@ -5,7 +5,7 @@ import {
   Compte, connecte, inscrire, connecterSe, deconnecter, chargerProfil,
   creerProfil, majProfil, envoyerAvatar, classement, podiumPersos,
   profilPublic, derniersMatchs, catalogueTitres, mesTitres, envoyerBanniere,
-  demarrerPresence, monId
+  demarrerPresence, monId, lireCommentaires, ecrireCommentaire, supprimerCommentaire
 } from '../reseau/compte.js';
 
 // ---------------------------------------------------------------------------
@@ -88,7 +88,13 @@ function marche(j, rang) {
   const d = document.createElement('div'); d.className = 'clMarche';
   if (j && j.avatar) { const i = document.createElement('img'); i.src = j.avatar; d.appendChild(i); }
   else { const v = document.createElement('div'); v.className = 'vide'; v.textContent = j ? '?' : '-'; d.appendChild(v); }
-  const b = document.createElement('b'); b.textContent = j ? j.pseudo : '-'; d.appendChild(b);
+  const b = document.createElement('b'); b.textContent = j ? j.pseudo : '-';
+  if (j) {
+    // Le pseudo mene au profil : c'est le geste qu'on tente naturellement.
+    b.style.cursor = 'pointer'; b.title = 'Voir le profil';
+    b.addEventListener('click', () => { sfx('select'); voirProfil(j.id); });
+  }
+  d.appendChild(b);
   if (j) {
     // Le personnage le plus joue, pose a cote de la photo.
     const fav = podiumPersos(j)[0];
@@ -118,6 +124,8 @@ export async function afficherClassement() {
       d.innerHTML = '<span class="rang"></span><span></span><span></span><span class="taux"></span>';
       const c = d.children;
       c[0].textContent = i + 4; c[1].textContent = j.pseudo;
+      c[1].style.cursor = 'pointer'; c[1].title = 'Voir le profil';
+      c[1].addEventListener('click', () => { sfx('select'); voirProfil(j.id); });
       c[2].textContent = j.victoires + 'V'; c[3].textContent = j.taux_victoire + '%';
       liste.appendChild(d);
     });
@@ -138,6 +146,12 @@ export async function ouvrirProfil() {
     const pub = await profilPublic(monId());
     const rec = await derniersMatchs(monId(), 3).catch(() => []);
     if (pub) afficherEnrichi(pub, rec);
+    setProfilVu(monId());
+    for (const sel of ['#onEditer', '#onDeconnexion', '.ficheChangeBan']) {
+      const e = document.querySelector(sel);
+      if (e) e.classList.remove('hidden');
+    }
+    chargerMur(monId());
     demarrerPresence();
   } catch (e) { dire(e.message, true); }
 }
@@ -394,5 +408,156 @@ async function remplirReglages(p) {
     try { await envoyerBanniere(f); await ouvrirProfil(); dire('banniere mise a jour.'); }
     catch (e) { dire(e.message, true); }
     ev.target.value = '';
+  });
+})();
+
+// ---------------------------------------------------------------------------
+// Mur de commentaires. Un profil est une page qu'on visite : on doit pouvoir
+// y laisser un mot, et repondre a celui d'un autre.
+// ---------------------------------------------------------------------------
+// Le profil actuellement affiche. Le sien par defaut, celui d'un autre quand
+// on vient de la liste d'amis ou du classement.
+export let profilVu = null;
+export function setProfilVu(v) { profilVu = v; }
+let repondA = null;
+
+function motDe(c, profilId) {
+  const d = document.createElement('div');
+  d.className = 'murMot' + (c.parent ? ' reponse' : '');
+  const auteur = c.profils || {};
+
+  const ph = document.createElement('img');
+  ph.className = 'murPhoto';
+  if (auteur.avatar) ph.src = auteur.avatar;
+  d.appendChild(ph);
+
+  const corps = document.createElement('div');
+  corps.className = 'murCorps';
+  const qui = document.createElement('span');
+  qui.className = 'murQui'; qui.textContent = auteur.pseudo || 'inconnu';
+  const txt = document.createElement('span');
+  txt.className = 'murTexte'; txt.textContent = c.texte;
+  const qd = document.createElement('span');
+  qd.className = 'murQuand'; qd.textContent = quand(c.ecrit_le);
+  corps.append(qui, txt, qd);
+  d.appendChild(corps);
+
+  const act = document.createElement('div');
+  act.className = 'murActions';
+  // Repondre : une seule fois, pas de reponse a une reponse. Deux niveaux
+  // suffisent a une conversation, dix la rendent illisible.
+  if (connecte() && !c.parent) {
+    const r = document.createElement('button');
+    r.textContent = 'repondre';
+    r.addEventListener('click', () => {
+      repondA = c.id;
+      const champ = $('murTexte');
+      champ.placeholder = 'reponse a ' + (auteur.pseudo || 'ce mot');
+      champ.focus();
+    });
+    act.appendChild(r);
+  }
+  // L'auteur peut retirer le sien, et le proprietaire du mur ce qu'on a
+  // ecrit chez lui : subir n'importe quoi sur sa page sans recours n'est pas
+  // une absence de moderation, c'est une absence de porte.
+  if (connecte() && (c.auteur === monId() || profilId === monId())) {
+    const s = document.createElement('button');
+    s.textContent = 'retirer';
+    s.addEventListener('click', async () => {
+      try { await supprimerCommentaire(c.id); sfx('deny'); chargerMur(profilId); }
+      catch (e) { dire(e.message, true); }
+    });
+    act.appendChild(s);
+  }
+  d.appendChild(act);
+  return d;
+}
+
+export async function chargerMur(profilId) {
+  const liste = $('murListe');
+  if (!liste) return;
+  liste.innerHTML = '';
+  try {
+    const mots = await lireCommentaires(profilId);
+    if (!mots.length) {
+      const v = document.createElement('div');
+      v.className = 'murVide';
+      v.textContent = 'aucun mot pour l instant.';
+      liste.appendChild(v);
+      return;
+    }
+    // Les reponses se rangent sous leur mot, pas a la suite : une conversation
+    // eclatee dans l'ordre chronologique ne se suit pas.
+    const racines = mots.filter(m => !m.parent);
+    for (const r of racines) {
+      liste.appendChild(motDe(r, profilId));
+      for (const rep of mots.filter(m => m.parent === r.id)) {
+        liste.appendChild(motDe(rep, profilId));
+      }
+    }
+  } catch (e) { dire('commentaires indisponibles : ' + e.message, true); }
+}
+
+// Ouvre le profil de quelqu'un d'autre : meme fiche, mais on n'y modifie rien.
+export async function voirProfil(id) {
+  if (!id) return;
+  montrerPanneau('onEtapeFiche');
+  dire('chargement du profil...');
+  try {
+    const p = await profilPublic(id);
+    if (!p) { dire('profil introuvable.', true); return; }
+    setProfilVu(id);
+    const soi = id === monId();
+    // Les commandes de modification n'ont aucun sens sur la page d'un autre.
+    for (const sel of ['#onEditer', '#onDeconnexion', '.ficheChangeBan']) {
+      const e = document.querySelector(sel);
+      if (e) e.classList.toggle('hidden', !soi);
+    }
+    const carte = $('ficheCarte');
+    carte.style.setProperty('--c1', p.couleur1 || '#35e0ff');
+    carte.style.setProperty('--c2', p.couleur2 || '#7b2ff7');
+    $('fichePseudo').textContent = p.pseudo || '';
+    const img = $('ficheAvatar'), vide = $('ficheAvatarVide');
+    if (p.avatar) { img.src = p.avatar; img.classList.remove('hidden'); vide.classList.add('hidden'); }
+    else { img.classList.add('hidden'); vide.classList.remove('hidden'); }
+    const diff = (p.points_marques || 0) - (p.points_encaisses || 0);
+    const taux = p.matchs ? Math.round((p.victoires || 0) / p.matchs * 100) : 0;
+    $('ficheStats').innerHTML = [
+      [p.matchs || 0, 'matchs'], [p.victoires || 0, 'victoires'], [taux + '%', 'de reussite'],
+      [p.points_marques || 0, 'points mis'], [p.points_encaisses || 0, 'encaisses'],
+      [(diff >= 0 ? '+' : '') + diff, 'difference']
+    ].map(([v, l]) => '<div class="ficheStat"><b>' + v + '</b><span>' + l + '</span></div>').join('');
+    const pod = $('fichePodium'); pod.innerHTML = '';
+    for (const { ck, n } of podiumPersos(p)) {
+      const d = document.createElement('div'); d.className = 'fichePerso';
+      d.appendChild(dessinerPerso(ck));
+      const e = document.createElement('em');
+      e.textContent = ((CHARS[ck] && CHARS[ck].short) || ck) + ' - ' + n;
+      d.appendChild(e); pod.appendChild(d);
+    }
+    afficherEnrichi(p, await derniersMatchs(id, 3).catch(() => []));
+    await chargerMur(id);
+    dire('');
+  } catch (e) { dire(e.message, true); }
+}
+
+(function cablerMur() {
+  const b = $('murEnvoyer');
+  if (!b) return;
+  const envoyer = async () => {
+    const champ = $('murTexte');
+    const cible = profilVu || monId();
+    if (!connecte()) { dire('connecte-toi pour ecrire.', true); return; }
+    try {
+      await ecrireCommentaire(cible, champ.value, repondA);
+      champ.value = ''; champ.placeholder = 'laisser un mot'; repondA = null;
+      sfx('select');
+      chargerMur(cible);
+    } catch (e) { dire(e.message, true); }
+  };
+  b.addEventListener('click', envoyer);
+  $('murTexte').addEventListener('keydown', e => {
+    e.stopPropagation();
+    if (e.key === 'Enter') envoyer();
   });
 })();

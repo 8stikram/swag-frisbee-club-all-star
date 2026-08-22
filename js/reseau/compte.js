@@ -343,3 +343,29 @@ export async function retirerInvitation(deId) {
   return appel('/rest/v1/invitations?de=eq.' + deId + '&vers=eq.' + monId(),
     { method: 'DELETE', headers: entetes() }).catch(() => { });
 }
+
+// ---------------------------------------------------------------------------
+// Commentaires de profil. Un mur public, avec des reponses d'un niveau.
+// ---------------------------------------------------------------------------
+export async function lireCommentaires(profilId, combien = 40) {
+  // On rapatrie le pseudo et la photo de l'auteur d'un coup : sans ca il
+  // faudrait une requete par commentaire pour savoir qui parle.
+  return appel('/rest/v1/commentaires?profil=eq.' + profilId +
+    '&select=id,auteur,parent,texte,ecrit_le,profils!commentaires_auteur_fkey(pseudo,avatar)' +
+    '&order=ecrit_le.asc&limit=' + combien, { headers: entetes() });
+}
+
+export async function ecrireCommentaire(profilId, texte, parent = null) {
+  if (!connecte()) throw new Error('connecte-toi d abord');
+  const t = (texte || '').trim();
+  if (!t) throw new Error('ecris quelque chose');
+  if (t.length > 300) throw new Error('300 caracteres maximum');
+  return appel('/rest/v1/commentaires', {
+    method: 'POST', headers: { ...entetes(), Prefer: 'return=representation' },
+    body: JSON.stringify({ profil: profilId, auteur: monId(), parent, texte: t })
+  });
+}
+
+export async function supprimerCommentaire(id) {
+  return appel('/rest/v1/commentaires?id=eq.' + id, { method: 'DELETE', headers: entetes() });
+}

@@ -1680,3 +1680,28 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   border-radius:50%; object-fit:cover; border:2px solid var(--ink); background:#dfe8f2 }
 .amiBilan{ color:#5b6478; font-size:clamp(7px,1.2cqh,11px); white-space:nowrap }
 .amiLigne .mbtn{ padding:.25cqh .7cqw; font-size:clamp(7px,1.2cqh,11px) }
+
+/* --- Mur de commentaires ---------------------------------------------------- */
+.murBloc{ width:min(46cqw,440px); display:flex; flex-direction:column; gap:.5cqh;
+  margin-top:1cqh }
+.murListe{ display:flex; flex-direction:column; gap:.4cqh; max-height:26cqh; overflow-y:auto }
+.murMot{ display:grid; grid-template-columns:auto 1fr auto; gap:.6cqw; align-items:start;
+  background:#f2f6fb; border:2px solid var(--ink); border-radius:9px; padding:.45cqh .8cqw }
+/* Une reponse est decalee et plus discrete : on doit voir d'un coup d'oeil
+   qu'elle repond a ce qui la precede, sans avoir a lire. */
+.murMot.reponse{ margin-left:2.2cqw; background:#e7edf6 }
+.murPhoto{ width:3cqh; height:3cqh; min-width:22px; min-height:22px; border-radius:50%;
+  object-fit:cover; border:2px solid var(--ink); background:#dfe8f2 }
+.murCorps{ display:flex; flex-direction:column; gap:.1cqh; min-width:0 }
+.murQui{ font-family:'Russo One',sans-serif; font-size:clamp(7px,1.3cqh,11px); color:#1f6aa8 }
+.murTexte{ font-family:'Barlow',sans-serif; font-weight:600;
+  font-size:clamp(8px,1.4cqh,12px); color:var(--ink); word-break:break-word }
+.murQuand{ font-family:'DotGothic16',monospace; font-size:clamp(6px,1.1cqh,9px); color:#5b6478 }
+.murActions{ display:flex; flex-direction:column; gap:.2cqh }
+.murActions button{ background:none; border:0; cursor:pointer; color:#5b6478;
+  font-family:'DotGothic16',monospace; font-size:clamp(6px,1.1cqh,10px); padding:0 }
+.murActions button:hover{ color:#c02a1c }
+.murEcrire{ display:flex; gap:.6cqw; align-items:center }
+.murEcrire .onChamp{ flex:1 1 auto; width:auto }
+.murVide{ font-family:'DotGothic16',monospace; font-size:clamp(7px,1.3cqh,11px);
+  color:rgba(255,255,255,.85); text-align:center; text-shadow:0 2px 0 rgba(20,26,38,.5) }

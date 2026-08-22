@@ -43,6 +43,13 @@ function ligne(a, options = {}) {
 
   const nom = document.createElement('span');
   nom.textContent = a.pseudo || '';
+  // Le pseudo mene au profil : c'est le geste qu'on tente naturellement.
+  nom.style.cursor = 'pointer';
+  nom.title = 'Voir le profil';
+  nom.addEventListener('click', async () => {
+    const { voirProfil } = await import('./profil-ui.js');
+    sfx('select'); voirProfil(a.id);
+  });
   d.appendChild(nom);
 
   const bilan = document.createElement('span');
