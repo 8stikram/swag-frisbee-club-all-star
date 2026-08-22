@@ -14,6 +14,18 @@
 <div id="stage">
   <canvas id="game" width="960" height="600"></canvas>
 
+  <!-- Barre du haut, commune à tous les menus : le compte et le plein écran.
+       Hors des écrans pour ne pas avoir à la recopier dans chacun. -->
+  <div class="topBar" id="topBar">
+    <button class="fsBtn compteBtn" id="compteBtn" title="Compte en ligne">SE CONNECTER</button>
+    <button class="fsBtn" id="fsBtn" title="Plein écran" aria-label="Plein écran">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
+      </svg>
+    </button>
+  </div>
+
   <!-- ============ INTRODUCTION ============
        Séquence jouée une fois au lancement, avant le menu. Elle se saute d'un
        clic ou d'une touche à n'importe quel moment. -->
@@ -42,15 +54,6 @@
           <text><textPath href="#ring-title" startOffset="0%">MENU PRINCIPAL • MENU PRINCIPAL • MENU PRINCIPAL • MENU PRINCIPAL • </textPath></text></svg>
       </div>
     </div>
-
-    <!-- Entrée valide toujours, mais sans texte à l'écran : la place sert
-         désormais au plein écran. -->
-    <button class="fsBtn" id="fsBtn" title="Plein écran" aria-label="Plein écran">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
-           stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
-      </svg>
-    </button>
 
     <div class="titleLeft">
       <img class="logo" src="assets/logo.png" alt="Swag Frisbee Club All Star">

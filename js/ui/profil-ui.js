@@ -121,7 +121,7 @@ export async function ouvrirProfil() {
   try {
     const p = await chargerProfil();
     if (!p) { montrerPanneau('onEtapePseudo'); dire('il te manque un pseudo.'); return; }
-    montrerPanneau('onEtapeFiche'); afficherFiche(); dire('');
+    montrerPanneau('onEtapeFiche'); afficherFiche(); rafraichirBoutonCompte(); dire('');
   } catch (e) { dire(e.message, true); }
 }
 
@@ -156,7 +156,7 @@ export async function ouvrirProfil() {
     const v = $('onPseudo').value.trim();
     if (v.length < 2) { dire('deux caracteres minimum.', true); return; }
     dire('enregistrement...');
-    try { await creerProfil(v); montrerPanneau('onEtapeFiche'); afficherFiche(); dire(''); }
+    try { await creerProfil(v); montrerPanneau('onEtapeFiche'); afficherFiche(); rafraichirBoutonCompte(); dire(''); }
     catch (err) { dire(/duplicate|unique/i.test(err.message) ? 'ce pseudo est deja pris.' : err.message, true); }
   });
 
@@ -164,7 +164,7 @@ export async function ouvrirProfil() {
     const f = ev.target.files && ev.target.files[0];
     if (!f) return;
     dire('envoi de la photo...');
-    try { await envoyerAvatar(f); afficherFiche(); dire('photo mise a jour.'); }
+    try { await envoyerAvatar(f); afficherFiche(); rafraichirBoutonCompte(); dire('photo mise a jour.'); }
     catch (err) { dire(err.message, true); }
     ev.target.value = '';
   });
@@ -177,6 +177,42 @@ export async function ouvrirProfil() {
   $('onCoul2').addEventListener('change', couleur);
 
   $('onDeconnexion').addEventListener('click', () => {
-    deconnecter(); sfx('deny'); montrerPanneau('onChoix'); dire('deconnecte.');
+    deconnecter(); sfx('deny'); rafraichirBoutonCompte(); montrerPanneau('onChoix'); dire('deconnecte.');
   });
+})();
+
+// ---------------------------------------------------------------------------
+// Bouton de compte de la barre du haut. Il suit l'état de la session : une
+// invitation à se connecter tant qu'on ne l'est pas, le pseudo et la photo
+// ensuite. C'est le seul endroit du jeu qui dit qui tu es.
+// ---------------------------------------------------------------------------
+export function rafraichirBoutonCompte() {
+  const b = $('compteBtn');
+  if (!b) return;
+  const p = Compte.profil;
+  b.classList.toggle('connecte', !!(connecte() && p));
+  b.textContent = '';
+  if (connecte() && p) {
+    if (p.avatar) { const i = document.createElement('img'); i.src = p.avatar; b.appendChild(i); }
+    b.appendChild(document.createTextNode(p.pseudo || 'MON PROFIL'));
+    b.title = 'Voir mon profil';
+  } else {
+    b.textContent = 'SE CONNECTER';
+    b.title = 'Se connecter ou creer un compte';
+  }
+}
+
+(function cablerBoutonCompte() {
+  const b = $('compteBtn');
+  if (!b) return;
+  b.addEventListener('click', async () => {
+    sfx('select');
+    const { doAct } = await import('./menus.js');
+    doAct('online');
+    ouvrirProfil();
+  });
+  // Une session peut survivre a un rechargement : on va chercher le profil
+  // pour afficher le pseudo tout de suite, sans attendre un clic.
+  if (connecte()) chargerProfil().then(rafraichirBoutonCompte).catch(() => { });
+  rafraichirBoutonCompte();
 })();

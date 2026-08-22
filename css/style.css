@@ -317,8 +317,14 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 /* ================= ÉCRAN TITRE ================= */
 /* Bouton plein écran, à l'emplacement de l'ancien hint « VALIDER » : Entrée
    valide toujours, mais sans occuper l'écran d'un texte permanent. */
+/* Barre du haut : présente sur tous les menus, masquée pendant le jeu pour
+   ne pas se retrouver sous le curseur au moment de viser. */
+.topBar{
+  position:absolute;top:2.6%;right:2.4%;z-index:24;
+  display:flex;gap:.7cqw;align-items:center;
+}
+.topBar.hidden{display:none}
 .fsBtn{
-  position:absolute;top:2.6%;right:2.4%;z-index:5;
   width:4.4cqh;height:4.4cqh;min-width:34px;min-height:34px;
   display:flex;align-items:center;justify-content:center;
   background:rgba(255,255,255,.96);color:var(--ink);
@@ -1448,3 +1454,11 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 /* Retour posé par-dessus la grille : dans le flux, les cartes le recouvraient
    et il devenait impossible de sortir autrement qu'en rechargeant. */
 .onRetour{ position:absolute; left:50%; bottom:2.6cqh; transform:translateX(-50%); z-index:7 }
+/* Le bouton de compte porte du texte : il s'élargit, sans quoi le pseudo
+   déborderait d'un carré prévu pour une icône. */
+.compteBtn{ width:auto; min-width:0; padding:0 1.1cqw; gap:.5cqw;
+  font-family:'Russo One',sans-serif; font-size:clamp(8px,1.5cqh,13px);
+  letter-spacing:.03em; white-space:nowrap; max-width:26cqw; overflow:hidden }
+.compteBtn img{ width:2.9cqh; height:2.9cqh; min-width:22px; min-height:22px;
+  border-radius:50%; object-fit:cover; border:2px solid var(--ink) }
+.compteBtn.connecte{ background:var(--yellow) }

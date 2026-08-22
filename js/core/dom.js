@@ -21,6 +21,10 @@ let kbNav = false;
 export function showScreen(name) {
   for (const k in SCREENS) $(SCREENS[k]).classList.toggle('hidden', k !== name);
   curScreen = name;
+  // La barre du haut n'appartient à aucun écran : elle suit simplement le fait
+  // qu'on soit dans un menu ou en plein match.
+  const tb = document.getElementById('topBar');
+  if (tb) tb.classList.toggle('hidden', name === null);
   kbNav = false;
   if (name) { selIdx[name] = selIdx[name] || 0; refreshMenu(name); }
 }
