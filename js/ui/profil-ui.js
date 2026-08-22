@@ -17,8 +17,13 @@ export function montrerPanneau(id) {
   for (const p of PANNEAUX) { const e = $(p); if (e) e.classList.toggle('hidden', p !== id); }
   // Les listes portent deja leur propre RETOUR : le gros bouton du bas ferait
   // doublon. Il ne sert qu'aux panneaux, qui n'en ont pas.
+  const liste = id === 'onChoix' || id === 'onChoixArene';
   const r = document.querySelector('.onRetour');
-  if (r) r.classList.toggle('hidden', id === 'onChoix' || id === 'onChoixArene');
+  if (r) r.classList.toggle('hidden', liste);
+  // Hors des listes, le titre et son decor remontent en retrecissant : ils
+  // resteraient sinon plantes derriere le panneau qu'on vient d'ouvrir.
+  const ecran = $('scr-online');
+  if (ecran) ecran.classList.toggle('panneau', !liste);
 }
 const dire = (t, mauvais) => {
   const e = $('onEtat'); if (!e) return;

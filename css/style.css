@@ -1366,7 +1366,7 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 /* Le fond laisse passer le match qui tourne derriere : c'est le jeu lui-meme
    qui anime l'ecran, pas un decor invente pour l'occasion. */
 .bg-online{ position:absolute; inset:0; overflow:hidden;
-  background:radial-gradient(120cqh 90cqh at 50% 42%, rgba(20,112,143,.86) 0%, rgba(13,90,118,.9) 55%, rgba(7,59,82,.94) 100%) }
+  background:radial-gradient(120cqh 90cqh at 50% 42%, rgba(20,112,143,.93) 0%, rgba(13,90,118,.95) 55%, rgba(7,59,82,.97) 100%) }
 .onEtoiles{ position:absolute; inset:-10%;
   background-image:
     radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 50%),
@@ -1397,9 +1397,6 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   font-family:'Archivo Black',sans-serif; font-size:15cqh; line-height:1;
   color:#fff; letter-spacing:.02em; white-space:nowrap;
   text-shadow:0 0 6px rgba(255,255,255,.35) }
-.onOnde{ position:absolute; bottom:2cqh; width:26cqh; height:19cqh; opacity:.95 }
-.onOnde.gauche{ left:2cqw }
-.onOnde.droite{ right:2cqw }
 
 /* Le menu commence juste sous les bandes, comme sur la maquette : plus bas il
    se retrouvait coince entre les deux ondes wifi. */
@@ -1577,8 +1574,34 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .onRepli summary{ cursor:pointer; font-family:'DotGothic16',monospace;
   font-size:clamp(7px,1.3cqh,11px); color:#5b6478; text-align:center }
 .onRepli[open]{ display:flex; flex-direction:column; align-items:center; gap:.7cqh }
-/* L'anneau rose qui tourne, repris de l'essai precedent : il donnait du
-   mouvement sans rien cacher. */
-.onArc{ position:absolute; top:34cqh; left:50%; width:64cqh; height:64cqh;
-  transform:translate(-50%,-50%); border:3px dashed rgba(242,105,140,.55);
-  border-radius:50%; animation:spin 48s linear infinite reverse }
+/* Deuxieme semis d'etoiles, decale : les deux couches ne scintillent pas
+   ensemble, donc les points s'allument un a un au lieu de clignoter en bloc. */
+.onEtoiles.deux{
+  background-image:
+    radial-gradient(2px 2px at 44% 12%, #fff 50%, transparent 50%),
+    radial-gradient(2px 2px at 8% 52%, #bff3ff 50%, transparent 50%),
+    radial-gradient(2px 2px at 70% 44%, #fff 50%, transparent 50%),
+    radial-gradient(2px 2px at 92% 22%, #9df0c0 50%, transparent 50%),
+    radial-gradient(2px 2px at 30% 92%, #fff 50%, transparent 50%),
+    radial-gradient(2px 2px at 82% 84%, #bff3ff 50%, transparent 50%);
+  background-size:31cqh 31cqh;
+  filter:drop-shadow(0 0 4px rgba(255,255,255,.8));
+  animation:onBrille 3.1s ease-in-out infinite alternate;
+}
+@keyframes onBrille{from{opacity:.35;filter:drop-shadow(0 0 2px rgba(255,255,255,.5))}
+  to{opacity:1;filter:drop-shadow(0 0 7px rgba(255,255,255,.95))}}
+
+/* L'anneau prend la taille de celui des autres ecrans. */
+.onArc{ position:absolute; top:50%; left:50%; width:126cqh; height:126cqh;
+  transform:translate(-50%,-50%); border:3px dashed rgba(242,105,140,.5);
+  border-radius:50%; animation:spin 60s linear infinite reverse }
+
+/* Ouverture d'un panneau : le titre et son décor remontent en rétrécissant
+   pour lui laisser la place, au lieu de rester plantés derrière lui. */
+.scr-online .onTitre,.scr-online .onGlobe,.scr-online .onBande{
+  transition:transform .3s cubic-bezier(.2,.9,.3,1.1), opacity .3s }
+.scr-online.panneau .onTitre{ transform:translateX(-50%) translateY(-13cqh) scale(.46) rotate(-1.2deg) }
+.scr-online.panneau .onGlobe{ transform:translateX(-50%) translateY(-4cqh) scale(.5); opacity:.75 }
+.scr-online.panneau .onBande{ transform:translateX(-50%) translateY(-13cqh) scaleY(.5); opacity:.8 }
+.scr-online.panneau .onArc{ opacity:.5 }
+
