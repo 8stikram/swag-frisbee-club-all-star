@@ -50,19 +50,16 @@ let gestesVus = null;
 
 // L'invité n'envoie que sa fiche d'intentions : cinq nombres et trois
 // compteurs. C'est tout ce dont l'hôte a besoin pour le faire jouer.
-// Compte un geste au moment où le joueur le demande, et non au moment de
-// l'envoi. Lu à l'envoi, il fallait que le drapeau soit encore levé à l'instant
-// précis où la boucle passait par là : selon l'ordre des images, le geste
-// partait ou se perdait sans laisser de trace. C'était toute l'irrégularité du
-// plongeon, de la feinte et de l'ultime en ligne.
-export function noterGeste(nom) {
-  if (nom === 'plongeon') gestes.pl++;
-  else if (nom === 'feinte') gestes.fe++;
-  else if (nom === 'special') gestes.sp++;
-  else if (nom === 'annuleDash') gestes.ad++;
-}
-
+// On compte le geste ET on efface le drapeau ici, dans le même geste. Compter
+// à un endroit et effacer à un autre laissait une fenêtre — d'une image, mais
+// bien réelle — où l'intention était effacée sans avoir été comptée : le
+// plongeon, la feinte et l'ultime partaient une fois sur deux. Un seul endroit
+// consomme le drapeau, donc plus aucune fenêtre.
 function fichePourLeReseau(c) {
+  if (c.plongeon) { gestes.pl++; c.plongeon = false; }
+  if (c.feinte) { gestes.fe++; c.feinte = false; }
+  if (c.special) { gestes.sp++; c.special = false; }
+  if (c.annuleDash) { gestes.ad++; c.annuleDash = false; }
   return {
     t: 'c', n: ++numeroEnvoi,
     dx: +c.dep.x.toFixed(2), dy: +c.dep.y.toFixed(2),
@@ -87,52 +84,86 @@ function etatPourLeReseau() {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Tampon d'interpolation.
+//
+// L'invité n'affiche pas le dernier état reçu : il affiche un instant
+// légèrement passé, encadré par deux états réels, et interpole entre les deux.
+//
+// C'est ce qui remplace l'ancienne « poursuite », qui courait après la dernière
+// position connue : quand les paquets arrivaient irrégulièrement — et ils
+// arrivent toujours irrégulièrement — la vitesse à l'écran devenait
+// irrégulière elle aussi. C'était le saccadé permanent, indépendamment du ping.
+//
+// Le prix est un retard fixe et assumé. Un retard fixe se compense en jouant ;
+// un retard qui varie, non.
+// ---------------------------------------------------------------------------
+const RETARD_AFFICHAGE = 100;   // millisecondes
+const TAMPON_MAX = 24;
+const tampon = [];
+
 function appliquerEtat(m) {
-  const pose = (p, a) => {
+  // Ce qui ne s'interpole pas est posé tout de suite : un score, un état de
+  // jeu ou un drapeau n'a pas d'états intermédiaires, et les retarder ferait
+  // sonner le but avant qu'il ne s'affiche.
+  const poseInstant = (p, a) => {
     if (!p || !a) return;
-    // On ne pose pas la position : on pose une destination. Se téléporter à
-    // chaque nouvelle du réseau donnait une image qui sautait soixante fois
-    // par seconde ; on s'y rend en glissant, ce qui rend le mouvement continu
-    // même quand une nouvelle se perd en route.
-    p.cible = { x: a[0], y: a[1] };
-    if (p._neuf === undefined) { p.x = a[0]; p.y = a[1]; p._neuf = 1; }
     p.face = a[2]; p.meter = a[3];
     p.score = a[4]; p.holding = !!a[5]; p.charge = a[6];
     p.diveT = a[7]; p.dashT = a[8]; p.sixT = a[9];
   };
-  pose(G.p1, m.p1); pose(G.p2, m.p2);
+  poseInstant(G.p1, m.p1); poseInstant(G.p2, m.p2);
   const d = G.disc;
-  d.cible = { x: m.d[0], y: m.d[1] };
-  if (d._neuf === undefined) { d.x = m.d[0]; d.y = m.d[1]; d._neuf = 1; }
   d.spin = m.d[2]; d.kind = m.d[3];
   d.heldBy = m.d[4] === 1 ? G.p1 : (m.d[4] === 2 ? G.p2 : null);
   d.free = !d.heldBy;
   d.big = d.kind === 'kurama';
   G.state = m.st;
+
+  tampon.push({ t: performance.now(), p1: m.p1, p2: m.p2, d: m.d });
+  if (tampon.length > TAMPON_MAX) tampon.shift();
+  // Premier état reçu : on se pose dessus sans interpoler, sinon l'image part
+  // du coin de l'écran et glisse jusqu'au terrain.
+  if (tampon.length === 1) {
+    if (G.p1) { G.p1.x = m.p1[0]; G.p1.y = m.p1[1]; }
+    if (G.p2) { G.p2.x = m.p2[0]; G.p2.y = m.p2[1]; }
+    d.x = m.d[0]; d.y = m.d[1];
+  }
 }
 
-// Rapproche l'image de sa destination. Un disque lancé traverse le terrain :
-// on le rattrape plus vite qu'un personnage, sinon il traînerait derrière sa
-// vraie position au moment précis où on essaie de l'attraper.
-function glisser(o, dt, vitesse) {
-  if (!o || !o.cible) return;
-  const k = 1 - Math.exp(-vitesse * dt);
-  o.x += (o.cible.x - o.x) * k;
-  o.y += (o.cible.y - o.y) * k;
+// Les deux états qui encadrent l'instant demandé, ou null si le tampon est à
+// sec — auquel cas on garde la dernière image plutôt que d'inventer.
+function encadrer(instant) {
+  for (let i = tampon.length - 1; i > 0; i--) {
+    if (tampon[i - 1].t <= instant && instant <= tampon[i].t) {
+      return [tampon[i - 1], tampon[i]];
+    }
+  }
+  return null;
 }
 
 export function lisserAffichage(dt) {
-  if (!Partie.active || Partie.role !== 'invite') return;
-  for (const p of [G.p1, G.p2]) {
+  if (!Partie.active || Partie.role !== 'invite' || tampon.length < 2) return;
+  const instant = performance.now() - RETARD_AFFICHAGE;
+  const paire = encadrer(instant);
+  if (!paire) return;
+  const [a, b] = paire;
+  const ecart = b.t - a.t;
+  const k = ecart > 0 ? (instant - a.t) / ecart : 1;
+  const entre = (ka, kb) => ka + (kb - ka) * k;
+
+  for (const [p, cle] of [[G.p1, 'p1'], [G.p2, 'p2']]) {
     if (!p) continue;
     const ax = p.x, ay = p.y;
-    glisser(p, dt, 18);
+    p.x = entre(a[cle][0], b[cle][0]);
+    p.y = entre(a[cle][1], b[cle][1]);
     // L'animation de course se déduit du déplacement réel à l'écran : sans
     // elle, les deux personnages glisseraient sur le terrain, raides.
     p.moving = Math.hypot(p.x - ax, p.y - ay) > .35;
     p.walk += p.moving ? dt * 9 : 0;
   }
-  glisser(G.disc, dt, 26);
+  G.disc.x = entre(a.d[0], b.d[0]);
+  G.disc.y = entre(a.d[1], b.d[1]);
 }
 
 function appliquerFiche(p, m) {
@@ -158,11 +189,16 @@ export function demarrerPartieReseau(role) {
   numeroEnvoi = 0; dernierEtatRecu = -1; dernierEtatFiche = -1;
   gestes.pl = gestes.fe = gestes.sp = gestes.ad = 0; gestesVus = null;
   Partie.envoyes = 0; Partie.recus = 0; Partie.jetes = 0;
+  tampon.length = 0; dernierEnvoi = 0;
   surMessage(m => {
     if (!Partie.active) return;
     if (m.t === 'moi') { recevoirIdentite(m); return; }
     // L'hote a tranche : l'invite se range a son terrain, sans discuter.
     if (m.t === 'terrain') { setMapId(m.terrain); return; }
+    // La pause d'en face est la nôtre. On ne la renvoie pas : deux écrans qui
+    // se répercutent la pause l'un à l'autre ne s'arrêteraient jamais.
+    if (m.t === 'pause') { if (surPause) surPause(!!m.on); return; }
+    if (m.t === 'abandon') { if (surAbandon) surAbandon(); return; }
     if (m.t === 'go') {
       setMapId(m.terrain);
       if (auCoupDEnvoi) auCoupDEnvoi(m.p1, m.p2, m.terrain);
@@ -185,17 +221,29 @@ export function demarrerPartieReseau(role) {
 
 export function arreterPartieReseau() { Partie.active = false; Partie.role = null; Partie.adversaire = null; }
 
+// Cadence d'envoi, découplée de la cadence d'affichage. L'état complet part
+// trente fois par seconde : avec un vrai tampon d'interpolation en face, on ne
+// voit aucune différence avec soixante, et on divise par deux la gigue de mise
+// en file. La fiche de l'invité, elle, reste à soixante — elle est minuscule et
+// c'est elle qui porte le délai ressenti sur ses propres gestes.
+const PERIODE_ETAT = 1000 / 30;
+const PERIODE_FICHE = 1000 / 60;
+let dernierEnvoi = 0;
+
 // Appelé à chaque image, une fois le reste du jeu à jour.
 export function majReseau() {
   if (!Partie.active || !connecte()) return;
+  const maintenant = performance.now();
+  const periode = Partie.role === 'hote' ? PERIODE_ETAT : PERIODE_FICHE;
+  if (maintenant - dernierEnvoi < periode) return;
+  dernierEnvoi = maintenant;
   if (Partie.role === 'hote') {
     if (envoyer(etatPourLeReseau())) Partie.envoyes++;
   } else if (G.p2 && G.p2.cmd) {
     const f = fichePourLeReseau(G.p2.cmd);
+    // Les drapeaux ont deja ete consommes par fichePourLeReseau : les effacer
+    // une seconde fois ici est exactement ce qui creait la fenetre de perte.
     if (envoyer(f)) Partie.envoyes++;
-    // Les gestes ponctuels sont partis : on les efface ici, sinon l'invité les
-    // rejouerait aussi chez lui alors que seul l'hôte doit les arbitrer.
-    G.p2.cmd.plongeon = false; G.p2.cmd.feinte = false; G.p2.cmd.special = false; G.p2.cmd.annuleDash = false;
   }
   Partie.dernierEtat = Reseau.ping;
 }
@@ -253,6 +301,29 @@ export function terrainDuMatch(mien, sien) {
 }
 
 export function annoncerTerrain(terrain) { envoyer({ t: 'terrain', terrain }); }
+
+// ---------------------------------------------------------------------------
+// Pause et abandon.
+//
+// Une pause ne peut pas être unilatérale : l'un s'arrête, l'autre continue de
+// jouer contre un adversaire figé. Elle vaut donc pour les deux, quel que soit
+// celui qui la demande. L'abandon, lui, met fin au match des deux côtés — le
+// laisser à un seul rendrait l'autre spectateur d'un match sans adversaire.
+//
+// Ces deux messages partent en urgent : ils échappent au garde-fou de la file
+// d'envoi, car un état de plus ou de moins n'a aucune importance alors qu'une
+// pause perdue laisse les deux écrans en désaccord.
+// ---------------------------------------------------------------------------
+let surPause = null, surAbandon = null;
+export function quandPause(fn) { surPause = fn; }
+export function quandAbandon(fn) { surAbandon = fn; }
+
+export function annoncerPause(enPause) {
+  if (Partie.active) envoyer({ t: 'pause', on: enPause ? 1 : 0 }, true);
+}
+export function annoncerAbandon() {
+  if (Partie.active) envoyer({ t: 'abandon' }, true);
+}
 
 // ---------------------------------------------------------------------------
 // Coup d'envoi. L'hote attend de connaitre le choix d'en face, puis annonce

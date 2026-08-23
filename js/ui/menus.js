@@ -17,6 +17,8 @@ import { lancerChapitre } from './tutoriel.js';
 import { skinActif } from '../data/skins-perso.js';
 import { ouvrirPanneauSkins, brancherSkins } from './skins-ui.js';
 import { ouvrirEnLigne } from './online-ui.js';
+import { annoncerPause, annoncerAbandon, quandPause, quandAbandon, arreterPartieReseau } from '../reseau/partie.js';
+import { fermer as fermerLiaison } from '../reseau/connexion.js';
 
 let selCharPlayer = 'naruto', selCharCPU = 'leon', diffIdx = 1;
 let modeJ2J = false;
@@ -720,7 +722,35 @@ export function proposerTutoSiPremiereFois() {
 }
 
 /* ---------- navigation ---------- */
-export function pauseGame() { Mouse.down = false; duckMusic(true); showScreen('pause'); }
+export function pauseGame(venantDuReseau) {
+  Mouse.down = false; duckMusic(true); showScreen('pause');
+  // On prévient l'autre, sauf si c'est justement lui qui vient de nous
+  // prévenir : sinon les deux se renvoient la pause indéfiniment.
+  if (!venantDuReseau) annoncerPause(true);
+}
+
+// Reprise et abandon, tous deux répercutés à l'autre bout.
+export function reprendreJeu(venantDuReseau) {
+  duckMusic(false); showScreen(null);
+  if (!venantDuReseau) { annoncerPause(false); requestLock(); }
+}
+
+// Abandonner met fin au match des deux côtés et renvoie chacun au titre.
+export function abandonnerMatch(venantDuReseau) {
+  if (!venantDuReseau) annoncerAbandon();
+  arreterPartieReseau(); fermerLiaison();
+  duckMusic(false);
+  initMatch(true);
+  showScreen('title'); renderTitleHero();
+  $('admin-panel').classList.remove('visible');
+}
+
+// Branchements réseau : la pause et l'abandon d'en face nous concernent.
+quandPause(on => { if (on) pauseGame(true); else reprendreJeu(true); });
+quandAbandon(() => {
+  addPopup('ADVERSAIRE PARTI', '#ff5340', 15, 1.6);
+  abandonnerMatch(true);
+});
 
 function startMatch() {
   resolveSkin();
@@ -746,7 +776,8 @@ export function doAct(act) {
     case 'back': sfx('select'); musiqueDeMenu(); showScreen('title'); break;
     case 'fight': sfx('select'); showScreen('maps'); refreshMaps(); break;
     case 'startMatch': sfx('select'); startMatch(); break;
-    case 'resume': sfx('select'); duckMusic(false); showScreen(null); requestLock(); break;
+    case 'resume': sfx('select'); reprendreJeu(); break;
+    case 'abandon': sfx('select'); abandonnerMatch(); break;
     case 'restart': sfx('select'); showScreen(null); initMatch(false, G.matchChar, G.matchCPU, G.matchDiff, G.isJ2J); requestLock(); break;
     case 'rematch': sfx('select'); showScreen(null); initMatch(false, G.matchChar, G.matchCPU, G.matchDiff, G.isJ2J); requestLock(); break;
     case 'changeChar': sfx('select'); initMatch(true); showScreen('select'); refreshSelect(); $('admin-panel').classList.remove('visible'); break;

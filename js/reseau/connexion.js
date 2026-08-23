@@ -21,7 +21,9 @@ const GLACE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com
 export const Reseau = {
   etat: 'ferme',   // ferme | attente | connecte | perdu
   role: null,      // hote | invite
-  ping: 0
+  ping: 0,
+  // Nombre de fois ou l'on a saute un envoi faute de place dans la file.
+  bouchons: 0
 };
 
 let pc = null, canal = null;
@@ -107,16 +109,27 @@ export async function rejoindre(texteInvitation) {
 }
 
 // --- Échanges --------------------------------------------------------------
-export function envoyer(obj) {
-  if (canal && canal.readyState === 'open') { canal.send(JSON.stringify(obj)); return true; }
-  return false;
+// Au-delà de ce seuil, la file d'envoi n'est plus drainée assez vite par le
+// lien. Continuer à empiler ferait grimper la latence en spirale : chaque
+// paquet attendrait derrière tous les précédents, et l'écart avec le direct
+// n'arrêterait plus de croître. Mieux vaut sauter un tour — l'état suivant
+// arrive de toute façon dans quelques millisecondes.
+const FILE_MAX = 64 * 1024;
+
+export function envoyer(obj, urgent) {
+  if (!canal || canal.readyState !== 'open') return false;
+  if (!urgent && canal.bufferedAmount > FILE_MAX) { Reseau.bouchons++; return false; }
+  canal.send(JSON.stringify(obj));
+  return true;
 }
+// Taille de la file d'envoi, en octets. Utile pour voir venir un bouchon.
+export function fileDAttente() { return canal ? canal.bufferedAmount : 0; }
 export function mesurerPing() { envoyer({ t: 'ping', h: performance.now() }); }
 export function connecte() { return !!canal && canal.readyState === 'open'; }
 
 export function fermer() {
   if (canal) { try { canal.close(); } catch (e) { } canal = null; }
   if (pc) { try { pc.close(); } catch (e) { } pc = null; }
-  Reseau.role = null; Reseau.ping = 0;
+  Reseau.role = null; Reseau.ping = 0; Reseau.bouchons = 0;
   etat('ferme');
 }

@@ -6,7 +6,7 @@ import { norm, clamp } from '../core/utils.js';
 import { doDive } from './actions.js';
 import { doFeint, cancelDash } from './input.js';
 import { trySpecial } from './specials.js';
-import { Partie, noterGeste } from '../reseau/partie.js';
+import { Partie } from '../reseau/partie.js';
 
 // ---------------------------------------------------------------------------
 // La fiche d'intentions d'un joueur.
@@ -43,7 +43,6 @@ export function jeSimule() {
 export function demanderGeste(p, nom) {
   if (!p || !p.cmd) return;
   p.cmd[nom] = true;
-  if (Partie.active && Partie.role === 'invite' && p === G.p2) noterGeste(nom);
 }
 
 // --- Joueur à la souris ----------------------------------------------------
