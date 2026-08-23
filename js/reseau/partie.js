@@ -78,6 +78,10 @@ function etatPourLeReseau() {
   const d = G.disc;
   return {
     t: 'e', n: ++numeroEnvoi,
+    // Numéro de la dernière fiche de l'invité prise en compte. C'est la clé de
+    // sa prédiction : sans lui, il ne saurait pas à quel instant de SON passé
+    // comparer la position qu'on lui renvoie, et ne pourrait rien corriger.
+    na: dernierEtatFiche,
     p1: j(G.p1), p2: j(G.p2),
     d: [Math.round(d.x), Math.round(d.y), +d.spin.toFixed(2), d.kind, d.heldBy ? (d.heldBy === G.p1 ? 1 : 2) : 0],
     st: G.state
@@ -102,17 +106,81 @@ const RETARD_AFFICHAGE = 100;   // millisecondes
 const TAMPON_MAX = 24;
 const tampon = [];
 
+// ---------------------------------------------------------------------------
+// Prédiction locale du joueur invité.
+//
+// L'invité ne peut pas attendre la réponse de l'hôte pour se voir bouger : ce
+// serait un aller-retour complet — cinquante millisecondes environ — sur chacun
+// de ses gestes. Il simule donc son propre personnage tout de suite, avec le
+// même code que l'hôte, et garde la trace de ce qu'il a prédit.
+//
+// Quand l'état revient, il porte le numéro de la dernière fiche traitée.
+// L'invité retrouve ce qu'il avait prédit à cet instant-là, mesure l'écart, et
+// le résorbe en douceur. Se replacer d'un coup ferait sauter l'image à chaque
+// désaccord, ce qui serait pire que le délai qu'on cherche à supprimer.
+//
+// Seule sa position est prédite. Qui attrape, qui marque, qui est étourdi
+// restent des décisions de l'hôte : les prédire ferait diverger les deux
+// écrans sur ce qui compte vraiment.
+// ---------------------------------------------------------------------------
+const HISTO_MAX = 180;
+const histo = [];                 // { n, x, y } de ce qu'on a prédit
+const correction = { x: 0, y: 0 };
+const RESORPTION = 9;             // par seconde
+const ECART_IGNORE = 1.5;         // px : en dessous, ce n'est que de l'arrondi
+const ECART_SAUT = 90;            // px : au-delà, c'est un replacement légitime
+
+// Appelé après chaque envoi de fiche : on note où l'on se croit à ce numéro.
+export function noterPrediction(x, y) {
+  histo.push({ n: numeroEnvoi, x, y });
+  if (histo.length > HISTO_MAX) histo.shift();
+}
+
+function reconcilier(na, a) {
+  if (na === undefined || na < 0 || !G.p2) return;
+  const h = histo.find(e => e.n === na);
+  if (!h) return;
+  // Tout ce qui précède est confirmé : on n'en a plus besoin.
+  while (histo.length && histo[0].n < na) histo.shift();
+  const dx = a[0] - h.x, dy = a[1] - h.y;
+  const ecart = Math.hypot(dx, dy);
+  if (ecart < ECART_IGNORE) return;
+  if (ecart > ECART_SAUT) {
+    // Remise en jeu, but, téléportation : il n'y a rien à lisser, on obéit.
+    G.p2.x = a[0]; G.p2.y = a[1];
+    correction.x = 0; correction.y = 0;
+    histo.length = 0;
+    return;
+  }
+  correction.x += dx; correction.y += dy;
+}
+
+// Résorbe l'écart accumulé, un peu à chaque image.
+function appliquerCorrection(dt) {
+  if (!G.p2) return;
+  const k = 1 - Math.exp(-RESORPTION * dt);
+  const cx = correction.x * k, cy = correction.y * k;
+  G.p2.x += cx; G.p2.y += cy;
+  correction.x -= cx; correction.y -= cy;
+}
+
 function appliquerEtat(m) {
   // Ce qui ne s'interpole pas est posé tout de suite : un score, un état de
   // jeu ou un drapeau n'a pas d'états intermédiaires, et les retarder ferait
   // sonner le but avant qu'il ne s'affiche.
-  const poseInstant = (p, a) => {
+  // `mien` : le personnage que cette machine prédit. Pour lui, on ne reprend
+  // que ce qu'il ne peut pas savoir seul — la jauge, le score, qui tient le
+  // disque. Sa charge, son orientation et son dash sont déjà calculés ici, et
+  // plus récents que ce qui revient : les écraser ferait bégayer la jauge de
+  // charge à chaque paquet.
+  const poseInstant = (p, a, mien) => {
     if (!p || !a) return;
-    p.face = a[2]; p.meter = a[3];
-    p.score = a[4]; p.holding = !!a[5]; p.charge = a[6];
-    p.diveT = a[7]; p.dashT = a[8]; p.sixT = a[9];
+    p.meter = a[3]; p.score = a[4]; p.holding = !!a[5]; p.sixT = a[9];
+    p.diveT = a[7];              // le plongeon est arbitré par l'hôte
+    if (mien) return;
+    p.face = a[2]; p.charge = a[6]; p.dashT = a[8];
   };
-  poseInstant(G.p1, m.p1); poseInstant(G.p2, m.p2);
+  poseInstant(G.p1, m.p1, false); poseInstant(G.p2, m.p2, true);
   const d = G.disc;
   d.spin = m.d[2]; d.kind = m.d[3];
   d.heldBy = m.d[4] === 1 ? G.p1 : (m.d[4] === 2 ? G.p2 : null);
@@ -128,6 +196,8 @@ function appliquerEtat(m) {
     if (G.p1) { G.p1.x = m.p1[0]; G.p1.y = m.p1[1]; }
     if (G.p2) { G.p2.x = m.p2[0]; G.p2.y = m.p2[1]; }
     d.x = m.d[0]; d.y = m.d[1];
+  } else {
+    reconcilier(m.na, m.p2);
   }
 }
 
@@ -143,7 +213,11 @@ function encadrer(instant) {
 }
 
 export function lisserAffichage(dt) {
-  if (!Partie.active || Partie.role !== 'invite' || tampon.length < 2) return;
+  if (!Partie.active || Partie.role !== 'invite') return;
+  // La correction de la prédiction se résorbe même quand le tampon est à sec :
+  // c'est ce qui évite qu'un écart reste figé le temps d'un trou de réseau.
+  appliquerCorrection(dt);
+  if (tampon.length < 2) return;
   const instant = performance.now() - RETARD_AFFICHAGE;
   const paire = encadrer(instant);
   if (!paire) return;
@@ -152,18 +226,27 @@ export function lisserAffichage(dt) {
   const k = ecart > 0 ? (instant - a.t) / ecart : 1;
   const entre = (ka, kb) => ka + (kb - ka) * k;
 
-  for (const [p, cle] of [[G.p1, 'p1'], [G.p2, 'p2']]) {
-    if (!p) continue;
-    const ax = p.x, ay = p.y;
-    p.x = entre(a[cle][0], b[cle][0]);
-    p.y = entre(a[cle][1], b[cle][1]);
+  // Seul l'adversaire est interpolé. Le joueur de cette machine garde la
+  // position qu'il a prédite : la remplacer par un passé de cent millisecondes
+  // rendrait la prédiction parfaitement inutile.
+  if (G.p1) {
+    const ax = G.p1.x, ay = G.p1.y;
+    G.p1.x = entre(a.p1[0], b.p1[0]);
+    G.p1.y = entre(a.p1[1], b.p1[1]);
     // L'animation de course se déduit du déplacement réel à l'écran : sans
-    // elle, les deux personnages glisseraient sur le terrain, raides.
-    p.moving = Math.hypot(p.x - ax, p.y - ay) > .35;
-    p.walk += p.moving ? dt * 9 : 0;
+    // elle, l'adversaire glisserait sur le terrain, raide.
+    G.p1.moving = Math.hypot(G.p1.x - ax, G.p1.y - ay) > .35;
+    G.p1.walk += G.p1.moving ? dt * 9 : 0;
   }
   G.disc.x = entre(a.d[0], b.d[0]);
   G.disc.y = entre(a.d[1], b.d[1]);
+  // Le disque en main suit celui qui le porte, sans passer par le réseau : à
+  // cent millisecondes de retard il flotterait à côté de la main de l'invité.
+  const d = G.disc;
+  if (d.heldBy === G.p2 && G.p2) {
+    d.x = G.p2.x + G.p2.face * 20;
+    d.y = G.p2.y + Math.sin(G.now * 6) * 2;
+  }
 }
 
 function appliquerFiche(p, m) {
@@ -190,6 +273,7 @@ export function demarrerPartieReseau(role) {
   gestes.pl = gestes.fe = gestes.sp = gestes.ad = 0; gestesVus = null;
   Partie.envoyes = 0; Partie.recus = 0; Partie.jetes = 0;
   tampon.length = 0; dernierEnvoi = 0;
+  histo.length = 0; correction.x = 0; correction.y = 0;
   surMessage(m => {
     if (!Partie.active) return;
     if (m.t === 'moi') { recevoirIdentite(m); return; }
@@ -244,6 +328,9 @@ export function majReseau() {
     // Les drapeaux ont deja ete consommes par fichePourLeReseau : les effacer
     // une seconde fois ici est exactement ce qui creait la fenetre de perte.
     if (envoyer(f)) Partie.envoyes++;
+    // On note où l'on se croit à ce numéro. C'est ce repère que l'hôte nous
+    // renverra, et sans lui il n'y a rien à comparer donc rien à corriger.
+    noterPrediction(G.p2.x, G.p2.y);
   }
   Partie.dernierEtat = Reseau.ping;
 }

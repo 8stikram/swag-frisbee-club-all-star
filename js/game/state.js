@@ -124,6 +124,9 @@ export function makePlayer(ck, side, human, diffIdx) {
     viseT: 0,
     // Dernier état connu de la touche de tir : sert à repérer le relâchement.
     tirTenu: false,
+    // Dernier état connu de la touche de dash : le dash part à l'appui, et une
+    // touche maintenue ne doit pas en enchaîner un toutes les demi-secondes.
+    dashTenu: false,
     // Bouclier du disque Captain : bref halo autour de celui qui attrape.
     bouclierT: 0,
     // Piraté par Cyberleek : ses déplacements partent à l'envers.

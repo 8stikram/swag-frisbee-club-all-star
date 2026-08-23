@@ -276,7 +276,12 @@ export function updatePlayerHuman(p, dt) {
   const c = p.cmd, d = c.dep;
   // Touche de dash maintenue : distance fixe, soumise à l'anti-spam. La visée
   // du dash est déjà arbitrée dans la fiche, selon le réglage du joueur.
-  if (c.dash && p.dashT <= 0 && p.dashGap <= 0 && p.diveT <= 0 && p.diveDown <= 0) {
+  // Le dash part à l'appui, pas tant que la touche est tenue. Maintenue, elle
+  // enchaînait un dash toutes les demi-secondes indéfiniment : on traversait
+  // le terrain en rafale sans jamais relâcher.
+  const veutDasher = c.dash && !p.dashTenu;
+  p.dashTenu = !!c.dash;
+  if (veutDasher && p.dashT <= 0 && p.dashGap <= 0 && p.diveT <= 0 && p.diveDown <= 0) {
     startDash(p, { x: c.viseeDash.x, y: c.viseeDash.y });
   }
   let mx = d.x, my = d.y;
@@ -328,7 +333,10 @@ export function updatePlayer2(dt) {
   } else p.charging = false;
   // Le dash suivait le viseur… qui n'existait pas : il fonçait donc toujours
   // droit sur l'adversaire. Il suit maintenant la visée du joueur.
-  if (c.dash && p.dashCd <= 0) {
+  // Même règle que pour le joueur de gauche : à l'appui, pas au maintien.
+  const veutDasher2 = c.dash && !p.dashTenu;
+  p.dashTenu = !!c.dash;
+  if (veutDasher2 && p.dashCd <= 0) {
     p.dashV.x = c.viseeDash.x * DASH_SPEED * 0.7; p.dashV.y = c.viseeDash.y * DASH_SPEED * 0.7;
     p.dashCd = DASH_CD; sfx('dash'); dust(p.x, p.y + 22, 8);
   }

@@ -153,7 +153,17 @@ export function update(dt) {
       // là et se contente d'afficher ce qu'on lui renvoie. Le laisser calculer
       // en parallèle ferait lutter sa physique contre celle d'en face, et les
       // deux écrans finiraient par ne plus être d'accord sur qui a attrapé.
-      if (Partie.active && Partie.role === 'invite') break;
+      if (Partie.active && Partie.role === 'invite') {
+        // Il ne simule rien du match — mais il simule SON personnage, tout de
+        // suite, avec exactement le code que l'hôte fera tourner sur la même
+        // fiche. Sans ça il attendrait un aller-retour complet avant de se voir
+        // bouger. L'écart éventuel est mesuré et résorbé au retour de l'état.
+        if (G.p2 && !G.cine) {
+          updatePlayerHuman(G.p2, wdt);
+          integratePlayer(G.p2, wdt);
+        }
+        break;
+      }
       // Gestes ponctuels : plongeon, feinte, ultime. Le joueur à la souris les
       // déclenche par ses événements ; tout autre joueur — le second clavier
       // aujourd'hui, un joueur distant demain — passe par ici.
