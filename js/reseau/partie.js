@@ -283,6 +283,13 @@ export function demarrerPartieReseau(role) {
     // se répercutent la pause l'un à l'autre ne s'arrêteraient jamais.
     if (m.t === 'pause') { if (surPause) surPause(!!m.on); return; }
     if (m.t === 'abandon') { if (surAbandon) surAbandon(); return; }
+    // L'invité demande la revanche : seul l'hôte peut la donner.
+    if (m.t === 'revanche') { if (Partie.role === 'hote') relancerMemeMatch(); return; }
+    if (m.t === 'changeperso') {
+      attenteNouveauxChoix();
+      if (surChangementPerso) surChangementPerso();
+      return;
+    }
     if (m.t === 'go') {
       setMapId(m.terrain);
       if (auCoupDEnvoi) auCoupDEnvoi(m.p1, m.p2, m.terrain);
@@ -347,6 +354,7 @@ export function majReseau() {
 export function annoncerIdentite(perso) {
   Partie.monTerrain = getMapId();
   Partie.monPerso = perso;
+  choixFrais.moi = true;
   envoyer({
     t: 'moi',
     id: monId() || null,
@@ -361,10 +369,13 @@ function recevoirIdentite(m) {
     id: m.id || null, pseudo: m.pseudo || null,
     perso: m.perso || null, terrain: m.terrain || null
   };
+  choixFrais.lui = true;
   // L'hôte seul tranche, puis donne le coup d'envoi avec les deux personnages
   // et le terrain retenu. Deux décisions indépendantes donneraient deux matchs
   // différents, et les joueurs ne verraient pas la même chose.
-  if (Partie.role === 'hote' && Partie.monPerso) {
+  // Il attend d'avoir les deux choix : après un changement de personnage, il
+  // relancerait sinon avec l'ancien personnage d'en face.
+  if (Partie.role === 'hote' && Partie.monPerso && peutRelancer()) {
     const terrain = terrainDuMatch(Partie.monTerrain || getMapId(), m.terrain);
     setMapId(terrain);
     annoncerCoupDEnvoi(Partie.monPerso, m.perso || 'leon', terrain);
@@ -401,9 +412,43 @@ export function annoncerTerrain(terrain) { envoyer({ t: 'terrain', terrain }); }
 // d'envoi, car un état de plus ou de moins n'a aucune importance alors qu'une
 // pause perdue laisse les deux écrans en désaccord.
 // ---------------------------------------------------------------------------
-let surPause = null, surAbandon = null;
+let surPause = null, surAbandon = null, surRevanche = null, surChangementPerso = null;
 export function quandPause(fn) { surPause = fn; }
 export function quandAbandon(fn) { surAbandon = fn; }
+export function quandRevanche(fn) { surRevanche = fn; }
+export function quandChangementPerso(fn) { surChangementPerso = fn; }
+
+// Revanche : c'est l'hôte qui relance, avec les mêmes personnages et le même
+// terrain. Si c'est l'invité qui la demande, il ne fait que la demander —
+// deux relances indépendantes donneraient deux matchs différents.
+export function demanderRevanche() {
+  if (!Partie.active) return false;
+  if (Partie.role === 'hote') { relancerMemeMatch(); return true; }
+  envoyer({ t: 'revanche' }, true);
+  return true;
+}
+
+export function relancerMemeMatch() {
+  if (Partie.role !== 'hote' || !Partie.monPerso) return;
+  const adv = (Partie.adversaire && Partie.adversaire.perso) || 'leon';
+  annoncerCoupDEnvoi(Partie.monPerso, adv, getMapId());
+}
+
+// Changement de personnage : les deux retournent à l'écran de choix, la
+// liaison restant ouverte. Chacun renverra sa présentation en validant, et
+// l'hôte redonnera le coup d'envoi quand il aura les deux.
+export function demanderChangementPerso() {
+  if (!Partie.active) return false;
+  envoyer({ t: 'changeperso' }, true);
+  attenteNouveauxChoix();
+  return true;
+}
+
+// Tant que les deux n'ont pas re-choisi, l'hôte ne donne pas le coup d'envoi :
+// sans cette attente il relancerait avec l'ancien personnage d'en face.
+let choixFrais = { moi: false, lui: false };
+function attenteNouveauxChoix() { choixFrais = { moi: false, lui: false }; }
+function peutRelancer() { return choixFrais.moi && choixFrais.lui; }
 
 export function annoncerPause(enPause) {
   if (Partie.active) envoyer({ t: 'pause', on: enPause ? 1 : 0 }, true);

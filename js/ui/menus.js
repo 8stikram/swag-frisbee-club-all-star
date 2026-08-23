@@ -17,11 +17,18 @@ import { lancerChapitre } from './tutoriel.js';
 import { skinActif } from '../data/skins-perso.js';
 import { ouvrirPanneauSkins, brancherSkins } from './skins-ui.js';
 import { ouvrirEnLigne } from './online-ui.js';
-import { annoncerPause, annoncerAbandon, quandPause, quandAbandon, arreterPartieReseau } from '../reseau/partie.js';
+import {
+  annoncerPause, annoncerAbandon, quandPause, quandAbandon, arreterPartieReseau,
+  demanderRevanche, demanderChangementPerso, quandRevanche, quandChangementPerso,
+  Partie, annoncerIdentite
+} from '../reseau/partie.js';
 import { fermer as fermerLiaison } from '../reseau/connexion.js';
 
 let selCharPlayer = 'naruto', selCharCPU = 'leon', diffIdx = 1;
 let modeJ2J = false;
+// Vrai quand les ecrans de choix preparent un match en ligne plutot qu'un match
+// local : le bouton final ouvre alors l'arene au lieu de lancer la partie.
+let modeEnLigne = false;
 let adminMode = false;
 
 export function isAdminMode() { return adminMode; }
@@ -214,6 +221,16 @@ function preselectRandom() {
 
 // Verrouille le choix et passe la main au camp suivant.
 function validate(side) {
+  // En ligne, il n'y a pas de second camp à choisir ici : l'adversaire choisit
+  // le sien de son côté. On passe donc directement à la suite plutôt que
+  // d'attendre une validation qui ne viendra jamais.
+  if (side === 1 && modeEnLigne) {
+    if (!previewP1 || lockedP1) return;
+    lockedP1 = true; turn = 0;
+    clac(); refreshSelect(); punchHero(1);
+    showScreen('maps'); refreshMaps();
+    return;
+  }
   if (side === 1) { if (!previewP1 || lockedP1) return; lockedP1 = true; turn = 2; }
   else { if (!previewP2 || lockedP2) return; lockedP2 = true; turn = 0; }
   clac();
@@ -745,7 +762,24 @@ export function abandonnerMatch(venantDuReseau) {
   $('admin-panel').classList.remove('visible');
 }
 
-// Branchements réseau : la pause et l'abandon d'en face nous concernent.
+// Retour au choix du personnage sans couper la liaison : on rejoue avec le
+// même adversaire, seulement pas avec le même personnage. Rouvrir l'arène
+// fermerait la connexion et il faudrait tout réétablir.
+function retourChoixEnLigne() {
+  modeEnLigne = true; modeJ2J = false;
+  initMatch(true);
+  musiqueDeMenu();
+  resetSelectTurn();
+  showScreen('select'); refreshSelect();
+  $('admin-panel').classList.remove('visible');
+}
+
+// Branchements réseau : la pause, l'abandon et le changement de personnage
+// d'en face nous concernent.
+quandChangementPerso(() => {
+  addPopup('CHANGEMENT DE PERSO', '#35e0ff', 13, 1.4);
+  retourChoixEnLigne();
+});
 quandPause(on => { if (on) pauseGame(true); else reprendreJeu(true); });
 quandAbandon(() => {
   addPopup('ADVERSAIRE PARTI', '#ff5340', 15, 1.6);
@@ -755,6 +789,19 @@ quandAbandon(() => {
 function startMatch() {
   resolveSkin();
   resolveMap();
+  // En ligne, ces deux écrans ne lancent pas le match : ils préparent ce qu'on
+  // apporte à la table. Le personnage et le terrain choisis partent avec notre
+  // présentation, et c'est l'hôte qui tranche entre les deux terrains.
+  if (modeEnLigne) {
+    G.matchChar = selCharPlayer;
+    musiqueDeMenu();
+    // Déjà en liaison — on revient d'un changement de personnage : on renvoie
+    // simplement sa présentation et on attend le coup d'envoi de l'hôte.
+    // Rouvrir l'arène couperait la connexion et il faudrait tout réétablir.
+    if (Partie.active) { annoncerIdentite(selCharPlayer); return; }
+    ouvrirEnLigne();
+    return;
+  }
   musiqueDuMatch();
   showScreen(null);
   initMatch(false, selCharPlayer, selCharCPU, diffIdx, modeJ2J);
@@ -764,10 +811,12 @@ function startMatch() {
 
 export function doAct(act) {
   switch (act) {
-    case 'play': sfx('select'); modeJ2J = false; musiqueDeMenu(); resetSelectTurn(); showScreen('select'); refreshSelect(); break;
+    case 'play': sfx('select'); modeJ2J = false; modeEnLigne = false; musiqueDeMenu(); resetSelectTurn(); showScreen('select'); refreshSelect(); break;
     case 'j2j': sfx('select'); modeJ2J = true; musiqueDeMenu(); resetSelectTurn(); showScreen('select'); refreshSelect(); break;
     case 'options': sfx('select'); musiqueDeMenu(); showScreen('options'); refreshKeysUI(); break;
-    case 'online': sfx('select'); musiqueDeMenu(); ouvrirEnLigne(); break;
+    // En ligne comme contre l'ordinateur : on choisit son personnage, puis son
+    // terrain, et seulement ensuite on va chercher un adversaire.
+    case 'online': sfx('select'); modeJ2J = false; modeEnLigne = true; musiqueDeMenu(); resetSelectTurn(); showScreen('select'); refreshSelect(); break;
     case 'learn': sfx('select'); musiqueDeMenu(); ouvrirApprentissage(); break;
     case 'training': sfx('select'); jouerMusiqueEntrainement(); lancerEntrainement(); break;
     case 'tuto': sfx('select'); musiqueDeMenu(); ouvrirChapitres(); break;
@@ -779,8 +828,17 @@ export function doAct(act) {
     case 'resume': sfx('select'); reprendreJeu(); break;
     case 'abandon': sfx('select'); abandonnerMatch(); break;
     case 'restart': sfx('select'); showScreen(null); initMatch(false, G.matchChar, G.matchCPU, G.matchDiff, G.isJ2J); requestLock(); break;
-    case 'rematch': sfx('select'); showScreen(null); initMatch(false, G.matchChar, G.matchCPU, G.matchDiff, G.isJ2J); requestLock(); break;
-    case 'changeChar': sfx('select'); initMatch(true); showScreen('select'); refreshSelect(); $('admin-panel').classList.remove('visible'); break;
+    // En ligne, une revanche ne peut pas etre decidee dans son coin : elle est
+    // demandee, et c'est l'hote qui relance les deux cotes ensemble.
+    case 'rematch':
+      sfx('select');
+      if (demanderRevanche()) { addPopup('REVANCHE DEMANDEE', '#35e0ff', 13, 1.2); break; }
+      showScreen(null); initMatch(false, G.matchChar, G.matchCPU, G.matchDiff, G.isJ2J); requestLock(); break;
+    case 'changeChar':
+      sfx('select');
+      if (demanderChangementPerso()) { retourChoixEnLigne(); break; }
+      initMatch(true); showScreen('select'); refreshSelect();
+      $('admin-panel').classList.remove('visible'); break;
     case 'menu': sfx('select'); initMatch(true); showScreen('title'); renderTitleHero(); $('admin-panel').classList.remove('visible'); break;
   }
 }
