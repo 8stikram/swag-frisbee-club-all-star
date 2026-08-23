@@ -273,6 +273,9 @@ export function demarrerPartieReseau(role) {
   gestes.pl = gestes.fe = gestes.sp = gestes.ad = 0; gestesVus = null;
   Partie.envoyes = 0; Partie.recus = 0; Partie.jetes = 0;
   tampon.length = 0; dernierEnvoi = 0;
+  // Personne n'a encore choisi : l'hote doit attendre les deux presentations
+  // avant de donner le coup d'envoi.
+  attenteNouveauxChoix();
   histo.length = 0; correction.x = 0; correction.y = 0;
   surMessage(m => {
     if (!Partie.active) return;
@@ -399,6 +402,27 @@ export function terrainDuMatch(mien, sien) {
 }
 
 export function annoncerTerrain(terrain) { envoyer({ t: 'terrain', terrain }); }
+
+// ---------------------------------------------------------------------------
+// Votes de terrain.
+//
+// Chacun annonce le sien pendant qu'il le survole, avec son avatar : on voit
+// donc en direct qui penche pour quoi, au lieu de découvrir le verdict après
+// coup. C'est ce qui rend le désaccord lisible — et le tirage au sort qui le
+// tranche compréhensible plutôt qu'arbitraire.
+// ---------------------------------------------------------------------------
+let surVoteTerrain = null;
+export function quandVoteTerrain(fn) { surVoteTerrain = fn; }
+
+export function annoncerVoteTerrain(terrain) {
+  if (!Partie.active) return;
+  envoyer({
+    t: 'vote',
+    terrain,
+    pseudo: (Compte.profil && Compte.profil.pseudo) || null,
+    avatar: (Compte.profil && Compte.profil.avatar) || null
+  }, true);
+}
 
 // ---------------------------------------------------------------------------
 // Pause et abandon.

@@ -43,10 +43,15 @@ export function ouvrirEnLigne() {
 // La liaison est ouverte : chacun annonce qui il est et quel personnage il a
 // choisi. Le match ne démarre qu'au coup d'envoi de l'hôte, une fois les deux
 // choix connus — sinon chacun lancerait le sien avec ses suppositions.
-function preparerMatch(role) {
+// La liaison est ouverte : on sait enfin qui est en face et de quel côté on
+// joue. C'est seulement maintenant qu'on choisit son personnage et son terrain
+// — avant, on choisissait à l'aveugle, sans même savoir si l'on jouerait à
+// gauche ou à droite, et le vote de terrain n'avait personne à qui s'adresser.
+async function preparerMatch(role) {
   demarrerPartieReseau(role);
-  dire('adversaire trouve — mise en place...');
-  annoncerIdentite(G.matchChar || 'naruto');
+  dire('adversaire trouve — a vous de choisir.');
+  const { preparerChoixEnLigne } = await import('./menus.js');
+  preparerChoixEnLigne(role);
 }
 
 async function lancerMatch(persoHote, persoInvite) {
@@ -68,25 +73,14 @@ async function lancerMatch(persoHote, persoInvite) {
   const bh = $('onHeberger'), br = $('onRejoindre');
   if (!bh || !br) return;
 
-  // Héberger et rejoindre ne lancent plus l'arène directement : ils décident du
-  // rôle, donc du camp, et envoient d'abord choisir personnage et terrain. On
-  // pickait sinon toujours à gauche pour parfois jouer à droite.
-  bh.addEventListener('click', async () => {
-    sfx('select');
-    const { preparerChoixEnLigne } = await import('./menus.js');
-    preparerChoixEnLigne('hote');
-  });
+  bh.addEventListener('click', () => { sfx('select'); lancerArene('hote'); });
 
   // ARENE ouvre le choix entre heberger et rejoindre : deux gestes differents,
   // mais une seule entree au menu, parce qu'on vient pour la meme chose.
   $('onArene')?.addEventListener('click', () => { sfx('select'); montrerPanneau('onChoixArene'); dire(''); });
   $('onRetourMenu')?.addEventListener('click', () => { sfx('select'); montrerPanneau('onChoix'); dire(''); });
 
-  br.addEventListener('click', async () => {
-    sfx('select');
-    const { preparerChoixEnLigne } = await import('./menus.js');
-    preparerChoixEnLigne('invite');
-  });
+  br.addEventListener('click', () => { sfx('select'); lancerArene('invite'); });
 
   $('onRejoindreCode')?.addEventListener('click', () => { sfx('select'); rejoindreAvecCode(); });
   $('areneEntree')?.addEventListener('keydown', e => {

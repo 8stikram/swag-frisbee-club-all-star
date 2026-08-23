@@ -16,7 +16,7 @@ import { lancerEntrainement } from './training.js';
 import { lancerChapitre } from './tutoriel.js';
 import { skinActif } from '../data/skins-perso.js';
 import { ouvrirPanneauSkins, brancherSkins } from './skins-ui.js';
-import { ouvrirEnLigne, lancerArene } from './online-ui.js';
+import { ouvrirEnLigne } from './online-ui.js';
 import {
   annoncerPause, annoncerAbandon, quandPause, quandAbandon, arreterPartieReseau,
   demanderRevanche, demanderChangementPerso, quandRevanche, quandChangementPerso,
@@ -838,10 +838,12 @@ function startMatch() {
     // Déjà en liaison — on revient d'un changement de personnage : on renvoie
     // simplement sa présentation et on attend le coup d'envoi de l'hôte.
     // Rouvrir l'arène couperait la connexion et il faudrait tout réétablir.
+    // La liaison est déjà ouverte à ce stade : on annonce ce qu'on apporte, et
+    // l'hôte donnera le coup d'envoi quand il aura les deux choix.
     if (Partie.active) { annoncerIdentite(monPersoChoisi()); return; }
-    // Le rôle est déjà décidé : on ouvre directement l'étape correspondante,
-    // héberger ou rejoindre, plutôt que de repasser par le menu de l'arène.
-    lancerArene(roleEnLigne || 'hote');
+    // Liaison perdue entre-temps : on ne lance rien dans le vide, on renvoie au
+    // menu de l'arène pour retrouver un adversaire.
+    ouvrirEnLigne();
     return;
   }
   musiqueDuMatch();
