@@ -94,8 +94,16 @@ async function appel(chemin, options = {}, deuxieme = false) {
 // --- Compte ----------------------------------------------------------------
 // Le mot de passe part directement au service d'authentification et n'est
 // jamais conservé ici, pas même le temps d'un instant.
+// Adresse de retour du courriel de confirmation : celle du site depuis lequel
+// on s'inscrit, pas une adresse figée. Sans elle, le service retombe sur son
+// « Site URL » — resté sur le serveur de développement — et le lien reçu par
+// un joueur renvoyait vers un localhost qui n'existe pas chez lui.
+function adresseDeRetour() {
+  return location.origin + location.pathname;
+}
+
 export async function inscrire(email, motDePasse) {
-  const s = await appel('/auth/v1/signup', {
+  const s = await appel('/auth/v1/signup?redirect_to=' + encodeURIComponent(adresseDeRetour()), {
     method: 'POST', headers: entetes(),
     body: JSON.stringify({ email, password: motDePasse })
   });
