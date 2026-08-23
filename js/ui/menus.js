@@ -16,7 +16,7 @@ import { lancerEntrainement } from './training.js';
 import { lancerChapitre } from './tutoriel.js';
 import { skinActif } from '../data/skins-perso.js';
 import { ouvrirPanneauSkins, brancherSkins } from './skins-ui.js';
-import { ouvrirEnLigne } from './online-ui.js';
+import { ouvrirEnLigne, lancerArene } from './online-ui.js';
 import {
   annoncerPause, annoncerAbandon, quandPause, quandAbandon, arreterPartieReseau,
   demanderRevanche, demanderChangementPerso, quandRevanche, quandChangementPerso,
@@ -109,9 +109,27 @@ let turn = 1;              // 1 = au tour de 1P, 2 = au tour de 2P/CPU, 0 = term
 let lockedP1 = false, lockedP2 = false;
 let rndP1 = false, rndP2 = false;   // camp tiré au sort : masqué jusqu'au match
 
-export function resetSelectTurn() {
-  turn = 1; lockedP1 = lockedP2 = false; rndP1 = rndP2 = false;
+export function resetSelectTurn(depart) {
+  turn = depart || 1; lockedP1 = lockedP2 = false; rndP1 = rndP2 = false;
   previewP1 = previewP2 = false;
+}
+
+// Rôle voulu pour le prochain match en ligne, décidé avant le choix du
+// personnage. C'est lui qui dit de quel côté on choisit : héberger tient le
+// camp de gauche, rejoindre celui de droite, et on picke là où l'on jouera.
+let roleEnLigne = null;
+
+export function preparerChoixEnLigne(role) {
+  roleEnLigne = role;
+  modeEnLigne = true; modeJ2J = false;
+  musiqueDeMenu();
+  resetSelectTurn(role === 'invite' ? 2 : 1);
+  showScreen('select'); refreshSelect();
+}
+
+// Le personnage que ce joueur vient de choisir, du côté qui est le sien.
+function monPersoChoisi() {
+  return roleEnLigne === 'invite' ? selCharCPU : selCharPlayer;
 }
 
 // Disque préféré : le bouton ouvre un panneau où l'on VOIT les disques, plutôt
@@ -223,11 +241,15 @@ function preselectRandom() {
 function validate(side) {
   // En ligne, il n'y a pas de second camp à choisir ici : l'adversaire choisit
   // le sien de son côté. On passe donc directement à la suite plutôt que
-  // d'attendre une validation qui ne viendra jamais.
-  if (side === 1 && modeEnLigne) {
-    if (!previewP1 || lockedP1) return;
-    lockedP1 = true; turn = 0;
-    clac(); refreshSelect(); punchHero(1);
+  // d'attendre une validation qui ne viendra jamais. Et on ne valide que SON
+  // camp — celui d'en face n'est pas à nous.
+  if (modeEnLigne) {
+    const mien = roleEnLigne === 'invite' ? 2 : 1;
+    if (side !== mien) return;
+    if (mien === 1) { if (!previewP1 || lockedP1) return; lockedP1 = true; }
+    else { if (!previewP2 || lockedP2) return; lockedP2 = true; }
+    turn = 0;
+    clac(); refreshSelect(); punchHero(mien);
     showScreen('maps'); refreshMaps();
     return;
   }
@@ -331,19 +353,24 @@ export function refreshSelect() {
   const p1 = CHARS[selCharPlayer], p2 = CHARS[selCharCPU];
   // En ligne, le camp d'en face n'est pas un choix : c'est quelqu'un qu'on ne
   // connaît pas encore. L'afficher avec un personnage par défaut laissait
-  // croire qu'on allait affronter Leon, alors que rien n'est décidé.
-  const advInconnu = modeEnLigne;
-  const cacheP2 = rndP2 || advInconnu;
+  // croire qu'on allait affronter Leon, alors que rien n'est décidé. C'est le
+  // camp opposé au nôtre qu'on masque, et notre camp dépend du rôle : héberger
+  // tient la gauche, rejoindre la droite.
+  const jeSuisInvite = modeEnLigne && roleEnLigne === 'invite';
+  const advGauche = jeSuisInvite;
+  const advDroite = modeEnLigne && !jeSuisInvite;
+  const cacheP1 = rndP1 || advGauche;
+  const cacheP2 = rndP2 || advDroite;
   // Un camp tiré au sort est masqué de bout en bout jusqu'au coup d'envoi :
   // sprite, univers, statistiques, ultime et couleur d'ambiance. Chacun de ces
   // détails suffisait à reconnaître le personnage malgré le « ? ».
-  $('selUni1').textContent = rndP1 ? '???' : p1.universe;
-  $('selUni2').textContent = advInconnu ? 'EN LIGNE' : (rndP2 ? '???' : p2.universe);
-  $('selName1').textContent = rndP1 ? '???' : p1.short;
-  $('selName2').textContent = advInconnu ? 'ADVERSAIRE' : (rndP2 ? '???' : p2.short);
-  drawSprite($('selHero1'), rndP1 ? null : selCharPlayer, 12);
+  $('selUni1').textContent = advGauche ? 'EN LIGNE' : (rndP1 ? '???' : p1.universe);
+  $('selUni2').textContent = advDroite ? 'EN LIGNE' : (rndP2 ? '???' : p2.universe);
+  $('selName1').textContent = advGauche ? 'ADVERSAIRE' : (rndP1 ? '???' : p1.short);
+  $('selName2').textContent = advDroite ? 'ADVERSAIRE' : (rndP2 ? '???' : p2.short);
+  drawSprite($('selHero1'), cacheP1 ? null : selCharPlayer, 12);
   drawSprite($('selHero2'), cacheP2 ? null : selCharCPU, 12);
-  showRandomMask(0, rndP1);
+  showRandomMask(0, cacheP1);
   showRandomMask(1, cacheP2);
 
   // Plus de grisage : le camp en cours se lit au bandeau clignotant et aux
@@ -358,13 +385,18 @@ export function refreshSelect() {
       : turn === 2 ? (modeJ2J ? 'AU TOUR DE 2P' : 'AU TOUR DU CPU') : '';
     // En ligne, l'hote tient le camp de gauche et l'invite celui de droite. On
     // le dit ici plutot que de laisser le joueur le decouvrir au coup d'envoi.
-    if (modeEnLigne && turn === 1) hint.textContent = 'CHOISIS TON CHAMPION — HEBERGER = GAUCHE, REJOINDRE = DROITE';
+    if (modeEnLigne && turn !== 0) hint.textContent = roleEnLigne === 'invite'
+      ? 'TU REJOINS — TON CHAMPION EST A DROITE'
+      : 'TU HEBERGES — TON CHAMPION EST A GAUCHE';
   }
-  renderStats($('selStats1'), rndP1 ? null : p1);
+  renderStats($('selStats1'), cacheP1 ? null : p1);
   renderStats($('selStats2'), cacheP2 ? null : p2);
   renderCharGrid();
 
-  const sp = rndP1 ? null : SPECIALS[p1.ult];
+  // L'ultime affiche est celui de NOTRE personnage, pas systematiquement celui
+  // de gauche : en invite, celui de gauche est l'adversaire inconnu.
+  const perso = modeEnLigne ? CHARS[monPersoChoisi()] : p1;
+  const sp = (modeEnLigne ? false : rndP1) ? null : SPECIALS[perso.ult];
   $('specialName').textContent = sp ? sp.name : '???';
   $('specialDesc').textContent = sp ? sp.desc : 'Tirage au sort — révélé au coup d\'envoi.';
   $('diffName').textContent = DIFFS[diffIdx].label;
@@ -372,7 +404,7 @@ export function refreshSelect() {
   // Halos + fond en dégradé de la couleur J1 vers celle de J2. Un camp masqué
   // vire au gris neutre : sa couleur d'ambiance le désignait aussi sûrement.
   const NEUTRE = '#6b7280';
-  const c1 = rndP1 ? NEUTRE : p1.color, c2 = cacheP2 ? NEUTRE : p2.color;
+  const c1 = cacheP1 ? NEUTRE : p1.color, c2 = cacheP2 ? NEUTRE : p2.color;
   $('selGlow1').style.background = c1;
   $('selGlow2').style.background = c2;
   document.querySelector('.bg-select').style.background =
@@ -801,13 +833,15 @@ function startMatch() {
   // apporte à la table. Le personnage et le terrain choisis partent avec notre
   // présentation, et c'est l'hôte qui tranche entre les deux terrains.
   if (modeEnLigne) {
-    G.matchChar = selCharPlayer;
+    G.matchChar = monPersoChoisi();
     musiqueDeMenu();
     // Déjà en liaison — on revient d'un changement de personnage : on renvoie
     // simplement sa présentation et on attend le coup d'envoi de l'hôte.
     // Rouvrir l'arène couperait la connexion et il faudrait tout réétablir.
-    if (Partie.active) { annoncerIdentite(selCharPlayer); return; }
-    ouvrirEnLigne();
+    if (Partie.active) { annoncerIdentite(monPersoChoisi()); return; }
+    // Le rôle est déjà décidé : on ouvre directement l'étape correspondante,
+    // héberger ou rejoindre, plutôt que de repasser par le menu de l'arène.
+    lancerArene(roleEnLigne || 'hote');
     return;
   }
   musiqueDuMatch();
@@ -824,7 +858,10 @@ export function doAct(act) {
     case 'options': sfx('select'); musiqueDeMenu(); showScreen('options'); refreshKeysUI(); break;
     // En ligne comme contre l'ordinateur : on choisit son personnage, puis son
     // terrain, et seulement ensuite on va chercher un adversaire.
-    case 'online': sfx('select'); modeJ2J = false; modeEnLigne = true; musiqueDeMenu(); resetSelectTurn(); showScreen('select'); refreshSelect(); break;
+    // On revient au menu de l'arene : on y decide d'abord d'heberger ou de
+    // rejoindre, et c'est ce choix qui dit de quel cote on va choisir son
+    // personnage. L'inverse obligeait a picker a gauche pour jouer a droite.
+    case 'online': sfx('select'); modeJ2J = false; modeEnLigne = false; musiqueDeMenu(); ouvrirEnLigne(); break;
     case 'learn': sfx('select'); musiqueDeMenu(); ouvrirApprentissage(); break;
     case 'training': sfx('select'); jouerMusiqueEntrainement(); lancerEntrainement(); break;
     case 'tuto': sfx('select'); musiqueDeMenu(); ouvrirChapitres(); break;

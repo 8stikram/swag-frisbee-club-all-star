@@ -68,10 +68,13 @@ async function lancerMatch(persoHote, persoInvite) {
   const bh = $('onHeberger'), br = $('onRejoindre');
   if (!bh || !br) return;
 
-  bh.addEventListener('click', () => {
+  // Héberger et rejoindre ne lancent plus l'arène directement : ils décident du
+  // rôle, donc du camp, et envoient d'abord choisir personnage et terrain. On
+  // pickait sinon toujours à gauche pour parfois jouer à droite.
+  bh.addEventListener('click', async () => {
     sfx('select');
-    montrerPanneau('onEtapeHote');
-    hebergerAvecCode();
+    const { preparerChoixEnLigne } = await import('./menus.js');
+    preparerChoixEnLigne('hote');
   });
 
   // ARENE ouvre le choix entre heberger et rejoindre : deux gestes differents,
@@ -79,12 +82,10 @@ async function lancerMatch(persoHote, persoInvite) {
   $('onArene')?.addEventListener('click', () => { sfx('select'); montrerPanneau('onChoixArene'); dire(''); });
   $('onRetourMenu')?.addEventListener('click', () => { sfx('select'); montrerPanneau('onChoix'); dire(''); });
 
-  br.addEventListener('click', () => {
+  br.addEventListener('click', async () => {
     sfx('select');
-    montrerPanneau('onEtapeInvite');
-    dire('tape le code que ton adversaire t\'a donné.');
-    const c = $('areneEntree');
-    if (c) { c.value = ''; c.focus(); }
+    const { preparerChoixEnLigne } = await import('./menus.js');
+    preparerChoixEnLigne('invite');
   });
 
   $('onRejoindreCode')?.addEventListener('click', () => { sfx('select'); rejoindreAvecCode(); });
@@ -131,6 +132,22 @@ async function lancerMatch(persoHote, persoInvite) {
     }
   });
 })();
+
+// Ouvre l'étape correspondant au rôle déjà décidé. Appelé une fois le
+// personnage et le terrain choisis : à ce moment on sait quoi apporter, donc
+// on peut vraiment ouvrir l'arène ou aller en rejoindre une.
+export function lancerArene(role) {
+  showScreen('online');
+  if (role === 'invite') {
+    montrerPanneau('onEtapeInvite');
+    dire('tape le code que ton adversaire t\'a donné.');
+    const c = $('areneEntree');
+    if (c) { c.value = ''; c.focus(); }
+    return;
+  }
+  montrerPanneau('onEtapeHote');
+  hebergerAvecCode();
+}
 
 // --- Code d'arene ----------------------------------------------------------
 // Le copier-coller marche toujours, mais il reste replie : il ne sert que si
