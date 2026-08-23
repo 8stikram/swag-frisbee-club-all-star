@@ -329,17 +329,22 @@ function markPicked(cell, kind, label) {
 
 export function refreshSelect() {
   const p1 = CHARS[selCharPlayer], p2 = CHARS[selCharCPU];
+  // En ligne, le camp d'en face n'est pas un choix : c'est quelqu'un qu'on ne
+  // connaît pas encore. L'afficher avec un personnage par défaut laissait
+  // croire qu'on allait affronter Leon, alors que rien n'est décidé.
+  const advInconnu = modeEnLigne;
+  const cacheP2 = rndP2 || advInconnu;
   // Un camp tiré au sort est masqué de bout en bout jusqu'au coup d'envoi :
   // sprite, univers, statistiques, ultime et couleur d'ambiance. Chacun de ces
   // détails suffisait à reconnaître le personnage malgré le « ? ».
   $('selUni1').textContent = rndP1 ? '???' : p1.universe;
-  $('selUni2').textContent = rndP2 ? '???' : p2.universe;
+  $('selUni2').textContent = advInconnu ? 'EN LIGNE' : (rndP2 ? '???' : p2.universe);
   $('selName1').textContent = rndP1 ? '???' : p1.short;
-  $('selName2').textContent = rndP2 ? '???' : p2.short;
+  $('selName2').textContent = advInconnu ? 'ADVERSAIRE' : (rndP2 ? '???' : p2.short);
   drawSprite($('selHero1'), rndP1 ? null : selCharPlayer, 12);
-  drawSprite($('selHero2'), rndP2 ? null : selCharCPU, 12);
+  drawSprite($('selHero2'), cacheP2 ? null : selCharCPU, 12);
   showRandomMask(0, rndP1);
-  showRandomMask(1, rndP2);
+  showRandomMask(1, cacheP2);
 
   // Plus de grisage : le camp en cours se lit au bandeau clignotant et aux
   // contours posés sur les cases. COMBATTRE n'apparaît qu'une fois les deux
@@ -351,9 +356,12 @@ export function refreshSelect() {
     hint.className = 'turnHint ' + (turn === 1 ? 'p1' : turn === 2 ? 'p2' : 'done');
     hint.textContent = turn === 1 ? 'AU TOUR DE 1P'
       : turn === 2 ? (modeJ2J ? 'AU TOUR DE 2P' : 'AU TOUR DU CPU') : '';
+    // En ligne, l'hote tient le camp de gauche et l'invite celui de droite. On
+    // le dit ici plutot que de laisser le joueur le decouvrir au coup d'envoi.
+    if (modeEnLigne && turn === 1) hint.textContent = 'CHOISIS TON CHAMPION — HEBERGER = GAUCHE, REJOINDRE = DROITE';
   }
   renderStats($('selStats1'), rndP1 ? null : p1);
-  renderStats($('selStats2'), rndP2 ? null : p2);
+  renderStats($('selStats2'), cacheP2 ? null : p2);
   renderCharGrid();
 
   const sp = rndP1 ? null : SPECIALS[p1.ult];
@@ -364,7 +372,7 @@ export function refreshSelect() {
   // Halos + fond en dégradé de la couleur J1 vers celle de J2. Un camp masqué
   // vire au gris neutre : sa couleur d'ambiance le désignait aussi sûrement.
   const NEUTRE = '#6b7280';
-  const c1 = rndP1 ? NEUTRE : p1.color, c2 = rndP2 ? NEUTRE : p2.color;
+  const c1 = rndP1 ? NEUTRE : p1.color, c2 = cacheP2 ? NEUTRE : p2.color;
   $('selGlow1').style.background = c1;
   $('selGlow2').style.background = c2;
   document.querySelector('.bg-select').style.background =
