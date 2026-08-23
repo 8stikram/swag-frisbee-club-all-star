@@ -116,8 +116,13 @@ export function resetSelectTurn() {
     b.textContent = f ? ((DISC_SKINS.find(s => s.id === f) || {}).name || f) : 'ALÉATOIRE';
   };
 
+  // Les vignettes du panneau, redessinées tant qu'il est ouvert. On repart de
+  // zéro à chaque construction : les anciens canevas n'existent plus.
+  const toilesPanneau = [];
+
   function buildPanel() {
     panel.innerHTML = '';
+    toilesPanneau.length = 0;
     const fav = getFavSkin();
     // Case « aléatoire » en tête, puis un aperçu dessiné de chaque disque.
     const rnd = document.createElement('button');
@@ -136,6 +141,9 @@ export function resetSelectTurn() {
       const cv = document.createElement('canvas');
       cv.width = cv.height = 72;
       drawSkinDisc(cv.getContext('2d'), 36, 36, 32, s.id, 0);
+      // On garde de quoi redessiner : les faces sont animées, un dessin unique
+      // à la construction donnerait un panneau de disques morts.
+      toilesPanneau.push({ g: cv.getContext('2d'), id: s.id });
       cell.appendChild(cv);
       const em = document.createElement('em'); em.textContent = s.name;
       cell.appendChild(em);
@@ -162,6 +170,18 @@ export function resetSelectTurn() {
     if (!ouvert) buildPanel();
     sfx('move');
   });
+
+  // Une seule boucle pour tout le panneau, et seulement quand il est ouvert :
+  // le menu n'a aucune raison de faire tourner onze canevas en fond.
+  (function animerPanneau() {
+    requestAnimationFrame(animerPanneau);
+    if (panel.classList.contains('hidden') || !toilesPanneau.length) return;
+    for (const t of toilesPanneau) {
+      t.g.clearRect(0, 0, 72, 72);
+      drawSkinDisc(t.g, 36, 36, 32, t.id, 0);
+    }
+  })();
+
   label();
 })();
 
@@ -364,23 +384,41 @@ function majChoixDisques() {
 }
 majChoixDisques();
 
+// Cases du carrousel encore à l'écran, redessinées tant qu'il est visible.
+const toilesCarrousel = [];
+
 // Peint une case du carrousel (grande au centre, petites sur les côtés).
 function paintDiscSlot(el, choice, size) {
   el.innerHTML = '';
   el.classList.toggle('rnd', choice.id === '__random');
   if (choice.id === '__random') {
     el.textContent = '?';
-  } else {
-    const cv = document.createElement('canvas');
-    cv.width = size; cv.height = size;
-    drawSkinDisc(cv.getContext('2d'), size / 2, size / 2, size / 2 - 2, choice.id, 0);
-    el.appendChild(cv);
+    return;
   }
+  const cv = document.createElement('canvas');
+  cv.width = size; cv.height = size;
+  const g = cv.getContext('2d');
+  drawSkinDisc(g, size / 2, size / 2, size / 2 - 2, choice.id, 0);
+  toilesCarrousel.push({ g, id: choice.id, size });
+  el.appendChild(cv);
 }
+
+// Une seule boucle pour les trois cases, et seulement quand l'écran de choix
+// est ouvert : ailleurs, ces canevas n'existent même plus à l'écran.
+(function animerCarrousel() {
+  requestAnimationFrame(animerCarrousel);
+  const scr = $('scr-select');
+  if (!scr || scr.classList.contains('hidden') || !toilesCarrousel.length) return;
+  for (const t of toilesCarrousel) {
+    t.g.clearRect(0, 0, t.size, t.size);
+    drawSkinDisc(t.g, t.size / 2, t.size / 2, t.size / 2 - 2, t.id, 0);
+  }
+})();
 
 function renderDisc() {
   const n = DISC_CHOICES.length;
   const ch = DISC_CHOICES[discIdx];
+  toilesCarrousel.length = 0;   // les canevas précédents viennent d'être jetés
   paintDiscSlot($('discView'), ch, 90);
   paintDiscSlot($('discLeft'), DISC_CHOICES[(discIdx - 1 + n) % n], 56);
   paintDiscSlot($('discRight'), DISC_CHOICES[(discIdx + 1) % n], 56);

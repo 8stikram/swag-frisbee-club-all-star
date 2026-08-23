@@ -6,7 +6,7 @@ import { options as optionsTraining } from '../ui/training.js';
 import { centreDunk, centrePanier, ZONES } from '../game/zones.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
-import { getSkinId, drawSkinDisc } from '../data/skins.js';
+import { getSkinId, drawSkinDisc, deformationDisque, tracerContour } from '../data/skins.js';
 import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN } from '../data/specials.js';
 import { Reglages } from '../data/disc-fx.js';
 
@@ -23,6 +23,27 @@ function drawStars() {
     ctx.fillRect(s.x - s.size / 2, s.y - s.size / 2, s.size, s.size);
   }
   ctx.globalAlpha = 1;
+}
+
+// Étoiles filantes de fond : elles n'existent que pendant que le disque
+// Galaxie est en jeu. Dessinées avec les étoiles du décor, donc loin derrière
+// l'action — elles doivent se remarquer sans jamais se disputer le regard.
+function drawFilantes() {
+  ctx.lineCap = 'round';
+  for (const f of G.filantes) {
+    const k = f.t / f.dur;
+    ctx.globalAlpha = Math.sin(k * Math.PI) * .55;
+    const g = ctx.createLinearGradient(f.x, f.y, f.x - f.vx * .12, f.y - f.vy * .12);
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(1, 'rgba(140,200,255,0)');
+    ctx.strokeStyle = g; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(f.x, f.y);
+    ctx.lineTo(f.x - f.vx * .12, f.y - f.vy * .12);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.lineCap = 'butt';
 }
 
 /* Nébuleuse de fond : nappes colorées diffuses, posées avant les étoiles.
@@ -493,6 +514,7 @@ function drawCourt() {
   ctx.fillRect(0, 0, W, H);
   drawNebula();
   drawStars();
+  if (G.filantes.length) drawFilantes();
   drawStationBackdrop();
   drawDrones();
 
@@ -725,6 +747,26 @@ function dessinerOrbes(p) {
   void c;
 }
 
+// Bouclier du disque Captain : les anneaux du bouclier, dessinés autour du
+// joueur qui vient d'attraper. Il grandit et s'efface — un anneau de taille
+// fixe passerait pour un élément d'interface.
+function drawBouclier(p) {
+  const k = p.bouclierT / .45;
+  const r = 27 + (1 - k) * 15;
+  ctx.save();
+  ctx.globalAlpha = k * .9;
+  ctx.lineWidth = 3;
+  // Les trois anneaux tiennent dans la couronne extérieure. Répartis jusqu'au
+  // centre comme sur le vrai bouclier, les deux plus petits tombaient sur le
+  // sprite et s'y délavaient : il ne restait qu'un cercle rouge.
+  const anneaux = [[1, '#c2131a'], [.85, '#f2f2f2'], [.70, '#1b3f94']];
+  for (const [f, col] of anneaux) {
+    ctx.strokeStyle = col;
+    ctx.beginPath(); ctx.arc(p.x, p.y, r * f, 0, TAU); ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawPlayer(p) {
   const c = p.char;
   drawGhosts(p);
@@ -841,6 +883,9 @@ function drawPlayer(p) {
     ctx.textAlign = 'center';
     ctx.fillText(G.isJ2J && p.side === 2 ? 'J2' : 'P1', p.x, p.y - 48 * SCALE);
   }
+  // Le bouclier passe par-dessus le joueur. Dessiné dessous, le sprite en
+  // masquait deux anneaux sur trois et il ne restait qu'un arc rouge.
+  if (p.bouclierT > 0) drawBouclier(p);
 }
 
 function drawTrail() {
@@ -873,11 +918,56 @@ function drawDisc() {
     ctx.strokeStyle = 'rgba(255,83,64,.7)'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(d.x, d.y, r + 4 + Math.sin(G.now * 24) * 2, G.now * 12, G.now * 12 + 4.6); ctx.stroke();
   } else {
-    drawSkinDisc(ctx, d.x, d.y, r, getSkinId(), d.spin);
+    const id = getSkinId();
+    // Gélatine : le disque tremble après un rebond. On étire sur un axe et on
+    // écrase sur l'autre, à volume constant — c'est ce qui fait « élastique »
+    // plutôt que « qui grandit ».
+    if (d.wobble > 0) {
+      const k = 1 + Math.sin(d.wobble * 26) * d.wobble * .28;
+      ctx.save();
+      ctx.translate(d.x, d.y); ctx.scale(k, 1 / k); ctx.translate(-d.x, -d.y);
+    }
+    drawSkinDisc(ctx, d.x, d.y, r, id, d.spin);
+    // Glitch : le disque se dédouble en rouge et cyan par intermittence,
+    // 0,1 s toutes les 2 s. Un décalage permanent deviendrait sa forme
+    // normale et ne surprendrait plus personne.
+    if (id === 'glitch' && (G.now % 2) < .1) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = .45;
+      ctx.beginPath(); ctx.arc(d.x + 3, d.y, r, 0, TAU); ctx.fillStyle = '#ff0040'; ctx.fill();
+      ctx.beginPath(); ctx.arc(d.x - 3, d.y, r, 0, TAU); ctx.fillStyle = '#00e5ff'; ctx.fill();
+      ctx.restore();
+    }
+    // Le liseré suit la silhouette réelle : la Gélatine n'est pas ronde, un
+    // cercle tracé par-dessus trahirait tout de suite la découpe.
     ctx.strokeStyle = 'rgba(255,255,255,.3)';
     ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(d.x, d.y, r, 0, TAU); ctx.stroke();
+    tracerContour(ctx, d.x, d.y, r, deformationDisque(id));
+    ctx.stroke();
+    if (d.wobble > 0) ctx.restore();
+    // 20/20 : une formule s'inscrit brièvement à côté du disque en vol.
+    if (id === 'vingt' && d.free) drawFormule(d);
   }
+}
+
+// Les formules du disque 20/20. Elles changent toutes les 1,2 s et ne durent
+// que 0,3 s : assez pour être lues, trop peu pour encombrer.
+const FORMULES = ['a²+b²', '∫f(x)dx', 'πr²', 'x=-b/2a', 'E=mc²', '√2', 'cos²+sin²=1'];
+function drawFormule(d) {
+  const cycle = 1.2, visible = .3;
+  const phase = G.now % cycle;
+  if (phase > visible) return;
+  const idx = Math.floor(G.now / cycle) % FORMULES.length;
+  const a = (1 - phase / visible) * .85;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.fillStyle = '#d81f26';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '700 11px "Archivo Black", sans-serif';
+  ctx.fillText(FORMULES[idx], d.x, d.y - 22 - (1 - a) * 8);
+  ctx.restore();
 }
 
 function drawDiscObj(x, y, spin, alpha = 1, tint = null, r) {

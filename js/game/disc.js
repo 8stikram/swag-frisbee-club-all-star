@@ -68,6 +68,9 @@ export function updateDisc(dt) {
         : (d.kind === 'matilda' ? '#8dff6a' : couleurTrainee(getSkinId(), d.spin)))
   });
   if (ordinaire) semerEnVol(getSkinId(), d, G.particles);
+  // Tremblement laissé par un rebond de Gélatine : il s'amortit vite, sinon le
+  // disque a l'air cassé plutôt qu'élastique.
+  if (d.wobble > 0) d.wobble = Math.max(0, d.wobble - dt * 2.6);
   if (G.trail.length > 26) G.trail.shift();
   const sp = Math.hypot(d.vx, d.vy);
   const rest = d.kind === 'kurama' ? 1 : .99;

@@ -36,6 +36,8 @@ export const G = {
   goalT: 0, cdT: 0, cdN: -1, serveTo: 1, winner: null, goalFlash: [0, 0],
   // Ondes de choc en demi-cercle parties d'une cage au moment du but.
   ondesBut: [],
+  // Étoiles filantes du décor, propres au disque Galaxie.
+  filantes: [],
   matchChar: 'naruto', matchCPU: 'leon', matchDiff: 1,
   crowd: [], stars: [], rally: 0, maxRally: 0,
   cine: null, leg: null, bell: null, rec: [], replay: null, comment: null,
@@ -115,7 +117,9 @@ export function makePlayer(ck, side, human, diffIdx) {
     // Mode Six Paths de Naruto : temps restant, et angle de l'anneau d'orbes.
     sixT: 0, sixA: 0,
     // Bras tendu de Leon pendant le Tir Matilda : durée de la pose.
-    viseT: 0
+    viseT: 0,
+    // Bouclier du disque Captain : bref halo autour de celui qui attrape.
+    bouclierT: 0
   };
   if (!human) {
     p.ai = {
@@ -129,7 +133,7 @@ export function makePlayer(ck, side, human, diffIdx) {
 }
 
 export function resetDisc() {
-  return { x: CX, y: CY, vx: 0, vy: 0, heldBy: null, kind: 'normal', spin: 0, age: 0, thrower: null, thrownAt: -9, bounced: false, stall: 0, free: false, big: false, kSpeed: 0, super: false };
+  return { x: CX, y: CY, vx: 0, vy: 0, heldBy: null, kind: 'normal', spin: 0, age: 0, thrower: null, thrownAt: -9, bounced: false, stall: 0, free: false, big: false, kSpeed: 0, super: false, wobble: 0 };
 }
 
 export function initMatch(demo, ck, cpu, diffIdx, j2j) {
@@ -138,7 +142,7 @@ export function initMatch(demo, ck, cpu, diffIdx, j2j) {
   G.timescale = 1; G.shake = 0; G.rally = 0; G.maxRally = 0; G.comment = null; G.idleT = 0;
   G.mem = { t: 0, m: 0, b: 0 }; G.startCom = false; G.lungeBonus = false; G.lungeBonusTimer = 0;
   G.zoom = null; G.flash = 0; G.lastCatchIdx = -1;
-  G.ondesBut.length = 0;
+  G.ondesBut.length = 0; G.filantes.length = 0;
   G.cercles.length = 0; G.prochainCercle = 0;
   // Repères pour les conditions de déblocage des skins : depuis quand le match
   // dure, et si le joueur s'est autorisé un dash.

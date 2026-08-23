@@ -169,6 +169,90 @@ export const FX_DISQUES = {
     rebond(d, out) { couronne(out, d.x, d.y, ['#ff2fb9', '#12d0ff', '#00ffa3', '#ffe600'], 12, 200, 4, .5); }
   },
 
+  // Enluminure : poudre d'or en spirale, rosace au rebond.
+  chaptele: {
+    trainee: ['#c9a227', '#f2e2b0'],
+    vol(d, out) {
+      if (combien(.4)) {
+        // La poudre part en spirale autour du disque, pas droit derrière : le
+        // mouvement tournant est ce qui évoque la plume du copiste.
+        const a = d.spin * 3, r = 12;
+        out.push(p(d.x + Math.cos(a) * r, d.y + Math.sin(a) * r,
+          -Math.sin(a) * 40, Math.cos(a) * 40, .55,
+          Math.random() < .6 ? '#e8c85a' : '#fff3c4', 2, 0, 'star'));
+      }
+    },
+    // Une rosace, donc des pétales réguliers et non un jet au hasard.
+    rebond(d, out) { spirale(out, d.x, d.y, ['#f2e2b0', '#c9a227', '#8a6a12'], 8, 130, .7); }
+  },
+
+  // Égypte : sable doré très fin, pyramide de lumière au rebond.
+  pharaon: {
+    trainee: ['#d4af37', '#e8d5a3'],
+    vol(d, out) {
+      if (combien(.45)) {
+        out.push(p(d.x + gauss() * 10, d.y + gauss() * 10, gauss() * 16, rand(10, 45),
+          .6, ['#d4af37', '#e8d5a3', '#c9a227'][(Math.random() * 3) | 0], 1.5, 30));
+      }
+    },
+    rebond(d, out) {
+      // La pyramide : trois traits qui montent en pointe. Peu de particules,
+      // mais placées — c'est la forme qui doit se lire, pas la quantité.
+      for (let i = 0; i < combien(9); i++) {
+        const k = i / 9;
+        const large = 26 * (1 - k);
+        out.push(p(d.x + (Math.random() < .5 ? -large : large), d.y + 14 - k * 30,
+          gauss() * 8, -rand(10, 25), .55, '#ffe9a8', 3, 0));
+      }
+    }
+  },
+
+  // Bonbon : gouttes colorées, et le disque qui tremble comme une gelée.
+  gelatine: {
+    trainee: ['#ff5fa2', '#ffe14d', '#5ce1a0'],
+    vol(d, out) {
+      if (combien(.35)) {
+        out.push(p(d.x + gauss() * 9, d.y + gauss() * 9, gauss() * 14, rand(15, 55),
+          .5, ['#ff5fa2', '#ffe14d', '#5ce1a0', '#ff8f4d'][(Math.random() * 4) | 0], 3, 90));
+      }
+    },
+    rebond(d, out) {
+      // Le vrai effet est le tremblement du disque, pas la gerbe : on marque
+      // le disque et le rendu s'en occupe. Deux ou trois gouttes suffisent
+      // à accompagner, davantage écraserait le wobble.
+      d.wobble = 1;
+      couronne(out, d.x, d.y, ['#ff5fa2', '#ffe14d', '#5ce1a0'], 4, 110, 4, .45);
+    }
+  },
+
+  // Cheval ailé : poussière d'étoile et plumes qui tombent, constellation au rebond.
+  pegasus: {
+    trainee: ['#ffffff', '#ffd9f0'],
+    vol(d, out) {
+      if (combien(.4)) {
+        out.push(p(d.x + gauss() * 11, d.y + gauss() * 11, gauss() * 20, gauss() * 20,
+          .5, Math.random() < .7 ? '#ffffff' : '#ffd9f0', 2, 0, 'star'));
+      }
+      // Les plumes tombent lentement en dérivant : c'est leur lenteur qui les
+      // distingue de la poussière, pas leur forme — trop petites pour ça.
+      if (combien(.12)) {
+        out.push(p(d.x + gauss() * 14, d.y + gauss() * 8, gauss() * 25, rand(15, 40),
+          1.1, '#ffffff', 3, 25));
+      }
+    },
+    rebond(d, out) {
+      // Une constellation : des points espacés reliés par l'œil, donc peu
+      // nombreux et presque immobiles, à l'inverse d'une gerbe.
+      for (let i = 0; i < combien(7); i++) {
+        const a = (i / 7) * TAU + rand(.5);
+        const dist = rand(18, 40);
+        out.push(p(d.x + Math.cos(a) * dist, d.y + Math.sin(a) * dist,
+          Math.cos(a) * 12, Math.sin(a) * 12, .9,
+          i % 3 === 0 ? '#ffd9f0' : '#ffffff', rand(2, 4), 0, 'star'));
+      }
+    }
+  },
+
   // Copie d'examen : poussière de craie, et la gomme qui rebondit avec.
   vingt: {
     trainee: ['#fdfaf0', '#d81f26'],

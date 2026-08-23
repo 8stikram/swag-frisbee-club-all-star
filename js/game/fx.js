@@ -1,6 +1,9 @@
 import { G } from './state.js';
 import { CY } from '../core/constants.js';
 import { TAU, rand, gauss } from '../core/utils.js';
+import { W, H } from '../core/dom.js';
+import { getSkinId } from '../data/skins.js';
+import { Reglages } from '../data/disc-fx.js';
 
 export function burst(x, y, c, n) {
   for (let i = 0; i < n; i++) {
@@ -45,6 +48,32 @@ export function confettiNumerique(x) {
   }
 }
 
+// Étoiles filantes du décor : elles n'existent que pendant que le disque
+// Galaxie est en jeu. Deux au maximum, parce qu'au-delà ce n'est plus un ciel,
+// c'est une pluie de météores — et elles doivent rester à l'arrière-plan.
+let prochaineFilante = 0;
+function majFilantes(dt) {
+  for (let i = G.filantes.length - 1; i >= 0; i--) {
+    const f = G.filantes[i];
+    f.t += dt;
+    if (f.t >= f.dur) { G.filantes.splice(i, 1); continue; }
+    f.x += f.vx * dt; f.y += f.vy * dt;
+  }
+  if (!Reglages.particules || getSkinId() !== 'galaxy' || G.demo) { prochaineFilante = 0; return; }
+  prochaineFilante -= dt;
+  if (prochaineFilante > 0 || G.filantes.length >= 2) return;
+  prochaineFilante = rand(1.6, 4.2);
+  const versLaDroite = Math.random() < .5;
+  const v = rand(420, 700);
+  G.filantes.push({
+    x: versLaDroite ? -60 : W + 60,
+    y: rand(20, H * .55),
+    vx: versLaDroite ? v : -v,
+    vy: rand(90, 190),
+    t: 0, dur: rand(.9, 1.5)
+  });
+}
+
 export function addPopup(text, color, size = 18, dur = 1, y) {
   G.popups.push({ text, color, size, dur, t: 0, y: y === undefined ? CY - 90 : y });
 }
@@ -65,6 +94,7 @@ export function updateFX(dt) {
   }
   if (G.banner) { G.banner.t += dt; if (G.banner.t > G.banner.dur) G.banner = null; }
   if (G.comment) { G.comment.t += dt; if (G.comment.t > G.comment.dur) G.comment = null; }
+  majFilantes(dt);
   for (let i = G.ondesBut.length - 1; i >= 0; i--) {
     const o = G.ondesBut[i];
     o.t += dt;

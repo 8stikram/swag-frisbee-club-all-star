@@ -14,6 +14,7 @@ import { burst, dust, ring, confetti, starBurst, addPopup, ondeDeBut, confettiNu
 import { $, cv, showScreen } from '../core/dom.js';
 import { signalerPerfectDive } from './moves.js';
 import { ajouterStat, verifierDeblocages } from '../data/skins-perso.js';
+import { getSkinId } from '../data/skins.js';
 import { annoncerSkins } from '../ui/skins-ui.js';
 
 export function setupServe(side) {
@@ -199,6 +200,10 @@ export function onCatch(p, sp, dirx, diry) {
   // puissance. S'il ne clique pas, il garde simplement le disque en main.
   if (p.dashT > 0 || p.cancelCatchT > 0) p.dashThrowT = DASH_THROW_WINDOW;
   sfx('catch'); ring(p.x, p.y, p.char.accent);
+  // Captain : un bouclier apparaît un instant autour de celui qui attrape.
+  // Attaché au joueur et pas au disque, parce que le disque vient de quitter
+  // le terrain pour sa main — c'est lui qu'on regarde à cet instant.
+  if (getSkinId() === 'captain') p.bouclierT = .45;
   if (sp > 780) {
     p.meter = clamp(p.meter + 20 * METER_GAIN, 0, 100);
     addPopup('PERFECT CATCH !', '#ffffff', 14, .9, p.y - 56);

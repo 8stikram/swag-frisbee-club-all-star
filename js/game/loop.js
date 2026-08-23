@@ -41,6 +41,7 @@ export function update(dt) {
   for (const p of [G.p1, G.p2]) {
     if (!p) continue;
     if (p.viseT > 0) p.viseT = Math.max(0, p.viseT - wdt);
+    if (p.bouclierT > 0) p.bouclierT = Math.max(0, p.bouclierT - wdt);
     if (!(p.sixT > 0)) continue;
     // Le compte à rebours ne tourne que balle en jeu. Sinon un but, son replay
     // et la remise en jeu dévoraient la moitié de la forme sans qu'on ait pu
