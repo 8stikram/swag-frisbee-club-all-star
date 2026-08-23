@@ -1750,3 +1750,25 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 #cadCanevas:active{ cursor:grabbing }
 #cadCanevas.rond{ border-radius:50% }
 .cadZoom{ width:min(30cqw,300px); accent-color:#1f6aa8 }
+
+/* Barre de gauche : le retour, du meme gabarit que le plein ecran. Un vrai
+   bouton plutot qu'un rappel de touche — on cliquait dessus de toute facon. */
+.topBar.gauche{ left:2.4%; right:auto }
+/* Les rappels de touches de l'ecran de selection descendent en bas : en haut a
+   droite ils passaient sous le bouton de compte, et les deux devenaient
+   illisibles. Ils gardent leur role, ils changent de place. */
+.scr-select .prompt.right{ top:auto; bottom:3%; right:auto; left:2.4%;
+  flex-direction:row; align-items:center; gap:1.4cqw }
+
+/* Titre du createur : degrade anime. Le fond defile sous le texte, decoupe a
+   la forme des lettres — c'est le seul titre du jeu qui bouge, et c'est
+   exactement ce qui le distingue de ceux qui se gagnent en jouant. */
+.ficheTitre.createur{
+  background:linear-gradient(90deg,#ff5f8d,#ffd23e,#5df08a,#35e0ff,#c86bff,#ff5f8d);
+  background-size:300% 100%;
+  -webkit-background-clip:text; background-clip:text;
+  color:transparent; border-color:var(--ink);
+  animation:titreDefile 5s linear infinite;
+  filter:drop-shadow(0 2px 0 rgba(20,26,38,.35));
+}
+@keyframes titreDefile{from{background-position:0% 50%}to{background-position:300% 50%}}

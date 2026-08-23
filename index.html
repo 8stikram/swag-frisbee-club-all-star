@@ -16,6 +16,17 @@
 
   <!-- Barre du haut, commune à tous les menus : le compte et le plein écran.
        Hors des écrans pour ne pas avoir à la recopier dans chacun. -->
+  <!-- Retour, a gauche : un vrai bouton plutot qu'un rappel de touche, du meme
+       gabarit que le plein ecran. -->
+  <div class="topBar gauche" id="topBarG">
+    <button class="fsBtn" id="btnRetour" title="Retour" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 5l-7 7 7 7"/>
+      </svg>
+    </button>
+  </div>
+
   <div class="topBar" id="topBar">
     <button class="fsBtn compteBtn" id="compteBtn" title="Compte en ligne">SE CONNECTER</button>
     <button class="fsBtn" id="fsBtn" title="Plein écran" aria-label="Plein écran">
@@ -208,7 +219,7 @@
   <div class="screen scr-chap hidden" id="scr-chap">
     <div class="bg bg-learn"></div>
     <div class="titlebar"><span>CHOISIS TON CHAPITRE</span></div>
-    <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
+
     <div class="chapProg"><i id="chapBar"></i><span id="chapProgTxt">0 / 5</span></div>
     <div class="chapWrap" id="chapWrap"></div>
   </div>
@@ -217,7 +228,7 @@
   <div class="screen scr-learn hidden" id="scr-learn">
     <div class="bg bg-learn"></div>
     <div class="titlebar"><span>APPRENDRE À JOUER</span></div>
-    <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
+
 
     <div class="learnWrap">
       <button class="learnCard" data-act="tuto">
@@ -276,7 +287,7 @@
     </div>
 
     <div class="titlebar"><span>CHOISIS TON CHAMPION</span></div>
-    <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
+
     <div class="prompt right">
       <div class="row"><span class="key">⏎</span>VALIDER</div>
       <div class="row"><span class="key">R</span>ALÉATOIRE</div>
@@ -348,7 +359,7 @@
       <div class="onBande bas"></div>
       <div class="onTitre">ONLINE</div>
     </div>
-    <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
+
     <!-- Menu du mode en ligne : une liste de texte, comme une borne d'arcade.
          ARÈNE domine parce que c'est ce pour quoi on vient ; le reste suit. -->
     <div class="onChoix" id="onChoix">
@@ -356,7 +367,6 @@
       <button class="onLigne" id="onProfil">PROFIL</button>
       <button class="onLigne" id="onAmis">AMIS</button>
       <button class="onLigne" id="onClassement">CLASSEMENT</button>
-      <button class="onLigne bas" data-act="back">RETOUR</button>
     </div>
 
     <!-- Deux façons d'entrer dans une arène, même langage que le menu. -->
@@ -501,7 +511,6 @@
 
       <p class="onEtat" id="onEtat"></p>
     </div>
-    <button class="mbtn onRetour" data-act="back">RETOUR</button>
   </div>
 
   <div class="screen scr-maps hidden" id="scr-maps">
@@ -518,8 +527,7 @@
     </div>
 
     <div class="titlebar"><span>CHOISIS TON TERRAIN</span></div>
-    <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
-    <div class="prompt right"><div class="row"><span class="key">⏎</span>VALIDER</div></div>
+
 
     <div class="previewWrap"><canvas id="mapPreview" width="900" height="480"></canvas></div>
     <div class="previewName"><span id="mapName">—</span></div>
@@ -550,7 +558,7 @@
     </div>
 
     <div class="titlebar"><span>OPTIONS</span></div>
-    <div class="prompt left"><span class="key">⎋</span>RETOUR</div>
+
 
     <div class="optPanel">
       <div class="tabs">
@@ -600,7 +608,7 @@
         </div>
       </div>
 
-      <button class="mbtn" data-act="back">RETOUR</button>
+
     </div>
   </div>
 

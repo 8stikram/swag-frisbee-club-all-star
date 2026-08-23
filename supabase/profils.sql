@@ -386,3 +386,22 @@ update storage.buckets
    set allowed_mime_types = array['image/png','image/jpeg','image/webp','image/gif'],
        file_size_limit = 4194304
  where id = 'bannieres';
+
+-- ---------------------------------------------------------------------------
+-- 12. Titre du créateur. Il ne s'obtient pas en jouant : il est attribué à un
+-- compte précis, et à personne d'autre. Le jeu l'affiche en dégradé animé.
+-- ---------------------------------------------------------------------------
+insert into titres (id, libelle, condition)
+values ('createur', 'CRÉATEUR DU JEU', 'Avoir fait le jeu')
+on conflict (id) do update set libelle = excluded.libelle, condition = excluded.condition;
+
+-- Attribué par l'adresse du compte plutôt que par un identifiant recopié : on
+-- sait de qui il s'agit, et la requête reste juste même si le compte change.
+insert into titres_debloques (joueur, titre)
+select u.id, 'createur' from auth.users u where u.email = 'noe.dub@outlook.fr'
+on conflict do nothing;
+
+-- Et on le lui pose d'office : un titre gagné qu'il faudrait encore aller
+-- choisir dans une liste ne se verrait jamais.
+update profils set titre_actif = 'CRÉATEUR DU JEU'
+ where id in (select id from auth.users where email = 'noe.dub@outlook.fr');

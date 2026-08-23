@@ -294,7 +294,13 @@ export function afficherEnrichi(p, recents) {
     past.title = ici ? 'En ligne' : ('Vu ' + quand(p.vu_le));
   }
 
-  const t = $('ficheTitre'); if (t) t.textContent = p.titre_actif || '';
+  const t = $('ficheTitre');
+  if (t) {
+    t.textContent = p.titre_actif || '';
+    // Le titre du créateur est le seul qui bouge : c'est ce qui le distingue
+    // de ceux qui se gagnent en jouant.
+    t.classList.toggle('createur', /CRÉATEUR/i.test(p.titre_actif || ''));
+  }
   const s = $('ficheStatut'); if (s) s.textContent = p.statut || '';
 
   // Le personnage principal, dessine avec son vrai sprite.
@@ -637,4 +643,14 @@ export function afficherStats(p, moyenne) {
     tag.textContent = 'MAIN';
     mn.append(tag, cv, nom);
   }
+}
+
+// Quel panneau est ouvert dans l'ecran en ligne. Sert au bouton retour du
+// haut, qui doit remonter d'un cran plutot que de quitter l'ecran entier.
+export function panneauOuvert() {
+  for (const p of PANNEAUX) {
+    const e = $(p);
+    if (e && !e.classList.contains('hidden')) return p;
+  }
+  return null;
 }

@@ -28,7 +28,13 @@ export function dessinerAvecSkin(canvasEl, ck, skinId, echelle) {
   g.drawImage(src, 0, 0, canvasEl.width, canvasEl.height);
 }
 
-export function ouvrirPanneauSkins(camp, ck) {
+// auChoix : appelé quand une tenue est retenue. C'est ce qui permet au choix
+// du personnage de se conclure sur le choix de sa tenue, au lieu de demander
+// deux gestes distincts pour une seule décision.
+let auChoix = null;
+
+export function ouvrirPanneauSkins(camp, ck, options) {
+  if (options && 'auChoix' in options) auChoix = options.auChoix || null;
   const panneau = $('skinsPanel');
   if (!panneau) return;
   campOuvert = camp;
@@ -58,6 +64,14 @@ export function ouvrirPanneauSkins(camp, ck) {
       setSkinActif(ck, s.id);
       sfx('select');
       if (auChangement) auChangement();
+      // Choisir une tenue vaut choix du personnage : on ferme et on conclut.
+      if (auChoix) {
+        const suite = auChoix;
+        auChoix = null;
+        fermerPanneauSkins();
+        suite(ck, s.id);
+        return;
+      }
       ouvrirPanneauSkins(camp, ck);          // rafraîchit la bordure dorée
     });
     grille.appendChild(cell);

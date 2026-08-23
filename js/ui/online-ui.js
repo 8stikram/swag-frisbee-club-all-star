@@ -211,20 +211,42 @@ surCoupDEnvoi((p1, p2) => { sfx('go'); lancerMatch(p1, p2); });
     G.matchChar = ck;
     for (const [k, el] of Object.entries(cases)) el.classList.toggle('on', k === ck);
   };
+  let redessiner = () => { };
   import('../data/characters.js').then(({ CHARS, ROSTER }) => {
+    const toiles = {};
+    // La vignette montre la tenue réellement portée : sans ça on choisit un
+    // personnage sans voir de quoi il aura l'air sur le terrain.
+    redessiner = async () => {
+      const { skinActif } = await import('../data/skins-perso.js');
+      for (const k of Object.keys(toiles)) {
+        const jeu = CHARS[k].skins && CHARS[k].skins[skinActif(k)];
+        const g = toiles[k].getContext('2d');
+        g.clearRect(0, 0, 16, 20);
+        g.drawImage((jeu && jeu.idle) || CHARS[k].frames.idle, 0, 0);
+      }
+    };
     for (const ck of ROSTER) {
       const b = document.createElement('button');
       b.className = 'persoCase';
       const cv = document.createElement('canvas');
       cv.width = 16; cv.height = 20;
+      toiles[ck] = cv;
       cv.getContext('2d').drawImage(CHARS[ck].frames.idle, 0, 0);
       const nom = document.createElement('span');
       nom.textContent = CHARS[ck].short;
       b.append(cv, nom);
-      b.addEventListener('click', () => { sfx('move'); choisir(ck); });
+      // Même geste qu'en solo : le personnage ouvre ses tenues, et c'est la
+      // tenue qui arrête le choix. Les skins manquaient ici, on partait donc
+      // en ligne avec celle de la dernière partie sans pouvoir en changer.
+      b.addEventListener('click', async () => {
+        sfx('move');
+        const { ouvrirPanneauSkins } = await import('./skins-ui.js');
+        ouvrirPanneauSkins(1, ck, { auChoix: () => { choisir(ck); redessiner(); } });
+      });
       cases[ck] = b;
       zone.appendChild(b);
     }
     choisir(G.matchChar && cases[G.matchChar] ? G.matchChar : ROSTER[0]);
+    redessiner();
   });
 })();

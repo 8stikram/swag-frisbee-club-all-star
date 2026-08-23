@@ -1,4 +1,4 @@
-import { $, showScreen } from '../core/dom.js';
+import { $, showScreen, curScreen } from '../core/dom.js';
 import { G, Mouse, initMatch } from '../game/state.js';
 import { DIFFS } from '../core/constants.js';
 import { CHARS, ROSTER } from '../data/characters.js';
@@ -253,7 +253,15 @@ function renderCharGrid() {
     // poser aussi sur le personnage réellement tiré vendait la mèche.
     if (lockedP1 && !rndP1 && selCharPlayer === ck) markPicked(cell, 'p1', '1P');
     if (lockedP2 && !rndP2 && selCharCPU === ck) markPicked(cell, modeJ2J ? 'p2' : 'cpu', modeJ2J ? '2P' : 'CPU');
-    cell.addEventListener('click', () => preselect(ck));
+    // Cliquer un personnage ouvre ses tenues, et c'est en choisissant la tenue
+    // qu'on arrête son choix. Le personnage et sa tenue sont une seule
+    // décision : les séparer en deux gestes faisait oublier le second, et on
+    // partait au match avec la tenue de la partie précédente.
+    cell.addEventListener('click', () => {
+      if (turn !== 1 && turn !== 2) return;
+      sfx('move');
+      ouvrirPanneauSkins(turn, ck, { auChoix: () => preselect(ck) });
+    });
     grid.appendChild(cell);
   }
   // Case aléatoire : ne tire que pour le camp dont c'est le tour, et le
@@ -734,3 +742,24 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'keys') refreshKeysUI();
   });
 });
+
+// Bouton retour de la barre du haut. Il remonte d'un cran selon l'ecran, comme
+// le ferait Echap : chaque ecran sait ou il doit ramener.
+(function cablerRetour() {
+  const b = $('btnRetour');
+  if (!b) return;
+  b.addEventListener('click', async () => {
+    sfx('select');
+    if (curScreen === 'chap') { doAct('learn'); return; }
+    if (curScreen === 'maps') { showScreen('select'); refreshSelect(); return; }
+    // En ligne, il remonte d'abord d'un panneau : quitter l'écran entier parce
+    // qu'on voulait sortir du classement serait un cran de trop.
+    if (curScreen === 'online') {
+      const { panneauOuvert, montrerPanneau } = await import('./profil-ui.js');
+      const ou = panneauOuvert();
+      if (ou === 'onEtapeHote' || ou === 'onEtapeInvite') { montrerPanneau('onChoixArene'); return; }
+      if (ou && ou !== 'onChoix') { montrerPanneau('onChoix'); return; }
+    }
+    doAct('back');
+  });
+})();

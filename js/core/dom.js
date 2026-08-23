@@ -23,8 +23,13 @@ export function showScreen(name) {
   curScreen = name;
   // La barre du haut n'appartient à aucun écran : elle suit simplement le fait
   // qu'on soit dans un menu ou en plein match.
-  const tb = document.getElementById('topBar');
-  if (tb) tb.classList.toggle('hidden', name === null);
+  for (const id of ['topBar', 'topBarG']) {
+    const tb = document.getElementById(id);
+    if (tb) tb.classList.toggle('hidden', name === null);
+  }
+  // Pas de retour sur l'ecran titre : il n'y a rien au-dessus.
+  const g = document.getElementById('topBarG');
+  if (g && name !== null) g.classList.toggle('hidden', name === 'title');
   kbNav = false;
   if (name) { selIdx[name] = selIdx[name] || 0; refreshMenu(name); }
 }

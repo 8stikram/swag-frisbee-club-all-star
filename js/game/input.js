@@ -94,6 +94,14 @@ window.addEventListener('blur', () => { keys.clear(); Mouse.down = false; });
 window.addEventListener('keydown', e => {
   initAudio();
   if (isCapturing()) { e.preventDefault(); e.stopPropagation(); return; }
+  // On écrit dans un champ : le clavier appartient au texte, pas au jeu. Sans
+  // cette sortie, la barre d'espace était avalée par la commande de plongeon et
+  // il devenait impossible de mettre un espace dans son statut ou son pseudo.
+  const cible = e.target;
+  if (cible && (cible.tagName === 'INPUT' || cible.tagName === 'TEXTAREA' || cible.isContentEditable)) {
+    if (e.code === 'Escape') cible.blur();
+    return;
+  }
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight'].includes(e.code)) e.preventDefault();
   if (e.repeat) { keys.add(e.code); return; }
   keys.add(e.code);
