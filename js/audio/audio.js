@@ -213,6 +213,18 @@ export function sfx(n) {
       beep(400, 1200, .3, 'square', .12);
       beep(1200, 400, .3, 'square', .12);
       break;
+    // Tempête de sable : un souffle long et grave qui enfle puis retombe. Le
+    // filtre est bas et large — un vent qui siffle aigu ferait un courant
+    // d'air, pas une masse de sable en mouvement.
+    case 'vent':
+      noise(2.6, .16, 480, 0);
+      noise(2.2, .10, 900, .25);
+      break;
+    // Entrée dans les sables mouvants : un glissement court et mat.
+    case 'sable':
+      noise(.34, .13, 1400);
+      beep(240, 130, .26, 'sine', .07);
+      break;
   }
 }
 

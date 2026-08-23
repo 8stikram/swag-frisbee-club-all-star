@@ -100,6 +100,55 @@ MAPS.push({
   }
 });
 
+// Terrain du désert, au crépuscule. Deux règles lui appartiennent : les sables
+// mouvants en demi-cercle devant chaque cage, et la tempête qui se lève par
+// intermittence. Les deux sont strictement symétriques — c'est la condition
+// pour qu'un terrain à effets reste un terrain de compétition.
+MAPS.push({
+  id: 'dune',
+  name: 'DUNE DE RÂ',
+  // Second nom, basculable depuis l'écran de choix. Ce n'est pas une variante
+  // du terrain : c'est le même, sous un autre titre.
+  nomAlt: 'SQUEEZIE SABLE',
+  ost: 'dune-de-ra',
+  court: { left: 70, right: 890, top: 84, bottom: 560 },
+  goal: { height: 200, depth: 48 },
+  zones: [
+    { from: -100, to: -26, points: 3, color: '#E8C05A' },
+    { from: -26, to: 26, points: 5, color: '#D9803C' },
+    { from: 26, to: 100, points: 3, color: '#E8C05A' }
+  ],
+  style: 'desert',
+  sablesMouvants: true,
+  theme: {
+    // Le ciel du crépuscule, en cinq arrêts : à deux couleurs on obtient un
+    // fond uni un peu sale, pas un coucher de soleil. C'est la bande rose
+    // entre le violet et l'orange qui donne l'heure.
+    ciel: ['#2E2A4A', '#5E3D6B', '#B85A63', '#D9884A', '#E8B96B'],
+    bgInner: '#B85A63',
+    bgOuter: '#2E2A4A',
+    // Sable éclairé en lumière rasante : doré sur les crêtes, violacé au creux.
+    floor: '#D9AE72',
+    sableClair: '#E8C894',
+    sableFonce: '#B88A56',
+    sableOmbre: '#8A6244',
+    line: 'rgba(90,60,40,.5)',
+    goalFill: 'rgba(232,192,90,.16)',
+    goalStroke: '#E8C05A',
+    roche: '#C4763F', rocheFonce: '#8A4A28', rocheClair: '#D99A66',
+    pierre: '#D9C08E', pierreOmbre: '#A8875C',
+    or: '#E8C05A', orClair: '#F5DFA8',
+    vert: '#5A8A56', vertFonce: '#3A5E3A', vertClair: '#7FA85E',
+    paille: '#B8945A', pailleFonce: '#7A5E34',
+    soleil: '#F0C85A', soleilBord: '#D9803C',
+    chameau: '#C4956A', chameauFonce: '#8A6440',
+    tempete: '#C9A070',
+    khol: '#2A2038',
+    crowdColors: ['#E8C05A', '#D9803C', '#B85A63'],
+    starColor: 'rgba(0,0,0,0)'
+  }
+});
+
 // Vrai quand le terrain est jouable. Même principe que pour les skins.
 export function mapDebloquee(m) {
   if (!m || !m.verrou) return true;
@@ -115,6 +164,23 @@ let _tutoFini = null;
 export function brancherVerrouTutoMap(fn) { _tutoFini = fn; }
 
 let currentMapId = MAPS[0].id;
+
+// Certains terrains portent deux noms. Ce n'est pas une variante du terrain :
+// c'est le même, sous un autre titre. Le choix est retenu d'une session à
+// l'autre, comme le disque préféré.
+let nomsAlt = {};
+try { nomsAlt = JSON.parse(localStorage.getItem('sbcbNomsMap') || '{}'); } catch (e) { }
+
+export function nomAffiche(m) {
+  if (!m) return '';
+  return (m.nomAlt && nomsAlt[m.id]) ? m.nomAlt : m.name;
+}
+export function aDeuxNoms(m) { return !!(m && m.nomAlt); }
+export function basculerNom(m) {
+  if (!aDeuxNoms(m)) return;
+  nomsAlt[m.id] = !nomsAlt[m.id];
+  try { localStorage.setItem('sbcbNomsMap', JSON.stringify(nomsAlt)); } catch (e) { }
+}
 
 export function getMap() { return MAPS.find(m => m.id === currentMapId) || MAPS[0]; }
 export function getMapId() { return currentMapId; }

@@ -1,3 +1,4 @@
+import { dansLesSables, RALENTI_SABLES } from './desert.js';
 import { G, Mouse } from './state.js';
 import { $, cv, W, H, curScreen, showScreen, moveMenu, activateMenu, setSelIdx, menuButtons } from '../core/dom.js';
 import {
@@ -338,7 +339,11 @@ export function integratePlayer(p, dt) {
   // Le dash n'est pas inversé : c'est un élan déjà lancé, pas une commande
   // qu'on tient. Le retourner ferait reculer le joueur à chaque échappée.
   const inv = p.piratage > 0 ? -1 : 1;
-  const mvx = p.vx * inv + p.dashV.x, mvy = p.vy * inv + p.dashV.y;
+  // Sables mouvants : 30 % de vitesse en moins, dash et plongeon compris. On
+  // peut s'y élancer, on n'en sort pas plus vite pour autant — c'est ce qui
+  // fait qu'ils se contournent au lieu de se traverser.
+  const boue = dansLesSables(p.x, p.y) ? RALENTI_SABLES : 1;
+  const mvx = (p.vx * inv + p.dashV.x) * boue, mvy = (p.vy * inv + p.dashV.y) * boue;
   p.x += mvx * dt; p.y += mvy * dt;
   const minX = p.side === 1 ? COURT.left + 16 : CX + 10;
   const maxX = p.side === 1 ? CX - 10 : COURT.right - 16;

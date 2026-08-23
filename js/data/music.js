@@ -3,7 +3,8 @@
 // proposera automatiquement.
 export const MUSIC_TRACKS = [
   { id: 'menu-ost', name: '0 • Menu OST', src: 'assets/audio/0-menu-ost.mp3' },
-  { id: 'stellar', name: '1 • Stellar Orbital Station', src: 'assets/audio/1-stellar-orbital-station.mp3' }
+  { id: 'stellar', name: '1 • Stellar Orbital Station', src: 'assets/audio/1-stellar-orbital-station.mp3' },
+  { id: 'dune-de-ra', name: '2 • Dune de Râ', src: 'assets/audio/2-dune-de-ra.mp3' }
 ];
 
 // Piste active par défaut : la première du registre. `null` = silence

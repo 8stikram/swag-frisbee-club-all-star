@@ -4,7 +4,7 @@ import { DIFFS } from '../core/constants.js';
 import { CHARS, ROSTER } from '../data/characters.js';
 import { SPECIALS } from '../data/specials.js';
 import { DISC_SKINS, getSkinId, setSkinId, drawSkinDisc, getFavSkin, setFavSkin, skinDebloque, randomSkinId } from '../data/skins.js';
-import { MAPS, setMapId, mapDebloquee } from '../data/maps.js';
+import { MAPS, setMapId, mapDebloquee, nomAffiche, aDeuxNoms, basculerNom } from '../data/maps.js';
 import { getKey } from '../data/keymap.js';
 import { MUSIC_TRACKS, getTrackId } from '../data/music.js';
 import { sfx, playTrack, stopTrack, duckMusic } from '../audio/audio.js';
@@ -525,7 +525,7 @@ function renderMapThumbs() {
 export function refreshMaps() {
   majChoixTerrains();
   const c = MAP_CHOICES[mapIdx];
-  $('mapName').textContent = c.name;
+  $('mapName').textContent = nomAffiche(c);
   const big = $('mapPreview');
   const bg = $('mapsBg');
   if (c.id === '__random') {
@@ -548,7 +548,10 @@ export function refreshMaps() {
   }
   // Terrain encore à gagner : aperçu éteint, cadenas, et la marche à suivre.
   const ferme = verrouille(c);
-  $('mapName').textContent = ferme ? '🔒 ' + c.name : c.name;
+  $('mapName').textContent = ferme ? '🔒 ' + nomAffiche(c) : nomAffiche(c);
+  // Le bouton n'apparaît que pour les terrains qui ont bien deux noms.
+  const alt = $('mapAlt');
+  if (alt) alt.classList.toggle('hidden', !aDeuxNoms(c));
   big.classList.toggle('locked', ferme);
   const aide = $('mapAide');
   if (aide) {
@@ -762,6 +765,14 @@ $('discPrev').addEventListener('click', () => cycleDisc(-1));
 $('discNext').addEventListener('click', () => cycleDisc(1));
 $('musicPrev').addEventListener('click', () => cycleMusic(-1));
 $('musicNext').addEventListener('click', () => cycleMusic(1));
+// Bascule entre les deux noms du terrain. On ne rafraîchit que le bandeau :
+// rien d'autre ne change, c'est le même terrain sous un autre titre.
+$('mapAlt')?.addEventListener('click', e => {
+  e.stopPropagation();
+  basculerNom(MAP_CHOICES[mapIdx]);
+  sfx('move');
+  refreshMaps();
+});
 $('discLeft').addEventListener('click', () => cycleDisc(-1));
 $('discRight').addEventListener('click', () => cycleDisc(1));
 $('diffL').addEventListener('click', () => changeDiff(-1));

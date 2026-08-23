@@ -9,6 +9,7 @@ import { getMap } from '../data/maps.js';
 import { getSkinId, drawSkinDisc, deformationDisque, tracerContour } from '../data/skins.js';
 import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE } from '../data/specials.js';
 import { Reglages } from '../data/disc-fx.js';
+import { rayonSables, centreSables, densiteTempete } from '../game/desert.js';
 
 ctx.imageSmoothingEnabled = false;
 const SCALE = 1.6;
@@ -500,7 +501,357 @@ function drawCourtStade() {
   drawEcranGeant();
 }
 
+// ---------------------------------------------------------------------------
+// DUNE DE RÂ — le terrain du désert, au crépuscule.
+//
+// Tout ce qui suit est décoratif sauf les sables mouvants et la tempête, qui
+// sont des règles de jeu et vivent dans game/desert.js. Le rendu ne fait que
+// les montrer ; il ne décide de rien.
+// ---------------------------------------------------------------------------
+
+// Éléments de décor semés une fois pour toutes. Les tirer au sort à chaque
+// image les ferait grésiller sur place au lieu de tenir en place.
+let decorDesert = null;
+function semerDecor() {
+  const r = makeRngHack(20250823);
+  const cactus = [];
+  // Deux de chaque côté, hors du terrain : purement décoratifs, ils ne doivent
+  // jamais se retrouver sur une trajectoire.
+  for (const cx of [COURT.left - 38, COURT.right + 38]) {
+    cactus.push({ x: cx, y: COURT.top + 40 + r() * 40, ech: .9 + r() * .5, ph: r() * TAU });
+    cactus.push({ x: cx, y: COURT.bottom - 40 - r() * 40, ech: .9 + r() * .5, ph: r() * TAU });
+  }
+  const palmiers = [];
+  for (let i = 0; i < 6; i++) {
+    palmiers.push({ x: 60 + r() * (W - 120), y: COURT.top - 6 - r() * 22, ech: .7 + r() * .5, ph: r() * TAU });
+  }
+  // Grain du sable : figé, sinon le sol scintille comme de la neige.
+  const grains = [];
+  for (let i = 0; i < 240; i++) {
+    grains.push({ x: COURT.left + r() * (COURT.right - COURT.left), y: COURT.top + r() * (COURT.bottom - COURT.top), ph: r() * TAU, clair: r() > .5 });
+  }
+  // Trois touffes de paille, chacune à son rythme.
+  const pailles = [];
+  for (let i = 0; i < 3; i++) pailles.push({ v: 74 + r() * 60, y: .2 + r() * .6, r: 8 + r() * 6, ph: r() * 900 });
+  // Cailloux du pourtour. Ils ne servent qu'à une chose : dire que le sable
+  // autour du terrain n'est pas le sable du terrain.
+  const cailloux = [];
+  for (let i = 0; i < 90; i++) {
+    const x = r() * W, y = COURT.top + r() * (H - COURT.top);
+    // On les tient hors de l'aire de jeu, sinon ils passent sous les joueurs.
+    if (x > COURT.left - 14 && x < COURT.right + 14 && y > COURT.top - 14 && y < COURT.bottom + 14) continue;
+    cailloux.push({ x, y, r: 1.6 + r() * 3.4, clair: r() > .6 });
+  }
+  decorDesert = { cactus, palmiers, grains, pailles, cailloux };
+}
+
+function palmierDesert(g, th, x, y, ech, t, ph) {
+  g.save(); g.translate(x, y); g.scale(ech, ech);
+  g.rotate(Math.sin(t * 1.2 + ph) * .1);
+  g.strokeStyle = th.pailleFonce; g.lineWidth = 4; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(3, -18, 2, -34); g.stroke();
+  g.fillStyle = th.vertFonce;
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI / 2 + (i - 2) * .62 + Math.sin(t * 1.8 + i + ph) * .08;
+    g.save(); g.translate(2, -34); g.rotate(a);
+    g.beginPath(); g.ellipse(14, 0, 14, 4.2, 0, 0, TAU); g.fill();
+    g.restore();
+  }
+  g.restore();
+}
+
+function cactusDesert(g, th, x, y, ech, t, ph) {
+  g.save(); g.translate(x, y); g.scale(ech, ech);
+  g.rotate(Math.sin(t * 1.1 + ph) * .05);
+  g.fillStyle = th.vertFonce;
+  const rond = (bx, by, bw, bh) => { g.beginPath(); g.roundRect(bx, by, bw, bh, bw / 2); g.fill(); };
+  rond(-5, -38, 10, 38);
+  rond(-16, -30, 7, 17); rond(-16, -16, 18, 7);
+  rond(10, -25, 7, 13); rond(-1, -19, 17, 7);
+  g.fillStyle = 'rgba(255,255,255,.16)';
+  rond(-4, -37, 3, 34);
+  g.restore();
+}
+
+// La caravane. Le chameau est dessiné tourné vers la gauche — tête et cou à
+// gauche, queue à droite — donc on le retourne quand il va vers la droite.
+// Sans ça il traverse le terrain en marche arrière.
+function chameauDesert(g, th, x, y, ech, t, versLaDroite) {
+  g.save(); g.translate(x, y); g.scale(versLaDroite ? -ech : ech, ech);
+  g.translate(0, Math.abs(Math.sin(t * 5)) * -1.6);
+  g.fillStyle = th.chameau;
+  g.beginPath(); g.ellipse(0, -14, 17, 8, 0, 0, TAU); g.fill();
+  g.beginPath(); g.ellipse(-3, -22, 7, 5.6, 0, 0, TAU); g.fill();
+  g.strokeStyle = th.chameau; g.lineWidth = 3.6; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(-15, -15); g.quadraticCurveTo(-22, -25, -20, -33); g.stroke();
+  g.fillStyle = th.chameau;
+  g.beginPath(); g.ellipse(-21, -34, 5, 3.6, -.3, 0, TAU); g.fill();
+  g.strokeStyle = th.chameauFonce; g.lineWidth = 3;
+  for (const [px, dec] of [[-9, 0], [-3, 1], [7, 1], [12, 0]]) {
+    const sw = Math.sin(t * 5 + dec * Math.PI) * 3.4;
+    g.beginPath(); g.moveTo(px, -8); g.lineTo(px + sw, 0); g.stroke();
+  }
+  g.lineWidth = 2.2;
+  g.beginPath(); g.moveTo(16, -16); g.lineTo(20, -10 + Math.sin(t * 5) * 2); g.stroke();
+  g.restore();
+}
+
+// L'œil de Râ, en haut du ciel. Sa pupille balaie lentement le terrain : c'est
+// la variante retenue, il regarde jouer.
+function oeilDeRaDesert(g, th, x, y, r, t) {
+  g.save(); g.translate(x, y); g.rotate(t * .3);
+  g.fillStyle = th.soleilBord;
+  for (let i = 0; i < 20; i++) {
+    g.rotate(TAU / 20);
+    g.beginPath(); g.moveTo(-r * .07, -r); g.lineTo(0, -r * 1.34); g.lineTo(r * .07, -r); g.closePath(); g.fill();
+  }
+  g.restore();
+  g.fillStyle = th.soleil; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill();
+  g.strokeStyle = th.soleilBord; g.lineWidth = 2.4;
+  g.beginPath(); g.arc(x, y, r, 0, TAU); g.stroke();
+
+  g.fillStyle = '#FFFFFF';
+  g.beginPath(); g.ellipse(x, y - r * .05, r * .5, r * .3, 0, 0, TAU); g.fill();
+  g.fillStyle = th.khol;
+  g.beginPath(); g.arc(x + Math.sin(t * .9) * r * .16, y - r * .05, r * .14, 0, TAU); g.fill();
+  g.strokeStyle = th.khol; g.lineWidth = Math.max(1.6, r * .09);
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath();
+  g.moveTo(x - r * .52, y - r * .05);
+  g.quadraticCurveTo(x, y - r * .52, x + r * .52, y - r * .05);
+  g.stroke();
+  // Le trait de fard et sa volute : sans eux on lit « un œil », pas « Râ ».
+  g.beginPath(); g.moveTo(x + r * .5, y + r * .02); g.lineTo(x + r * .74, y + r * .42); g.stroke();
+  g.beginPath();
+  g.moveTo(x - r * .16, y + r * .14);
+  g.quadraticCurveTo(x - r * .1, y + r * .5, x - r * .42, y + r * .46);
+  g.stroke();
+}
+
+function drawCourtDesert() {
+  const m = getMap(), th = m.theme;
+  const cw = COURT.right - COURT.left, chh = COURT.bottom - COURT.top;
+  if (!decorDesert) semerDecor();
+  const D = decorDesert;
+  const t = G.now;
+
+  // 1. Le ciel, du haut de l'écran à l'horizon seulement. Étendu jusqu'en bas,
+  // le dégradé passait derrière le terrain et sur les côtés : on se retrouvait
+  // à jouer au milieu d'un ciel, ce qui n'a aucun sens en vue de dessus.
+  const horizon = COURT.top - 26;
+  const ciel = ctx.createLinearGradient(0, 0, 0, horizon);
+  th.ciel.forEach((c, i) => ciel.addColorStop(i / (th.ciel.length - 1), c));
+  ctx.fillStyle = ciel; ctx.fillRect(0, 0, W, horizon);
+
+  // 1b. Le désert autour du terrain : du sable lui aussi, mais nettement plus
+  // sombre et parsemé de cailloux. C'est ce contraste qui dit où l'on joue —
+  // sans lui, l'aire de jeu n'a plus de limite lisible.
+  ctx.fillStyle = th.sableOmbre;
+  ctx.fillRect(0, horizon, W, H - horizon);
+  ctx.globalAlpha = .35;
+  ctx.strokeStyle = th.sableFonce; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  for (let i = 0; i < 16; i++) {
+    const y = horizon + ((i * 61) % (H - horizon));
+    const x = (i * 137) % W;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 40 + (i % 4) * 16, y + 4); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // 2. L'œil de Râ, bas sur l'horizon comme un soleil couchant.
+  oeilDeRaDesert(ctx, th, W * .78, COURT.top - 44, 30, t);
+
+  // 3. Les pyramides et les palmiers, derrière le terrain.
+  const base = COURT.top - 4;
+  ctx.fillStyle = th.sableOmbre;
+  ctx.beginPath();
+  ctx.moveTo(0, base);
+  for (let x = 0; x <= W; x += 14) ctx.lineTo(x, base - 20 - Math.sin(x / W * 5) * 12);
+  ctx.lineTo(W, base); ctx.closePath(); ctx.fill();
+  for (const [px, larg, haut] of [[W * .17, 62, 74], [W * .30, 40, 46], [W * .58, 34, 40]]) {
+    ctx.fillStyle = th.pierre;
+    ctx.beginPath(); ctx.moveTo(px, base - haut); ctx.lineTo(px - larg, base); ctx.lineTo(px + larg, base); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = th.pierreOmbre;
+    ctx.beginPath(); ctx.moveTo(px, base - haut); ctx.lineTo(px + larg, base); ctx.lineTo(px, base); ctx.closePath(); ctx.fill();
+  }
+  for (const p of D.palmiers) palmierDesert(ctx, th, p.x, p.y, p.ech, t, p.ph);
+
+  // 4. La caravane traverse au-dessus du terrain, toutes les 20 à 25 secondes.
+  const CYCLE = 23, PASSAGE = 9;
+  const phase = t % CYCLE;
+  if (phase < PASSAGE) {
+    for (let i = 0; i < 3; i++) {
+      const k = (phase / PASSAGE) - i * .07;
+      if (k < 0 || k > 1) continue;
+      chameauDesert(ctx, th, -50 + k * (W + 100), COURT.top - 14, .8, t + i * .4, true);
+    }
+  }
+
+  // 5. Le sable du terrain : dunes ondulées, puis grain fin par-dessus.
+  ctx.fillStyle = th.floor;
+  ctx.fillRect(COURT.left, COURT.top, cw, chh);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(COURT.left, COURT.top, cw, chh); ctx.clip();
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = i % 2 ? th.sableClair : th.sableFonce;
+    ctx.globalAlpha = .42;
+    ctx.beginPath();
+    for (let x = COURT.left; x <= COURT.right; x += 10) {
+      const y = COURT.top + chh * ((i + .5) / 6) + Math.sin((x - COURT.left) / cw * 5 + t * .45 + i) * 16;
+      x === COURT.left ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.lineTo(COURT.right, COURT.bottom); ctx.lineTo(COURT.left, COURT.bottom);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  for (const gr of D.grains) {
+    ctx.globalAlpha = .1 + .18 * (.5 + .5 * Math.sin(t * 2 + gr.ph));
+    ctx.fillStyle = gr.clair ? th.sableClair : th.sableOmbre;
+    ctx.fillRect(gr.x, gr.y, 2, 2);
+  }
+  ctx.globalAlpha = 1;
+
+  // 6. Les sables mouvants, un demi-cercle devant chaque cage. Le sable y est
+  // plus sombre que le terrain sans l'être franchement, et les anneaux restent
+  // légers : ils doivent se voir sans attirer l'œil plus que le disque.
+  const R = rayonSables();
+  for (const side of [1, 2]) {
+    const c = centreSables(side);
+    // Le demi-cercle doit toujours s'ouvrir VERS le terrain. Le centre étant
+    // posé sur la ligne de cage, c'est le sens de parcours qui décide de la
+    // moitié dessinée : à droite, un sens inversé l'envoyait entièrement hors
+    // du terrain et la zone n'apparaissait pas.
+    const d0 = side === 1 ? -Math.PI / 2 : Math.PI / 2;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(c.x, c.y, R, d0, d0 + Math.PI); ctx.closePath(); ctx.clip();
+    ctx.fillStyle = th.sableFonce; ctx.globalAlpha = .62;
+    ctx.fillRect(c.x - R, c.y - R, R * 2, R * 2);
+    ctx.globalAlpha = 1;
+    for (let i = 0; i < 4; i++) {
+      const k = 1 - ((i / 4 + t * .3) % 1);
+      ctx.globalAlpha = Math.sin(k * Math.PI) * .28;
+      ctx.strokeStyle = i % 2 ? th.or : th.sableClair; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(c.x, c.y, R * k, 0, TAU); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+    // Liseré pointillé plutôt qu'un trait plein : la limite se lit, mais elle
+    // ne cercle pas la zone comme un obstacle solide.
+    ctx.strokeStyle = th.or; ctx.lineWidth = 2; ctx.globalAlpha = .75;
+    ctx.setLineDash([7, 6]);
+    ctx.beginPath(); ctx.arc(c.x, c.y, R, d0, d0 + Math.PI); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+  }
+
+  // 7. La paille qui roule et rebondit sur les bosses du sable.
+  for (const p of D.pailles) {
+    const x = ((t * p.v + p.ph) % (cw + 90)) - 45 + COURT.left;
+    const y = COURT.top + chh * p.y;
+    const saut = Math.abs(Math.sin(t * 4.4 + p.ph)) * 18;
+    ctx.fillStyle = 'rgba(70,45,25,.18)';
+    ctx.beginPath(); ctx.ellipse(x, y, p.r - saut * .28, 3.5, 0, 0, TAU); ctx.fill();
+    ctx.save(); ctx.translate(x, y - p.r - saut); ctx.rotate(t * 6);
+    ctx.strokeStyle = th.paille; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+    const rp = makeRngHack(Math.round(p.ph));
+    for (let i = 0; i < 11; i++) {
+      const a = rp() * TAU, l = p.r * (.55 + rp() * .5);
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * l, Math.sin(a) * l);
+      ctx.lineTo(Math.cos(a + 2.2) * l * .8, Math.sin(a + 2.2) * l * .8);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = th.pailleFonce; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.arc(0, 0, p.r * .74, 0, TAU); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // 8. Les bordures : pas de mur, un bourrelet de dune de part et d'autre.
+  for (const [by, sens] of [[COURT.top, -1], [COURT.bottom, 1]]) {
+    ctx.fillStyle = th.sableFonce;
+    ctx.beginPath();
+    ctx.moveTo(COURT.left, by + sens * 22);
+    for (let x = COURT.left; x <= COURT.right; x += 12) ctx.lineTo(x, by + Math.sin((x - COURT.left) / cw * 6 + t * .6) * 5);
+    ctx.lineTo(COURT.right, by + sens * 22); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = th.sableClair; ctx.globalAlpha = .55;
+    ctx.beginPath();
+    for (let x = COURT.left; x <= COURT.right; x += 12) ctx.lineTo(x, by + sens * 4 + Math.sin((x - COURT.left) / cw * 6 + t * .6) * 5);
+    ctx.lineTo(COURT.right, by + sens * 12); ctx.lineTo(COURT.left, by + sens * 12);
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  // 9. Cailloux du pourtour, puis les cactus des coins. Tous hors terrain.
+  for (const p of D.cailloux) {
+    ctx.fillStyle = p.clair ? th.sableFonce : th.rocheFonce;
+    ctx.globalAlpha = p.clair ? .7 : .45;
+    ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r, p.r * .7, 0, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  for (const c of D.cactus) cactusDesert(ctx, th, c.x, c.y, c.ech, t, c.ph);
+
+  // 10. Lignes de jeu et cages.
+  ctx.strokeStyle = th.line; ctx.lineWidth = 3;
+  ctx.strokeRect(COURT.left, COURT.top, cw, chh);
+  ctx.setLineDash([12, 10]);
+  ctx.beginPath(); ctx.moveTo(CX, COURT.top); ctx.lineTo(CX, COURT.bottom); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(CX, CY, 62, 0, TAU); ctx.stroke();
+  drawZonesDesert(th);
+  drawGoalsDesert(th);
+}
+
+function drawZonesDesert(th) {
+  for (const side of [1, 2]) {
+    const gx = side === 1 ? COURT.left : COURT.right - GOAL_DEPTH;
+    for (const z of getMap().zones) {
+      ctx.fillStyle = z.color;
+      ctx.globalAlpha = .2;
+      ctx.fillRect(gx, CY + z.from, GOAL_DEPTH, z.to - z.from);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = th.khol;
+      ctx.font = 'bold 15px "Archivo Black", system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(z.points), gx + GOAL_DEPTH / 2, CY + (z.from + z.to) / 2);
+    }
+  }
+  ctx.textBaseline = 'alphabetic';
+}
+
+function drawGoalsDesert(th) {
+  for (const side of [1, 2]) {
+    const gx = side === 1 ? COURT.left - 6 : COURT.right - GOAL_DEPTH + 6;
+    ctx.fillStyle = th.goalFill;
+    ctx.fillRect(gx, GOAL_TOP, GOAL_DEPTH, GOAL_BOTTOM - GOAL_TOP);
+    ctx.strokeStyle = th.goalStroke; ctx.lineWidth = 4;
+    ctx.strokeRect(gx, GOAL_TOP, GOAL_DEPTH, GOAL_BOTTOM - GOAL_TOP);
+  }
+}
+
+// Le voile de la tempête, posé par-dessus tout le terrain. Il s'épaissit et
+// s'éclaircit avec la densité calculée par game/desert.js — le rendu ne décide
+// ni du moment ni de la durée.
+function drawTempete() {
+  const k = densiteTempete();
+  if (k <= 0) return;
+  const th = getMap().theme;
+  ctx.save();
+  ctx.fillStyle = th.tempete;
+  ctx.globalAlpha = k * .42;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = 1;
+  const r = makeRngHack(4242);
+  for (let i = 0; i < 150; i++) {
+    const x = (r() * W + G.now * 150) % W, y = r() * H;
+    ctx.globalAlpha = k * (.2 + r() * .4);
+    ctx.fillStyle = '#F5E4C0';
+    ctx.fillRect(x, y, 2.5, 2.5);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 function drawCourt() {
+  if (getMap().style === 'desert') { drawCourtDesert(); return; }
   if (getMap().style === 'stade') { drawCourtStade(); return; }
   if (getMap().style === 'nu') { drawCourtNu(); return; }
   const th = getMap().theme;
@@ -1536,6 +1887,7 @@ export function render() {
   // Les bandes et le logo REPLAY sont en espace écran : dessinés dans la
   // transformation caméra, ils auraient été zoomés avec le terrain.
   if (G.replay) drawReplayOverlay();
+  drawTempete();
   if (G.hack) drawHack();
   drawDebug();
   // Flash du Perfect Dive, appliqué hors zoom pour couvrir tout l'écran.
