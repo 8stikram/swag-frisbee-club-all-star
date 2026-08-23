@@ -49,7 +49,13 @@ function preparerMatch(role) {
   annoncerIdentite(G.matchChar || 'naruto');
 }
 
-function lancerMatch(persoHote, persoInvite) {
+async function lancerMatch(persoHote, persoInvite) {
+  // Chacun joue avec son disque préféré, de son côté. Le disque est dessiné
+  // localement et n'a aucune incidence sur le jeu : rien n'oblige les deux
+  // joueurs à voir le même, et personne n'a envie de se faire imposer celui
+  // d'en face. Sans préféré, on en tire un — c'est déjà le comportement solo.
+  const { getFavSkin, setSkinId, randomSkinId } = await import('../data/skins.js');
+  setSkinId(getFavSkin() || randomSkinId());
   // L'hôte tient toujours le joueur de gauche : le camp qui simule ne peut pas
   // être celui qu'on téléguide.
   initMatch(false, persoHote, persoInvite, 1, true);

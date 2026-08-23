@@ -2,7 +2,7 @@ import { G, Mouse, resetDisc, initMatch, comment } from './state.js';
 import { Partie } from '../reseau/partie.js';
 import { enregistrerMatchComplet } from '../reseau/compte.js';
 import {
-  COURT, CY, TARGET, GOAL_MID1, GOAL_MID2, throwSpeed,
+  COURT, CX, CY, TARGET, GOAL_MID1, GOAL_MID2, throwSpeed,
   DIVE_TIME, DIVE_RANGE, DIVE_WHIFF_DOWN, DIVE_POWER,
   PERFECT_WINDOW, PERFECT_SPEED, DISC_RADIUS, DASH_THROW_WINDOW, METER_GAIN, DISC_SPEED
 } from '../core/constants.js';
@@ -10,7 +10,7 @@ import { clamp, norm, gauss, pick, rand } from '../core/utils.js';
 import { zoneByY } from '../data/maps.js';
 import { CHARS } from '../data/characters.js';
 import { sfx, setMuffled } from '../audio/audio.js';
-import { burst, dust, ring, confetti, starBurst, addPopup } from './fx.js';
+import { burst, dust, ring, confetti, starBurst, addPopup, ondeDeBut, confettiNumerique } from './fx.js';
 import { $, cv, showScreen } from '../core/dom.js';
 import { signalerPerfectDive } from './moves.js';
 import { ajouterStat, verifierDeblocages } from '../data/skins-perso.js';
@@ -253,6 +253,11 @@ export function scoreGoal(scorer, y) {
   const gx = scorer.side === 1 ? COURT.right : COURT.left;
   burst(gx, y, '#ffd23e', 40); burst(gx, y, scorer.char.color, 30);
   confetti(gx, y); starBurst(gx, y);
+  // L'onde part de la cage encaissée et balaie le terrain vers l'autre camp,
+  // aux couleurs du buteur. Le flash reste court : il ponctue, il n'aveugle pas.
+  ondeDeBut(gx, y, scorer.char.accent || scorer.char.color, scorer.side === 1 ? -1 : 1);
+  confettiNumerique(CX);
+  G.flash = Math.max(G.flash, .2);
   addPopup('+' + pts + '  ' + scorer.char.short + ' !', '#ffffff', 26, 1.6);
   sfx('goal');
   if (scorer.ai) { comment(pick(["L'IA EST EN FEU !", "L'IA FRAPPE FORT !", "LE CPU PUNIT !"])); }

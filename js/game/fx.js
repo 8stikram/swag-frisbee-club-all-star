@@ -23,6 +23,28 @@ export function starBurst(x, y) {
     G.particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(.8, 1.8), c: cols[(rand(5)) | 0], s: rand(4, 9), g: 0, type: 'star' });
   }
 }
+// --- Mise en scène du but ---------------------------------------------------
+// Une onde en demi-cercle part de la cage et balaie le terrain. Le demi-cercle
+// plutôt que le cercle entier n'est pas un détail : la cage est sur le bord, la
+// moitié extérieure ne serait jamais vue, et l'onde paraîtrait décentrée.
+export function ondeDeBut(x, y, c, sens) {
+  G.ondesBut.push({ x, y, c, sens, t: 0, dur: .75 });
+}
+
+// Confettis « numériques » : des carrés qui tombent lentement et durent le
+// temps du ralenti, à l'opposé de la gerbe existante qui claque en une seconde.
+// Peu nombreux et translucides — c'est ce qui les garde discrets alors qu'ils
+// restent trois secondes à l'écran.
+export function confettiNumerique(x) {
+  const cols = ['#35e0ff', '#ffd23e', '#ff5340', '#7bd66a', '#ffffff'];
+  for (let i = 0; i < 22; i++) {
+    G.particles.push({
+      x: x + gauss() * 120, y: rand(-40, 40), vx: gauss() * 22, vy: rand(40, 95),
+      life: rand(2.4, 3.4), c: cols[(rand(5)) | 0], s: rand(2, 4), g: 8, doux: true
+    });
+  }
+}
+
 export function addPopup(text, color, size = 18, dur = 1, y) {
   G.popups.push({ text, color, size, dur, t: 0, y: y === undefined ? CY - 90 : y });
 }
@@ -43,6 +65,11 @@ export function updateFX(dt) {
   }
   if (G.banner) { G.banner.t += dt; if (G.banner.t > G.banner.dur) G.banner = null; }
   if (G.comment) { G.comment.t += dt; if (G.comment.t > G.comment.dur) G.comment = null; }
+  for (let i = G.ondesBut.length - 1; i >= 0; i--) {
+    const o = G.ondesBut[i];
+    o.t += dt;
+    if (o.t >= o.dur) G.ondesBut.splice(i, 1);
+  }
   G.shake *= Math.exp(-6 * dt);
   G.goalFlash[0] = Math.max(0, G.goalFlash[0] - dt * 2);
   G.goalFlash[1] = Math.max(0, G.goalFlash[1] - dt * 2);

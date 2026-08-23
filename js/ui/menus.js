@@ -763,3 +763,54 @@ document.querySelectorAll('.tab').forEach(tab => {
     doAct('back');
   });
 })();
+
+// --- Options graphiques ------------------------------------------------------
+// Quatre reglages, tous appliques immediatement : personne n'a envie de
+// relancer une partie pour savoir si baisser l'intensite a servi a quelque
+// chose. Ils sont retenus par disc-fx.js, qui les ecrit dans le stockage local.
+(function cablerGraphismes() {
+  const curseur = $('fxIntensite'), vIntensite = $('fxIntensiteVal');
+  const bPart = $('fxParticules'), bOmbres = $('fxOmbres'), bPlein = $('fxPleinEcran');
+  if (!curseur) return;
+
+  const OMBRES = ['faible', 'moyenne', 'elevee'];
+  const NOM_OMBRES = { faible: 'FAIBLE', moyenne: 'MOYENNE', elevee: 'ÉLEVÉE' };
+
+  import('../data/disc-fx.js').then(({ Reglages, setIntensiteFX, setParticulesFX, setOmbresFX }) => {
+    const rafraichir = () => {
+      const pct = Math.round(Reglages.intensite * 100);
+      curseur.value = pct;
+      vIntensite.textContent = pct + '%';
+      bPart.textContent = Reglages.particules ? 'ACTIVÉES' : 'COUPÉES';
+      bOmbres.textContent = NOM_OMBRES[Reglages.ombres];
+    };
+
+    curseur.addEventListener('input', () => {
+      setIntensiteFX(curseur.value / 100);
+      vIntensite.textContent = curseur.value + '%';
+    });
+    bPart.addEventListener('click', () => {
+      sfx('select'); setParticulesFX(!Reglages.particules); rafraichir();
+    });
+    bOmbres.addEventListener('click', () => {
+      sfx('select');
+      setOmbresFX(OMBRES[(OMBRES.indexOf(Reglages.ombres) + 1) % OMBRES.length]);
+      rafraichir();
+    });
+    rafraichir();
+  });
+
+  // Le plein ecran ne se retient pas : le navigateur le refuse hors d'un clic,
+  // donc le retablir au chargement echouerait de toute facon. Le bouton se
+  // contente de suivre l'etat reel.
+  const suivrePlein = () => {
+    bPlein.textContent = document.fullscreenElement ? 'QUITTER' : 'ACTIVER';
+  };
+  bPlein.addEventListener('click', () => {
+    sfx('select');
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
+    else document.documentElement.requestFullscreen().catch(() => { });
+  });
+  document.addEventListener('fullscreenchange', suivrePlein);
+  suivrePlein();
+})();

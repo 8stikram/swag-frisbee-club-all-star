@@ -34,6 +34,8 @@ export const G = {
   decoys: [], particles: [], popups: [], trail: [],
   banner: null, timescale: 1, tsTimer: 0, shake: 0,
   goalT: 0, cdT: 0, cdN: -1, serveTo: 1, winner: null, goalFlash: [0, 0],
+  // Ondes de choc en demi-cercle parties d'une cage au moment du but.
+  ondesBut: [],
   matchChar: 'naruto', matchCPU: 'leon', matchDiff: 1,
   crowd: [], stars: [], rally: 0, maxRally: 0,
   cine: null, leg: null, bell: null, rec: [], replay: null, comment: null,
@@ -136,6 +138,7 @@ export function initMatch(demo, ck, cpu, diffIdx, j2j) {
   G.timescale = 1; G.shake = 0; G.rally = 0; G.maxRally = 0; G.comment = null; G.idleT = 0;
   G.mem = { t: 0, m: 0, b: 0 }; G.startCom = false; G.lungeBonus = false; G.lungeBonusTimer = 0;
   G.zoom = null; G.flash = 0; G.lastCatchIdx = -1;
+  G.ondesBut.length = 0;
   G.cercles.length = 0; G.prochainCercle = 0;
   // Repères pour les conditions de déblocage des skins : depuis quand le match
   // dure, et si le joueur s'est autorisé un dash.

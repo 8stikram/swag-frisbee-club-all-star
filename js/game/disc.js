@@ -9,6 +9,8 @@ import { disqueImmobile, testerPanier } from './zones.js';
 import { burst, dust, addPopup } from './fx.js';
 import { onCatch, scoreGoal, ownFoul, setupServe } from './actions.js';
 import { RASENGAN } from '../data/specials.js';
+import { getSkinId } from '../data/skins.js';
+import { couleurTrainee, semerEnVol, eclatDeRebond } from '../data/disc-fx.js';
 
 export const DISC_R = () => G.disc.big ? DISC_BIG_RADIUS : DISC_RADIUS;
 
@@ -56,7 +58,16 @@ export function updateDisc(dt) {
   if (d.super && Math.random() < .6) G.particles.push({ x: d.x, y: d.y, vx: gauss() * 50, vy: gauss() * 50, life: .3, c: '#ff5340', s: 2.5, g: 0 });
   if (d.thrower && d.thrower.ck === 'isaac' && Math.random() < .35) G.particles.push({ x: d.x, y: d.y, vx: gauss() * 30, vy: rand(20, 90), life: .5, c: '#7fd8ff', s: 2, g: 400 });
   d.x += d.vx * dt; d.y += d.vy * dt;
-  G.trail.push({ x: d.x, y: d.y, c: d.kind === 'kurama' ? RASENGAN : (d.super ? '#ff5340' : (d.kind === 'matilda' ? '#8dff6a' : '#ffd23e')) });
+  // Hors coups spéciaux, la traînée et ce que le disque sème appartiennent au
+  // disque lui-même : chacun a les siens, décrits en un seul endroit.
+  const ordinaire = d.kind !== 'kurama' && d.kind !== 'matilda' && !d.super;
+  G.trail.push({
+    x: d.x, y: d.y,
+    c: d.kind === 'kurama' ? RASENGAN
+      : (d.super ? '#ff5340'
+        : (d.kind === 'matilda' ? '#8dff6a' : couleurTrainee(getSkinId(), d.spin)))
+  });
+  if (ordinaire) semerEnVol(getSkinId(), d, G.particles);
   if (G.trail.length > 26) G.trail.shift();
   const sp = Math.hypot(d.vx, d.vy);
   const rest = d.kind === 'kurama' ? 1 : .99;
@@ -113,7 +124,11 @@ export function updateDisc(dt) {
 export function onBounce(d) {
   d.bounced = true;
   if (d.kind === 'kurama') { sfx('bigbounce'); G.shake = Math.max(G.shake, 8); burst(d.x, d.y, RASENGAN, 16); }
-  else { sfx('bounce'); dust(d.x, d.y, 6); G.shake = Math.max(G.shake, 3); }
+  else {
+    sfx('bounce'); dust(d.x, d.y, 6); G.shake = Math.max(G.shake, 3);
+    // Chaque disque a son éclat de rebond : la rosace, la pyramide, l'éruption.
+    eclatDeRebond(getSkinId(), d, G.particles);
+  }
   if (d.thrower) {
     const ownSideWall = (d.x <= COURT.left + DISC_R() && d.thrower.side === 1) || (d.x >= COURT.right - DISC_R() && d.thrower.side === 2);
     if (!ownSideWall) { d.thrower.meter = clamp(d.thrower.meter + 5 * METER_GAIN, 0, 100); }

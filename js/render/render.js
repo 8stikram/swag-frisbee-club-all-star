@@ -8,6 +8,7 @@ import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { getSkinId, drawSkinDisc } from '../data/skins.js';
 import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN } from '../data/specials.js';
+import { Reglages } from '../data/disc-fx.js';
 
 ctx.imageSmoothingEnabled = false;
 const SCALE = 1.6;
@@ -657,11 +658,18 @@ function drawGoalSide(side) {
 }
 
 function drawShadow(x, y, r) {
+  // « Faible » supprime l'ombre : c'est le seul réglage qui enlève vraiment du
+  // travail au GPU. « Élevée » lui ajoute un flou, qui coûte cher mais pose
+  // bien mieux les joueurs au sol.
+  const q = Reglages.ombres;
+  if (q === 'faible') return;
   const k = (x - CX) / CX;
+  if (q === 'elevee') { ctx.shadowColor = 'rgba(0,0,20,.5)'; ctx.shadowBlur = 8; }
   ctx.fillStyle = 'rgba(0,0,20,.33)';
   ctx.beginPath();
   ctx.ellipse(x + k * 13, y + 26, r * (1 + Math.abs(k) * .55), r * .36, 0, 0, TAU);
   ctx.fill();
+  if (q === 'elevee') ctx.shadowBlur = 0;
 }
 
 function drawGhosts(p) {
@@ -945,10 +953,31 @@ function drawLegSprite(x, y, alpha, squash = 1) {
 
 function drawParticles() {
   for (const p of G.particles) {
-    const a = clamp(p.life * 2.5, 0, 1);
+    // Les confettis de but vivent trois secondes : à pleine opacité ils
+    // masqueraient le jeu tout ce temps. On les garde volontairement pâles.
+    const a = p.doux ? clamp(p.life, 0, 1) * .5 : clamp(p.life * 2.5, 0, 1);
     ctx.globalAlpha = a;
     ctx.fillStyle = p.c;
     ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// L'onde de but : un demi-cercle qui s'ouvre vers le terrain depuis la cage.
+// Deux traits, un large et pâle derrière un fin et vif — c'est ce décalage qui
+// donne l'épaisseur, un seul arc paraît plat.
+function drawOndesBut() {
+  for (const o of G.ondesBut) {
+    const k = o.t / o.dur;
+    const r = 40 + k * 620;
+    const a = (1 - k) * (1 - k);
+    const d = o.sens > 0 ? 0 : Math.PI;
+    ctx.globalAlpha = a * .28;
+    ctx.strokeStyle = o.c; ctx.lineWidth = 14;
+    ctx.beginPath(); ctx.arc(o.x, o.y, r, d - Math.PI / 2, d + Math.PI / 2, o.sens < 0); ctx.stroke();
+    ctx.globalAlpha = a * .8;
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(o.x, o.y, r, d - Math.PI / 2, d + Math.PI / 2, o.sens < 0); ctx.stroke();
   }
   ctx.globalAlpha = 1;
 }
@@ -1267,6 +1296,7 @@ export function render() {
   }
   if (G.leg && G.leg.phase !== 'shadow') drawLeg();
   if (G.bell) drawBell();
+  if (G.ondesBut.length) drawOndesBut();
   drawParticles();
   // Pas de HUD à l'entraînement : il n'y a ni score ni objectif à suivre, et le
   // bandeau mangerait la place de l'historique des actions.

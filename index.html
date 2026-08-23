@@ -564,6 +564,7 @@
       <div class="tabs">
         <div class="tab active" data-tab="audio">AUDIO</div>
         <div class="tab" data-tab="jeu">JEU</div>
+        <div class="tab" data-tab="gfx">GRAPHISMES</div>
         <div class="tab" data-tab="keys">TOUCHES</div>
       </div>
 
@@ -599,6 +600,30 @@
           <p style="font-size:1.5cqh;color:#8fa4c4;margin:1cqh 0 0;line-height:1.5">
             Le disque retenu ici est celui de chaque nouvelle session.
             « Aléatoire » en tire un différent à chaque ouverture.
+          </p>
+        </div>
+
+        <div class="tab-content" id="tab-gfx">
+          <div class="sliderRow">
+            <label>EFFETS DE DISQUE</label>
+            <input type="range" id="fxIntensite" min="0" max="100" value="100">
+            <span class="val" id="fxIntensiteVal">100%</span>
+          </div>
+          <div class="sliderRow">
+            <label>PARTICULES</label>
+            <button class="mbtn" id="fxParticules" style="flex:1">ACTIVÉES</button>
+          </div>
+          <div class="sliderRow">
+            <label>QUALITÉ DES OMBRES</label>
+            <button class="mbtn" id="fxOmbres" style="flex:1">MOYENNE</button>
+          </div>
+          <div class="sliderRow">
+            <label>PLEIN ÉCRAN</label>
+            <button class="mbtn" id="fxPleinEcran" style="flex:1">ACTIVER</button>
+          </div>
+          <p style="font-size:1.5cqh;color:#8fa4c4;margin:1cqh 0 0;line-height:1.5">
+            Chaque disque a sa traînée et son éclat de rebond.
+            Baisse l'intensité — ou coupe les particules — si le jeu rame.
           </p>
         </div>
 
