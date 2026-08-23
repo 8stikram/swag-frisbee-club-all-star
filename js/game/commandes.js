@@ -4,9 +4,9 @@ import { getKey } from '../data/keymap.js';
 import { getDashAim } from '../data/settings.js';
 import { norm, clamp } from '../core/utils.js';
 import { doDive } from './actions.js';
-import { doFeint } from './input.js';
+import { doFeint, cancelDash } from './input.js';
 import { trySpecial } from './specials.js';
-import { Partie } from '../reseau/partie.js';
+import { Partie, noterGeste } from '../reseau/partie.js';
 
 // ---------------------------------------------------------------------------
 // La fiche d'intentions d'un joueur.
@@ -21,6 +21,30 @@ import { Partie } from '../reseau/partie.js';
 // Tout est en coordonnées de terrain, jamais en pixels d'écran : une visée
 // reste valable quelle que soit la taille de la fenêtre d'en face.
 // ---------------------------------------------------------------------------
+
+// Le joueur que commande CETTE machine. En ligne, l'invité tient celui de
+// droite : tout ce qui visait « G.p1 » en dur ne le concernait donc jamais, et
+// il ne pouvait ni plonger, ni feinter, ni lancer son ultime.
+export function monJoueur() {
+  if (Partie.active) return Partie.role === 'hote' ? G.p1 : G.p2;
+  return G.p1;
+}
+
+// Vrai partout sauf chez l'invité, qui n'a rien à simuler : c'est l'hôte qui
+// fait foi, et calculer en double ferait diverger les deux écrans.
+export function jeSimule() {
+  return !(Partie.active && Partie.role === 'invite');
+}
+
+// Dépose un geste ponctuel — plongeon, feinte, ultime, annulation de dash.
+// Passer par ici plutôt que d'écrire le drapeau à la main est ce qui garantit
+// qu'un geste demandé en ligne finit toujours par arriver : il est compté tout
+// de suite, et non au moment où l'envoi se trouve passer par là.
+export function demanderGeste(p, nom) {
+  if (!p || !p.cmd) return;
+  p.cmd[nom] = true;
+  if (Partie.active && Partie.role === 'invite' && p === G.p2) noterGeste(nom);
+}
 
 // --- Joueur à la souris ----------------------------------------------------
 export function commandeSouris(p) {
@@ -91,6 +115,9 @@ export function appliquerActions(p) {
   }
   if (c.feinte) { c.feinte = false; doFeint(p, { x: c.visee.x, y: c.visee.y }); }
   if (c.special) { c.special = false; trySpecial(p); }
+  // Cancel Dash : freiner net en pleine course. C'était le dernier geste qui
+  // passait encore par un appel direct, donc le seul que l'invité n'avait pas.
+  if (c.annuleDash) { c.annuleDash = false; if (p.dashT > 0) cancelDash(p); }
 }
 
 // --- Joueur piloté par l'ordinateur ---------------------------------------

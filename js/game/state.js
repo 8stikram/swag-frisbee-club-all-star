@@ -23,7 +23,7 @@ function nouvelleCommande(side) {
     // Actions ponctuelles : posées par ce qui remplit la fiche, consommées par
     // le jeu qui les remet aussitôt à faux. Une intention qui resterait collée
     // se rejouerait à l'image suivante.
-    plongeon: false, feinte: false, special: false,
+    plongeon: false, feinte: false, special: false, annuleDash: false,
     angle: 0           // visée au clavier : angle courant, en radians
   };
 }

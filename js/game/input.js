@@ -20,7 +20,7 @@ import {
   resetEntrainement, quitterEntrainement, demanderSortie, sortieOuverte, annulerSortie
 } from '../ui/training.js';
 import { enTutoriel, quitterTutoriel } from './../ui/tutoriel.js';
-import { toucheActionJ2 } from './commandes.js';
+import { toucheActionJ2, monJoueur, jeSimule, demanderGeste } from './commandes.js';
 
 export const keys = new Set();
 export const keysP2 = new Set();
@@ -71,22 +71,26 @@ window.addEventListener('mousedown', e => {
     // on le place où l'on veut travailler, sans toucher au reste.
     if (enEntrainement() && tenterPriseDummy(Mouse.x, Mouse.y)) { Mouse.down = false; return; }
     Mouse.down = true;
-    const p = G.p1;
+    const p = monJoueur();
     if (!p || !p.human || p.stun > 0) return;
     if (G.state !== 'play' && G.state !== 'serve') return;
     if (G.cine) return;
     if (p.diveT > 0 || p.diveDown > 0) return;
-    if (p.holding) { p.charging = true; }
-    else doDive(p, norm(Mouse.x - p.x, Mouse.y - p.y));
-  } else if (e.button === 2) { trySpecial(G.p1); }
+    // On dépose une intention au lieu d'agir : c'est la seule façon qu'un
+    // joueur distant ait les mêmes gestes qu'un joueur assis ici. La charge,
+    // elle, part du maintien du bouton, que la fiche transporte déjà.
+    if (!p.holding) demanderGeste(p, 'plongeon');
+  } else if (e.button === 2) { demanderGeste(monJoueur(), 'special'); }
 });
 
 window.addEventListener('mouseup', e => {
   if (e.button === 0) {
     if (dummyEnDeplacement()) { lacherDummy(); Mouse.down = false; return; }
     Mouse.down = false;
-    const p = G.p1;
-    if (p && p.human && p.holding && p.wasCharging && curScreen === null) doThrowHuman(p);
+    // L'invité ne tire pas lui-même : sa fiche part à l'hôte, qui arbitre. Le
+    // laisser lancer le disque de son côté ferait diverger les deux écrans.
+    const p = monJoueur();
+    if (jeSimule() && p && p.human && p.holding && p.wasCharging && curScreen === null) doThrowHuman(p);
   }
 });
 
@@ -150,21 +154,20 @@ window.addEventListener('keydown', e => {
   }
   if (enTutoriel() && e.code === getKey('pause')) { demanderSortie('tuto', quitterTutoriel); return; }
   if (e.code === getKey('pause') || e.code === 'KeyP') { if (G.state !== 'over' && !G.demo && !G.adminMode) pauseGame(); return; }
-  const p = G.p1;
+  const p = monJoueur();
   if (!p || !p.human || p.stun > 0) return;
   // Le dash est géré au maintien dans updatePlayerHuman. Ici on ne traite que le
   // Cancel Dash : réappuyer sur la touche pendant le dash freine net.
-  if ((e.code === getKey('dash') || e.code === 'ShiftLeft') && p.dashT > 0) { cancelDash(p); return; }
+  if ((e.code === getKey('dash') || e.code === 'ShiftLeft') && p.dashT > 0) { demanderGeste(p, 'annuleDash'); return; }
   // Feinte de tir : annule la charge en cours d'un faux geste de tir.
-  if (e.code === getKey('feint')) { doFeint(p); return; }
+  if (e.code === getKey('feint')) { demanderGeste(p, 'feinte'); return; }
   // Le double-tap directionnel a été retiré : le dash passe désormais uniquement
   // par la touche dédiée maintenue, visée à la souris. Le garder déclenchait deux
   // dashs concurrents avec des règles différentes.
   if (e.code === getKey('charge') || e.code === 'Space') {
     if (G.cine) return;
     if (p.diveT > 0 || p.diveDown > 0) return;
-    if (p.holding) { p.charging = true; }
-    else doDive(p, norm(Mouse.x - p.x, Mouse.y - p.y));
+    if (!p.holding) demanderGeste(p, 'plongeon');
   }
 });
 
@@ -184,8 +187,8 @@ window.addEventListener('keyup', e => {
   }
   keysP2.delete(e.code);
   if (curScreen) return;
-  const p = G.p1;
-  if (p && p.human && e.code === getKey('charge') && p.holding && p.wasCharging) doThrowHuman(p);
+  const p = monJoueur();
+  if (jeSimule() && p && p.human && e.code === getKey('charge') && p.holding && p.wasCharging) doThrowHuman(p);
 });
 
 // Bascule de la visée du dash dans l'onglet JEU des options.
@@ -355,9 +358,14 @@ export function integratePlayer(p, dt) {
   p.y = clamp(p.y, COURT.top + 16, COURT.bottom - 16);
   p.moving = Math.hypot(mvx, mvy) > 34;
   if (p.moving) p.walk += dt * 10;
-  p.throwCd -= dt; p.throwPoseT -= dt; p.lunge -= dt; p.lungeCd -= dt; p.dashCd -= dt;
-  p.dashT -= dt; p.dashGap -= dt; p.dashThrowT -= dt; p.diveT -= dt; p.diveDown -= dt;
-  p.cancelCatchT -= dt; p.feintT -= dt; p.feintCd -= dt; p.dizzy -= dt;
+  // Tous ces compte-à-rebours s'arrêtent à zéro. Sans borne ils plongeaient
+  // indéfiniment dans le négatif — après quelques minutes de match on lisait
+  // « feintT: -115 », ce qui ne cassait rien mais rendait toute inspection de
+  // l'état d'un joueur illisible.
+  for (const k of ['throwCd', 'throwPoseT', 'lunge', 'lungeCd', 'dashCd', 'dashT',
+    'dashGap', 'dashThrowT', 'diveT', 'diveDown', 'cancelCatchT', 'feintT', 'feintCd', 'dizzy']) {
+    if (p[k] > 0) p[k] = Math.max(0, p[k] - dt);
+  }
   // La cloche fait vaciller sa course sans jamais le bloquer.
   if (p.dizzy > 0) { p.vx += gauss() * 90 * dt * 60 * .016; p.vy += gauss() * 90 * dt * 60 * .016; }
   if (p.stun > 0) p.stun -= dt;

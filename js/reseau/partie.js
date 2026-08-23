@@ -45,21 +45,30 @@ function aJour(n, dernier) {
 
 // Compteurs des gestes ponctuels. Un booléen dans un seul paquet disparaît
 // avec lui quand il se perd : un compteur, lui, se rattrape au paquet suivant.
-const gestes = { pl: 0, fe: 0, sp: 0 };
+const gestes = { pl: 0, fe: 0, sp: 0, ad: 0 };
 let gestesVus = null;
 
 // L'invité n'envoie que sa fiche d'intentions : cinq nombres et trois
 // compteurs. C'est tout ce dont l'hôte a besoin pour le faire jouer.
+// Compte un geste au moment où le joueur le demande, et non au moment de
+// l'envoi. Lu à l'envoi, il fallait que le drapeau soit encore levé à l'instant
+// précis où la boucle passait par là : selon l'ordre des images, le geste
+// partait ou se perdait sans laisser de trace. C'était toute l'irrégularité du
+// plongeon, de la feinte et de l'ultime en ligne.
+export function noterGeste(nom) {
+  if (nom === 'plongeon') gestes.pl++;
+  else if (nom === 'feinte') gestes.fe++;
+  else if (nom === 'special') gestes.sp++;
+  else if (nom === 'annuleDash') gestes.ad++;
+}
+
 function fichePourLeReseau(c) {
-  if (c.plongeon) gestes.pl++;
-  if (c.feinte) gestes.fe++;
-  if (c.special) gestes.sp++;
   return {
     t: 'c', n: ++numeroEnvoi,
     dx: +c.dep.x.toFixed(2), dy: +c.dep.y.toFixed(2),
     vx: +c.visee.x.toFixed(3), vy: +c.visee.y.toFixed(3),
     tir: c.tir ? 1 : 0, dash: c.dash ? 1 : 0,
-    pl: gestes.pl, fe: gestes.fe, sp: gestes.sp
+    pl: gestes.pl, fe: gestes.fe, sp: gestes.sp, ad: gestes.ad
   };
 }
 
@@ -135,10 +144,11 @@ function appliquerFiche(p, m) {
   // Gestes ponctuels : on ne regarde pas un drapeau, on regarde si le compteur
   // d'en face a avancé. Le premier paquet ne fait que caler les compteurs —
   // sans ça, la remise à zéro passerait pour trois gestes déclenchés d'un coup.
-  if (!gestesVus) { gestesVus = { pl: m.pl | 0, fe: m.fe | 0, sp: m.sp | 0 }; return; }
+  if (!gestesVus) { gestesVus = { pl: m.pl | 0, fe: m.fe | 0, sp: m.sp | 0, ad: m.ad | 0 }; return; }
   if ((m.pl | 0) > gestesVus.pl) { gestesVus.pl = m.pl | 0; c.plongeon = true; }
   if ((m.fe | 0) > gestesVus.fe) { gestesVus.fe = m.fe | 0; c.feinte = true; }
   if ((m.sp | 0) > gestesVus.sp) { gestesVus.sp = m.sp | 0; c.special = true; }
+  if ((m.ad | 0) > gestesVus.ad) { gestesVus.ad = m.ad | 0; c.annuleDash = true; }
 }
 
 export function demarrerPartieReseau(role) {
@@ -146,7 +156,7 @@ export function demarrerPartieReseau(role) {
   // Compteurs remis à neuf : une partie précédente laisserait des numéros
   // hauts qui feraient jeter tous les paquets de celle-ci.
   numeroEnvoi = 0; dernierEtatRecu = -1; dernierEtatFiche = -1;
-  gestes.pl = gestes.fe = gestes.sp = 0; gestesVus = null;
+  gestes.pl = gestes.fe = gestes.sp = gestes.ad = 0; gestesVus = null;
   Partie.envoyes = 0; Partie.recus = 0; Partie.jetes = 0;
   surMessage(m => {
     if (!Partie.active) return;
@@ -185,7 +195,7 @@ export function majReseau() {
     if (envoyer(f)) Partie.envoyes++;
     // Les gestes ponctuels sont partis : on les efface ici, sinon l'invité les
     // rejouerait aussi chez lui alors que seul l'hôte doit les arbitrer.
-    G.p2.cmd.plongeon = false; G.p2.cmd.feinte = false; G.p2.cmd.special = false;
+    G.p2.cmd.plongeon = false; G.p2.cmd.feinte = false; G.p2.cmd.special = false; G.p2.cmd.annuleDash = false;
   }
   Partie.dernierEtat = Reseau.ping;
 }
