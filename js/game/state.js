@@ -122,6 +122,8 @@ export function makePlayer(ck, side, human, diffIdx) {
     sixT: 0, sixA: 0,
     // Bras tendu de Leon pendant le Tir Matilda : durée de la pose.
     viseT: 0,
+    // Dernier état connu de la touche de tir : sert à repérer le relâchement.
+    tirTenu: false,
     // Bouclier du disque Captain : bref halo autour de celui qui attrape.
     bouclierT: 0,
     // Piraté par Cyberleek : ses déplacements partent à l'envers.

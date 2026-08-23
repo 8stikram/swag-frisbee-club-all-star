@@ -92,7 +92,13 @@ export function viseVersAvant(p, dir) {
 
 export function doThrowHuman(p) {
   if (!p.holding) return;
-  const dir = norm(Mouse.x - p.x, Mouse.y - p.y);
+  // La visée vient de la fiche d'intentions, jamais de la souris. Un joueur
+  // distant n'a pas de curseur sur cette machine : son tir partait donc vers
+  // le curseur de l'hôte, c'est-à-dire n'importe où.
+  const c = p.cmd;
+  const dir = (c && (c.visee.x || c.visee.y))
+    ? norm(c.visee.x, c.visee.y)
+    : norm(Mouse.x - p.x, Mouse.y - p.y);
   if (!viseVersAvant(p, dir)) return;
   p.face = dir.x >= 0 ? 1 : -1;
   // Dash Throw : attraper pendant un dash puis tirer dans la foulée envoie le

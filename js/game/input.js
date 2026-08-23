@@ -1,4 +1,5 @@
 import { dansLesSables, RALENTI_SABLES } from './desert.js';
+import { Partie } from '../reseau/partie.js';
 import { G, Mouse } from './state.js';
 import { $, cv, W, H, curScreen, showScreen, moveMenu, activateMenu, setSelIdx, menuButtons } from '../core/dom.js';
 import {
@@ -171,7 +172,10 @@ window.addEventListener('keyup', e => {
   keys.delete(e.code);
   // Le joueur 2 tire au relâchement d'Enter (comme P1 avec sa touche de
   // charge), pas tant qu'elle reste enfoncée — sinon impossible de charger.
-  if (e.code === 'Enter' && G.isJ2J && G.p2 && G.p2.human && G.p2.holding && G.p2.wasCharging && G.p2.charge > 0) {
+  // En ligne, le joueur de droite est a l'autre bout de la liaison : son tir
+  // arrive par sa fiche d'intentions. Sans cette garde, l'hote tirait a sa
+  // place avec sa propre touche Entree.
+  if (e.code === 'Enter' && G.isJ2J && !Partie.active && G.p2 && G.p2.human && G.p2.holding && G.p2.wasCharging && G.p2.charge > 0) {
     const p = G.p2;
     // Le tir partait droit sur le joueur 1, faute de visée : impossible de
     // marquer autrement que par accident. Il suit maintenant son viseur.

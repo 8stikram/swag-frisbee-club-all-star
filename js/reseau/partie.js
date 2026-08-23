@@ -15,18 +15,51 @@ import { setMapId, getMapId } from '../data/maps.js';
 // le prix à payer pour n'avoir aucun serveur à faire tourner.
 // ---------------------------------------------------------------------------
 
-export const Partie = { active: false, role: null, dernierEtat: 0, adversaire: null, monTerrain: null, monPerso: null };
+export const Partie = {
+  active: false, role: null, dernierEtat: 0, adversaire: null, monTerrain: null, monPerso: null,
+  // Comptes des paquets, visibles depuis le panneau admin. Sans eux, une
+  // liaison qui ne transporte plus rien ressemble exactement à une liaison
+  // qui va bien : le canal reste ouvert, le ping répond, et le jeu se fige.
+  envoyes: 0, recus: 0, jetes: 0
+};
 
-// L'invité n'envoie que sa fiche d'intentions : cinq nombres et deux
-// booléens. C'est tout ce dont l'hôte a besoin pour le faire jouer.
+// Le canal est volontairement non ordonné et sans retransmission : une
+// intention périmée n'a aucune valeur, la renvoyer indéfiniment en aurait
+// encore moins. Mais sans numéro d'ordre, un paquet en retard écrase un plus
+// récent — et l'image saute en arrière. Chaque envoi est donc numéroté, et ce
+// qui arrive en retard est jeté.
+let numeroEnvoi = 0;
+let dernierEtatRecu = -1, dernierEtatFiche = -1;
+
+// Un paquet est bon s'il est plus récent que le dernier retenu. Mais un grand
+// bond en arrière n'est pas un retard : c'est que l'autre a recommencé à
+// compter — revanche, reconnexion, nouveau match. Sans cette tolérance, tous
+// les paquets suivants étaient jetés pour toujours et la partie se figeait sur
+// une liaison pourtant ouverte, ce qui est le pire des symptômes à diagnostiquer.
+const BOND_EN_ARRIERE = 120;   // deux secondes à soixante envois par seconde
+function aJour(n, dernier) {
+  if (n === undefined) return true;
+  if (n > dernier) return true;
+  return (dernier - n) > BOND_EN_ARRIERE;
+}
+
+// Compteurs des gestes ponctuels. Un booléen dans un seul paquet disparaît
+// avec lui quand il se perd : un compteur, lui, se rattrape au paquet suivant.
+const gestes = { pl: 0, fe: 0, sp: 0 };
+let gestesVus = null;
+
+// L'invité n'envoie que sa fiche d'intentions : cinq nombres et trois
+// compteurs. C'est tout ce dont l'hôte a besoin pour le faire jouer.
 function fichePourLeReseau(c) {
+  if (c.plongeon) gestes.pl++;
+  if (c.feinte) gestes.fe++;
+  if (c.special) gestes.sp++;
   return {
-    t: 'c',
+    t: 'c', n: ++numeroEnvoi,
     dx: +c.dep.x.toFixed(2), dy: +c.dep.y.toFixed(2),
     vx: +c.visee.x.toFixed(3), vy: +c.visee.y.toFixed(3),
     tir: c.tir ? 1 : 0, dash: c.dash ? 1 : 0,
-    // Les gestes ponctuels partent une seule fois, comme en local.
-    pl: c.plongeon ? 1 : 0, fe: c.feinte ? 1 : 0, sp: c.special ? 1 : 0
+    pl: gestes.pl, fe: gestes.fe, sp: gestes.sp
   };
 }
 
@@ -38,7 +71,7 @@ function etatPourLeReseau() {
     +p.diveT.toFixed(2), +p.dashT.toFixed(2), +(p.sixT || 0).toFixed(1)];
   const d = G.disc;
   return {
-    t: 'e',
+    t: 'e', n: ++numeroEnvoi,
     p1: j(G.p1), p2: j(G.p2),
     d: [Math.round(d.x), Math.round(d.y), +d.spin.toFixed(2), d.kind, d.heldBy ? (d.heldBy === G.p1 ? 1 : 2) : 0],
     st: G.state
@@ -99,15 +132,22 @@ function appliquerFiche(p, m) {
   c.visee.x = m.vx; c.visee.y = m.vy;
   c.viseeDash.x = m.vx; c.viseeDash.y = m.vy;
   c.tir = !!m.tir; c.dash = !!m.dash;
-  // On pose l'intention ; la boucle l'exécutera et l'effacera, exactement
-  // comme pour un joueur assis devant cette machine.
-  if (m.pl) c.plongeon = true;
-  if (m.fe) c.feinte = true;
-  if (m.sp) c.special = true;
+  // Gestes ponctuels : on ne regarde pas un drapeau, on regarde si le compteur
+  // d'en face a avancé. Le premier paquet ne fait que caler les compteurs —
+  // sans ça, la remise à zéro passerait pour trois gestes déclenchés d'un coup.
+  if (!gestesVus) { gestesVus = { pl: m.pl | 0, fe: m.fe | 0, sp: m.sp | 0 }; return; }
+  if ((m.pl | 0) > gestesVus.pl) { gestesVus.pl = m.pl | 0; c.plongeon = true; }
+  if ((m.fe | 0) > gestesVus.fe) { gestesVus.fe = m.fe | 0; c.feinte = true; }
+  if ((m.sp | 0) > gestesVus.sp) { gestesVus.sp = m.sp | 0; c.special = true; }
 }
 
 export function demarrerPartieReseau(role) {
   Partie.active = true; Partie.role = role;
+  // Compteurs remis à neuf : une partie précédente laisserait des numéros
+  // hauts qui feraient jeter tous les paquets de celle-ci.
+  numeroEnvoi = 0; dernierEtatRecu = -1; dernierEtatFiche = -1;
+  gestes.pl = gestes.fe = gestes.sp = 0; gestesVus = null;
+  Partie.envoyes = 0; Partie.recus = 0; Partie.jetes = 0;
   surMessage(m => {
     if (!Partie.active) return;
     if (m.t === 'moi') { recevoirIdentite(m); return; }
@@ -118,8 +158,18 @@ export function demarrerPartieReseau(role) {
       if (auCoupDEnvoi) auCoupDEnvoi(m.p1, m.p2, m.terrain);
       return;
     }
-    if (role === 'hote' && m.t === 'c' && G.p2) appliquerFiche(G.p2, m);
-    else if (role === 'invite' && m.t === 'e') appliquerEtat(m);
+    if (role === 'hote' && m.t === 'c' && G.p2) {
+      if (!aJour(m.n, dernierEtatFiche)) { Partie.jetes++; return; }
+      dernierEtatFiche = m.n === undefined ? dernierEtatFiche : m.n;
+      Partie.recus++;
+      Partie.derniereFiche = m;   // visible au panneau admin, pour diagnostic
+      appliquerFiche(G.p2, m);
+    } else if (role === 'invite' && m.t === 'e') {
+      if (!aJour(m.n, dernierEtatRecu)) { Partie.jetes++; return; }
+      dernierEtatRecu = m.n === undefined ? dernierEtatRecu : m.n;
+      Partie.recus++;
+      appliquerEtat(m);
+    }
   });
 }
 
@@ -129,10 +179,10 @@ export function arreterPartieReseau() { Partie.active = false; Partie.role = nul
 export function majReseau() {
   if (!Partie.active || !connecte()) return;
   if (Partie.role === 'hote') {
-    envoyer(etatPourLeReseau());
+    if (envoyer(etatPourLeReseau())) Partie.envoyes++;
   } else if (G.p2 && G.p2.cmd) {
     const f = fichePourLeReseau(G.p2.cmd);
-    envoyer(f);
+    if (envoyer(f)) Partie.envoyes++;
     // Les gestes ponctuels sont partis : on les efface ici, sinon l'invité les
     // rejouerait aussi chez lui alors que seul l'hôte doit les arbitrer.
     G.p2.cmd.plongeon = false; G.p2.cmd.feinte = false; G.p2.cmd.special = false;

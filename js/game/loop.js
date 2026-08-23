@@ -4,6 +4,7 @@ import { CX, METER_GAIN } from '../core/constants.js';
 import { lerp, gauss, rand, pick, clamp } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { updatePlayerHuman, updatePlayer2, integratePlayer } from './input.js';
+import { doThrowHuman } from './actions.js';
 import { majCommandes, appliquerActions } from './commandes.js';
 import { updateAI } from './ai.js';
 import { updateDisc, updateDecoys } from './disc.js';
@@ -72,11 +73,24 @@ export function update(dt) {
   }
   if (G.state === 'replay') {
     const r = G.replay;
+    // L'invité reçoit l'état « replay » de l'hôte mais n'a rien enregistré :
+    // il n'a donc aucun replay à dérouler. Sans cette sortie, la première
+    // action rejouée du match faisait lever une erreur à chaque image et sa
+    // boucle entière s'arrêtait — le jeu paraissait planté à partir de là.
+    // Il continue simplement d'afficher ce que l'hôte lui envoie, qui est
+    // précisément le replay en train de se dérouler.
+    if (!r) {
+      updateFX(dt);
+      lisserAffichage(dt);
+      majReseau();
+      return;
+    }
     // Fermeture des bandes noires en fin de replay (ou après un skip).
     if (r.closing > 0) {
       r.closing += dt;
       if (r.closing > .3) { finishReplay(); }
       updateFX(dt);
+      majReseau();
       return;
     }
     // Vitesse normale, puis ralenti au moment du tir et à l'approche du but.
@@ -102,6 +116,11 @@ export function update(dt) {
     if (r.idx >= r.end) { G.shake = Math.max(G.shake, 12); endReplay(); }
     else { applySnap(G.rec[Math.floor(r.idx)]); }
     updateFX(dt);
+    // On continue d'emettre pendant le replay : l'hote y deplace les joueurs
+    // image par image, donc l'invite voit le meme replay sans rien enregistrer.
+    // Sans cet envoi, sa liaison restait ouverte mais muette et son ecran se
+    // figeait jusqu'a la remise en jeu.
+    majReseau();
     return;
   }
   updateLeg(wdt);
@@ -139,6 +158,17 @@ export function update(dt) {
       // déclenche par ses événements ; tout autre joueur — le second clavier
       // aujourd'hui, un joueur distant demain — passe par ici.
       for (const p of [G.p1, G.p2]) if (p && p.cmd) appliquerActions(p);
+      // Le tir part au relâchement de la charge. On guette ce relâchement sur
+      // la fiche d'intentions et non sur l'événement de la souris : un joueur
+      // distant n'en produit aucun sur cette machine, et son tir ne partait
+      // tout simplement jamais. Le joueur local, lui, tire toujours par son
+      // événement — d'une image plus tôt — et retombe ici sans rien déclencher,
+      // puisque doThrowHuman refuse un joueur qui n'a plus le disque.
+      for (const p of [G.p1, G.p2]) {
+        if (!p || !p.cmd) continue;
+        if (p.tirTenu && !p.cmd.tir && p.holding && p.wasCharging) doThrowHuman(p);
+        p.tirTenu = !!p.cmd.tir;
+      }
       for (const p of [G.p1, G.p2]) {
         const locked = G.cine && G.cine.p === p && !G.cine.launched;
         if (!locked) {

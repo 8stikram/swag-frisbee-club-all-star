@@ -68,7 +68,9 @@ export function commandeClavier2(p, dt) {
 // des gestes ponctuels, pas des états maintenus.
 export function toucheActionJ2(code) {
   const p = G.p2;
-  if (!p || !p.cmd || !G.isJ2J || !p.human) return false;
+  // En ligne, ces gestes appartiennent au joueur distant : ils arrivent par sa
+  // fiche. L'hote ne doit pas pouvoir plonger ni lancer l'ultime a sa place.
+  if (!p || !p.cmd || !G.isJ2J || !p.human || Partie.active) return false;
   if (code === 'ControlRight') { p.cmd.plongeon = true; return true; }
   if (code === 'Delete') { p.cmd.feinte = true; return true; }
   if (code === 'PageDown') { p.cmd.special = true; return true; }
