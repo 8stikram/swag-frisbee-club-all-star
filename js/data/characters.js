@@ -114,7 +114,7 @@ const PAL_C = {
   // se lisait comme une seule barre claire en travers du visage.
   W: '#dfeaa6',   // fût du poireau : le visage
   w: '#a8bb70',   // ombre du fût
-  M: '#ffffff',   // moustache
+  S: '#a8ecff',   // le sourire, cyan comme les verres
   K: '#101a33',   // navy des plaques et de la monture
   B: '#2a6ef0',   // bleu vif de l'armure
   b: '#143a92',   // bleu sombre des articulations
@@ -123,12 +123,16 @@ const PAL_C = {
 
 // Les verres sont décalés d'un pixel vers la droite, comme les yeux de tout le
 // roster : c'est ce léger décentrage qui donne aux visages leur air vivant.
-// Sa tête EST un poireau, feuilles comprises : le vert fait la moitié de la
-// hauteur, comme le fût blanc d'un vrai poireau prolongé par son feuillage.
-// D'où le partage inhabituel — douze rangées de tête, huit de corps, au lieu
-// du dix-dix du reste du roster. Le sprite fait toujours vingt lignes, donc le
-// moteur n'a rien à savoir de cette exception.
-const C_HEAD = ["......lL........", ".....lLL........", ".....LLl........", "....lLL.........", "....LLl.........", "....wLw.........", "....wWw.........", "...wWWWw........", "..KKKKKKKKKK....", "..KKCCKKKCCK....", "..wWWWMMMwWw....", "...wWWWWWWw....."];
+// Sa tête EST un poireau : un fût blanc large, qui monte haut au-dessus des
+// lunettes avant de se resserrer, coiffé d'un feuillage court et penché à
+// gauche. D'où le partage inhabituel — douze rangées de tête, huit de corps,
+// au lieu du dix-dix du reste du roster. Le sprite fait toujours vingt lignes,
+// donc le moteur n'a rien à savoir de cette exception.
+// Le fût s'évase doucement vers les lunettes, de cinq à huit pixels. Élargi
+// jusqu'à la largeur des verres il devenait un crâne triangulaire ; laissé à
+// trois pixels il n'était plus qu'une mèche posée sur une tête normale. Entre
+// les deux, on lit le poireau.
+const C_HEAD = ["..lLLl..........", ".lLLLLl.........", ".lLLLLLl........", "..lLLLLl........", "...wWWWw........", "...wWWWWw.......", "..wWWWWWw.......", "..wWWWWWWw......", "..KKKKKKKKKK....", "..KKCCKKKCCK....", "..wWSSwwSSWw....", "...wWWWWWWw....."];
 // Armure tactique : épaulières et genouillères navy, plastron sombre au cœur
 // cyan, et les mains qui luisent au bout des bras. Les bras sont bien des bras
 // — hand, avant-bras, articulation — sinon les mains cyan flottaient à côté du
