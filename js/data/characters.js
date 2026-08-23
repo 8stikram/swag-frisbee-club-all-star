@@ -100,6 +100,47 @@ const J_DIVE_B = ["....rvrvrv......", "..SVvRVVRvVSS...", "..SVvVVVVvVSSS..", ".
 const J_DASH_B = ["....rvrvrv......", "SSSVvVVRRvVR....", "SSSVvVVVVvVR....", "..RlvVVVVvlR....", "..rrlSssSlrr....", "..rRRlsSlRRr....", "..RRRRllRR......", "..SS..SS........", ".SS..SS.........", "GSS.GSS........."];
 
 // ---------------------------------------------------------------------------
+// Cyberleek. Un poireau en armure tactique : les feuilles partent vers le haut
+// et sur la droite, le fût pâle fait le visage, et tout le bas est bleu avec
+// des liserés cyan. Les feuilles s'arrêtent à quatre rangées — elles montent
+// beaucoup plus haut sur les visuels d'origine, mais un sprite fait vingt
+// lignes en tout, et lui en donner huit reviendrait à supprimer les jambes.
+// ---------------------------------------------------------------------------
+const PAL_C = {
+  L: '#8fe04a',   // feuille, face éclairée
+  l: '#3f9b2e',   // feuille, face à l'ombre
+  // Le fût tire volontairement sur le vert pâle. En crème il était presque
+  // blanc, et la moustache — blanche elle aussi — s'y noyait : toute la rangée
+  // se lisait comme une seule barre claire en travers du visage.
+  W: '#dfeaa6',   // fût du poireau : le visage
+  w: '#a8bb70',   // ombre du fût
+  M: '#ffffff',   // moustache
+  K: '#101a33',   // navy des plaques et de la monture
+  B: '#2a6ef0',   // bleu vif de l'armure
+  b: '#143a92',   // bleu sombre des articulations
+  C: '#4fe8ff'    // cyan lumineux : verres, accents, mains
+};
+
+// Les verres sont décalés d'un pixel vers la droite, comme les yeux de tout le
+// roster : c'est ce léger décentrage qui donne aux visages leur air vivant.
+// Sa tête EST un poireau, feuilles comprises : le vert fait la moitié de la
+// hauteur, comme le fût blanc d'un vrai poireau prolongé par son feuillage.
+// D'où le partage inhabituel — douze rangées de tête, huit de corps, au lieu
+// du dix-dix du reste du roster. Le sprite fait toujours vingt lignes, donc le
+// moteur n'a rien à savoir de cette exception.
+const C_HEAD = ["......lL........", ".....lLL........", ".....LLl........", "....lLL.........", "....LLl.........", "....wLw.........", "....wWw.........", "...wWWWw........", "..KKKKKKKKKK....", "..KKCCKKKCCK....", "..wWWWMMMwWw....", "...wWWWWWWw....."];
+// Armure tactique : épaulières et genouillères navy, plastron sombre au cœur
+// cyan, et les mains qui luisent au bout des bras. Les bras sont bien des bras
+// — hand, avant-bras, articulation — sinon les mains cyan flottaient à côté du
+// torse comme deux blocs détachés.
+const C_IDLE_B = ["..KKBBBBBBKK....", ".CBbKKKKKKbBC...", ".CBbKKCCKKbBC...", "..bBBBBBBBBb....", "...BB....BB.....", "...KK....KK.....", "...BB....BB.....", "..KKK....KKK...."];
+const C_RUN1_B = ["..KKBBBBBBKK....", ".CBbKKKKKKbBC...", "..BbKKCCKKbB....", "..bBBBBBBBBb....", "..BB......BB....", ".KK........KK...", ".BB........BB...", "KKK........KKK.."];
+const C_RUN2_B = ["..KBBBBBBBBK....", "..BbKKKKKKbB....", ".CBbKKCCKKbBC...", "..bBBBBBBBBb....", "....BB..BB......", "....KK..KK......", "....BB..BB......", "...KKK..KKK....."];
+const C_THROW_B = ["..KKBBBBBBKK....", ".CBbKKKKKKbBBBC.", "..BbKKCCKKbBBB..", "..bBBBBBBBBb....", "...BB....BB.....", "...KK....KK.....", "..BB......BB....", "..KKK....KKK...."];
+const C_DIVE_B = ["..KKBBBBBBKKCC..", ".CBbKKKKKKbBBB..", "..BbKKCCKKbBB...", ".bBBBBBBBBb.....", "..BB....BB......", ".KK......KK.....", "KK........KK....", "................"];
+const C_DASH_B = ["CCKKBBBBBBKK....", "CCBbKKKKKKbB....", "..BbKKCCKKbB....", "..bBBBBBBBb.....", "..BB..BB........", ".KK..KK.........", ".BB..BB.........", "KKK.KKK........."];
+
+// ---------------------------------------------------------------------------
 // Skins de Naruto. Chaque tenue est décrite par deux choses :
 //   - `idle`, dessiné à la main et validé pixel par pixel ;
 //   - `teinte`, une correspondance de couleurs appliquée aux autres poses, pour
@@ -288,7 +329,7 @@ function construireSixPaths() {
   return out;
 }
 
-export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle'];
+export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek'];
 
 export const CHARS = {
   naruto: {
@@ -371,6 +412,25 @@ export const CHARS = {
       dash: buildSprite([...J_HEAD, ...J_DASH_B], PAL_J)
       // Sa tête qui lévite n'a pas besoin de frame dédiée : le rendu découpe
       // directement la pose courante entre la cloche et les épaules.
+    }
+  },
+
+  cyberleek: {
+    name: 'CYBERLEEK', short: 'CYBERLEEK', icon: '🥬', universe: '$CYBERLEEK',
+    // Profil de perturbateur : vif et très sûr à la réception, mais le bras le
+    // plus faible du roster. Il ne gagne pas en frappant, il gagne en prenant
+    // la main sur l'adversaire — sa puissance est basse à dessein.
+    speed: 344, power: .86, catchR: 30, chargeT: .66,
+    color: '#2a6ef0', accent: '#4fe8ff',
+    stats: { spd: 4, pow: 2, ctl: 5 },
+    ult: 'piratage',
+    frames: {
+      idle: buildSprite([...C_HEAD, ...C_IDLE_B], PAL_C),
+      run1: buildSprite([...C_HEAD, ...C_RUN1_B], PAL_C),
+      run2: buildSprite([...C_HEAD, ...C_RUN2_B], PAL_C),
+      throw: buildSprite([...C_HEAD, ...C_THROW_B], PAL_C),
+      dive: buildSprite([...C_HEAD, ...C_DIVE_B], PAL_C),
+      dash: buildSprite([...C_HEAD, ...C_DASH_B], PAL_C)
     }
   }
 };

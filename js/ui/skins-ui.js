@@ -43,7 +43,16 @@ export function ouvrirPanneauSkins(camp, ck, options) {
   $('skinsTitre').textContent = 'SKINS · ' + CHARS[ck].short;
 
   const actif = skinActif(ck);
-  for (const s of listeSkins(ck)) {
+  const dispos = listeSkins(ck);
+  // Personnage sans aucune tenue : on conclut le choix tout de suite plutôt que
+  // d'ouvrir un panneau vide. C'est la tuile qui valide le personnage, donc un
+  // panneau sans tuile le rendrait injouable — le piège n'est pas théorique, il
+  // s'est déclenché à l'arrivée de Cyberleek.
+  if (!dispos.length) {
+    if (auChoix) { const suite = auChoix; auChoix = null; sfx('select'); suite(ck, null); }
+    return;
+  }
+  for (const s of dispos) {
     const libre = estDebloque(ck, s.id);
     const cell = document.createElement('button');
     cell.className = 'skinTile' + (s.id === actif ? ' on' : '') + (libre ? '' : ' locked');

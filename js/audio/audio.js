@@ -199,6 +199,20 @@ export function sfx(n) {
     case 'bell':
       if (!sample('bell')) { beep(1320, 660, .6, 'sine', .18); beep(1980, 990, .4, 'sine', .08); }
       break;
+    // Piratage : une poignée de main de modem. Deux porteuses qui se cherchent,
+    // puis un souffle de données. C'est le seul son du jeu qui évoque une
+    // machine plutôt qu'un geste, et c'est exactement ce qu'on veut entendre.
+    case 'hack':
+      [1200, 980, 1600, 780].forEach((f, i) => beep(f, f * .6, .09, 'square', .09, i * .07));
+      noise(.34, .09, 3000, .28);
+      beep(300, 90, .5, 'sawtooth', .1, .3);
+      break;
+    // Inversion : deux notes qui se croisent, l'une monte pendant que l'autre
+    // descend. On entend le renversement avant même de le subir.
+    case 'inverse':
+      beep(400, 1200, .3, 'square', .12);
+      beep(1200, 400, .3, 'square', .12);
+      break;
   }
 }
 

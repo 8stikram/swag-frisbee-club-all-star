@@ -7,7 +7,7 @@ import { centreDunk, centrePanier, ZONES } from '../game/zones.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { getSkinId, drawSkinDisc, deformationDisque, tracerContour } from '../data/skins.js';
-import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN } from '../data/specials.js';
+import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE } from '../data/specials.js';
 import { Reglages } from '../data/disc-fx.js';
 
 ctx.imageSmoothingEnabled = false;
@@ -886,6 +886,37 @@ function drawPlayer(p) {
   // Le bouclier passe par-dessus le joueur. Dessiné dessous, le sprite en
   // masquait deux anneaux sur trois et il ne restait qu'un arc rouge.
   if (p.bouclierT > 0) drawBouclier(p);
+  // Piraté : deux flèches opposées au-dessus de la tête, et un décrochage
+  // rouge/cyan par intermittence. Le compte à rebours est visible — savoir
+  // combien de temps ça dure fait partie de ce qu'on peut jouer.
+  if (p.piratage > 0) drawMarqueHack(p);
+}
+
+function drawMarqueHack(p) {
+  const y = p.y - 52 * SCALE;
+  ctx.save();
+  // Décrochage RVB sur le sprite, une image sur trois environ.
+  if (Math.sin(G.now * 19) > .55) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = .3;
+    ctx.fillStyle = '#ff0040'; ctx.fillRect(p.x - 16 + 3, p.y - 30, 32, 56);
+    ctx.fillStyle = '#00e5ff'; ctx.fillRect(p.x - 16 - 3, p.y - 30, 32, 56);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  }
+  // Deux chevrons tête-bêche : le symbole de l'inversion, lisible sans texte.
+  ctx.strokeStyle = VERT_HACK; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(p.x - 5, y - 1); ctx.lineTo(p.x, y - 6); ctx.lineTo(p.x + 5, y - 1);
+  ctx.moveTo(p.x - 5, y + 3); ctx.lineTo(p.x, y + 8); ctx.lineTo(p.x + 5, y + 3);
+  ctx.stroke();
+  // Jauge du temps restant, sous les chevrons.
+  const l = 26, k = p.piratage / PIRATAGE_DUREE;
+  ctx.fillStyle = 'rgba(4,16,8,.7)';
+  ctx.fillRect(p.x - l / 2, y + 12, l, 3);
+  ctx.fillStyle = VERT_HACK;
+  ctx.fillRect(p.x - l / 2, y + 12, l * k, 3);
+  ctx.restore();
 }
 
 function drawTrail() {
@@ -1268,6 +1299,110 @@ function drawBell() {
 }
 
 // ---------------------------------------------------------------------------
+// Piratage de Cyberleek. Un terminal s'ouvre sur la moitié de terrain de la
+// victime — pas au centre de l'écran : on doit voir tout de suite QUI est
+// piraté, et un panneau centré aurait laissé le doute une seconde de trop.
+// ---------------------------------------------------------------------------
+const VERT_HACK = '#5df08a';
+
+function drawHack() {
+  const h = G.hack;
+  const k = h.t / h.dur;
+  // Il s'ouvre vite et se referme vite, en restant lisible au milieu.
+  const ouv = Math.min(1, k * 6) * Math.min(1, (1 - k) * 5);
+  if (ouv <= 0) return;
+  const cible = h.cible;
+  const gauche = !cible || cible.side === 1;
+  const pw = Math.min(360, W * .42), ph = 176;
+  const px = gauche ? W * .06 : W - W * .06 - pw;
+  const py = H * .5 - ph / 2;
+
+  ctx.save();
+  ctx.translate(px + pw / 2, py + ph / 2);
+  ctx.scale(1, ouv);
+  ctx.translate(-(px + pw / 2), -(py + ph / 2));
+
+  ctx.fillStyle = 'rgba(4,10,8,.92)';
+  ctx.fillRect(px, py, pw, ph);
+  ctx.strokeStyle = VERT_HACK; ctx.lineWidth = 2;
+  ctx.strokeRect(px + .5, py + .5, pw - 1, ph - 1);
+
+  // Barre de titre : elle nomme la cible, c'est la lecture la plus rapide.
+  ctx.fillStyle = VERT_HACK;
+  ctx.fillRect(px, py, pw, 18);
+  ctx.fillStyle = '#041008';
+  ctx.font = 'bold 11px Consolas, "Courier New", monospace';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('$CYBERLEEK — root@' + ((cible && cible.char.short) || 'CIBLE'), px + 8, py + 9);
+
+  // Les lignes tombent l'une après l'autre. La dernière clignote : c'est la
+  // seule qui dit ce que le joueur va subir.
+  ctx.font = '11px Consolas, "Courier New", monospace';
+  ctx.textBaseline = 'top';
+  h.lignes.forEach((l, i) => {
+    if (h.t < l.a) return;
+    const finale = i === h.lignes.length - 1;
+    if (finale && Math.sin(h.t * 22) < 0) return;
+    ctx.fillStyle = finale ? '#ffffff' : (l.texte.startsWith('>') ? VERT_HACK : 'rgba(93,240,138,.6)');
+    ctx.fillText(l.texte, px + 8, py + 26 + i * 16);
+  });
+
+  // Curseur de saisie, et bandes de parasites qui traversent le panneau.
+  if (Math.sin(h.t * 14) > 0) {
+    ctx.fillStyle = VERT_HACK;
+    ctx.fillRect(px + 8, py + 26 + h.lignes.length * 16, 7, 11);
+  }
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 3; i++) {
+    const by = py + ((h.t * (140 + i * 90) + i * 61) % ph);
+    ctx.fillStyle = 'rgba(93,240,138,.14)';
+    ctx.fillRect(px, by, pw, 3);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.restore();
+  ctx.textBaseline = 'alphabetic';
+}
+
+// Pluie de caractères sur la moitié de terrain du joueur piraté. Elle dure tout
+// l'effet et sert de rappel : sans elle, six secondes après le terminal, on ne
+// sait plus pourquoi on court à l'envers.
+const GLYPHES_HACK = '01¥$#%&@/\\<>[]{}=+*';
+const COLONNES_HACK = 15, TRAINEE_HACK = 5;
+function drawPluieHack(p) {
+  const gauche = p.side === 1;
+  const x0 = gauche ? COURT.left : CX, x1 = gauche ? CX : COURT.right;
+  const haut = COURT.top, bas = COURT.bottom, hauteur = bas - haut;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x0, haut, x1 - x0, hauteur); ctx.clip();
+  ctx.font = '13px Consolas, "Courier New", monospace';
+  ctx.textAlign = 'center';
+  const rng = makeRngHack(p.side * 7717);
+  for (let c = 0; c < COLONNES_HACK; c++) {
+    const cx = x0 + (c + .5) * ((x1 - x0) / COLONNES_HACK) + (rng() - .5) * 10;
+    const ph = rng(), vit = .28 + rng() * .3;
+    const tete = ((ph + G.now * vit) % 1.25) * hauteur;
+    // Une colonne, c'est une tête claire suivie d'une traînée qui s'éteint.
+    // Des glyphes isolés ne se lisaient pas : c'est la traînée qui fait la
+    // pluie, pas le nombre de caractères.
+    for (let j = 0; j < TRAINEE_HACK; j++) {
+      const cy = haut + tete - j * 15;
+      if (cy < haut || cy > bas) continue;
+      ctx.globalAlpha = (1 - j / TRAINEE_HACK) * .5;
+      ctx.fillStyle = j === 0 ? '#ffffff' : VERT_HACK;
+      ctx.fillText(GLYPHES_HACK[(Math.floor(G.now * 7 + c * 5 + j * 3) % GLYPHES_HACK.length)], cx, cy);
+    }
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+// Générateur figé : les colonnes de pluie doivent rester aux mêmes abscisses
+// d'une image à l'autre, sinon la pluie grésille au lieu de tomber.
+function makeRngHack(seed) {
+  let s = seed >>> 0;
+  return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+}
+
+// ---------------------------------------------------------------------------
 // Calques de debug, pilotés par les interrupteurs du panneau admin. Ils sont
 // dessinés en espace écran, après la caméra, pour rester lisibles.
 // ---------------------------------------------------------------------------
@@ -1373,6 +1508,9 @@ export function render() {
     ctx.translate(-G.zoom.x, -G.zoom.y);
   }
   drawCourt();
+  // La pluie de code tombe sur le sol du camp piraté, donc sous les joueurs et
+  // sous le disque : elle habille le terrain, elle ne masque jamais l'action.
+  for (const p of [G.p1, G.p2]) if (p && p.piratage > 0) drawPluieHack(p);
   if (G.leg && G.leg.phase === 'shadow') drawLeg();
   drawDecoys();
   if (G.p1) {
@@ -1398,6 +1536,7 @@ export function render() {
   // Les bandes et le logo REPLAY sont en espace écran : dessinés dans la
   // transformation caméra, ils auraient été zoomés avec le terrain.
   if (G.replay) drawReplayOverlay();
+  if (G.hack) drawHack();
   drawDebug();
   // Flash du Perfect Dive, appliqué hors zoom pour couvrir tout l'écran.
   // Plafonné à 1 : la transformation Six Paths pousse la valeur bien au-delà

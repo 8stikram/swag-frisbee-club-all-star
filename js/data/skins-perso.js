@@ -45,6 +45,13 @@ export const SKINS = {
     { id: 'eve', nom: 'EVE', cond: 'victoiresDifficile', seuil: 3,
       texte: 'Gagner 3 matchs en difficulté Difficile' }
   ],
+  // Cyberleek n'a pour l'instant que sa tenue d'origine. L'entrée est quand
+  // même nécessaire : sans elle sa liste de tenues est vide, le panneau s'ouvre
+  // sans une seule tuile, et comme c'est la tuile qui valide le personnage, il
+  // devenait tout simplement impossible à choisir.
+  cyberleek: [
+    { id: 'combat', nom: 'TENUE DE COMBAT', defaut: true }
+  ],
   jingle: [
     { id: 'polenord', nom: 'PÔLE NORD', defaut: true },
     { id: 'smoking', nom: 'SMOKING NOIR', cond: 'victoires', seuil: 10,

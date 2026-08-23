@@ -330,7 +330,15 @@ export function updatePlayer2(dt) {
 }
 
 export function integratePlayer(p, dt) {
-  const mvx = p.vx + p.dashV.x, mvy = p.vy + p.dashV.y;
+  // Piratage de Cyberleek : le déplacement part à l'envers. On retourne le
+  // mouvement ici et pas dans les fiches d'intentions, parce que quatre sources
+  // les remplissent — souris, clavier du J2, IA, réseau — et qu'une seule
+  // oubliée aurait laissé un adversaire immunisé. Tout le monde passe par
+  // cette intégration, personne n'y échappe.
+  // Le dash n'est pas inversé : c'est un élan déjà lancé, pas une commande
+  // qu'on tient. Le retourner ferait reculer le joueur à chaque échappée.
+  const inv = p.piratage > 0 ? -1 : 1;
+  const mvx = p.vx * inv + p.dashV.x, mvy = p.vy * inv + p.dashV.y;
   p.x += mvx * dt; p.y += mvy * dt;
   const minX = p.side === 1 ? COURT.left + 16 : CX + 10;
   const maxX = p.side === 1 ? CX - 10 : COURT.right - 16;

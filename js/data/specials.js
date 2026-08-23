@@ -73,6 +73,30 @@ export const GUN_SPRITE = buildSprite([
   "........"
 ], PAL_GUN);
 
+// --- Piratage de Cyberleek --------------------------------------------------
+// Six secondes de commandes inversées. Assez pour perdre un échange, trop court
+// pour rendre la partie injouable — c'est le réglage qu'on cherche : l'ultime
+// doit coûter un point, pas la partie.
+export const PIRATAGE_DUREE = 6;
+export const PIRATAGE_INTRO = 1.35;
+
+// Les lignes du terminal. Elles ne sont pas décoratives au hasard : elles
+// racontent une intrusion, du scan à la prise de contrôle, et la dernière dit
+// exactement ce qui vient d'arriver au joueur d'en face.
+const LIGNES_HACK = [
+  '> scan_arene --cible=adversaire',
+  '  [##########] 4 ports ouverts',
+  '> exploit input_daemon',
+  '  bypass ok — uid=0',
+  '> patch commandes.axe_x *= -1',
+  '> patch commandes.axe_y *= -1',
+  '  $CYBERLEEK OWNS YOU',
+  '> COMMANDES INVERSEES'
+];
+function construireTerminal() {
+  return LIGNES_HACK.map((texte, i) => ({ texte, a: i * .13 }));
+}
+
 export const SPECIALS = {
   kurama: {
     name: 'SIX PATHS',
@@ -161,6 +185,27 @@ export const SPECIALS = {
       G.banner = { text: 'CLOCHE DE MINUIT !!', color: '#f5c542', t: 0, dur: 1.3 };
       G.shake = 12;
       sfx('roar'); comment('LA CLOCHE SONNE MINUIT !');
+    }
+  },
+
+  piratage: {
+    name: 'PIRATAGE',
+    desc: 'Prend la main sur l\'adversaire : ses commandes partent à l\'envers.',
+    // Le seul ultime du jeu qui ne touche ni au disque ni au terrain. Il ne
+    // demande donc pas le disque : Cyberleek frappe quand il n'a rien, ce qui
+    // en fait une riposte plutôt qu'une conclusion.
+    needsDisc: false,
+    cast(p) {
+      p.meter = 0; p.stats.specials++;
+      const foe = p.foe;
+      // L'inversion part tout de suite, l'animation se joue par-dessus. La
+      // faire attendre la fin du terminal offrirait une seconde de répit à
+      // l'adversaire, exactement quand il vient de voir qu'il allait la subir.
+      if (foe) foe.piratage = PIRATAGE_DUREE;
+      G.hack = { t: 0, dur: PIRATAGE_INTRO, source: p, cible: foe, lignes: construireTerminal() };
+      G.timescale = .3; G.tsTimer = .55; G.shake = 9;
+      G.banner = { text: 'PIRATAGE !!', color: '#4fe8ff', t: 0, dur: 1.3 };
+      sfx('hack'); comment('IL PREND LA MAIN !');
     }
   },
 

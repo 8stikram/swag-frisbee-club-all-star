@@ -41,6 +41,8 @@ export const G = {
   matchChar: 'naruto', matchCPU: 'leon', matchDiff: 1,
   crowd: [], stars: [], rally: 0, maxRally: 0,
   cine: null, leg: null, bell: null, rec: [], replay: null, comment: null,
+  // Mise en scène du Piratage de Cyberleek : le terminal qui défile.
+  hack: null,
   // Cercles bonus au sol du Swag Frisbee Stadium. Vide partout ailleurs.
   cercles: [], prochainCercle: 0,
   idleT: 0, waveX: -200, mem: { t: 0, m: 0, b: 0 }, startCom: false,
@@ -119,7 +121,9 @@ export function makePlayer(ck, side, human, diffIdx) {
     // Bras tendu de Leon pendant le Tir Matilda : durée de la pose.
     viseT: 0,
     // Bouclier du disque Captain : bref halo autour de celui qui attrape.
-    bouclierT: 0
+    bouclierT: 0,
+    // Piraté par Cyberleek : ses déplacements partent à l'envers.
+    piratage: 0
   };
   if (!human) {
     p.ai = {
@@ -138,6 +142,7 @@ export function resetDisc() {
 
 export function initMatch(demo, ck, cpu, diffIdx, j2j) {
   G.demo = demo; G.now = 0; G.winner = null; G.banner = null; G.cine = null; G.leg = null; G.bell = null; G.replay = null;
+  G.hack = null;
   G.particles.length = 0; G.popups.length = 0; G.trail.length = 0; G.decoys.length = 0; G.rec.length = 0;
   G.timescale = 1; G.shake = 0; G.rally = 0; G.maxRally = 0; G.comment = null; G.idleT = 0;
   G.mem = { t: 0, m: 0, b: 0 }; G.startCom = false; G.lungeBonus = false; G.lungeBonusTimer = 0;

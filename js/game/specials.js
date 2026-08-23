@@ -67,6 +67,20 @@ export function updateBell(dt) {
   }
 }
 
+// Le terminal du Piratage : il défile, puis s'efface. L'inversion, elle, a déjà
+// commencé au lancement — cette fonction ne fait que la mise en scène, et la
+// fin de l'animation ne doit surtout pas y toucher.
+export function updateHack(dt) {
+  const h = G.hack;
+  if (!h) return;
+  h.t += dt;
+  if (h.t >= h.dur) {
+    G.hack = null;
+    addPopup('COMMANDES INVERSÉES !', '#4fe8ff', 15, 1.2, (h.cible ? h.cible.y : 0) - 60);
+    sfx('inverse');
+  }
+}
+
 export function updateLeg(dt) {
   const L = G.leg;
   if (!L) return;
