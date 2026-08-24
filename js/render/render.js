@@ -10,7 +10,7 @@ import { getSkinId, drawSkinDisc, deformationDisque, tracerContour } from '../da
 import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE } from '../data/specials.js';
 import { Reglages } from '../data/disc-fx.js';
 import { rayonSables, centreSables, densiteTempete } from '../game/desert.js';
-import { etiquetteJoueur, Partie, monJoueur, enMiroir } from '../reseau/partie.js';
+import { etiquetteJoueur, Partie, monJoueur, enMiroir, skinDuDisque } from '../reseau/partie.js';
 import { Reseau } from '../reseau/connexion.js';
 
 ctx.imageSmoothingEnabled = false;
@@ -1315,7 +1315,7 @@ function drawDisc() {
     ctx.strokeStyle = 'rgba(255,83,64,.7)'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(d.x, d.y, r + 4 + Math.sin(G.now * 24) * 2, G.now * 12, G.now * 12 + 4.6); ctx.stroke();
   } else {
-    const id = getSkinId();
+    const id = skinDuDisque();   // le disque du lanceur, pas le sien
     // Gélatine : le disque tremble après un rebond. On étire sur un axe et on
     // écrase sur l'autre, à volume constant — c'est ce qui fait « élastique »
     // plutôt que « qui grandit ».

@@ -6,6 +6,7 @@ import { getMap } from '../data/maps.js';
 // les deux machines n'en voyaient pas les mêmes — la seule fuite qu'ait laissée
 // le partage jeu/cosmétique du chantier 3.
 import { randJeu } from '../core/alea.js';
+import { jeSimule } from '../reseau/partie.js';
 import { sfx } from '../audio/audio.js';
 import { addPopup, burst, ring } from './fx.js';
 
@@ -71,6 +72,7 @@ export function centrePanier(side) {
 // Un seul panier par lancer, sinon un disque qui traîne dans l'anneau les
 // empilerait image après image.
 export function testerPanier(d) {
+  if (!jeSimule()) return;   // cinq points : à l'hôte de les accorder
   if (!terrainAZones() || !d.free || !d.thrower || d.panierMarque) return;
   const cible = centrePanier(d.thrower.side === 1 ? 2 : 1);
   if (Math.hypot(d.x - cible.x, d.y - cible.y) > RAYON_PANIER) return;
@@ -82,6 +84,9 @@ export function testerPanier(d) {
 // Appelé quand le disque s'immobilise. Renvoie true si une zone l'a récompensé,
 // auquel cas l'appelant n'a pas à déclarer le disque mort.
 export function disqueImmobile(d) {
+  // Récompenser un placement, c'est ajouter des points : une décision d'arbitre.
+  // L'invité voit les cercles — ils lui arrivent par l'état — mais ne compte pas.
+  if (!jeSimule()) return false;
   if (!terrainAZones() || !d.thrower) return false;
   const p = d.thrower;
 

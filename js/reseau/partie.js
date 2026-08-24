@@ -1,4 +1,4 @@
-import { G, makePlayer } from '../game/state.js';
+import { G, makePlayer, comment } from '../game/state.js';
 import { Reseau, envoyer, connecte, surMessage, mesurerPing, fermer } from './connexion.js';
 import { Compte, monId } from './compte.js';
 import { setMapId, getMapId } from '../data/maps.js';
@@ -9,6 +9,7 @@ import { effetDeBut } from '../game/fx.js';
 import { COURT, CX, DISC_RADIUS } from '../core/constants.js';
 import { clamp } from '../core/utils.js';
 import { semerAlea, graineNeuve } from '../core/alea.js';
+import { getSkinId } from '../data/skins.js';
 
 // ---------------------------------------------------------------------------
 // Circulation d'un match sur la liaison directe.
@@ -186,6 +187,22 @@ function etatPourLeReseau() {
     // avant toute la physique du match, donc aucun rebond, aucune réception,
     // aucun but ne faisait le moindre bruit chez lui : il jouait en silence.
     ev: viderEcho(),
+    // Les leurres du Tir Matilda. Trois disques de plus à l'écran, et c'est
+    // tout l'intérêt de l'ultime de Leon : l'invité n'en voyait aucun, donc
+    // il voyait un seul disque là où il fallait deviner lequel était vrai.
+    // Envoyés en positions plutôt que simulés : ils vivent deux secondes, et
+    // les recevoir soixante fois par seconde coûte moins qu'un désaccord.
+    dc: G.decoys.length ? G.decoys.map(o => [Math.round(o.x), Math.round(o.y)]) : 0,
+    // Cercles bonus du Stadium. L'invité ne simule pas les zones du tout : il
+    // n'en voyait aucun, sur un terrain dont c'est la mécanique principale.
+    ce: G.cercles.length ? G.cercles.map(c => [Math.round(c.x), Math.round(c.y), +c.t.toFixed(2)]) : 0,
+    // Secousse et flash. Cosmétiques, oui, mais ce sont eux qui font sentir un
+    // but ou un contre — sans eux les temps forts du match sont plats.
+    fx: [Math.round(G.shake), +G.flash.toFixed(2)],
+    // Le commentateur, seulement quand il vient de dire quelque chose de neuf.
+    // Ses phrases naissent des buts et des réceptions, que l'invité n'arbitre
+    // pas : il jouait donc un match quasi muet.
+    cm: commentaireNeuf(),
     // Les mises en scène des ultimes. Elles ne voyageaient pas du tout :
     // l'invité voyait la jauge de l'adversaire se vider et son personnage
     // subir des effets, sans jamais voir ce qui les provoquait — ni la jambe
@@ -200,11 +217,29 @@ function etatPourLeReseau() {
 // Les joueurs y deviennent un numéro de côté — une référence ne traverse pas
 // un fil — et le texte du terminal de piratage n'est pas transmis : il est
 // décoratif et l'invité en fabrique un de son côté.
+// Le commentateur ne se renvoie pas soixante fois par seconde : on ne transmet
+// une phrase qu'une fois, à sa sortie. Sans ce garde-fou, chaque paquet
+// aurait porté le même texte pendant les deux secondes et demie de son
+// affichage — et l'aurait rejoué à l'infini chez l'invité.
+let dernierCommentaire = null;
+function commentaireNeuf() {
+  const c = G.comment;
+  if (!c || c.text === dernierCommentaire) return 0;
+  dernierCommentaire = c.text;
+  return c.text;
+}
+
 function scenesPourLeReseau() {
   const c = G.cine, b = G.bell, h = G.hack, l = G.leg, t = G.tempete;
-  if (!c && !b && !h && !l && !t) return 0;
+  const ba = G.banner, zo = G.zoom;
+  if (!c && !b && !h && !l && !t && !ba && !zo) return 0;
   const q = p => (p === G.p1 ? 1 : (p === G.p2 ? 2 : 0));
   return {
+    // Le bandeau qui annonce l'ultime, et le zoom du Perfect Dive. Ils vivent
+    // une seconde à peine et n'existent que pendant une scène : ils voyagent
+    // donc avec elle, pas dans le paquet ordinaire.
+    ba: ba ? [ba.text, ba.color, +ba.t.toFixed(2), ba.dur] : 0,
+    zo: zo ? [+zo.t.toFixed(2), zo.dur, Math.round(zo.x), Math.round(zo.y)] : 0,
     c: c ? [+c.t.toFixed(2), q(c.p), c.launched ? 1 : 0, c.ult] : 0,
     b: b ? [q(b.owner), b.side, +b.t.toFixed(2), b.dur, Math.round(b.x), Math.round(b.y)] : 0,
     h: h ? [+h.t.toFixed(2), h.dur, q(h.source), q(h.cible)] : 0,
@@ -219,7 +254,15 @@ function scenesPourLeReseau() {
 // resonnerait à chaque fois.
 function appliquerScenes(sc) {
   const j = n => (n === 1 ? G.p1 : (n === 2 ? G.p2 : null));
-  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; return; }
+  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.banner = null; G.zoom = null; return; }
+  const ba = sc.ba;
+  if (ba) { if (!G.banner || G.banner.text !== ba[0]) G.banner = { text: ba[0], color: ba[1], t: ba[2], dur: ba[3] };
+    else G.banner.t = ba[2]; }
+  else G.banner = null;
+  const zo = sc.zo;
+  if (zo) { if (!G.zoom) G.zoom = { t: zo[0], dur: zo[1], x: zo[2], y: zo[3] };
+    else { G.zoom.t = zo[0]; G.zoom.dur = zo[1]; G.zoom.x = zo[2]; G.zoom.y = zo[3]; } }
+  else G.zoom = null;
   const c = sc.c;
   if (c) { if (!G.cine) G.cine = { t: 0, p: j(c[1]), launched: !!c[2], ult: c[3] };
     G.cine.t = c[0]; G.cine.p = j(c[1]); G.cine.launched = !!c[2]; G.cine.ult = c[3]; }
@@ -675,6 +718,25 @@ function appliquerEtat(m) {
   // décide de leur existence et de leur avancement.
   if (m.sc !== undefined) appliquerScenes(m.sc);
 
+  // Leurres et cercles : reçus en positions, pas simulés. L'invité ne fait
+  // tourner ni updateDecoys ni updateZones — les deux décident de points, donc
+  // ils appartiennent à l'arbitre — et il n'en voyait par conséquent aucun.
+  if (m.dc !== undefined) {
+    G.decoys.length = 0;
+    if (m.dc) for (const o of m.dc) G.decoys.push({ x: o[0], y: o[1], vx: 0, vy: 0, life: 1, real: false, thrower: null });
+  }
+  if (m.ce !== undefined) {
+    G.cercles.length = 0;
+    if (m.ce) for (const c of m.ce) G.cercles.push({ x: c[0], y: c[1], t: c[2] });
+  }
+  // Secousse et flash : on prend le plus fort des deux, jamais l'un à la place
+  // de l'autre. L'invité en produit aussi de son côté — un rebond, un dash — et
+  // les écraser au rythme des paquets les hacherait.
+  if (m.fx) { G.shake = Math.max(G.shake, m.fx[0]); G.flash = Math.max(G.flash, m.fx[1]); }
+  // Une phrase du commentateur n'arrive qu'une fois : elle est déjà filtrée au
+  // départ, on peut la rejouer telle quelle.
+  if (m.cm) comment(m.cm);
+
   // Les bruitages du match, produits par une simulation qui n'a pas lieu ici.
   // Marqués comme venant du réseau : sans quoi l'étouffement qui empêche
   // l'invité de doubler ses propres sons étoufferait aussi l'écho lui-même,
@@ -869,7 +931,7 @@ export function demarrerPartieReseau(role) {
   tampon.length = 0; dernierEnvoi = 0;
   p1Autorite.valide = false; Partie.predictionAdversaire = false;
   Partie.voteAdversaire = null;
-  Partie.skipDemande = false; Partie.finDeMatch = false;
+  Partie.skipDemande = false; Partie.finDeMatch = false; dernierCommentaire = null;
   // Personne n'a encore choisi : l'hote doit attendre les deux presentations
   // avant de donner le coup d'envoi.
   attenteNouveauxChoix();
@@ -961,6 +1023,29 @@ export function sonJoueur() {
 // session (retour au menu, nouvelle partie).
 export function enMiroir() { return Partie.active && Partie.role === 'invite'; }
 
+// ---------------------------------------------------------------------------
+// À qui appartient le disque qu'on regarde.
+//
+// Le skin de disque est un choix personnel, gardé en local : chacun voyait donc
+// le sien, et les deux écrans ne montraient pas le même objet. Il fallait
+// trancher lequel l'emporte, et c'est celui du LANCEUR — de cette façon les
+// deux disques apparaissent tour à tour au lieu qu'un seul écrase l'autre, et
+// les deux machines s'accordent puisque le lanceur est le même pour tout le
+// monde.
+//
+// Hors ligne, ou tant qu'on ne connaît pas le skin d'en face, on retombe sur
+// le sien : le jeu reste exactement ce qu'il était.
+// ---------------------------------------------------------------------------
+export function skinDuJoueur(p) {
+  if (!Partie.active || !p || p === monJoueur()) return getSkinId();
+  return (Partie.adversaire && Partie.adversaire.skin) || getSkinId();
+}
+
+export function skinDuDisque() {
+  const d = G.disc;
+  return skinDuJoueur(d.heldBy || d.thrower);
+}
+
 // Comment nommer un joueur à l'écran. En ligne on dispose des deux pseudos, et
 // un match contre quelqu'un doit nommer ce quelqu'un — « J2 » ou « CPU » ne
 // veulent rien dire quand on affronte une personne. Hors ligne, on garde les
@@ -984,7 +1069,7 @@ export function arreterPartieReseau() {
   // bandes noires collées à l'écran, par l'autre bout cette fois.
   if (G.replay && G.replay.distant) { G.replay = null; setMuffled(false); }
   Partie.active = false; Partie.role = null; Partie.adversaire = null;
-  Partie.skipDemande = false; Partie.finDeMatch = false;
+  Partie.skipDemande = false; Partie.finDeMatch = false; dernierCommentaire = null;
   activerEcho(false);
   // Sans quoi le solo qui suit se jouerait en sourdine : l'étouffement ne vaut
   // que pour un invité en train de recevoir l'écho de quelqu'un.
@@ -1093,14 +1178,18 @@ export function annoncerIdentite(perso) {
     id: monId() || null,
     pseudo: (Compte.profil && Compte.profil.pseudo) || null,
     perso: perso || null,
-    terrain: Partie.monTerrain
+    terrain: Partie.monTerrain,
+    // Le disque qu'on a choisi. C'est celui du lanceur qui s'affiche, donc
+    // chacun a besoin de connaître celui d'en face pour dessiner le même objet.
+    skin: getSkinId()
   });
 }
 
 function recevoirIdentite(m) {
   Partie.adversaire = {
     id: m.id || null, pseudo: m.pseudo || null,
-    perso: m.perso || null, terrain: m.terrain || null
+    perso: m.perso || null, terrain: m.terrain || null,
+    skin: m.skin || null
   };
   choixFrais.lui = true;
   // L'hôte seul tranche, puis donne le coup d'envoi avec les deux personnages

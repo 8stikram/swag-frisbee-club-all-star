@@ -1,5 +1,5 @@
 import { G, Mouse, resetDisc, initMatch, comment } from './state.js';
-import { Partie, monJoueur, etiquetteJoueur, jeSimule, signalerTirLocal, demanderSkipRejeu } from '../reseau/partie.js';
+import { Partie, monJoueur, etiquetteJoueur, jeSimule, signalerTirLocal, demanderSkipRejeu, skinDuJoueur } from '../reseau/partie.js';
 import { enregistrerMatchComplet } from '../reseau/compte.js';
 import {
   COURT, CX, CY, TARGET, GOAL_MID1, GOAL_MID2, throwSpeed,
@@ -261,7 +261,7 @@ export function onCatch(p, sp, dirx, diry) {
   // Captain : un bouclier apparaît un instant autour de celui qui attrape.
   // Attaché au joueur et pas au disque, parce que le disque vient de quitter
   // le terrain pour sa main — c'est lui qu'on regarde à cet instant.
-  if (getSkinId() === 'captain') p.bouclierT = .45;
+  if (skinDuJoueur(p) === 'captain') p.bouclierT = .45;
   if (sp > 780) {
     p.meter = clamp(p.meter + 20 * METER_GAIN, 0, 100);
     addPopup('PERFECT CATCH !', '#ffffff', 14, .9, p.y - 56);

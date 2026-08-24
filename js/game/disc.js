@@ -8,9 +8,8 @@ import { sfx } from '../audio/audio.js';
 import { disqueImmobile, testerPanier } from './zones.js';
 import { burst, dust, addPopup } from './fx.js';
 import { onCatch, scoreGoal, ownFoul, setupServe } from './actions.js';
-import { disqueVuPar } from '../reseau/partie.js';
+import { disqueVuPar, skinDuDisque } from '../reseau/partie.js';
 import { RASENGAN } from '../data/specials.js';
-import { getSkinId } from '../data/skins.js';
 import { couleurTrainee, semerEnVol, eclatDeRebond } from '../data/disc-fx.js';
 
 export const DISC_R = () => G.disc.big ? DISC_BIG_RADIUS : DISC_RADIUS;
@@ -66,9 +65,9 @@ export function updateDisc(dt) {
     x: d.x, y: d.y,
     c: d.kind === 'kurama' ? RASENGAN
       : (d.super ? '#ff5340'
-        : (d.kind === 'matilda' ? '#8dff6a' : couleurTrainee(getSkinId(), d.spin)))
+        : (d.kind === 'matilda' ? '#8dff6a' : couleurTrainee(skinDuDisque(), d.spin)))
   });
-  if (ordinaire) semerEnVol(getSkinId(), d, G.particles);
+  if (ordinaire) semerEnVol(skinDuDisque(), d, G.particles);
   // Tremblement laissé par un rebond de Gélatine : il s'amortit vite, sinon le
   // disque a l'air cassé plutôt qu'élastique.
   if (d.wobble > 0) d.wobble = Math.max(0, d.wobble - dt * 2.6);
@@ -138,7 +137,7 @@ export function onBounce(d) {
   else {
     sfx('bounce'); dust(d.x, d.y, 6); G.shake = Math.max(G.shake, 3);
     // Chaque disque a son éclat de rebond : la rosace, la pyramide, l'éruption.
-    eclatDeRebond(getSkinId(), d, G.particles);
+    eclatDeRebond(skinDuDisque(), d, G.particles);
   }
   if (d.thrower) {
     const ownSideWall = (d.x <= COURT.left + DISC_R() && d.thrower.side === 1) || (d.x >= COURT.right - DISC_R() && d.thrower.side === 2);
