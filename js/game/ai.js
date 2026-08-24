@@ -4,6 +4,11 @@ import {
   DASH_CATCH_MULT, DIVE_RANGE, PERFECT_WINDOW, CATCH_RADIUS
 } from '../core/constants.js';
 import { clamp, norm, gauss, rand, approach } from '../core/utils.js';
+// Tout le hasard de l'IA est semé : ses erreurs de visée et ses hésitations sont
+// des décisions de jeu. Deux machines qui simulent la même IA doivent la voir
+// prendre les mêmes. C'est ce qui rend possible la reprise par l'IA quand un
+// joueur se déconnecte, sans que les deux écrans partent chacun de leur côté.
+import { gaussJeu, randJeu, aleaJeu } from '../core/alea.js';
 import { dust } from './fx.js';
 import { onCatch, throwDisc, doDive } from './actions.js';
 import { startDash, cancelDash, doFeint } from './input.js';
@@ -27,7 +32,7 @@ export function predictArrivalAtX(disc, targetX) {
 }
 
 export function getOpenCorner(side) {
-  const y = (Math.random() < 0.5) ? GOAL_TOP + 10 : GOAL_BOTTOM - 10;
+  const y = (aleaJeu() < 0.5) ? GOAL_TOP + 10 : GOAL_BOTTOM - 10;
   return { x: side === 1 ? COURT.right : COURT.left, y };
 }
 
@@ -50,9 +55,9 @@ function morale(p) {
 // fois par possession — c'est ce qui rend l'intention de l'IA lisible.
 function choisirVisee(p, D, d) {
   const corner = getOpenCorner(p.side);
-  const parLaBande = Math.random() < 0.45 || d.aggro > 3;
+  const parLaBande = aleaJeu() < 0.45 || d.aggro > 3;
   const point = parLaBande ? getMirrorGoal(p.side, corner) : corner;
-  const bruit = gauss() * D.err * 0.4;
+  const bruit = gaussJeu() * D.err * 0.4;
   // `but` est l'endroit réellement visé dans la cage. Sur un tir par la bande,
   // le point de visée est volontairement hors du terrain (c'est le reflet), il
   // ne dit donc rien de l'endroit où l'adversaire doit se placer.
@@ -68,7 +73,7 @@ export function updateAI(p, dt) {
   // menu par trySpecial() lui-même.
   if (p.meter >= 100 && !G.cine && (G.state === 'play' || G.state === 'serve')) {
     const u = SPECIALS[p.char.ult];
-    if (u && (!u.needsDisc || p.holding) && Math.random() < D.special * dt) trySpecial(p);
+    if (u && (!u.needsDisc || p.holding) && aleaJeu() < D.special * dt) trySpecial(p);
   }
   const attackSign = p.side === 2 ? -1 : 1;
   const hasDisc = p.holding;
@@ -79,9 +84,9 @@ export function updateAI(p, dt) {
     if (!d.avaitDisque) {
       // Certaines possessions, l'IA vise volontairement une charge quasi
       // complète pour sortir un vrai super-lancer, comme le ferait un joueur.
-      d.superCommit = Math.random() < D.smart * 0.35;
+      d.superCommit = aleaJeu() < D.smart * 0.35;
       d.aim = null;
-      d.veutFeinter = Math.random() < D.smart * 0.5;
+      d.veutFeinter = aleaJeu() < D.smart * 0.5;
     }
     if (d.state !== 'STRIKE') { d.state = 'STRIKE'; d.stateTimer = 0; }
   } else {
@@ -114,10 +119,10 @@ export function updateAI(p, dt) {
   if (d.hesT > 0) d.hesT -= dt;
   // L'errance est bien plus marquée en Facile qu'en Difficile : c'est ce qui
   // fait la différence entre un CPU qui flotte et un CPU qui tient sa ligne.
-  if (d.hesT <= 0 && Math.random() < 0.005) {
+  if (d.hesT <= 0 && aleaJeu() < 0.005) {
     const flou = 1.4 - D.smart;
-    d.hesT = 0.2 + rand(0.3);
-    d.hes = { x: gauss() * 26 * flou, y: gauss() * 32 * flou };
+    d.hesT = 0.2 + randJeu(0.3);
+    d.hes = { x: gaussJeu() * 26 * flou, y: gaussJeu() * 32 * flou };
   }
 
   // Feinte adverse : le geste part, le disque avance — l'IA peut y croire et
@@ -125,12 +130,12 @@ export function updateAI(p, dt) {
   // elle ne bronche presque jamais. On ne décide qu'une fois par feinte.
   if (foe.feintT > 0 && !d.feinteVue) {
     d.feinteVue = true;
-    if (Math.random() < (1 - D.smart) * 0.85) {
+    if (aleaJeu() < (1 - D.smart) * 0.85) {
       d.aMordu = true;                 // repère de mise au point, lu par le debug
       d.hesT = 0; d.aggro = 0;
       // Elle part défendre la trajectoire annoncée, et reste en retard sur le
       // vrai tir le temps de se replacer.
-      d.reactAt = G.now + 0.22 + rand(0.2);
+      d.reactAt = G.now + 0.22 + randJeu(0.2);
       const vise = foe.feintDir || { x: p.side === 1 ? -1 : 1, y: 0 };
       if (p.dashT <= 0 && p.dashGap <= 0) startDash(p, norm(vise.x, vise.y));
       else { d.hesT = .45; d.hes = { x: vise.x * 120, y: vise.y * 140 }; }
@@ -142,7 +147,7 @@ export function updateAI(p, dt) {
     case 'DEFEND': {
       const pred = predictArrivalAtX(disc, p.side === 1 ? COURT.left + 80 : COURT.right - 80);
       if (pred) {
-        let err = gauss() * D.err * 0.4;
+        let err = gaussJeu() * D.err * 0.4;
         if (d.miss) err += d.missOff * 0.4;
         let ty = pred.y + err;
         const m = G.mem, tot = m.t + m.m + m.b;
@@ -185,7 +190,7 @@ export function updateAI(p, dt) {
   const dx = d.target.x - p.x, dy = d.target.y - p.y, dist = Math.hypot(dx, dy);
   const speedFactor = D.speed * 0.85;
   const spd = p.speed * speedFactor * (d.aggro > 0 ? 1.08 : 1);
-  if (d.state === 'STRIKE' && dist > 160 && p.dashCd <= 0 && Math.random() < D.smart * 0.25 + 0.05) {
+  if (d.state === 'STRIKE' && dist > 160 && p.dashCd <= 0 && aleaJeu() < D.smart * 0.25 + 0.05) {
     const dd = norm(dx, dy);
     p.dashV.x = dd.x * DASH_SPEED * 0.8; p.dashV.y = dd.y * DASH_SPEED * 0.8;
     p.dashCd = 0.9; dust(p.x, p.y + 20, 5);
@@ -205,7 +210,7 @@ export function updateAI(p, dt) {
     // Dash défensif : le disque file hors de portée, elle va le chercher.
     // La probabilité est ramenée par seconde pour ne pas dépendre du framerate.
     if (dd > 70 && dd < 260 && closing && p.dashT <= 0 && p.dashGap <= 0
-      && Math.random() < D.dash * mor * 3 * dt) {
+      && aleaJeu() < D.dash * mor * 3 * dt) {
       startDash(p, norm(disc.x - p.x, disc.y - p.y));
     }
 
@@ -214,7 +219,7 @@ export function updateAI(p, dt) {
     // La fenêtre d'attrapé qu'ouvre l'annulation lui sert exactement comme au
     // joueur. Réservé aux difficultés qui maîtrisent la mécanique.
     if (p.dashT > 0 && !closing && dd > p.char.catchR * CATCH_RADIUS * 1.6
-      && Math.random() < D.smart * 2.2 * dt) {
+      && aleaJeu() < D.smart * 2.2 * dt) {
       cancelDash(p);
     }
 
@@ -224,12 +229,12 @@ export function updateAI(p, dt) {
       // Contre au plongeon. Un CPU qui « vise le parry » attend la fenêtre
       // exacte du Perfect Dive ; les autres plongent plus tôt et se contentent
       // d'un renvoi normal. C'est ce qui creuse l'écart entre les difficultés.
-      const viseParry = D.parry > 0 && Math.random() < D.parry * mor;
+      const viseParry = D.parry > 0 && aleaJeu() < D.parry * mor;
       const doitPlonger = viseParry ? (tti <= PERFECT_WINDOW && dd < DIVE_RANGE)
-        : (Math.random() < D.dive * mor * 3 * dt);
+        : (aleaJeu() < D.dive * mor * 3 * dt);
       if (doitPlonger) {
         const corner = getOpenCorner(p.side);
-        doDive(p, norm(corner.x - p.x, corner.y + gauss() * D.err * .4 - p.y));
+        doDive(p, norm(corner.x - p.x, corner.y + gaussJeu() * D.err * .4 - p.y));
       }
     }
   }

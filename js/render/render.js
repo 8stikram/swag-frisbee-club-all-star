@@ -10,9 +10,24 @@ import { getSkinId, drawSkinDisc, deformationDisque, tracerContour } from '../da
 import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE } from '../data/specials.js';
 import { Reglages } from '../data/disc-fx.js';
 import { rayonSables, centreSables, densiteTempete } from '../game/desert.js';
+import { etiquetteJoueur, Partie, monJoueur, enMiroir } from '../reseau/partie.js';
+import { Reseau } from '../reseau/connexion.js';
 
 ctx.imageSmoothingEnabled = false;
 const SCALE = 1.6;
+
+// Un texte dessiné À L'INTÉRIEUR de la transformation miroir doit rester
+// lisible : sans ce contre-basculement local, chaque lettre s'afficherait à
+// l'envers. La position, elle, hérite correctement du miroir extérieur — on
+// ne la touche pas, seule l'orientation locale du texte est annulée.
+function texteMonde(txt, x, y) {
+  if (!enMiroir()) { ctx.fillText(txt, x, y); return; }
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(-1, 1);
+  ctx.fillText(txt, 0, 0);
+  ctx.restore();
+}
 const LEG_W = LEG_SPRITE.width * LEG_SPRITE_SCALE;
 const LEG_H = LEG_SPRITE.height * LEG_SPRITE_SCALE;
 
@@ -320,7 +335,7 @@ function drawEcranGeant() {
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillStyle = Math.sin(G.now * 2.4) > -.3 ? '#35e0ff' : '#1b6b80';
   ctx.font = '700 11px "Archivo Black", sans-serif';
-  ctx.fillText('SWAG FRISBEE STADIUM', CX, y + h / 2);
+  texteMonde('SWAG FRISBEE STADIUM', CX, y + h / 2);
 
   // Petits témoins lumineux qui défilent, comme un bandeau à LED.
   ctx.fillStyle = 'rgba(255,210,62,.8)';
@@ -377,7 +392,7 @@ function drawPanier(side) {
   ctx.fillStyle = '#ff8c1f';
   ctx.font = '700 14px "Archivo Black", sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(ZONES.POINTS_PANIER, c.x, c.y);
+  texteMonde(ZONES.POINTS_PANIER, c.x, c.y);
   ctx.restore();
 }
 
@@ -413,7 +428,7 @@ function drawZonesSol() {
     ctx.fillStyle = 'rgba(93,240,138,.95)';
     ctx.font = '700 13px "Archivo Black", sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('+1', c.x, c.y);
+    texteMonde('+1', c.x, c.y);
     ctx.restore();
   }
 }
@@ -450,9 +465,9 @@ function drawCourtStade() {
   ctx.fillStyle = '#2a1a0c';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.font = '700 30px "Archivo Black", sans-serif';
-  ctx.fillText('SWAG FRISBEE', 0, -14);
+  texteMonde('SWAG FRISBEE', 0, -14);
   ctx.font = '700 20px "Archivo Black", sans-serif';
-  ctx.fillText('CLUB', 0, 12);
+  texteMonde('CLUB', 0, 12);
   ctx.restore();
 
   // Raquettes peintes, sous le marquage : c'est ce qui donne au parquet sa
@@ -492,7 +507,7 @@ function drawCourtStade() {
       ctx.fillStyle = 'rgba(255,255,255,.92)';
       ctx.font = '700 17px "Archivo Black", sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(z.points, gx + GOAL_DEPTH / 2, CY + (z.from + z.to) / 2);
+      texteMonde(z.points, gx + GOAL_DEPTH / 2, CY + (z.from + z.to) / 2);
     }
     ctx.strokeStyle = th.goalStroke; ctx.lineWidth = 4;
     ctx.strokeRect(gx, GOAL_TOP, GOAL_DEPTH, GOAL_BOTTOM - GOAL_TOP);
@@ -811,7 +826,7 @@ function drawZonesDesert(th) {
       ctx.fillStyle = th.khol;
       ctx.font = 'bold 15px "Archivo Black", system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(String(z.points), gx + GOAL_DEPTH / 2, CY + (z.from + z.to) / 2);
+      texteMonde(String(z.points), gx + GOAL_DEPTH / 2, CY + (z.from + z.to) / 2);
     }
   }
   ctx.textBaseline = 'alphabetic';
@@ -992,7 +1007,7 @@ function drawGoalSide(side) {
     const size = Math.max(12, Math.min(20, (y2 - y1) - 18));
     ctx.font = `700 ${size}px "Archivo Black", system-ui, sans-serif`;
     ctx.textBaseline = 'middle';
-    ctx.fillText(String(z.points), gx + GOAL_DEPTH / 2, (y1 + y2) / 2);
+    texteMonde(String(z.points), gx + GOAL_DEPTH / 2, (y1 + y2) / 2);
     ctx.restore();
   }
 
@@ -1232,7 +1247,7 @@ function drawPlayer(p) {
     ctx.fillStyle = c.accent;
     ctx.font = '8px "Archivo Black", system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(G.isJ2J && p.side === 2 ? 'J2' : 'P1', p.x, p.y - 48 * SCALE);
+    texteMonde(etiquetteJoueur(p), p.x, p.y - 48 * SCALE);
   }
   // Le bouclier passe par-dessus le joueur. Dessiné dessous, le sprite en
   // masquait deux anneaux sur trois et il ne restait qu'un arc rouge.
@@ -1348,7 +1363,7 @@ function drawFormule(d) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = '700 11px "Archivo Black", sans-serif';
-  ctx.fillText(FORMULES[idx], d.x, d.y - 22 - (1 - a) * 8);
+  texteMonde(FORMULES[idx], d.x, d.y - 22 - (1 - a) * 8);
   ctx.restore();
 }
 
@@ -1474,14 +1489,20 @@ function drawHUD() {
     ctx.strokeStyle = '#3d5ba6';
     ctx.lineWidth = 2;
     ctx.strokeRect(bx, 52, 180, 9);
-    if (G.isJ2J && p.side === 2) {
-      ctx.fillStyle = '#35e0ff';
+    // En ligne on nomme les deux joueurs sous leur jauge. Hors ligne on garde
+    // le seul repère utile, le « J2 » du second clavier.
+    const etiq = Partie.active ? etiquetteJoueur(p) : (G.isJ2J && p.side === 2 ? 'J2' : null);
+    if (etiq) {
+      ctx.fillStyle = Partie.active ? c.accent : '#35e0ff';
       ctx.font = '9px "Archivo Black", system-ui, sans-serif';
-      ctx.fillText('J2', alignRight ? bx + 190 : bx - 10, 68);
+      ctx.fillText(etiq, alignRight ? bx + 180 : bx, 71);
     }
   };
-  panel(G.p1, 16, false);
-  panel(G.p2, W - 16 - 210, true);
+  // En vue miroir, celui qui occupe le côté gauche de CET écran n'est plus
+  // forcément G.p1 : c'est toujours son propre joueur qui doit s'y trouver.
+  const [gauche, droite] = enMiroir() ? [G.p2, G.p1] : [G.p1, G.p2];
+  panel(gauche, 16, false);
+  panel(droite, W - 16 - 210, true);
   ctx.fillStyle = '#0d1936';
   ctx.fillRect(CX - 78, 10, 156, 30);
   ctx.strokeStyle = '#ffd23e';
@@ -1491,6 +1512,21 @@ function drawHUD() {
   ctx.font = '10px "Archivo Black", system-ui, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('PREMIER À ' + TARGET, CX, 29);
+  // Ping de la liaison, sous le panneau central. Il n'était pas affiché parce
+  // qu'il n'était pas mesuré : `mesurerPing` n'avait aucun appelant et la
+  // valeur restait à zéro. Un joueur en ligne a le droit de savoir dans quelles
+  // conditions il joue — c'est aussi la première chose qu'on regarde quand on
+  // trouve que « ça rame », et ça évite de blâmer le jeu pour le réseau.
+  // Posé à DROITE du panneau, pas dessous : le compteur d'échange occupe déjà
+  // la colonne centrale six pixels plus bas, et les deux se chevauchaient.
+  if (Partie.active) {
+    const ms = Reseau.ping | 0;
+    ctx.fillStyle = ms === 0 ? '#7c8c98' : (ms < 60 ? '#7bd66a' : (ms < 120 ? '#ffd23e' : '#ff5340'));
+    ctx.font = '9px "Archivo Black", system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(ms === 0 ? '— MS' : ms + ' MS', CX + 88, 28);
+    ctx.textAlign = 'center';
+  }
   if (G.rally >= 4) {
     ctx.fillStyle = '#7bd66a';
     ctx.font = '9px "Archivo Black", system-ui, sans-serif';
@@ -1558,7 +1594,9 @@ function drawTexts() {
 
 function drawCrosshair() {
   if (G.demo || G.replay) return;
-  const p = G.p1;
+  // Le joueur de CETTE machine, pas celui de gauche : côté invité, le viseur
+  // affichait la couleur du joueur d'en face, jamais la sienne.
+  const p = monJoueur();
   if (!p) return;
   const x = Mouse.x, y = Mouse.y;
   const col = p.holding ? p.char.accent : '#ffffff';
@@ -1663,7 +1701,10 @@ function drawHack() {
   const ouv = Math.min(1, k * 6) * Math.min(1, (1 - k) * 5);
   if (ouv <= 0) return;
   const cible = h.cible;
-  const gauche = !cible || cible.side === 1;
+  // Déjà en espace écran (px se calcule à partir de W, pas d'une position du
+  // terrain) : c'est le bon côté d'ÉCRAN qu'il faut trouver, pas le côté
+  // monde. En vue miroir, le côté 1 (normalement à gauche) apparaît à droite.
+  const gauche = !cible || (enMiroir() ? cible.side !== 1 : cible.side === 1);
   const pw = Math.min(360, W * .42), ph = 176;
   const px = gauche ? W * .06 : W - W * .06 - pw;
   const py = H * .5 - ph / 2;
@@ -1740,7 +1781,7 @@ function drawPluieHack(p) {
       if (cy < haut || cy > bas) continue;
       ctx.globalAlpha = (1 - j / TRAINEE_HACK) * .5;
       ctx.fillStyle = j === 0 ? '#ffffff' : VERT_HACK;
-      ctx.fillText(GLYPHES_HACK[(Math.floor(G.now * 7 + c * 5 + j * 3) % GLYPHES_HACK.length)], cx, cy);
+      texteMonde(GLYPHES_HACK[(Math.floor(G.now * 7 + c * 5 + j * 3) % GLYPHES_HACK.length)], cx, cy);
     }
   }
   ctx.restore();
@@ -1858,6 +1899,12 @@ export function render() {
     ctx.scale(z, z);
     ctx.translate(-G.zoom.x, -G.zoom.y);
   }
+  // Le monde — terrain, joueurs, disque, particules, viseur — se dessine dans
+  // son propre repère, séparé de celui du zoom/tremblement ci-dessus. C'est ce
+  // qui permet à l'invité de le voir en miroir sans que ça déborde sur le HUD,
+  // qui reste toujours en espace écran, jamais retourné.
+  ctx.save();
+  if (enMiroir()) { ctx.translate(W, 0); ctx.scale(-1, 1); }
   drawCourt();
   // La pluie de code tombe sur le sol du camp piraté, donc sous les joueurs et
   // sous le disque : elle habille le terrain, elle ne masque jamais l'action.
@@ -1877,10 +1924,15 @@ export function render() {
   if (G.bell) drawBell();
   if (G.ondesBut.length) drawOndesBut();
   drawParticles();
+  // Le viseur suit la souris EN ESPACE MONDE (Mouse.x/y sont déjà corrigés à
+  // la capture, voir input.js) : il doit donc rester dans ce même repère pour
+  // que le miroir le replace au bon endroit à l'écran, comme n'importe quel
+  // autre objet du monde.
+  if (G.p1 && !G.demo) drawCrosshair();
+  ctx.restore();
   // Pas de HUD à l'entraînement : il n'y a ni score ni objectif à suivre, et le
   // bandeau mangerait la place de l'historique des actions.
   if (G.p1 && !G.demo && !G.training) drawHUD();
-  if (G.p1 && !G.demo) drawCrosshair();
   drawTexts();
   drawCommentator();
   ctx.restore();

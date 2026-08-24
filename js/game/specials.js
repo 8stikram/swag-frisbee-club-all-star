@@ -4,6 +4,7 @@ import { sfx } from '../audio/audio.js';
 import { addPopup, burst, dust } from './fx.js';
 import { dropDisc } from './actions.js';
 import { gauss, rand } from '../core/utils.js';
+import { gaussJeu, randJeu } from '../core/alea.js';
 
 export function trySpecial(p) {
   if (!p || G.demo || p.stun > 0 || G.cine) return;
@@ -60,7 +61,7 @@ export function updateBell(dt) {
   if (d.free && Math.hypot(d.x - b.x, d.y - b.y) < 62) {
     const away = b.side === 1 ? 1 : -1;
     d.vx = Math.abs(d.vx || 400) * away * 1.15;
-    d.vy += gauss() * 180;
+    d.vy += gaussJeu() * 180;                 // semé : trajectoire du disque
     G.shake = Math.max(G.shake, 9);
     sfx('bigbounce');
     addPopup('REPOUSSÉ !', '#f5c542', 14, .7, b.y - 60);
@@ -105,7 +106,7 @@ function legImpact(L) {
     sfx('stun'); comment('ÉCRASÉ !');
   }
   if (G.disc.free && Math.hypot(G.disc.x - L.x, G.disc.y - L.yTarget) < 95) {
-    G.disc.vx = gauss() * 380;
-    G.disc.vy = -rand(220, 400);
+    G.disc.vx = gaussJeu() * 380;           // semé : trajectoire du disque
+    G.disc.vy = -randJeu(220, 400);
   }
 }

@@ -1,5 +1,5 @@
 import { G } from './state.js';
-import { CY } from '../core/constants.js';
+import { CY, CX, COURT } from '../core/constants.js';
 import { TAU, rand, gauss } from '../core/utils.js';
 import { W, H } from '../core/dom.js';
 import { getSkinId } from '../data/skins.js';
@@ -104,4 +104,26 @@ export function updateFX(dt) {
   G.goalFlash[0] = Math.max(0, G.goalFlash[0] - dt * 2);
   G.goalFlash[1] = Math.max(0, G.goalFlash[1] - dt * 2);
   if (G.lungeBonusTimer > 0) G.lungeBonusTimer -= dt; else G.lungeBonus = false;
+}
+
+// ---------------------------------------------------------------------------
+// Mise en scène d'un but.
+//
+// Elle vit ici, et pas dans le code qui compte les points, parce que deux
+// machines doivent la jouer : celle qui arbitre le match, et celle de l'invité
+// en ligne — qui ne simule rien et ne passe donc jamais par le décompte. Sans
+// ce point commun, l'invité voyait le score changer sans la moindre étincelle.
+// ---------------------------------------------------------------------------
+export function effetDeBut(side, y, couleur, accent, pts, nomCourt) {
+  G.shake = 14;
+  G.goalFlash[side === 1 ? 1 : 0] = 1;
+  const gx = side === 1 ? COURT.right : COURT.left;
+  burst(gx, y, '#ffd23e', 40); burst(gx, y, couleur, 30);
+  confetti(gx, y); starBurst(gx, y);
+  // L'onde part de la cage encaissée et balaie le terrain vers l'autre camp,
+  // aux couleurs du buteur. Le flash reste court : il ponctue, il n'aveugle pas.
+  ondeDeBut(gx, y, accent || couleur, side === 1 ? -1 : 1);
+  confettiNumerique(CX);
+  G.flash = Math.max(G.flash, .2);
+  if (pts !== undefined) addPopup('+' + pts + '  ' + nomCourt + ' !', '#ffffff', 26, 1.6);
 }

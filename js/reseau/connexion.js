@@ -128,8 +128,13 @@ export function mesurerPing() { envoyer({ t: 'ping', h: performance.now() }); }
 export function connecte() { return !!canal && canal.readyState === 'open'; }
 
 export function fermer() {
-  if (canal) { try { canal.close(); } catch (e) { } canal = null; }
-  if (pc) { try { pc.close(); } catch (e) { } pc = null; }
+  // On détache les gestionnaires AVANT de fermer, pas après : close() ne
+  // déclenche ses événements que plus tard, sur un tour de boucle suivant, et
+  // sans ça ce « perdu » tardif écrasait le « ferme » qu'on vient de poser —
+  // une fermeture volontaire (abandon, bascule vers l'IA) se relabellait
+  // toute seule en coupure subie, un instant après l'avoir décidée.
+  if (canal) { canal.onclose = null; try { canal.close(); } catch (e) { } canal = null; }
+  if (pc) { pc.onconnectionstatechange = null; try { pc.close(); } catch (e) { } pc = null; }
   Reseau.role = null; Reseau.ping = 0; Reseau.bouchons = 0;
   etat('ferme');
 }

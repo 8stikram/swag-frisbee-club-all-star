@@ -1,6 +1,7 @@
 import { W, H } from '../core/dom.js';
 import { COURT, CX, CY, DIFFS } from '../core/constants.js';
 import { TAU, rand } from '../core/utils.js';
+import { semerAlea, graineNeuve } from '../core/alea.js';
 import { CHARS } from '../data/characters.js';
 import { skinActif } from './../data/skins-perso.js';
 import { getMap } from '../data/maps.js';
@@ -48,6 +49,13 @@ export const G = {
   // Cercles bonus au sol du Swag Frisbee Stadium. Vide partout ailleurs.
   cercles: [], prochainCercle: 0,
   idleT: 0, waveX: -200, mem: { t: 0, m: 0, b: 0 }, startCom: false,
+  // Images écoulées depuis la dernière prise du disque. C'est de la SIMULATION
+  // (elle recule avec un rembobinage), contrairement au tampon du rejeu — et
+  // c'est ce qui permet au rejeu d'avoir la même durée sur les deux machines.
+  depuisPrise: 0,
+  // Vrai pendant qu'on rejoue des images déjà vécues : ce qui est cosmétique
+  // ou non rembobinable (l'enregistrement du rejeu) s'abstient alors.
+  rembobine: false,
   lungeBonus: false, lungeBonusTimer: 0, adminMode: false, isJ2J: false,
   pendingServe: 1,
   // Mise en scène du Perfect Dive : zoom caméra transitoire et flash lumineux.
@@ -148,10 +156,20 @@ export function resetDisc() {
 }
 
 export function initMatch(demo, ck, cpu, diffIdx, j2j) {
+  // Graine neuve à chaque match. En ligne, le message de coup d'envoi la
+  // remplacera aussitôt par celle de l'hôte : c'est voulu, ce qui compte ici
+  // est qu'un match solo ne rejoue jamais deux fois la même partie.
+  semerAlea(graineNeuve());
   G.demo = demo; G.now = 0; G.winner = null; G.banner = null; G.cine = null; G.leg = null; G.bell = null; G.replay = null;
   G.hack = null;
   G.particles.length = 0; G.popups.length = 0; G.trail.length = 0; G.decoys.length = 0; G.rec.length = 0;
-  G.timescale = 1; G.shake = 0; G.rally = 0; G.maxRally = 0; G.comment = null; G.idleT = 0;
+  // `tsTimer`, `goalT` et `pendingServe` manquaient à cette remise à zéro, et
+  // ça se voyait : un match relancé juste après un but héritait du ralenti du
+  // précédent, parce que `timescale` revenait bien à 1 mais que le minuteur qui
+  // le tient l'écrasait aussitôt. Trouvé en cherchant pourquoi deux matchs
+  // partis de la même graine ne se déroulaient pas pareil.
+  G.timescale = 1; G.tsTimer = 0; G.goalT = 0; G.pendingServe = 1;
+  G.shake = 0; G.rally = 0; G.maxRally = 0; G.comment = null; G.idleT = 0;
   G.mem = { t: 0, m: 0, b: 0 }; G.startCom = false; G.lungeBonus = false; G.lungeBonusTimer = 0;
   G.zoom = null; G.flash = 0; G.lastCatchIdx = -1;
   G.ondesBut.length = 0; G.filantes.length = 0; G.tempete = null;

@@ -1,7 +1,11 @@
 import { G, comment } from './state.js';
 import { COURT, CY, GOAL_DEPTH } from '../core/constants.js';
 import { getMap } from '../data/maps.js';
-import { rand } from '../core/utils.js';
+// Semé, pas libre : ces cercles rapportent des points, donc leur horaire et
+// leur place sont un résultat de match et non un décor. Tirés au hasard libre,
+// les deux machines n'en voyaient pas les mêmes — la seule fuite qu'ait laissée
+// le partage jeu/cosmétique du chantier 3.
+import { randJeu } from '../core/alea.js';
 import { sfx } from '../audio/audio.js';
 import { addPopup, burst, ring } from './fx.js';
 
@@ -26,7 +30,7 @@ export function terrainAZones() { return !!getMap().zonesSol; }
 // À l'entraînement les cercles sont plus fréquents : on vient les travailler.
 function attente() {
   const [a, b] = ATTENTE;
-  return G.training ? rand(a * .5, b * .5) : rand(a, b);
+  return G.training ? randJeu(a * .5, b * .5) : randJeu(a, b);
 }
 
 export function updateZones(dt) {
@@ -38,8 +42,8 @@ export function updateZones(dt) {
     // On évite les abords immédiats des cages : un cercle là-bas se
     // confondrait avec la zone de dunk.
     G.cercles.push({
-      x: rand(COURT.left + 150, COURT.right - 150),
-      y: rand(COURT.top + 60, COURT.bottom - 60),
+      x: randJeu(COURT.left + 150, COURT.right - 150),
+      y: randJeu(COURT.top + 60, COURT.bottom - 60),
       t: 0
     });
   }

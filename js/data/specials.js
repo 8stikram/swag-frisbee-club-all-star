@@ -1,6 +1,7 @@
 import { G, Mouse, comment } from '../game/state.js';
 import { COURT, CY, GOAL_TOP, GOAL_BOTTOM } from '../core/constants.js';
 import { norm, gauss, clamp } from '../core/utils.js';
+import { gaussJeu, aleaJeu, pickJeu } from '../core/alea.js';
 import { sfx } from '../audio/audio.js';
 import { burst } from '../game/fx.js';
 import { throwDisc, viseVersAvant } from '../game/actions.js';
@@ -129,9 +130,10 @@ export const SPECIALS = {
         // vers l'arrière est donc retournée vers la cage adverse.
         if (!viseVersAvant(p, dir)) dir = norm(-dir.x, dir.y);
       } else {
-        const zy = [GOAL_TOP + 34, GOAL_BOTTOM - 34, CY][(Math.random() * 3) | 0];
+        // Semé : ce tirage choisit où part le disque, donc l'issue du point.
+        const zy = pickJeu([GOAL_TOP + 34, GOAL_BOTTOM - 34, CY]);
         const tx = p.side === 1 ? COURT.right : COURT.left;
-        dir = norm(tx - p.x, zy + gauss() * 40 - p.y);
+        dir = norm(tx - p.x, zy + gaussJeu() * 40 - p.y);
       }
       p.face = dir.x >= 0 ? 1 : -1;
       throwDisc(p, dir, 1150 * p.char.power, 'kurama');
@@ -155,9 +157,10 @@ export const SPECIALS = {
       let dir;
       if (p.human) { dir = norm(Mouse.x - p.x, Mouse.y - p.y); }
       else {
-        const zy = [GOAL_TOP + 34, GOAL_BOTTOM - 34, CY][(Math.random() * 3) | 0];
+        // Semé : ce tirage choisit où part le disque, donc l'issue du point.
+        const zy = pickJeu([GOAL_TOP + 34, GOAL_BOTTOM - 34, CY]);
         const tx = p.side === 1 ? COURT.right : COURT.left;
-        dir = norm(tx - p.x, zy + gauss() * 30 - p.y);
+        dir = norm(tx - p.x, zy + gaussJeu() * 30 - p.y);
       }
       const a0 = Math.atan2(dir.y, dir.x), sp = 980 * p.char.power;
       throwDisc(p, { x: Math.cos(a0), y: Math.sin(a0) }, sp, 'matilda');
@@ -165,7 +168,9 @@ export const SPECIALS = {
         const a = a0 + off;
         G.decoys.push({ x: p.x + Math.cos(a) * 22, y: p.y + Math.sin(a) * 22, vx: Math.cos(a) * sp * .93, vy: Math.sin(a) * sp * .93, life: 2.0, real: false, thrower: p });
       }
-      if (p.foe.ai) p.foe.ai.tracked = Math.random() < p.foe.ai.diff.smart ? G.disc : G.decoys[(Math.random() * 2) | 0];
+      // Semé : c'est une décision d'IA, et deux IA qui ne suivent pas le même
+      // leurre ne jouent plus le même match.
+      if (p.foe.ai) p.foe.ai.tracked = aleaJeu() < p.foe.ai.diff.smart ? G.disc : G.decoys[(aleaJeu() * 2) | 0];
     }
   },
 
@@ -217,9 +222,9 @@ export const SPECIALS = {
       const foe = p.foe;
       p.meter = 0; p.stats.specials++;
       const err = p.ai ? p.ai.diff.err * .5 : 0;
-      const tx = clamp(foe.x + foe.vx * .35 + gauss() * err, COURT.left + 40, COURT.right - 40);
-      const ty = clamp(foe.y + foe.vy * .35 + gauss() * 20, COURT.top + 46, COURT.bottom - 46);
-      G.leg = { x: tx, yTarget: ty, phase: 'shadow', t: 0, caster: p, side: foe.side, aiDodges: foe.ai ? Math.random() < foe.ai.diff.smart : false };
+      const tx = clamp(foe.x + foe.vx * .35 + gaussJeu() * err, COURT.left + 40, COURT.right - 40);
+      const ty = clamp(foe.y + foe.vy * .35 + gaussJeu() * 20, COURT.top + 46, COURT.bottom - 46);
+      G.leg = { x: tx, yTarget: ty, phase: 'shadow', t: 0, caster: p, side: foe.side, aiDodges: foe.ai ? aleaJeu() < foe.ai.diff.smart : false };
       G.banner = { text: 'LA JAMBE DE MAMAN !!', color: '#ff6a7a', t: 0, dur: 1.2 };
       sfx('legcast');
     }

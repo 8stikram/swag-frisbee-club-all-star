@@ -1,7 +1,9 @@
 import { $, showScreen } from '../core/dom.js';
-import { sfx } from '../audio/audio.js';
+import { sfx, playTrack, stopTrack } from '../audio/audio.js';
+import { getMap, getMapId } from '../data/maps.js';
+import { semerAlea } from '../core/alea.js';
 import { heberger, rejoindre, accepterReponse, surChangement, fermer, Reseau } from '../reseau/connexion.js';
-import { demarrerPartieReseau, arreterPartieReseau, annoncerIdentite, surCoupDEnvoi } from '../reseau/partie.js';
+import { demarrerPartieReseau, arreterPartieReseau, annoncerIdentite, surCoupDEnvoi, Partie, signalerDeconnexionEnMatch, signalerResultatVote } from '../reseau/partie.js';
 import { initMatch, G } from '../game/state.js';
 import { montrerPanneau } from './profil-ui.js';
 import { ouvrirArene, lireArene, repondreArene, fermerArene, attendreReponse, codeValide } from '../reseau/arene.js';
@@ -54,7 +56,7 @@ async function preparerMatch(role) {
   preparerChoixEnLigne(role);
 }
 
-async function lancerMatch(persoHote, persoInvite) {
+async function lancerMatch(persoHote, persoInvite, graine) {
   // Chacun joue avec son disque préféré, de son côté. Le disque est dessiné
   // localement et n'a aucune incidence sur le jeu : rien n'oblige les deux
   // joueurs à voir le même, et personne n'a envie de se faire imposer celui
@@ -63,10 +65,39 @@ async function lancerMatch(persoHote, persoInvite) {
   setSkinId(getFavSkin() || randomSkinId());
   // L'hôte tient toujours le joueur de gauche : le camp qui simule ne peut pas
   // être celui qu'on téléguide.
-  initMatch(false, persoHote, persoInvite, 1, true);
+  // `false` en dernier argument, et c'est le correctif le plus important du
+  // mode en ligne. Avec `true`, le match tournait en « deux joueurs sur le même
+  // canapé » : le joueur de droite passait alors par updatePlayer2, un chemin
+  // de code écrit pour un second clavier, jamais pour être prédit à distance.
+  // Son dash n'y était même pas le même coup — poussée décroissante au lieu
+  // d'une distance fixe — et il intégrait sa vitesse avec une image de retard.
+  // Le bon modèle n'est pas le JcJ local : c'est le mode contre l'IA, où
+  // l'adversaire occupe simplement la place du pilote automatique.
+  initMatch(false, persoHote, persoInvite, 1, false);
   G.p2.human = true; G.p2.ai = null;
+  // Marque le joueur piloté par la liaison. Personne ne s'en sert encore, mais
+  // c'est ce drapeau qui portera la reprise par l'IA à la déconnexion.
+  G.p1.distant = Partie.role === 'invite';
+  G.p2.distant = Partie.role === 'hote';
+  // Après initMatch, qui vient d'en tirer une neuve pour le solo. À partir
+  // d'ici, les deux machines tirent exactement les mêmes nombres : mêmes
+  // tempêtes de sable, même dispersion du disque lâché, mêmes décisions d'IA.
+  if (graine !== undefined) semerAlea(graine);
+  // La musique du match. En ligne, l'écran de sélection sort avant de la lancer
+  // — c'est l'hôte qui tranche le terrain, donc on ne peut pas la choisir
+  // avant le coup d'envoi. Sans cet appel, les deux joueurs restaient sur le
+  // thème des menus, et l'invité n'entendait jamais l'OST du terrain.
+  const ost = getMap().ost;
+  if (ost) playTrack(ost); else stopTrack();
   showScreen(null);
   dire('');
+  // Tirage au sort à montrer : seulement si les deux avaient vraiment choisi
+  // des terrains différents. S'ils sont tombés d'accord, il n'y a rien à
+  // dramatiser — l'animation ne se pose que sur un vrai désaccord tranché.
+  if (Partie.monTerrain && Partie.adversaire && Partie.adversaire.terrain
+    && Partie.monTerrain !== Partie.adversaire.terrain) {
+    signalerResultatVote(Partie.monTerrain, Partie.adversaire.terrain, getMapId());
+  }
 }
 
 (function cabler() {
@@ -92,8 +123,12 @@ async function lancerMatch(persoHote, persoInvite) {
   $('onCopier')?.addEventListener('click', e => {
     const t = $('areneCode').textContent.trim();
     navigator.clipboard?.writeText(t).catch(() => { });
-    e.currentTarget.textContent = 'COPIÉ';
-    setTimeout(() => { e.currentTarget.textContent = 'COPIER LE CODE'; }, 900);
+    // On retient le bouton dans une variable : le navigateur vide
+    // `currentTarget` dès que le gestionnaire rend la main, et le libellé
+    // revenait donc sur un `null` neuf cents millisecondes plus tard.
+    const bouton = e.currentTarget;
+    bouton.textContent = 'COPIÉ';
+    setTimeout(() => { bouton.textContent = 'COPIER LE CODE'; }, 900);
     sfx('select');
   });
   $('onCopier2')?.addEventListener('click', e => copier('onMaReponse', e.currentTarget));
@@ -119,6 +154,12 @@ async function lancerMatch(persoHote, persoInvite) {
   surChangement(e => {
     if (e === 'connecte') { sfx('go'); preparerMatch(Reseau.role); }
     else if (e === 'perdu') {
+      // En plein match, une coupure ne renvoie plus directement au menu :
+      // c'est menus.js qui prend le relais, avec la pause de dix secondes et
+      // le choix décidés pour ce cas précis. Avant le coup d'envoi (recherche
+      // d'adversaire, écran de choix), rien de tout ça n'a de sens — on garde
+      // alors le retour immédiat d'origine.
+      if (Partie.active) { signalerDeconnexionEnMatch(); return; }
       arreterPartieReseau();
       dire('liaison perdue.', true);
       showScreen('online');
@@ -215,7 +256,7 @@ export async function rejoindreDepuisAmi(code) {
 
 // Coup d'envoi commun : les deux cotes demarrent sur les memes personnages et
 // le meme terrain, annonces par l'hote.
-surCoupDEnvoi((p1, p2) => { sfx('go'); lancerMatch(p1, p2); });
+surCoupDEnvoi((p1, p2, terrain, graine) => { sfx('go'); lancerMatch(p1, p2, graine); });
 
 // --- Choix du personnage ---------------------------------------------------
 // Chacun choisit le sien avant d'entrer : le choix part avec l'identite au

@@ -8,6 +8,7 @@ import { sfx } from '../audio/audio.js';
 import { disqueImmobile, testerPanier } from './zones.js';
 import { burst, dust, addPopup } from './fx.js';
 import { onCatch, scoreGoal, ownFoul, setupServe } from './actions.js';
+import { disqueVuPar } from '../reseau/partie.js';
 import { RASENGAN } from '../data/specials.js';
 import { getSkinId } from '../data/skins.js';
 import { couleurTrainee, semerEnVol, eclatDeRebond } from '../data/disc-fx.js';
@@ -120,7 +121,14 @@ export function updateDisc(dt) {
     // La hitbox élargie vaut pendant le dash et survit brièvement à un Cancel Dash.
     const dashBonus = (p.dashT > 0 || p.cancelCatchT > 0) ? DASH_CATCH_MULT : 1;
     const r2 = p.char.catchR * CATCH_RADIUS * (d.kind === 'kurama' ? .5 : 1) * (p.lunge > 0 ? 1.45 : 1) * dashBonus + (d.big ? 8 : 0);
-    if (Math.hypot(d.x - p.x, d.y - p.y) < r2) { onCatch(p, sp, dirB.x, dirB.y); break; }
+    // On juge la réception d'un joueur distant sur le disque qu'IL a vu, pas
+    // sur celui d'ici : son personnage, chez l'hôte, avance avec des intentions
+    // vieilles d'un aller simple, et le comparer au disque de maintenant lui
+    // refusait des réceptions qu'il avait vues réussir. Rien ne change pour le
+    // joueur local ni hors ligne — disqueVuPar renvoie null et on compare le
+    // disque réel, comme depuis toujours.
+    const vu = disqueVuPar(p) || d;
+    if (Math.hypot(vu.x - p.x, vu.y - p.y) < r2) { onCatch(p, sp, dirB.x, dirB.y); break; }
   }
 }
 

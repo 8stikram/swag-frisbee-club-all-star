@@ -1,4 +1,7 @@
 import { getTrackId, getTrack, setTrackId } from '../data/music.js';
+// Seau sans dépendance : il note les sons à renvoyer à l'invité. Il n'importe
+// rien, donc importer l'audio ne peut pas fermer de cycle avec l'état du jeu.
+import { noterSon, sonEtouffe } from '../reseau/echo.js';
 
 // Bruitages toujours autorisés même pendant la démo IA-vs-IA jouée en fond
 // de menu (clics/sélections) — tout le reste (buts, coups, cris...) est
@@ -150,7 +153,16 @@ function noise(dur, vol, freq = 2000, delay = 0) {
   s.connect(f); f.connect(g); g.connect(sfxGain); s.start(t); s.stop(t + dur);
 }
 
-export function sfx(n) {
+// `venuDuReseau` distingue les sons rejoués depuis l'écho de l'hôte de ceux
+// que cette machine vient de produire. Sans cette distinction, l'étouffement
+// ci-dessous se serait appliqué à l'écho lui-même et l'invité n'aurait plus
+// rien entendu du tout.
+export function sfx(n, venuDuReseau) {
+  // On note avant toute condition de sortie : que cette machine ait ou non son
+  // audio prêt ne dit rien de celle d'en face, et l'hôte doit renvoyer ce que
+  // le match produit même s'il joue lui-même en sourdine.
+  noterSon(n);
+  if (!venuDuReseau && sonEtouffe(n)) return;
   if (!AC) return;
   if (demoMuted && !UI_SFX.has(n)) return;
   switch (n) {

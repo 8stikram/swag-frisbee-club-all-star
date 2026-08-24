@@ -14,6 +14,13 @@ function snapFrame(p) {
 
 export function capture() {
   if (G.demo) return;
+  // Rien à enregistrer pendant un rembobinage : ces images ont déjà été
+  // filmées la première fois, on ne fait que recalculer où tout se trouvait.
+  // Surtout, ce tampon GLISSE — ses images sorties par la fenêtre sont perdues
+  // — donc il ne sait pas revenir en arrière. Le laisser participer au
+  // rembobinage faisait repartir les rejeux d'un autre endroit et suffisait à
+  // faire diverger tout le match derrière. Il avance donc, et jamais ne recule.
+  if (G.rembobine) return;
   if (G.state !== 'play' && G.state !== 'serve') return;
   G.rec.push({
     p1: snapFrame(G.p1),

@@ -1,5 +1,5 @@
 import { G, Mouse, resetDisc, initMatch, comment } from './state.js';
-import { Partie } from '../reseau/partie.js';
+import { Partie, monJoueur, etiquetteJoueur, jeSimule, signalerTirLocal, demanderSkipRejeu } from '../reseau/partie.js';
 import { enregistrerMatchComplet } from '../reseau/compte.js';
 import {
   COURT, CX, CY, TARGET, GOAL_MID1, GOAL_MID2, throwSpeed,
@@ -7,10 +7,11 @@ import {
   PERFECT_WINDOW, PERFECT_SPEED, DISC_RADIUS, DASH_THROW_WINDOW, METER_GAIN, DISC_SPEED
 } from '../core/constants.js';
 import { clamp, norm, gauss, pick, rand } from '../core/utils.js';
+import { gaussJeu, randJeu, aleaJeu } from '../core/alea.js';
 import { zoneByY } from '../data/maps.js';
 import { CHARS } from '../data/characters.js';
 import { sfx, setMuffled } from '../audio/audio.js';
-import { burst, dust, ring, confetti, starBurst, addPopup, ondeDeBut, confettiNumerique } from './fx.js';
+import { burst, dust, ring, confetti, starBurst, addPopup, ondeDeBut, confettiNumerique, effetDeBut } from './fx.js';
 import { $, cv, showScreen } from '../core/dom.js';
 import { signalerPerfectDive } from './moves.js';
 import { ajouterStat, verifierDeblocages } from '../data/skins-perso.js';
@@ -18,7 +19,20 @@ import { getSkinId } from '../data/skins.js';
 import { annoncerSkins } from '../ui/skins-ui.js';
 
 export function setupServe(side) {
-  G.state = 'serve'; G.serveTo = side;
+  // L'invité prédit le vol du disque, pas l'arbitrage. Le laisser remettre en
+  // jeu lui ferait replacer les deux joueurs au centre avant que l'hôte n'ait
+  // tranché — et si l'hôte tranche autrement, tout serait à défaire.
+  if (!jeSimule()) return;
+  // L'horloge du match repart à zéro à chaque remise en jeu, et c'est ce qui
+  // rend le rejeu inoffensif pour la simulation. Le rejeu fait avancer `G.now`
+  // pendant qu'il se déroule, et sa durée dépend de l'enregistrement — qui ne
+  // recule jamais et peut donc différer d'une machine à l'autre après des
+  // rembobinages. Sans cette remise à zéro, cet écart-là s'accumulerait dans
+  // l'horloge et finirait par décaler les deux simulations. Ici, il est effacé
+  // au début de chaque point : rien de ce qui lit `G.now` ne traverse une
+  // remise en jeu — le disque est neuf, les compte-à-rebours aussi.
+  G.now = 0;
+  G.state = 'serve'; G.serveTo = side; G.depuisPrise = 0;
   G.decoys.length = 0; G.trail.length = 0; G.rally = 0; G.cine = null; G.leg = null;
   G.disc = resetDisc();
   for (const p of [G.p1, G.p2]) {
@@ -99,7 +113,17 @@ export function doThrowHuman(p) {
   const dir = (c && (c.visee.x || c.visee.y))
     ? norm(c.visee.x, c.visee.y)
     : norm(Mouse.x - p.x, Mouse.y - p.y);
+  // Le refus de viser en arrière est décidé APRÈS ce point : c'est ce qui
+  // permet à l'invité d'ouvrir sa fenêtre d'arbitrage au bon moment, sur un
+  // tir qui part réellement — et pas sur un geste que l'hôte va refuser comme
+  // lui vient de le faire, avec la même règle et la même visée.
   if (!viseVersAvant(p, dir)) return;
+  // Le geste le plus important du jeu, et jusqu'ici le seul dont l'invité
+  // payait l'aller-retour en entier : le disque quittait sa main plus de cent
+  // millisecondes après qu'il ait relâché le bouton. Il part maintenant tout
+  // de suite, ici, et l'hôte tranche derrière — d'où la fenêtre pendant
+  // laquelle son état, qui décrit un disque encore en main, ne s'applique pas.
+  if (!jeSimule() && p === monJoueur()) signalerTirLocal();
   p.face = dir.x >= 0 ? 1 : -1;
   // Dash Throw : attraper pendant un dash puis tirer dans la foulée envoie le
   // disque à pleine puissance sans avoir eu besoin de charger.
@@ -129,6 +153,17 @@ export function doDive(p, aim) {
   // même sans regarder la pose.
   dust(p.x + aim.x * 26, p.y + 22, 12);
   sfx('dash');
+
+  // Le plongeon se coupe en deux, et la coupure est exactement celle du reste
+  // du jeu en ligne : l'ÉLAN appartient au joueur, le CONTACT à l'arbitre.
+  // Tout ce qui précède est l'élan — la pose, la poussée, la poussière — et
+  // l'invité le joue à l'image de l'appui, sans attendre personne. Ce qui
+  // suit décide si le disque est renvoyé, à quelle vitesse, et si le joueur
+  // reste au sol : trois conséquences partagées, que l'hôte tranche seul et
+  // renvoie une vingtaine de millisecondes plus tard. Les prédire ferait
+  // repartir le disque deux fois pour un seul plongeon — la correction que ce
+  // jeu supporte le moins.
+  if (!jeSimule()) return;
 
   const inRange = d.free && Math.hypot(d.x - p.x, d.y - p.y) < DIVE_RANGE + DISC_RADIUS;
   if (!inRange) {
@@ -178,15 +213,31 @@ export function onThrowEvent(thrower) {
   const foe = thrower.foe;
   if (foe.ai) {
     const D = foe.ai.diff;
-    foe.ai.reactAt = G.now + D.react * (0.8 + rand(.5));
-    foe.ai.miss = Math.random() < D.miss;
-    foe.ai.missOff = (rand() < .5 ? -1 : 1) * (90 + rand(80));
+    // Semé : le temps de réaction de l'IA, sa décision de rater et de combien
+    // décident qui marque. C'est du match, pas du décor. Tiré au hasard libre,
+    // deux machines ne jouaient pas contre le même adversaire — et rejouer une
+    // image n'en redonnait pas le même résultat, ce qui interdit tout
+    // rembobinage. La dernière fuite du partage jeu/cosmétique, avec aiDodges.
+    foe.ai.reactAt = G.now + D.react * (0.8 + randJeu(.5));
+    foe.ai.miss = aleaJeu() < D.miss;
+    foe.ai.missOff = (aleaJeu() < .5 ? -1 : 1) * (90 + randJeu(80));
     foe.ai.tracked = null;
     foe.ai.plan = null;
   }
 }
 
 export function onCatch(p, sp, dirx, diry) {
+  // Trouvé en vérifiant 8a et 8b ensemble, pas en les testant séparément :
+  // updateDisc tourne désormais chez l'invité, et son test de proximité
+  // géométrique appelle onCatch tout seul, sans savoir que la réception est
+  // une décision qui ne lui appartient pas. Sans cette garde, une réception
+  // à peine décalée d'un ou deux pixels — la position PRÉDITE de l'adversaire
+  // n'est jamais tout à fait exacte — pouvait faire jouer un « PERFECT CATCH ! »
+  // et un ralenti que l'hôte n'a jamais décidés, corrigés d'un coup à l'image
+  // suivante. Le disque continue simplement de voler jusqu'au prochain paquet
+  // — au pire une vingtaine de millisecondes à 60 Hz — plutôt que de risquer
+  // un effet que personne n'a réellement déclenché.
+  if (!jeSimule()) return;
   const d = G.disc;
   // Mesuré avant que le recul de l'attrapé ne vienne gonfler dashV.
   const enDash = Math.hypot(p.dashV.x, p.dashV.y) > 130 || p.lunge > 0;
@@ -201,6 +252,7 @@ export function onCatch(p, sp, dirx, diry) {
   p.holdTimer = 0;
   G.rally++; G.maxRally = Math.max(G.maxRally, G.rally); G.idleT = 0;
   G.lastCatchIdx = G.rec.length;   // point de départ du prochain replay
+  G.depuisPrise = 0;               // et son minutage, lui, est de la simulation
   // Attrapé pendant un dash (ou juste après un Cancel Dash) : le joueur a un
   // court instant pour déclencher un Dash Throw, tir instantané à pleine
   // puissance. S'il ne clique pas, il garde simplement le disque en main.
@@ -224,12 +276,16 @@ export function onCatch(p, sp, dirx, diry) {
 export function dropDisc(p) {
   const d = G.disc;
   d.heldBy = null; d.free = true; d.x = p.x; d.y = p.y;
-  d.vx = gauss() * 140; d.vy = gauss() * 140;
+  // Semé : la dispersion du disque lâché décide où il repart, donc qui le
+  // récupère. C'est un résultat de match, pas un effet.
+  d.vx = gaussJeu() * 140; d.vy = gaussJeu() * 140;
   d.thrownAt = G.now - 1; d.thrower = null; d.kind = 'normal'; d.big = false; d.super = false;
   p.holding = false; p.charging = false; p.wasCharging = false; p.charge = 0; p.throwCd = .7; p.holdTimer = 0;
 }
 
 export function ownFoul(p) {
+  // Jamais chez l'invité : retirer un point est une décision d'arbitre.
+  if (!jeSimule()) return;
   // Aucune sanction pendant l'apprentissage : on y vient pour essayer.
   if (G.training || G.tuto) { setupServe(p.foe.side); return; }
   p.score = Math.max(0, p.score - 1);
@@ -241,6 +297,11 @@ export function ownFoul(p) {
 }
 
 export function scoreGoal(scorer, y) {
+  // Le score n'est jamais prédit. L'invité voit son disque franchir la ligne et
+  // ne compte rien : c'est l'état de l'hôte qui, une vingtaine de millisecondes
+  // plus tard, marque le point et déclenche la mise en scène. On préfère ce
+  // délai minuscule à un but affiché puis repris.
+  if (!jeSimule()) return;
   // À l'entraînement comme au tutoriel, un but n'est qu'un repère : on le
   // signale brièvement et on remet en place, sans compteur ni mise en scène.
   // Il n'y a rien à gagner ici, et surtout rien à perdre : sans cette garde le
@@ -259,17 +320,10 @@ export function scoreGoal(scorer, y) {
   if (pts >= 5) scorer.stats.z5++; else scorer.stats.z3++;
   scorer.meter = clamp(scorer.meter + 25 * METER_GAIN, 0, 100);
   scorer.foe.meter = clamp(scorer.foe.meter + 15 * METER_GAIN, 0, 100);
-  G.state = 'goal'; G.goalT = 1.1; G.timescale = .28; G.tsTimer = .5; G.shake = 14;
-  G.goalFlash[scorer.side === 1 ? 1 : 0] = 1;
-  const gx = scorer.side === 1 ? COURT.right : COURT.left;
-  burst(gx, y, '#ffd23e', 40); burst(gx, y, scorer.char.color, 30);
-  confetti(gx, y); starBurst(gx, y);
-  // L'onde part de la cage encaissée et balaie le terrain vers l'autre camp,
-  // aux couleurs du buteur. Le flash reste court : il ponctue, il n'aveugle pas.
-  ondeDeBut(gx, y, scorer.char.accent || scorer.char.color, scorer.side === 1 ? -1 : 1);
-  confettiNumerique(CX);
-  G.flash = Math.max(G.flash, .2);
-  addPopup('+' + pts + '  ' + scorer.char.short + ' !', '#ffffff', 26, 1.6);
+  G.state = 'goal'; G.goalT = 1.1; G.timescale = .28; G.tsTimer = .5;
+  // Toute la mise en scène est dans fx.js : l'invité en ligne ne compte pas les
+  // points et ne passe jamais ici, il doit pouvoir la rejouer de son côté.
+  effetDeBut(scorer.side, y, scorer.char.color, scorer.char.accent || scorer.char.color, pts, scorer.char.short);
   sfx('goal');
   if (scorer.ai) { comment(pick(["L'IA EST EN FEU !", "L'IA FRAPPE FORT !", "LE CPU PUNIT !"])); }
   else if (pts === 5) { comment(pick(['ZONE 5 ! QUEL SNIPER !', 'EN PLEINE LUCARNE !', 'MAGNIFIQUE !'])); }
@@ -281,19 +335,40 @@ export function scoreGoal(scorer, y) {
 
 export function afterGoal() { if (G.winner) gameOver(); else setupServe(G.pendingServe); }
 
+// Durée du rejeu, EN IMAGES et bornée. Elle se déduit du temps écoulé depuis la
+// dernière prise — une donnée de simulation, qui recule avec un rembobinage —
+// et non de la longueur du tampon d'enregistrement, qui ne recule jamais. La
+// nuance décide de la synchronisation : deux machines qui n'ont pas fait les
+// mêmes rembobinages n'ont pas le même tampon, donc n'y passaient pas le même
+// nombre d'images, et tout le match se décalait derrière le rejeu.
+const REJEU_MIN = 60, REJEU_MAX = 200;
+
 export function startReplay() {
+  // Le rejeu appartient à l'hôte, comme le but qui l'a déclenché. L'invité en
+  // montait un DEUXIÈME, avec son propre enregistrement, pendant que l'hôte lui
+  // envoyait déjà le sien image par image — et les deux ne duraient pas la même
+  // chose. Quand celui de l'hôte finissait le premier, l'état reçu repassait à
+  // « serve », la boucle cessait d'entrer dans la branche du rejeu, et l'objet
+  // G.replay de l'invité restait là pour toujours : bandes noires collées à
+  // l'écran, son étouffé, et surtout input.js qui avale tous les clics et la
+  // barre d'espace dans skipReplay() — le joueur ne contrôlait plus rien.
+  // L'invité ne tient donc plus qu'un drapeau d'affichage, posé et retiré par
+  // l'état de l'hôte lui-même (voir appliquerEtat).
+  if (!jeSimule()) return;
   const n = G.rec.length;
   if (n < 12) { afterGoal(); return; }
   // Durée adaptative : on remonte jusqu'à l'instant où le buteur a pris le
   // disque, plutôt que d'utiliser un nombre d'images fixe. On borne quand même
   // pour éviter un replay interminable sur une possession très longue.
-  let start = (G.lastCatchIdx >= 0 && G.lastCatchIdx < n - 8) ? G.lastCatchIdx : n - 90;
-  start = Math.max(0, Math.min(start, n - 12));
-  if (n - start > 200) start = n - 200;
+  // Combien d'images le rejeu va durer : décidé par la simulation, identique
+  // des deux côtés. Ce qu'on MONTRE pendant ce temps vient du tampon local,
+  // qui peut différer de quelques images — c'est du décor, pas du match.
+  const duree = clamp(G.depuisPrise, REJEU_MIN, REJEU_MAX);
+  let start = Math.max(0, Math.min(n - 12, n - duree));
   // Repère du tir : première image où le disque n'est plus tenu.
   let shot = start;
   for (let i = start; i < n; i++) { if (!G.rec[i].held) { shot = i; break; } }
-  G.replay = { idx: start, end: n - 1, shot, speed: 1, closing: 0 };
+  G.replay = { idx: start, end: n - 1, shot, speed: 1, closing: 0, restant: duree };
   G.state = 'replay'; sfx('replay');
   setMuffled(true);
   G.p1.ghosts.length = 0; G.p2.ghosts.length = 0;
@@ -302,7 +377,9 @@ export function startReplay() {
 // Fin du replay : les bandes se referment sur un léger flash avant le retour au
 // jeu. Le son redevient normal.
 export function endReplay() {
-  if (!G.replay) return;
+  // Un rejeu d'affichage n'a pas de fin à décider ici : c'est l'hôte qui la
+  // décide, et son état la transmettra.
+  if (!G.replay || G.replay.distant) return;
   G.replay.closing = .001;      // amorce l'animation de fermeture
 }
 export function finishReplay() {
@@ -311,7 +388,14 @@ export function finishReplay() {
   G.flash = Math.max(G.flash, .22);
   afterGoal();
 }
-export function skipReplay() { endReplay(); }
+// « CLIQUE POUR PASSER » doit dire vrai des deux côtés. Chez l'hôte on coupe
+// tout de suite ; chez l'invité on le demande, et l'hôte coupe pour les deux —
+// le rejeu se passe donc au premier des deux qui appuie, sans que personne
+// n'attende l'autre.
+export function skipReplay() {
+  if (G.replay && G.replay.distant) { demanderSkipRejeu(); return; }
+  endReplay();
+}
 
 function drawOverSprite(canvasEl, ck, scale) {
   const src = CHARS[ck].frames.idle;
@@ -374,8 +458,12 @@ $('vicDetailScrim').addEventListener('click', e => {
 // mérité. Les conditions « en un seul match » sont jugées ici, à chaud, sans
 // être stockées ; les autres viennent des compteurs cumulés.
 function bilanSkins(aGagne) {
-  const p = G.p1;
-  if (!p || !p.human || G.isJ2J) return;
+  // Celui qui regarde l'écran, pas le joueur de gauche : côté invité, ses
+  // déblocages étaient jugés sur les statistiques de son adversaire.
+  const p = monJoueur();
+  // Le JcJ local ne débloque rien — deux personnes sur un canapé s'offriraient
+  // n'importe quoi. Une victoire en ligne, elle, compte comme une victoire solo.
+  if (!p || !p.human || (G.isJ2J && !Partie.active)) return;
   const ck = p.ck, s = p.stats;
   const duree = (performance.now() - (G.debutMatch || 0)) / 1000;
 
@@ -429,13 +517,20 @@ export function gameOver() {
   drawOverSprite($('vicLoserPortrait'), loser.ck, 8);
 
   const flag = $('vicFlag'), loserTag = $('vicLoserTag');
-  flag.textContent = winnerIsP1 ? 'P1' : (G.isJ2J ? 'J2' : 'CPU');
-  flag.className = 'bigFlag ' + (winnerIsP1 ? 'red' : 'gray');
-  loserTag.textContent = winnerIsP1 ? (G.isJ2J ? 'J2' : 'CPU') : 'P1';
-  loserTag.className = 'flag ' + (winnerIsP1 ? 'gray' : 'red');
+  flag.textContent = etiquetteJoueur(winner);
+  loserTag.textContent = etiquetteJoueur(loser);
+  // La couleur vive marque le camp de celui qui regarde l'écran. Hors ligne
+  // c'est le joueur de gauche ; en ligne, l'invité regarde le sien, qui est
+  // celui de droite — le teinter selon P1 lui aurait donné l'écran de l'autre.
+  const jaiGagne = Partie.active ? winner === monJoueur() : winnerIsP1;
+  flag.className = 'bigFlag ' + (jaiGagne ? 'red' : 'gray');
+  loserTag.className = 'flag ' + (jaiGagne ? 'gray' : 'red');
 
-  $('vicCatch').textContent = G.p1.stats.catches;
-  $('vicSpec').textContent = G.p1.stats.specials;
+  // Les chiffres du bas sont CEUX DE CELUI QUI REGARDE. En dur sur G.p1, ils
+  // affichaient à l'invité les réceptions et les ultimes de son adversaire.
+  const moiStats = monJoueur();
+  $('vicCatch').textContent = moiStats.stats.catches;
+  $('vicSpec').textContent = moiStats.stats.specials;
   $('vicRally').textContent = G.maxRally;
 
   overDetail = {

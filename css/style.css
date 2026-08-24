@@ -537,6 +537,53 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
   -webkit-text-stroke:3px var(--ink);paint-order:stroke fill;
 }
 @keyframes rainbow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+/* Qui vote pour quoi : la sienne à gauche, la mienne à droite — jamais
+   superposées, même quand les deux se portent sur la même vignette. */
+.voteBadge{
+  position:absolute;bottom:4px;left:4px;width:22px;height:22px;border-radius:50%;
+  border:2px solid var(--ink);overflow:hidden;background:var(--yellow);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Archivo Black',sans-serif;font-size:11px;color:var(--ink);
+  box-shadow:2px 2px 0 rgba(0,0,0,.4);
+}
+.voteBadge.mien{left:auto;right:4px;background:var(--green)}
+.voteBadge img{width:100%;height:100%;object-fit:cover}
+
+/* ================= TIRAGE AU SORT DU TERRAIN ================= */
+.voteResultOverlay{
+  position:fixed;inset:0;z-index:80;background:rgba(3,5,10,.86);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;
+  animation:voteResultIn .25s ease both;
+}
+.voteResultOverlay.sortie{animation:voteResultOut .4s ease both}
+@keyframes voteResultIn{from{opacity:0}to{opacity:1}}
+@keyframes voteResultOut{from{opacity:1}to{opacity:0}}
+.voteResultTitre{
+  font-family:'Archivo Black',sans-serif;font-size:clamp(16px,3.4cqh,28px);
+  color:var(--yellow);letter-spacing:.08em;text-shadow:3px 3px 0 var(--ink);
+}
+.voteResultRangee{display:flex;align-items:center;gap:20px}
+.voteResultVs{
+  font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--gray);
+}
+.voteResultCase{
+  width:150px;border-radius:10px;overflow:hidden;border:4px solid var(--ink);
+  background:#0a1220;box-shadow:5px 5px 0 var(--ink);transition:transform .1s,box-shadow .1s,filter .15s;
+  filter:brightness(.55);
+}
+.voteResultCase canvas{width:100%;height:150px;display:block}
+.voteResultCase .label{
+  font-family:'Archivo Black',sans-serif;font-size:11px;color:#fff;text-align:center;
+  padding:6px 4px;background:rgba(0,0,0,.5);
+}
+/* Éclairée un instant, le temps que le décompte s'y arrête. */
+.voteResultCase.lit{filter:brightness(1);outline:4px solid var(--yellow);outline-offset:2px}
+/* Fixée pour de bon : elle grandit et se fige, contrairement à .lit qui
+   repasse à la case suivante un instant plus tard. */
+.voteResultCase.gagnant{
+  filter:brightness(1);outline:4px solid var(--green);outline-offset:2px;
+  transform:scale(1.08);box-shadow:7px 7px 0 var(--ink);
+}
 .thumb .label{
   position:absolute;left:0;right:0;bottom:0;padding:2px 4px;text-align:center;
   background:rgba(17,19,24,.72);font-family:'Archivo Black',sans-serif;
@@ -612,6 +659,13 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 .pauseCard .menu{display:flex;flex-direction:column;gap:1.2cqh;width:100%}
 .pauseCard .mbtn{background:var(--pastel)}
 .pauseCard .mbtn:hover{background:var(--ink);color:#fff}
+/* Message de reconnexion : entre la bannière et les boutons, qui restent
+   cachés tant qu'il n'y a rien de sensé à leur faire faire. */
+.pauseSub{
+  font-family:'DotGothic16',monospace;font-size:clamp(10px,1.8cqh,15px);
+  color:var(--ink);text-align:center;max-width:44cqh;line-height:1.5;
+}
+.pauseCard .mbtn.c-green{background:var(--green)}
 
 /* ================= VICTOIRE / DÉFAITE ================= */
 .overScrim{

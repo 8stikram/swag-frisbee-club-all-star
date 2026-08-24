@@ -2,6 +2,10 @@ import { G } from './state.js';
 import { COURT, CY } from '../core/constants.js';
 import { getMap } from '../data/maps.js';
 import { rand } from '../core/utils.js';
+// Semé : la tempête ralentit les joueurs et masque le terrain. Deux machines
+// qui la déclencheraient à des instants différents ne joueraient plus le même
+// match — l'une freinerait pendant que l'autre court librement.
+import { randJeu } from '../core/alea.js';
 import { sfx } from '../audio/audio.js';
 import { addPopup } from './fx.js';
 
@@ -47,10 +51,10 @@ const DUREE = [10, 15];     // combien de temps elle dure
 const PREAVIS = 2.2;        // le voile monte progressivement, il n'apparaît pas
 const RETRAIT = 1.6;        // et redescend de même
 
-let prochaine = rand(ENTRE[0], ENTRE[1]);
+let prochaine = randJeu(ENTRE[0], ENTRE[1]);
 
 export function reinitialiserDesert() {
-  prochaine = rand(ENTRE[0], ENTRE[1]);
+  prochaine = randJeu(ENTRE[0], ENTRE[1]);
   G.tempete = null;
   for (const p of [G.p1, G.p2]) if (p) p.dansSables = false;
 }
@@ -65,12 +69,12 @@ export function updateDesert(dt) {
     G.tempete.t += dt;
     if (G.tempete.t >= G.tempete.dur) {
       G.tempete = null;
-      prochaine = rand(ENTRE[0], ENTRE[1]);
+      prochaine = randJeu(ENTRE[0], ENTRE[1]);
     }
   } else {
     prochaine -= dt;
     if (prochaine <= 0) {
-      G.tempete = { t: 0, dur: rand(DUREE[0], DUREE[1]) };
+      G.tempete = { t: 0, dur: randJeu(DUREE[0], DUREE[1]) };
       sfx('vent');
       addPopup('TEMPÊTE DE SABLE', '#C9A070', 15, 1.4);
     }

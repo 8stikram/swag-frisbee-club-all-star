@@ -1,5 +1,5 @@
 import { dansLesSables, RALENTI_SABLES } from './desert.js';
-import { Partie } from '../reseau/partie.js';
+import { Partie, enMiroir } from '../reseau/partie.js';
 import { G, Mouse } from './state.js';
 import { $, cv, W, H, curScreen, showScreen, moveMenu, activateMenu, setSelIdx, menuButtons } from '../core/dom.js';
 import {
@@ -7,6 +7,7 @@ import {
   CANCEL_GAP, CANCEL_CATCH, FEINT_TIME, FEINT_CD, DASH_SLIDE, throwSpeed
 } from '../core/constants.js';
 import { clamp, norm, approach, gauss } from '../core/utils.js';
+import { gaussJeu } from '../core/alea.js';
 import { getKey } from '../data/keymap.js';
 import { getDashAim, toggleDashAim } from '../data/settings.js';
 import { initAudio, sfx, toggleMusic } from '../audio/audio.js';
@@ -49,14 +50,21 @@ document.addEventListener('pointerlockerror', () => { });
 
 window.addEventListener('mousemove', e => {
   if (curScreen !== null) return;
+  // Mouse.x/y sont ensuite lus PARTOUT comme des coordonnées du monde — la
+  // visée, le viseur, les stats de zone. Les corriger ici, au seul point où
+  // la souris entre dans le jeu, évite qu'aucun autre fichier n'ait besoin de
+  // savoir que la vue est retournée. Seul l'axe horizontal se retourne : la
+  // vue miroir n'échange que la gauche et la droite.
+  const inv = enMiroir();
   if (Mouse.locked) {
     const k = mScale();
-    Mouse.x = clamp(Mouse.x + e.movementX * k, 0, W);
+    Mouse.x = clamp(Mouse.x + (inv ? -e.movementX : e.movementX) * k, 0, W);
     Mouse.y = clamp(Mouse.y + e.movementY * k, 0, H);
   } else {
     const r = cv.getBoundingClientRect();
     if (!r.width) return;
-    Mouse.x = clamp((e.clientX - r.left) * W / r.width, 0, W);
+    const xEcran = (e.clientX - r.left) * W / r.width;
+    Mouse.x = clamp(inv ? W - xEcran : xEcran, 0, W);
     Mouse.y = clamp((e.clientY - r.top) * H / r.height, 0, H);
   }
 });
@@ -87,10 +95,13 @@ window.addEventListener('mouseup', e => {
   if (e.button === 0) {
     if (dummyEnDeplacement()) { lacherDummy(); Mouse.down = false; return; }
     Mouse.down = false;
-    // L'invité ne tire pas lui-même : sa fiche part à l'hôte, qui arbitre. Le
-    // laisser lancer le disque de son côté ferait diverger les deux écrans.
+    // L'invité tire désormais lui-même, à l'image du relâchement, exactement
+    // comme en solo — c'est tout l'objet du chantier 10. L'hôte tranche
+    // toujours derrière, sur la même fiche et avec la même règle : la fenêtre
+    // d'arbitrage tenue dans partie.js couvre le demi-aller-retour pendant
+    // lequel il croit encore le disque en main.
     const p = monJoueur();
-    if (jeSimule() && p && p.human && p.holding && p.wasCharging && curScreen === null) doThrowHuman(p);
+    if (p && p.human && p.holding && p.wasCharging && curScreen === null) doThrowHuman(p);
   }
 });
 
@@ -188,7 +199,7 @@ window.addEventListener('keyup', e => {
   keysP2.delete(e.code);
   if (curScreen) return;
   const p = monJoueur();
-  if (jeSimule() && p && p.human && e.code === getKey('charge') && p.holding && p.wasCharging) doThrowHuman(p);
+  if (p && p.human && e.code === getKey('charge') && p.holding && p.wasCharging) doThrowHuman(p);
 });
 
 // Bascule de la visée du dash dans l'onglet JEU des options.
@@ -250,13 +261,18 @@ export function doFeint(p, dirVoulue) {
 export function startDash(p, dir) {
   // Un seul dash du joueur suffit à disqualifier la condition « gagner sans
   // jamais dasher » du skin Ninja.
-  if (p === G.p1 && p.human) G.aDashe = true;
+  // Le joueur de CETTE machine, pas celui de gauche : côté invité, la condition
+  // se jugeait sur les dash de l'adversaire, et il gardait le skin en dashant.
+  if (p === monJoueur() && p.human) G.aDashe = true;
   if (!dir || (!dir.x && !dir.y)) dir = { x: p.face, y: 0 };
   p.dashT = DASH_TIME; p.dashGap = DASH_GAP; p.dashDir = dir;
   p.face = dir.x >= 0 ? 1 : -1;
   const v = DASH_DIST / DASH_TIME;
   p.dashV.x = dir.x * v; p.dashV.y = dir.y * v;
-  dust(p.x, p.y + 20, 6); sfx('dash');
+  // Silence pendant un rejeu : ce dash a déjà claqué une fois, à l'instant où
+  // il a réellement eu lieu. Le rejouer sans cette garde ferait entendre deux
+  // dashs pour un seul geste, à chaque rembobinage.
+  if (!Partie.rejeuEnCours) { dust(p.x, p.y + 20, 6); sfx('dash'); }
 }
 
 export function doLunge(p) {
@@ -297,11 +313,16 @@ export function updatePlayerHuman(p, dt) {
     p.charging = true;
     const prev = p.charge;
     p.charge = clamp(p.charge + dt / p.char.chargeT, 0, 1);
-    if (Math.floor(prev * 4) !== Math.floor(p.charge * 4) && p.charge < 1) sfx('charge');
-    if (p.charge >= 1 && !p.fullFlash) {
-      p.fullFlash = true; sfx('full');
-      addPopup('CHARGE MAX !', p.char.accent, 11, .6, p.y - 56);
+    // Mêmes sons rejoués sans cette garde : un rembobinage qui retraverse une
+    // charge en cours ferait bipper chaque palier une seconde fois.
+    if (!Partie.rejeuEnCours) {
+      if (Math.floor(prev * 4) !== Math.floor(p.charge * 4) && p.charge < 1) sfx('charge');
+      if (p.charge >= 1 && !p.fullFlash) {
+        sfx('full');
+        addPopup('CHARGE MAX !', p.char.accent, 11, .6, p.y - 56);
+      }
     }
+    if (p.charge >= 1) p.fullFlash = true;
     p.wasCharging = true;
   } else p.charging = false;
 }
@@ -375,7 +396,10 @@ export function integratePlayer(p, dt) {
     if (p[k] > 0) p[k] = Math.max(0, p[k] - dt);
   }
   // La cloche fait vaciller sa course sans jamais le bloquer.
-  if (p.dizzy > 0) { p.vx += gauss() * 90 * dt * 60 * .016; p.vy += gauss() * 90 * dt * 60 * .016; }
+  // Hasard SEMÉ : ce tremblement s'ajoute à la vitesse, c'est de la physique.
+  // Tiré au hasard libre, les deux machines faisaient vaciller le joueur dans
+  // des directions différentes et divergeaient à chaque coup de cloche.
+  if (p.dizzy > 0) { p.vx += gaussJeu() * 90 * dt * 60 * .016; p.vy += gaussJeu() * 90 * dt * 60 * .016; }
   if (p.stun > 0) p.stun -= dt;
   // Pendant le dash la vitesse est maintenue constante, ce qui garantit la
   // distance fixe. À la fin on la coupe net : sans ça elle décroît en douceur et
@@ -394,7 +418,9 @@ export function integratePlayer(p, dt) {
   p.dashV.y *= Math.exp(-DASH_DECAY * dt);
   p.ghostT -= dt;
   if (Math.hypot(p.dashV.x, p.dashV.y) > 130 && p.ghostT <= 0) {
-    p.ghosts.push({ x: p.x, y: p.y, face: p.face, life: .55, fr: p.moving ? ((Math.floor(p.walk) % 2) ? 'run1' : 'run2') : 'idle' });
+    // Cosmétique, donc pas dans le journal du rembobinage : un rejeu qui
+    // retraverse ce point spawnerait la même image fantôme une seconde fois.
+    if (!Partie.rejeuEnCours) p.ghosts.push({ x: p.x, y: p.y, face: p.face, life: .55, fr: p.moving ? ((Math.floor(p.walk) % 2) ? 'run1' : 'run2') : 'idle' });
     p.ghostT = .025;
   }
   for (let i = p.ghosts.length - 1; i >= 0; i--) {

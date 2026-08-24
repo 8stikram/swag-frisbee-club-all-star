@@ -20,9 +20,11 @@ import { ouvrirEnLigne } from './online-ui.js';
 import {
   annoncerPause, annoncerAbandon, quandPause, quandAbandon, arreterPartieReseau,
   demanderRevanche, demanderChangementPerso, quandRevanche, quandChangementPerso,
-  Partie, annoncerIdentite
+  Partie, annoncerIdentite, remplacerInviteParIA, quandDeconnexionEnMatch,
+  annoncerVoteTerrain, quandVoteTerrain, quandResultatVote
 } from '../reseau/partie.js';
 import { fermer as fermerLiaison } from '../reseau/connexion.js';
+import { Compte } from '../reseau/compte.js';
 
 let selCharPlayer = 'naruto', selCharCPU = 'leon', diffIdx = 1;
 let modeJ2J = false;
@@ -514,6 +516,65 @@ function majChoixTerrains() {
 }
 
 function verrouille(c) { return !!(c && c.id !== '__random' && !mapDebloquee(c)); }
+
+// ---------------------------------------------------------------------------
+// Tirage au sort du terrain. Ne se pose que sur un vrai désaccord (voir
+// online-ui.js) : deux vignettes, un mouvement qui hésite entre les deux puis
+// ralentit et se pose sur celui que terrainDuMatch() a déjà tranché — jamais
+// un troisième terrain, l'issue est connue avant même que l'animation ne
+// commence, elle ne fait que la raconter.
+//
+// Se pose PAR-DESSUS le match qui vient de démarrer, sans rien bloquer : le
+// coup d'envoi n'attend pas la fin de l'animation, elle n'est que cosmétique.
+// ---------------------------------------------------------------------------
+function afficherResultatVote(mien, son, resultat) {
+  const mienMap = MAPS.find(m => m.id === mien), sonMap = MAPS.find(m => m.id === son);
+  if (!mienMap || !sonMap) return;
+  const gagneMien = resultat === mien;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'voteResultOverlay';
+  overlay.innerHTML = `
+    <div class="voteResultTitre">TERRAIN…</div>
+    <div class="voteResultRangee">
+      <div class="voteResultCase" data-side="mien"><canvas width="160" height="160"></canvas><div class="label"></div></div>
+      <div class="voteResultVs">VS</div>
+      <div class="voteResultCase" data-side="son"><canvas width="160" height="160"></canvas><div class="label"></div></div>
+    </div>`;
+  const caseMien = overlay.querySelector('[data-side="mien"]');
+  const caseSon = overlay.querySelector('[data-side="son"]');
+  drawArena(caseMien.querySelector('canvas'), mienMap, false);
+  caseMien.querySelector('.label').textContent = nomAffiche(mienMap);
+  drawArena(caseSon.querySelector('canvas'), sonMap, false);
+  caseSon.querySelector('.label').textContent = nomAffiche(sonMap);
+  document.body.appendChild(overlay);
+  sfx('move');
+
+  // Hésite entre les deux cases à un rythme qui ralentit — le classique du
+  // tirage à la roulette — puis se fixe sur le bon côté.
+  let tick = 0;
+  const PAS = [70, 70, 80, 90, 110, 140, 180, 230, 300];
+  const suivant = () => {
+    caseMien.classList.remove('lit'); caseSon.classList.remove('lit');
+    const surMien = tick % 2 === 0;
+    (surMien ? caseMien : caseSon).classList.add('lit');
+    tick++;
+    if (tick < PAS.length) { sfx('move'); setTimeout(suivant, PAS[tick]); return; }
+    // Dernier pas : on force le côté gagnant, quelle que soit la parité où le
+    // décompte s'est arrêté — le hasard visuel ne doit jamais contredire
+    // l'issue déjà décidée par terrainDuMatch().
+    caseMien.classList.remove('lit'); caseSon.classList.remove('lit');
+    (gagneMien ? caseMien : caseSon).classList.add('gagnant');
+    sfx('go');
+    overlay.querySelector('.voteResultTitre').textContent =
+      nomAffiche(gagneMien ? mienMap : sonMap).toUpperCase();
+    setTimeout(() => {
+      overlay.classList.add('sortie');
+      setTimeout(() => overlay.remove(), 400);
+    }, 1100);
+  };
+  setTimeout(suivant, PAS[0]);
+}
 let mapIdx = 0;
 
 // Mini-rendu proportionnel du vrai terrain (données de data/maps.js).
@@ -550,9 +611,31 @@ function drawArena(cv, map, big) {
   }
 }
 
+// Badge rond posé sur une vignette : la photo si le profil en a une, sinon
+// une initiale sur fond de couleur — jamais un cadre vide, qui se lirait
+// comme une erreur de chargement plutôt que comme une absence de photo.
+function badgeVote(pseudo, avatar, mien) {
+  const b = document.createElement('div');
+  b.className = 'voteBadge' + (mien ? ' mien' : '');
+  if (avatar) {
+    const img = document.createElement('img');
+    img.src = avatar; img.alt = '';
+    b.appendChild(img);
+  } else {
+    b.textContent = ((pseudo || '?')[0] || '?').toUpperCase();
+  }
+  if (pseudo) b.title = pseudo;
+  return b;
+}
+
 function renderMapThumbs() {
   const row = $('mapThumbs');
   row.innerHTML = '';
+  // Qui vote pour quoi, en ce moment — seulement si un match en ligne est
+  // réellement en cours : hors ligne, il n'y a personne en face à afficher.
+  const enLigne = modeEnLigne && Partie.active;
+  const monVote = enLigne ? MAP_CHOICES[mapIdx].id : null;
+  const advVote = enLigne && Partie.voteAdversaire ? Partie.voteAdversaire.terrain : null;
   MAP_CHOICES.forEach((c, i) => {
     const ferme = verrouille(c);
     const el = document.createElement('div');
@@ -571,6 +654,12 @@ function renderMapThumbs() {
         lock.className = 'mapLock'; lock.textContent = '🔒';
         el.appendChild(lock);
       }
+      if (c.id === monVote) {
+        el.appendChild(badgeVote((Compte.profil && Compte.profil.pseudo) || 'TOI', Compte.profil && Compte.profil.avatar, true));
+      }
+      if (c.id === advVote) {
+        el.appendChild(badgeVote(Partie.voteAdversaire.pseudo || 'ADVERSAIRE', Partie.voteAdversaire.avatar, false));
+      }
     }
     // On peut regarder un terrain verrouillé, pas le choisir.
     el.addEventListener('click', () => {
@@ -584,6 +673,10 @@ function renderMapThumbs() {
 export function refreshMaps() {
   majChoixTerrains();
   const c = MAP_CHOICES[mapIdx];
+  // On annonce ce qu'on survole, pas seulement ce qu'on valide : c'est ce qui
+  // permet à l'autre de voir en direct qui penche pour quoi. Sans effet hors
+  // ligne — annoncerVoteTerrain sort tout de suite si aucun match n'est actif.
+  if (c.id !== '__random') annoncerVoteTerrain(c.id);
   $('mapName').textContent = nomAffiche(c);
   const big = $('mapPreview');
   const bg = $('mapsBg');
@@ -780,6 +873,10 @@ export function proposerTutoSiPremiereFois() {
 
 /* ---------- navigation ---------- */
 export function pauseGame(venantDuReseau) {
+  // Remet l'écran dans son état par défaut : une alerte de déconnexion passée
+  // a pu changer son titre, cacher ses boutons — une pause normale, qui
+  // partage le même écran, ne doit jamais hériter de ce qu'elle a laissé.
+  refermerAlerteDeconnexion();
   Mouse.down = false; duckMusic(true); showScreen('pause');
   // On prévient l'autre, sauf si c'est justement lui qui vient de nous
   // prévenir : sinon les deux se renvoient la pause indéfiniment.
@@ -794,12 +891,93 @@ export function reprendreJeu(venantDuReseau) {
 
 // Abandonner met fin au match des deux côtés et renvoie chacun au titre.
 export function abandonnerMatch(venantDuReseau) {
+  refermerAlerteDeconnexion();
   if (!venantDuReseau) annoncerAbandon();
   arreterPartieReseau(); fermerLiaison();
   duckMusic(false);
   initMatch(true);
   showScreen('title'); renderTitleHero();
   $('admin-panel').classList.remove('visible');
+}
+
+// ---------------------------------------------------------------------------
+// Coupure en plein match. Avant, n'importe quelle coupure — même au milieu
+// d'un échange — renvoyait les deux instantanément au menu : le pire symptôme
+// possible, une partie qui s'arrête sans prévenir. Dix secondes de pause
+// annoncée, puis un choix : abandonner, ou — côté hôte seulement, lui seul
+// simule le match — continuer contre l'IA à la place de l'adversaire parti.
+//
+// Cette architecture (codes échangés à la main, sans serveur de
+// signalisation) ne peut pas détecter un retour de connexion : la coupure est
+// donc traitée comme définitive dès le départ, le décompte n'est qu'un temps
+// de battement pour lire le message avant qu'on ne propose quoi que ce soit.
+// ---------------------------------------------------------------------------
+const ATTENTE_DECONNEXION = 10;
+let deconnexionMinuteur = null;
+
+function reglerBoutonsDeconnexion(revele, hote) {
+  $('scr-pause')?.querySelectorAll('[data-act="resume"],[data-act="restart"]')
+    .forEach(b => b.classList.add('hidden'));
+  const ia = $('scr-pause')?.querySelector('[data-act="continuerIA"]');
+  if (ia) ia.classList.toggle('hidden', !(revele && hote));
+}
+
+export function alerterDeconnexion() {
+  // Idempotent, et c'est indispensable : une même coupure fait traverser
+  // plusieurs états de connexion l'un après l'autre (« disconnected » puis
+  // « failed » puis « closed »), et chacun déclenche son propre signal
+  // « perdu ». Sans cette garde, le décompte repartait de dix à chaque
+  // palier — la proposition n'arrivait jamais.
+  if (deconnexionMinuteur !== null) return;
+  const hote = Partie.role === 'hote';
+  Mouse.down = false; duckMusic(true); showScreen('pause');
+  $('pauseTitre').textContent = 'CONNEXION PERDUE';
+  const sous = $('pauseSousTitre');
+  sous.classList.remove('hidden');
+  reglerBoutonsDeconnexion(false, hote);
+  let reste = ATTENTE_DECONNEXION;
+  const majTexte = () => {
+    sous.textContent = hote
+      ? `L'adversaire a disparu. Proposition dans ${reste} s…`
+      : `L'hôte a disparu. Message dans ${reste} s…`;
+  };
+  majTexte();
+  deconnexionMinuteur = setInterval(() => {
+    reste--;
+    if (reste <= 0) {
+      clearInterval(deconnexionMinuteur); deconnexionMinuteur = null;
+      sous.textContent = hote
+        ? 'L\'adversaire ne revient pas. Continuer contre l\'IA, ou abandonner ?'
+        : 'L\'hôte ne revient pas. La partie ne peut pas continuer sans lui.';
+      reglerBoutonsDeconnexion(true, hote);
+      return;
+    }
+    majTexte();
+  }, 1000);
+}
+
+// Referme l'alerte sans laisser le minuteur tourner dans le vide, et remet
+// l'écran de pause dans son état normal pour la prochaine fois qu'il sert.
+function refermerAlerteDeconnexion() {
+  clearInterval(deconnexionMinuteur); deconnexionMinuteur = null;
+  $('pauseTitre').textContent = 'PAUSE';
+  $('pauseSousTitre')?.classList.add('hidden');
+  $('scr-pause')?.querySelectorAll('[data-act="resume"],[data-act="restart"]')
+    .forEach(b => b.classList.remove('hidden'));
+  // Celui-là ne revient PAS avec les deux autres : il ne doit jamais
+  // apparaître hors d'un vrai décompte de déconnexion terminé.
+  $('scr-pause')?.querySelector('[data-act="continuerIA"]')?.classList.add('hidden');
+}
+
+// L'hôte prend la main sur le personnage parti : le match continue, sans
+// écran de fin ni retour au menu — seule sa case a changé de pilote.
+function continuerContreIA() {
+  refermerAlerteDeconnexion();
+  remplacerInviteParIA();
+  duckMusic(false);
+  showScreen(null);
+  addPopup('L\'IA PREND LE RELAIS', '#ffd23e', 14, 1.6);
+  requestLock();
 }
 
 // Retour au choix du personnage sans couper la liaison : on rejoue avec le
@@ -825,6 +1003,12 @@ quandAbandon(() => {
   addPopup('ADVERSAIRE PARTI', '#ff5340', 15, 1.6);
   abandonnerMatch(true);
 });
+quandDeconnexionEnMatch(alerterDeconnexion);
+// Le vote de l'adversaire vient de mettre à jour Partie.voteAdversaire (voir
+// partie.js) : il ne reste qu'à redessiner les vignettes pour que son avatar
+// apparaisse, si c'est bien cet écran-là qu'on regarde en ce moment.
+quandVoteTerrain(() => { if (curScreen === 'maps') renderMapThumbs(); });
+quandResultatVote(afficherResultatVote);
 
 function startMatch() {
   resolveSkin();
@@ -874,6 +1058,7 @@ export function doAct(act) {
     case 'startMatch': sfx('select'); startMatch(); break;
     case 'resume': sfx('select'); reprendreJeu(); break;
     case 'abandon': sfx('select'); abandonnerMatch(); break;
+    case 'continuerIA': sfx('select'); continuerContreIA(); break;
     case 'restart': sfx('select'); showScreen(null); initMatch(false, G.matchChar, G.matchCPU, G.matchDiff, G.isJ2J); requestLock(); break;
     // En ligne, une revanche ne peut pas etre decidee dans son coin : elle est
     // demandee, et c'est l'hote qui relance les deux cotes ensemble.

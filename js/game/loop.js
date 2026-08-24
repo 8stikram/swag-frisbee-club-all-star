@@ -19,7 +19,14 @@ import { render } from '../render/render.js';
 import { updateTraining, pilotageDummy } from '../ui/training.js';
 import { updateTutoriel, enTutoriel } from '../ui/tutoriel.js';
 import { updateZones } from './zones.js';
-import { majReseau, lisserAffichage, Partie } from '../reseau/partie.js';
+import { majReseau, lisserAffichage, Partie, surSimulationJoueur } from '../reseau/partie.js';
+
+// partie.js a besoin de rejouer updatePlayerHuman+integratePlayer pour
+// rembobiner le joueur invité, mais ne peut pas les importer directement :
+// input.js importe déjà Partie depuis partie.js, et l'inverse fermerait un
+// cycle. loop.js a les deux bouts, donc c'est lui qui fait la liaison — même
+// patron que surCoupDEnvoi ou surMessage, déjà utilisé dans partie.js.
+surSimulationJoueur((p, dt) => { updatePlayerHuman(p, dt); integratePlayer(p, dt); });
 
 export function update(dt) {
   setDemoMuted(G.demo);
@@ -73,13 +80,14 @@ export function update(dt) {
   }
   if (G.state === 'replay') {
     const r = G.replay;
-    // L'invité reçoit l'état « replay » de l'hôte mais n'a rien enregistré :
-    // il n'a donc aucun replay à dérouler. Sans cette sortie, la première
-    // action rejouée du match faisait lever une erreur à chaque image et sa
-    // boucle entière s'arrêtait — le jeu paraissait planté à partir de là.
-    // Il continue simplement d'afficher ce que l'hôte lui envoie, qui est
-    // précisément le replay en train de se dérouler.
-    if (!r) {
+    // L'invité a demandé à couper : l'hôte le fait pour les deux, puisque
+    // c'est lui qui déroule le rejeu.
+    if (Partie.skipDemande) { Partie.skipDemande = false; endReplay(); }
+    // L'invité ne déroule aucun rejeu : le sien n'est qu'un drapeau
+    // d'affichage (voir startReplay et appliquerEtat). Il continue simplement
+    // de montrer ce que l'hôte lui envoie, qui est précisément le rejeu en
+    // train de se dérouler.
+    if (!r || r.distant) {
       updateFX(dt);
       lisserAffichage(dt);
       majReseau();
@@ -113,8 +121,14 @@ export function update(dt) {
     r.cam.x = lerp(r.cam.x, suivi.x, k);
     r.cam.y = lerp(r.cam.y, suivi.y, k);
     r.cam.z = lerp(r.cam.z, zCible, k);
-    if (r.idx >= r.end) { G.shake = Math.max(G.shake, 12); endReplay(); }
-    else { applySnap(G.rec[Math.floor(r.idx)]); }
+    // La FIN se décide au compteur d'images, pas en arrivant au bout du
+    // tampon : c'est ce qui garantit que les deux machines passent exactement
+    // le même nombre d'images dans le rejeu, même si leurs enregistrements
+    // diffèrent de quelques images. Ce qu'on montre suit le tampon local et
+    // s'arrête sur sa dernière image s'il est plus court — du décor.
+    r.restant--;
+    if (r.restant <= 0) { G.shake = Math.max(G.shake, 12); endReplay(); }
+    else { applySnap(G.rec[Math.min(G.rec.length - 1, Math.floor(r.idx))]); }
     updateFX(dt);
     // On continue d'emettre pendant le replay : l'hote y deplace les joueurs
     // image par image, donc l'invite voit le meme replay sans rien enregistrer.
@@ -145,6 +159,10 @@ export function update(dt) {
     }
     case 'serve':
     case 'play': {
+      // Images écoulées depuis la dernière prise : c'est ce qui donnera sa
+      // durée au rejeu, et ça se compte dans la simulation pour reculer avec
+      // elle en cas de rembobinage.
+      G.depuisPrise++;
       // Les fiches d'intentions se remplissent d'abord, une fois pour toutes :
       // ensuite le jeu ne consulte plus qu'elles.
       majCommandes(wdt);
@@ -158,10 +176,28 @@ export function update(dt) {
         // suite, avec exactement le code que l'hôte fera tourner sur la même
         // fiche. Sans ça il attendrait un aller-retour complet avant de se voir
         // bouger. L'écart éventuel est mesuré et résorbé au retour de l'état.
+        // Ses gestes ponctuels partent d'ici, à l'image de l'appui : plongeon,
+        // feinte, annulation de dash. Placés exactement où l'hôte les place
+        // dans sa propre boucle — avant le déplacement, et sans dépendre de
+        // G.cine, qui n'écarte que le plongeon et le fait déjà lui-même — pour
+        // que les deux simulations restent superposables geste pour geste.
+        // Le plongeon n'y joue que son élan et sa pose : le contact avec le
+        // disque reste arbitré en face (voir doDive).
+        if (G.p2 && G.p2.cmd) appliquerActions(G.p2);
         if (G.p2 && !G.cine) {
           updatePlayerHuman(G.p2, wdt);
           integratePlayer(G.p2, wdt);
         }
+        // Le disque vole ici aussi, avec exactement la même physique que chez
+        // l'hôte. C'est le changement qui compte le plus pour l'invité : le
+        // disque est le centre du jeu, et il le voyait jusqu'ici avec le retard
+        // du tampon d'interpolation. Il le voit maintenant à l'image près.
+        //
+        // Il n'arbitre toujours rien. Les buts, les contres son camp et la
+        // remise en jeu se refusent chez lui — le score reste une décision de
+        // l'hôte, et un but affiché puis repris serait pire que vingt
+        // millisecondes d'attente.
+        updateDisc(wdt);
         break;
       }
       // Gestes ponctuels : plongeon, feinte, ultime. Le joueur à la souris les
@@ -229,15 +265,51 @@ export function update(dt) {
   majReseau();
 }
 
-let lastT = 0;
+// ---------------------------------------------------------------------------
+// Cadence de simulation, découplée de l'affichage.
+//
+// Le jeu avançait auparavant d'un pas égal au temps écoulé, plafonné à 33 ms.
+// Ce plafond est un garde-fou classique, mais il a un effet qu'on ne voit pas
+// en le lisant : sous trente images par seconde, la simulation n'avance plus
+// que de 33 ms pendant que 50, 60 ou 80 ms s'écoulent réellement. Le jeu passe
+// au ralenti. Personne ne le décrit comme tel — on dit « ça lague ».
+//
+// En ligne, c'est pire qu'un défaut de confort : les deux machines ne ralentissent
+// pas au même moment ni de la même façon, donc elles cessent de simuler le même
+// match. C'est une source de divergence permanente et invisible.
+//
+// Le pas est donc fixe. L'affichage suit comme il peut, la simulation avance
+// toujours de 1/60 par tranche, et le temps en trop est jeté plutôt que distendu.
+const PAS = 1 / 60;
+// Au-delà, on renonce à rattraper : un onglet en arrière-plan ou un point d'arrêt
+// laisse des écarts de plusieurs secondes, et les rejouer d'un bloc ferait
+// traverser le terrain au disque en une image.
+const RETARD_MAX = .25;
+// Nombre de tranches par image. Cinq laisse la simulation tenir sa cadence
+// jusqu'à douze images par seconde ; en dessous, on accepte enfin de ralentir,
+// parce qu'à ce stade la machine ne suit plus de toute façon.
+const PAS_MAX = 5;
+
+let lastT = 0, accu = 0;
 export function frame(t) {
   requestAnimationFrame(frame);
-  const dt = Math.min(.033, (t - lastT) / 1000 || .016);
+  let ecoule = (t - lastT) / 1000;
+  if (!lastT || !isFinite(ecoule) || ecoule < 0) ecoule = PAS;
   lastT = t;
+  if (ecoule > RETARD_MAX) ecoule = RETARD_MAX;
+  accu += ecoule;
   const playing = curScreen === null;
   // L'ecran en ligne laisse voir le match : le fond y est translucide, autant
   // que ce soit le jeu qui l'anime plutot qu'un decor invente.
   const demoBehind = ['title', 'select', 'options', 'online'].includes(curScreen);
-  if (playing || demoBehind) update(dt);
+  const jouer = playing || demoBehind;
+  // On vide l'accumulateur même quand rien ne tourne : sinon le temps passé
+  // dans les menus s'y entasserait et le match repartirait par une rafale.
+  let n = 0;
+  while (accu >= PAS && n < PAS_MAX) {
+    accu -= PAS; n++;
+    if (jouer) update(PAS);
+  }
+  if (n >= PAS_MAX) accu = 0;
   render();
 }
