@@ -5,6 +5,7 @@ import { addPopup, burst, dust } from './fx.js';
 import { dropDisc } from './actions.js';
 import { gauss, rand } from '../core/utils.js';
 import { gaussJeu, randJeu } from '../core/alea.js';
+import { jeSimule } from '../reseau/partie.js';
 
 export function trySpecial(p) {
   if (!p || G.demo || p.stun > 0 || G.cine) return;
@@ -49,7 +50,8 @@ export function updateBell(dt) {
     b.ring = 1;
     G.shake = Math.max(G.shake, 7);
     sfx('bell');
-    const foe = b.owner.foe;
+    // L'étourdissement, lui, s'arbitre : il arrive à l'invité par l'état.
+    const foe = jeSimule() ? b.owner.foe : null;
     if (foe) {
       foe.dizzy = .55;                 // sa course dérive pendant ce temps
       if (foe.ai) foe.ai.hesT = .4;    // et l'IA hésite tout autant
@@ -58,7 +60,7 @@ export function updateBell(dt) {
   b.ring = Math.max(0, b.ring - dt * 2.2);
   // Elle repousse le disque qui approche de la cage protégée.
   const d = G.disc;
-  if (d.free && Math.hypot(d.x - b.x, d.y - b.y) < 62) {
+  if (jeSimule() && d.free && Math.hypot(d.x - b.x, d.y - b.y) < 62) {
     const away = b.side === 1 ? 1 : -1;
     d.vx = Math.abs(d.vx || 400) * away * 1.15;
     d.vy += gaussJeu() * 180;                 // semé : trajectoire du disque
@@ -97,6 +99,12 @@ function legImpact(L) {
   burst(L.x, L.yTarget, '#c98686', 24);
   burst(L.x, L.yTarget, '#ff6a7a', 14);
   addPopup('SPLAT !', '#ff6a7a', 22, 1);
+  // Ce qui suit est de l'arbitrage : étourdir quelqu'un, lui faire lâcher le
+  // disque, envoyer celui-ci ailleurs. L'invité joue la scène — l'ombre, la
+  // chute, l'impact, la poussière — mais ses conséquences lui arrivent par
+  // l'état, comme les réceptions et les buts. Sans cette garde, il les
+  // appliquerait une seconde fois, avec ses propres tirages au sort.
+  if (!jeSimule()) return;
   const foe = L.caster.foe;
   if (Math.hypot(foe.x - L.x, foe.y - L.yTarget) < 88) {
     foe.stun = 2.0;

@@ -6,6 +6,7 @@ import { rand } from '../core/utils.js';
 // qui la déclencheraient à des instants différents ne joueraient plus le même
 // match — l'une freinerait pendant que l'autre court librement.
 import { randJeu } from '../core/alea.js';
+import { jeSimule } from '../reseau/partie.js';
 import { sfx } from '../audio/audio.js';
 import { addPopup } from './fx.js';
 
@@ -65,6 +66,12 @@ export function updateDesert(dt) {
   // et la remise en jeu déclencheraient une tempête que personne ne subit.
   if (G.state !== 'play' && G.state !== 'serve') return;
 
+  // Naissance et mort des tempêtes : décidées par l'hôte seul, et reçues par
+  // l'invité avec le reste de l'état. Les tirer des deux côtés ferait non
+  // seulement lever deux tempêtes différentes, mais surtout puiser dans le
+  // hasard semé à des rythmes différents — ce qui désaccorderait tout ce qui
+  // en dépend ensuite. Le bruit de sable, lui, reste local : voir plus bas.
+  if (!jeSimule()) { majSables(); return; }
   if (G.tempete) {
     G.tempete.t += dt;
     if (G.tempete.t >= G.tempete.dur) {
@@ -80,7 +87,13 @@ export function updateDesert(dt) {
     }
   }
 
-  // Bruit de glissement à l'entrée dans les sables, une seule fois par entrée.
+  majSables();
+}
+
+// Bruit de glissement à l'entrée dans les sables, une seule fois par entrée.
+// Purement local et sans hasard : chacun l'entend pour ce qu'il voit, des deux
+// côtés de la liaison.
+function majSables() {
   for (const p of [G.p1, G.p2]) {
     if (!p) continue;
     const dedans = dansLesSables(p.x, p.y);

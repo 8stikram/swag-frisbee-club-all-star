@@ -6,6 +6,10 @@ import { sfx } from '../audio/audio.js';
 import { burst } from '../game/fx.js';
 import { throwDisc, viseVersAvant } from '../game/actions.js';
 import { buildSprite } from './characters.js';
+// Le terminal du piratage vit dans son propre module, sans dépendance : le
+// réseau doit pouvoir en fabriquer un chez l'invité, et l'importer d'ici
+// aurait fermé un cycle (specials -> actions -> partie -> specials).
+import { construireTerminal } from './hack-terminal.js';
 
 // Sprite pixel-art de la Jambe de Maman (référence Binding of Isaac : chair
 // pâle et grumeleuse/malsaine, pas une jambe humaine propre, qui se termine
@@ -81,22 +85,6 @@ export const GUN_SPRITE = buildSprite([
 export const PIRATAGE_DUREE = 6;
 export const PIRATAGE_INTRO = 1.35;
 
-// Les lignes du terminal. Elles ne sont pas décoratives au hasard : elles
-// racontent une intrusion, du scan à la prise de contrôle, et la dernière dit
-// exactement ce qui vient d'arriver au joueur d'en face.
-const LIGNES_HACK = [
-  '> scan_arene --cible=adversaire',
-  '  [##########] 4 ports ouverts',
-  '> exploit input_daemon',
-  '  bypass ok — uid=0',
-  '> patch commandes.axe_x *= -1',
-  '> patch commandes.axe_y *= -1',
-  '  $CYBERLEEK OWNS YOU',
-  '> COMMANDES INVERSEES'
-];
-function construireTerminal() {
-  return LIGNES_HACK.map((texte, i) => ({ texte, a: i * .13 }));
-}
 
 export const SPECIALS = {
   kurama: {

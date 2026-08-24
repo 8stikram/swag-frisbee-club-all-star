@@ -13,7 +13,7 @@ import { updateDesert } from './desert.js';
 import { SIX_ORBES } from '../data/specials.js';
 import { updateFX } from './fx.js';
 import { capture, applySnap } from './replay.js';
-import { setupServe, afterGoal, startReplay, endReplay, finishReplay } from './actions.js';
+import { setupServe, afterGoal, startReplay, endReplay, finishReplay, gameOver } from './actions.js';
 import { sfx, setDemoMuted } from '../audio/audio.js';
 import { render } from '../render/render.js';
 import { updateTraining, pilotageDummy } from '../ui/training.js';
@@ -30,6 +30,10 @@ surSimulationJoueur((p, dt) => { updatePlayerHuman(p, dt); integratePlayer(p, dt
 
 export function update(dt) {
   setDemoMuted(G.demo);
+  // L'hôte vient d'annoncer la fin du match : l'invité monte son écran final,
+  // avec le vainqueur reçu. Avant, rien ne réagissait à l'état « over » de son
+  // côté — la partie s'arrêtait sans un mot, puis la liaison se fermait.
+  if (Partie.finDeMatch) { Partie.finDeMatch = false; gameOver(); return; }
   // Mise en scène du Perfect Dive : le zoom et le flash vivent en temps réel,
   // pas en temps de jeu, pour rester lisibles pendant le ralenti.
   if (G.zoom) { G.zoom.t += dt; if (G.zoom.t >= G.zoom.dur) G.zoom = null; }

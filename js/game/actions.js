@@ -488,12 +488,14 @@ export function gameOver() {
   G.state = 'over';
   if (G.demo) { initMatch(true); return; }
   if (document.pointerLockElement === cv) document.exitPointerLock();
-  const win = G.winner === G.p1;
-  sfx(win ? 'win' : 'lose');
-
   const winner = G.winner, loser = winner.foe;
   const winnerIsP1 = winner === G.p1;
-  bilanSkins(win);
+  // Ai-je gagné, MOI qui regarde cet écran ? Ce n'est pas « le joueur de
+  // gauche a-t-il gagné » : en ligne, l'invité tient celui de droite, et il
+  // s'entendait donc jouer la fanfare de la victoire en ayant perdu.
+  const jaiGagne = Partie.active ? winner === monJoueur() : winnerIsP1;
+  sfx(jaiGagne ? 'win' : 'lose');
+  bilanSkins(jaiGagne);
   // Match en ligne : chacun enregistre le sien, de son point de vue. Seuls les
   // matchs en ligne comptent au classement — sinon il suffirait de battre l'IA
   // en très facile en boucle pour trôner en tête.
@@ -510,19 +512,19 @@ export function gameOver() {
   }
 
   buildPerspectiveTitle($('vicName'), winner.char.short);
-  // L'écran met en scène le VAINQUEUR : afficher « DÉFAITE » quand le CPU
-  // l'emporte donnait l'impression que c'était lui qui avait perdu.
-  $('vicOutcome').textContent = 'VICTOIRE';
+  // L'écran met en scène le vainqueur — son nom, son portrait en grand — mais
+  // le verdict s'énonce du point de vue de CELUI QUI REGARDE. Il affichait
+  // « VICTOIRE » à tout le monde, y compris au perdant, qui se retrouvait à
+  // fêter la victoire de l'autre sans qu'on lui dise jamais qu'il avait perdu.
+  $('vicOutcome').textContent = jaiGagne ? 'VICTOIRE' : 'DÉFAITE';
   drawOverSprite($('vicPortrait'), winner.ck, 18);
   drawOverSprite($('vicLoserPortrait'), loser.ck, 8);
 
   const flag = $('vicFlag'), loserTag = $('vicLoserTag');
   flag.textContent = etiquetteJoueur(winner);
   loserTag.textContent = etiquetteJoueur(loser);
-  // La couleur vive marque le camp de celui qui regarde l'écran. Hors ligne
-  // c'est le joueur de gauche ; en ligne, l'invité regarde le sien, qui est
-  // celui de droite — le teinter selon P1 lui aurait donné l'écran de l'autre.
-  const jaiGagne = Partie.active ? winner === monJoueur() : winnerIsP1;
+  // La couleur vive marque le camp de celui qui regarde l'écran — même
+  // question que plus haut, donc même réponse : `jaiGagne`, calculé une fois.
   flag.className = 'bigFlag ' + (jaiGagne ? 'red' : 'gray');
   loserTag.className = 'flag ' + (jaiGagne ? 'gray' : 'red');
 
@@ -539,7 +541,7 @@ export function gameOver() {
   };
 
   spawnConfetti();
-  $('confettiWrap').style.display = win ? 'block' : 'none';
+  $('confettiWrap').style.display = jaiGagne ? 'block' : 'none';
   $('vicDetailScrim').classList.remove('open');
   showScreen('over');
 }

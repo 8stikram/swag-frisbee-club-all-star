@@ -3,6 +3,7 @@ import { Reseau, envoyer, connecte, surMessage, mesurerPing, fermer } from './co
 import { Compte, monId } from './compte.js';
 import { setMapId, getMapId } from '../data/maps.js';
 import { activerEcho, viderEcho, marquerInvite } from './echo.js';
+import { construireTerminal } from '../data/hack-terminal.js';
 import { sfx, setMuffled } from '../audio/audio.js';
 import { effetDeBut } from '../game/fx.js';
 import { COURT, CX, DISC_RADIUS } from '../core/constants.js';
@@ -39,7 +40,9 @@ export const Partie = {
   voteAdversaire: null,
   // L'invité a cliqué pour passer le rejeu. Seul l'hôte le déroule, donc seule
   // sa boucle peut donner suite ; elle consomme le drapeau et le rabaisse.
-  skipDemande: false
+  skipDemande: false,
+  // L'hôte a annoncé la fin du match : la boucle doit monter l'écran final.
+  finDeMatch: false
 };
 
 // Le canal est volontairement non ordonné et sans retransmission : une
@@ -168,6 +171,11 @@ function etatPourLeReseau() {
     d: [Math.round(d.x), Math.round(d.y), +d.spin.toFixed(2), d.kind, d.heldBy ? (d.heldBy === G.p1 ? 1 : 2) : 0,
       Math.round(d.vx), Math.round(d.vy)],
     st: G.state,
+    // Le vainqueur. Il ne se devine pas : l'invité ne compte pas les points,
+    // donc son `G.winner` reste vide et sa fin de match n'arrivait jamais — il
+    // voyait la partie s'interrompre puis la liaison se fermer, sans écran de
+    // victoire ni de défaite.
+    w: G.winner ? (G.winner === G.p1 ? 1 : 2) : 0,
     // Le ralenti. Il ne se devine pas : un but, une réception parfaite ou un
     // ulti le font tomber à 0,15 chez l'hôte, et l'invité qui l'ignorait
     // prédisait son joueur six fois trop vite pendant toute la mise en scène,
@@ -177,8 +185,60 @@ function etatPourLeReseau() {
     // Les bruitages produits depuis le paquet précédent. L'invité s'arrête
     // avant toute la physique du match, donc aucun rebond, aucune réception,
     // aucun but ne faisait le moindre bruit chez lui : il jouait en silence.
-    ev: viderEcho()
+    ev: viderEcho(),
+    // Les mises en scène des ultimes. Elles ne voyageaient pas du tout :
+    // l'invité voyait la jauge de l'adversaire se vider et son personnage
+    // subir des effets, sans jamais voir ce qui les provoquait — ni la jambe
+    // qui s'écrase, ni la cloche, ni le terminal du piratage, ni la tempête.
+    sc: scenesPourLeReseau()
   };
+}
+
+// Les scènes en cours, sous forme compacte. Zéro quand il n'y en a aucune,
+// ce qui est le cas la plupart du temps : le paquet ne grossit que pendant
+// les quelques secondes où il se passe quelque chose.
+// Les joueurs y deviennent un numéro de côté — une référence ne traverse pas
+// un fil — et le texte du terminal de piratage n'est pas transmis : il est
+// décoratif et l'invité en fabrique un de son côté.
+function scenesPourLeReseau() {
+  const c = G.cine, b = G.bell, h = G.hack, l = G.leg, t = G.tempete;
+  if (!c && !b && !h && !l && !t) return 0;
+  const q = p => (p === G.p1 ? 1 : (p === G.p2 ? 2 : 0));
+  return {
+    c: c ? [+c.t.toFixed(2), q(c.p), c.launched ? 1 : 0, c.ult] : 0,
+    b: b ? [q(b.owner), b.side, +b.t.toFixed(2), b.dur, Math.round(b.x), Math.round(b.y)] : 0,
+    h: h ? [+h.t.toFixed(2), h.dur, q(h.source), q(h.cible)] : 0,
+    l: l ? [Math.round(l.x), Math.round(l.yTarget), l.phase, +l.t.toFixed(2), q(l.caster), l.side] : 0,
+    t: t ? [+t.t.toFixed(2), +t.dur.toFixed(2)] : 0
+  };
+}
+
+// Pose chez l'invité les scènes décrites par l'hôte. On met à jour en place
+// quand la scène existe déjà, au lieu de la recréer : la recréer à chaque
+// paquet rembobinerait son animation soixante fois par seconde, et la cloche
+// resonnerait à chaque fois.
+function appliquerScenes(sc) {
+  const j = n => (n === 1 ? G.p1 : (n === 2 ? G.p2 : null));
+  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; return; }
+  const c = sc.c;
+  if (c) { if (!G.cine) G.cine = { t: 0, p: j(c[1]), launched: !!c[2], ult: c[3] };
+    G.cine.t = c[0]; G.cine.p = j(c[1]); G.cine.launched = !!c[2]; G.cine.ult = c[3]; }
+  else G.cine = null;
+  const b = sc.b;
+  if (b) { if (!G.bell) G.bell = { owner: j(b[0]), side: b[1], t: 0, dur: b[3], x: b[4], y: b[5], ring: 0, bal: 0, sens: undefined };
+    G.bell.owner = j(b[0]); G.bell.side = b[1]; G.bell.t = b[2]; G.bell.dur = b[3]; G.bell.x = b[4]; G.bell.y = b[5]; }
+  else G.bell = null;
+  const h = sc.h;
+  if (h) { if (!G.hack) G.hack = { t: 0, dur: h[1], source: j(h[2]), cible: j(h[3]), lignes: construireTerminal() };
+    G.hack.t = h[0]; G.hack.dur = h[1]; G.hack.source = j(h[2]); G.hack.cible = j(h[3]); }
+  else G.hack = null;
+  const l = sc.l;
+  if (l) { if (!G.leg) G.leg = { x: l[0], yTarget: l[1], phase: l[2], t: 0, caster: j(l[4]), side: l[5], aiDodges: false };
+    G.leg.x = l[0]; G.leg.yTarget = l[1]; G.leg.phase = l[2]; G.leg.t = l[3]; G.leg.caster = j(l[4]); G.leg.side = l[5]; }
+  else G.leg = null;
+  const t = sc.t;
+  if (t) { if (!G.tempete) G.tempete = { t: 0, dur: t[1] }; G.tempete.t = t[0]; G.tempete.dur = t[1]; }
+  else G.tempete = null;
 }
 
 // ---------------------------------------------------------------------------
@@ -596,10 +656,24 @@ function appliquerEtat(m) {
   } else if (G.replay) {
     G.replay = null; setMuffled(false);
   }
+  // Fin de match. Le vainqueur vient de l'hôte, qui seul compte les points ;
+  // l'écran, lui, se monte en local, comme la mise en scène d'un but. La
+  // boucle s'en charge — gameOver vit dans actions.js, qui importe déjà ce
+  // fichier, donc on pose un drapeau plutôt que de fermer un cycle d'import.
+  if (m.st === 'over' && etatAvant !== 'over' && m.w) {
+    G.winner = m.w === 1 ? G.p1 : G.p2;
+    Partie.finDeMatch = true;
+  }
   // On adopte le ralenti de l'hôte. Le tsTimer empêche la décroissance locale
   // de le ramener vers 1 entre deux paquets : c'est l'hôte qui décide quand la
   // scène reprend sa vitesse, et il le redit trente fois par seconde.
   if (m.ts !== undefined) { G.timescale = m.ts; G.tsTimer = .12; }
+
+  // Les mises en scène des ultimes, telles que l'hôte les déroule. L'invité
+  // les fait vivre ensuite avec le même code que lui — updateLeg, updateBell,
+  // updateHack et updateDesert tournent des deux côtés — mais c'est l'hôte qui
+  // décide de leur existence et de leur avancement.
+  if (m.sc !== undefined) appliquerScenes(m.sc);
 
   // Les bruitages du match, produits par une simulation qui n'a pas lieu ici.
   // Marqués comme venant du réseau : sans quoi l'étouffement qui empêche
@@ -795,7 +869,7 @@ export function demarrerPartieReseau(role) {
   tampon.length = 0; dernierEnvoi = 0;
   p1Autorite.valide = false; Partie.predictionAdversaire = false;
   Partie.voteAdversaire = null;
-  Partie.skipDemande = false;
+  Partie.skipDemande = false; Partie.finDeMatch = false;
   // Personne n'a encore choisi : l'hote doit attendre les deux presentations
   // avant de donner le coup d'envoi.
   attenteNouveauxChoix();
@@ -910,7 +984,7 @@ export function arreterPartieReseau() {
   // bandes noires collées à l'écran, par l'autre bout cette fois.
   if (G.replay && G.replay.distant) { G.replay = null; setMuffled(false); }
   Partie.active = false; Partie.role = null; Partie.adversaire = null;
-  Partie.skipDemande = false;
+  Partie.skipDemande = false; Partie.finDeMatch = false;
   activerEcho(false);
   // Sans quoi le solo qui suit se jouerait en sourdine : l'étouffement ne vaut
   // que pour un invité en train de recevoir l'écho de quelqu'un.

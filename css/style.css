@@ -735,7 +735,11 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 .statBar span{font-family:'Archivo Black',sans-serif;font-size:clamp(10px,1.6cqh,14px);color:#fff;white-space:nowrap}
 .statBar .sep{width:2px;height:2cqh;background:rgba(255,255,255,.45);flex-shrink:0}
 
-.scr-over .actions{position:absolute;top:3cqh;right:3cqw;z-index:5;display:flex;flex-direction:column;gap:.8cqh;align-items:stretch}
+/* Les boutons de fin de match passent SOUS la barre du haut (bouton compte et
+   plein écran), qui est posée à 2,6 % avec un z-index de 24. À 3cqh ils
+   partageaient exactement le même coin : le bouton « Revanche » se retrouvait
+   recouvert par la pastille de profil, donc incliquable. */
+.scr-over .actions{position:absolute;top:9.5cqh;right:3cqw;z-index:5;display:flex;flex-direction:column;gap:.8cqh;align-items:stretch}
 .actionsRow{display:flex;gap:.7cqw}
 .scr-over .mbtn{font-size:clamp(9px,1.5cqh,13px);padding:.9cqh 1.4cqw;border-width:3px;box-shadow:3px 3px 0 var(--ink);border-radius:6px}
 .scr-over .mbtn:hover{box-shadow:5px 5px 0 var(--ink)}
