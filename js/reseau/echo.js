@@ -28,11 +28,12 @@ const PRODUITS_LOCALEMENT = new Set(['bounce', 'bigbounce', 'swish']);
 // emballé, et mieux vaut perdre des sons que gonfler l'état.
 const MAX = 12;
 
-export const Echo = { collecte: false, file: [], invite: false };
+export const Echo = { collecte: false, file: [], popups: [], invite: false };
 
 export function activerEcho(oui) {
   Echo.collecte = !!oui;
   Echo.file.length = 0;
+  Echo.popups.length = 0;
 }
 
 // L'invité se signale pour que `sonEtouffe` puisse répondre. Un simple booléen
@@ -61,6 +62,37 @@ export function marquerInvite(oui) { Echo.invite = !!oui; }
 export function sonEtouffe(nom) {
   return Echo.invite && !LOCAUX.has(nom) && !PRODUITS_LOCALEMENT.has(nom);
 }
+
+// ---------------------------------------------------------------------------
+// Même seau, pour les messages qui s'affichent à l'écran.
+//
+// Presque tous naissent dans du code réservé à l'arbitre — « SERVICE : X »,
+// « FAUTE ! −1 POINT », « PERFECT CATCH ! », « CERCLE +1 » — donc l'invité
+// n'en voyait aucun. Et ceux qu'il produisait lui-même pouvaient contredire
+// l'hôte : depuis que les points de zone sont réservés à l'arbitre, il
+// affichait « DISQUE MORT » là où l'hôte affichait « CERCLE +1 ».
+//
+// La règle est celle des sons, et pour la même raison : l'hôte les produit
+// tous, puisqu'il simule tout. L'invité n'affiche donc que ce qu'on lui
+// relaie, et se tait sur les siens — sans quoi les deux se cumuleraient.
+// ---------------------------------------------------------------------------
+const MAX_POPUPS = 6;
+
+export function noterPopup(p) {
+  if (!Echo.collecte) return;
+  if (Echo.popups.length < MAX_POPUPS) Echo.popups.push(p);
+}
+
+export function viderPopups() {
+  if (!Echo.popups.length) return null;
+  const f = Echo.popups.slice();
+  Echo.popups.length = 0;
+  return f;
+}
+
+// Vrai quand ce message va nous revenir par l'écho : l'afficher ici aussi le
+// montrerait deux fois, ou pire, en contradiction avec celui d'en face.
+export function popupEtouffe() { return Echo.invite; }
 
 export function noterSon(nom) {
   if (!Echo.collecte || LOCAUX.has(nom) || PRODUITS_LOCALEMENT.has(nom)) return;

@@ -2,10 +2,10 @@ import { G, makePlayer, comment } from '../game/state.js';
 import { Reseau, envoyer, connecte, surMessage, mesurerPing, fermer } from './connexion.js';
 import { Compte, monId } from './compte.js';
 import { setMapId, getMapId } from '../data/maps.js';
-import { activerEcho, viderEcho, marquerInvite } from './echo.js';
+import { activerEcho, viderEcho, marquerInvite, viderPopups } from './echo.js';
 import { construireTerminal } from '../data/hack-terminal.js';
 import { sfx, setMuffled } from '../audio/audio.js';
-import { effetDeBut } from '../game/fx.js';
+import { effetDeBut, popupDistant } from '../game/fx.js';
 import { COURT, CX, DISC_RADIUS } from '../core/constants.js';
 import { clamp } from '../core/utils.js';
 import { semerAlea, graineNeuve } from '../core/alea.js';
@@ -203,6 +203,9 @@ function etatPourLeReseau() {
     // Ses phrases naissent des buts et des réceptions, que l'invité n'arbitre
     // pas : il jouait donc un match quasi muet.
     cm: commentaireNeuf(),
+    // Les messages à l'écran. Même seau que les sons, même raison : presque
+    // tous naissent d'une décision d'arbitre que l'invité ne prend pas.
+    po: viderPopups(),
     // Les mises en scène des ultimes. Elles ne voyageaient pas du tout :
     // l'invité voyait la jauge de l'adversaire se vider et son personnage
     // subir des effets, sans jamais voir ce qui les provoquait — ni la jambe
@@ -736,6 +739,9 @@ function appliquerEtat(m) {
   // Une phrase du commentateur n'arrive qu'une fois : elle est déjà filtrée au
   // départ, on peut la rejouer telle quelle.
   if (m.cm) comment(m.cm);
+  // Les messages de l'hôte, affichés tels quels : c'est la seule source de
+  // l'invité, puisqu'il étouffe les siens.
+  if (m.po) for (const p of m.po) popupDistant(p[0], p[1], p[2], p[3], p[4]);
 
   // Les bruitages du match, produits par une simulation qui n'a pas lieu ici.
   // Marqués comme venant du réseau : sans quoi l'étouffement qui empêche

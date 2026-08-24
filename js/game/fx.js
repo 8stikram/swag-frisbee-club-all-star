@@ -4,6 +4,8 @@ import { TAU, rand, gauss } from '../core/utils.js';
 import { W, H } from '../core/dom.js';
 import { getSkinId } from '../data/skins.js';
 import { Reglages } from '../data/disc-fx.js';
+// Seau sans dépendance : il ne peut fermer aucun cycle avec l'état du jeu.
+import { noterPopup, popupEtouffe } from '../reseau/echo.js';
 
 export function burst(x, y, c, n) {
   for (let i = 0; i < n; i++) {
@@ -75,7 +77,21 @@ function majFilantes(dt) {
 }
 
 export function addPopup(text, color, size = 18, dur = 1, y) {
-  G.popups.push({ text, color, size, dur, t: 0, y: y === undefined ? CY - 90 : y });
+  const py = y === undefined ? CY - 90 : y;
+  // L'hôte note ce qu'il affiche pour le relayer ; l'invité se tait et attend
+  // le relais. Presque tous ces messages naissent d'une décision d'arbitre —
+  // le service, la faute, la réception parfaite, les points de zone — donc
+  // l'invité n'en voyait aucun, et ceux qu'il produisait seul pouvaient
+  // contredire l'hôte. Même règle que pour les sons, pour la même raison.
+  noterPopup([text, color, size, dur, Math.round(py)]);
+  if (popupEtouffe()) return;
+  G.popups.push({ text, color, size, dur, t: 0, y: py });
+}
+
+// Un message venu de l'hôte : il s'affiche sans repasser par le filtre, sinon
+// l'invité étoufferait justement ce qu'on lui relaie.
+export function popupDistant(text, color, size, dur, y) {
+  G.popups.push({ text, color, size, dur, t: 0, y });
 }
 
 export function updateFX(dt) {
