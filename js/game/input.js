@@ -48,6 +48,23 @@ document.addEventListener('pointerlockchange', () => {
 });
 document.addEventListener('pointerlockerror', () => { });
 
+// Onglet masqué — alt-tab, changement d'onglet, fenêtre réduite. Le navigateur
+// suspend alors requestAnimationFrame : la simulation s'arrête net. Seul, ce
+// n'est pas grave, on reprend au retour. En ligne, si : elle s'arrête SANS
+// prévenir l'autre, qui continue de jouer contre un adversaire figé et ne
+// reçoit plus d'état du tout — c'est la boucle qui émet. On met donc le match
+// en pause, ce qui prévient l'autre bout par le même chemin que la pause
+// manuelle, plutôt que de le laisser deviner.
+//
+// Le verrouillage de la souris couvrait déjà une partie des cas, mais lui seul
+// ne suffit pas : on peut très bien jouer sans l'avoir engagé, et alors rien
+// ne se déclenchait.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) return;
+  if (curScreen || G.demo || G.adminMode) return;
+  if (['play', 'serve', 'countdown', 'goal', 'replay'].includes(G.state)) pauseGame();
+});
+
 window.addEventListener('mousemove', e => {
   if (curScreen !== null) return;
   // Mouse.x/y sont ensuite lus PARTOUT comme des coordonnées du monde — la
