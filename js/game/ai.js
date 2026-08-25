@@ -90,7 +90,12 @@ export function updateAI(p, dt) {
     }
     if (d.state !== 'STRIKE') { d.state = 'STRIKE'; d.stateTimer = 0; }
   } else {
-    const puckInOwn = (attackSign * disc.x) < 0;
+    // Écrit comme si le terrain était centré sur zéro — il l'est sur CX. Sans
+    // le décalage, `disc.x` étant toujours positif, ce test valait CONSTAMMENT
+    // vrai pour l'IA de droite et constamment faux pour celle de gauche : la
+    // machine à états se privait donc de la moitié de ses transitions, quelle
+    // que soit la position réelle du disque.
+    const puckInOwn = (attackSign * (disc.x - CX)) < 0;
     const puckIncoming = (attackSign * disc.vx) < -15;
     const puckOutgoing = (attackSign * disc.vx) > 15;
     const distToPuck = Math.hypot(disc.x - p.x, disc.y - p.y);
@@ -172,7 +177,23 @@ export function updateAI(p, dt) {
       d.emaTarget.y = d.emaTarget.y || d.aim.y;
       d.emaTarget.x = alpha * d.aim.x + (1 - alpha) * d.emaTarget.x;
       d.emaTarget.y = alpha * d.aim.y + (1 - alpha) * d.emaTarget.y;
-      target = { x: d.emaTarget.x, y: d.emaTarget.y };
+      // `emaTarget` est la VISÉE, et elle le reste : c'est elle que lit
+      // commandeIA pour orienter le tir. Mais s'en servir aussi comme
+      // destination de déplacement confondait deux choses opposées — viser la
+      // cage adverse ne veut pas dire vouloir y aller. L'IA marchait donc vers
+      // le camp d'en face et finissait collée au filet, ce qui se lisait
+      // directement sur l'affichage de ses intentions.
+      if (hasDisc) {
+        // Disque en main : on se place pour tirer. On avance vers le filet, du
+        // bon côté, et on s'aligne sur la hauteur qu'on vise.
+        target = {
+          x: p.side === 1 ? CX - 90 : CX + 90,
+          y: clamp(d.aim.but, COURT.top + 40, COURT.bottom - 40)
+        };
+      } else {
+        // Disque libre dans son camp : on va le chercher, tout simplement.
+        target = { x: disc.x, y: disc.y };
+      }
       if (d.aggro < 4) d.aggro += dt * 0.3;
       break;
     }
@@ -184,7 +205,14 @@ export function updateAI(p, dt) {
     case 'READY':
     default: { target = { x: p.home.x, y: CY + Math.sin(G.now * 1.5 + p.side) * 30 }; break; }
   }
-  target.x = clamp(target.x, COURT.left + 30, COURT.right - 30);
+  // Une IA ne traverse jamais le filet : sa cible est bornée à SON camp, et
+  // pas au terrain entier. L'intégration l'empêchait déjà physiquement de
+  // passer, mais elle passait alors son temps à pousser contre la ligne
+  // médiane en visant un point qu'elle ne pouvait pas atteindre — immobile en
+  // apparence, et incompréhensible pour qui regarde ses intentions.
+  const minX = p.side === 1 ? COURT.left + 30 : CX + 20;
+  const maxX = p.side === 1 ? CX - 20 : COURT.right - 30;
+  target.x = clamp(target.x, minX, maxX);
   target.y = clamp(target.y, COURT.top + 20, COURT.bottom - 20);
   d.target = target;
   const dx = d.target.x - p.x, dy = d.target.y - p.y, dist = Math.hypot(dx, dy);
