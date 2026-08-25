@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mesure de niveau des musiques</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; background:#0b0e14; color:#e8ecf4; }
+  h1 { font-size: 1.2rem; }
+  p.aide { color: #9fb0c8; font-size: .9rem; line-height: 1.5; }
+  .zone { border: 3px dashed #3a4358; border-radius: 10px; padding: 28px; text-align: center; margin: 16px 0; cursor: pointer; }
+  .zone.survole { border-color: #35e0ff; background: rgba(53,224,255,.06); }
+  table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: .92rem; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid #232a3a; }
+  th { color: #9fb0c8; font-weight: 600; }
+  .ref { color: #ffd23e; }
+  .ref-radio { cursor: pointer; }
+  code { background: #171c28; padding: 2px 6px; border-radius: 4px; }
+  #sortie { white-space: pre-wrap; background: #10141d; border: 1px solid #232a3a; border-radius: 8px; padding: 14px; font-family: monospace; font-size: .85rem; margin-top: 16px; display:none; }
+</style>
+</head>
+<body>
+<h1>Mesure de niveau des musiques</h1>
+<p class="aide">
+  Dépose ici le Menu OST (<code>0-menu-ost.mp3</code>) et la ou les nouvelles pistes à ajouter.
+  L'outil mesure le niveau sonore réel de chacune (RMS par fenêtres de 3 s, médiane —
+  proche de ce que l'oreille retient comme « le niveau » d'un morceau, sans se laisser
+  fausser par les silences). Coche la piste de référence — le Menu OST, toujours —
+  et le <code>gain</code> à reporter dans <code>js/data/music.js</code> s'affiche pour
+  chaque autre piste. Tout se passe dans le navigateur, aucun fichier n'est envoyé où
+  que ce soit : cette page marche même ouverte en double-clic, sans serveur.
+</p>
+
+<div class="zone" id="zone">Dépose des fichiers audio ici, ou clique pour en choisir</div>
+<input type="file" id="fichier" accept="audio/*" multiple style="display:none">
+
+<table id="table" style="display:none">
+  <thead><tr><th>Réf.</th><th>Piste</th><th>Niveau médian</th><th>Gain à reporter</th></tr></thead>
+  <tbody id="corps"></tbody>
+</table>
+
+<div id="sortie"></div>
+
+<script>
+const zone = document.getElementById('zone');
+const input = document.getElementById('fichier');
+const corps = document.getElementById('corps');
+const table = document.getElementById('table');
+const sortie = document.getElementById('sortie');
+
+zone.addEventListener('click', () => input.click());
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('survole'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('survole'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('survole');
+  traiter([...e.dataTransfer.files]);
+});
+input.addEventListener('change', () => traiter([...input.files]));
+
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+const pistes = []; // { nom, db }
+
+// Même méthode que la mesure faite pour les trois pistes d'origine : fenêtres
+// de 3 s, RMS de chacune, on garde la médiane. Représentatif du niveau perçu,
+// insensible aux silences et aux quelques pics isolés.
+async function mesurer(file) {
+  const buf = await AC.decodeAudioData(await file.arrayBuffer());
+  const sr = buf.sampleRate, ch = buf.numberOfChannels;
+  const fenetre = Math.floor(sr * 3);
+  const rms = [];
+  for (let start = 0; start + fenetre <= buf.length; start += fenetre) {
+    let somme = 0, n = 0;
+    for (let c = 0; c < ch; c++) {
+      const d = buf.getChannelData(c);
+      for (let i = start; i < start + fenetre; i += 5) { somme += d[i] * d[i]; n++; }
+    }
+    rms.push(Math.sqrt(somme / n));
+  }
+  rms.sort((a, b) => a - b);
+  const mediane = rms[Math.floor(rms.length / 2)] || 0;
+  return 20 * Math.log10(mediane || 1e-8);
+}
+
+async function traiter(files) {
+  for (const f of files) {
+    const db = await mesurer(f);
+    pistes.push({ nom: f.name, db });
+  }
+  // Le Menu OST se propose comme référence par défaut, sinon la première piste.
+  if (!pistes.some(p => p.estRef)) {
+    const menu = pistes.find(p => /menu.?ost/i.test(p.nom)) || pistes[0];
+    if (menu) menu.estRef = true;
+  }
+  redessiner();
+}
+
+function redessiner() {
+  table.style.display = pistes.length ? '' : 'none';
+  corps.innerHTML = '';
+  const ref = pistes.find(p => p.estRef) || pistes[0];
+  for (const p of pistes) {
+    const tr = document.createElement('tr');
+    const gain = ref ? Math.pow(10, (ref.db - p.db) / 20) : 1;
+    tr.innerHTML = `
+      <td><input type="radio" name="ref" class="ref-radio" ${p.estRef ? 'checked' : ''}></td>
+      <td class="${p.estRef ? 'ref' : ''}">${p.nom}${p.estRef ? ' (référence)' : ''}</td>
+      <td>${p.db.toFixed(2)} dB</td>
+      <td>${p.estRef ? '1 (référence)' : gain.toFixed(2)}</td>`;
+    tr.querySelector('.ref-radio').addEventListener('change', () => {
+      pistes.forEach(x => x.estRef = false);
+      p.estRef = true;
+      redessiner();
+    });
+    corps.appendChild(tr);
+  }
+  if (pistes.length > 1 && ref) {
+    sortie.style.display = 'block';
+    sortie.textContent = pistes.filter(p => !p.estRef).map(p =>
+      `{ id: '...', name: '...', src: 'assets/audio/...', gain: ${Math.pow(10, (ref.db - p.db) / 20).toFixed(2)} },  // ${p.nom}`
+    ).join('\n');
+  }
+}
+</script>
+</body>
+</html>

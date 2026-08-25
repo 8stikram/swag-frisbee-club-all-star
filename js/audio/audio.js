@@ -13,7 +13,15 @@ let demoMuted = false;
 export function setDemoMuted(v) { demoMuted = v; }
 
 let AC = null, masterG = null, sfxGain = null, noiseBuf = null;
-let musicVol = 0.2, sfxVol = 0.9;
+// 5 % / 20 % : la musique reste un fond, les bruitages restent les repères
+// d'action qu'on doit entendre par-dessus. Choisis en écoutant le jeu tourner
+// normalement, pas au silence — un réglage jugé casque au calme sonne
+// systématiquement trop fort une fois la partie lancée.
+let musicVol = 0.05, sfxVol = 0.2;
+// Gain de la piste en cours (voir data/music.js) : corrige les écarts de
+// mastering entre fichiers pour que le curseur ci-dessus règle une seule
+// intensité perçue, quelle que soit la piste choisie.
+let pisteGain = 1;
 export let musicOn = true;
 export function toggleMusic() {
   musicOn = !musicOn;
@@ -29,9 +37,10 @@ export function playTrack(id) {
   if (bgmEl) { bgmEl.pause(); bgmEl = null; }
   const t = getTrack(id);
   if (!t) return; // pas de piste choisie -> silence
+  pisteGain = t.gain || 1;
   bgmEl = new Audio(t.src);
   bgmEl.loop = true;
-  bgmEl.volume = musicVol;
+  applyMusicVol();
   if (musicOn) bgmEl.play().catch(() => { });
 }
 export function stopTrack() {
@@ -63,7 +72,7 @@ let duck = 1, duckTimer = null, solo = null;
 
 function applyMusicVol() {
   if (!bgmEl) return;
-  let v = musicVol * duck;
+  let v = musicVol * duck * pisteGain;
   if (solo === 'sfx') v = 0;
   bgmEl.volume = Math.max(0, Math.min(1, v));
 }
@@ -105,7 +114,7 @@ export function initAudio() {
 // certains sons ne s'imitent pas correctement à l'oscillateur. Ils passent par
 // le même gain que le reste, donc le réglage de volume, le mode solo et le
 // filtre feutré du replay s'y appliquent aussi.
-const SAMPLES = { bell: 'assets/audio/bell.wav' };
+const SAMPLES = { bell: 'assets/audio/bell.wav', mamieUlti: 'assets/audio/mamie-ulti.mp3' };
 const bufs = {};
 
 function loadSamples() {
@@ -210,6 +219,11 @@ export function sfx(n, venuDuReseau) {
     // fichier n'a pas encore fini de charger.
     case 'bell':
       if (!sample('bell')) { beep(1320, 660, .6, 'sine', .18); beep(1980, 990, .4, 'sine', .08); }
+      break;
+    // Réplique de Mamie Trayette au déclenchement de son ulti. Volume plus haut
+    // que la cloche : c'est une voix, elle doit passer par-dessus la rafale.
+    case 'mamie-ulti':
+      if (!sample('mamieUlti', .9)) { beep(420, 300, .3, 'sawtooth', .14); beep(300, 220, .3, 'square', .1, .2); }
       break;
     // Piratage : une poignée de main de modem. Deux porteuses qui se cherchent,
     // puis un souffle de données. C'est le seul son du jeu qui évoque une
