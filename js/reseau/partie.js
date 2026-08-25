@@ -937,6 +937,7 @@ export function demarrerPartieReseau(role) {
   tampon.length = 0; dernierEnvoi = 0;
   p1Autorite.valide = false; Partie.predictionAdversaire = false;
   Partie.voteAdversaire = null;
+  oublierPrets();
   Partie.skipDemande = false; Partie.finDeMatch = false; dernierCommentaire = null;
   // Personne n'a encore choisi : l'hote doit attendre les deux presentations
   // avant de donner le coup d'envoi.
@@ -971,6 +972,7 @@ export function demarrerPartieReseau(role) {
     // L'invité demande à couper le rejeu. Seul l'hôte peut le faire — il le
     // déroule — donc on ne fait que poser la demande, que sa boucle consomme.
     if (m.t === 'skip') { if (Partie.role === 'hote') Partie.skipDemande = true; return; }
+    if (m.t === 'pret') { recevoirPret(m); return; }
     // L'invité demande la revanche : seul l'hôte peut la donner.
     if (m.t === 'revanche') { if (Partie.role === 'hote') relancerMemeMatch(); return; }
     if (m.t === 'changeperso') {
@@ -1248,6 +1250,36 @@ export function quandResultatVote(fn) { surResultatVote = fn; }
 export function signalerResultatVote(mien, son, resultat) {
   if (surResultatVote) surResultatVote(mien, son, resultat);
 }
+
+// ---------------------------------------------------------------------------
+// Validations avant le match : « je suis prêt ».
+//
+// Chacun verrouille d'abord son personnage, puis son terrain, et l'écran
+// n'avance que lorsque les DEUX ont verrouillé. C'est une couche d'interface
+// posée par-dessus le coup d'envoi, pas dedans : la présentation et l'accord
+// sur le terrain continuent de passer exactement par le même chemin qu'avant,
+// une fois les deux prêts. Rien du démarrage n'est touché.
+//
+// Un « prêt » peut se retirer tant que l'autre n'a pas verrouillé : d'où le
+// drapeau, plutôt qu'un simple message d'annonce.
+// ---------------------------------------------------------------------------
+export const Pret = { adversairePerso: null, adversaireTerrain: null };
+
+let surPretAdversaire = null;
+export function quandPretAdversaire(fn) { surPretAdversaire = fn; }
+
+export function annoncerPret(etape, valeur, pret) {
+  if (!Partie.active) return;
+  envoyer({ t: 'pret', etape, valeur: valeur || null, pret: pret ? 1 : 0 }, true);
+}
+
+function recevoirPret(m) {
+  const cle = m.etape === 'terrain' ? 'adversaireTerrain' : 'adversairePerso';
+  Pret[cle] = m.pret ? (m.valeur || true) : null;
+  if (surPretAdversaire) surPretAdversaire(m.etape, Pret[cle]);
+}
+
+export function oublierPrets() { Pret.adversairePerso = null; Pret.adversaireTerrain = null; }
 
 export function annoncerVoteTerrain(terrain) {
   if (!Partie.active) return;

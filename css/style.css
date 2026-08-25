@@ -1840,3 +1840,31 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   filter:drop-shadow(0 2px 0 rgba(20,26,38,.35));
 }
 @keyframes titreDefile{from{background-position:0% 50%}to{background-position:300% 50%}}
+
+/* --- Verrouillage du champion en ligne ------------------------------------
+   Le tampon qui claque sur le portrait quand l'adversaire valide : c'est le
+   moment où l'on découvre contre qui on joue, il mérite d'être vu. Posé en
+   absolu sur la boîte du héros, qui est déjà en position relative. */
+.tamponPret{
+  position:absolute; left:50%; top:50%; z-index:6;
+  transform:translate(-50%,-50%) rotate(-11deg);
+  font-family:"Archivo Black",system-ui,sans-serif;
+  font-size:clamp(13px,3.2cqh,26px); letter-spacing:.06em; color:#fff;
+  background:var(--red,#ff3b5c); border:3px solid var(--ink,#0b0e14);
+  border-radius:6px; padding:.5cqh 1.4cqw; box-shadow:4px 4px 0 var(--ink,#0b0e14);
+  animation:tamponClac .42s cubic-bezier(.2,1.5,.4,1) both;
+  pointer-events:none; white-space:nowrap;
+}
+@keyframes tamponClac{
+  0%{opacity:0;transform:translate(-50%,-50%) rotate(-11deg) scale(2.6)}
+  60%{opacity:1;transform:translate(-50%,-50%) rotate(-11deg) scale(.92)}
+  100%{opacity:1;transform:translate(-50%,-50%) rotate(-11deg) scale(1)}
+}
+
+/* Bouton en attente de l'autre : il reste lisible mais dit qu'il n'y a rien à
+   cliquer, et respire doucement pour qu'on voie que ça vit encore. */
+.mbtn.enAttente{
+  background:#cfd8e8; color:#43506b; cursor:default;
+  animation:attentePouls 1.5s ease-in-out infinite;
+}
+@keyframes attentePouls{0%,100%{opacity:.72}50%{opacity:1}}

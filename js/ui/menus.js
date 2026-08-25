@@ -4,7 +4,7 @@ import { DIFFS } from '../core/constants.js';
 import { CHARS, ROSTER } from '../data/characters.js';
 import { SPECIALS } from '../data/specials.js';
 import { DISC_SKINS, getSkinId, setSkinId, drawSkinDisc, getFavSkin, setFavSkin, skinDebloque, randomSkinId } from '../data/skins.js';
-import { MAPS, setMapId, mapDebloquee, nomAffiche, aDeuxNoms, basculerNom } from '../data/maps.js';
+import { MAPS, setMapId, mapDebloquee, nomAffiche, aDeuxNoms, basculerNom, getMapId } from '../data/maps.js';
 import { getKey } from '../data/keymap.js';
 import { MUSIC_TRACKS, getTrackId } from '../data/music.js';
 import { sfx, playTrack, stopTrack, duckMusic } from '../audio/audio.js';
@@ -21,7 +21,8 @@ import {
   annoncerPause, annoncerAbandon, quandPause, quandAbandon, arreterPartieReseau,
   demanderRevanche, demanderChangementPerso, quandRevanche, quandChangementPerso,
   Partie, annoncerIdentite, remplacerInviteParIA, quandDeconnexionEnMatch,
-  annoncerVoteTerrain, quandVoteTerrain, quandResultatVote
+  annoncerVoteTerrain, quandVoteTerrain, quandResultatVote,
+  Pret, annoncerPret, quandPretAdversaire, oublierPrets
 } from '../reseau/partie.js';
 import { fermer as fermerLiaison } from '../reseau/connexion.js';
 import { Compte } from '../reseau/compte.js';
@@ -132,6 +133,75 @@ export function preparerChoixEnLigne(role) {
 // Le personnage que ce joueur vient de choisir, du côté qui est le sien.
 function monPersoChoisi() {
   return roleEnLigne === 'invite' ? selCharCPU : selCharPlayer;
+}
+
+// Suis-je verrouillé sur mon champion ?
+function jeSuisPret() { return roleEnLigne === 'invite' ? lockedP2 : lockedP1; }
+
+// ---------------------------------------------------------------------------
+// L'adversaire vient de verrouiller son champion.
+//
+// On le pose dans SON camp — celui d'en face — puis on le tamponne « PRÊT »
+// comme le fait Smash : c'est le moment où l'on découvre contre qui on joue,
+// et il mérite mieux qu'un changement de sprite silencieux.
+// ---------------------------------------------------------------------------
+function adversairePret(etape, valeur) {
+  if (etape === 'terrain') { majBoutonTerrain(); return; }
+  if (curScreen !== 'select') return;
+  if (valeur && typeof valeur === 'string') {
+    if (roleEnLigne === 'invite') selCharPlayer = valeur; else selCharCPU = valeur;
+  }
+  refreshSelect();
+  if (!valeur) return;                       // il s'est ravisé : on efface juste
+  const cote = roleEnLigne === 'invite' ? 1 : 2;
+  tamponPret(cote);
+  punchHero(cote);
+  sfx('select');
+  if (jeSuisPret()) setTimeout(versLesTerrains, 900);
+}
+
+// Le tampon « PRÊT ! » qui claque sur le portrait, à la Smash.
+function tamponPret(cote) {
+  const box = document.querySelectorAll('.scr-select .side .heroBox')[cote - 1];
+  if (!box) return;
+  box.querySelectorAll('.tamponPret').forEach(e => e.remove());
+  const t = document.createElement('div');
+  t.className = 'tamponPret';
+  t.textContent = 'PRÊT !';
+  box.appendChild(t);
+}
+
+function versLesTerrains() {
+  if (curScreen !== 'select') return;
+  terrainValide = false;
+  showScreen('maps'); refreshMaps(); majBoutonTerrain();
+}
+
+// Ai-je verrouillé mon terrain ? Le pendant de `jeSuisPret`, côté terrains.
+let terrainValide = false;
+
+// Le bouton de lancement dit la même chose que celui des champions : combien
+// de joueurs ont validé. Sans lui, valider son terrain ne produisait rien de
+// visible et on ne savait pas si le clic avait été pris.
+function majBoutonTerrain() {
+  const b = document.querySelector('.scr-maps [data-act="startMatch"]');
+  if (!b) return;
+  if (!modeEnLigne) { b.classList.remove('enAttente'); b.textContent = 'LANCER LE MATCH'; return; }
+  const prets = (terrainValide ? 1 : 0) + (Pret.adversaireTerrain ? 1 : 0);
+  b.classList.toggle('enAttente', terrainValide && prets < 2);
+  b.textContent = !terrainValide ? 'LANCER LE MATCH'
+    : (prets < 2 ? 'EN ATTENTE… ' + prets + '/2' : 'PRÊTS 2/2');
+}
+
+// Quitter proprement le choix en ligne : la liaison se ferme et on revient au
+// menu de l'arène. Sans ça, Échap ramenait au titre en laissant la session
+// ouverte derrière — et un coup d'envoi pouvait démarrer un match depuis là.
+function quitterChoixEnLigne() {
+  modeEnLigne = false; roleEnLigne = null;
+  terrainValide = false;
+  oublierPrets();
+  arreterPartieReseau(); fermerLiaison();
+  ouvrirEnLigne();
 }
 
 // Disque préféré : le bouton ouvre un panneau où l'on VOIT les disques, plutôt
@@ -251,8 +321,14 @@ function validate(side) {
     if (mien === 1) { if (!previewP1 || lockedP1) return; lockedP1 = true; }
     else { if (!previewP2 || lockedP2) return; lockedP2 = true; }
     turn = 0;
-    clac(); refreshSelect(); punchHero(mien);
-    showScreen('maps'); refreshMaps();
+    clac(); punchHero(mien);
+    // On annonce son champion, et on ATTEND celui d'en face. L'écran filait
+    // droit aux terrains sans se soucier de l'adversaire : on s'y retrouvait
+    // à choisir un terrain pendant que l'autre cherchait encore son perso, et
+    // on ne découvrait son champion qu'au coup d'envoi.
+    annoncerPret('perso', monPersoChoisi(), true);
+    refreshSelect();
+    if (Pret.adversairePerso) versLesTerrains();
     return;
   }
   if (side === 1) { if (!previewP1 || lockedP1) return; lockedP1 = true; turn = 2; }
@@ -281,6 +357,20 @@ function punchHero(side) {
 
 // Échap : le joueur en cours revient sur son choix, tant que 2P n'a pas validé.
 export function undoSelect() {
+  // En ligne, on peut se raviser tant que l'adversaire n'a pas verrouillé —
+  // une fois qu'il l'a fait, l'écran part aux terrains et il n'y a plus rien
+  // à défaire. On retire alors aussi son « prêt », sinon l'autre continuerait
+  // de nous croire décidé.
+  if (modeEnLigne) {
+    const mien = roleEnLigne === 'invite' ? 2 : 1;
+    const verrouille = mien === 1 ? lockedP1 : lockedP2;
+    if (!verrouille || Pret.adversairePerso) return false;
+    if (mien === 1) lockedP1 = false; else lockedP2 = false;
+    turn = mien;
+    annoncerPret('perso', null, false);
+    sfx('deny'); refreshSelect();
+    return true;
+  }
   if (turn === 0 && lockedP2) { lockedP2 = false; turn = 2; sfx('deny'); refreshSelect(); return true; }
   if (turn === 2 && lockedP1) { lockedP1 = false; turn = 1; sfx('deny'); refreshSelect(); return true; }
   return false;
@@ -358,9 +448,12 @@ export function refreshSelect() {
   // croire qu'on allait affronter Leon, alors que rien n'est décidé. C'est le
   // camp opposé au nôtre qu'on masque, et notre camp dépend du rôle : héberger
   // tient la gauche, rejoindre la droite.
+  // …jusqu'à ce qu'il verrouille : à partir de là on le montre, c'est le
+  // moment de la révélation.
   const jeSuisInvite = modeEnLigne && roleEnLigne === 'invite';
-  const advGauche = jeSuisInvite;
-  const advDroite = modeEnLigne && !jeSuisInvite;
+  const advConnu = modeEnLigne && !!Pret.adversairePerso;
+  const advGauche = jeSuisInvite && !advConnu;
+  const advDroite = modeEnLigne && !jeSuisInvite && !advConnu;
   const cacheP1 = rndP1 || advGauche;
   const cacheP2 = rndP2 || advDroite;
   // Un camp tiré au sort est masqué de bout en bout jusqu'au coup d'envoi :
@@ -379,7 +472,22 @@ export function refreshSelect() {
   // contours posés sur les cases. COMBATTRE n'apparaît qu'une fois les deux
   // camps verrouillés — avant, il n'y a rien à lancer.
   const fight = $('fightBtn');
-  if (fight) fight.classList.toggle('hidden', !(lockedP1 && lockedP2));
+  if (fight) {
+    // En ligne, ce bouton devient un compteur d'attente : une fois son champion
+    // verrouillé, il dit combien de joueurs sont prêts au lieu de disparaître.
+    // C'est là que l'œil se trouve au moment de valider, donc c'est là qu'il
+    // faut dire pourquoi rien ne se passe.
+    if (modeEnLigne) {
+      const prets = (jeSuisPret() ? 1 : 0) + (Pret.adversairePerso ? 1 : 0);
+      fight.classList.toggle('hidden', !jeSuisPret());
+      fight.classList.toggle('enAttente', prets < 2);
+      fight.textContent = prets < 2 ? 'EN ATTENTE… ' + prets + '/2' : 'PRÊTS 2/2';
+    } else {
+      fight.classList.remove('enAttente');
+      fight.textContent = 'COMBATTRE';
+      fight.classList.toggle('hidden', !(lockedP1 && lockedP2));
+    }
+  }
   const hint = $('turnHint');
   if (hint) {
     hint.className = 'turnHint ' + (turn === 1 ? 'p1' : turn === 2 ? 'p2' : 'done');
@@ -1009,6 +1117,8 @@ quandDeconnexionEnMatch(alerterDeconnexion);
 // apparaisse, si c'est bien cet écran-là qu'on regarde en ce moment.
 quandVoteTerrain(() => { if (curScreen === 'maps') renderMapThumbs(); });
 quandResultatVote(afficherResultatVote);
+// L'adversaire vient de verrouiller son champion ou son terrain.
+quandPretAdversaire(adversairePret);
 
 function startMatch() {
   resolveSkin();
@@ -1024,7 +1134,16 @@ function startMatch() {
     // Rouvrir l'arène couperait la connexion et il faudrait tout réétablir.
     // La liaison est déjà ouverte à ce stade : on annonce ce qu'on apporte, et
     // l'hôte donnera le coup d'envoi quand il aura les deux choix.
-    if (Partie.active) { annoncerIdentite(monPersoChoisi()); return; }
+    if (Partie.active) {
+      // On annonce ce qu'on apporte — c'est ce qui déclenche le coup d'envoi
+      // chez l'hôte quand il a les deux — et on affiche l'attente en même
+      // temps, pour qu'un écran figé s'explique de lui-même.
+      annoncerIdentite(monPersoChoisi());
+      terrainValide = true;
+      annoncerPret('terrain', getMapId(), true);
+      majBoutonTerrain();
+      return;
+    }
     // Liaison perdue entre-temps : on ne lance rien dans le vide, on renvoie au
     // menu de l'arène pour retrouver un adversaire.
     ouvrirEnLigne();
@@ -1053,9 +1172,26 @@ export function doAct(act) {
     case 'tuto': sfx('select'); musiqueDeMenu(); ouvrirChapitres(); break;
     // Refuser le tutoriel au premier lancement ne doit se demander qu'une fois.
     case 'skipTuto': sfx('select'); marquerTutoPropose(); showScreen('title'); break;
-    case 'back': sfx('select'); musiqueDeMenu(); showScreen('title'); break;
-    case 'fight': sfx('select'); showScreen('maps'); refreshMaps(); break;
-    case 'startMatch': sfx('select'); startMatch(); break;
+    // Quitter l'écran de choix en ligne ne peut pas se contenter de montrer le
+    // titre : la liaison resterait ouverte et la partie active derrière, si
+    // bien qu'un coup d'envoi de l'hôte pouvait démarrer un match depuis
+    // l'écran-titre. Échap et « retour » ferment donc vraiment la session et
+    // ramènent au menu de l'arène, d'où l'on peut rechercher quelqu'un.
+    case 'back':
+      sfx('select'); musiqueDeMenu();
+      if (modeEnLigne) { quitterChoixEnLigne(); break; }
+      showScreen('title');
+      break;
+    // En ligne, ce bouton n'est plus une porte : c'est un compteur d'attente.
+    // Cliquer dessus avant que les deux soient prêts doit rester sans effet,
+    // sinon on repasserait devant l'adversaire encore en train de choisir.
+    case 'fight':
+      if (modeEnLigne) { if (Pret.adversairePerso && jeSuisPret()) versLesTerrains(); break; }
+      sfx('select'); showScreen('maps'); refreshMaps(); break;
+    // Même chose côté terrains : une fois validé, on attend, on ne relance pas.
+    case 'startMatch':
+      if (modeEnLigne && terrainValide) break;
+      sfx('select'); startMatch(); break;
     case 'resume': sfx('select'); reprendreJeu(); break;
     case 'abandon': sfx('select'); abandonnerMatch(); break;
     case 'continuerIA': sfx('select'); continuerContreIA(); break;
