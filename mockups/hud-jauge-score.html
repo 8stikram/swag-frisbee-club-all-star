@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — HUD, jauge d'ultime + panneau score (6 pistes)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#111318; --yellow:#f5e63d; --green:#5df08a; --blue:#2f6bff; --red:#e5384f; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;background:#070a12;color:#fff;font-family:'Barlow',sans-serif;
+    display:flex;flex-direction:column;align-items:center;gap:16px;padding:26px 16px 60px;
+  }
+  h1{font-family:'Archivo Black',sans-serif;font-size:18px}
+  .note{color:#8fa3cc;font-size:13.5px;max-width:940px;line-height:1.7;text-align:center}
+  .note b{color:#eaf2ff}
+  .note code{background:#182338;padding:1px 5px;border-radius:4px;color:#9fe8ff}
+
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .tabs button{
+    font-family:'Archivo Black',sans-serif;font-size:12px;color:#c8d4ec;
+    background:#141d30;border:2px solid #263452;border-radius:7px;padding:9px 16px;cursor:pointer;
+  }
+  .tabs button.on{background:var(--yellow);color:var(--ink);border-color:var(--yellow)}
+
+  /* ================= STAGE : fond de terrain, pour juger l'emprise réelle ================= */
+  .stage{
+    position:relative;width:min(94vw,1120px);aspect-ratio:16/10;border-radius:8px;overflow:hidden;
+    container-type:size;border:2px solid #1b2a52;
+    background:
+      linear-gradient(180deg,rgba(0,0,0,.3),transparent 22%,transparent 78%,rgba(0,0,0,.35)),
+      radial-gradient(140cqh 100cqh at 50% 50%,#2f6b45 0%,#255939 45%,#173b26 78%,#0e2618 100%);
+  }
+  .courtLines{position:absolute;left:9%;right:9%;top:15%;bottom:12%;border:2px solid rgba(255,255,255,.5);border-radius:3px}
+  .courtLines::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.35);transform:translateX(-50%)}
+  .disc-mock{position:absolute;top:53%;left:48%;width:20px;height:20px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#fff,#cfe0ff 40%,#8fa3cc 100%);box-shadow:0 0 8px rgba(255,255,255,.5)}
+  .centerHint{position:absolute;top:2%;left:50%;transform:translateX(-50%);z-index:6;
+    font-family:'Archivo Black',sans-serif;font-size:clamp(8px,1.3cqh,11px);color:#eaf2ff;opacity:.7;letter-spacing:.06em}
+
+  .variant{position:absolute;inset:0;display:none}
+  .variant.on{display:block}
+
+  /* ============================================================
+     TOUT ce qui suit reprend le langage déjà en place sur
+     options-screen.html / select-player.html : bordure noire 3-4px,
+     ombre décalée fixe (Npx Npx 0 var(--ink)), texte Archivo Black
+     avec contour noir sur fond clair ou coloré. Ce qui change d'une
+     piste à l'autre : la découpe (biseau 2XKO), la forme de la jauge,
+     l'agencement portrait/nom/score.
+     ============================================================ */
+
+  /* ---------- A — Ruban classique : nameSlash existant + .bar existant ---------- */
+  .a-side{position:absolute;top:2%;display:flex;align-items:center;gap:.8cqw}
+  .a-side.left{left:1.8%} .a-side.right{right:1.8%;flex-direction:row-reverse}
+  .a-portrait{width:7.6cqh;height:7.6cqh;min-width:48px;min-height:48px;flex-shrink:0;
+    background:#0a1430;border:3px solid var(--ink);border-radius:8px;box-shadow:3px 3px 0 var(--ink);
+    overflow:hidden;position:relative}
+  .a-portrait canvas{position:absolute;left:50%;bottom:-6%;height:128%;width:auto;transform:translateX(-50%);image-rendering:pixelated}
+  .a-info{display:flex;flex-direction:column;gap:.35cqh;min-width:11cqw}
+  .a-side.right .a-info{align-items:flex-end}
+  .a-tag{position:relative;padding:.3cqh 1cqw;transform:skewX(-10deg);border:3px solid var(--ink);
+    box-shadow:3px 3px 0 var(--ink);width:fit-content}
+  .a-side.right .a-tag{transform:skewX(10deg)}
+  .a-tag span{display:inline-block;transform:skewX(10deg);font-family:'Archivo Black',sans-serif;
+    font-size:clamp(10px,1.7cqh,13px);color:#fff;-webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill}
+  .a-side.right .a-tag span{transform:skewX(-10deg)}
+  .a-bar{width:11cqw;height:1.9cqh;min-height:10px;background:#fff;border:3px solid var(--ink);
+    box-shadow:3px 3px 0 var(--ink);overflow:hidden;position:relative}
+  .a-bar i{display:block;height:100%;background-image:linear-gradient(100deg,rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.5) 42%,rgba(255,255,255,.68) 50%,rgba(255,255,255,.5) 58%,rgba(255,255,255,0) 100%);
+    background-size:260% 100%;background-repeat:no-repeat;animation:shine 2.6s linear infinite;
+    background-color:var(--c)}
+  .a-bar.full{animation:fullFlash .5s ease-in-out infinite}
+  @keyframes fullFlash{0%,100%{box-shadow:3px 3px 0 var(--ink)}50%{box-shadow:3px 3px 0 var(--ink),0 0 10px 2px #fff}}
+  @keyframes shine{from{background-position:180% 0}to{background-position:-80% 0}}
+
+  /* ---------- B — Carte biseautée : portrait 2XKO mais bordure/ombre "maison" ---------- */
+  .b-side{position:absolute;top:2%;display:flex;align-items:flex-start;z-index:5}
+  .b-side.left{left:0} .b-side.right{right:0;flex-direction:row-reverse}
+  .b-portrait{position:relative;width:8.4cqh;height:8.4cqh;min-width:52px;min-height:52px;flex-shrink:0;
+    background:#0a1430;border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);overflow:hidden;
+    clip-path:polygon(14% 0,100% 0,86% 100%,0 100%)}
+  .b-side.right .b-portrait{clip-path:polygon(0 0,86% 0,100% 100%,14% 100%)}
+  .b-portrait canvas{position:absolute;left:50%;bottom:-6%;height:130%;width:auto;transform:translateX(-50%);image-rendering:pixelated}
+  .b-info{display:flex;flex-direction:column;gap:.3cqh;margin:0 .7cqw;padding-top:.2cqh}
+  .b-side.right .b-info{align-items:flex-end}
+  .b-tag{background:var(--c);border:3px solid var(--ink);padding:.2cqh .9cqw;box-shadow:3px 3px 0 var(--ink);
+    clip-path:polygon(8% 0,100% 0,92% 100%,0 100%)}
+  .b-side.right .b-tag{clip-path:polygon(0 0,92% 0,100% 100%,8% 100%)}
+  .b-tag span{font-family:'Archivo Black',sans-serif;font-size:clamp(9px,1.5cqh,12px);color:var(--ink)}
+  .b-bar{width:11.5cqw;height:1.9cqh;min-height:10px;background:#fff;border:3px solid var(--ink);
+    box-shadow:3px 3px 0 var(--ink);position:relative;overflow:hidden;
+    clip-path:polygon(6% 0,100% 0,94% 100%,0 100%)}
+  .b-side.right .b-bar{clip-path:polygon(0 0,94% 0,100% 100%,6% 100%)}
+  .b-bar .ghost{position:absolute;inset:0;background:#d8d8e0}
+  .b-bar .fill{position:absolute;top:0;bottom:0;left:0;background:var(--c)}
+  .b-side.right .b-bar .fill{left:auto;right:0}
+  .b-ready{margin-top:.3cqh;font-family:'Archivo Black',sans-serif;font-size:clamp(7px,1.15cqh,9.5px);
+    color:var(--ink);background:var(--yellow);border:2.5px solid var(--ink);padding:.2cqh .7cqw;
+    box-shadow:2px 2px 0 var(--ink);clip-path:polygon(9% 0,100% 0,91% 100%,0 100%);
+    opacity:0;transform:scale(.8);transition:opacity .15s,transform .15s}
+  .b-side.right .b-ready{clip-path:polygon(0 0,91% 0,100% 100%,9% 100%)}
+  .b-ready.on{opacity:1;transform:scale(1);animation:readyPulse 1s ease-in-out infinite}
+  @keyframes readyPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3)}}
+
+  /* ---------- C — Blason rond : portrait circulaire façon .disc, jauge en arc ---------- */
+  .c-side{position:absolute;top:2.4%;display:flex;flex-direction:column;align-items:center;gap:.4cqh;width:11cqw}
+  .c-side.left{left:2%} .c-side.right{right:2%}
+  .c-portrait{position:relative;width:8cqh;height:8cqh;min-width:50px;min-height:50px;border-radius:50%;
+    border:4px solid var(--ink);box-shadow:3px 3px 0 var(--ink);background:#0a1430;overflow:hidden}
+  .c-portrait canvas{position:absolute;left:50%;bottom:-6%;height:130%;width:auto;transform:translateX(-50%);image-rendering:pixelated}
+  .c-portrait svg{position:absolute;inset:-8%;width:116%;height:116%;transform:rotate(-90deg)}
+  .c-tag{font-family:'Archivo Black',sans-serif;font-size:clamp(9px,1.5cqh,12px);color:#fff;
+    -webkit-text-stroke:3px var(--ink);paint-order:stroke fill}
+  .c-score{font-family:'Archivo Black',sans-serif;font-size:clamp(13px,2.3cqh,18px);color:var(--yellow);
+    -webkit-text-stroke:3px var(--ink);paint-order:stroke fill}
+
+  /* ---------- D — Plaque unique : portrait + nom + score + jauge dans une seule carte ---------- */
+  .d-side{position:absolute;top:2%;display:flex;align-items:center;gap:.6cqw;
+    background:rgba(17,19,24,.88);border:3px solid var(--ink);border-radius:9px;box-shadow:4px 4px 0 var(--ink);
+    padding:.6cqh .9cqw}
+  .d-side.left{left:1.8%} .d-side.right{right:1.8%;flex-direction:row-reverse}
+  .d-portrait{width:6.6cqh;height:6.6cqh;min-width:42px;min-height:42px;border-radius:6px;border:2.5px solid var(--c);
+    overflow:hidden;position:relative;flex-shrink:0;background:#0a1430}
+  .d-portrait canvas{position:absolute;left:50%;bottom:-6%;height:130%;width:auto;transform:translateX(-50%);image-rendering:pixelated}
+  .d-mid{display:flex;flex-direction:column;gap:.3cqh}
+  .d-side.right .d-mid{align-items:flex-end}
+  .d-nm{font-family:'Archivo Black',sans-serif;font-size:clamp(9px,1.4cqh,11px);color:var(--c);letter-spacing:.04em}
+  .d-score{font-family:'Archivo Black',sans-serif;font-size:clamp(14px,2.4cqh,19px);color:#fff}
+  .d-bar{width:8.5cqw;height:1.5cqh;min-height:8px;background:#0a1430;border:2px solid var(--c);
+    border-radius:3px;overflow:hidden;position:relative}
+  .d-bar i{display:block;height:100%;background:var(--c)}
+  .d-bar.full{animation:fullFlash .5s ease-in-out infinite}
+
+  /* ---------- E — Chevron d'équipe : bar en pointe de flèche, portrait hexagonal ---------- */
+  .e-side{position:absolute;top:2.2%;display:flex;align-items:center;gap:.6cqw}
+  .e-side.left{left:1.8%} .e-side.right{right:1.8%;flex-direction:row-reverse}
+  .e-portrait{width:7.4cqh;height:7.4cqh;min-width:46px;min-height:46px;flex-shrink:0;position:relative;
+    background:#0a1430;border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);overflow:hidden;
+    clip-path:polygon(20% 0,100% 0,100% 80%,80% 100%,0 100%,0 20%)}
+  .e-portrait canvas{position:absolute;left:50%;bottom:-6%;height:130%;width:auto;transform:translateX(-50%);image-rendering:pixelated}
+  .e-info{display:flex;flex-direction:column;gap:.35cqh}
+  .e-side.right .e-info{align-items:flex-end}
+  .e-top{display:flex;align-items:baseline;gap:.5cqw}
+  .e-side.right .e-top{flex-direction:row-reverse}
+  .e-nm{font-family:'Archivo Black',sans-serif;font-size:clamp(8px,1.3cqh,10px);color:#fff;
+    -webkit-text-stroke:2px var(--ink);paint-order:stroke fill}
+  .e-score{font-family:'Archivo Black',sans-serif;font-size:clamp(13px,2.2cqh,17px);color:#fff;
+    -webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill}
+  .e-bar{width:10.5cqw;height:1.8cqh;min-height:9px;background:#fff;border:3px solid var(--ink);
+    box-shadow:3px 3px 0 var(--ink);position:relative;overflow:hidden;
+    clip-path:polygon(0 0,92% 0,100% 50%,92% 100%,0 100%)}
+  .e-side.right .e-bar{clip-path:polygon(8% 0,100% 0,100% 100%,8% 100%,0 50%)}
+  .e-bar i{display:block;height:100%;background:var(--c)}
+  .e-bar.full{animation:fullFlash .5s ease-in-out infinite}
+
+  /* ---------- F — Écusson + crans : badge rond façon .key, jauge segmentée ---------- */
+  .f-side{position:absolute;top:2.2%;display:flex;align-items:center;gap:.7cqw}
+  .f-side.left{left:1.8%} .f-side.right{right:1.8%;flex-direction:row-reverse}
+  .f-portrait{width:7cqh;height:7cqh;min-width:44px;min-height:44px;border-radius:50%;flex-shrink:0;
+    border:4px solid var(--ink);box-shadow:3px 3px 0 var(--ink);background:#0a1430;overflow:hidden;position:relative}
+  .f-portrait canvas{position:absolute;left:50%;bottom:-6%;height:130%;width:auto;transform:translateX(-50%);image-rendering:pixelated}
+  .f-info{display:flex;flex-direction:column;gap:.35cqh}
+  .f-side.right .f-info{align-items:flex-end}
+  .f-top{display:flex;align-items:baseline;gap:.5cqw}
+  .f-side.right .f-top{flex-direction:row-reverse}
+  .f-nm{font-family:'Archivo Black',sans-serif;font-size:clamp(8px,1.3cqh,10px);color:#fff;
+    -webkit-text-stroke:2px var(--ink);paint-order:stroke fill}
+  .f-score{font-family:'Archivo Black',sans-serif;font-size:clamp(13px,2.2cqh,17px);color:#fff;
+    -webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill}
+  .f-segs{display:flex;gap:.25cqw}
+  .f-side.right .f-segs{flex-direction:row-reverse}
+  .f-segs b{display:block;width:1.7cqw;height:1.7cqh;min-height:9px;background:#fff;border:2px solid var(--ink);
+    box-shadow:2px 2px 0 var(--ink)}
+  .f-segs b.on{background:var(--c)}
+  .f-segs b.on.full{animation:fullFlash .5s ease-in-out infinite}
+
+  .legend{max-width:1120px;width:94vw;background:#0e1626;border:1px solid #22344f;border-radius:10px;padding:14px 18px;margin-top:6px}
+  .legend h2{font-family:'Archivo Black',sans-serif;font-size:13px;color:#ffd23e;margin-bottom:8px}
+  .legend p{color:#c8d4ec;font-size:13px;line-height:1.8}
+</style>
+</head>
+<body>
+
+  <h1>Mockup — HUD, jauge d'ultime + panneau score</h1>
+  <p class="note">
+    Six pistes, toutes bâties avec <b>notre langage déjà validé</b> (bordure noire 3-4px, ombre décalée
+    <code>Npx Npx 0 var(--ink)</code>, texte Archivo Black à contour noir — comme sur
+    <code>select-player.html</code>) mais en empruntant à <b>2XKO</b> ce qui lui donne son énergie :
+    portrait biseauté, jauge coupée en biais avec fantôme, pastille d'état qui s'allume à 100%. Portraits =
+    vrais sprites du jeu (mêmes données que <code>characters.js</code>). Clique une lettre.
+  </p>
+
+  <div class="tabs">
+    <button data-v="a" class="on">A — Ruban classique</button>
+    <button data-v="b">B — Carte biseautée</button>
+    <button data-v="c">C — Blason + arc</button>
+    <button data-v="d">D — Plaque unique</button>
+    <button data-v="e">E — Chevron d'équipe</button>
+    <button data-v="f">F — Écusson + crans</button>
+  </div>
+
+  <div class="stage">
+    <div class="courtLines"></div>
+    <div class="disc-mock"></div>
+    <div class="centerHint">PREMIER À 35</div>
+
+    <!-- A -->
+    <div class="variant on" id="v-a">
+      <div class="a-side left">
+        <div class="a-portrait"><canvas class="sp-n"></canvas></div>
+        <div class="a-info">
+          <div class="a-tag" style="background:#ff8c1a"><span>NARUTO · 18</span></div>
+          <div class="a-bar" style="--c:#ff8c1a"><i style="width:64%"></i></div>
+        </div>
+      </div>
+      <div class="a-side right">
+        <div class="a-portrait"><canvas class="sp-l"></canvas></div>
+        <div class="a-info">
+          <div class="a-tag" style="background:#3f8fe0"><span>22 · LEON</span></div>
+          <div class="a-bar full" style="--c:#3f8fe0"><i style="width:100%"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B -->
+    <div class="variant" id="v-b">
+      <div class="b-side left" style="--c:#ff8c1a">
+        <div class="b-portrait"><canvas class="sp-n"></canvas></div>
+        <div class="b-info">
+          <div class="b-tag"><span>NARUTO · 18</span></div>
+          <div class="b-bar"><div class="ghost" style="width:74%"></div><div class="fill" style="width:64%"></div></div>
+          <div class="b-ready">ULTI PRÊT</div>
+        </div>
+      </div>
+      <div class="b-side right" style="--c:#3f8fe0">
+        <div class="b-portrait"><canvas class="sp-l"></canvas></div>
+        <div class="b-info">
+          <div class="b-tag"><span>22 · LEON</span></div>
+          <div class="b-bar"><div class="fill" style="width:100%"></div></div>
+          <div class="b-ready on">ULTI PRÊT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C -->
+    <div class="variant" id="v-c">
+      <div class="c-side left">
+        <div class="c-portrait">
+          <canvas class="sp-n"></canvas>
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="6"/>
+            <circle cx="50" cy="50" r="46" fill="none" stroke="#ff8c1a" stroke-width="6" stroke-linecap="round"
+              stroke-dasharray="289" stroke-dashoffset="104"/>
+          </svg>
+        </div>
+        <div class="c-tag">NARUTO</div>
+        <div class="c-score">18</div>
+      </div>
+      <div class="c-side right">
+        <div class="c-portrait">
+          <canvas class="sp-l"></canvas>
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="6"/>
+            <circle cx="50" cy="50" r="46" fill="none" stroke="#3f8fe0" stroke-width="6" stroke-linecap="round"
+              stroke-dasharray="289" stroke-dashoffset="0" style="filter:drop-shadow(0 0 4px #3f8fe0)"/>
+          </svg>
+        </div>
+        <div class="c-tag">LEON</div>
+        <div class="c-score">22</div>
+      </div>
+    </div>
+
+    <!-- D -->
+    <div class="variant" id="v-d">
+      <div class="d-side left" style="--c:#ff8c1a">
+        <div class="d-portrait"><canvas class="sp-n"></canvas></div>
+        <div class="d-mid">
+          <div class="d-nm">NARUTO</div>
+          <div class="d-score">18</div>
+          <div class="d-bar"><i style="width:64%"></i></div>
+        </div>
+      </div>
+      <div class="d-side right" style="--c:#3f8fe0">
+        <div class="d-portrait"><canvas class="sp-l"></canvas></div>
+        <div class="d-mid">
+          <div class="d-nm">LEON</div>
+          <div class="d-score">22</div>
+          <div class="d-bar full"><i style="width:100%"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- E -->
+    <div class="variant" id="v-e">
+      <div class="e-side left">
+        <div class="e-portrait"><canvas class="sp-n"></canvas></div>
+        <div class="e-info">
+          <div class="e-top"><span class="e-nm">NARUTO</span><span class="e-score">18</span></div>
+          <div class="e-bar" style="--c:#ff8c1a"><i style="width:64%"></i></div>
+        </div>
+      </div>
+      <div class="e-side right">
+        <div class="e-portrait"><canvas class="sp-l"></canvas></div>
+        <div class="e-info">
+          <div class="e-top"><span class="e-nm">LEON</span><span class="e-score">22</span></div>
+          <div class="e-bar full" style="--c:#3f8fe0"><i style="width:100%"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F -->
+    <div class="variant" id="v-f">
+      <div class="f-side left">
+        <div class="f-portrait"><canvas class="sp-n"></canvas></div>
+        <div class="f-info">
+          <div class="f-top"><span class="f-nm">NARUTO</span><span class="f-score">18</span></div>
+          <div class="f-segs" style="--c:#ff8c1a"><b class="on"></b><b class="on"></b><b class="on"></b><b></b><b></b></div>
+        </div>
+      </div>
+      <div class="f-side right">
+        <div class="f-portrait"><canvas class="sp-l"></canvas></div>
+        <div class="f-info">
+          <div class="f-top"><span class="f-nm">LEON</span><span class="f-score">22</span></div>
+          <div class="f-segs" style="--c:#3f8fe0"><b class="on full"></b><b class="on full"></b><b class="on full"></b><b class="on full"></b><b class="on full"></b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <h2 id="legend-title">A — Ruban classique</h2>
+    <p id="legend-text">L'étiquette skewX + le .bar existent déjà tels quels dans le jeu (nameSlash, .bar/.bar i) — on les rétrécit et on les colle au coin. Le changement le plus proche de zéro nouveau composant CSS.</p>
+  </div>
+
+<script>
+// Sprites copiés de js/data/characters.js — mêmes pixels, même palette que le jeu.
+function buildSprite(rows, pal, target) {
+  target.width = 16; target.height = rows.length;
+  const g = target.getContext('2d');
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const ch = row[x];
+      if (ch !== '.') { g.fillStyle = pal[ch]; g.fillRect(x, y, 1, 1); }
+    }
+  });
+}
+const PAL_N = { H:'#ffd23e', h:'#e2a71c', M:'#d9dfe8', S:'#f8c890', s:'#d99a63', w:'#c08050', E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#f2f2f5', K:'#1e1e24', P:'#e5730f' };
+const N_HEAD = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....","..SSSSSSSSSS....","..SSSESSSSES....","..swSSSSSSws....","...SSSSSSSS....."];
+const N_IDLE_B = ["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...","..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."];
+const PAL_L = { L:'#7a4f2c', l:'#4e2f18', S:'#f0c090', s:'#cf9660', E:'#2c2a26', J:'#42537d', j:'#26314d', V:'#b3bac6', B:'#e8b83a', W:'#eef1f6', D:'#2f3b59', K:'#1b1f2a' };
+const L_HEAD = ["....lLLLLl......","...LLLLLLLL.....","..LLLLLLLLLL....","..LLLLllLLLL....","..LLSSSSSSLL....","..LSSSSSSSSL....","..SSSESSSSES....","..SSSSSSSSSS....","...SSSSSSSS.....","....JJJJJJ......"];
+const L_IDLE_B = ["..KKKKKKKKKB....",".VKKKKKKKKKKV...",".VKKWKWKWKKKV...",".SKKKKKKKKKKS...","..JJJJJJJJJJ....","..KKKKVKKKKK....","...DD....DD.....","...KK....KK.....","...DD....DD.....","..KKK....KKK...."];
+
+document.querySelectorAll('canvas.sp-n').forEach(cv => buildSprite([...N_HEAD, ...N_IDLE_B], PAL_N, cv));
+document.querySelectorAll('canvas.sp-l').forEach(cv => buildSprite([...L_HEAD, ...L_IDLE_B], PAL_L, cv));
+
+const descs = {
+  a: ["A — Ruban classique", "L'étiquette skewX + le .bar existent déjà tels quels dans le jeu (nameSlash, .bar/.bar i) — on les rétrécit et on les colle au coin. Le changement le plus proche de zéro nouveau composant CSS."],
+  b: ["B — Carte biseautée", "Le portrait est coupé en parallélogramme comme sur 2XKO, mais garde notre bordure noire épaisse + ombre décalée au lieu du simple liseré coloré des captures. La pastille « ULTI PRÊT » n'apparaît qu'à 100%."],
+  c: ["C — Blason + arc", "Portrait rond façon .disc (déjà utilisé pour le skin de frisbee en sélection), jauge en arc tout autour au lieu d'une barre. La piste la plus compacte, mais l'arc se lit un peu moins vite qu'une barre pleine."],
+  d: ["D — Plaque unique", "Portrait + nom + score + jauge dans une seule carte sombre (esprit .discbar), plutôt que des éléments posés à nu sur le terrain. Le plus \"boîte fermée\", le plus lisible sur un fond de terrain très chargé."],
+  e: ["E — Chevron d'équipe", "Portrait en pointe d'hexagone, jauge taillée en pointe de flèche du côté du centre — souligne visuellement de quel côté joue chaque camp, dans l'esprit sportif/versus."],
+  f: ["F — Écusson + crans", "Portrait rond façon pastille .key du menu, jauge à 5 blocs avec bordure et ombre identiques à celles des boutons — le plus \"jeu de plateau\", très lisible d'un coup d'œil."]
+};
+document.querySelectorAll('.tabs button[data-v]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button[data-v]').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    document.querySelectorAll('.variant').forEach(v => v.classList.remove('on'));
+    document.getElementById('v-' + btn.dataset.v).classList.add('on');
+    const [t, d] = descs[btn.dataset.v];
+    document.getElementById('legend-title').textContent = t;
+    document.getElementById('legend-text').textContent = d;
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — HUD de match, 5 pistes sobres</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Chakra+Petch:wght@600;700&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#111318; --yellow:#f5e63d; --green:#5df08a; --blue:#2f6bff; --red:#e5384f; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;background:#070a12;color:#fff;font-family:'Barlow',sans-serif;
+    display:flex;flex-direction:column;align-items:center;gap:16px;padding:26px 16px 60px;
+  }
+  h1{font-family:'Archivo Black',sans-serif;font-size:18px}
+  .note{color:#8fa3cc;font-size:13.5px;max-width:920px;line-height:1.7;text-align:center}
+  .note b{color:#eaf2ff}
+
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .tabs button{
+    font-family:'Archivo Black',sans-serif;font-size:12px;color:#c8d4ec;
+    background:#141d30;border:2px solid #263452;border-radius:7px;padding:9px 16px;cursor:pointer;
+  }
+  .tabs button.on{background:var(--yellow);color:var(--ink);border-color:var(--yellow)}
+  .tabs .desc{width:100%;text-align:center;font-size:12px;color:#8fa3cc;margin-top:-2px}
+
+  /* ================= STAGE : un vrai fond de terrain, coloré, pour juger
+     honnêtement l'emprise visuelle du HUD dessus. ================= */
+  .stage{
+    position:relative;width:min(94vw,1100px);aspect-ratio:16/10;border-radius:8px;overflow:hidden;
+    container-type:size;border:2px solid #1b2a52;
+    background:
+      linear-gradient(180deg,rgba(0,0,0,.25),transparent 20%,transparent 80%,rgba(0,0,0,.3)),
+      radial-gradient(140cqh 100cqh at 50% 50%,#2f6b45 0%,#255939 45%,#173b26 78%,#0e2618 100%);
+  }
+  .courtLines{
+    position:absolute;left:9%;right:9%;top:14%;bottom:12%;
+    border:2px solid rgba(255,255,255,.55);border-radius:3px;
+  }
+  .courtLines::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.4);transform:translateX(-50%)}
+  .courtLines::after{content:'';position:absolute;top:50%;left:0;right:0;height:2px;background:rgba(255,255,255,.22);transform:translateY(-50%)}
+  .goal{position:absolute;top:30%;bottom:30%;width:1.6%;background:rgba(255,255,255,.35);border-radius:3px}
+  .goal.g1{left:9%}
+  .goal.g2{right:9%}
+  .disc-mock{
+    position:absolute;top:52%;left:47%;width:20px;height:20px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#fff,#cfe0ff 40%,#8fa3cc 100%);
+    box-shadow:0 0 8px rgba(255,255,255,.5);
+  }
+
+  .variant{position:absolute;inset:0;display:none}
+  .variant.on{display:block}
+
+  /* ============================================================
+     A — CLASSIQUE AMÉLIORÉ : même principe que l'actuel (coin nu,
+     pas de carte), mais la barre a un léger biseau et le nombre
+     un vrai poids graphique. Le plus proche de l'existant.
+     ============================================================ */
+  .a-panel{position:absolute;top:2.2%;display:flex;flex-direction:column;gap:.3cqh;width:15%}
+  .a-panel.left{left:2%}
+  .a-panel.right{right:2%;align-items:flex-end}
+  .a-top{display:flex;align-items:baseline;gap:.5cqw}
+  .a-panel.right .a-top{flex-direction:row-reverse}
+  .a-tag{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(8px,1.35cqh,10px);letter-spacing:.06em;opacity:.9}
+  .a-score{font-family:'Archivo Black',sans-serif;font-size:clamp(15px,2.7cqh,22px);line-height:1}
+  .a-bar{width:100%;height:.85cqh;min-height:5px;background:rgba(0,0,0,.5);border-radius:2px;overflow:hidden;position:relative}
+  .a-bar i{display:block;height:100%;border-radius:2px;background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0) 55%),var(--c)}
+  .a-bar.full i{box-shadow:0 0 6px 1px #fff}
+
+  /* ============================================================
+     B — RUBAN DIAGONAL ESPORT : étiquette biseautée collée au bord,
+     dans l'esprit des nameSlash déjà utilisés en sélection perso,
+     mais réduite à la taille d'un HUD.
+     ============================================================ */
+  .b-panel{position:absolute;top:2%;display:flex;flex-direction:column;gap:.35cqh;width:16%}
+  .b-panel.left{left:0}
+  .b-panel.right{right:0;align-items:flex-end}
+  .b-slash{
+    display:flex;align-items:center;gap:.5cqw;transform:skewX(-9deg);
+    background:var(--c);padding:.35cqh 1cqw;border-radius:0 4px 4px 0;
+  }
+  .b-panel.right .b-slash{transform:skewX(9deg);border-radius:4px 0 0 4px;flex-direction:row-reverse}
+  .b-slash span{transform:skewX(9deg);font-family:'Archivo Black',sans-serif;font-size:clamp(12px,2.1cqh,17px);color:#111}
+  .b-panel.right .b-slash span{transform:skewX(-9deg)}
+  .b-tag{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(7px,1.15cqh,9px);color:#111;opacity:.75;transform:skewX(9deg)}
+  .b-panel.right .b-tag{transform:skewX(-9deg)}
+  .b-bar{width:82%;height:.7cqh;min-height:4px;background:rgba(0,0,0,.45);border-radius:2px;overflow:hidden;margin-left:1cqw}
+  .b-panel.right .b-bar{margin-left:0;margin-right:1cqw}
+  .b-bar i{display:block;height:100%;background:var(--c)}
+  .b-bar.full i{box-shadow:0 0 6px 1px #fff}
+
+  /* ============================================================
+     C — PASTILLE + ARC : le score dans un médaillon rond, la jauge
+     en arc fin tout autour — zéro rectangle, empreinte minimale,
+     proche des ronds utilisés pour les touches (.key) du menu.
+     ============================================================ */
+  .c-panel{position:absolute;top:3%;width:9%;aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+  .c-panel.left{left:2.4%}
+  .c-panel.right{right:2.4%}
+  .c-panel svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .c-num{position:absolute;font-family:'Archivo Black',sans-serif;font-size:clamp(13px,2.4cqh,19px);color:#fff}
+  .c-tag{position:absolute;bottom:-1.6cqh;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(7px,1.1cqh,9px);letter-spacing:.06em;color:#cfe0ff;white-space:nowrap}
+
+  /* ============================================================
+     D — LIGNE MINIMALE : juste un chiffre et un trait fin en dessous,
+     invisible tant qu'il n'y a rien à signaler, qui ne s'allume
+     franchement qu'à l'approche du plein. Le plus sobre des cinq.
+     ============================================================ */
+  .d-panel{position:absolute;top:2.4%;display:flex;flex-direction:column;gap:.25cqh}
+  .d-panel.left{left:2.4%;align-items:flex-start}
+  .d-panel.right{right:2.4%;align-items:flex-end}
+  .d-score{font-family:'Archivo Black',sans-serif;font-size:clamp(14px,2.5cqh,20px);color:#fff;opacity:.92}
+  .d-tag{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(7px,1.1cqh,9px);letter-spacing:.08em;color:#9fb0d0;margin-bottom:.15cqh}
+  .d-line{width:6.4cqw;height:2px;background:rgba(255,255,255,.18);position:relative}
+  .d-line i{position:absolute;top:0;left:0;bottom:0;background:var(--c)}
+  .d-panel.right .d-line i{left:auto;right:0}
+  .d-line.full{height:3px}
+  .d-line.full i{box-shadow:0 0 8px 1px var(--c)}
+
+  /* ============================================================
+     E — CRANS SEGMENTÉS : petite jauge à blocs façon scoreboard
+     de versus fighting game — sobre, très lisible d'un coup d'œil,
+     jamais plus de 6 crans donc jamais imposante.
+     ============================================================ */
+  .e-panel{position:absolute;top:2.4%;display:flex;flex-direction:column;gap:.35cqh;width:14%}
+  .e-panel.left{left:2.2%}
+  .e-panel.right{right:2.2%;align-items:flex-end}
+  .e-top{display:flex;align-items:baseline;gap:.5cqw}
+  .e-panel.right .e-top{flex-direction:row-reverse}
+  .e-tag{font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(7px,1.2cqh,9px);opacity:.85}
+  .e-score{font-family:'Archivo Black',sans-serif;font-size:clamp(14px,2.4cqh,19px)}
+  .e-segs{display:flex;gap:2px}
+  .e-panel.right .e-segs{flex-direction:row-reverse}
+  .e-segs b{display:block;width:1.1cqw;height:.9cqh;min-height:5px;background:rgba(255,255,255,.14);border-radius:1px}
+  .e-segs b.on{background:var(--c)}
+  .e-segs b.on.full{box-shadow:0 0 5px 1px var(--c)}
+
+  /* Bandeau central + prompt : commun aux 5 pistes, déjà réduit au minimum
+     (un simple libellé, pas de carte). */
+  .centerMini{
+    position:absolute;top:2.4%;left:50%;transform:translateX(-50%);z-index:6;
+    display:flex;align-items:center;gap:.8cqw;font-family:'Chakra Petch',sans-serif;font-weight:700;
+    font-size:clamp(8px,1.3cqh,11px);color:#eaf2ff;opacity:.92;
+  }
+  .centerMini .dot{width:.6cqh;height:.6cqh;border-radius:50%;background:var(--green)}
+  .servePrompt{
+    position:absolute;left:50%;bottom:15%;transform:translateX(-50%);z-index:6;
+    font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:clamp(9px,1.6cqh,13px);color:#fff;
+    text-shadow:0 2px 4px rgba(0,0,0,.6);animation:blink 1.1s ease-in-out infinite;
+  }
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.45}}
+
+  .legend{max-width:1100px;width:94vw;background:#0e1626;border:1px solid #22344f;border-radius:10px;padding:14px 18px;margin-top:6px}
+  .legend h2{font-family:'Archivo Black',sans-serif;font-size:13px;color:#ffd23e;margin-bottom:8px}
+  .legend p{color:#c8d4ec;font-size:13px;line-height:1.8}
+</style>
+</head>
+<body>
+
+  <h1>Mockup — HUD de match, 5 pistes sobres (WJ2)</h1>
+  <p class="note">
+    Retour pris en compte : la V1 était trop grosse, façon carte de menu, et mangeait le terrain.
+    Ici on revient au <b>principe de l'actuel</b> — HUD collé aux coins, pas de fond plein ni de gros
+    cadre — et on l'affine juste ce qu'il faut : biseau, forme, ou jauge en arc selon la piste.
+    Aucune des cinq ne dépasse ~15 % de la largeur d'écran. Clique une lettre pour la voir sur le terrain.
+  </p>
+
+  <div class="tabs">
+    <button data-v="a" class="on">A — Classique affiné</button>
+    <button data-v="b">B — Ruban diagonal</button>
+    <button data-v="c">C — Pastille + arc</button>
+    <button data-v="d">D — Ligne minimale</button>
+    <button data-v="e">E — Crans segmentés</button>
+  </div>
+  <div class="tabs desc" id="desc"></div>
+
+  <div class="stage">
+    <div class="courtLines"></div>
+    <div class="goal g1"></div>
+    <div class="goal g2"></div>
+    <div class="disc-mock"></div>
+
+    <div class="centerMini"><span>PREMIER À 35</span><span class="dot"></span><span>42 MS</span></div>
+    <div class="servePrompt">À toi de servir !</div>
+
+    <!-- A -->
+    <div class="variant on" id="v-a">
+      <div class="a-panel left">
+        <div class="a-top"><span class="a-tag" style="color:#ffd23e">NARUTO</span><span class="a-score">18</span></div>
+        <div class="a-bar" style="--c:#ff8c1a"><i style="width:64%"></i></div>
+      </div>
+      <div class="a-panel right">
+        <div class="a-top"><span class="a-tag" style="color:#9fe8ff">LEON</span><span class="a-score">22</span></div>
+        <div class="a-bar full" style="--c:#3f8fe0"><i style="width:100%"></i></div>
+      </div>
+    </div>
+
+    <!-- B -->
+    <div class="variant" id="v-b">
+      <div class="b-panel left">
+        <div class="b-slash" style="--c:#ffd23e"><span>18</span><span class="b-tag">NARUTO</span></div>
+        <div class="b-bar" style="--c:#ff8c1a"><i style="width:64%"></i></div>
+      </div>
+      <div class="b-panel right">
+        <div class="b-slash" style="--c:#9fe8ff"><span>22</span><span class="b-tag">LEON</span></div>
+        <div class="b-bar full" style="--c:#3f8fe0"><i style="width:100%"></i></div>
+      </div>
+    </div>
+
+    <!-- C -->
+    <div class="variant" id="v-c">
+      <div class="c-panel left">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="43" fill="none" stroke="rgba(0,0,0,.5)" stroke-width="7"/>
+          <circle cx="50" cy="50" r="43" fill="none" stroke="#ff8c1a" stroke-width="7" stroke-linecap="round"
+            stroke-dasharray="270.2" stroke-dashoffset="97.3"/>
+        </svg>
+        <div class="c-num">18</div>
+        <div class="c-tag">NARUTO</div>
+      </div>
+      <div class="c-panel right">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="43" fill="none" stroke="rgba(0,0,0,.5)" stroke-width="7"/>
+          <circle cx="50" cy="50" r="43" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"
+            stroke-dasharray="270.2" stroke-dashoffset="0" style="filter:drop-shadow(0 0 4px #fff)"/>
+        </svg>
+        <div class="c-num">22</div>
+        <div class="c-tag">LEON</div>
+      </div>
+    </div>
+
+    <!-- D -->
+    <div class="variant" id="v-d">
+      <div class="d-panel left">
+        <div class="d-tag" style="color:#ffd23e">NARUTO</div>
+        <div class="d-score">18</div>
+        <div class="d-line" style="--c:#ff8c1a"><i style="width:64%"></i></div>
+      </div>
+      <div class="d-panel right">
+        <div class="d-tag" style="color:#9fe8ff">LEON</div>
+        <div class="d-score">22</div>
+        <div class="d-line full" style="--c:#ffffff"><i style="width:100%"></i></div>
+      </div>
+    </div>
+
+    <!-- E -->
+    <div class="variant" id="v-e">
+      <div class="e-panel left">
+        <div class="e-top"><span class="e-tag" style="color:#ffd23e">NARUTO</span><span class="e-score">18</span></div>
+        <div class="e-segs" style="--c:#ff8c1a">
+          <b class="on"></b><b class="on"></b><b class="on"></b><b></b><b></b>
+        </div>
+      </div>
+      <div class="e-panel right">
+        <div class="e-top"><span class="e-tag" style="color:#9fe8ff">LEON</span><span class="e-score">22</span></div>
+        <div class="e-segs" style="--c:#ffffff">
+          <b class="on full"></b><b class="on full"></b><b class="on full"></b><b class="on full"></b><b class="on full"></b>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <h2 id="legend-title">A — Classique affiné</h2>
+    <p id="legend-text">Reprend exactement la disposition actuelle (tag + score + barre, collés au coin, aucun fond).
+    Seuls changent : un léger dégradé sur la barre pour lui donner du volume, et un vrai flash blanc à 100% au lieu
+    d'un clignotement de teinte. Le changement le plus proche du zéro-risque.</p>
+  </div>
+
+  <script>
+    const descs = {
+      a: ["A — Classique affiné", "Reprend exactement la disposition actuelle (tag + score + barre, collés au coin, aucun fond). Seuls changent : un léger dégradé sur la barre pour lui donner du volume, et un vrai flash blanc à 100% au lieu d'un clignotement de teinte. Le changement le plus proche du zéro-risque."],
+      b: ["B — Ruban diagonal", "Étiquette biseautée dans l'esprit du nameSlash déjà utilisé en sélection de perso, réduite à la taille d'un HUD. Donne un peu plus de caractère « esport » sans ajouter de carte pleine."],
+      c: ["C — Pastille + arc", "Le score tient dans un médaillon rond, la jauge en devient un arc fin tout autour. Aucun rectangle du tout : c'est la piste avec la plus petite empreinte au sol, au prix d'un peu moins de lisibilité au premier coup d'œil."],
+      d: ["D — Ligne minimale", "Juste un chiffre et un trait de 2px en dessous. Ne s'allume franchement (halo) qu'en approche du plein. La plus sobre des cinq — presque invisible tant qu'il ne se passe rien d'important."],
+      e: ["E — Crans segmentés", "Jauge à 5 blocs façon scoreboard de versus fighting game. Très lisible d'un coup d'œil (on compte les crans plutôt que de jauger un pourcentage), reste petite car jamais plus de 5-6 segments."]
+    };
+    document.querySelectorAll('.tabs button[data-v]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tabs button[data-v]').forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
+        document.querySelectorAll('.variant').forEach(v => v.classList.remove('on'));
+        document.getElementById('v-' + btn.dataset.v).classList.add('on');
+        const [t, d] = descs[btn.dataset.v];
+        document.getElementById('legend-title').textContent = t;
+        document.getElementById('legend-text').textContent = d;
+      });
+    });
+  </script>
+</body>
+</html>
