@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — bandeau central retenu : pastille C + ping D + échange D animé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#111318; --yellow:#f5e63d; --green:#5df08a; --blue:#2f6bff; --red:#e5384f; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;background:#070a12;color:#fff;font-family:'Barlow',sans-serif;
+    display:flex;flex-direction:column;align-items:center;gap:16px;padding:26px 16px 60px;
+  }
+  h1{font-family:'Archivo Black',sans-serif;font-size:18px}
+  .note{color:#8fa3cc;font-size:13.5px;max-width:920px;line-height:1.7;text-align:center}
+  .note b{color:#eaf2ff}
+
+  .stage{
+    position:relative;width:min(94vw,1120px);aspect-ratio:16/10;border-radius:8px;overflow:hidden;
+    container-type:size;border:2px solid #1b2a52;background:#05070d;
+  }
+  #courtCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .disc-mock{position:absolute;top:53%;left:48%;width:20px;height:20px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#fff,#cfe0ff 40%,#8fa3cc 100%);box-shadow:0 0 8px rgba(255,255,255,.5);z-index:2}
+
+  /* Panneaux latéraux : morceau déjà validé, fixe pour juger le centre en contexte. */
+  .side{position:absolute;top:2.2%;display:flex;align-items:center;gap:.7cqw;z-index:5}
+  .side.left{left:1.8%} .side.right{right:1.8%;flex-direction:row-reverse}
+  .frame{width:11.5cqh;height:11.5cqh;min-width:66px;min-height:66px;flex-shrink:0;
+    filter:drop-shadow(0 0 .7cqh rgba(0,0,0,.6))}
+  .portrait{position:relative;width:100%;height:100%;border:6px solid var(--ink);overflow:hidden;
+    box-shadow:5px 5px 0 var(--ink);clip-path:polygon(20% 0,100% 0,100% 80%,80% 100%,0 100%,0 20%)}
+  .side.right .portrait{clip-path:polygon(0 0,80% 0,100% 20%,100% 100%,20% 100%,0 80%)}
+  .portrait::after{content:'';position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;
+    box-shadow:inset 0 0 2.3cqh .35cqh rgba(255,255,255,.85)}
+  .portrait canvas{position:absolute;left:50%;top:2%;height:104%;width:auto;transform:translateX(-50%);image-rendering:pixelated}
+  .info{display:flex;flex-direction:column;gap:.35cqh;min-width:16cqw}
+  .side.right .info{align-items:flex-end}
+  .tag{position:relative;padding:.3cqh 1cqw;transform:skewX(-10deg);border:3px solid var(--ink);
+    box-shadow:3px 3px 0 var(--ink);width:fit-content;display:inline-flex;align-items:center;justify-content:center;
+    background:linear-gradient(90deg,var(--c) 0%,var(--c2) 100%)}
+  .side.right .tag{transform:skewX(10deg)}
+  .tag span{display:inline-block;transform:skewX(10deg);font-family:'Archivo Black',sans-serif;
+    font-size:clamp(10px,1.7cqh,13px);color:#fff;-webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill}
+  .side.right .tag span{transform:skewX(-10deg)}
+  .bar{width:16cqw;height:2.8cqh;min-height:15px;background:#fff;border:3px solid var(--ink);
+    box-shadow:3px 3px 0 var(--ink);overflow:hidden;position:relative}
+  .bar i{display:block;height:100%;background-image:linear-gradient(100deg,rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.5) 42%,rgba(255,255,255,.68) 50%,rgba(255,255,255,.5) 58%,rgba(255,255,255,0) 100%);
+    background-size:260% 100%;background-repeat:no-repeat;animation:shine 2.6s linear infinite;background-color:var(--c)}
+  @keyframes shine{from{background-position:180% 0}to{background-position:-80% 0}}
+
+  /* ================= BANDEAU CENTRAL retenu ================= */
+  .center{position:absolute;top:1.8%;left:50%;transform:translateX(-50%);z-index:6;
+    display:flex;flex-direction:column;align-items:center;gap:.35cqh}
+
+  /* 1 — Forme C : pastille pleine largeur */
+  .pastille{background:#fff;border:3px solid var(--ink);border-radius:22px;
+    box-shadow:3px 3px 0 var(--ink);padding:.5cqh 1.6cqw}
+  .pastille span{font-family:'Archivo Black',sans-serif;font-size:clamp(9px,1.5cqh,12px);color:var(--ink);letter-spacing:.03em}
+
+  /* 2 — Ping D : barres de signal + texte, sans cadre (comme choisi) */
+  .ping{display:flex;align-items:flex-end;gap:2px}
+  .ping b{display:block;width:3px;background:var(--green);border-radius:1px}
+  .ping b:nth-child(1){height:5px} .ping b:nth-child(2){height:8px} .ping b:nth-child(3){height:11px}
+  .ping span{font-family:'Archivo Black',sans-serif;font-size:clamp(8px,1.3cqh,10px);color:#eaf2ff;
+    margin-left:.4em;text-shadow:0 2px 3px rgba(0,0,0,.6)}
+
+  /* 3 — Échange D : grand chiffre lumineux, façon 2XKO, avec une respiration
+     douce en continu (demande explicite : jamais totalement figé), pas un
+     blink dur — cohérent avec le traitement déjà retenu pour la jauge pleine. */
+  .rally{margin-top:.15cqh;font-family:'Archivo Black',sans-serif;
+    font-size:clamp(20px,4.4cqh,36px);line-height:1;color:#ffe27a;
+    text-shadow:0 0 14px rgba(255,210,80,.7),0 2px 3px rgba(0,0,0,.6);
+    animation:rallyBreathe 1.8s ease-in-out infinite}
+  @keyframes rallyBreathe{0%,100%{transform:scale(1);text-shadow:0 0 14px rgba(255,210,80,.7),0 2px 3px rgba(0,0,0,.6)}
+    50%{transform:scale(1.07);text-shadow:0 0 22px rgba(255,210,80,.95),0 2px 3px rgba(0,0,0,.6)}}
+
+  .legend{max-width:920px;width:94vw;background:#0e1626;border:1px solid #22344f;border-radius:10px;padding:14px 18px;margin-top:6px}
+  .legend h2{font-family:'Archivo Black',sans-serif;font-size:13px;color:#ffd23e;margin-bottom:8px}
+  .legend p{color:#c8d4ec;font-size:13px;line-height:1.8}
+</style>
+</head>
+<body>
+
+  <h1>Bandeau central retenu — pastille C + ping D + échange D (animé)</h1>
+  <p class="note">
+    Combine tes trois choix : la pastille pleine largeur pour le score cible, les barres de signal +
+    texte pour le ping (sans cadre, comme dans le mockup de sous-catégories), et le grand chiffre
+    lumineux pour l'échange — avec une respiration douce en continu (léger zoom + halo qui pulse),
+    jamais figé, sans clignoter dur.
+  </p>
+
+  <div class="stage">
+    <canvas id="courtCanvas" width="1120" height="700"></canvas>
+    <div class="disc-mock"></div>
+
+    <div class="side left">
+      <div class="frame"><div class="portrait" style="--frameBg:#fdf1e0"><canvas id="spN"></canvas></div></div>
+      <div class="info">
+        <div class="tag" style="--c:#ff8c1a;--c2:#ffb066"><span>NARUTO · 18</span></div>
+        <div class="bar" style="--c:#ff8c1a"><i style="width:64%"></i></div>
+      </div>
+    </div>
+    <div class="side right">
+      <div class="frame"><div class="portrait" style="--frameBg:#e6f0fb"><canvas id="spL"></canvas></div></div>
+      <div class="info">
+        <div class="tag" style="--c:#3f8fe0;--c2:#7fb3f0"><span>22 · LEON</span></div>
+        <div class="bar full" style="--c:#3f8fe0"><i style="width:100%"></i></div>
+      </div>
+    </div>
+
+    <div class="center">
+      <div class="pastille"><span>PREMIER À 35</span></div>
+      <div class="ping"><b></b><b></b><b></b><span>42 MS</span></div>
+      <div class="rally">×5</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <h2>C'est bon pour toi ?</h2>
+    <p>Si oui, on a les trois morceaux du HUD de match validés (jauge/score/portrait + bandeau central) —
+    je peux passer à l'implémentation dans <code>render.js</code>. Sinon dis-moi ce qui coince.</p>
+  </div>
+
+<script type="module">
+import { MAPS } from '/js/data/maps.js';
+function drawArena(cv, map) {
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0, 0, W, H);
+  const t = map.theme;
+  const grd = ctx.createRadialGradient(W/2, H/2, H*0.12, W/2, H/2, H*0.9);
+  grd.addColorStop(0, t.bgInner); grd.addColorStop(1, t.bgOuter);
+  ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+  const m = Math.min(W, H) * 0.1;
+  const L = m, R = W - m, T = m * 0.7, B = H - m * 0.7;
+  ctx.fillStyle = t.floor; ctx.fillRect(L, T, R - L, B - T);
+  ctx.strokeStyle = t.line; ctx.lineWidth = 2;
+  ctx.strokeRect(L, T, R - L, B - T);
+  ctx.beginPath(); ctx.moveTo((L+R)/2, T); ctx.lineTo((L+R)/2, B); ctx.stroke();
+  ctx.beginPath(); ctx.arc((L+R)/2, (T+B)/2, (B-T)*0.16, 0, Math.PI*2); ctx.stroke();
+  const cy = (T + B) / 2, goalW = (R - L) * 0.05, goalH = (B - T) * (map.goal.height / (map.court.bottom - map.court.top));
+  for (const side of [0, 1]) {
+    const gx = side === 0 ? L - goalW : R;
+    ctx.fillStyle = t.goalFill; ctx.strokeStyle = t.goalStroke; ctx.lineWidth = 2;
+    ctx.fillRect(gx, cy - goalH/2, goalW, goalH);
+    ctx.strokeRect(gx, cy - goalH/2, goalW, goalH);
+    const scale = (B - T) / (map.court.bottom - map.court.top);
+    for (const z of map.zones) {
+      ctx.fillStyle = z.color; ctx.globalAlpha = .55;
+      ctx.fillRect(gx, cy + z.from*scale, goalW, (z.to - z.from)*scale);
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+drawArena(document.getElementById('courtCanvas'), MAPS[0]);
+
+function buildSprite(rows, pal, target) {
+  target.width = 16; target.height = rows.length;
+  const g = target.getContext('2d');
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const ch = row[x];
+      if (ch !== '.') { g.fillStyle = pal[ch]; g.fillRect(x, y, 1, 1); }
+    }
+  });
+}
+const PAL_N = { H:'#ffd23e', h:'#e2a71c', M:'#d9dfe8', S:'#f8c890', s:'#d99a63', w:'#c08050', E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#f2f2f5', K:'#1e1e24', P:'#e5730f' };
+const N_HEAD = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....","..SSSSSSSSSS....","..SSSESSSSES....","..swSSSSSSws....","...SSSSSSSS....."];
+const N_IDLE_B = ["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...","..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."];
+const PAL_L = { L:'#7a4f2c', l:'#4e2f18', S:'#f0c090', s:'#cf9660', E:'#2c2a26', J:'#42537d', j:'#26314d', V:'#b3bac6', B:'#e8b83a', W:'#eef1f6', D:'#2f3b59', K:'#1b1f2a' };
+const L_HEAD = ["....lLLLLl......","...LLLLLLLL.....","..LLLLLLLLLL....","..LLLLllLLLL....","..LLSSSSSSLL....","..LSSSSSSSSL....","..SSSESSSSES....","..SSSSSSSSSS....","...SSSSSSSS.....","....JJJJJJ......"];
+const L_IDLE_B = ["..KKKKKKKKKB....",".VKKKKKKKKKKV...",".VKKWKWKWKKKV...",".SKKKKKKKKKKS...","..JJJJJJJJJJ....","..KKKKVKKKKK....","...DD....DD.....","...KK....KK.....","...DD....DD.....","..KKK....KKK...."];
+buildSprite([...N_HEAD, ...N_IDLE_B.slice(0, 6)], PAL_N, document.getElementById('spN'));
+buildSprite([...L_HEAD, ...L_IDLE_B.slice(0, 6)], PAL_L, document.getElementById('spL'));
+</script>
+</body>
+</html>

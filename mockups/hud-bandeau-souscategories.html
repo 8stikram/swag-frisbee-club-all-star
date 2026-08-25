@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — bandeau central, par sous-catégorie (5 choix chacune)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#111318; --yellow:#f5e63d; --green:#5df08a; --blue:#2f6bff; --red:#e5384f; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{margin:0;background:#f4f1ea;color:var(--ink);font-family:'Barlow',sans-serif;padding:22px 18px 70px}
+  h1{font-family:'Archivo Black',sans-serif;font-size:20px;margin:0 0 4px}
+  h2{font-family:'Archivo Black',sans-serif;font-size:14px;margin:34px 0 6px;color:#b3400a;
+     text-transform:uppercase;letter-spacing:1.2px;border-bottom:1px solid #d8d0bf;padding-bottom:6px}
+  .note{font-size:13px;color:#5a5648;max-width:960px;line-height:1.7;margin:0 0 14px}
+  .note code{background:#e6e0d2;padding:1px 5px;border-radius:4px;color:#8a3d00}
+  .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+  .card{background:#fff;border:1px solid #ded5c0;border-radius:10px;padding:14px 10px 10px;
+    display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .card .letter{font-family:'Archivo Black',sans-serif;font-size:13px;color:#b3400a}
+  .card .desc{font-size:11px;color:#6b6656;text-align:center;line-height:1.5;min-height:50px}
+
+  /* Fond du swatch : reprend la teinte du vrai terrain (bleu-nuit), le vrai
+     contexte dans lequel ce morceau du HUD sera lu — pas la carte blanche. */
+  .swatch{width:100%;height:92px;background:radial-gradient(120% 160% at 50% 0%,#182640 0%,#0c1526 60%,#050810 100%);
+    border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;overflow:visible}
+
+  .legend{max-width:960px;background:#fff;border:1px solid #ded5c0;border-radius:10px;padding:14px 18px;margin-top:26px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .legend h2{margin-top:0}
+  .legend p{color:#4a4638;font-size:13px;line-height:1.8}
+
+  /* ================= 1. FORME DU BLOC "SCORE CIBLE" ================= */
+  .f-ruban{background:var(--yellow);border:3px solid var(--ink);border-radius:0 0 6px 6px;
+    padding:.5em 1.1em;box-shadow:0 3px 0 var(--ink);clip-path:polygon(6% 0,94% 0,100% 100%,0 100%)}
+  .f-ruban span{font-family:'Archivo Black',sans-serif;font-size:12px;color:var(--ink)}
+
+  .f-plaque{background:#12182a;border:3px solid var(--ink);border-radius:9px;box-shadow:4px 4px 0 var(--ink);padding:.5em 1.1em}
+  .f-plaque span{font-family:'Archivo Black',sans-serif;font-size:12px;color:var(--yellow)}
+
+  .f-pastille{background:#fff;border:3px solid var(--ink);border-radius:22px;box-shadow:3px 3px 0 var(--ink);padding:.5em 1.3em}
+  .f-pastille span{font-family:'Archivo Black',sans-serif;font-size:12px;color:var(--ink)}
+
+  .f-hex{background:var(--yellow);border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);
+    padding:.5em 1.2em;clip-path:polygon(8% 0,92% 0,100% 50%,92% 100%,8% 100%,0 50%)}
+  .f-hex span{font-family:'Archivo Black',sans-serif;font-size:12px;color:var(--ink)}
+
+  .f-nu span{font-family:'Archivo Black',sans-serif;font-size:12px;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.7);opacity:.85}
+
+  /* ================= 2. AFFICHAGE DU PING ================= */
+  .p-chip{background:#fff;border:2.5px solid var(--ink);border-radius:5px;padding:.3em .8em;box-shadow:2px 2px 0 var(--ink)}
+  .p-chip span{font-family:'Archivo Black',sans-serif;font-size:10px;color:var(--ink)}
+
+  .p-nu span{font-family:'Archivo Black',sans-serif;font-size:11px;color:var(--green);text-shadow:0 2px 3px rgba(0,0,0,.7)}
+
+  .p-dot{display:flex;align-items:center;gap:.4em}
+  .p-dot i{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 4px var(--green)}
+  .p-dot span{font-family:'Archivo Black',sans-serif;font-size:11px;color:#fff}
+
+  .p-bars{display:flex;align-items:flex-end;gap:2px}
+  .p-bars b{display:block;width:3px;background:var(--green);border-radius:1px}
+  .p-bars b:nth-child(1){height:5px} .p-bars b:nth-child(2){height:8px} .p-bars b:nth-child(3){height:11px}
+  .p-bars span{font-family:'Archivo Black',sans-serif;font-size:11px;color:#fff;margin-left:.4em}
+
+  .p-plate{background:#12182a;border:3px solid var(--ink);border-radius:9px;box-shadow:3px 3px 0 var(--ink);
+    padding:.4em 1em;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .p-plate .t{font-family:'Archivo Black',sans-serif;font-size:11px;color:var(--yellow)}
+  .p-plate .s{font-family:'Archivo Black',sans-serif;font-size:8px;color:#9fb0d0}
+
+  /* ================= 3. COMPTEUR D'ÉCHANGE ================= */
+  .r-txt span{font-family:'Archivo Black',sans-serif;font-size:13px;color:var(--green);text-shadow:0 2px 3px rgba(0,0,0,.7)}
+
+  .r-pill{background:var(--green);border:2.5px solid var(--ink);border-radius:20px;padding:.3em 1em;
+    box-shadow:2px 2px 0 var(--ink);animation:pillPulse 1.4s ease-in-out infinite}
+  .r-pill span{font-family:'Archivo Black',sans-serif;font-size:11px;color:var(--ink)}
+  @keyframes pillPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
+  .r-ticks{display:flex;gap:3px}
+  .r-ticks b{display:block;width:9px;height:7px;background:#fff;border:2px solid var(--ink);box-shadow:1.5px 1.5px 0 var(--ink)}
+  .r-ticks b.on{background:var(--green)}
+
+  .r-big span{font-family:'Archivo Black',sans-serif;font-size:26px;color:#ffe27a;
+    text-shadow:0 0 12px rgba(255,210,80,.7),0 2px 3px rgba(0,0,0,.6)}
+
+  .r-bar{width:70px;height:8px;background:#0a1430;border:2px solid var(--ink);border-radius:4px;overflow:hidden}
+  .r-bar i{display:block;height:100%;width:70%;background:var(--green)}
+</style>
+</head>
+<body>
+
+<h1>Bandeau central — décomposé en 3 sous-catégories, 5 choix chacune</h1>
+<p class="note">
+  Retour pris en compte : les 5 pistes précédentes changeaient trop de choses à la fois (forme + ping +
+  échange en bloc), donc rien n'était vraiment comparable. Ici, comme pour les lueurs du cadre : on isole
+  chaque décision. Fond du swatch = bleu-nuit du vrai terrain, pas une carte blanche.
+</p>
+
+<h2>1 · Forme du bloc "score cible" (PREMIER À 35)</h2>
+<div class="row" id="forme"></div>
+
+<h2>2 · Affichage du ping</h2>
+<div class="row" id="ping"></div>
+
+<h2>3 · Compteur d'échange (rally)</h2>
+<div class="row" id="rally"></div>
+
+<div class="legend">
+  <h2>Pour choisir</h2>
+  <p>Une lettre par ligne (ex. "B pour la forme, D pour le ping, C pour l'échange") — je les combine dans
+  un mockup complet posé sur le vrai terrain avant qu'on tranche pour de bon.</p>
+</div>
+
+<script>
+function card(container, letter, desc, innerHTML) {
+  const c = document.createElement('div'); c.className = 'card';
+  const l = document.createElement('div'); l.className = 'letter'; l.textContent = letter;
+  const sw = document.createElement('div'); sw.className = 'swatch';
+  sw.innerHTML = innerHTML;
+  const d = document.createElement('div'); d.className = 'desc'; d.textContent = desc;
+  c.appendChild(l); c.appendChild(sw); c.appendChild(d);
+  container.appendChild(c);
+}
+
+// ---------- 1. Forme du bloc score cible ----------
+const formeRow = document.getElementById('forme');
+[
+  ['A', 'Ruban biseauté — comme le bandeau des menus', '<div class="f-ruban"><span>PREMIER À 35</span></div>'],
+  ['B', 'Plaque sombre arrondie', '<div class="f-plaque"><span>PREMIER À 35</span></div>'],
+  ['C', 'Pastille pleine largeur', '<div class="f-pastille"><span>PREMIER À 35</span></div>'],
+  ['D', 'Blason hexagonal', '<div class="f-hex"><span>PREMIER À 35</span></div>'],
+  ['E', 'Texte nu, sans cadre', '<div class="f-nu"><span>PREMIER À 35</span></div>'],
+].forEach(([l, d, html]) => card(formeRow, l, d, html));
+
+// ---------- 2. Affichage du ping ----------
+const pingRow = document.getElementById('ping');
+[
+  ['A', 'Chip blanche à part', '<div class="p-chip"><span>42 MS</span></div>'],
+  ['B', 'Texte coloré nu (couleur = qualité du ping)', '<div class="p-nu"><span>42 MS</span></div>'],
+  ['C', 'Point coloré + texte', '<div class="p-dot"><i></i><span>42 MS</span></div>'],
+  ['D', 'Barres de signal + texte', '<div class="p-bars"><b></b><b></b><b></b><span>42 MS</span></div>'],
+  ['E', 'Intégré dans une plaque avec le score', '<div class="p-plate"><div class="t">PREMIER À 35</div><div class="s">42 MS</div></div>'],
+].forEach(([l, d, html]) => card(pingRow, l, d, html));
+
+// ---------- 3. Compteur d'échange ----------
+const rallyRow = document.getElementById('rally');
+[
+  ['A', 'Texte "×N" simple', '<div class="r-txt"><span>×5</span></div>'],
+  ['B', 'Pastille qui pulse', '<div class="r-pill"><span>ÉCHANGE ×5</span></div>'],
+  ['C', 'Crans qui s\'allument', '<div class="r-ticks"><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b></b></div>'],
+  ['D', 'Grand chiffre lumineux (façon 2XKO)', '<div class="r-big"><span>×5</span></div>'],
+  ['E', 'Barre de progression vers un seuil', '<div class="r-bar"><i></i></div>'],
+].forEach(([l, d, html]) => card(rallyRow, l, d, html));
+</script>
+</body>
+</html>

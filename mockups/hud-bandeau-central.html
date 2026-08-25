@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — bandeau central (5 pistes)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#111318; --yellow:#f5e63d; --green:#5df08a; --blue:#2f6bff; --red:#e5384f; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;background:#070a12;color:#fff;font-family:'Barlow',sans-serif;
+    display:flex;flex-direction:column;align-items:center;gap:16px;padding:26px 16px 60px;
+  }
+  h1{font-family:'Archivo Black',sans-serif;font-size:18px}
+  .note{color:#8fa3cc;font-size:13.5px;max-width:940px;line-height:1.7;text-align:center}
+  .note b{color:#eaf2ff}
+  .note code{background:#182338;padding:1px 5px;border-radius:4px;color:#9fe8ff}
+
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .tabs button{
+    font-family:'Archivo Black',sans-serif;font-size:12px;color:#c8d4ec;
+    background:#141d30;border:2px solid #263452;border-radius:7px;padding:9px 16px;cursor:pointer;
+  }
+  .tabs button.on{background:var(--yellow);color:var(--ink);border-color:var(--yellow)}
+
+  .stage{
+    position:relative;width:min(94vw,1120px);aspect-ratio:16/10;border-radius:8px;overflow:hidden;
+    container-type:size;border:2px solid #1b2a52;background:#05070d;
+  }
+  #courtCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .disc-mock{position:absolute;top:53%;left:48%;width:20px;height:20px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#fff,#cfe0ff 40%,#8fa3cc 100%);box-shadow:0 0 8px rgba(255,255,255,.5);z-index:2}
+
+  /* Panneaux latéraux : repris tels quels du morceau déjà validé
+     (hud-jauge-score-final.html), fixes ici pour juger le centre dans son
+     vrai contexte plutôt que sur une page nue. */
+  .side{position:absolute;top:2.2%;display:flex;align-items:center;gap:.7cqw;z-index:5}
+  .side.left{left:1.8%} .side.right{right:1.8%;flex-direction:row-reverse}
+  .frame{width:11.5cqh;height:11.5cqh;min-width:66px;min-height:66px;flex-shrink:0;
+    filter:drop-shadow(0 0 .7cqh rgba(0,0,0,.6))}
+  .portrait{
+    position:relative;width:100%;height:100%;
+    border:6px solid var(--ink);overflow:hidden;box-shadow:5px 5px 0 var(--ink);
+    clip-path:polygon(20% 0,100% 0,100% 80%,80% 100%,0 100%,0 20%);
+  }
+  .side.right .portrait{clip-path:polygon(0 0,80% 0,100% 20%,100% 100%,20% 100%,0 80%)}
+  .portrait::after{content:'';position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;
+    box-shadow:inset 0 0 2.3cqh .35cqh rgba(255,255,255,.85)}
+  .portrait canvas{position:absolute;left:50%;top:2%;height:104%;width:auto;transform:translateX(-50%);image-rendering:pixelated}
+  .info{display:flex;flex-direction:column;gap:.35cqh;min-width:16cqw}
+  .side.right .info{align-items:flex-end}
+  .tag{position:relative;padding:.3cqh 1cqw;transform:skewX(-10deg);border:3px solid var(--ink);
+    box-shadow:3px 3px 0 var(--ink);width:fit-content;display:inline-flex;align-items:center;justify-content:center;
+    background:linear-gradient(90deg,var(--c) 0%,var(--c2) 100%)}
+  .side.right .tag{transform:skewX(10deg)}
+  .tag span{display:inline-block;transform:skewX(10deg);font-family:'Archivo Black',sans-serif;
+    font-size:clamp(10px,1.7cqh,13px);color:#fff;-webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill}
+  .side.right .tag span{transform:skewX(-10deg)}
+  .bar{width:16cqw;height:2.8cqh;min-height:15px;background:#fff;border:3px solid var(--ink);
+    box-shadow:3px 3px 0 var(--ink);overflow:hidden;position:relative}
+  .bar i{display:block;height:100%;background-image:linear-gradient(100deg,rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.5) 42%,rgba(255,255,255,.68) 50%,rgba(255,255,255,.5) 58%,rgba(255,255,255,0) 100%);
+    background-size:260% 100%;background-repeat:no-repeat;animation:shine 2.6s linear infinite;background-color:var(--c)}
+  @keyframes shine{from{background-position:180% 0}to{background-position:-80% 0}}
+
+  .variant{position:absolute;inset:0;display:none;z-index:6}
+  .variant.on{display:block}
+
+  /* ============================================================
+     A — RUBAN TITRE : même construction que .titlebar (le bandeau
+     "CHOISIS TON CHAMPION" des menus), juste réduit. Score cible au
+     centre du ruban, ping et échange en pastilles satellites dessous.
+     ============================================================ */
+  .a-ribbon{position:absolute;top:1.6%;left:50%;transform:translateX(-50%);
+    background:var(--yellow);border:3px solid var(--ink);border-radius:0 0 6px 6px;
+    padding:.5cqh 1.6cqw;box-shadow:0 3px 0 var(--ink);
+    clip-path:polygon(6% 0,94% 0,100% 100%,0 100%)}
+  .a-ribbon span{font-family:'Archivo Black',sans-serif;font-size:clamp(9px,1.5cqh,12px);color:var(--ink);letter-spacing:.04em}
+  .a-sat{position:absolute;top:6.4%;left:50%;transform:translateX(-50%);display:flex;gap:.5cqw}
+  .a-chip{font-family:'Archivo Black',sans-serif;font-size:clamp(7px,1.15cqh,9px);color:var(--ink);
+    background:#fff;border:2.5px solid var(--ink);border-radius:5px;padding:.2cqh .7cqw;box-shadow:2px 2px 0 var(--ink)}
+  .a-chip.rally{background:var(--green)}
+
+  /* ============================================================
+     B — PASTILLES RELIÉES : score cible dans une pastille ronde
+     centrale, ping et échange dans deux pastilles satellites reliées
+     par un trait fin — esprit "constellation d'infos", pas un bloc.
+     ============================================================ */
+  .b-wrap{position:absolute;top:1.8%;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:.6cqw}
+  .b-line{width:1.6cqw;height:2px;background:var(--ink)}
+  .b-pill{font-family:'Archivo Black',sans-serif;color:var(--ink);background:#fff;
+    border:2.5px solid var(--ink);border-radius:20px;padding:.35cqh 1cqw;box-shadow:2px 2px 0 var(--ink);
+    font-size:clamp(8px,1.3cqh,10px);white-space:nowrap}
+  .b-pill.main{background:var(--yellow);font-size:clamp(9px,1.5cqh,12px)}
+  .b-pill.rally{background:var(--green);opacity:0;transform:scale(.7);transition:opacity .15s,transform .15s}
+  .b-pill.rally.on{opacity:1;transform:scale(1)}
+
+  /* ============================================================
+     C — PLAQUE VS : plaque unique façon écusson de match, score cible
+     au centre flanqué d'un "VS" discret, ping et échange empilés à
+     l'intérieur de la même plaque plutôt qu'à côté.
+     ============================================================ */
+  .c-plate{position:absolute;top:1.8%;left:50%;transform:translateX(-50%);
+    background:#12182a;border:3px solid var(--ink);border-radius:9px;box-shadow:4px 4px 0 var(--ink);
+    padding:.5cqh 1.2cqw;display:flex;flex-direction:column;align-items:center;gap:.15cqh;min-width:16cqw}
+  .c-top{font-family:'Archivo Black',sans-serif;font-size:clamp(9px,1.5cqh,12px);color:var(--yellow);letter-spacing:.04em}
+  .c-sub{display:flex;gap:.7cqw;font-family:'Archivo Black',sans-serif;font-size:clamp(7px,1.1cqh,9px);color:#9fb0d0}
+  .c-sub .rally{color:var(--green)}
+
+  /* ============================================================
+     D — TICKER DISCRET : simple ligne de texte, aucun cadre, presque
+     invisible — flashe seulement quand il y a un échange à signaler.
+     Le plus proche de "ne pas gêner la lecture du terrain".
+     ============================================================ */
+  .d-line{position:absolute;top:2%;left:50%;transform:translateX(-50%);
+    font-family:'Archivo Black',sans-serif;font-size:clamp(8px,1.3cqh,11px);color:#eaf2ff;opacity:.75;
+    letter-spacing:.06em;text-shadow:0 2px 3px rgba(0,0,0,.6)}
+  .d-rally{position:absolute;top:5.6%;left:50%;transform:translateX(-50%);
+    font-family:'Archivo Black',sans-serif;font-size:clamp(11px,2cqh,16px);color:var(--yellow);
+    text-shadow:0 0 10px rgba(255,210,80,.7),0 2px 3px rgba(0,0,0,.6);opacity:0;transition:opacity .15s}
+  .d-rally.on{opacity:1}
+
+  /* ============================================================
+     E — BLASON À CRANS : score cible dans un blason hexagonal (même
+     langage que les portraits), un rang de crans en dessous représente
+     visuellement les échanges au lieu d'un simple "×N".
+     ============================================================ */
+  .e-badge{position:absolute;top:1.6%;left:50%;transform:translateX(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:.35cqh}
+  .e-hex{background:var(--yellow);border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);
+    padding:.4cqh 1.2cqw;clip-path:polygon(8% 0,92% 0,100% 50%,92% 100%,8% 100%,0 50%)}
+  .e-hex span{font-family:'Archivo Black',sans-serif;font-size:clamp(9px,1.5cqh,12px);color:var(--ink)}
+  .e-ticks{display:flex;gap:.2cqw}
+  .e-ticks b{display:block;width:1.3cqw;height:1cqh;min-height:5px;background:#fff;border:2px solid var(--ink);box-shadow:1.5px 1.5px 0 var(--ink)}
+  .e-ticks b.on{background:var(--green)}
+
+  .legend{max-width:1120px;width:94vw;background:#0e1626;border:1px solid #22344f;border-radius:10px;padding:14px 18px;margin-top:6px}
+  .legend h2{font-family:'Archivo Black',sans-serif;font-size:13px;color:#ffd23e;margin-bottom:8px}
+  .legend p{color:#c8d4ec;font-size:13px;line-height:1.8}
+</style>
+</head>
+<body>
+
+  <h1>Mockup — bandeau central (score cible + ping + échange)</h1>
+  <p class="note">
+    Panneaux latéraux = le morceau déjà validé (<code>hud-jauge-score-final.html</code>), posés en fixe
+    pour juger le centre dans son vrai contexte. Cinq pistes pour <b>PREMIER À 35 + ping + ÉCHANGE ×N</b>,
+    même langage BD que le reste (bordure noire, ombre décalée, Archivo Black). Clique une lettre.
+  </p>
+
+  <div class="tabs">
+    <button data-v="a" class="on">A — Ruban titre</button>
+    <button data-v="b">B — Pastilles reliées</button>
+    <button data-v="c">C — Plaque VS</button>
+    <button data-v="d">D — Ticker discret</button>
+    <button data-v="e">E — Blason à crans</button>
+  </div>
+
+  <div class="stage">
+    <canvas id="courtCanvas" width="1120" height="700"></canvas>
+    <div class="disc-mock"></div>
+
+    <div class="side left">
+      <div class="frame"><div class="portrait" style="--frameBg:#fdf1e0"><canvas id="spN"></canvas></div></div>
+      <div class="info">
+        <div class="tag" style="--c:#ff8c1a;--c2:#ffb066"><span>NARUTO · 18</span></div>
+        <div class="bar" style="--c:#ff8c1a"><i style="width:64%"></i></div>
+      </div>
+    </div>
+    <div class="side right">
+      <div class="frame"><div class="portrait" style="--frameBg:#e6f0fb"><canvas id="spL"></canvas></div></div>
+      <div class="info">
+        <div class="tag" style="--c:#3f8fe0;--c2:#7fb3f0"><span>22 · LEON</span></div>
+        <div class="bar full" style="--c:#3f8fe0"><i style="width:100%"></i></div>
+      </div>
+    </div>
+
+    <!-- A -->
+    <div class="variant on" id="v-a">
+      <div class="a-ribbon"><span>PREMIER À 35</span></div>
+      <div class="a-sat"><div class="a-chip">42 MS</div><div class="a-chip rally">ÉCHANGE ×5</div></div>
+    </div>
+
+    <!-- B -->
+    <div class="variant" id="v-b">
+      <div class="b-wrap">
+        <div class="b-pill">42 MS</div>
+        <div class="b-line"></div>
+        <div class="b-pill main">PREMIER À 35</div>
+        <div class="b-line"></div>
+        <div class="b-pill rally on">×5</div>
+      </div>
+    </div>
+
+    <!-- C -->
+    <div class="variant" id="v-c">
+      <div class="c-plate">
+        <div class="c-top">PREMIER À 35</div>
+        <div class="c-sub"><span>42 MS</span><span class="rally">ÉCHANGE ×5</span></div>
+      </div>
+    </div>
+
+    <!-- D -->
+    <div class="variant" id="v-d">
+      <div class="d-line">PREMIER À 35 · 42 MS</div>
+      <div class="d-rally on">×5</div>
+    </div>
+
+    <!-- E -->
+    <div class="variant" id="v-e">
+      <div class="e-badge">
+        <div class="e-hex"><span>35 · 42 MS</span></div>
+        <div class="e-ticks">
+          <b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b></b>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <h2 id="legend-title">A — Ruban titre</h2>
+    <p id="legend-text">Même construction que le bandeau "CHOISIS TON CHAMPION" des menus (clip-path en biseau, fond jaune), réduit et posé en haut du terrain. Ping et échange en petites pastilles satellites juste dessous, l'échange n'apparaît que si le rally est en cours.</p>
+  </div>
+
+<script type="module">
+import { MAPS } from '/js/data/maps.js';
+function drawArena(cv, map) {
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0, 0, W, H);
+  const t = map.theme;
+  const grd = ctx.createRadialGradient(W/2, H/2, H*0.12, W/2, H/2, H*0.9);
+  grd.addColorStop(0, t.bgInner); grd.addColorStop(1, t.bgOuter);
+  ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+  const m = Math.min(W, H) * 0.1;
+  const L = m, R = W - m, T = m * 0.7, B = H - m * 0.7;
+  ctx.fillStyle = t.floor; ctx.fillRect(L, T, R - L, B - T);
+  ctx.strokeStyle = t.line; ctx.lineWidth = 2;
+  ctx.strokeRect(L, T, R - L, B - T);
+  ctx.beginPath(); ctx.moveTo((L+R)/2, T); ctx.lineTo((L+R)/2, B); ctx.stroke();
+  ctx.beginPath(); ctx.arc((L+R)/2, (T+B)/2, (B-T)*0.16, 0, Math.PI*2); ctx.stroke();
+  const cy = (T + B) / 2, goalW = (R - L) * 0.05, goalH = (B - T) * (map.goal.height / (map.court.bottom - map.court.top));
+  for (const side of [0, 1]) {
+    const gx = side === 0 ? L - goalW : R;
+    ctx.fillStyle = t.goalFill; ctx.strokeStyle = t.goalStroke; ctx.lineWidth = 2;
+    ctx.fillRect(gx, cy - goalH/2, goalW, goalH);
+    ctx.strokeRect(gx, cy - goalH/2, goalW, goalH);
+    const scale = (B - T) / (map.court.bottom - map.court.top);
+    for (const z of map.zones) {
+      ctx.fillStyle = z.color; ctx.globalAlpha = .55;
+      ctx.fillRect(gx, cy + z.from*scale, goalW, (z.to - z.from)*scale);
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+drawArena(document.getElementById('courtCanvas'), MAPS[0]);
+
+function buildSprite(rows, pal, target) {
+  target.width = 16; target.height = rows.length;
+  const g = target.getContext('2d');
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const ch = row[x];
+      if (ch !== '.') { g.fillStyle = pal[ch]; g.fillRect(x, y, 1, 1); }
+    }
+  });
+}
+const PAL_N = { H:'#ffd23e', h:'#e2a71c', M:'#d9dfe8', S:'#f8c890', s:'#d99a63', w:'#c08050', E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#f2f2f5', K:'#1e1e24', P:'#e5730f' };
+const N_HEAD = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....","..SSSSSSSSSS....","..SSSESSSSES....","..swSSSSSSws....","...SSSSSSSS....."];
+const N_IDLE_B = ["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...","..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."];
+const PAL_L = { L:'#7a4f2c', l:'#4e2f18', S:'#f0c090', s:'#cf9660', E:'#2c2a26', J:'#42537d', j:'#26314d', V:'#b3bac6', B:'#e8b83a', W:'#eef1f6', D:'#2f3b59', K:'#1b1f2a' };
+const L_HEAD = ["....lLLLLl......","...LLLLLLLL.....","..LLLLLLLLLL....","..LLLLllLLLL....","..LLSSSSSSLL....","..LSSSSSSSSL....","..SSSESSSSES....","..SSSSSSSSSS....","...SSSSSSSS.....","....JJJJJJ......"];
+const L_IDLE_B = ["..KKKKKKKKKB....",".VKKKKKKKKKKV...",".VKKWKWKWKKKV...",".SKKKKKKKKKKS...","..JJJJJJJJJJ....","..KKKKVKKKKK....","...DD....DD.....","...KK....KK.....","...DD....DD.....","..KKK....KKK...."];
+buildSprite([...N_HEAD, ...N_IDLE_B.slice(0, 6)], PAL_N, document.getElementById('spN'));
+buildSprite([...L_HEAD, ...L_IDLE_B.slice(0, 6)], PAL_L, document.getElementById('spL'));
+
+const descs = {
+  a: ["A — Ruban titre", "Même construction que le bandeau «CHOISIS TON CHAMPION» des menus (clip-path en biseau, fond jaune), réduit et posé en haut du terrain. Ping et échange en petites pastilles satellites juste dessous, l'échange n'apparaît que si le rally est en cours."],
+  b: ["B — Pastilles reliées", "Trois pastilles rondes reliées par un trait fin, comme une petite constellation d'infos plutôt qu'un bloc compact. La pastille d'échange apparaît/disparaît en douceur selon le rally."],
+  c: ["C — Plaque VS", "Une seule plaque sombre qui regroupe tout (score cible en haut, ping + échange en dessous) — le plus \"boîte fermée\", cohérent avec la piste D des panneaux latéraux (même esprit \"tout dans une carte\")."],
+  d: ["D — Ticker discret", "Aucun cadre, juste du texte avec ombre portée — la piste la plus sobre des cinq, dans l'esprit \"ne pas gêner la lecture du terrain\". Le compteur d'échange, lui, reste bien visible (il doit se voir vite en plein jeu)."],
+  e: ["E — Blason à crans", "Le score cible dans un blason hexagonal (écho du portrait), et les échanges representés par des crans qui s'allument un par un plutôt qu'un simple ×N — cohérent avec la piste F des panneaux latéraux si jamais elle est choisie plus tard."]
+};
+document.querySelectorAll('.tabs button[data-v]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button[data-v]').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    document.querySelectorAll('.variant').forEach(v => v.classList.remove('on'));
+    document.getElementById('v-' + btn.dataset.v).classList.add('on');
+    const [t, d] = descs[btn.dataset.v];
+    document.getElementById('legend-title').textContent = t;
+    document.getElementById('legend-text').textContent = d;
+  });
+});
+</script>
+</body>
+</html>
