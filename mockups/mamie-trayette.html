@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mamie Trayette — pièces détachées</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:32px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:900px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;flex:1 1 0;min-width:180px}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:52px}
+  .lbl b{display:block;font-size:14px;color:#ffd23e;letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px;background:#101a2e;image-rendering:pixelated}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin-bottom:6px}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>Mamie Trayette — pièces détachées</h1>
+<p class="note">Grand-mère vétérane façon armée américaine, ulti mitraillette — le bandana rouge reste l'unique
+clin d'œil au Petit Chaperon Rouge. Cinq versions franchement différentes par section — dis-moi une
+lettre par section et j'assemble le perso final. Le sprite reste au gabarit du jeu (16 × 20), la tête
+et le corps se recombinent librement entre sections.</p>
+
+<div id="errs"></div>
+
+<h2>0 · Assemblage final (validé)</h2>
+<p class="note">Cheveux détachés (1E) + treillis camouflage avec les bras visibles (2C) + Tommy gun (3A) +
+gerbe conique (4B) + à genoux (5B), et elle n'a aucun recul propre. Bouge la souris sur l'aperçu :
+elle vise dans cette direction, et l'adversaire recule par à-coups à chaque balle qui touche.</p>
+<div class="row" id="final"></div>
+
+<h2>1 · La tête</h2>
+<div class="row" id="tete"></div>
+
+<h2>2 · La tenue</h2>
+<div class="row" id="tenue"></div>
+
+<h2>3 · La mitraillette</h2>
+<div class="row" id="arme"></div>
+
+<h2>4 · L'ulti — la rafale &amp; le knockback</h2>
+<div class="row" id="rafale"></div>
+
+<h2>5 · La pose de tir</h2>
+<div class="row" id="pose"></div>
+
+<script>
+const TAU = Math.PI * 2;
+
+/* ---------- gabarit de base : 16 de large, tête 10 lignes + corps 10 lignes ---------- */
+const PAL_M = {
+  G:'#d9d9dd', g:'#a9a9b0',   // cheveux gris clair / ombre (tête uniquement)
+  S:'#eccba3', s:'#c99b6e',   // peau claire / ombre
+  E:'#241f1c',                // lunettes / yeux
+  O:'#6b7a3d', o:'#48532a',   // veste treillis olive / ombre — lettre séparée du
+                               // gris des cheveux pour ne pas les repeindre en vert
+  W:'#c9b380', w:'#a8925c',   // treillis kaki (torse/pantalon) / ombre
+  R:'#b3272d', r:'#7a1a1e',   // bandana rouge, seul reste du Chaperon Rouge
+  K:'#241f1c',                // bouche
+  n:'#2b2320',                // rangers
+  c:'#e8a882',                // joues
+  p:'#c9ccd1',                // plaques militaires
+  x:'#5a4a2e',                // tache de camouflage
+};
+
+function reshade(rows, map) {
+  return rows.map((row, r) => {
+    let out = '';
+    for (let c = 0; c < row.length; c++) {
+      const ch = row[c];
+      out += (map[r + ',' + c] !== undefined) ? map[r + ',' + c] : ch;
+    }
+    return out;
+  });
+}
+function bati(rows, pal, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+  }});
+  return c;
+}
+
+// Rangées communes à toutes les têtes : yeux décalés à droite, joues, bouche.
+// Seuls le haut (coiffe) et le bas (transition menton→col) changent par variante.
+const FACE_MID = [
+  ".SSSSSSSSSSSS...",
+  ".SSSSSSSSSSSS...",
+  ".SSEESSEESSS....",
+  ".SScSSSScSSS....",
+  ".SSSSSKKSSSSS...",
+];
+
+const TETE = [
+  { id:'A', nom:'CHIGNON CLASSIQUE', desc:'Chignon gris serré, lunettes rondes. La plus sobre, se lit à toutes les échelles.',
+    rows:["....GGGG........","..GGGGGGGG......",".GGSSSSSSGG.....", ...FACE_MID, "..GSSSSSSSSG....","...RRRRRRRR....."] },
+  { id:'B', nom:'PERMANENTE', desc:'Coiffe bouclée bien fournie façon salon des années 60. Plus imposante, remplit mieux la tête au duel.',
+    rows:["...GGGGGGGG.....","..GGGGGGGGGG....",".GGGSSSSSSGGG...", ...FACE_MID, ".GGSSSSSSSSGG...","...RRRRRRRR....."] },
+  { id:'C', nom:'FOULARD ROUGE', desc:'Le fichu noué façon Chaperon Rouge, directement sur Mamie. La référence la plus directe à la fable.',
+    rows:["....RRRR........","..RRRRRRRR......",".RRSSSSSSRR.....", ...FACE_MID, "..rSSSSSSSSr....","...RRRRRRRR....."] },
+  { id:'D', nom:'CHAPEAU À FLEUR', desc:'Petit chapeau rond avec une fleur rose sur le bord. La plus « habillée », presque dimanche.',
+    rows:["...GGGGGGGG.....","..GpGGGGGGG.....",".GGSSSSSSGG.....", ...FACE_MID, "..GSSSSSSSSG....","...RRRRRRRR....."] },
+  { id:'E', nom:'CHEVEUX DÉTACHÉS (validée)', desc:'Cheveux longs lâchés avec une barrette, débordent sur les épaules. La plus douce, casse le côté « mamie stricte ».',
+    rows:["....GGGG........","..GGGGGGGG......",".GGpSSSSSSGG....", ...FACE_MID, ".GGSSSSSSSSGG...","..GRRRRRRRRG...."] },
+];
+
+// Haut du buste commun à toutes les tenues/poses. Deux corrections après
+// retours : (1) la version cape rouge pointue lisait comme un costume de
+// super-héros (« Viltrumite »), pas comme une mamie — silhouette arrondie
+// à la place ; (2) elle passe au treillis façon armée américaine plutôt
+// qu'un cardigan civil, cohérent avec une mamie qui sort une mitraillette.
+// Le bandana rouge (2 px) reste l'unique clin d'œil Chaperon Rouge, les
+// plaques (p) sont cousues dans le tissu plutôt qu'ajoutées par-dessus.
+// Les mains (S) existent à hauteur d'épaule pour que les bras se lisent.
+const TORSO_TOP = [
+  "...OOOOOOOO.....",
+  "SOORROOOOOOS....",
+  ".OOWWWWWWOO.....",
+  ".OWWwppwWWWO....",
+  "..OWWWWWWWO.....",
+  "..OOWWWWWWOO....",
+];
+const LEG_STAND = [
+  "..OOo....oOO....",
+  "..OOo....oOO....",
+  "..OOo....oOO....",
+  "...nn....nn.....",
+];
+const IDLE_B = [...TORSO_TOP, ...LEG_STAND];
+const FIRE_B = [...TORSO_TOP, ...LEG_STAND];
+// À genoux : jambe droite pliée au sol pour stabiliser le tir, jambe gauche plantée.
+const POSE_B = [
+  ...TORSO_TOP,
+  "..OOo....oOO....",
+  "..OOo...oOOO....",
+  "..OOo..oOOOO....",
+  "..nn....nnnnn...",
+];
+const POSE_C = [
+  ...TORSO_TOP,
+  "..OOo....oOO....",
+  "..OOo...n.oOO...",
+  "..OOo..n..oOO...",
+  "...nn.n...nn....",
+];
+const POSE_D = [
+  ...TORSO_TOP.slice(0, 5),
+  ".OOOWWWWWWOOO...",
+  ".OOo......oOO...",
+  "OOo........oOO..",
+  "Oo..........oO..",
+  "n..............n",
+];
+const POSE_E = [
+  ...TORSO_TOP,
+  "..OOo...oOO.....",
+  ".OOo...oOO......",
+  "OOo...oOO.......",
+  "nn...nn.........",
+];
+
+/* ======================= 1 · TÊTE ======================= */
+// (défini ci-dessus, TETE)
+
+/* ======================= 2 · TENUE ======================= */
+const teteA = TETE[0].rows;
+const baseTenue = [...teteA, ...IDLE_B];
+
+// Camouflage : la veste (O) se tachète de brun sur une case sur deux.
+const mapCamo = {};
+for (let r = 10; r < 16; r++) for (let c = 0; c < 16; c++) {
+  if (baseTenue[r][c] === 'O' && (r + c) % 2 === 0) mapCamo[r + ',' + c] = 'x';
+}
+
+const TENUE = [
+  { id:'A', nom:'TREILLIS OLIVE', desc:'Veste olive unie sur kaki, bandana rouge, plaques militaires. La version de référence, la plus simple à lire.',
+    pal:PAL_M, rows:baseTenue },
+  { id:'B', nom:'DÉSERT SABLE', desc:'Camaïeu sable/beige façon opérations désert. Se fond bien sur les maps claires, moins sur le stade sombre.',
+    pal:{ ...PAL_M, O:'#c9a86a', o:'#a8895a', W:'#ddc9a0', w:'#c0a878' }, rows:baseTenue },
+  { id:'C', nom:'CAMOUFLAGE FORÊT (validée)', desc:'Vraies taches de camouflage sur la veste, mains visibles aux épaules, bandana et plaques gardés. Corrigée pour ne plus lire comme un costume de super-héros — la tenue retenue.',
+    pal:PAL_M, rows:reshade(baseTenue, mapCamo) },
+  { id:'D', nom:'NOCTURNE URBAIN', desc:'Treillis gris/noir façon opération de nuit. La plus sombre, tranche fort avec l\'image « mamie ».',
+    pal:{ ...PAL_M, O:'#4a4f52', o:'#2c2f31', W:'#7d8286', w:'#5c6165' }, rows:baseTenue },
+  { id:'E', nom:'GRAND UNIFORME', desc:'Veste bleu marine de parade, plaques dorées façon décorations. La plus habillée — elle sort ça pour la finale.',
+    pal:{ ...PAL_M, O:'#1f3a5f', o:'#142943', p:'#d4af37' }, rows:baseTenue },
+];
+
+/* ======================= 3 · LA MITRAILLETTE ======================= */
+const ARME = [
+  { id:'A', nom:'TOMMY GUN (validé)', desc:'La mitraillette classique, tambour rond sous le canon. Silhouette la plus lisible instantanément.',
+    f(g,cx,cy,t){ const b=Math.sin(t*3)*1.5;
+      g.fillStyle='#5c3a22'; g.fillRect(cx-46,cy-6+b,18,24);           // crosse bois
+      g.fillStyle='#8a8f98'; g.fillRect(cx-30,cy-14+b,58,20);          // corps
+      g.fillStyle='#3a3f48'; g.fillRect(cx+26,cy-6+b,34,8);            // canon
+      g.beginPath(); g.fillStyle='#caa14a'; g.arc(cx-6,cy+16+b,16,0,TAU); g.fill(); // tambour
+      g.fillStyle='#54585f'; g.fillRect(cx+56,cy-8+b,4,4);             // guidon
+    } },
+  { id:'B', nom:'MINI-UZI', desc:'Compacte, crosse repliée, chargeur vertical. La plus petite — se planque facilement sous le châle.',
+    f(g,cx,cy,t){ const b=Math.sin(t*3)*1.5;
+      g.fillStyle='#3a3f48'; g.fillRect(cx-24,cy-12+b,48,18);          // corps
+      g.fillStyle='#20242e'; g.fillRect(cx+22,cy-6+b,14,6);            // canon court
+      g.fillStyle='#54585f'; g.fillRect(cx-4,cy+4+b,10,26);            // chargeur vertical
+      g.fillStyle='#20242e'; g.fillRect(cx-24,cy-2+b,10,10);           // poignée
+    } },
+  { id:'C', nom:'VINTAGE BOIS & LAITON', desc:'Crosse en bois massif, canon laiton, ruban rouge noué dessus. La plus « objet de mamie », la moins militaire.',
+    f(g,cx,cy,t){ const b=Math.sin(t*3)*1.5;
+      g.fillStyle='#6b4423'; g.fillRect(cx-50,cy-10+b,26,26);          // grosse crosse bois
+      g.fillStyle='#8a6a2a'; g.fillRect(cx-24,cy-14+b,50,20);          // corps laiton sombre
+      g.fillStyle='#caa14a'; g.fillRect(cx+22,cy-7+b,36,10);           // canon laiton clair
+      g.beginPath(); g.fillStyle='#b3272d'; g.arc(cx-38,cy-6+b,6,0,TAU); g.fill(); // ruban, noeud
+      g.fillStyle='#7a1a1e'; g.fillRect(cx-44,cy-2+b,5,10); g.fillRect(cx-33,cy-2+b,5,10);
+    } },
+  { id:'D', nom:'DOUBLE CANON SCIÉ', desc:'Deux canons parallèles, crosse raccourcie. La plus brutale visuellement, tir large mais imprécis à l\'œil.',
+    f(g,cx,cy,t){ const b=Math.sin(t*3)*1.5;
+      g.fillStyle='#5c3a22'; g.fillRect(cx-38,cy-8+b,20,20);           // crosse courte
+      g.fillStyle='#3a3f48'; g.fillRect(cx-18,cy-12+b,30,22);          // corps
+      g.fillStyle='#20242e'; g.fillRect(cx+10,cy-10+b,38,7);           // canon haut
+      g.fillStyle='#20242e'; g.fillRect(cx+10,cy+1+b,38,7);            // canon bas
+    } },
+  { id:'E', nom:'ARROSOIR-MITRAILLETTE', desc:'Le corps d\'un arrosoir vert, le bec en guise de canon, la poignée en anse. La plus décalée — very Mamie.',
+    f(g,cx,cy,t){ const b=Math.sin(t*3)*1.5;
+      g.beginPath(); g.fillStyle='#3f9b2e'; g.arc(cx-6,cy+2+b,24,0,TAU); g.fill();  // corps rond
+      g.save(); g.translate(cx+14,cy-6+b); g.rotate(-.5);
+      g.fillStyle='#2f7a22'; g.fillRect(-4,-30,10,34);                 // bec/canon diagonal
+      g.restore();
+      g.strokeStyle='#2f7a22'; g.lineWidth=5;
+      g.beginPath(); g.arc(cx-6,cy-14+b,16,Math.PI*1.15,Math.PI*1.85); g.stroke(); // anse
+      g.fillStyle='#20242e'; g.fillRect(cx-14,cy+18+b,8,10);           // détente
+    } },
+];
+
+/* ======================= 4 · L'ULTI — RAFALE & KNOCKBACK ======================= */
+function etincelle(g,x,y,t){
+  if(Math.sin(t*10)<.3) return;
+  g.fillStyle='rgba(255,226,140,.95)';
+  for(let i=0;i<5;i++){ const a=(i-2)*.4;
+    g.fillRect(x+Math.cos(a)*7,y+Math.sin(a)*7,3,2); }
+  const d=g.createRadialGradient(x,y,1,x,y,12);
+  d.addColorStop(0,'rgba(255,240,190,.9)'); d.addColorStop(1,'rgba(255,180,40,0)');
+  g.fillStyle=d; g.beginPath(); g.arc(x,y,12,0,TAU); g.fill();
+}
+const RAFALE = [
+  { id:'A', nom:'LIGNE TENDUE', desc:'Tant que la touche reste appuyée, des traits filent droit dans l\'axe. Le plus sobre, aucune ambiguïté sur la trajectoire.',
+    f(g,cx,cy,t){ for(let i=0;i<6;i++){ const ph=(t*4+i*.4)%2.4;
+      g.fillStyle='rgba(255,176,32,.9)'; g.fillRect(cx+ph*40,cy-2,14,4); } } },
+  { id:'B', nom:'GERBE CONIQUE (validée)', desc:'Les balles partent en léger éventail qui s\'élargit avec la distance — plus de vie que la ligne tendue. Vise la souris, l\'adversaire recule par à-coups à chaque balle — elle, aucun recul.',
+    f(g,cx,cy,t){ for(let i=0;i<6;i++){ const ph=(t*4+i*.4)%2.4; const a=(i-2.5)*.05;
+      g.fillStyle='rgba(255,176,32,.9)';
+      g.save(); g.translate(cx+ph*38,cy+a*ph*60); g.rotate(a); g.fillRect(0,-2,14,4); g.restore(); }
+      const step=Math.floor(t*3)%4;
+      g.fillStyle='#9aa0a6'; g.fillRect(cx+150+step*6,cy-24,26,44);
+      if((t*3)%1<.3) etincelle(g,cx+150+step*6,cy-2,t); } },
+  { id:'C', nom:'IMPACT ADVERSE', desc:'Chaque balle qui arrive déclenche une étincelle sur l\'adversaire touché. Le retour visuel le plus clair sur les dégâts.',
+    f(g,cx,cy,t){ for(let i=0;i<6;i++){ const ph=(t*4+i*.4)%2.4;
+      g.fillStyle='rgba(255,176,32,.9)'; g.fillRect(cx+ph*40,cy-2,14,4); }
+      g.fillStyle='#9aa0a6'; g.fillRect(cx+150,cy-24,26,44);
+      etincelle(g,cx+150,cy-2,t); } },
+  { id:'D', nom:'DOUILLES & ONDE', desc:'Des douilles s\'éjectent vers le haut pendant que des ondes de choc partent de l\'impact. La plus chargée, très « il se passe un truc ».',
+    f(g,cx,cy,t){ for(let i=0;i<6;i++){ const ph=(t*4+i*.4)%2.4;
+      g.fillStyle='rgba(255,176,32,.9)'; g.fillRect(cx+ph*40,cy-2,14,4); }
+      const k=(t*2)%1; g.fillStyle='#caa14a'; g.fillRect(cx-4,cy-8-k*20,4,7);
+      for(let i=0;i<2;i++){ const ph=((t*1.6+i/2)%1);
+        g.strokeStyle=`rgba(255,226,140,${(1-ph)*.8})`; g.lineWidth=3;
+        g.beginPath(); g.arc(cx+150,cy-2,ph*30,0,TAU); g.stroke(); } } },
+  { id:'E', nom:'RECUL PAR À-COUPS', desc:'L\'adversaire est repoussé par saccades, une par balle qui touche. Le knockback se lit le mieux dans le mouvement.',
+    f(g,cx,cy,t){ for(let i=0;i<6;i++){ const ph=(t*4+i*.4)%2.4;
+      g.fillStyle='rgba(255,176,32,.9)'; g.fillRect(cx+ph*40,cy-2,14,4); }
+      const step=Math.floor(t*3)%4;
+      g.fillStyle='#9aa0a6'; g.fillRect(cx+150+step*6,cy-24,26,44);
+      if((t*3)%1<.3) etincelle(g,cx+150+step*6,cy-2,t); } },
+];
+
+/* ======================= 5 · POSE DE TIR ======================= */
+const POSE = [
+  { id:'A', nom:'PENCHÉE EN ARRIÈRE', desc:'Elle encaisse le recul en s\'inclinant vers l\'arrière, bras collés au corps. La plus simple à lire au premier coup d\'œil.',
+    rows:[...teteA, ...FIRE_B] },
+  { id:'B', nom:'À GENOUX (validée)', desc:'Un genou au sol pour stabiliser le tir. Cohérent avec le fait qu\'elle n\'a pas de recul propre : la posture ne bouge pas pendant la rafale.',
+    rows:[...teteA, ...POSE_B] },
+  { id:'C', nom:'CANNE-BIPIED', desc:'Sa canne plantée au sol sert d\'appui, comme un bipied de fortune. La plus caractérisée, très « mamie increvable ».',
+    rows:[...teteA, ...POSE_C] },
+  { id:'D', nom:'BIEN PLANTÉE', desc:'Jambes largement écartées, stance de tank. La plus stable visuellement, lit comme « rien ne la bouge ».',
+    rows:[...teteA, ...POSE_D] },
+  { id:'E', nom:'FENTE AVANT', desc:'Un pied en arrière, buste penché vers la cible. La plus agressive, tranche avec l\'image « gentille mamie ».',
+    rows:[...teteA, ...POSE_E] },
+];
+
+/* ======================= 0 · ASSEMBLAGE FINAL ======================= */
+const teteE = TETE.find(v => v.id === 'E').rows;
+const FINAL_PAL = PAL_M;
+const baseFinal = [...teteE, ...POSE_B];
+const mapCamoFinal = {};
+for (let r = 10; r < 16; r++) for (let c = 0; c < 16; c++) {
+  if (baseFinal[r][c] === 'O' && (r + c) % 2 === 0) mapCamoFinal[r + ',' + c] = 'x';
+}
+const FINAL_ROWS = reshade(baseFinal, mapCamoFinal);
+
+function buildFinal() {
+  const host = document.getElementById('final');
+  const card = document.createElement('div'); card.className = 'card'; card.style.flex = '1 1 100%';
+  const lbl = document.createElement('div'); lbl.className = 'lbl'; lbl.style.minHeight = '0';
+  lbl.innerHTML = '<b>Mamie Trayette — build validé</b>1E + 2C + 3A + 4B + 5B. Bouge la souris.';
+  const cv = document.createElement('canvas'); cv.width = 480; cv.height = 220;
+  card.appendChild(lbl); card.appendChild(cv);
+  host.appendChild(card);
+
+  const ctx = cv.getContext('2d');
+  const sprite = bati(FINAL_ROWS, FINAL_PAL, 6);
+  const spriteX = 40, spriteY = 40;
+  const gunX = spriteX + sprite.width - 6, gunY = spriteY + 62; // niveau des mains
+
+  const mouse = { x: gunX + 220, y: gunY };
+  cv.addEventListener('mousemove', e => {
+    const r = cv.getBoundingClientRect();
+    mouse.x = (e.clientX - r.left) * (cv.width / r.width);
+    mouse.y = (e.clientY - r.top) * (cv.height / r.height);
+  });
+
+  // Chaque balle fige sa direction à l'instant du tir : bouger la souris
+  // ensuite réoriente le canon et les balles suivantes, jamais celles déjà
+  // parties. Sans ça toute la rafale pivotait d'un bloc et on aurait pu
+  // guider les balles après coup.
+  const balles = [];
+  const cadence = .09;
+  let prochainTir = 0;
+
+  // L'adversaire est une cible libre que les balles repoussent réellement,
+  // au lieu d'un rectangle collé à l'axe de visée.
+  const cible = { x: gunX + 250, y: gunY, secousse: 0 };
+
+  let dernier = 0;
+  (function loop(ms) {
+    const t = ms / 1000;
+    const dt = Math.min(.05, dernier ? t - dernier : .016);
+    dernier = t;
+
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.fillStyle = '#101a2e'; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(sprite, spriteX, spriteY);
+
+    const vise = Math.atan2(mouse.y - gunY, mouse.x - gunX);
+
+    // Gerbe conique (4B) : la dispersion est tirée au sort à la naissance de
+    // la balle, elle fait donc partie de sa trajectoire figée.
+    prochainTir -= dt;
+    if (prochainTir <= 0) {
+      prochainTir = cadence;
+      const a = vise + (Math.random() - .5) * .14;
+      balles.push({ x: gunX, y: gunY, vx: Math.cos(a) * 620, vy: Math.sin(a) * 620, a, vie: 1.4 });
+    }
+
+    for (let i = balles.length - 1; i >= 0; i--) {
+      const b = balles[i];
+      b.x += b.vx * dt; b.y += b.vy * dt; b.vie -= dt;
+      const touche = Math.abs(b.x - cible.x) < 15 && Math.abs(b.y - cible.y) < 24;
+      if (touche) {
+        // Knockback par à-coups : chaque impact pousse la cible dans l'axe de
+        // CETTE balle, pas dans celui de la souris.
+        cible.x += Math.cos(b.a) * 9;
+        cible.y += Math.sin(b.a) * 9;
+        cible.secousse = .12;
+        etincelle(ctx, b.x, b.y, t);
+      }
+      if (touche || b.vie <= 0 || b.x < 0 || b.x > cv.width || b.y < 0 || b.y > cv.height) {
+        balles.splice(i, 1);
+        continue;
+      }
+      ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.a);
+      ctx.fillStyle = 'rgba(255,176,32,.9)';
+      ctx.fillRect(-7, -2, 14, 4);
+      ctx.restore();
+    }
+
+    // La cible revient doucement à portée, sinon elle sort de l'écran en
+    // quelques secondes et l'aperçu n'a plus rien à montrer.
+    cible.x += (gunX + 250 - cible.x) * .012;
+    cible.y += (gunY - cible.y) * .012;
+    cible.secousse = Math.max(0, cible.secousse - dt);
+
+    const sx = cible.secousse > 0 ? (Math.random() - .5) * 4 : 0;
+    ctx.fillStyle = '#9aa0a6';
+    ctx.fillRect(cible.x - 13 + sx, cible.y - 22, 26, 44);
+
+    requestAnimationFrame(loop);
+  })(0);
+}
+buildFinal();
+
+/* ======================= MONTAGE ======================= */
+const bad = [];
+function verifie(id, rows) {
+  if (rows.length !== 20) bad.push(id + ' a ' + rows.length + ' lignes (attendu 20)');
+  rows.forEach((r, i) => { if (r.length !== 16) bad.push(id + '[' + i + '] largeur ' + r.length + ' (attendu 16)'); });
+}
+TETE.forEach(v => verifie('tete-' + v.id, [...v.rows, ...IDLE_B]));
+TENUE.forEach(v => verifie('tenue-' + v.id, v.rows));
+POSE.forEach(v => verifie('pose-' + v.id, v.rows));
+verifie('assemblage-final', FINAL_ROWS);
+
+function poser(cible, liste, mode) {
+  const hote = document.getElementById(cible);
+  const rendus = [];
+  for (const v of liste) {
+    const card = document.createElement('div'); card.className = 'card';
+    const lbl = document.createElement('div'); lbl.className = 'lbl';
+    lbl.innerHTML = '<b>' + v.id + ' · ' + v.nom + '</b>' + v.desc;
+    const cv = document.createElement('canvas');
+    cv.width = 300; cv.height = 150;
+    card.appendChild(lbl); card.appendChild(cv);
+    hote.appendChild(card);
+    rendus.push({ ctx: cv.getContext('2d'), v, mode });
+  }
+  return rendus;
+}
+const tout = [
+  ...poser('tete', TETE, 'tete'),
+  ...poser('tenue', TENUE, 'tenue'),
+  ...poser('arme', ARME, 'arme'),
+  ...poser('rafale', RAFALE, 'rafale'),
+  ...poser('pose', POSE, 'pose'),
+];
+
+const boite = document.getElementById('errs');
+boite.textContent = bad.length ? bad.join('\n') : 'OK — tous les sprites tiennent le gabarit 16 × 20 du jeu.';
+if (bad.length) boite.className = 'bad';
+
+const spriteFire = bati([...teteA, ...FIRE_B], PAL_M, 4);
+
+(function boucle(ms) {
+  const t = ms / 1000;
+  for (const r of tout) {
+    const g = r.ctx;
+    g.clearRect(0, 0, 300, 150);
+    g.fillStyle = '#101a2e'; g.fillRect(0, 0, 300, 150);
+    g.imageSmoothingEnabled = false;
+    const cx = 150, cy = 75;
+    if (r.mode === 'tete') {
+      const s = bati([...r.v.rows, ...IDLE_B], PAL_M, 5);
+      g.drawImage(s, cx - s.width / 2, cy - s.height / 2);
+    } else if (r.mode === 'tenue' || r.mode === 'pose') {
+      const s = bati(r.v.rows, r.v.pal || PAL_M, 5);
+      g.drawImage(s, cx - s.width / 2, cy - s.height / 2);
+    } else if (r.mode === 'arme') {
+      r.v.f(g, cx, cy, t);
+    } else if (r.mode === 'rafale') {
+      g.drawImage(spriteFire, cx - spriteFire.width / 2 - 60, cy - spriteFire.height / 2);
+      r.v.f(g, cx - 46, cy, t);
+    }
+  }
+  requestAnimationFrame(boucle);
+})(0);
+</script>
+</body>
+</html>

@@ -52,6 +52,12 @@ export const SKINS = {
   cyberleek: [
     { id: 'combat', nom: 'TENUE DE COMBAT', defaut: true }
   ],
+  // Même raison que Cyberleek ci-dessus : Mamie n'a que son treillis, mais
+  // sans cette entrée sa liste serait vide et elle ne pourrait pas être
+  // choisie du tout.
+  mamie: [
+    { id: 'treillis', nom: 'TREILLIS CAMO', defaut: true }
+  ],
   jingle: [
     { id: 'polenord', nom: 'PÔLE NORD', defaut: true },
     { id: 'smoking', nom: 'SMOKING NOIR', cond: 'victoires', seuil: 10,

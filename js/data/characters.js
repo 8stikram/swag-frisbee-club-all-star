@@ -100,6 +100,44 @@ const J_DIVE_B = ["....rvrvrv......", "..SVvRVVRvVSS...", "..SVvVVVVvVSSS..", ".
 const J_DASH_B = ["....rvrvrv......", "SSSVvVVRRvVR....", "SSSVvVVVVvVR....", "..RlvVVVVvlR....", "..rrlSssSlrr....", "..rRRlsSlRRr....", "..RRRRllRR......", "..SS..SS........", ".SS..SS.........", "GSS.GSS........."];
 
 // ---------------------------------------------------------------------------
+// Mamie Trayette. Une grand-mère vétérane en treillis, pas une mamie en
+// cardigan : le premier jet (cape rouge pointue sur bloc blanc) se lisait
+// comme un costume de super-héros, d'où la silhouette arrondie et le vert
+// militaire dominant. Le bandana rouge (R) est le seul reste du Petit
+// Chaperon Rouge. `O` est volontairement une lettre distincte de `G` : le
+// gris ne sert qu'aux cheveux, sinon le treillis les repeindrait en vert.
+// ---------------------------------------------------------------------------
+const PAL_M = {
+  G: '#d9d9dd', g: '#a9a9b0',   // cheveux gris / ombre
+  S: '#eccba3', s: '#c99b6e',   // peau / ombre
+  E: '#241f1c',                 // lunettes et yeux
+  O: '#6b7a3d', o: '#48532a',   // treillis olive / ombre
+  W: '#c9b380', w: '#a8925c',   // tissu kaki du torse / ombre
+  R: '#b3272d', r: '#7a1a1e',   // bandana rouge / ombre
+  K: '#241f1c',                 // bouche
+  n: '#2b2320',                 // rangers
+  c: '#e8a882',                 // joues
+  p: '#c9ccd1',                 // plaques militaires
+  x: '#5a4a2e'                  // taches de camouflage
+};
+
+// Tête partagée : cheveux détachés avec barrette, lunettes, bandana au cou.
+// Yeux décalés d'un pixel à droite comme tout le roster, sinon le miroir
+// horizontal (render.js, p.face) ne se lit pas quand elle vise à la souris.
+const M_HEAD = ["....GGGG........", "..GGGGGGGG......", ".GGpSSSSSSGG....", ".GSSSSSSSSSG....", ".GSSSSSSSSSG....", "..SSEESSEESS....", "..SScSSSScSS....", "..SSSSSKKSSS....", ".GGSSSSSSSSGG...", "..GRRRRRRRRG...."];
+// Veste olive ouverte sur un maillot kaki, plaques militaires au centre,
+// mains (S) visibles à hauteur d'épaule pour que les bras existent.
+// Les taches de camouflage (x) sont placées à la main, en petits amas
+// irréguliers : générées en damier sur une case sur deux, elles se lisaient
+// comme des rayures régulières et pas comme du camo.
+const M_IDLE_B = ["...OOxxOOOO.....", "SOORROxOOOOS....", ".OOWxxWWWOO.....", ".OWWwppwWWWO....", "..OWWWWxxWO.....", "..OOWxWWWWOO....", "..OOo....oOO....", "..OOo....oOO....", "..OOo....oOO....", "...nn....nn....."];
+const M_RUN1_B = ["...OOxxOOOO.....", "SOORROxOOOOS....", ".OOWxxWWWOO.....", ".OWWwppwWWWO....", "..OWWWWxxWO.....", "..OOWxWWWWOO....", "..OOo......oOO..", ".OOo........oOO.", ".OOo........oOO.", "..nn........nn.."];
+const M_RUN2_B = ["...OOxxOOOO.....", "SOORROxOOOOS....", "..OOWxWWWWOO....", ".OWWwppwWWWO....", "..OWWWWxxWO.....", "..OOWxWWWWOO....", "..OOo....oOO....", "..OOo....oOO....", "..OOo....oOO....", "...nn....nn....."];
+const M_THROW_B = ["...OOxxOOOO.....", ".OORROxOOOOSS...", ".OOWxxWWWOOSS...", ".OWWwppwWWWO....", "..OWWWWxxWO.....", "..OOWxWWWWOO....", "..OOo...oOO.....", "..OOo...oOO.....", ".OOo.....oOO....", "..nn.....nn....."];
+const M_DIVE_B = ["...OOxxOOOO.....", "SOORROxOOOOSS...", ".OOWxxWWWOOSS...", ".OWWwppwWWWO....", "..OWWWWxxWO.....", "..OOWxWWWWOO....", ".OOOo...oOOO....", "OOo......oOO....", "nn........nn....", "................"];
+const M_DASH_B = ["...OOxxOOOO.....", "SSOORROxOOOO....", "SSOOWxWWWWOO....", ".OWWwppwWWWO....", "..OWWWWxxWO.....", "..OOWxWWWWOO....", "..OOo.oOO.......", ".OOo.oOO........", "OOo.oOO.........", "nn..nn.........."];
+
+// ---------------------------------------------------------------------------
 // Cyberleek. Un poireau en armure tactique : les feuilles partent vers le haut
 // et sur la droite, le fût pâle fait le visage, et tout le bas est bleu avec
 // des liserés cyan. Les feuilles s'arrêtent à quatre rangées — elles montent
@@ -333,7 +371,7 @@ function construireSixPaths() {
   return out;
 }
 
-export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek'];
+export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie'];
 
 export const CHARS = {
   naruto: {
@@ -416,6 +454,29 @@ export const CHARS = {
       dash: buildSprite([...J_HEAD, ...J_DASH_B], PAL_J)
       // Sa tête qui lévite n'a pas besoin de frame dédiée : le rendu découpe
       // directement la pose courante entre la cloche et les épaules.
+    }
+  },
+
+  mamie: {
+    // Seul nom du roster qui n'est pas en capitales : demandé tel quel, il
+    // doit s'afficher « Mamie Trayette ». Rien ne le met en majuscules au
+    // rendu (aucun text-transform sur les libellés de perso), la casse
+    // écrite ici est donc bien celle qu'on voit à l'écran.
+    name: 'Mamie Trayette', short: 'Mamie Trayette', icon: '🧶', universe: 'MAISON DE MAMIE',
+    // Profil d'artilleuse : la plus lente du roster et un bras moyen, mais la
+    // charge d'ultime la plus rapide. Elle ne court pas après le disque, elle
+    // attend d'avoir sa jauge — c'est sa mitraillette qui fait le travail.
+    speed: 288, power: 1.02, catchR: 29, chargeT: .62,
+    color: '#6b7a3d', accent: '#c9b380',
+    stats: { spd: 2, pow: 4, ctl: 4 },
+    ult: 'rafale',
+    frames: {
+      idle: buildSprite([...M_HEAD, ...M_IDLE_B], PAL_M),
+      run1: buildSprite([...M_HEAD, ...M_RUN1_B], PAL_M),
+      run2: buildSprite([...M_HEAD, ...M_RUN2_B], PAL_M),
+      throw: buildSprite([...M_HEAD, ...M_THROW_B], PAL_M),
+      dive: buildSprite([...M_HEAD, ...M_DIVE_B], PAL_M),
+      dash: buildSprite([...M_HEAD, ...M_DASH_B], PAL_M)
     }
   },
 

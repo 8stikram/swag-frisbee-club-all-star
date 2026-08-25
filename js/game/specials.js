@@ -70,6 +70,89 @@ export function updateBell(dt) {
   }
 }
 
+// Rafale de Mamie Trayette. Deux règles portent tout l'ultime :
+//
+// 1. Chaque balle fige sa direction à l'instant du tir. Bouger la visée
+//    ensuite réoriente le canon et les balles suivantes, jamais celles déjà
+//    parties — sinon on téléguiderait la rafale après coup, et une balle
+//    tirée à l'opposé reviendrait sur l'adversaire.
+// 2. Mamie ne subit aucun recul : c'est l'adversaire qui recule, par à-coups,
+//    une poussée par balle qui touche.
+const CADENCE = .085;
+const BALLE_V = 780;
+const BALLE_R = 26;
+// Poussée par balle. Volontairement forte : à 190 l'adversaire dérivait à
+// peine plus qu'en marchant et la rafale se lisait comme un feu d'artifice
+// sans effet. À cette valeur, une rafale complète le repousse d'un bon tiers
+// de terrain — c'est le sens de l'ultime.
+const POUSSEE = 420;
+
+export function updateRafale(dt) {
+  const r = G.rafale;
+  if (r) {
+    r.t += dt;
+    if (r.t >= r.dur) {
+      G.rafale = null;
+      addPopup('PLUS DE MUNITIONS', '#c9b380', 13, .9);
+    } else {
+      const p = r.owner;
+      // La visée vient de la fiche d'intentions, jamais de la souris : un
+      // joueur distant n'a pas de curseur sur cette machine, et sa rafale
+      // partirait vers le curseur de l'hôte.
+      const c = p.cmd;
+      const vx = (c && (c.visee.x || c.visee.y)) ? c.visee.x : (p.side === 1 ? 1 : -1);
+      const vy = (c && (c.visee.x || c.visee.y)) ? c.visee.y : 0;
+      const a0 = Math.atan2(vy, vx);
+      p.face = vx >= 0 ? 1 : -1;
+      r.prochainTir -= dt;
+      if (r.prochainTir <= 0) {
+        r.prochainTir = CADENCE;
+        // Gerbe conique : la dispersion est tirée à la naissance de la balle,
+        // elle fait donc partie de sa trajectoire figée.
+        //
+        // Tirage DÉCORATIF, pas semé, et c'est délibéré : les deux machines
+        // font naître leurs propres balles, à des instants qui diffèrent de
+        // quelques millisecondes puisque le minuteur de l'invité arrive par le
+        // réseau. Puiser ici dans la suite semée aurait donc consommé un nombre
+        // de tirages différent de chaque côté et décalé tout le hasard partagé
+        // — trajectoires du disque et décisions d'IA comprises. Ce que la
+        // dispersion décide vraiment (qui est touché) reste arbitré par l'hôte
+        // plus bas, sous `jeSimule()`.
+        const a = a0 + gauss() * .06;
+        G.balles.push({
+          x: p.x + Math.cos(a) * 22, y: p.y + Math.sin(a) * 22,
+          vx: Math.cos(a) * BALLE_V, vy: Math.sin(a) * BALLE_V,
+          a, vie: .9, owner: p
+        });
+        G.shake = Math.max(G.shake, 3);
+        sfx('charge');
+      }
+    }
+  }
+
+  // Les balles vivent au-delà de la fin de la rafale : celles déjà en l'air
+  // finissent leur course au lieu de disparaître d'un coup.
+  for (let i = G.balles.length - 1; i >= 0; i--) {
+    const b = G.balles[i];
+    b.x += b.vx * dt; b.y += b.vy * dt; b.vie -= dt;
+    let fini = b.vie <= 0;
+    // Le knockback est de l'arbitrage : l'invité voit les balles voler, mais
+    // c'est l'hôte qui décide qui est touché et le lui envoie par l'état.
+    if (!fini && jeSimule()) {
+      const foe = b.owner.foe;
+      if (foe && Math.hypot(foe.x - b.x, foe.y - b.y) < BALLE_R) {
+        foe.vx += Math.cos(b.a) * POUSSEE;
+        foe.vy += Math.sin(b.a) * POUSSEE;
+        if (foe.ai) foe.ai.hesT = Math.max(foe.ai.hesT || 0, .12);
+        G.shake = Math.max(G.shake, 5);
+        burst(b.x, b.y, '#ffb020', 5);
+        fini = true;
+      }
+    }
+    if (fini) G.balles.splice(i, 1);
+  }
+}
+
 // Le terminal du Piratage : il défile, puis s'efface. L'inversion, elle, a déjà
 // commencé au lancement — cette fonction ne fait que la mise en scène, et la
 // fin de l'animation ne doit surtout pas y toucher.

@@ -181,6 +181,25 @@ export const SPECIALS = {
     }
   },
 
+  rafale: {
+    name: 'RAFALE DE MAMIE',
+    desc: 'Elle mitraille dans la direction visée et repousse l\'adversaire.',
+    // Comme le Piratage, cet ultime ne touche pas au disque : Mamie tire même
+    // les mains vides, ce qui en fait une arme de harcèlement plutôt qu'une
+    // conclusion de point.
+    needsDisc: false,
+    cast(p) {
+      p.meter = 0; p.stats.specials++;
+      // La rafale dure le temps de la jauge, sans dépendre d'un appui
+      // maintenu : en ligne, l'invité n'a pas le clavier de l'hôte, et faire
+      // dépendre la durée d'une touche aurait coupé la rafale chez lui.
+      G.rafale = { owner: p, t: 0, dur: 2.6, prochainTir: 0 };
+      G.banner = { text: 'RAFALE DE MAMIE !!', color: '#c9b380', t: 0, dur: 1.3 };
+      G.shake = 10;
+      sfx('mamie-ulti'); comment('C\'EST L\'HEURE DE LA RAFALE !');
+    }
+  },
+
   piratage: {
     name: 'PIRATAGE',
     desc: 'Prend la main sur l\'adversaire : ses commandes partent à l\'envers.',

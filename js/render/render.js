@@ -1633,6 +1633,24 @@ function drawReplayOverlay() {
 /* Cloche de Minuit : la tête de Jingle, devenue géante, se balance devant sa
    cage. Elle est dessinée à la main plutôt qu'agrandie depuis le sprite, pour
    rester nette à cette taille. */
+/* Rafale de Mamie : chaque balle est un trait orienté selon SA propre
+   direction (b.a), figée au tir — jamais selon la visée courante, sinon la
+   rafale entière pivoterait avec la souris. */
+function drawBalles() {
+  ctx.save();
+  for (const b of G.balles) {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(b.a);
+    ctx.fillStyle = 'rgba(255,226,140,.35)';
+    ctx.fillRect(-16, -3, 22, 6);
+    ctx.fillStyle = '#ffb020';
+    ctx.fillRect(-7, -2, 14, 4);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
 function drawBell() {
   const b = G.bell;
   // L'image se charge de façon asynchrone : tant qu'elle n'est pas prête on ne
@@ -1922,6 +1940,7 @@ export function render() {
   }
   if (G.leg && G.leg.phase !== 'shadow') drawLeg();
   if (G.bell) drawBell();
+  if (G.balles.length) drawBalles();
   if (G.ondesBut.length) drawOndesBut();
   drawParticles();
   // Le viseur suit la souris EN ESPACE MONDE (Mouse.x/y sont déjà corrigés à
