@@ -149,6 +149,51 @@ MAPS.push({
   }
 });
 
+// Le Pôle Nord, terrain de Jingle Bells : une veillée de Noël sous l'aurore
+// boréale. Il ne porte aucune règle propre, contrairement au stadium et à la
+// dune — c'est un terrain de décor, et la glace n'y glisse pas. Ses huit pièces
+// ont été choisies une par une dans mockups/pole-nord.html, puis accordées
+// entre elles dans mockups/pole-nord-final.html.
+MAPS.push({
+  id: 'polenord',
+  name: 'PÔLE NORD',
+  // Pas d'OST à lui : il n'y a aucune piste de Noël dans data/music.js, et lui
+  // en imposer une autre écraserait le choix du joueur pour rien.
+  court: { left: 70, right: 890, top: 84, bottom: 560 },
+  goal: { height: 200, depth: 48 },
+  // Rouge et or : les deux seules couleurs vives qu'on s'autorise sur les
+  // cages, justement pour qu'elles restent la cible la plus lisible du terrain.
+  zones: [
+    { from: -100, to: -26, points: 3, color: '#e5384f' },
+    { from: -26, to: 26, points: 5, color: '#f5c542' },
+    { from: 26, to: 100, points: 3, color: '#e5384f' }
+  ],
+  style: 'noel',
+  theme: {
+    // Les sept premières sont celles que lit la vignette de l'écran de choix
+    // (ui/menus.js) : elle ne sait dessiner qu'un terrain générique, il faut
+    // donc qu'elles suffisent à reconnaître le Pôle Nord.
+    bgInner: '#12233f',
+    bgOuter: '#040a16',
+    floor: '#d8e3f3',            // la glace givrée sous les lampions
+    line: 'rgba(74,102,146,.5)',
+    goalFill: 'rgba(229,56,79,.16)',
+    goalStroke: '#fdfdfd',
+    crowdColors: ['#e5384f', '#1f8a4d', '#f5c542'],
+    starColor: 'rgba(0,0,0,0)',
+    // Propres au style « noel » (render.js).
+    cielHaut: '#050b18', cielBas: '#12233f',
+    dehorsHaut: '#1b2c4a', dehorsBas: '#0d1729',
+    givre: '#e2ecf9',            // la glace avant réchauffement
+    givreChaud: '#f2e7d2',       // la même, poussée par le réglage « chaleur »
+    sapin: '#2a6b46',
+    or: '#f5c542', chaud: '#ffb457', rouge: '#e5384f',
+    // L'aurore se peint en dégradé : on garde ses composantes séparées pour
+    // pouvoir en faire varier l'opacité à la volée.
+    aurore: '93,240,138', aurore2: '53,224,255'
+  }
+});
+
 // Vrai quand le terrain est jouable. Même principe que pour les skins.
 export function mapDebloquee(m) {
   if (!m || !m.verrou) return true;

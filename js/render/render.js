@@ -865,7 +865,388 @@ function drawTempete() {
   ctx.restore();
 }
 
+// ---------------------------------------------------------------------------
+// PÔLE NORD — le terrain de Jingle Bells, une veillée de Noël sous l'aurore.
+//
+// Ses huit pièces ont été choisies séparément dans mockups/pole-nord.html —
+// sol givré, marquage creusé, cages en sucre d'orge, sapins décorés, aurore en
+// vague, flocons étoilés, lutins, lampions — puis accordées entre elles dans
+// mockups/pole-nord-final.html. Sans cet accord elles se mangeaient : le givre
+// du sol et les flocons dessinaient deux fois la même étoile, le marquage
+// creusé disparaissait sur un sol blanc déjà couvert de blanc, quatre sources
+// de rouge et de vert se disputaient l'œil, et les halos des lampions lavaient
+// la glace juste là où le disque doit rester lisible.
+//
+// Terrain de décor : aucune règle propre, la glace ne glisse pas. Rien ici ne
+// décide de quoi que ce soit, donc rien n'a besoin d'être semé ni synchronisé.
+// ---------------------------------------------------------------------------
+
+// La finition retenue (D · nuit profonde du mockup d'assemblage). Chaque valeur
+// corrige une collision précise ; les changer fait passer d'une finition du
+// mockup à l'autre sans toucher une ligne de dessin.
+const NOEL = {
+  givre: .42,      // fougères de givre plus grandes, donc plus rares
+  degager: 1,      // balayage du givre le long des lignes
+  sillon: 2,       // contraste du marquage creusé
+  flocons: .45,    // densité des cristaux qui tombent
+  discipline: 1,   // le rouge et le blanc rayés n'existent qu'aux cages
+  nuit: 1,         // pourtour éteint, aire de jeu éclairée
+  chaleur: .25     // réchauffement de la glace
+};
+
+// Mélange de deux couleurs. Il rend de l'hexadécimal et non du rgb() parce
+// qu'on l'imbrique — chaleur PUIS nuit sur la même teinte — et qu'il doit donc
+// savoir relire sa propre sortie.
+function melangeNoel(a, b, k) {
+  const lire = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const A = lire(a), B = lire(b);
+  return '#' + A.map((v, i) => Math.max(0, Math.min(255, Math.round(v + (B[i] - v) * k)))
+    .toString(16).padStart(2, '0')).join('');
+}
+
+// Sapins et spectateurs, placés une fois pour toutes. Tout vient de graine() :
+// aucun tirage au sort, donc rien à semer entre deux machines et rien qui
+// grésille d'une image à l'autre.
+let decorNoel = null;
+function semerNoel() {
+  const sapins = [], lutins = [];
+  for (let x = 6; x < W; x += 44) sapins.push({ x, y: COURT.top - 2, grand: true });
+  for (let y = COURT.top + 34; y < COURT.bottom - 10; y += 62) {
+    sapins.push({ x: 30, y, grand: false });
+    sapins.push({ x: W - 30, y, grand: false });
+  }
+  for (let x = 26; x < W; x += 66) sapins.push({ x, y: H - 4, grand: false });
+  for (let x = 10; x < W; x += 17) lutins.push({ x, y: COURT.top - 3, h: 15 });
+  for (let x = 8; x < W; x += 21) lutins.push({ x, y: H - 5, h: 22 });
+  for (let y = COURT.top + 22; y < COURT.bottom; y += 27) {
+    lutins.push({ x: 24 + graine(y) * 22, y, h: 16 });
+    lutins.push({ x: W - 24 - graine(y + 3) * 22, y, h: 16 });
+  }
+  decorNoel = { sapins, lutins };
+}
+
+function sapinNoel(x, y, ech, couleur, balance) {
+  const l = ech * .42;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(Math.sin(balance) * .012);
+  ctx.fillStyle = '#5e3a20';
+  ctx.fillRect(-ech * .045, -ech * .16, ech * .09, ech * .16);
+  ctx.fillStyle = couleur;
+  for (let e = 0; e < 3; e++) {
+    const bas = -ech * (.12 + e * .27), haut = -ech * (.46 + e * .27), larg = l * (1 - e * .26);
+    ctx.beginPath();
+    ctx.moveTo(0, haut); ctx.lineTo(-larg, bas); ctx.lineTo(larg, bas);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Le halo compte autant que le point : c'est lui qui fait la lumière.
+function ampouleNoel(x, y, col, intensite, taille) {
+  ctx.globalAlpha = .18 * intensite;
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.arc(x, y, 5.5 * taille, 0, TAU); ctx.fill();
+  ctx.globalAlpha = intensite;
+  ctx.beginPath(); ctx.arc(x, y, 1.9 * taille, 0, TAU); ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+// Une nappe d'aurore : bande ondulante peinte en dégradé, posée en « screen »
+// pour qu'elle éclaire le ciel au lieu de le couvrir.
+function nappeAurore(rgb, alpha, y0, hauteur, amp, vitesse) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  const g = ctx.createLinearGradient(0, y0 - hauteur, 0, y0 + hauteur * .4);
+  g.addColorStop(0, 'rgba(255,255,255,0)');
+  g.addColorStop(.45, `rgba(${rgb},${alpha})`);
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(0, y0 + hauteur * .4);
+  for (let x = 0; x <= W; x += 16) ctx.lineTo(x, y0 + Math.sin(x / 150 + G.now * vitesse) * amp);
+  ctx.lineTo(W, -hauteur); ctx.lineTo(0, -hauteur);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+// Le marquage : touche, médiane, rond central. Tracé une fois, peint deux fois
+// — une fois en blanc pour balayer le givre, une fois en creux par-dessus.
+function tracerMarquageNoel() {
+  const cw = COURT.right - COURT.left, chh = COURT.bottom - COURT.top;
+  ctx.beginPath();
+  ctx.rect(COURT.left + 6, COURT.top + 6, cw - 12, chh - 12);
+  ctx.moveTo(CX, COURT.top + 6); ctx.lineTo(CX, COURT.bottom - 6);
+  ctx.moveTo(CX + 58, CY); ctx.arc(CX, CY, 58, 0, TAU);
+  ctx.moveTo(CX + 13, CY); ctx.arc(CX, CY, 13, 0, TAU);
+}
+
+// Cage en sucre d'orge. Le rouge et blanc rayé ne sert QUE là : c'est ce qui
+// en fait la cible la plus lisible du terrain. Les volets de points se lisent
+// au travers, comme partout ailleurs.
+function drawCageNoel(side) {
+  const m = getMap(), th = m.theme;
+  const gx = side === 1 ? COURT.left - GOAL_DEPTH : COURT.right;
+  const GH = (GOAL_BOTTOM - GOAL_TOP) / 2;
+
+  ctx.fillStyle = melangeNoel('#0d1a2c', '#050c16', NOEL.nuit);
+  ctx.fillRect(gx, GOAL_TOP, GOAL_DEPTH, GOAL_BOTTOM - GOAL_TOP);
+  for (const z of m.zones) {
+    ctx.fillStyle = z.color; ctx.globalAlpha = .38;
+    ctx.fillRect(gx, CY + z.from, GOAL_DEPTH, z.to - z.from);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.font = '700 17px "Archivo Black", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    texteMonde(z.points, gx + GOAL_DEPTH / 2, CY + (z.from + z.to) / 2);
+  }
+
+  ctx.save();
+  ctx.translate(side === 1 ? COURT.left : COURT.right, CY);
+  ctx.scale(side === 1 ? 1 : -1, 1);
+  ctx.lineCap = 'butt'; ctx.lineWidth = 16;
+  for (const y of [-GH, GH]) {
+    ctx.save(); ctx.translate(0, y);
+    ctx.strokeStyle = '#fdfdfd';
+    ctx.beginPath(); ctx.moveTo(2, 0); ctx.lineTo(-GOAL_DEPTH - 10, 0); ctx.stroke();
+    ctx.strokeStyle = th.rouge; ctx.setLineDash([10, 14]); ctx.lineDashOffset = -G.now * 18;
+    ctx.beginPath(); ctx.moveTo(2, 0); ctx.lineTo(-GOAL_DEPTH - 10, 0); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.strokeStyle = '#fdfdfd'; ctx.setLineDash([]); ctx.lineWidth = 14;
+  ctx.beginPath(); ctx.moveTo(-GOAL_DEPTH - 10, -GH); ctx.lineTo(-GOAL_DEPTH - 10, GH); ctx.stroke();
+  ctx.strokeStyle = th.rouge; ctx.setLineDash([10, 14]); ctx.lineDashOffset = G.now * 18;
+  ctx.beginPath(); ctx.moveTo(-GOAL_DEPTH - 10, -GH); ctx.lineTo(-GOAL_DEPTH - 10, GH); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawCourtNoel() {
+  const m = getMap(), th = m.theme;
+  const cw = COURT.right - COURT.left, chh = COURT.bottom - COURT.top;
+  const t = G.now, horizon = COURT.top - 2;
+  if (!decorNoel) semerNoel();
+  const D = decorNoel;
+
+  // 1. Le ciel, du haut de l'écran à l'horizon seulement — comme à Dune de Râ.
+  // Étendu plus bas, le dégradé passerait derrière le terrain, ce qui n'a
+  // aucun sens en vue de dessus.
+  const ciel = ctx.createLinearGradient(0, 0, 0, horizon);
+  ciel.addColorStop(0, melangeNoel(th.cielHaut, '#01030a', NOEL.nuit));
+  ciel.addColorStop(1, melangeNoel(th.cielBas, '#070f1e', NOEL.nuit));
+  ctx.fillStyle = ciel;
+  ctx.fillRect(0, 0, W, horizon);
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 90; i++) {
+    ctx.globalAlpha = (.35 + .65 * Math.abs(Math.sin(t * (.6 + graine(i + 5)) + i))) * .8;
+    ctx.fillRect(graine(i) * W, graine(i + 31) * (horizon - 4), 1, 1);
+  }
+  ctx.globalAlpha = 1;
+  nappeAurore(th.aurore, .45, horizon * .62, 52, 13, .35);
+  // La seconde nappe est réduite à un liseré : à pleine opacité elle faisait
+  // une deuxième aurore et le ciel devenait bavard.
+  nappeAurore(th.aurore2, NOEL.discipline ? .12 : .32, horizon * .44, 40, 17, .5);
+
+  // 2. La neige autour du terrain, nettement plus sombre que celle de l'aire de
+  // jeu : c'est ce contraste qui dit où l'on joue.
+  const dehors = ctx.createLinearGradient(0, horizon, 0, H);
+  dehors.addColorStop(0, melangeNoel(th.dehorsHaut, '#0c1526', NOEL.nuit));
+  dehors.addColorStop(1, melangeNoel(th.dehorsBas, '#060b14', NOEL.nuit));
+  ctx.fillStyle = dehors;
+  ctx.fillRect(0, horizon, W, H - horizon);
+  ctx.globalAlpha = .3;
+  for (let i = 0; i < 130; i++) {
+    ctx.fillStyle = graine(i + 600) > .5 ? 'rgba(200,220,250,.5)' : 'rgba(60,84,120,.6)';
+    ctx.fillRect(graine(i + 400) * W, horizon + graine(i + 500) * (H - horizon), 2, 2);
+  }
+  ctx.globalAlpha = 1;
+
+  // 3. La forêt de sapins, décorée. En hiérarchie de couleur les boules passent
+  // toutes à l'or et au rouge : le cyan et le vert restent au ciel.
+  const vert = melangeNoel(th.sapin, '#08251a', NOEL.nuit * .8);
+  const boules = NOEL.discipline ? [th.or, th.rouge, '#ffe9a8'] : [th.or, th.rouge, '#35e0ff', '#5df08a'];
+  D.sapins.forEach((p, i) => {
+    const h = (p.grand ? 58 : 38) + graine(i) * 18;
+    sapinNoel(p.x, p.y, h, vert, t + i);
+    for (let b = 0; b < 5; b++) {
+      ampouleNoel(p.x + Math.sin(b * 2.1 + i) * h * .16, p.y - h * .18 - b * h * .15,
+        boules[(b + i) % boules.length], (.55 + Math.sin(t * 3 + i + b) * .4) * .8, .8);
+    }
+    ctx.fillStyle = th.or;
+    ctx.beginPath(); ctx.arc(p.x, p.y - h * .94, 2.6, 0, TAU); ctx.fill();
+  });
+
+  // 4. Les lutins. Rabattus et rapetissés pour ne pas rivaliser avec les cages,
+  // mais ils sautent plus haut au but — toute l'ambiance passe par eux.
+  const but = Math.max(G.goalFlash[0], G.goalFlash[1]);
+  const calme = G.training ? .4 : 1;
+  const vertL = '#175c3a', rougeL = '#8f2436';
+  D.lutins.forEach((p, i) => {
+    const h = p.h * .82;
+    const saut = Math.abs(Math.sin(t * 4 + i * 1.7)) * h * .24 * calme * (1 + but * 1.8);
+    ctx.save();
+    ctx.translate(p.x, p.y - saut);
+    ctx.globalAlpha = .65;
+    ctx.fillStyle = i % 2 ? vertL : rougeL;
+    ctx.fillRect(-h * .17, -h * .55, h * .34, h * .55);
+    ctx.fillStyle = '#b39a80';
+    ctx.beginPath(); ctx.arc(0, -h * .66, h * .16, 0, TAU); ctx.fill();
+    ctx.fillStyle = i % 2 ? rougeL : vertL;
+    ctx.beginPath();
+    ctx.moveTo(-h * .17, -h * .74); ctx.lineTo(h * .17, -h * .74);
+    ctx.lineTo(h * .05, -h * 1.1); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = th.or;
+    ctx.beginPath(); ctx.arc(h * .05, -h * 1.1, h * .06, 0, TAU); ctx.fill();
+    ctx.fillStyle = i % 2 ? vertL : rougeL;
+    const bras = Math.sin(t * 6 + i) * h * .2;
+    ctx.fillRect(-h * .28, -h * .55 + bras, h * .11, h * .3);
+    ctx.fillRect(h * .17, -h * .55 - bras, h * .11, h * .3);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  });
+
+  // 5. La glace givrée. `givre` ne coupe pas les fougères au hasard : il les
+  // rend plus grandes et plus rares, pour qu'on lise un motif au lieu d'un
+  // grouillement — et surtout pour qu'elles ne se confondent plus avec les
+  // flocons qui tombent, qui dessinent exactement la même étoile.
+  ctx.fillStyle = melangeNoel(melangeNoel(th.givre, th.givreChaud, NOEL.chaleur),
+    '#b8c8de', NOEL.nuit * .45);
+  ctx.fillRect(COURT.left, COURT.top, cw, chh);
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(COURT.left, COURT.top, cw, chh); ctx.clip();
+
+  const nGivre = Math.round(6 + 16 * NOEL.givre), grossir = 1 + (1 - NOEL.givre) * .9;
+  ctx.strokeStyle = `rgba(255,255,255,${.35 + .5 * NOEL.givre})`;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < nGivre; i++) {
+    const x = COURT.left + 10 + graine(i) * (cw - 20);
+    const y = COURT.top + 10 + graine(i + 13) * (chh - 20);
+    const branches = 5 + ((graine(i + 2) * 3) | 0), R = (12 + graine(i + 4) * 16) * grossir;
+    for (let b = 0; b < branches; b++) {
+      const a = b / branches * TAU + graine(i) * 3;
+      ctx.lineWidth = 1.3 * grossir;
+      ctx.beginPath(); ctx.moveTo(x, y);
+      ctx.lineTo(x + Math.cos(a) * R, y + Math.sin(a) * R); ctx.stroke();
+      ctx.lineWidth = .8 * grossir;
+      for (const k of [.4, .7]) {
+        const mx = x + Math.cos(a) * R * k, my = y + Math.sin(a) * R * k;
+        ctx.beginPath();
+        ctx.moveTo(mx, my); ctx.lineTo(mx + Math.cos(a + .9) * R * .26, my + Math.sin(a + .9) * R * .26);
+        ctx.moveTo(mx, my); ctx.lineTo(mx + Math.cos(a - .9) * R * .26, my + Math.sin(a - .9) * R * .26);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // 6. Le marquage creusé. Le balayage est ce qui le sauve : sur un sol blanc
+  // déjà couvert de motifs blancs, un sillon seul ne se voit pas. On dégage le
+  // givre le long du tracé avant de creuser — c'est aussi ce qu'on ferait
+  // vraiment sur un terrain enneigé.
+  if (NOEL.degager > 0) {
+    ctx.strokeStyle = `rgba(255,255,255,${.55 * NOEL.degager})`;
+    ctx.lineWidth = 20 * NOEL.degager; tracerMarquageNoel(); ctx.stroke();
+    ctx.strokeStyle = `rgba(232,240,251,${.7 * NOEL.degager})`;
+    ctx.lineWidth = 12 * NOEL.degager; tracerMarquageNoel(); ctx.stroke();
+  }
+  ctx.lineWidth = 7;
+  ctx.strokeStyle = `rgba(74,102,146,${.32 * NOEL.sillon})`;
+  tracerMarquageNoel(); ctx.stroke();
+  ctx.save(); ctx.translate(0, 2);
+  ctx.lineWidth = 2.4;
+  ctx.strokeStyle = `rgba(255,255,255,${Math.min(1, .55 * NOEL.sillon)})`;
+  tracerMarquageNoel(); ctx.stroke();
+  ctx.restore();
+
+  // 7. La nappe chaude des lampions sur la glace : c'est elle qui ramène l'œil
+  // au centre une fois le pourtour éteint.
+  const nappe = ctx.createRadialGradient(CX, CY, 40, CX, CY, Math.max(cw, chh) * .62);
+  nappe.addColorStop(0, `rgba(255,228,180,${.16 * NOEL.nuit + .1 * NOEL.chaleur})`);
+  nappe.addColorStop(1, 'rgba(255,228,180,0)');
+  ctx.fillStyle = nappe;
+  ctx.fillRect(COURT.left, COURT.top, cw, chh);
+  ctx.restore();
+
+  drawCageNoel(1);
+  drawCageNoel(2);
+
+  // 8. Les lampions. Leurs halos sont coupés au bord du terrain : sans ça, huit
+  // taches chaudes débordent sur la glace et lui font perdre son contraste
+  // exactement là où le disque doit rester lisible.
+  const piquets = [];
+  for (let x = 46; x < W; x += 118) { piquets.push([x, COURT.top - 6]); piquets.push([x, H - 10]); }
+  piquets.push([26, CY - 90], [26, CY + 90], [W - 26, CY - 90], [W - 26, CY + 90]);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, W, H);
+  ctx.rect(COURT.left, COURT.top, cw, chh);   // le terrain devient un trou
+  ctx.clip('evenodd');
+  piquets.forEach(([x, y], i) => {
+    ctx.globalAlpha = .16 * (.62 + Math.sin(t * 2.2 + i) * .3) * (1 + NOEL.nuit * .8);
+    ctx.fillStyle = th.chaud;
+    ctx.beginPath(); ctx.arc(x, y - 32, 26 + NOEL.nuit * 14, 0, TAU); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  piquets.forEach(([x, y], i) => {
+    const v = .62 + Math.sin(t * 2.2 + i) * .3;
+    ctx.fillStyle = '#3a2a1c';
+    ctx.fillRect(x - 1.6, y - 26, 3.2, 26);
+    ctx.fillRect(x - 7, y - 42, 14, 3);
+    ctx.fillStyle = `rgba(255,190,100,${v})`;
+    ctx.beginPath();
+    ctx.moveTo(x - 6, y - 39); ctx.lineTo(x + 6, y - 39);
+    ctx.lineTo(x + 4, y - 26); ctx.lineTo(x - 4, y - 26);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#3a2a1c'; ctx.lineWidth = 1.4; ctx.stroke();
+  });
+
+  // 9. Le vignettage : on éteint les bords pour que rien n'attire l'œil hors du
+  // terrain.
+  const vig = ctx.createRadialGradient(CX, CY, cw * .34, CX, CY, cw * .78);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, `rgba(2,5,12,${.55 * NOEL.nuit})`);
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// Les flocons étoilés, posés par-dessus tout — joueurs et disque compris. Ils
+// sont nettement plus petits et plus rares que le givre du sol : à taille égale
+// les deux couches d'étoiles se confondaient et l'image devenait illisible.
+function drawNeigeNoel() {
+  if (getMap().style !== 'noel') return;
+  const t = G.now, n = Math.round(34 * NOEL.flocons), taille = .55 + .45 * NOEL.flocons;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.85)';
+  ctx.lineCap = 'round';
+  for (let i = 0; i < n; i++) {
+    const v = 20 + graine(i) * 18, R = (3.4 + graine(i + 2) * 4) * taille;
+    const x = (graine(i) * W + Math.sin(t * .6 + i) * 14 + W) % W;
+    const y = (graine(i + 7) * H + t * v) % H;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(t * (.5 + graine(i + 4)) + i);
+    ctx.globalAlpha = (.45 + graine(i + 9) * .45) * (.6 + .4 * NOEL.flocons);
+    ctx.lineWidth = 1.1;
+    for (let b = 0; b < 3; b++) {
+      ctx.rotate(Math.PI / 3);
+      ctx.beginPath(); ctx.moveTo(-R, 0); ctx.lineTo(R, 0); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(R * .55, 0); ctx.lineTo(R * .8, -R * .3);
+      ctx.moveTo(R * .55, 0); ctx.lineTo(R * .8, R * .3);
+      ctx.moveTo(-R * .55, 0); ctx.lineTo(-R * .8, -R * .3);
+      ctx.moveTo(-R * .55, 0); ctx.lineTo(-R * .8, R * .3);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
 function drawCourt() {
+  if (getMap().style === 'noel') { drawCourtNoel(); return; }
   if (getMap().style === 'desert') { drawCourtDesert(); return; }
   if (getMap().style === 'stade') { drawCourtStade(); return; }
   if (getMap().style === 'nu') { drawCourtNu(); return; }
@@ -1959,6 +2340,9 @@ export function render() {
   // transformation caméra, ils auraient été zoomés avec le terrain.
   if (G.replay) drawReplayOverlay();
   drawTempete();
+  // La neige du Pôle Nord, comme la tempête de sable : en espace écran, donc
+  // par-dessus tout, et jamais retournée chez l'invité.
+  drawNeigeNoel();
   if (G.hack) drawHack();
   drawDebug();
   // Flash du Perfect Dive, appliqué hors zoom pour couvrir tout l'écran.

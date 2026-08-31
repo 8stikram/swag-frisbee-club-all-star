@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Pôle Nord — assemblage final</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#060a12; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff;
+         --accent:#5df08a; --or:#f5c542; --rouge:#e5384f; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:'Segoe UI',system-ui,sans-serif;padding:16px 18px 60px}
+  h1{font-size:20px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:12.5px;margin:22px 0 8px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.3px;border-bottom:1px solid var(--edge);padding-bottom:5px}
+  .note{font-size:12.5px;color:#8fa4c4;line-height:1.65;margin:0 0 14px}
+  .note b{color:var(--ink)}
+
+  /* Aperçu en colonne latérale collante : en pleine largeur il mange l'écran
+     et on ne peut plus comparer les options en même temps qu'on le regarde. */
+  .page{display:grid;grid-template-columns:minmax(300px,400px) 1fr;gap:20px;align-items:start}
+  @media (max-width:1080px){ .page{grid-template-columns:1fr} }
+  .scene{position:sticky;top:14px}
+  .scene canvas{display:block;width:100%;height:auto;border-radius:8px;
+                border:1px solid var(--edge);background:#060a12}
+  .outils{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+
+  button{font:inherit;font-size:11.5px;letter-spacing:.4px;cursor:pointer;
+         background:#16233a;color:var(--ink);border:1px solid var(--edge);
+         border-radius:5px;padding:6px 11px}
+  button:hover{background:#1e3050;border-color:#3a557f}
+  button.on{background:var(--or);color:#111;border-color:var(--or);font-weight:700}
+
+  .recette{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:#9fb0cc;
+           background:var(--panel);border:1px solid var(--edge);border-radius:7px;
+           padding:9px 11px;line-height:1.75}
+  .recette b{color:var(--or)}
+
+  .conflit{background:var(--panel);border:1px solid var(--edge);border-left:3px solid var(--rouge);
+           border-radius:6px;padding:8px 11px;margin-bottom:7px;font-size:11.5px;
+           color:#8fa4c4;line-height:1.55}
+  .conflit b{display:block;color:#ffb0ba;font-size:12px;margin-bottom:2px}
+
+  .fin{background:var(--panel);border:1px solid var(--edge);border-radius:8px;
+       padding:9px 11px;margin-bottom:8px;cursor:pointer;transition:border-color .12s}
+  .fin:hover{border-color:#3a557f}
+  .fin.on{border-color:var(--or);box-shadow:0 0 0 1px var(--or) inset}
+  .fin b{display:block;font-size:13px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  .fin.on b{color:#fff}
+  .fin span{font-size:11.5px;color:#8fa4c4;line-height:1.55}
+
+  /* Même cadre que la recette et les finitions : sans lui, ce bloc était le
+     seul à courir jusqu'au bord de la colonne, et les valeurs se collaient au
+     ras du vide au point de passer pour coupées. */
+  #reglages{background:var(--panel);border:1px solid var(--edge);border-radius:8px;
+            padding:12px 13px 4px}
+  .reglage{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:baseline;
+           font-size:11.5px;color:#9fb0cc;margin-bottom:11px}
+  .reglage input[type=range]{grid-column:1/-1;width:100%;margin:2px 0 0;accent-color:var(--or)}
+  .reglage .val{color:var(--or);font-family:ui-monospace,Consolas,monospace;
+                min-width:34px;text-align:right}
+  .bascule{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#9fb0cc;
+           margin-bottom:11px;cursor:pointer}
+  .bascule:first-of-type{border-top:1px solid var(--edge);padding-top:12px;margin-top:2px}
+  .bascule input{accent-color:var(--or);width:15px;height:15px;flex:0 0 auto}
+</style>
+</head>
+<body>
+
+<h1>Pôle Nord — assemblage final</h1>
+<p class="note">Ton choix monté en un seul terrain, puis retravaillé pour que les huit pièces
+tiennent ensemble. <b>A</b> est ton choix brut, sans une retouche ; <b>B</b> à <b>E</b> le corrigent
+de plus en plus loin. Les curseurs du bas règlent chaque correction séparément si tu veux ton propre
+dosage. <b>Comparer au brut</b> coupe l'image en deux : ton choix à gauche, la finition en cours à droite.</p>
+
+<div class="page">
+  <div class="colonne">
+
+    <div class="recette" id="recette"></div>
+
+    <h2>Ce qui se mange entre soi</h2>
+    <div id="conflits"></div>
+
+    <h2>Les finitions</h2>
+    <div id="finitions"></div>
+
+    <h2>Réglage fin</h2>
+    <div id="reglages"></div>
+
+  </div>
+
+  <div class="scene">
+    <canvas id="grand" width="960" height="600"></canvas>
+    <div class="outils">
+      <button id="btAction">Voir l'action</button>
+      <button id="btCompare">Comparer au brut</button>
+      <button id="btPause">Figer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===========================================================================
+   Géométrie du jeu (core/dom.js + data/maps.js), à l'identique.
+   ======================================================================== */
+const W = 960, H = 600;
+const COURT = { left: 70, right: 890, top: 84, bottom: 560 };
+const CW = COURT.right - COURT.left, CH = COURT.bottom - COURT.top;
+const CX = (COURT.left + COURT.right) / 2, CY = (COURT.top + COURT.bottom) / 2;
+const GOAL_H = 200, GOAL_D = 48, GH = GOAL_H / 2;
+const HORIZON = COURT.top - 2;
+const TAU = Math.PI * 2;
+
+const P = {
+  sapin:'#1f8a4d', sapinFonce:'#14603a', sapinNuit:'#0d3f27',
+  or:'#f5c542', orClair:'#ffe9a8', chaud:'#ffb457',
+  rouge:'#e5384f', rougeFonce:'#a8253a', boisFonce:'#5e3a20',
+  aurVert:'#5df08a', aurCyan:'#35e0ff'
+};
+
+function graine(i){ const x = Math.sin(i * 127.1) * 43758.5453; return x - Math.floor(x); }
+function alea(i, a, b){ return a + graine(i) * (b - a); }
+function hx(h){ return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]; }
+/* Mélange de deux couleurs : c'est lui qui porte « nuit » et « chaleur »,
+   au lieu de dupliquer une palette par finition. Il rend de l'hexadécimal et
+   non du rgb(), parce qu'on l'imbrique — chaleur PUIS nuit sur la même teinte —
+   et qu'il doit donc savoir relire sa propre sortie. */
+function melange(a, b, k){ const A = hx(a), B = hx(b);
+  return '#' + A.map((v,i) =>
+    Math.max(0, Math.min(255, Math.round(v + (B[i]-v)*k))).toString(16).padStart(2,'0')).join(''); }
+function surLeTerrain(c, fn){
+  c.save(); c.beginPath(); c.rect(COURT.left, COURT.top, CW, CH); c.clip(); fn(); c.restore(); }
+function horsTerrain(c, fn){
+  c.save(); c.beginPath(); c.rect(0,0,W,H);
+  c.rect(COURT.left, COURT.top, CW, CH);     // le terrain devient un trou
+  c.clip('evenodd'); fn(); c.restore(); }
+
+function sapin(c, x, y, ech, opt = {}){
+  const l = ech * .42;
+  c.save(); c.translate(x, y);
+  if (opt.balance) c.rotate(Math.sin(opt.balance) * .012);
+  c.fillStyle = P.boisFonce;
+  c.fillRect(-ech * .045, -ech * .16, ech * .09, ech * .16);
+  for (let e = 0; e < 3; e++){
+    const bas = -ech * (.12 + e * .27), haut = -ech * (.46 + e * .27), larg = l * (1 - e * .26);
+    c.fillStyle = opt.couleur || P.sapinFonce;
+    c.beginPath(); c.moveTo(0, haut); c.lineTo(-larg, bas); c.lineTo(larg, bas); c.closePath(); c.fill();
+    if (opt.neige){
+      c.fillStyle = 'rgba(232,240,251,.6)';
+      c.beginPath(); c.moveTo(0, haut); c.lineTo(-larg * .58, bas - (bas-haut) * .42);
+      c.lineTo(larg * .58, bas - (bas-haut) * .42); c.closePath(); c.fill(); }
+  }
+  c.restore();
+}
+function ampoule(c, x, y, col, intensite, taille = 1){
+  c.globalAlpha = .18 * intensite; c.fillStyle = col;
+  c.beginPath(); c.arc(x, y, 5.5 * taille, 0, TAU); c.fill();
+  c.globalAlpha = intensite;
+  c.beginPath(); c.arc(x, y, 1.9 * taille, 0, TAU); c.fill();
+  c.globalAlpha = 1;
+}
+
+const POSTES = (()=>{ const a=[];
+  for(let x=6;x<W;x+=44) a.push({x, y:COURT.top-2, k:0});
+  for(let y=COURT.top+34;y<COURT.bottom-10;y+=62){ a.push({x:30,y,k:1}); a.push({x:W-30,y,k:1}); }
+  for(let x=26;x<W;x+=66) a.push({x, y:H-4, k:2});
+  return a; })();
+const GRADINS = (()=>{ const a=[];
+  for(let x=10;x<W;x+=17) a.push({x, y:COURT.top-3, h:15, k:0});
+  for(let x=8;x<W;x+=21) a.push({x, y:H-5, h:22, k:1});
+  for(let y=COURT.top+22;y<COURT.bottom;y+=27){
+    a.push({x:24+graine(y)*22, y, h:16, k:2});
+    a.push({x:W-24-graine(y+3)*22, y, h:16, k:2}); }
+  return a; })();
+
+/* ===========================================================================
+   LES HUIT PIÈCES CHOISIES, paramétrées.
+   sol G · marquage A · cages D · forêt C · ciel B · neige E · public C · lumières B
+   ======================================================================== */
+
+/* 5 · CIEL B — aurore en vague. */
+function ciel(c, t, R){
+  const g = c.createLinearGradient(0, 0, 0, HORIZON);
+  g.addColorStop(0, melange('#050b18', '#01030a', R.nuit));
+  g.addColorStop(1, melange('#12233f', '#070f1e', R.nuit));
+  c.fillStyle = g; c.fillRect(0, 0, W, HORIZON);
+  for (let i = 0; i < 90; i++){
+    c.globalAlpha = (.35 + .65 * Math.abs(Math.sin(t * (.6 + graine(i+5)) + i))) * (1 - R.nuit * .2);
+    c.fillStyle = '#ffffff';
+    c.fillRect(alea(i,0,W), alea(i+31,0,HORIZON-4), 1, 1);
+  }
+  c.globalAlpha = 1;
+  nappe(c, 'rgba(93,240,138,' + (.55 - R.nuit*.1) + ')', HORIZON*.62, 52, 13, .35, t);
+  // La seconde nappe cyan est ce qui rend le ciel bavard : la hiérarchie de
+  // couleur la réduit à un liseré au lieu d'une deuxième aurore.
+  nappe(c, 'rgba(53,224,255,' + (R.discipline ? .12 : .32) + ')', HORIZON*.44, 40, 17, .5, t);
+}
+function nappe(c, col, y0, hauteur, amp, vitesse, t){
+  c.save(); c.globalCompositeOperation = 'screen';
+  const g = c.createLinearGradient(0, y0-hauteur, 0, y0+hauteur*.4);
+  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.45, col);
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = g; c.beginPath(); c.moveTo(0, y0+hauteur*.4);
+  for (let x = 0; x <= W; x += 16) c.lineTo(x, y0 + Math.sin(x/150 + t*vitesse) * amp);
+  c.lineTo(W, -hauteur); c.lineTo(0, -hauteur); c.closePath(); c.fill();
+  c.restore();
+}
+
+/* La neige autour du terrain. */
+function exterieur(c, R){
+  const g = c.createLinearGradient(0, HORIZON, 0, H);
+  g.addColorStop(0, melange(melange('#1b2c4a','#3a2f42',R.chaleur*.5), '#0c1526', R.nuit));
+  g.addColorStop(1, melange(melange('#0d1729','#221a2a',R.chaleur*.5), '#060b14', R.nuit));
+  c.fillStyle = g; c.fillRect(0, HORIZON, W, H - HORIZON);
+  c.globalAlpha = .45 * (1 - R.nuit * .35);
+  for (let i = 0; i < 130; i++){
+    c.fillStyle = graine(i+600) > .5 ? 'rgba(200,220,250,.5)' : 'rgba(60,84,120,.6)';
+    c.fillRect(alea(i+400,0,W), alea(i+500,HORIZON,H), 2, 2);
+  }
+  c.globalAlpha = 1;
+}
+
+/* 4 · FORÊT C — sapins décorés. */
+function foret(c, t, R){
+  const vert = melange(melange(P.sapin, '#2a6b46', R.discipline), '#08251a', R.nuit * .8);
+  const palette = R.discipline ? [P.or, P.rouge, P.orClair] : [P.or, P.rouge, P.aurCyan, P.aurVert];
+  POSTES.forEach((p, i) => {
+    const h = (p.k ? 38 : 58) + graine(i) * 18;
+    sapin(c, p.x, p.y, h, { couleur: vert, balance: t + i });
+    for (let b = 0; b < 5; b++){
+      const yy = p.y - h*.18 - b*h*.15, xx = p.x + Math.sin(b*2.1 + i) * h*.16;
+      ampoule(c, xx, yy, palette[(b+i) % palette.length],
+              (.55 + Math.sin(t*3 + i + b) * .4) * (R.discipline ? .8 : 1), R.discipline ? .8 : 1);
+    }
+    c.fillStyle = P.or;
+    c.beginPath(); c.arc(p.x, p.y - h*.94, 2.6, 0, TAU); c.fill();
+  });
+}
+
+/* 7 · PUBLIC C — lutins. En hiérarchie de couleur, ils passent au second plan :
+   teintes rabattues et taille réduite, sinon ils rivalisent avec les cages. */
+function public_(c, t, R){
+  const vert = R.discipline ? '#175c3a' : '#1c7a49';
+  const rouge = R.discipline ? '#8f2436' : '#c22a3e';
+  const ech = R.discipline ? .82 : 1;
+  GRADINS.forEach((p, i) => {
+    const h = p.h * ech, saut = Math.abs(Math.sin(t*4 + i*1.7)) * h*.24;
+    c.save(); c.translate(p.x, p.y - saut);
+    c.globalAlpha = 1 - R.nuit * .35;
+    c.fillStyle = i % 2 ? vert : rouge;
+    c.fillRect(-h*.17, -h*.55, h*.34, h*.55);
+    c.fillStyle = melange('#f0d3b0', '#8a7660', R.nuit * .6);
+    c.beginPath(); c.arc(0, -h*.66, h*.16, 0, TAU); c.fill();
+    c.fillStyle = i % 2 ? rouge : vert;
+    c.beginPath(); c.moveTo(-h*.17, -h*.74); c.lineTo(h*.17, -h*.74);
+    c.lineTo(h*.05, -h*1.1); c.closePath(); c.fill();
+    c.fillStyle = P.or; c.beginPath(); c.arc(h*.05, -h*1.1, h*.06, 0, TAU); c.fill();
+    c.fillStyle = i % 2 ? vert : rouge;
+    const b = Math.sin(t*6 + i) * h*.2;
+    c.fillRect(-h*.28, -h*.55+b, h*.11, h*.3); c.fillRect(h*.17, -h*.55-b, h*.11, h*.3);
+    c.globalAlpha = 1; c.restore();
+  });
+}
+
+/* 1 · SOL G — givre étoilé. `givre` ne coupe pas le nombre de fougères au
+   hasard : il les rend plus grandes et plus rares, pour qu'on lise un motif
+   au lieu d'un grouillement. */
+function sol(c, t, R){
+  const base = melange(melange('#e2ecf9', '#f2e7d2', R.chaleur), '#b8c8de', R.nuit * .45);
+  c.fillStyle = base; c.fillRect(COURT.left, COURT.top, CW, CH);
+  const n = Math.round(6 + 16 * R.givre);
+  const grossir = 1 + (1 - R.givre) * .9;
+  surLeTerrain(c, () => {
+    c.strokeStyle = 'rgba(255,255,255,' + (.35 + .5 * R.givre) + ')'; c.lineCap = 'round';
+    for (let i = 0; i < n; i++){
+      const x = COURT.left + alea(i,10,CW-10), y = COURT.top + alea(i+13,10,CH-10);
+      const br = 5 + ((graine(i+2) * 3) | 0), Rr = (12 + graine(i+4)*16) * grossir;
+      for (let b = 0; b < br; b++){
+        const a = b/br * TAU + graine(i)*3;
+        c.lineWidth = 1.3 * grossir; c.beginPath();
+        c.moveTo(x,y); c.lineTo(x + Math.cos(a)*Rr, y + Math.sin(a)*Rr); c.stroke();
+        c.lineWidth = .8 * grossir;
+        for (const k of [.4, .7]){
+          const mx = x + Math.cos(a)*Rr*k, my = y + Math.sin(a)*Rr*k;
+          c.beginPath(); c.moveTo(mx,my); c.lineTo(mx + Math.cos(a+.9)*Rr*.26, my + Math.sin(a+.9)*Rr*.26);
+          c.moveTo(mx,my); c.lineTo(mx + Math.cos(a-.9)*Rr*.26, my + Math.sin(a-.9)*Rr*.26); c.stroke();
+        }
+      }
+    }
+  });
+}
+
+function tracerMarquage(c){
+  c.beginPath(); c.rect(COURT.left+6, COURT.top+6, CW-12, CH-12);
+  c.moveTo(CX, COURT.top+6); c.lineTo(CX, COURT.bottom-6);
+  c.moveTo(CX+58, CY); c.arc(CX, CY, 58, 0, TAU);
+  c.moveTo(CX+13, CY); c.arc(CX, CY, 13, 0, TAU);
+}
+
+/* 2 · MARQUAGE A — creusé dans la neige. Le dégagement est ce qui le sauve :
+   on balaie le givre le long des lignes avant de creuser le sillon. C'est
+   aussi ce qu'on ferait vraiment sur un terrain enneigé. */
+function marquage(c, t, R){
+  surLeTerrain(c, () => {
+    if (R.degager > 0){
+      c.strokeStyle = 'rgba(255,255,255,' + (.55 * R.degager) + ')';
+      c.lineWidth = 20 * R.degager; tracerMarquage(c); c.stroke();
+      c.strokeStyle = 'rgba(232,240,251,' + (.7 * R.degager) + ')';
+      c.lineWidth = 12 * R.degager; tracerMarquage(c); c.stroke();
+    }
+    c.lineWidth = 7; c.strokeStyle = 'rgba(74,102,146,' + (.32 * R.sillon) + ')';
+    tracerMarquage(c); c.stroke();
+    c.save(); c.translate(0, 2);
+    c.lineWidth = 2.4; c.strokeStyle = 'rgba(255,255,255,' + Math.min(1, .55 * R.sillon) + ')';
+    tracerMarquage(c); c.stroke(); c.restore();
+  });
+}
+
+/* La nappe de lumière des lampions sur le terrain, et le vignettage du
+   pourtour : c'est ce qui ramène l'œil au centre en finition « nuit ». */
+function nappeLumiere(c, R){
+  if (R.nuit <= 0) return;
+  surLeTerrain(c, () => {
+    const g = c.createRadialGradient(CX, CY, 40, CX, CY, Math.max(CW, CH) * .62);
+    g.addColorStop(0, 'rgba(255,228,180,' + (.16 * R.nuit + .1 * R.chaleur) + ')');
+    g.addColorStop(1, 'rgba(255,228,180,0)');
+    c.fillStyle = g; c.fillRect(COURT.left, COURT.top, CW, CH);
+  });
+}
+function vignette(c, R){
+  if (R.nuit <= 0) return;
+  const g = c.createRadialGradient(CX, CY, CW*.34, CX, CY, CW*.78);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(2,5,12,' + (.55 * R.nuit) + ')');
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+}
+
+/* 3 · CAGES D — tunnel de sucre d'orge. Le rouge et le blanc rayés ne sont
+   gardés QU'ICI en hiérarchie de couleur : c'est ce qui en fait la cible. */
+function cages(c, t, R){
+  for (const side of [1, 2]){
+    const vers = side === 1 ? 1 : -1;
+    c.save(); c.translate(side === 1 ? COURT.left : COURT.right, CY); c.scale(vers, 1);
+    c.fillStyle = melange('#0d1a2c', '#050c16', R.nuit);
+    c.fillRect(-GOAL_D, -GH, GOAL_D, GOAL_H);
+    if (R.nuit > 0){
+      const g = c.createLinearGradient(-GOAL_D, 0, 0, 0);
+      g.addColorStop(0, 'rgba(229,56,79,' + (.18 * R.nuit) + ')');
+      g.addColorStop(1, 'rgba(229,56,79,0)');
+      c.fillStyle = g; c.fillRect(-GOAL_D, -GH, GOAL_D, GOAL_H);
+    }
+    c.save(); c.lineCap = 'butt'; c.lineWidth = 16;
+    for (const y of [-GH, GH]){
+      c.save(); c.translate(0, y);
+      c.strokeStyle = '#fdfdfd';
+      c.beginPath(); c.moveTo(2, 0); c.lineTo(-GOAL_D-10, 0); c.stroke();
+      c.strokeStyle = P.rouge; c.setLineDash([10, 14]); c.lineDashOffset = -t*18;
+      c.beginPath(); c.moveTo(2, 0); c.lineTo(-GOAL_D-10, 0); c.stroke(); c.restore();
+    }
+    c.strokeStyle = '#fdfdfd'; c.setLineDash([]); c.lineWidth = 14;
+    c.beginPath(); c.moveTo(-GOAL_D-10, -GH); c.lineTo(-GOAL_D-10, GH); c.stroke();
+    c.strokeStyle = P.rouge; c.setLineDash([10, 14]); c.lineDashOffset = t*18;
+    c.beginPath(); c.moveTo(-GOAL_D-10, -GH); c.lineTo(-GOAL_D-10, GH); c.stroke();
+    c.restore();
+    c.restore();
+  }
+}
+
+/* 8 · LUMIÈRES B — lampions sur piquets. `haloContenu` coupe les halos au bord
+   du terrain : sans ça, huit taches chaudes débordent sur la glace et lavent
+   le sol juste là où le disque doit ressortir. */
+function lumieres(c, t, R){
+  const places = [];
+  for (let x = 46; x < W; x += 118){ places.push([x, COURT.top-6]); places.push([x, H-10]); }
+  places.push([26, CY-90], [26, CY+90], [W-26, CY-90], [W-26, CY+90]);
+  const halos = () => places.forEach(([x, y], i) => {
+    const v = .62 + Math.sin(t*2.2 + i) * .3;
+    c.globalAlpha = .16 * v * (1 + R.nuit * .8); c.fillStyle = P.chaud;
+    c.beginPath(); c.arc(x, y-32, 26 + R.nuit*14, 0, TAU); c.fill(); c.globalAlpha = 1;
+  });
+  R.haloContenu ? horsTerrain(c, halos) : halos();
+  places.forEach(([x, y], i) => {
+    const v = .62 + Math.sin(t*2.2 + i) * .3;
+    c.fillStyle = '#3a2a1c'; c.fillRect(x-1.6, y-26, 3.2, 26);
+    c.fillRect(x-7, y-42, 14, 3);
+    c.fillStyle = 'rgba(255,190,100,' + v + ')';
+    c.beginPath(); c.moveTo(x-6, y-39); c.lineTo(x+6, y-39);
+    c.lineTo(x+4, y-26); c.lineTo(x-4, y-26); c.closePath(); c.fill();
+    c.strokeStyle = '#3a2a1c'; c.lineWidth = 1.4; c.stroke();
+  });
+}
+
+/* 6 · NEIGE E — flocons étoilés. Même motif que le givre du sol : il faut
+   qu'ils soient nettement plus petits et plus rares, sinon les deux couches
+   d'étoiles se confondent et l'image devient illisible. */
+function neige(c, t, R){
+  const n = Math.round(34 * R.flocons);
+  const taille = .55 + .45 * R.flocons;
+  c.save(); c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineCap = 'round';
+  for (let i = 0; i < n; i++){
+    const v = 20 + graine(i)*18, Rr = (3.4 + graine(i+2)*4) * taille;
+    const x = (alea(i,0,W) + Math.sin(t*.6+i)*14 + W) % W, y = (alea(i+7,0,H) + t*v) % H;
+    c.save(); c.translate(x, y); c.rotate(t * (.5 + graine(i+4)) + i);
+    c.globalAlpha = (.45 + graine(i+9)*.45) * (.6 + .4*R.flocons); c.lineWidth = 1.1;
+    for (let b = 0; b < 3; b++){
+      c.rotate(Math.PI/3);
+      c.beginPath(); c.moveTo(-Rr, 0); c.lineTo(Rr, 0); c.stroke();
+      c.beginPath(); c.moveTo(Rr*.55, 0); c.lineTo(Rr*.8, -Rr*.3);
+      c.moveTo(Rr*.55, 0); c.lineTo(Rr*.8, Rr*.3);
+      c.moveTo(-Rr*.55, 0); c.lineTo(-Rr*.8, -Rr*.3);
+      c.moveTo(-Rr*.55, 0); c.lineTo(-Rr*.8, Rr*.3); c.stroke();
+    }
+    c.restore();
+  }
+  c.restore();
+}
+
+/* Le calque lisibilité : deux joueurs et le disque à l'échelle du jeu. */
+function action(c, t){
+  const d = { x: CX + Math.cos(t*.9)*300, y: CY + Math.sin(t*1.7)*150 };
+  for (const [px, py, robe] of [
+      [CX-250 + Math.sin(t*.8)*40, CY + Math.cos(t*.6)*90, '#1f8a4d'],
+      [CX+250 + Math.cos(t*.7)*40, CY + Math.sin(t*.9)*90, '#c22a3e']]){
+    c.fillStyle = 'rgba(0,0,0,.3)';
+    c.beginPath(); c.ellipse(px, py+15, 15, 5, 0, 0, TAU); c.fill();
+    c.fillStyle = robe; c.fillRect(px-13, py-8, 26, 24);
+    c.fillStyle = '#f0d3b0'; c.fillRect(px-10, py-24, 20, 16);
+    c.fillStyle = '#e5384f'; c.fillRect(px-11, py-27, 22, 5);
+    c.fillStyle = '#f2f6ff'; c.fillRect(px-12, py-10, 24, 4);
+    c.fillStyle = '#1a1f2b'; c.fillRect(px-6, py-19, 4, 4); c.fillRect(px+2, py-19, 4, 4);
+  }
+  c.fillStyle = 'rgba(0,0,0,.28)';
+  c.beginPath(); c.ellipse(d.x, d.y+12, 13, 4, 0, 0, TAU); c.fill();
+  c.save(); c.translate(d.x, d.y); c.rotate(t*6);
+  c.fillStyle = '#f2f6ff'; c.beginPath(); c.ellipse(0, 0, 14, 12, 0, 0, TAU); c.fill();
+  c.strokeStyle = '#9fb6d6'; c.lineWidth = 2; c.stroke();
+  c.fillStyle = '#35e0ff'; c.beginPath(); c.ellipse(0, 0, 7, 6, 0, 0, TAU); c.fill();
+  c.restore();
+}
+
+let montrerAction = false;
+function peindre(c, t, R){
+  c.clearRect(0, 0, W, H);
+  ciel(c, t, R);
+  exterieur(c, R);
+  foret(c, t, R);
+  public_(c, t, R);
+  sol(c, t, R);
+  marquage(c, t, R);
+  nappeLumiere(c, R);
+  cages(c, t, R);
+  lumieres(c, t, R);
+  vignette(c, R);
+  if (montrerAction) action(c, t);
+  neige(c, t, R);
+}
+
+/* ===========================================================================
+   LES FINITIONS — chacune n'est qu'un jeu de réglages.
+   ======================================================================== */
+const FINITIONS = [
+  { id:'A', nom:'BRUT', desc:'Ton choix tel quel, sans une retouche. À garder sous les yeux comme référence : c\'est lui que les autres corrigent.',
+    r:{ givre:1, degager:0, sillon:1, flocons:1, discipline:0, nuit:0, chaleur:0, haloContenu:0 } },
+
+  { id:'B', nom:'LISIBILITÉ', desc:'La correction minimale, rien d\'autre. Le givre passe en motifs plus grands et plus rares, les lignes sont balayées et creusées deux fois plus fort, les flocons réduits de moitié et les halos des lampions coupés au bord du terrain.',
+    r:{ givre:.42, degager:1, sillon:1.8, flocons:.5, discipline:0, nuit:0, chaleur:0, haloContenu:1 } },
+
+  { id:'C', nom:'HIÉRARCHIE DE COULEUR', desc:'B, plus une règle : le rouge et blanc rayé n\'existe que sur les cages, les sapins et les lampions passent tous à l\'or, les lutins sont rabattus et rapetissés, la seconde aurore cyan devient un liseré. Chaque couleur ne sert plus qu\'à une chose.',
+    r:{ givre:.42, degager:1, sillon:1.8, flocons:.5, discipline:1, nuit:0, chaleur:0, haloContenu:1 } },
+
+  { id:'D', nom:'NUIT PROFONDE', desc:'C, puis on éteint le pourtour et on allume le terrain : vignettage sur les bords, nappe chaude des lampions sur la glace, buts qui rougeoient. L\'œil ne peut plus aller ailleurs que sur l\'aire de jeu.',
+    r:{ givre:.42, degager:1, sillon:2, flocons:.45, discipline:1, nuit:1, chaleur:.25, haloContenu:1 } },
+
+  { id:'E', nom:'CARTE POSTALE', desc:'C, réchauffé : givre doré, neige crème, lumière plus généreuse. Le plus beau en image fixe, le moins « terrain de compétition » — la glace n\'a plus l\'air froide.',
+    r:{ givre:.5, degager:1, sillon:1.6, flocons:.6, discipline:1, nuit:.45, chaleur:1, haloContenu:1 } }
+];
+
+const CONFLITS = [
+  ['Deux fois le même motif d\'étoile',
+   'Le givre du sol (G) et les flocons étoilés (E) dessinent exactement la même figure à six branches. Superposés, on ne lit plus ni l\'un ni l\'autre — juste du bruit blanc. Il faut que l\'un des deux change d\'échelle.'],
+  ['Le marquage creusé disparaît',
+   'Des sillons à peine teintés sur un sol blanc déjà couvert de motifs blancs : les lignes ne se voient plus du tout. Il faut dégager le givre le long du tracé et creuser plus franchement.'],
+  ['Quatre sources de rouge et de vert',
+   'Lutins rouge et vert, cages rayées rouge et blanc, sapins à boules multicolores, aurore verte. Rien ne domine, donc rien ne se remarque — et surtout pas la cage, qui devrait être la chose la plus visible du terrain.'],
+  ['Les halos des lampions lavent la glace',
+   'Huit lanternes chaudes posées juste au bord versent leur halo sur le terrain. Le sol y perd son contraste exactement là où le disque doit rester lisible.']
+];
+
+/* ===========================================================================
+   MONTAGE
+   ======================================================================== */
+const R = Object.assign({}, FINITIONS[1].r);
+let finActive = 1;
+
+const RECETTE = [['sol','G · givre étoilé'],['marquage','A · creusé dans la neige'],
+  ['cages','D · tunnel de sucre d\'orge'],['forêt','C · sapins décorés'],
+  ['ciel','B · aurore en vague'],['neige','E · flocons étoilés'],
+  ['public','C · lutins'],['lumières','B · lampions sur piquets']];
+document.getElementById('recette').innerHTML =
+  RECETTE.map(([k, v]) => k + ' <b>' + v + '</b>').join('<br>');
+
+document.getElementById('conflits').innerHTML = CONFLITS
+  .map(([t, d]) => '<div class="conflit"><b>' + t + '</b>' + d + '</div>').join('');
+
+const hoteFin = document.getElementById('finitions');
+FINITIONS.forEach((f, i) => {
+  const el = document.createElement('div');
+  el.className = 'fin' + (i === finActive ? ' on' : '');
+  el.innerHTML = '<b>' + f.id + ' · ' + f.nom + '</b><span>' + f.desc + '</span>';
+  el.addEventListener('click', () => {
+    finActive = i; Object.assign(R, f.r);
+    [...hoteFin.children].forEach((e, k) => e.classList.toggle('on', k === i));
+    majReglages();
+  });
+  hoteFin.appendChild(el);
+});
+
+const CURSEURS = [
+  ['givre', 'Givre du sol', 0, 1, .01],
+  ['degager', 'Dégagement des lignes', 0, 1, .01],
+  ['sillon', 'Profondeur des sillons', .4, 2.5, .05],
+  ['flocons', 'Densité des flocons', 0, 1, .01],
+  ['nuit', 'Nuit profonde', 0, 1, .01],
+  ['chaleur', 'Chaleur', 0, 1, .01]
+];
+const BASCULES = [['discipline', 'Hiérarchie de couleur'], ['haloContenu', 'Halos contenus hors terrain']];
+const hoteReg = document.getElementById('reglages');
+const champs = {};
+for (const [cle, nom, min, max, pas] of CURSEURS){
+  const d = document.createElement('div'); d.className = 'reglage';
+  d.innerHTML = '<span>' + nom + '</span><span class="val"></span>';
+  const inp = document.createElement('input');
+  inp.type = 'range'; inp.min = min; inp.max = max; inp.step = pas;
+  inp.addEventListener('input', () => { R[cle] = +inp.value; horsPreset(); majValeurs(); });
+  d.appendChild(inp); hoteReg.appendChild(d);
+  champs[cle] = { inp, val: d.querySelector('.val') };
+}
+for (const [cle, nom] of BASCULES){
+  const l = document.createElement('label'); l.className = 'bascule';
+  const inp = document.createElement('input'); inp.type = 'checkbox';
+  inp.addEventListener('change', () => { R[cle] = inp.checked ? 1 : 0; horsPreset(); });
+  l.appendChild(inp); l.appendChild(document.createTextNode(nom));
+  hoteReg.appendChild(l);
+  champs[cle] = { inp };
+}
+function majValeurs(){
+  for (const [cle] of CURSEURS) champs[cle].val.textContent = (+R[cle]).toFixed(2);
+}
+function majReglages(){
+  for (const [cle] of CURSEURS) champs[cle].inp.value = R[cle];
+  for (const [cle] of BASCULES) champs[cle].inp.checked = !!R[cle];
+  majValeurs();
+}
+/* Bouger un curseur, c'est quitter la finition nommée : on le dit au lieu de
+   laisser une pastille allumée sur un réglage qui n'est plus le sien. On les
+   teste TOUTES et pas seulement la dernière allumée — comme ça, retomber à la
+   main sur les valeurs d'une finition la rallume, et surtout on ne va plus
+   chercher FINITIONS[-1] au deuxième réglage d'affilée. */
+function horsPreset(){
+  finActive = FINITIONS.findIndex(f =>
+    Object.keys(f.r).every(k => Math.abs(R[k] - f.r[k]) < .001));
+  [...hoteFin.children].forEach((e, i) => e.classList.toggle('on', i === finActive));
+}
+majReglages();
+
+const grand = document.getElementById('grand').getContext('2d');
+const tampon = document.createElement('canvas'); tampon.width = W; tampon.height = H;
+const tctx = tampon.getContext('2d');
+let comparer = false, fige = false, horloge = 0;
+
+document.getElementById('btAction').addEventListener('click', e => {
+  montrerAction = !montrerAction; e.currentTarget.classList.toggle('on', montrerAction); });
+document.getElementById('btCompare').addEventListener('click', e => {
+  comparer = !comparer; e.currentTarget.classList.toggle('on', comparer); });
+document.getElementById('btPause').addEventListener('click', e => {
+  fige = !fige; e.currentTarget.classList.toggle('on', fige);
+  e.currentTarget.textContent = fige ? 'Reprendre' : 'Figer'; });
+
+function rendu(t){
+  if (!comparer){ peindre(grand, t, R); return; }
+  peindre(tctx, t, FINITIONS[0].r);
+  grand.clearRect(0, 0, W, H);
+  grand.drawImage(tampon, 0, 0);
+  peindre(tctx, t, R);
+  grand.save();
+  grand.beginPath(); grand.rect(W/2, 0, W/2, H); grand.clip();
+  grand.drawImage(tampon, 0, 0);
+  grand.restore();
+  grand.strokeStyle = '#f5c542'; grand.lineWidth = 2;
+  grand.beginPath(); grand.moveTo(W/2, 0); grand.lineTo(W/2, H); grand.stroke();
+  grand.font = '700 13px "Archivo Black", sans-serif'; grand.textBaseline = 'top';
+  grand.fillStyle = 'rgba(6,10,18,.75)';
+  grand.fillRect(W/2 - 92, 8, 84, 22); grand.fillRect(W/2 + 8, 8, 150, 22);
+  grand.fillStyle = '#f5c542'; grand.textAlign = 'right';
+  grand.fillText('BRUT', W/2 - 16, 13);
+  grand.textAlign = 'left';
+  grand.fillText(finActive < 0 ? 'RÉGLAGE PERSO' : FINITIONS[finActive].nom, W/2 + 16, 13);
+}
+requestAnimationFrame(function boucle(ms){
+  if (!fige) horloge = ms / 1000;
+  rendu(horloge);
+  requestAnimationFrame(boucle);
+});
+</script>
+</body>
+</html>

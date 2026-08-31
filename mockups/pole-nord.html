@@ -1,0 +1,1343 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Pôle Nord — pièces détachées du terrain</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#060a12; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff;
+         --accent:#5df08a; --or:#f5c542; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:'Segoe UI',system-ui,sans-serif;padding:20px 18px 80px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:34px 0 8px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px;
+     display:flex;align-items:center;gap:10px}
+  h2 .socle{font-size:9.5px;letter-spacing:.5px;color:#7d8ba3;border:1px solid #2b3a52;
+            border-radius:3px;padding:2px 6px;text-transform:none}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:940px;line-height:1.7;margin:0 0 16px}
+  .note b{color:var(--ink)}
+
+  /* ---- Aperçu assemblé, collant en haut ---- */
+  .apercu{position:sticky;top:0;z-index:20;background:var(--bg);
+          padding:10px 0 12px;border-bottom:1px solid var(--edge);margin-bottom:6px}
+  .apercu canvas{display:block;width:100%;max-width:960px;height:auto;margin:0 auto;
+                 border-radius:8px;border:1px solid var(--edge);background:#060a12}
+  .barre{display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+         max-width:960px;margin:9px auto 0}
+  .recette{flex:1 1 380px;font-size:12px;color:#9fb0cc;letter-spacing:.4px;
+           font-family:ui-monospace,Consolas,monospace;line-height:1.6}
+  .recette b{color:var(--or)}
+  button{font:inherit;font-size:11.5px;letter-spacing:.4px;cursor:pointer;
+         background:#16233a;color:var(--ink);border:1px solid var(--edge);
+         border-radius:5px;padding:6px 11px}
+  button:hover{background:#1e3050;border-color:#3a557f}
+  button.on{background:var(--or);color:#111;border-color:var(--or);font-weight:700}
+
+  /* ---- Cartes de variantes : un mini-terrain complet chacune ---- */
+  .row{display:flex;gap:11px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:9px;
+        padding:9px;flex:1 1 320px;max-width:390px;cursor:pointer;
+        transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3a557f;transform:translateY(-2px)}
+  .card.on{border-color:var(--or);box-shadow:0 0 0 1px var(--or) inset}
+  .card canvas{display:block;width:100%;height:auto;border-radius:5px;background:#060a12}
+  .lbl{font-size:11px;color:#8fa4c4;margin:7px 2px 0;line-height:1.5;min-height:52px}
+  .lbl b{display:block;font-size:13.5px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  .card.on .lbl b{color:#fff}
+  .plus{margin-top:9px}
+  .reserve{display:none}
+  .reserve.ouverte{display:flex}
+</style>
+</head>
+<body>
+
+<h1>Pôle Nord — pièces détachées du terrain</h1>
+<p class="note">Terrain de <b>Jingle Bells</b> (univers Pôle Nord), en <b>veillée de Noël sous aurore boréale</b>.
+Huit sections, <b>dix variantes chacune</b> — cinq affichées, cinq derrière le bouton « 5 de plus ».
+Chaque vignette est le <b>terrain entier</b> avec cette seule pièce changée, et l'aperçu du haut se
+recompose au clic : tu peux essayer les combinaisons toi-même avant de me donner tes lettres.
+Tout est dessiné en coordonnées du jeu (960×600, terrain 70→890 / 84→560), donc ce que tu vois est
+transposable ligne pour ligne dans le moteur.</p>
+
+<div class="apercu">
+  <canvas id="grand" width="960" height="600"></canvas>
+  <div class="barre">
+    <div class="recette" id="recette"></div>
+    <button id="btAction">Voir l'action</button>
+    <button id="btHasard">Combinaison au hasard</button>
+    <button id="btCopie">Copier la recette</button>
+  </div>
+</div>
+
+<h2>1 · Le sol <span class="socle">socle</span></h2><div class="row" id="sec-sol"></div>
+<h2>2 · Le marquage <span class="socle">socle</span></h2><div class="row" id="sec-marquage"></div>
+<h2>3 · Les cages <span class="socle">socle</span></h2><div class="row" id="sec-cages"></div>
+<h2>4 · La forêt de sapins</h2><div class="row" id="sec-foret"></div>
+<h2>5 · Le ciel</h2><div class="row" id="sec-ciel"></div>
+<h2>6 · La chute de neige</h2><div class="row" id="sec-neige"></div>
+<h2>7 · Le public</h2><div class="row" id="sec-public"></div>
+<h2>8 · Les lumières</h2><div class="row" id="sec-lumieres"></div>
+
+<script>
+/* ===========================================================================
+   Géométrie du jeu, recopiée telle quelle (core/dom.js + data/maps.js).
+   Toutes les variantes dessinent dans ce repère : une vignette n'est qu'un
+   ctx.scale() appliqué avant, jamais un dessin différent.
+   ======================================================================== */
+const W = 960, H = 600;
+const COURT = { left: 70, right: 890, top: 84, bottom: 560 };
+const CW = COURT.right - COURT.left, CH = COURT.bottom - COURT.top;
+const CX = (COURT.left + COURT.right) / 2, CY = (COURT.top + COURT.bottom) / 2;
+const GOAL_H = 200, GOAL_D = 48;
+const GOAL_TOP = CY - GOAL_H / 2, GOAL_BOTTOM = CY + GOAL_H / 2;
+const HORIZON = COURT.top - 2;               // le ciel s'arrête juste au-dessus du terrain
+const TAU = Math.PI * 2;
+
+/* Palette de la veillée. Le vert et l'or viennent de Jingle Bells
+   (data/characters.js : color #1f8a4d, accent #f5c542). */
+const P = {
+  nuit:'#0a1428', nuit2:'#071021', nuitClair:'#16243f',
+  neige:'#e8f0fb', neigeOmbre:'#b9cbe6', neigeFonce:'#93a9c9', neigeNuit:'#2b3f61',
+  glace:'#a8d8e8', glaceFonce:'#5f9ab5', glaceSombre:'#274a63',
+  sapin:'#1f8a4d', sapinFonce:'#14603a', sapinNuit:'#0d3f27',
+  or:'#f5c542', orClair:'#ffe9a8', chaud:'#ffb457',
+  rouge:'#e5384f', rougeFonce:'#a8253a',
+  bois:'#8a5a34', boisFonce:'#5e3a20',
+  aurVert:'#5df08a', aurCyan:'#35e0ff', aurViolet:'#b98cf5', aurRose:'#f58cc8'
+};
+
+/* Pseudo-aléatoire stable : le même indice donne toujours le même flocon,
+   le même sapin, le même spectateur (identique à render.js). */
+function graine(i){ const x = Math.sin(i * 127.1) * 43758.5453; return x - Math.floor(x); }
+function alea(i, a, b){ return a + graine(i) * (b - a); }
+
+/* Le terrain sert de masque à tout ce qui est peint « sur la glace ». */
+function surLeTerrain(c, fn){
+  c.save(); c.beginPath(); c.rect(COURT.left, COURT.top, CW, CH); c.clip(); fn(); c.restore();
+}
+
+/* Un sapin, brique de base de la section 4 et de plusieurs décors.
+   `ech` = hauteur en pixels ; le tronc est posé sur (x, y). */
+function sapin(c, x, y, ech, opt = {}){
+  const l = ech * .42;
+  c.save(); c.translate(x, y);
+  if (opt.balance) c.rotate(Math.sin(opt.balance) * .012);
+  c.fillStyle = opt.tronc || P.boisFonce;
+  c.fillRect(-ech * .045, -ech * .16, ech * .09, ech * .16);
+  const corps = opt.couleur || P.sapinFonce;
+  for (let e = 0; e < 3; e++){
+    const bas = -ech * (.12 + e * .27), haut = -ech * (.46 + e * .27);
+    const larg = l * (1 - e * .26);
+    c.fillStyle = corps;
+    c.beginPath(); c.moveTo(0, haut); c.lineTo(-larg, bas); c.lineTo(larg, bas); c.closePath(); c.fill();
+    if (opt.neige){
+      c.fillStyle = 'rgba(232,240,251,.72)';
+      c.beginPath(); c.moveTo(0, haut); c.lineTo(-larg * .58, bas - (bas - haut) * .42);
+      c.lineTo(larg * .58, bas - (bas - haut) * .42); c.closePath(); c.fill();
+    }
+  }
+  c.restore();
+}
+
+/* Petite ampoule de guirlande : le halo compte autant que le point. */
+function ampoule(c, x, y, col, intensite){
+  c.globalAlpha = .18 * intensite;
+  c.fillStyle = col; c.beginPath(); c.arc(x, y, 5.5, 0, TAU); c.fill();
+  c.globalAlpha = intensite;
+  c.beginPath(); c.arc(x, y, 1.9, 0, TAU); c.fill();
+  c.globalAlpha = 1;
+}
+
+/* Silhouette de spectateur : buste + tête, à la manière de drawRangs(). */
+function silhouette(c, x, y, h, col, bras){
+  const l = h * .42;
+  c.fillStyle = col;
+  c.fillRect(x - l / 2, y - h * .62, l, h * .62);
+  c.beginPath(); c.arc(x, y - h * .74, h * .19, 0, TAU); c.fill();
+  if (bras > .2){
+    c.fillRect(x - l / 2 - h * .1, y - h * .95, h * .09, h * .34);
+    c.fillRect(x + l / 2 + h * .01, y - h * .95, h * .09, h * .34);
+  }
+}
+
+/* ===========================================================================
+   1 · LE SOL — la surface du terrain elle-même.
+   ======================================================================== */
+const SOL = [
+  { id:'A', nom:'NEIGE TASSÉE', desc:'Neige damée par les passages, bleutée par la nuit. Le plus neutre : rien ne se dispute la lecture du disque.',
+    f(c,t){ c.fillStyle='#cfdcef'; c.fillRect(COURT.left,COURT.top,CW,CH);
+      surLeTerrain(c,()=>{ for(let i=0;i<300;i++){ c.fillStyle=graine(i)>.5?'rgba(255,255,255,.5)':'rgba(147,169,201,.35)';
+        c.fillRect(COURT.left+alea(i,0,CW),COURT.top+alea(i+7,0,CH),2,2); }
+        c.strokeStyle='rgba(147,169,201,.22)'; c.lineWidth=7; c.lineCap='round';
+        for(let i=0;i<9;i++){ const y=COURT.top+alea(i+40,10,CH-10);
+          c.beginPath(); c.moveTo(COURT.left+alea(i+60,0,CW*.5),y);
+          c.lineTo(COURT.left+alea(i+80,CW*.5,CW),y+alea(i+90,-14,14)); c.stroke(); } }); } },
+
+  { id:'B', nom:'GLACE VIVE', desc:'Patinoire polie qui renvoie la lumière du ciel, parcourue de craquelures. Brillante et froide, mais les reflets bougent sous le disque.',
+    f(c,t){ const g=c.createLinearGradient(0,COURT.top,0,COURT.bottom);
+      g.addColorStop(0,'#9fd0e6'); g.addColorStop(.5,'#79b4d2'); g.addColorStop(1,'#8cc4dd');
+      c.fillStyle=g; c.fillRect(COURT.left,COURT.top,CW,CH);
+      surLeTerrain(c,()=>{ c.globalAlpha=.3; c.fillStyle='#eaf7ff';
+        for(let i=0;i<7;i++){ const y=COURT.top+alea(i,20,CH-20);
+          c.fillRect(COURT.left,y+Math.sin(t*.6+i)*3,CW,4+graine(i+3)*7); }
+        c.globalAlpha=1; c.strokeStyle='rgba(255,255,255,.45)'; c.lineWidth=1.2;
+        for(let i=0;i<14;i++){ const x=COURT.left+alea(i+20,0,CW), y=COURT.top+alea(i+30,0,CH);
+          c.beginPath(); c.moveTo(x,y);
+          for(let k=1;k<4;k++) c.lineTo(x+alea(i*7+k,-40,40),y+alea(i*7+k+5,-26,26));
+          c.stroke(); } }); } },
+
+  { id:'C', nom:'NEIGE FRAÎCHE BOSSELÉE', desc:'Poudreuse non tassée, en douces ondulations éclairées sur le dessus et bleues au creux. Très doux, mais le relief peut brouiller la trajectoire.',
+    f(c,t){ c.fillStyle='#dbe7f8'; c.fillRect(COURT.left,COURT.top,CW,CH);
+      surLeTerrain(c,()=>{ for(let i=0;i<26;i++){ const x=COURT.left+alea(i,0,CW),y=COURT.top+alea(i+9,0,CH),
+          rx=alea(i+18,34,84),ry=alea(i+27,14,30);
+        c.fillStyle='rgba(255,255,255,.55)'; c.beginPath(); c.ellipse(x,y-3,rx,ry,0,0,TAU); c.fill();
+        c.fillStyle='rgba(147,169,201,.30)'; c.beginPath(); c.ellipse(x,y+ry*.55,rx*.9,ry*.45,0,0,TAU); c.fill(); } }); } },
+
+  { id:'D', nom:'LAC GELÉ', desc:'Glace sombre et profonde, avec les bulles prises dedans et l\'eau noire qu\'on devine dessous. Le fond le plus contrasté du lot : tout ressort dessus.',
+    f(c,t){ const g=c.createRadialGradient(CX,CY,40,CX,CY,CW*.62);
+      g.addColorStop(0,'#3d6b88'); g.addColorStop(1,'#1b3a4a');
+      c.fillStyle=g; c.fillRect(COURT.left,COURT.top,CW,CH);
+      surLeTerrain(c,()=>{ for(let i=0;i<70;i++){ const x=COURT.left+alea(i,0,CW),y=COURT.top+alea(i+11,0,CH);
+          c.fillStyle='rgba(190,225,240,'+(.16+graine(i+5)*.35)+')';
+          c.beginPath(); c.arc(x,y,1.6+graine(i+2)*4.4,0,TAU); c.fill(); }
+        c.strokeStyle='rgba(200,235,255,.3)'; c.lineWidth=1.6;
+        for(let i=0;i<9;i++){ const x=COURT.left+alea(i+40,0,CW),y=COURT.top+alea(i+50,0,CH);
+          c.beginPath(); c.moveTo(x,y);
+          for(let k=1;k<5;k++) c.lineTo(x+alea(i*9+k,-70,70),y+alea(i*9+k+3,-40,40)); c.stroke(); } }); } },
+
+  { id:'E', nom:'TAPIS ROUGE DE NOËL', desc:'Un vrai tapis de velours déroulé sur la neige, liseré doré. Chaleureux et très « soirée de gala », mais on ne joue plus vraiment sur de la neige.',
+    f(c,t){ c.fillStyle='#cfdcef'; c.fillRect(COURT.left,COURT.top,CW,CH);
+      c.fillStyle='#8f1f2e'; c.fillRect(COURT.left+16,COURT.top+14,CW-32,CH-28);
+      surLeTerrain(c,()=>{ c.globalAlpha=.2; c.fillStyle='#c94257';
+        for(let x=COURT.left+16;x<COURT.right-16;x+=18) c.fillRect(x,COURT.top+14,9,CH-28);
+        c.globalAlpha=1; });
+      c.strokeStyle=P.or; c.lineWidth=4; c.strokeRect(COURT.left+16,COURT.top+14,CW-32,CH-28);
+      c.strokeStyle='rgba(255,233,168,.5)'; c.lineWidth=1.5; c.strokeRect(COURT.left+23,COURT.top+21,CW-46,CH-42); } },
+
+  { id:'F', nom:'NEIGE DAMÉE', desc:'Stries régulières de dameuse, comme une piste au petit matin. Très graphique et lisible, mais les bandes verticales peuvent tirer l\'œil.',
+    f(c,t){ c.fillStyle='#d5e1f2'; c.fillRect(COURT.left,COURT.top,CW,CH);
+      surLeTerrain(c,()=>{ for(let x=COURT.left;x<COURT.right;x+=22){
+          c.fillStyle='rgba(255,255,255,.5)'; c.fillRect(x,COURT.top,11,CH);
+          c.fillStyle='rgba(147,169,201,.22)'; c.fillRect(x+11,COURT.top,2,CH); }
+        c.fillStyle='rgba(147,169,201,.14)';
+        for(let y=COURT.top;y<COURT.bottom;y+=54) c.fillRect(COURT.left,y,CW,2); }); } },
+
+  { id:'G', nom:'GIVRE ÉTOILÉ', desc:'Blanc couvert de fougères de givre, comme une vitre gelée vue de près. Le plus décoratif des sols clairs, et le plus chargé en détail.',
+    f(c,t){ c.fillStyle='#e2ecf9'; c.fillRect(COURT.left,COURT.top,CW,CH);
+      surLeTerrain(c,()=>{ c.strokeStyle='rgba(255,255,255,.85)'; c.lineCap='round';
+        for(let i=0;i<22;i++){ const x=COURT.left+alea(i,10,CW-10),y=COURT.top+alea(i+13,10,CH-10),
+            n=5+((graine(i+2)*3)|0), R=12+graine(i+4)*16;
+          for(let b=0;b<n;b++){ const a=b/n*TAU+graine(i)*3;
+            c.lineWidth=1.3; c.beginPath(); c.moveTo(x,y); c.lineTo(x+Math.cos(a)*R,y+Math.sin(a)*R); c.stroke();
+            c.lineWidth=.8;
+            for(const k of [.4,.7]){ const mx=x+Math.cos(a)*R*k,my=y+Math.sin(a)*R*k;
+              c.beginPath(); c.moveTo(mx,my); c.lineTo(mx+Math.cos(a+.9)*R*.26,my+Math.sin(a+.9)*R*.26);
+              c.moveTo(mx,my); c.lineTo(mx+Math.cos(a-.9)*R*.26,my+Math.sin(a-.9)*R*.26); c.stroke(); } } } }); } },
+
+  { id:'H', nom:'PARQUET DE CHALET', desc:'Plancher de bois chaud sous une verrière : on joue au chaud pendant qu\'il neige dehors. Prend le contre-pied total du reste du terrain.',
+    f(c,t){ c.fillStyle='#8a5a34'; c.fillRect(COURT.left,COURT.top,CW,CH);
+      surLeTerrain(c,()=>{ for(let y=COURT.top,r=0;y<COURT.bottom;y+=34,r++){
+          for(let x=COURT.left-(r%2?60:0);x<COURT.right;x+=124){
+            c.fillStyle=graine(r*40+x)>.5?'#95653c':'#7d4f2c'; c.fillRect(x+2,y+2,120,30);
+            c.fillStyle='rgba(255,220,180,.10)'; c.fillRect(x+2,y+2,120,3); } }
+        const h=c.createRadialGradient(CX,CY,30,CX,CY,CW*.55);
+        h.addColorStop(0,'rgba(255,180,87,.22)'); h.addColorStop(1,'rgba(255,180,87,0)');
+        c.fillStyle=h; c.fillRect(COURT.left,COURT.top,CW,CH); }); } },
+
+  { id:'I', nom:'GLACE MIROIR', desc:'La glace renvoie l\'aurore et la cime des sapins à l\'envers. Spectaculaire — mais le reflet bouge en permanence sous les joueurs.',
+    f(c,t){ const g=c.createLinearGradient(0,COURT.top,0,COURT.bottom);
+      g.addColorStop(0,'#2c536e'); g.addColorStop(1,'#16344a'); c.fillStyle=g;
+      c.fillRect(COURT.left,COURT.top,CW,CH);
+      surLeTerrain(c,()=>{ for(const [col,dec,amp] of [[P.aurVert,0,26],[P.aurViolet,1.7,18]]){
+          c.globalAlpha=.22;
+          for(let i=0;i<3;i++){ c.fillStyle=col; c.beginPath();
+            const y0=COURT.top+30+i*26;
+            c.moveTo(COURT.left,y0);
+            for(let x=COURT.left;x<=COURT.right;x+=24) c.lineTo(x,y0+Math.sin(x/120+t*.5+dec+i)*amp*.4);
+            c.lineTo(COURT.right,y0+34);
+            for(let x=COURT.right;x>=COURT.left;x-=24) c.lineTo(x,y0+34+Math.sin(x/120+t*.5+dec+i)*amp*.4);
+            c.closePath(); c.fill(); } }
+        c.globalAlpha=.3; c.fillStyle=P.sapinNuit;
+        for(let i=0;i<16;i++){ const x=COURT.left+20+i*54, hh=26+graine(i)*22;
+          c.beginPath(); c.moveTo(x,COURT.top); c.lineTo(x-11,COURT.top+hh); c.lineTo(x+11,COURT.top+hh); c.closePath(); c.fill(); }
+        c.globalAlpha=1; }); } },
+
+  { id:'J', nom:'NEIGE ET PLAQUES DE GLACE', desc:'Neige mate parsemée de plaques verglacées bien visibles. C\'est le seul sol qui raconte déjà une règle de jeu : ici ça glisse, là non.',
+    f(c,t){ c.fillStyle='#d3dff0'; c.fillRect(COURT.left,COURT.top,CW,CH);
+      surLeTerrain(c,()=>{ for(let i=0;i<200;i++){ c.fillStyle='rgba(255,255,255,.45)';
+          c.fillRect(COURT.left+alea(i,0,CW),COURT.top+alea(i+7,0,CH),2,2); }
+        for(let i=0;i<9;i++){ const x=COURT.left+alea(i+30,60,CW-60),y=COURT.top+alea(i+40,40,CH-40),
+            rx=alea(i+50,40,76),ry=alea(i+60,20,38);
+          c.fillStyle='rgba(120,190,220,.55)'; c.beginPath(); c.ellipse(x,y,rx,ry,graine(i)*3,0,TAU); c.fill();
+          c.strokeStyle='rgba(230,250,255,.6)'; c.lineWidth=1.4; c.stroke();
+          c.fillStyle='rgba(255,255,255,.4)'; c.beginPath(); c.ellipse(x-rx*.25,y-ry*.3,rx*.34,ry*.24,-.4,0,TAU); c.fill(); } }); } }
+];
+
+/* Points régulièrement répartis le long du marquage : sert aux variantes qui
+   posent des objets sur les lignes (ampoules, bougies, houx). */
+function pointsLignes(pas){
+  const p=[], x0=COURT.left+6, x1=COURT.right-6, y0=COURT.top+6, y1=COURT.bottom-6;
+  for(let x=x0;x<=x1;x+=pas){ p.push({x,y:y0}); p.push({x,y:y1}); }
+  for(let y=y0;y<=y1;y+=pas){ p.push({x:x0,y}); p.push({x:x1,y}); }
+  for(let y=COURT.top+8;y<=COURT.bottom-8;y+=pas) p.push({x:CX,y});
+  const n=Math.max(8,(TAU*58/pas)|0);
+  for(let i=0;i<n;i++) p.push({x:CX+Math.cos(i/n*TAU)*58, y:CY+Math.sin(i/n*TAU)*58});
+  return p;
+}
+
+/* Le tracé standard, commun à toutes les variantes de marquage :
+   touche, médiane, rond central. Chaque variante décide comment le peindre. */
+function tracerMarquage(c){
+  c.beginPath(); c.rect(COURT.left+6,COURT.top+6,CW-12,CH-12);
+  c.moveTo(CX,COURT.top+6); c.lineTo(CX,COURT.bottom-6);
+  c.moveTo(CX+58,CY); c.arc(CX,CY,58,0,TAU);
+  c.moveTo(CX+13,CY); c.arc(CX,CY,13,0,TAU);
+}
+
+/* ===========================================================================
+   2 · LE MARQUAGE — les lignes de jeu.
+   ======================================================================== */
+const MARQUAGE = [
+  { id:'A', nom:'CREUSÉ DANS LA NEIGE', desc:'Aucune peinture : les lignes sont des sillons, ombre bleue au fond et crête éclairée. Le plus naturel, le moins visible sur un sol clair.',
+    f(c,t){ surLeTerrain(c,()=>{ c.lineWidth=7; c.strokeStyle='rgba(96,124,164,.5)'; tracerMarquage(c); c.stroke();
+      c.lineWidth=2.4; c.strokeStyle='rgba(255,255,255,.9)'; c.translate(0,2); tracerMarquage(c); c.stroke(); }); } },
+
+  { id:'B', nom:'GUIRLANDE LUMINEUSE', desc:'Les lignes sont des chapelets d\'ampoules qui clignotent en décalé. Le plus festif — et le seul marquage qui éclaire vraiment le terrain.',
+    f(c,t){ surLeTerrain(c,()=>{ const cols=[P.rouge,P.aurVert,P.or,P.aurCyan];
+      const pts=pointsLignes(26);
+      c.strokeStyle='rgba(255,255,255,.18)'; c.lineWidth=1.4; tracerMarquage(c); c.stroke();
+      pts.forEach((p,i)=>ampoule(c,p.x,p.y,cols[i%cols.length],.55+Math.sin(t*3+i*.7)*.42)); }); } },
+
+  { id:'C', nom:'PEINTURE ROUGE VIF', desc:'Marquage franc, rouge Noël, sans fioriture. La lisibilité maximale : on sait toujours où sont les lignes, même dans la neige qui tombe.',
+    f(c,t){ surLeTerrain(c,()=>{ c.lineWidth=4.5; c.strokeStyle='#d8283f'; tracerMarquage(c); c.stroke();
+      c.lineWidth=1.2; c.strokeStyle='rgba(255,255,255,.35)'; tracerMarquage(c); c.stroke(); }); } },
+
+  { id:'D', nom:'RUBAN DE CADEAU', desc:'Ruban satiné doré avec un nœud posé au centre. Très raccord avec l\'or de Jingle, mais le nœud occupe le rond central.',
+    f(c,t){ surLeTerrain(c,()=>{ c.lineWidth=7; c.strokeStyle='#c99a1c'; tracerMarquage(c); c.stroke();
+      c.lineWidth=2.6; c.strokeStyle='rgba(255,233,168,.95)'; tracerMarquage(c); c.stroke();
+      c.save(); c.translate(CX,CY); c.fillStyle=P.or;
+      for(const s of [-1,1]){ c.beginPath(); c.ellipse(s*17,0,15,10,s*.4,0,TAU); c.fill(); }
+      c.fillStyle='#ffe9a8'; c.beginPath(); c.arc(0,0,7,0,TAU); c.fill();
+      c.fillStyle=P.or; c.beginPath(); c.moveTo(-6,6); c.lineTo(-13,25); c.lineTo(-1,17); c.closePath(); c.fill();
+      c.beginPath(); c.moveTo(6,6); c.lineTo(13,25); c.lineTo(1,17); c.closePath(); c.fill(); c.restore(); }); } },
+
+  { id:'E', nom:'BRANCHES DE HOUX', desc:'Les lignes sont faites de feuilles de houx et de baies rouges. Le plus « décoration de Noël » — et le plus chargé, feuille par feuille.',
+    f(c,t){ surLeTerrain(c,()=>{ c.strokeStyle='rgba(20,96,58,.55)'; c.lineWidth=3; tracerMarquage(c); c.stroke();
+      pointsLignes(24).forEach((p,i)=>{ c.save(); c.translate(p.x,p.y); c.rotate(graine(i)*TAU);
+        c.fillStyle=i%3?P.sapin:P.sapinFonce;
+        for(const s of [-1,1]){ c.beginPath(); c.ellipse(s*5,0,7,3.6,s*.5,0,TAU); c.fill(); }
+        c.fillStyle=P.rouge; c.beginPath(); c.arc(0,0,2.4,0,TAU); c.fill(); c.restore(); }); }); } },
+
+  { id:'F', nom:'TRACES DE PATINS', desc:'Deux rainures parallèles légèrement tremblées, comme gravées par des lames. Discret et crédible sur la glace, presque invisible sur la neige.',
+    f(c,t){ surLeTerrain(c,()=>{ for(const [dec,al] of [[-2,'.55'],[2,'.35']]){
+        c.save(); c.translate(dec,dec*.5); c.strokeStyle='rgba(255,255,255,'+al+')';
+        c.lineWidth=1.6; tracerMarquage(c); c.stroke(); c.restore(); }
+      c.strokeStyle='rgba(96,124,164,.35)'; c.lineWidth=1;
+      for(let i=0;i<11;i++){ const y=COURT.top+alea(i+70,20,CH-20);
+        c.beginPath(); c.moveTo(COURT.left+alea(i+71,0,CW*.6),y);
+        c.bezierCurveTo(CX,y-20,CX,y+20,COURT.left+alea(i+72,CW*.5,CW),y+alea(i+73,-10,10)); c.stroke(); } }); } },
+
+  { id:'G', nom:'NÉON GLACÉ', desc:'Trait cyan lumineux avec son halo, cousin froid du terrain holographique de Stellar. Superbe de nuit, un peu science-fiction pour un village du pôle.',
+    f(c,t){ surLeTerrain(c,()=>{ const p=.75+Math.sin(t*2)*.2;
+      c.save(); c.shadowColor=P.aurCyan; c.shadowBlur=14;
+      c.strokeStyle='rgba(53,224,255,'+p+')'; c.lineWidth=2.4; tracerMarquage(c); c.stroke();
+      c.shadowBlur=6; c.strokeStyle='rgba(255,255,255,'+(p*.8)+')'; c.lineWidth=1; tracerMarquage(c); c.stroke();
+      c.restore(); }); } },
+
+  { id:'H', nom:'SUCRE D\'ORGE', desc:'Lignes rayées rouge et blanc en torsade, comme des cannes de Noël posées bout à bout. Immédiatement identifiable, franchement enfantin.',
+    f(c,t){ surLeTerrain(c,()=>{ c.lineWidth=6.5; c.strokeStyle='#fdfdfd'; tracerMarquage(c); c.stroke();
+      c.save(); c.lineWidth=6.5; c.strokeStyle=P.rouge; c.setLineDash([9,11]); c.lineDashOffset=-t*14;
+      tracerMarquage(c); c.stroke(); c.restore();
+      c.lineWidth=7.6; c.strokeStyle='rgba(96,124,164,.25)'; tracerMarquage(c); c.stroke(); }); } },
+
+  { id:'I', nom:'BOUGIES ALIGNÉES', desc:'De vraies flammes plantées le long des lignes, qui vacillent chacune à son rythme. La plus belle lumière du lot ; à surveiller, ça fait beaucoup de points chauds.',
+    f(c,t){ surLeTerrain(c,()=>{ c.strokeStyle='rgba(255,255,255,.2)'; c.lineWidth=1.6; tracerMarquage(c); c.stroke();
+      pointsLignes(34).forEach((p,i)=>{ c.fillStyle='#f3ede0'; c.fillRect(p.x-2,p.y-8,4,9);
+        const v=.7+Math.sin(t*7+i)*.3;
+        c.globalAlpha=.2; c.fillStyle=P.chaud; c.beginPath(); c.arc(p.x,p.y-11,9*v,0,TAU); c.fill();
+        c.globalAlpha=1; c.fillStyle=P.or; c.beginPath(); c.ellipse(p.x,p.y-11,2,4*v,0,0,TAU); c.fill(); }); }); } },
+
+  { id:'J', nom:'RIEN QUE L\'OMBRE', desc:'Aucun trait : les camps se distinguent par une nuance de neige à peine différente. Le plus épuré du jeu — mais on perd la lecture nette des limites.',
+    f(c,t){ surLeTerrain(c,()=>{ c.fillStyle='rgba(96,124,164,.10)'; c.fillRect(CX,COURT.top,CW/2,CH);
+      c.fillStyle='rgba(255,255,255,.13)'; c.beginPath(); c.arc(CX,CY,58,0,TAU); c.fill();
+      c.strokeStyle='rgba(96,124,164,.22)'; c.lineWidth=3;
+      c.strokeRect(COURT.left+6,COURT.top+6,CW-12,CH-12); }); } }
+];
+
+/* Les deux cages, en miroir. Dans le repère passé à `fn`, l'origine est sur la
+   ligne de but, x négatif part vers l'extérieur du terrain, y=0 est le centre :
+   une seule écriture sert aux deux côtés (comme drawPanier() dans render.js). */
+function pourChaqueCage(c, fn){
+  for(const side of [1,2]){
+    const vers = side===1 ? 1 : -1;
+    c.save(); c.translate(side===1?COURT.left:COURT.right, CY); c.scale(vers,1);
+    fn(c, side); c.restore();
+  }
+}
+const GH = GOAL_H/2;
+
+/* ===========================================================================
+   3 · LES CAGES — ce dans quoi on marque.
+   ======================================================================== */
+const CAGES = [
+  { id:'A', nom:'CHEMINÉE DE BRIQUES', desc:'Un âtre de briques avec le feu qui danse au fond. L\'image la plus évidente de Noël, et une cible bien sombre sur laquelle le disque ressort.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle='#7d3b30'; c.fillRect(-GOAL_D-10,-GH-16,GOAL_D+10,GOAL_H+32);
+      c.fillStyle='rgba(0,0,0,.25)';
+      for(let y=-GH-16;y<GH+16;y+=13) c.fillRect(-GOAL_D-10,y,GOAL_D+10,2);
+      for(let y=-GH-16,r=0;y<GH+16;y+=13,r++) for(let x=-GOAL_D-10+(r%2?14:0);x<0;x+=28) c.fillRect(x,y,2,13);
+      c.fillStyle='#1a0d0a'; c.fillRect(-GOAL_D+2,-GH+8,GOAL_D-2,GOAL_H-16);
+      const v=.55+Math.sin(t*6)*.25;
+      const g=c.createLinearGradient(-GOAL_D,0,0,0);
+      g.addColorStop(0,'rgba(255,140,31,'+v+')'); g.addColorStop(1,'rgba(255,60,20,0)');
+      c.fillStyle=g; c.fillRect(-GOAL_D+2,-GH+8,GOAL_D-2,GOAL_H-16);
+      c.fillStyle='#e8f0fb'; c.fillRect(-GOAL_D-12,-GH-22,GOAL_D+14,7); }); } },
+
+  { id:'B', nom:'TRAÎNEAU DU PÈRE NOËL', desc:'Le disque doit atterrir dans le traîneau chargé de cadeaux. Très narratif, mais la forme courbe est moins lisible qu\'un rectangle franc.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle='#a8253a'; c.beginPath();
+      c.moveTo(0,-GH); c.lineTo(-GOAL_D,-GH+10); c.lineTo(-GOAL_D,GH-10); c.lineTo(0,GH);
+      c.quadraticCurveTo(-14,0,0,-GH); c.closePath(); c.fill();
+      c.strokeStyle=P.or; c.lineWidth=3; c.stroke();
+      c.fillStyle='#3a2418'; c.fillRect(-GOAL_D-9,-GH-6,5,GOAL_H+12);
+      c.strokeStyle='#3a2418'; c.lineWidth=4;
+      c.beginPath(); c.moveTo(-GOAL_D-7,-GH+14); c.lineTo(-GOAL_D+4,-GH+14);
+      c.moveTo(-GOAL_D-7,GH-14); c.lineTo(-GOAL_D+4,GH-14); c.stroke();
+      for(let i=0;i<3;i++){ const y=-GH+34+i*58;
+        c.fillStyle=[P.aurVert,P.or,P.aurCyan][i]; c.fillRect(-GOAL_D+8,y,20,20);
+        c.fillStyle=P.rouge; c.fillRect(-GOAL_D+16,y,4,20); c.fillRect(-GOAL_D+8,y+8,20,4); } }); } },
+
+  { id:'C', nom:'PAQUET GÉANT OUVERT', desc:'Une boîte cadeau grande ouverte, couvercle relevé et nœud sur le dessus. Cible large et très lisible ; l\'ouverture reste un rectangle net.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle='#1c6f45'; c.fillRect(-GOAL_D-6,-GH-4,GOAL_D+6,GOAL_H+8);
+      c.fillStyle=P.rouge; c.fillRect(-GOAL_D-6,-14,GOAL_D+6,28);
+      c.fillStyle='#0f2f22'; c.fillRect(-GOAL_D+4,-GH+6,GOAL_D-4,GOAL_H-12);
+      const bal=Math.sin(t*1.4)*.06;
+      c.save(); c.translate(0,-GH-4); c.rotate(bal);
+      c.fillStyle='#175c39'; c.fillRect(-GOAL_D-10,-16,GOAL_D+12,16);
+      c.fillStyle=P.rouge; c.fillRect(-GOAL_D-10,-16,GOAL_D+12,5); c.restore();
+      c.fillStyle=P.or;
+      c.beginPath(); c.ellipse(-GOAL_D/2-3,-GH-26,13,9,.5,0,TAU); c.fill();
+      c.beginPath(); c.ellipse(-GOAL_D/2-3,-GH-42,13,9,-.5,0,TAU); c.fill(); }); } },
+
+  { id:'D', nom:'TUNNEL DE SUCRE D\'ORGE', desc:'Une arche rayée rouge et blanc que le disque traverse. Jolie et bien identifiable, mais l\'arche rétrécit visuellement la cible.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle='#0d1a2c'; c.fillRect(-GOAL_D,-GH,GOAL_D,GOAL_H);
+      c.save(); c.lineCap='butt'; c.lineWidth=16;
+      for(const y of [-GH,GH]){ c.save(); c.translate(0,y);
+        c.strokeStyle='#fdfdfd'; c.beginPath(); c.moveTo(2,0); c.lineTo(-GOAL_D-10,0); c.stroke();
+        c.strokeStyle=P.rouge; c.setLineDash([10,14]); c.lineDashOffset=-t*18;
+        c.beginPath(); c.moveTo(2,0); c.lineTo(-GOAL_D-10,0); c.stroke(); c.restore(); }
+      c.strokeStyle='#fdfdfd'; c.setLineDash([]); c.lineWidth=14;
+      c.beginPath(); c.moveTo(-GOAL_D-10,-GH); c.lineTo(-GOAL_D-10,GH); c.stroke();
+      c.strokeStyle=P.rouge; c.setLineDash([10,14]); c.lineDashOffset=t*18;
+      c.beginPath(); c.moveTo(-GOAL_D-10,-GH); c.lineTo(-GOAL_D-10,GH); c.stroke();
+      c.restore(); }); } },
+
+  { id:'E', nom:'PORTE DE CHALET', desc:'Une porte de bois avec sa couronne, entrouverte sur une lumière chaude. La plus accueillante — mais on marque « dans une maison », ce qui est étrange.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle='#4a3222'; c.fillRect(-GOAL_D-12,-GH-14,GOAL_D+12,GOAL_H+28);
+      const g=c.createLinearGradient(-GOAL_D,0,0,0);
+      g.addColorStop(0,'#ffd08a'); g.addColorStop(1,'rgba(255,180,87,.25)');
+      c.fillStyle=g; c.fillRect(-GOAL_D+2,-GH,GOAL_D-2,GOAL_H);
+      c.fillStyle='#6b4a2e';
+      for(let y=-GH;y<GH;y+=24) c.fillRect(-GOAL_D+2,y,GOAL_D-2,3);
+      c.strokeStyle=P.sapinFonce; c.lineWidth=7;
+      c.beginPath(); c.arc(-GOAL_D/2,0,26,0,TAU); c.stroke();
+      c.fillStyle=P.rouge;
+      for(let i=0;i<5;i++){ const a=i/5*TAU+.4;
+        c.beginPath(); c.arc(-GOAL_D/2+Math.cos(a)*26,Math.sin(a)*26,3.4,0,TAU); c.fill(); }
+      c.fillStyle=P.or; c.beginPath(); c.arc(-6,10,4,0,TAU); c.fill(); }); } },
+
+  { id:'F', nom:'FILET DE HOCKEY', desc:'La cage de hockey, poteaux rouges et mailles enneigées. La plus sportive et la plus neutre : elle ne raconte rien mais ne gêne jamais.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle='rgba(10,20,40,.55)'; c.fillRect(-GOAL_D,-GH,GOAL_D,GOAL_H);
+      c.strokeStyle='rgba(255,255,255,.5)'; c.lineWidth=1;
+      for(let y=-GH+6;y<GH;y+=11){ c.beginPath(); c.moveTo(-GOAL_D+2,y); c.lineTo(0,y+5); c.stroke(); }
+      for(let y=-GH+6;y<GH;y+=11){ c.beginPath(); c.moveTo(-GOAL_D+2,y+5); c.lineTo(0,y); c.stroke(); }
+      c.strokeStyle=P.rouge; c.lineWidth=7; c.lineCap='round';
+      c.beginPath(); c.moveTo(0,-GH); c.lineTo(0,GH); c.stroke();
+      c.beginPath(); c.moveTo(0,-GH); c.lineTo(-GOAL_D,-GH+8); c.lineTo(-GOAL_D,GH-8); c.lineTo(0,GH); c.stroke();
+      c.fillStyle='rgba(232,240,251,.8)';
+      for(let i=0;i<7;i++) c.fillRect(-GOAL_D+alea(i+3,2,GOAL_D-8),-GH+alea(i+9,4,GOAL_H-8),7,3); }); } },
+
+  { id:'G', nom:'GROTTE DE GLACE', desc:'Une brèche bleue ouverte dans un mur de glace, avec ses stalactites. La plus « grand nord » et la plus sombre : le disque y disparaît franchement.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle='#5f9ab5'; c.fillRect(-GOAL_D-14,-GH-24,GOAL_D+14,GOAL_H+48);
+      c.fillStyle='rgba(255,255,255,.22)';
+      for(let i=0;i<9;i++) c.fillRect(-GOAL_D-14,-GH-24+alea(i,0,GOAL_H+40),GOAL_D+14,3);
+      const g=c.createLinearGradient(-GOAL_D,0,4,0);
+      g.addColorStop(0,'#08161f'); g.addColorStop(1,'#1e4a63');
+      c.fillStyle=g; c.beginPath();
+      c.moveTo(2,-GH+4); c.quadraticCurveTo(-GOAL_D-6,-GH*.5,-GOAL_D+2,0);
+      c.quadraticCurveTo(-GOAL_D-6,GH*.5,2,GH-4); c.closePath(); c.fill();
+      c.fillStyle='#bfe6f5';
+      for(let i=0;i<6;i++){ const y=-GH+10+i*32, l=8+graine(i)*16;
+        c.beginPath(); c.moveTo(-4,y); c.lineTo(-9,y+2); c.lineTo(-6,y+l); c.closePath(); c.fill(); }
+      c.globalAlpha=.35+Math.sin(t*2)*.15; c.fillStyle=P.aurCyan;
+      c.fillRect(-GOAL_D+4,-GH+6,GOAL_D-6,GOAL_H-12); c.globalAlpha=1; }); } },
+
+  { id:'H', nom:'BOÎTE AUX LETTRES DU PÈRE NOËL', desc:'Une fente géante où les lettres s\'engouffrent, drapeau relevé compris. Amusant et très reconnaissable ; l\'ouverture utile est plus étroite qu\'ailleurs.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle='#c22a3e'; c.beginPath();
+      c.moveTo(-GOAL_D-8,GH+10); c.lineTo(-GOAL_D-8,-GH+16);
+      c.quadraticCurveTo(-GOAL_D-8,-GH-10,0,-GH-10);
+      c.lineTo(0,GH+10); c.closePath(); c.fill();
+      c.fillStyle='#8f1f2e'; c.fillRect(-GOAL_D-8,GH-2,GOAL_D+8,12);
+      c.fillStyle='#140a10'; c.fillRect(-GOAL_D+4,-GH+18,GOAL_D-4,GOAL_H-36);
+      c.strokeStyle=P.or; c.lineWidth=2.4; c.strokeRect(-GOAL_D+4,-GH+18,GOAL_D-4,GOAL_H-36);
+      c.fillStyle=P.or; c.fillRect(-GOAL_D-14,-GH+4,5,44);
+      c.fillStyle=P.rouge; c.fillRect(-GOAL_D-24,-GH+4,12,16);
+      c.fillStyle='#e8f0fb'; c.fillRect(-GOAL_D-9,-GH-14,GOAL_D+10,6); }); } },
+
+  { id:'I', nom:'RIDEAU DE GLAÇONS', desc:'Aucune structure : juste des stalactites qui pendent et entre lesquelles le disque passe. Le plus léger visuellement, mais le but est presque abstrait.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle='rgba(10,25,45,.4)'; c.fillRect(-GOAL_D,-GH,GOAL_D,GOAL_H);
+      for(let i=0;i<11;i++){ const y=-GH+i*(GOAL_H/10), l=14+graine(i)*26, dec=Math.sin(t*1.2+i)*1.6;
+        const g=c.createLinearGradient(0,y,-l,y);
+        g.addColorStop(0,'rgba(200,240,255,.95)'); g.addColorStop(1,'rgba(120,200,230,.25)');
+        c.fillStyle=g; c.beginPath();
+        c.moveTo(2,y-5+dec); c.lineTo(2,y+5+dec); c.lineTo(-l,y+dec); c.closePath(); c.fill(); }
+      c.strokeStyle='rgba(200,240,255,.7)'; c.lineWidth=3;
+      c.beginPath(); c.moveTo(2,-GH); c.lineTo(2,GH); c.stroke(); }); } },
+
+  { id:'J', nom:'DEUX SAPINS GARDIENS', desc:'Deux sapins décorés plantés de part et d\'autre encadrent l\'ouverture. Cohérent avec la forêt, et le cadre reste largement dégagé.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle='rgba(10,25,45,.45)'; c.fillRect(-GOAL_D,-GH,GOAL_D,GOAL_H);
+      c.strokeStyle='rgba(232,240,251,.6)'; c.lineWidth=2.5;
+      c.beginPath(); c.moveTo(0,-GH); c.lineTo(-GOAL_D,-GH); c.moveTo(0,GH); c.lineTo(-GOAL_D,GH);
+      c.moveTo(-GOAL_D,-GH); c.lineTo(-GOAL_D,GH); c.stroke();
+      for(const s of [-1,1]){ c.save(); c.translate(-GOAL_D/2, s*(GH+6)); c.rotate(s>0?Math.PI:0);
+        sapin(c,0,0,74,{neige:true,couleur:P.sapinFonce,balance:t*1.3});
+        for(let i=0;i<6;i++){ const a=i*1.7;
+          ampoule(c, Math.sin(a)*12, -14-i*8, [P.or,P.rouge,P.aurCyan][i%3], .6+Math.sin(t*3+i)*.4); }
+        c.restore(); } }); } }
+];
+
+/* Emplacements du décor autour du terrain, semés une fois : rangée du haut,
+   colonnes latérales dans les marges, rangée du bas. */
+const POSTES = (()=>{ const a=[];
+  for(let x=6;x<W;x+=44) a.push({x, y:COURT.top-2, k:0});
+  for(let y=COURT.top+34;y<COURT.bottom-10;y+=62){ a.push({x:30,y,k:1}); a.push({x:W-30,y,k:1}); }
+  for(let x=26;x<W;x+=66) a.push({x, y:H-4, k:2});
+  return a; })();
+
+/* ===========================================================================
+   4 · LA FORÊT DE SAPINS — tout le pourtour hors-terrain.
+   ======================================================================== */
+const FORET = [
+  { id:'A', nom:'RANGÉE DENSE', desc:'Un mur de sapins serrés qui ferme complètement l\'horizon. On se sent enfermé dans la clairière — et le fond est très sombre, donc très lisible.',
+    f(c,t){ POSTES.forEach((p,i)=>{ const h=p.k?38:52+graine(i)*26;
+      sapin(c,p.x,p.y,h,{couleur:i%3?P.sapinNuit:P.sapinFonce,balance:t+i});
+      if(p.k===0) sapin(c,p.x+22,p.y+2,h*.8,{couleur:P.sapinNuit,balance:t+i+1}); }); } },
+
+  { id:'B', nom:'CLAIRIÈRE', desc:'Quelques sapins espacés, on voit loin entre les troncs. Le ciel et l\'aurore prennent toute la place ; le décor ne raconte presque rien.',
+    f(c,t){ POSTES.forEach((p,i)=>{ if(graine(i+5)<.62) return;
+      sapin(c,p.x,p.y,(p.k?36:56)+graine(i)*20,{couleur:P.sapinFonce,neige:true,balance:t+i}); }); } },
+
+  { id:'C', nom:'SAPINS DÉCORÉS', desc:'Chaque arbre porte sa guirlande et ses boules. Le plus festif du lot — et le seul qui apporte de la couleur au pourtour.',
+    f(c,t){ POSTES.forEach((p,i)=>{ const h=(p.k?38:58)+graine(i)*18;
+      sapin(c,p.x,p.y,h,{couleur:P.sapin,balance:t+i});
+      for(let b=0;b<5;b++){ const yy=p.y-h*.18-b*h*.15, xx=p.x+Math.sin(b*2.1+i)*h*.16;
+        ampoule(c,xx,yy,[P.or,P.rouge,P.aurCyan,P.aurVert][(b+i)%4],.55+Math.sin(t*3+i+b)*.4); }
+      c.fillStyle=P.or; c.beginPath();
+      c.arc(p.x,p.y-h*.94,2.6,0,TAU); c.fill(); }); } },
+
+  { id:'D', nom:'SAPINS ENNEIGÉS', desc:'Branches lourdes de neige, blanc dominant. Le pourtour devient clair, ce qui adoucit tout — mais rapproche le décor de la couleur du disque.',
+    f(c,t){ POSTES.forEach((p,i)=>{ const h=(p.k?38:56)+graine(i)*20;
+      sapin(c,p.x,p.y,h,{couleur:'#1a4f36',neige:true,balance:t+i});
+      c.fillStyle='rgba(255,255,255,.85)';
+      for(let b=0;b<3;b++) c.fillRect(p.x-h*.2+graine(i+b)*h*.4, p.y-h*(.2+b*.26), 8, 3); }); } },
+
+  { id:'E', nom:'FORÊT ÉTAGÉE', desc:'Trois plans de profondeur, du plus pâle au fond au plus sombre devant. Donne une vraie profondeur au décor ; c\'est aussi le plus chargé à dessiner.',
+    f(c,t){ for(const [dy,ech,al,col] of [[-26,.55,.35,'#2c4f6b'],[-13,.78,.6,'#1a4a3a'],[0,1,1,P.sapinNuit]]){
+      c.globalAlpha=al;
+      POSTES.forEach((p,i)=>{ if(p.k && dy) return;
+        sapin(c,p.x+dy*.6,p.y+dy,(p.k?38:56)*ech+graine(i)*16*ech,{couleur:col,balance:t+i}); });
+      c.globalAlpha=1; } } },
+
+  { id:'F', nom:'SILHOUETTES NOIRES', desc:'Les sapins en ombres chinoises pures sur l\'aurore, sans un détail. Le plus graphique et le plus élégant ; le décor perd toute matière.',
+    f(c,t){ c.fillStyle='#04070d';
+      POSTES.forEach((p,i)=>{ const h=(p.k?40:60)+graine(i)*24, l=h*.4;
+        c.beginPath(); c.moveTo(p.x,p.y-h);
+        for(let e=0;e<4;e++){ const yy=p.y-h*(.72-e*.24), ll=l*(.34+e*.22);
+          c.lineTo(p.x-ll*.7,yy); c.lineTo(p.x-ll,yy+h*.06); }
+        c.lineTo(p.x-l,p.y); c.lineTo(p.x+l,p.y);
+        for(let e=3;e>=0;e--){ const yy=p.y-h*(.72-e*.24), ll=l*(.34+e*.22);
+          c.lineTo(p.x+ll,yy+h*.06); c.lineTo(p.x+ll*.7,yy); }
+        c.closePath(); c.fill(); }); } },
+
+  { id:'G', nom:'UN SEUL GRAND SAPIN', desc:'Un sapin géant décoré derrière le terrain, le reste dégagé. Donne un point de repère fort au décor, un peu comme l\'Œil de Râ à Dune de Râ.',
+    f(c,t){ POSTES.forEach((p,i)=>{ if(p.k===0 && Math.abs(p.x-CX)<120) return;
+      sapin(c,p.x,p.y,(p.k?26:30)+graine(i)*10,{couleur:P.sapinNuit,balance:t+i}); });
+      sapin(c,CX,COURT.top-2,78,{couleur:P.sapinFonce,neige:true,balance:t*.6});
+      for(let b=0;b<11;b++){ const yy=COURT.top-10-b*6, xx=CX+Math.sin(b*1.9)*(24*(1-b/13));
+        ampoule(c,xx,yy,[P.or,P.rouge,P.aurCyan,P.aurVert][b%4],.5+Math.sin(t*2.5+b)*.45); }
+      c.fillStyle=P.or; c.save(); c.translate(CX,COURT.top-80); c.rotate(t*.5);
+      for(let i=0;i<5;i++){ c.rotate(TAU/5);
+        c.beginPath(); c.moveTo(-2.5,0); c.lineTo(0,-11); c.lineTo(2.5,0); c.closePath(); c.fill(); }
+      c.restore(); } },
+
+  { id:'H', nom:'SAPINS ET CHALETS', desc:'Des cabanes de bois aux fenêtres allumées glissées entre les arbres. C\'est ce qui fait exister le village — au prix d\'un pourtour plus occupé.',
+    f(c,t){ POSTES.forEach((p,i)=>{ if(p.k===0 && i%4===1){
+        const l=34,h=26; c.fillStyle='#4a3222'; c.fillRect(p.x-l/2,p.y-h,l,h);
+        c.fillStyle='#6b4a2e'; c.beginPath();
+        c.moveTo(p.x-l/2-5,p.y-h); c.lineTo(p.x,p.y-h-15); c.lineTo(p.x+l/2+5,p.y-h); c.closePath(); c.fill();
+        c.fillStyle='rgba(232,240,251,.85)';
+        c.beginPath(); c.moveTo(p.x-l/2-5,p.y-h); c.lineTo(p.x,p.y-h-15); c.lineTo(p.x+l/2+5,p.y-h); c.closePath();
+        c.save(); c.clip(); c.fillRect(p.x-l/2-5,p.y-h-15,l+10,7); c.restore();
+        const v=.65+Math.sin(t*1.7+i)*.2;
+        c.fillStyle='rgba(255,190,100,'+v+')'; c.fillRect(p.x-10,p.y-h+6,9,9); c.fillRect(p.x+2,p.y-h+6,9,9);
+        return; }
+      sapin(c,p.x,p.y,(p.k?38:54)+graine(i)*18,{couleur:P.sapinNuit,neige:true,balance:t+i}); }); } },
+
+  { id:'I', nom:'FORÊT GIVRÉE', desc:'Pas un sapin : des troncs nus et blancs de givre, branches en éventail. Beaucoup plus rude et plus adulte ; on perd le côté Noël.',
+    f(c,t){ POSTES.forEach((p,i)=>{ const h=(p.k?40:64)+graine(i)*22;
+      c.strokeStyle='#8fa8c4'; c.lineWidth=3; c.lineCap='round';
+      c.beginPath(); c.moveTo(p.x,p.y); c.lineTo(p.x+Math.sin(i)*4,p.y-h); c.stroke();
+      c.lineWidth=1.6; c.strokeStyle='#c3d6ea';
+      for(let b=0;b<5;b++){ const yy=p.y-h*(.3+b*.16), s=b%2?1:-1, l=h*(.3-b*.04);
+        c.beginPath(); c.moveTo(p.x,yy); c.lineTo(p.x+s*l,yy-l*.5); c.stroke();
+        c.beginPath(); c.moveTo(p.x,yy+4); c.lineTo(p.x-s*l*.7,yy-l*.3); c.stroke(); } }); } },
+
+  { id:'J', nom:'HAIE TAILLÉE', desc:'Des sapins taillés au cordeau, tous identiques, alignés comme une haie de jardin. Très graphique et très propre ; ça ne ressemble plus à une forêt.',
+    f(c,t){ POSTES.forEach((p,i)=>{ const h=p.k?38:54, l=h*.34;
+      c.fillStyle=i%2?'#17553a':'#134429';
+      c.beginPath(); c.moveTo(p.x,p.y-h); c.lineTo(p.x-l,p.y); c.lineTo(p.x+l,p.y); c.closePath(); c.fill();
+      c.fillStyle='rgba(255,255,255,.16)';
+      c.beginPath(); c.moveTo(p.x,p.y-h); c.lineTo(p.x-l*.35,p.y); c.lineTo(p.x,p.y); c.closePath(); c.fill();
+      c.fillStyle='rgba(232,240,251,.7)'; c.fillRect(p.x-l,p.y-3,l*2,3); }); } }
+];
+
+/* Fond de nuit commun : le ciel s'arrête à l'horizon, comme à Dune de Râ.
+   Étendu jusqu'en bas, le dégradé passerait derrière le terrain — en vue de
+   dessus, on ne joue pas au milieu du ciel. */
+function fondNuit(c, haut='#050b18', bas='#12233f'){
+  const g=c.createLinearGradient(0,0,0,HORIZON);
+  g.addColorStop(0,haut); g.addColorStop(1,bas);
+  c.fillStyle=g; c.fillRect(0,0,W,HORIZON);
+}
+function etoiles(c, n, t, al=1){
+  for(let i=0;i<n;i++){ const x=alea(i,0,W), y=alea(i+31,0,HORIZON-4);
+    c.globalAlpha=al*(.35+.65*Math.abs(Math.sin(t*(.6+graine(i+5))+i)));
+    c.fillStyle='#ffffff'; c.fillRect(x,y,1+((graine(i+9)*2)|0),1+((graine(i+9)*2)|0)); }
+  c.globalAlpha=1;
+}
+/* Nappe d'aurore : une bande ondulante peinte en dégradé vertical. */
+function nappe(c, col, y0, hauteur, amp, vitesse, t, al){
+  c.save(); c.globalAlpha=al; c.globalCompositeOperation='screen';
+  const g=c.createLinearGradient(0,y0-hauteur,0,y0+hauteur*.4);
+  g.addColorStop(0,'rgba(255,255,255,0)'); g.addColorStop(.45,col); g.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=g; c.beginPath(); c.moveTo(0,y0+hauteur*.4);
+  for(let x=0;x<=W;x+=16) c.lineTo(x, y0+Math.sin(x/150+t*vitesse)*amp);
+  c.lineTo(W,-hauteur); c.lineTo(0,-hauteur); c.closePath(); c.fill();
+  c.restore();
+}
+
+/* ===========================================================================
+   5 · LE CIEL — ce qu'on voit au-dessus et ce qui le traverse.
+   ======================================================================== */
+const CIEL = [
+  { id:'A', nom:'AURORE EN RIDEAUX', desc:'De grands voiles verts qui tombent à la verticale et ondulent lentement. L\'image classique de l\'aurore, la plus reconnaissable.',
+    f(c,t){ fondNuit(c); etoiles(c,80,t);
+      c.save(); c.globalCompositeOperation='screen';
+      for(let i=0;i<14;i++){ const x=i*70+Math.sin(t*.4+i)*14, h=HORIZON*(.5+graine(i)*.5);
+        const g=c.createLinearGradient(0,0,0,h);
+        g.addColorStop(0,'rgba(93,240,138,0)'); g.addColorStop(.4,'rgba(93,240,138,.42)');
+        g.addColorStop(1,'rgba(53,224,255,0)');
+        c.fillStyle=g; c.fillRect(x,0,16+graine(i+3)*22,h); }
+      c.restore(); } },
+
+  { id:'B', nom:'AURORE EN VAGUE', desc:'Une seule large bande qui traverse le ciel en biais. Plus calme et plus lisible que les rideaux, mais moins spectaculaire.',
+    f(c,t){ fondNuit(c); etoiles(c,90,t);
+      nappe(c,'rgba(93,240,138,.55)',HORIZON*.62,52,13,.35,t,1);
+      nappe(c,'rgba(53,224,255,.32)',HORIZON*.44,40,17,.5,t,1); } },
+
+  { id:'C', nom:'AURORE DOUBLE', desc:'Deux nappes qui se croisent, verte et violette. La plus riche en couleur — attention, le violet mange un peu l\'or de Jingle.',
+    f(c,t){ fondNuit(c,'#0a0716','#241a3f'); etoiles(c,70,t);
+      nappe(c,'rgba(93,240,138,.5)',HORIZON*.7,50,15,.3,t,1);
+      nappe(c,'rgba(185,140,245,.5)',HORIZON*.5,44,20,-.42,t,1);
+      nappe(c,'rgba(245,140,200,.28)',HORIZON*.34,30,12,.6,t,1); } },
+
+  { id:'D', nom:'PLEINE LUNE', desc:'Une grosse lune basse qui éclaire la neige, aurore réduite à un souffle. La lumière la plus naturelle, et un vrai point de repère au-dessus du terrain.',
+    f(c,t){ fondNuit(c,'#04091a','#0e1c36'); etoiles(c,110,t);
+      const mx=W*.8,my=HORIZON*.42;
+      const h=c.createRadialGradient(mx,my,6,mx,my,60);
+      h.addColorStop(0,'rgba(230,240,255,.5)'); h.addColorStop(1,'rgba(230,240,255,0)');
+      c.fillStyle=h; c.beginPath(); c.arc(mx,my,60,0,TAU); c.fill();
+      c.fillStyle='#eef3ff'; c.beginPath(); c.arc(mx,my,26,0,TAU); c.fill();
+      c.fillStyle='rgba(180,196,224,.55)';
+      for(const [dx,dy,r] of [[-8,-6,6],[7,4,4.5],[-3,9,3.4],[11,-9,3]]){
+        c.beginPath(); c.arc(mx+dx,my+dy,r,0,TAU); c.fill(); }
+      nappe(c,'rgba(93,240,138,.22)',HORIZON*.72,34,10,.3,t,1); } },
+
+  { id:'E', nom:'CIEL ÉTOILÉ PUR', desc:'Pas d\'aurore du tout : une voûte dense et noire. Le fond le plus sobre et le plus contrasté ; le terrain devient le seul spectacle.',
+    f(c,t){ fondNuit(c,'#02050d','#07101f'); etoiles(c,240,t);
+      c.globalAlpha=.16; c.fillStyle='#9fb6e6';
+      for(let i=0;i<40;i++){ const x=alea(i+200,0,W), y=alea(i+300,0,HORIZON);
+        c.beginPath(); c.arc(x,y,10+graine(i)*22,0,TAU); c.fill(); }
+      c.globalAlpha=1; } },
+
+  { id:'F', nom:'LE TRAÎNEAU QUI PASSE', desc:'Aurore discrète, et toutes les vingt secondes le traîneau et ses rennes traversent le ciel. L\'équivalent de la caravane de Dune de Râ.',
+    f(c,t){ fondNuit(c); etoiles(c,90,t);
+      nappe(c,'rgba(93,240,138,.34)',HORIZON*.66,40,12,.3,t,1);
+      const CYCLE=20, PASSAGE=7, ph=t%CYCLE;
+      if(ph<PASSAGE){ const k=ph/PASSAGE, x=-90+k*(W+180), y=HORIZON*.36+Math.sin(k*7)*7;
+        c.save(); c.translate(x,y);
+        c.globalAlpha=.35; c.strokeStyle=P.or; c.lineWidth=2; c.lineCap='round';
+        c.beginPath(); c.moveTo(-70,4); c.lineTo(-6,1); c.stroke(); c.globalAlpha=1;
+        c.fillStyle='#2b1a12';
+        for(let r=0;r<3;r++){ const rx=-18-r*20, bob=Math.sin(t*9+r)*1.4;
+          c.fillRect(rx,-3+bob,13,7);
+          c.beginPath(); c.moveTo(rx+11,-4+bob); c.lineTo(rx+18,-6+bob); c.lineTo(rx+15,-1+bob); c.closePath(); c.fill();
+          c.strokeStyle='#2b1a12'; c.lineWidth=1.4;
+          c.beginPath(); c.moveTo(rx+15,-6+bob); c.lineTo(rx+18,-12+bob); c.moveTo(rx+15,-6+bob); c.lineTo(rx+11,-12+bob); c.stroke(); }
+        c.fillStyle=P.rouge; c.beginPath();
+        c.moveTo(0,-2); c.lineTo(24,-2); c.lineTo(24,6); c.lineTo(2,6); c.quadraticCurveTo(-6,6,0,-2); c.closePath(); c.fill();
+        c.strokeStyle=P.or; c.lineWidth=1.6;
+        c.beginPath(); c.moveTo(-2,8); c.lineTo(26,8); c.stroke();
+        c.fillStyle='#e5384f'; c.beginPath(); c.arc(-88+70,1,1.8,0,TAU); c.fill();
+        c.restore(); } } },
+
+  { id:'G', nom:'PLUIE D\'ÉTOILES FILANTES', desc:'Un ciel qui se déchire en permanence de longues traînées lentes. Très beau, mais des traits qui filent au-dessus d\'un jeu de tir, c\'est un pari.',
+    f(c,t){ fondNuit(c,'#03060f','#0b1728'); etoiles(c,140,t);
+      c.save(); c.lineCap='round';
+      for(let i=0;i<9;i++){ const per=3+graine(i)*4, k=((t/per)+graine(i+7))%1;
+        const x=alea(i+11,-60,W), y=alea(i+21,0,HORIZON*.9);
+        const px=x+k*260, py=y+k*90;
+        const g=c.createLinearGradient(px,py,px-46,py-16);
+        g.addColorStop(0,'rgba(255,255,255,'+(Math.sin(k*Math.PI)*.85)+')');
+        g.addColorStop(1,'rgba(140,200,255,0)');
+        c.strokeStyle=g; c.lineWidth=2;
+        c.beginPath(); c.moveTo(px,py); c.lineTo(px-46,py-16); c.stroke(); }
+      c.restore(); } },
+
+  { id:'H', nom:'AURORE QUI RESPIRE', desc:'Une seule nappe, mais qui enfle et retombe lentement comme un souffle. Dans le jeu, elle pourrait s\'embraser à chaque but.',
+    f(c,t){ fondNuit(c,'#040a16','#0f2038');
+      const s=.5+Math.sin(t*.8)*.5;
+      etoiles(c,100,t,1-s*.4);
+      nappe(c,'rgba(93,240,138,'+(.25+s*.45)+')',HORIZON*(.72-s*.12),44+s*26,12+s*10,.3,t,1);
+      nappe(c,'rgba(53,224,255,'+(.12+s*.3)+')',HORIZON*(.52-s*.1),34+s*20,16,-.4,t,1);
+      const g=c.createLinearGradient(0,0,0,HORIZON);
+      g.addColorStop(0,'rgba(93,240,138,'+(s*.1)+')'); g.addColorStop(1,'rgba(93,240,138,0)');
+      c.fillStyle=g; c.fillRect(0,0,W,HORIZON); } },
+
+  { id:'I', nom:'CIEL DE VILLAGE', desc:'L\'aurore, et au loin les toits et le clocher du village éclairés. Ancre le terrain quelque part au lieu de le poser dans le vide.',
+    f(c,t){ fondNuit(c); etoiles(c,70,t);
+      nappe(c,'rgba(93,240,138,.4)',HORIZON*.6,42,12,.3,t,1);
+      c.fillStyle='#060d19';
+      for(let i=0;i<11;i++){ const x=i*92+alea(i,0,26), l=52+graine(i)*38, h=16+graine(i+3)*20;
+        c.fillRect(x,HORIZON-h,l,h);
+        c.beginPath(); c.moveTo(x-5,HORIZON-h); c.lineTo(x+l/2,HORIZON-h-11); c.lineTo(x+l+5,HORIZON-h); c.closePath(); c.fill(); }
+      c.fillStyle='#060d19';
+      c.fillRect(W*.42,HORIZON-46,24,46);
+      c.beginPath(); c.moveTo(W*.42-4,HORIZON-46); c.lineTo(W*.42+12,HORIZON-70); c.lineTo(W*.42+28,HORIZON-46); c.closePath(); c.fill();
+      for(let i=0;i<26;i++){ const x=alea(i+40,10,W-10), y=HORIZON-alea(i+50,4,26);
+        c.fillStyle='rgba(255,190,100,'+(.5+Math.sin(t*1.6+i)*.25)+')'; c.fillRect(x,y,4,4); }
+      c.fillStyle=P.or; c.beginPath(); c.arc(W*.42+12,HORIZON-72,3,0,TAU); c.fill(); } },
+
+  { id:'J', nom:'NUAGES BAS', desc:'Un ciel couvert et violacé, l\'aurore ne perce que par une déchirure. L\'ambiance la plus lourde et la plus sombre — presque une tempête qui arrive.',
+    f(c,t){ fondNuit(c,'#0d0a1c','#241d3a');
+      c.save(); c.globalCompositeOperation='screen';
+      const g=c.createLinearGradient(W*.3,0,W*.6,HORIZON);
+      g.addColorStop(0,'rgba(93,240,138,0)'); g.addColorStop(.5,'rgba(93,240,138,.5)'); g.addColorStop(1,'rgba(93,240,138,0)');
+      c.fillStyle=g; c.beginPath();
+      c.moveTo(W*.34,0); c.lineTo(W*.46,0); c.lineTo(W*.58,HORIZON); c.lineTo(W*.40,HORIZON); c.closePath(); c.fill();
+      c.restore();
+      for(let i=0;i<22;i++){ const x=(alea(i,0,W)+t*(4+graine(i)*6))%(W+220)-110;
+        const y=alea(i+17,-14,HORIZON*.8), rx=54+graine(i+5)*90, ry=13+graine(i+9)*14;
+        c.fillStyle='rgba(28,24,48,'+(.5+graine(i+3)*.4)+')';
+        c.beginPath(); c.ellipse(x,y,rx,ry,0,0,TAU); c.fill();
+        c.fillStyle='rgba(90,80,130,.18)';
+        c.beginPath(); c.ellipse(x-rx*.2,y-ry*.4,rx*.6,ry*.5,0,0,TAU); c.fill(); } } }
+];
+
+/* ===========================================================================
+   6 · LA CHUTE DE NEIGE — le calque animé posé par-dessus tout.
+   ======================================================================== */
+const NEIGE = [
+  { id:'A', nom:'FLOCONS FINS', desc:'Une poussière lente et régulière. Presque imperceptible en jeu : c\'est l\'option qui ne gêne strictement jamais la lecture du disque.',
+    f(c,t){ c.fillStyle='rgba(255,255,255,.7)';
+      for(let i=0;i<170;i++){ const v=18+graine(i)*22;
+        const x=(alea(i,0,W)+Math.sin(t*.5+i)*10+W)%W, y=(alea(i+7,0,H)+t*v)%H;
+        c.globalAlpha=.3+graine(i+3)*.5; c.fillRect(x,y,1.6,1.6); }
+      c.globalAlpha=1; } },
+
+  { id:'B', nom:'GROS FLOCONS', desc:'Peu nombreux, lents, franchement visibles. Très joli et très « veillée », mais ce sont des taches blanches qui traversent le champ de jeu.',
+    f(c,t){ for(let i=0;i<48;i++){ const v=22+graine(i)*20, r=2.4+graine(i+2)*3.4;
+        const x=(alea(i,0,W)+Math.sin(t*.7+i*2)*16+W)%W, y=(alea(i+7,0,H)+t*v)%H;
+        c.globalAlpha=.45+graine(i+5)*.45; c.fillStyle='#ffffff';
+        c.beginPath(); c.arc(x,y,r,0,TAU); c.fill(); }
+      c.globalAlpha=1; } },
+
+  { id:'C', nom:'BOURRASQUE', desc:'Des rafales obliques qui montent et retombent par vagues. Le terrain vit vraiment ; par moments la visibilité baisse nettement.',
+    f(c,t){ const force=.45+Math.sin(t*.42)*.55;
+      c.save(); c.strokeStyle='rgba(255,255,255,.75)'; c.lineCap='round';
+      for(let i=0;i<210;i++){ const v=(70+graine(i)*130)*(.4+force);
+        const x=(alea(i,0,W*1.4)-t*v+W*2)%(W*1.4)-W*.2, y=(alea(i+7,0,H)+t*v*.34)%H;
+        c.globalAlpha=(.2+graine(i+3)*.5)*force; c.lineWidth=1.3;
+        c.beginPath(); c.moveTo(x,y); c.lineTo(x+11*force+4,y-4*force-1); c.stroke(); }
+      c.restore(); } },
+
+  { id:'D', nom:'NEIGE EN PROFONDEUR', desc:'Trois couches à des vitesses différentes : du grain lointain aux gros flocons du premier plan. C\'est ce qui donne le plus de volume à l\'image.',
+    f(c,t){ const couches=[[130,12,1,.28],[70,26,2,.5],[26,54,4.2,.85]];
+      for(const [n,v,r,al] of couches){
+        for(let i=0;i<n;i++){ const s=i+n*10;
+          const x=(alea(s,0,W)+Math.sin(t*.5+s)*r*4+W)%W, y=(alea(s+7,0,H)+t*v)%H;
+          c.globalAlpha=al*(.5+graine(s+3)*.5); c.fillStyle='#ffffff';
+          c.beginPath(); c.arc(x,y,r,0,TAU); c.fill(); } }
+      c.globalAlpha=1; } },
+
+  { id:'E', nom:'FLOCONS ÉTOILÉS', desc:'De vrais cristaux à six branches qui tournent sur eux-mêmes en tombant. Le plus soigné de près — et le plus coûteux à dessiner.',
+    f(c,t){ c.save(); c.strokeStyle='rgba(255,255,255,.85)'; c.lineCap='round';
+      for(let i=0;i<34;i++){ const v=20+graine(i)*18, R=3.4+graine(i+2)*4;
+        const x=(alea(i,0,W)+Math.sin(t*.6+i)*14+W)%W, y=(alea(i+7,0,H)+t*v)%H;
+        c.save(); c.translate(x,y); c.rotate(t*(.5+graine(i+4))+i);
+        c.globalAlpha=.45+graine(i+9)*.45; c.lineWidth=1.1;
+        for(let b=0;b<3;b++){ c.rotate(Math.PI/3);
+          c.beginPath(); c.moveTo(-R,0); c.lineTo(R,0); c.stroke();
+          c.beginPath(); c.moveTo(R*.55,0); c.lineTo(R*.8,-R*.3);
+          c.moveTo(R*.55,0); c.lineTo(R*.8,R*.3);
+          c.moveTo(-R*.55,0); c.lineTo(-R*.8,-R*.3);
+          c.moveTo(-R*.55,0); c.lineTo(-R*.8,R*.3); c.stroke(); }
+        c.restore(); }
+      c.restore(); } },
+
+  { id:'F', nom:'TOURBILLONS AU SOL', desc:'Rien ne tombe : la neige est balayée au ras du sol en volutes. Le champ de vision reste totalement dégagé, et le terrain bouge quand même.',
+    f(c,t){ c.save(); c.globalCompositeOperation='screen';
+      for(let i=0;i<7;i++){ const per=9+graine(i)*7, k=((t/per)+graine(i+5))%1;
+        const x=-120+k*(W+240), y=COURT.top+alea(i+9,10,CH-10);
+        c.globalAlpha=Math.sin(k*Math.PI)*.28; c.fillStyle='#dfeaff';
+        c.beginPath();
+        for(let s=0;s<=22;s++){ const a=s/22*TAU;
+          const rx=64+Math.sin(t*3+i+s)*10, ry=11+Math.sin(t*2+s)*4;
+          const px=x+Math.cos(a)*rx, py=y+Math.sin(a)*ry;
+          s?c.lineTo(px,py):c.moveTo(px,py); }
+        c.fill(); }
+      c.restore();
+      c.globalAlpha=.5; c.fillStyle='#ffffff';
+      for(let i=0;i<60;i++){ const x=(alea(i+40,0,W)+t*90)%W, y=COURT.top+alea(i+50,0,CH);
+        c.fillRect(x,y,3,1); }
+      c.globalAlpha=1; } },
+
+  { id:'G', nom:'CIEL DÉGAGÉ', desc:'Pas un flocon. L\'option honnête : le terrain est déjà un décor de neige, la chute n\'apporte rien et coûte de la lisibilité.',
+    f(c,t){} },
+
+  { id:'H', nom:'NEIGE ET SOUFFLE', desc:'Des flocons, plus la buée blanche qui sort de la bouche des joueurs. Le détail qui dit qu\'il fait vraiment froid — visible seulement près des persos.',
+    f(c,t){ NEIGE[0].f(c,t);
+      for(const [bx,by,dec] of [[CX-190,CY-30,0],[CX+190,CY+30,2.2]]){
+        for(let i=0;i<5;i++){ const k=((t*.7+i*.2+dec)%1);
+          c.globalAlpha=(1-k)*.35; c.fillStyle='#ffffff';
+          c.beginPath(); c.ellipse(bx+k*38,by-k*10,6+k*16,4+k*10,0,0,TAU); c.fill(); } }
+      c.globalAlpha=1; } },
+
+  { id:'I', nom:'NEIGE QUI S\'ACCUMULE', desc:'Elle tombe et se dépose : congères le long des bandes, poudre sur le marquage. Le terrain se salit joliment au fil du match.',
+    f(c,t){ NEIGE[1].f(c,t);
+      const k=.5+Math.sin(t*.25)*.5;
+      c.fillStyle='rgba(255,255,255,.85)';
+      c.beginPath(); c.moveTo(COURT.left,COURT.top);
+      for(let x=COURT.left;x<=COURT.right;x+=18) c.lineTo(x,COURT.top+4+Math.sin(x/40)*3+k*4);
+      c.lineTo(COURT.right,COURT.top); c.closePath(); c.fill();
+      c.beginPath(); c.moveTo(COURT.left,COURT.bottom);
+      for(let x=COURT.left;x<=COURT.right;x+=18) c.lineTo(x,COURT.bottom-4-Math.sin(x/34)*3-k*4);
+      c.lineTo(COURT.right,COURT.bottom); c.closePath(); c.fill();
+      c.globalAlpha=.5;
+      for(let i=0;i<90;i++) c.fillRect(COURT.left+alea(i+70,0,CW),COURT.top+alea(i+80,0,CH),3+graine(i)*4,2);
+      c.globalAlpha=1; } },
+
+  { id:'J', nom:'PAILLETTES DORÉES', desc:'Pas de la neige : des étincelles d\'or qui montent doucement. Complètement féérique et raccord avec Jingle, mais on quitte le réalisme.',
+    f(c,t){ for(let i=0;i<90;i++){ const v=10+graine(i)*20;
+        const x=(alea(i,0,W)+Math.sin(t*.9+i)*20+W)%W, y=(alea(i+7,0,H)-t*v+H*3)%H;
+        const s=.4+Math.abs(Math.sin(t*3+i))*.6;
+        c.globalAlpha=s*.9; c.fillStyle=graine(i+2)>.4?P.or:'#ffe9a8';
+        c.save(); c.translate(x,y); c.rotate(t+i);
+        c.beginPath(); c.moveTo(0,-3.4*s); c.lineTo(1.1*s,0); c.lineTo(0,3.4*s); c.lineTo(-1.1*s,0);
+        c.closePath(); c.fill(); c.restore(); }
+      c.globalAlpha=1; } }
+];
+
+/* Places du public : une rangée devant la forêt, une rangée au premier plan
+   sous le terrain (plus grande, on est plus près), et les marges latérales. */
+const GRADINS = (()=>{ const a=[];
+  for(let x=10;x<W;x+=17) a.push({x, y:COURT.top-3, h:15, k:0});
+  for(let x=8;x<W;x+=21) a.push({x, y:H-5, h:22, k:1});
+  for(let y=COURT.top+22;y<COURT.bottom;y+=27){
+    a.push({x:24+graine(y)*22, y, h:16, k:2});
+    a.push({x:W-24-graine(y+3)*22, y, h:16, k:2}); }
+  return a; })();
+
+/* Un spectateur, un type. Ces quatre-là sont écrits une seule fois : la variante
+   « foule mixte » les repioche au lieu de rappeler les autres variantes en
+   entier — sinon chaque spectateur redessinait toute la tribune (150 × 150). */
+function bonhomme(c,t,p,i){ const h=p.h, bal=Math.sin(t*2+i)*1.4;
+      c.save(); c.translate(p.x+bal,p.y);
+      c.fillStyle='#eef4ff';
+      c.beginPath(); c.arc(0,-h*.18,h*.28,0,TAU); c.fill();
+      c.beginPath(); c.arc(0,-h*.52,h*.22,0,TAU); c.fill();
+      c.beginPath(); c.arc(0,-h*.8,h*.17,0,TAU); c.fill();
+      c.fillStyle='#1a1f2b'; c.fillRect(-h*.19,-h*.99,h*.38,h*.09);
+      c.fillRect(-h*.13,-h*1.14,h*.26,h*.16);
+      c.fillStyle=P.chaud; c.fillRect(h*.1,-h*.82,h*.16,h*.06);
+      c.fillStyle='#1a1f2b';
+      c.fillRect(-h*.08,-h*.86,h*.05,h*.05); c.fillRect(h*.03,-h*.86,h*.05,h*.05);
+      c.strokeStyle=P.rouge; c.lineWidth=Math.max(1,h*.09);
+      c.beginPath(); c.moveTo(-h*.2,-h*.66); c.lineTo(h*.2,-h*.66); c.stroke();
+      c.restore(); }
+
+function renne(c,t,p,i){ const h=p.h, bob=Math.abs(Math.sin(t*2.4+i))*1.6;
+      c.save(); c.translate(p.x,p.y-bob);
+      c.fillStyle=i%5?'#6b4a30':'#845c3a';
+      c.beginPath(); c.ellipse(0,-h*.42,h*.32,h*.24,0,0,TAU); c.fill();
+      c.beginPath(); c.ellipse(h*.16,-h*.7,h*.15,h*.13,.3,0,TAU); c.fill();
+      c.strokeStyle='#4a3222'; c.lineWidth=Math.max(1,h*.07); c.lineCap='round';
+      for(const s of [-1,1]){ const a=Math.sin(t*2+i)*.14;
+        c.beginPath(); c.moveTo(h*.14,-h*.82);
+        c.lineTo(h*.14+s*h*.16,-h*1.02-a*8); c.stroke();
+        c.beginPath(); c.moveTo(h*.14+s*h*.09,-h*.93); c.lineTo(h*.14+s*h*.24,-h*.96); c.stroke(); }
+      c.fillStyle=P.rouge; c.beginPath(); c.arc(h*.29,-h*.68,h*.07,0,TAU); c.fill();
+      c.strokeStyle='#4a3222'; c.lineWidth=Math.max(1,h*.06);
+      for(const dx of [-h*.18,h*.1]){ c.beginPath(); c.moveTo(dx,-h*.22); c.lineTo(dx,0); c.stroke(); }
+      c.restore(); }
+
+function lutin(c,t,p,i){ const h=p.h, saut=Math.abs(Math.sin(t*4+i*1.7))*h*.24;
+      c.save(); c.translate(p.x,p.y-saut);
+      c.fillStyle=i%2?'#1c7a49':'#c22a3e';
+      c.fillRect(-h*.17,-h*.55,h*.34,h*.55);
+      c.fillStyle='#f0d3b0'; c.beginPath(); c.arc(0,-h*.66,h*.16,0,TAU); c.fill();
+      c.fillStyle=i%2?'#c22a3e':'#1c7a49';
+      c.beginPath(); c.moveTo(-h*.17,-h*.74); c.lineTo(h*.17,-h*.74);
+      c.lineTo(h*.05,-h*1.1); c.closePath(); c.fill();
+      c.fillStyle=P.or; c.beginPath(); c.arc(h*.05,-h*1.1,h*.06,0,TAU); c.fill();
+      c.fillStyle=i%2?'#1c7a49':'#c22a3e';
+      const b=Math.sin(t*6+i)*h*.2;
+      c.fillRect(-h*.28,-h*.55+b,h*.11,h*.3); c.fillRect(h*.17,-h*.55-b,h*.11,h*.3);
+      c.restore(); }
+
+function manchot(c,t,p,i){ const h=p.h, dand=Math.sin(t*3+i)*.14;
+      c.save(); c.translate(p.x,p.y); c.rotate(dand);
+      c.fillStyle='#14181f';
+      c.beginPath(); c.ellipse(0,-h*.42,h*.24,h*.42,0,0,TAU); c.fill();
+      c.fillStyle='#f2f6ff';
+      c.beginPath(); c.ellipse(0,-h*.36,h*.15,h*.32,0,0,TAU); c.fill();
+      c.fillStyle='#14181f'; c.beginPath(); c.arc(0,-h*.86,h*.17,0,TAU); c.fill();
+      c.fillStyle='#f2f6ff';
+      c.beginPath(); c.arc(-h*.06,-h*.88,h*.04,0,TAU); c.fill();
+      c.beginPath(); c.arc(h*.06,-h*.88,h*.04,0,TAU); c.fill();
+      c.fillStyle=P.chaud;
+      c.beginPath(); c.moveTo(0,-h*.83); c.lineTo(h*.12,-h*.78); c.lineTo(0,-h*.74); c.closePath(); c.fill();
+      c.fillRect(-h*.16,-h*.04,h*.13,h*.05); c.fillRect(h*.03,-h*.04,h*.13,h*.05);
+      c.restore(); }
+
+const COLS_FOULE=[P.rouge,P.aurVert,P.or,P.aurCyan,P.aurViolet,'#ff8c1f'];
+function villageois(c,t,p,i){ const cols=COLS_FOULE;
+      { const h=p.h, saut=Math.sin(t*3+i)*1.5;
+      c.save(); c.translate(p.x,p.y-saut);
+      c.fillStyle='#2a3346';
+      c.fillRect(-h*.2,-h*.62,h*.4,h*.62);
+      c.fillStyle=cols[(graine(i+7)*cols.length)|0];
+      c.fillRect(-h*.22,-h*.68,h*.44,h*.12);
+      c.fillStyle='#f0d3b0'; c.beginPath(); c.arc(0,-h*.78,h*.15,0,TAU); c.fill();
+      c.fillStyle=cols[(graine(i+2)*cols.length)|0];
+      c.beginPath(); c.arc(0,-h*.84,h*.16,Math.PI,0); c.fill();
+      c.beginPath(); c.arc(0,-h*1.0,h*.06,0,TAU); c.fill();
+      c.restore(); } }
+
+/* ===========================================================================
+   7 · LE PUBLIC — qui regarde le match.
+   ======================================================================== */
+const PUBLIC = [
+  { id:'A', nom:'BONSHOMMES DE NEIGE', desc:'Des rangées de bonshommes qui dodelinent, carotte et chapeau compris. Immédiatement lisible et parfaitement dans le thème.',
+    f(c,t){ GRADINS.forEach((p,i)=>bonhomme(c,t,p,i)); } },
+
+  { id:'B', nom:'RENNES', desc:'Un troupeau au bord du terrain, bois qui bougent. Plus sobre et plus « nature » que les bonshommes ; les silhouettes brunes sont discrètes de nuit.',
+    f(c,t){ GRADINS.forEach((p,i)=>renne(c,t,p,i)); } },
+
+  { id:'C', nom:'LUTINS', desc:'De petits personnages verts et rouges, très agités, qui sautent sur place. Le public le plus vivant et le plus coloré — au risque de tirer l\'œil.',
+    f(c,t){ GRADINS.forEach((p,i)=>lutin(c,t,p,i)); } },
+
+  { id:'D', nom:'MANCHOTS', desc:'Des colonies noir et blanc qui se dandinent. Très graphique et très lisible, mais le manchot n\'a rien à faire au pôle Nord — c\'est assumé ou pas.',
+    f(c,t){ GRADINS.forEach((p,i)=>manchot(c,t,p,i)); } },
+
+  { id:'E', nom:'VILLAGEOIS EMMITOUFLÉS', desc:'Des silhouettes en bonnets et écharpes de toutes les couleurs, à la manière des tribunes du stadium. Le plus proche d\'une vraie foule de match.',
+    f(c,t){ GRADINS.forEach((p,i)=>villageois(c,t,p,i)); } },
+
+  { id:'F', nom:'FOULE MIXTE', desc:'Un peu de tout : villageois, lutins, bonshommes et rennes mélangés. Le plus vivant et le plus désordonné, au risque de paraître brouillon.',
+    f(c,t){ const q=[villageois,lutin,bonhomme,renne];
+      GRADINS.forEach((p,i)=>q[(graine(i*3)*4)|0](c,t,p,i)); } },
+
+  { id:'G', nom:'PERSONNE', desc:'Le terrain est désert : on joue seuls dans la nuit, il ne reste que des traces de pas dans la neige. Le plus solitaire, et le plus lisible de tous.',
+    f(c,t){ c.fillStyle='rgba(120,145,180,.35)';
+      for(let i=0;i<70;i++){ const x=alea(i,6,W-6), y=alea(i+9,COURT.top-14,H-6);
+        if(x>COURT.left-6&&x<COURT.right+6&&y>COURT.top-6&&y<COURT.bottom+6) continue;
+        c.save(); c.translate(x,y); c.rotate(graine(i+3)*TAU);
+        c.fillRect(-3,-1.5,4,3); c.fillRect(1,1,4,3); c.restore(); } } },
+
+  { id:'H', nom:'DES FENÊTRES, PAS DES GENS', desc:'Aucun spectateur visible : seulement des cabanes allumées, on devine du monde derrière. Discret et mystérieux, mais la salle ne réagira jamais aux buts.',
+    f(c,t){ for(let i=0;i<9;i++){ const x=alea(i,20,W-60), y=i%2?COURT.top-8:H-10;
+        const l=44+graine(i)*24, h=30;
+        c.fillStyle='#2f2013'; c.fillRect(x,y-h,l,h);
+        c.fillStyle='#472f1c'; c.beginPath();
+        c.moveTo(x-6,y-h); c.lineTo(x+l/2,y-h-16); c.lineTo(x+l+6,y-h); c.closePath(); c.fill();
+        c.fillStyle='rgba(232,240,251,.9)'; c.fillRect(x-6,y-h-5,l+12,5);
+        for(let k=0;k<2;k++){ const v=.5+Math.sin(t*1.4+i*2+k)*.3;
+          c.fillStyle='rgba(255,190,100,'+v+')'; c.fillRect(x+8+k*20,y-h+9,13,12);
+          c.globalAlpha=.14; c.beginPath(); c.arc(x+14+k*20,y-h+15,17,0,TAU); c.fill(); c.globalAlpha=1; } } } },
+
+  { id:'I', nom:'UN SEUL SPECTATEUR', desc:'Le Père Noël, énorme, assis derrière le terrain, et personne d\'autre. Drôle et mémorable ; le décor devient un gag plutôt qu\'une ambiance.',
+    f(c,t){ const x=CX, y=COURT.top-2, s=1.5, bob=Math.sin(t*1.2)*2;
+      c.save(); c.translate(x,y+bob); c.scale(s,s);
+      c.fillStyle='#b02036';
+      c.beginPath(); c.ellipse(0,-26,26,24,0,0,TAU); c.fill();
+      c.fillStyle='#f2f6ff'; c.fillRect(-26,-20,52,7);
+      c.fillStyle='#2a2018'; c.fillRect(-8,-19,16,6);
+      c.fillStyle=P.or; c.fillRect(-4,-18,8,4);
+      c.fillStyle='#f0d3b0'; c.beginPath(); c.arc(0,-52,15,0,TAU); c.fill();
+      c.fillStyle='#f2f6ff';
+      c.beginPath(); c.arc(-7,-44,8,0,TAU); c.arc(7,-44,8,0,TAU); c.arc(0,-38,10,0,TAU); c.fill();
+      c.fillStyle='#d9435a';
+      c.beginPath(); c.moveTo(-16,-60); c.lineTo(16,-60); c.lineTo(9,-82); c.closePath(); c.fill();
+      c.fillStyle='#f2f6ff'; c.fillRect(-17,-64,34,6);
+      c.beginPath(); c.arc(9,-83,5,0,TAU); c.fill();
+      c.fillStyle='#2a2018';
+      c.beginPath(); c.arc(-5,-54,2,0,TAU); c.arc(5,-54,2,0,TAU); c.fill();
+      c.restore();
+      GRADINS.forEach((p,i)=>{ if(p.k!==1||i%3) return;
+        c.fillStyle='rgba(120,145,180,.3)'; c.fillRect(p.x,p.y-3,4,3); }); } },
+
+  { id:'J', nom:'OURS POLAIRES', desc:'Quelques ours massifs, immobiles, qui regardent jouer. Peu de figures mais très imposantes ; l\'ambiance devient franchement sauvage.',
+    f(c,t){ for(let i=0;i<10;i++){ const haut=i%2;
+        const x=alea(i,40,W-40), y=haut?COURT.top-4:H-8, s=haut?1:1.35;
+        const resp=Math.sin(t*1.1+i)*1.2;
+        c.save(); c.translate(x,y+resp); c.scale(s,s);
+        c.fillStyle='#e6ecf6';
+        c.beginPath(); c.ellipse(0,-13,22,12,0,0,TAU); c.fill();
+        c.beginPath(); c.ellipse(-19,-22,11,10,0,0,TAU); c.fill();
+        c.fillStyle='#cdd8e8';
+        c.beginPath(); c.arc(-24,-29,3.4,0,TAU); c.arc(-14,-30,3.4,0,TAU); c.fill();
+        c.fillStyle='#1a1f2b';
+        c.beginPath(); c.arc(-27,-21,2.4,0,TAU); c.fill();
+        c.beginPath(); c.arc(-22,-24,1.6,0,TAU); c.arc(-15,-24,1.6,0,TAU); c.fill();
+        c.fillStyle='#e6ecf6';
+        c.fillRect(-14,-4,7,5); c.fillRect(4,-4,7,5);
+        c.restore(); } } }
+];
+
+/* ===========================================================================
+   8 · LES LUMIÈRES — tout ce qui éclaire le terrain d'en haut.
+   ======================================================================== */
+const LUMIERES = [
+  { id:'A', nom:'GUIRLANDES SUSPENDUES', desc:'Des chapelets d\'ampoules tendus en travers du terrain, qui pendent en courbe. Le plus festif — mais ce sont des lumières AU-DESSUS de l\'aire de jeu.',
+    f(c,t){ const cols=[P.rouge,P.aurVert,P.or,P.aurCyan,P.aurViolet];
+      for(let r=0;r<4;r++){ const y0=COURT.top+40+r*128, creux=26+r*4;
+        c.strokeStyle='rgba(20,30,50,.75)'; c.lineWidth=1.6;
+        c.beginPath();
+        for(let x=0;x<=W;x+=10) c.lineTo(x, y0+Math.sin(x/W*Math.PI)*creux+Math.sin(t*1.1+r)*2);
+        c.stroke();
+        for(let x=16;x<W;x+=42){ const y=y0+Math.sin(x/W*Math.PI)*creux+Math.sin(t*1.1+r)*2;
+          ampoule(c,x,y+4,cols[((x/42|0)+r)%cols.length],.5+Math.sin(t*3+x*.1+r)*.45); } } } },
+
+  { id:'B', nom:'LAMPIONS SUR PIQUETS', desc:'Des lanternes plantées tout autour du terrain, jamais au-dessus. La lumière est chaude et le champ de jeu reste totalement dégagé.',
+    f(c,t){ const places=[];
+      for(let x=46;x<W;x+=118){ places.push([x,COURT.top-6]); places.push([x,H-10]); }
+      places.push([26,CY-90],[26,CY+90],[W-26,CY-90],[W-26,CY+90]);
+      places.forEach(([x,y],i)=>{ c.fillStyle='#3a2a1c'; c.fillRect(x-1.6,y-26,3.2,26);
+        const v=.62+Math.sin(t*2.2+i)*.3;
+        c.globalAlpha=.16*v; c.fillStyle=P.chaud;
+        c.beginPath(); c.arc(x,y-32,26,0,TAU); c.fill(); c.globalAlpha=1;
+        c.fillStyle='#3a2a1c'; c.fillRect(x-7,y-42,14,3);
+        c.fillStyle='rgba(255,190,100,'+v+')';
+        c.beginPath(); c.moveTo(x-6,y-39); c.lineTo(x+6,y-39); c.lineTo(x+4,y-26); c.lineTo(x-4,y-26); c.closePath(); c.fill();
+        c.strokeStyle='#3a2a1c'; c.lineWidth=1.4; c.stroke(); }); } },
+
+  { id:'C', nom:'LA GRANDE CLOCHE', desc:'La cloche de Jingle Bells suspendue au-dessus du rond central, qui oscille et rayonne. Le clin d\'œil au perso — et un objet pile au milieu du terrain.',
+    f(c,t){ const a=Math.sin(t*1.6)*.16, x=CX, y=COURT.top+14;
+      c.strokeStyle='#5a6272'; c.lineWidth=3;
+      c.beginPath(); c.moveTo(x,0); c.lineTo(x,y); c.stroke();
+      c.save(); c.translate(x,y); c.rotate(a);
+      const v=.5+Math.sin(t*3)*.3;
+      c.globalAlpha=.18*v; c.fillStyle=P.or;
+      c.beginPath(); c.arc(0,34,64,0,TAU); c.fill(); c.globalAlpha=1;
+      c.fillStyle=P.or;
+      c.beginPath(); c.moveTo(-4,0); c.lineTo(4,0); c.lineTo(4,10); c.lineTo(-4,10); c.closePath(); c.fill();
+      c.beginPath();
+      c.moveTo(-9,12); c.quadraticCurveTo(-34,34,-38,52); c.lineTo(38,52);
+      c.quadraticCurveTo(34,34,9,12); c.closePath(); c.fill();
+      c.fillStyle='#c99a1c'; c.fillRect(-40,50,80,7);
+      c.fillStyle='rgba(255,255,255,.4)';
+      c.beginPath(); c.moveTo(-6,14); c.quadraticCurveTo(-24,34,-27,50); c.lineTo(-18,50);
+      c.quadraticCurveTo(-16,32,-1,15); c.closePath(); c.fill();
+      c.fillStyle='#c99a1c'; c.beginPath(); c.arc(Math.sin(t*3.2)*9,62,7,0,TAU); c.fill();
+      c.strokeStyle=P.sapinFonce; c.lineWidth=5;
+      c.beginPath(); c.arc(0,52,42,.3,Math.PI-.3); c.stroke();
+      c.fillStyle=P.rouge;
+      for(let i=0;i<5;i++){ const aa=.5+i*.5;
+        c.beginPath(); c.arc(Math.cos(aa)*42,52+Math.sin(aa)*42,3.4,0,TAU); c.fill(); }
+      c.restore(); } },
+
+  { id:'D', nom:'TORCHES', desc:'De vraies flammes sur des poteaux plantés autour du terrain, qui vacillent. La lumière la plus vivante et la plus rude — on n\'est plus du tout dans le sapin.',
+    f(c,t){ const places=[];
+      for(let x=70;x<W;x+=160){ places.push([x,COURT.top-4]); places.push([x,H-8]); }
+      places.push([30,CY-110],[30,CY+110],[W-30,CY-110],[W-30,CY+110]);
+      places.forEach(([x,y],i)=>{ c.fillStyle='#3a2a1c'; c.fillRect(x-2.4,y-34,4.8,34);
+        const v=.7+Math.sin(t*8+i*2)*.3, dec=Math.sin(t*6+i)*2;
+        c.globalAlpha=.2; c.fillStyle='#ff8c1f';
+        c.beginPath(); c.arc(x,y-40,34*v,0,TAU); c.fill(); c.globalAlpha=1;
+        c.fillStyle='#ff8c1f';
+        c.beginPath(); c.moveTo(x-7,y-34); c.quadraticCurveTo(x+dec,y-46-8*v,x+7,y-34); c.closePath(); c.fill();
+        c.fillStyle=P.or;
+        c.beginPath(); c.moveTo(x-4,y-34); c.quadraticCurveTo(x+dec,y-42-6*v,x+4,y-34); c.closePath(); c.fill(); }); } },
+
+  { id:'E', nom:'PROJECTEURS DE GLACE', desc:'Quatre faisceaux froids venus des coins, comme une patinoire de compétition. Très propre, très sportif — et complètement dénué de chaleur.',
+    f(c,t){ const coins=[[40,40,1,1],[W-40,40,-1,1],[40,H-40,1,-1],[W-40,H-40,-1,-1]];
+      c.save(); c.globalCompositeOperation='screen';
+      coins.forEach(([x,y,sx,sy],i)=>{ const v=.5+Math.sin(t*1.3+i)*.12;
+        const g=c.createRadialGradient(x,y,10,x,y,540);
+        g.addColorStop(0,'rgba(190,230,255,'+(.3*v)+')'); g.addColorStop(1,'rgba(190,230,255,0)');
+        c.fillStyle=g; c.beginPath();
+        c.moveTo(x,y); c.lineTo(x+sx*560,y+sy*130); c.lineTo(x+sx*130,y+sy*560); c.closePath(); c.fill(); });
+      c.restore();
+      coins.forEach(([x,y],i)=>{ c.fillStyle='#2c3648'; c.fillRect(x-9,y-9,18,18);
+        c.fillStyle='rgba(220,245,255,'+(.7+Math.sin(t*1.3+i)*.2)+')'; c.fillRect(x-6,y-6,12,12); }); } },
+
+  { id:'F', nom:'BOUGIES AU SOL', desc:'Des centaines de petites bougies semées dans la neige autour du terrain. La plus douce et la plus recueillie ; presque aucune lumière ne porte jusqu\'au jeu.',
+    f(c,t){ for(let i=0;i<120;i++){ const x=alea(i,6,W-6), y=alea(i+9,COURT.top-16,H-4);
+        if(x>COURT.left-10&&x<COURT.right+10&&y>COURT.top-10&&y<COURT.bottom+10) continue;
+        const v=.55+Math.sin(t*5+i*1.3)*.45;
+        c.globalAlpha=.13*v; c.fillStyle=P.chaud;
+        c.beginPath(); c.arc(x,y-4,13,0,TAU); c.fill();
+        c.globalAlpha=1; c.fillStyle='#f3ede0'; c.fillRect(x-1.4,y-4,2.8,5);
+        c.fillStyle=P.or; c.beginPath(); c.ellipse(x,y-6,1.4,3*v,0,0,TAU); c.fill(); }
+      c.globalAlpha=1; } },
+
+  { id:'G', nom:'L\'ÉTOILE AU-DESSUS', desc:'Une grande étoile de Noël accrochée au-dessus du terrain, avec son cône de lumière. Un seul point fort au lieu de vingt petits, et le centre reste dégagé.',
+    f(c,t){ const x=CX, y=42;
+      c.save(); c.globalCompositeOperation='screen';
+      const g=c.createLinearGradient(0,y,0,COURT.bottom);
+      g.addColorStop(0,'rgba(255,233,168,.28)'); g.addColorStop(1,'rgba(255,233,168,0)');
+      c.fillStyle=g; c.beginPath();
+      c.moveTo(x,y); c.lineTo(COURT.left+40,COURT.bottom); c.lineTo(COURT.right-40,COURT.bottom); c.closePath(); c.fill();
+      c.restore();
+      const v=.75+Math.sin(t*1.8)*.25;
+      c.globalAlpha=.2*v; c.fillStyle=P.or;
+      c.beginPath(); c.arc(x,y,42,0,TAU); c.fill(); c.globalAlpha=1;
+      c.save(); c.translate(x,y); c.rotate(Math.sin(t*.5)*.06);
+      c.fillStyle=P.or; c.beginPath();
+      for(let i=0;i<10;i++){ const a=i/10*TAU-Math.PI/2, r=i%2?9:26;
+        c.lineTo(Math.cos(a)*r,Math.sin(a)*r); }
+      c.closePath(); c.fill();
+      c.fillStyle='#fff8dd'; c.beginPath();
+      for(let i=0;i<10;i++){ const a=i/10*TAU-Math.PI/2, r=i%2?5:14;
+        c.lineTo(Math.cos(a)*r,Math.sin(a)*r); }
+      c.closePath(); c.fill(); c.restore(); } },
+
+  { id:'H', nom:'NÉONS DE FÊTE', desc:'Des enseignes lumineuses colorées posées derrière les cages, façon marché de Noël. Beaucoup de couleur et un côté urbain qui tranche avec la forêt.',
+    f(c,t){ const mots=[['JOYEUX',P.rouge],['NOËL',P.aurVert],['SWAG',P.aurCyan],['FRISBEE',P.or]];
+      mots.forEach(([m,col],i)=>{ const x=i%2?W*.76:W*.24, y=i<2?30:H-26;
+        const v=(Math.sin(t*7+i*3)>-.75)?1:.25;
+        c.save(); c.globalAlpha=v;
+        c.shadowColor=col; c.shadowBlur=16;
+        c.fillStyle=col; c.font='700 21px "Archivo Black", sans-serif';
+        c.textAlign='center'; c.textBaseline='middle';
+        c.fillText(m,x,y);
+        c.shadowBlur=6; c.fillStyle='#ffffff'; c.font='700 20px "Archivo Black", sans-serif';
+        c.globalAlpha=v*.5; c.fillText(m,x,y); c.restore(); });
+      c.globalAlpha=1; } },
+
+  { id:'I', nom:'RIEN QUE L\'AURORE', desc:'Aucune lumière artificielle : tout vient du ciel. Le terrain reste dans une pénombre bleue, la plus belle et la plus austère.',
+    f(c,t){ const g=c.createLinearGradient(0,COURT.top,0,COURT.bottom);
+      g.addColorStop(0,'rgba(93,240,138,.09)'); g.addColorStop(.5,'rgba(53,224,255,.05)');
+      g.addColorStop(1,'rgba(10,20,40,.12)');
+      c.fillStyle=g; c.fillRect(0,0,W,H); } },
+
+  { id:'J', nom:'DEUX BRASIERS', desc:'Un feu de chaque côté du terrain qui projette une lueur mouvante sur la neige. Chaud et vivant, et strictement symétrique — aucun camp n\'est mieux éclairé.',
+    f(c,t){ for(const s of [-1,1]){ const x=CX+s*(CW*.5+34), y=CY;
+        const v=.7+Math.sin(t*5+s)*.3;
+        c.save(); c.globalCompositeOperation='screen';
+        const g=c.createRadialGradient(x,y,10,x,y,190*v);
+        g.addColorStop(0,'rgba(255,150,60,.4)'); g.addColorStop(1,'rgba(255,120,40,0)');
+        c.fillStyle=g; c.beginPath(); c.arc(x,y,190*v,0,TAU); c.fill(); c.restore();
+        c.fillStyle='#3a2a1c';
+        for(let i=0;i<4;i++){ c.save(); c.translate(x,y+8); c.rotate(i*.8);
+          c.fillRect(-16,-2.5,32,5); c.restore(); }
+        for(let i=0;i<5;i++){ const dec=Math.sin(t*7+i*1.6)*4, hh=18+Math.sin(t*9+i)*9;
+          c.fillStyle=i%2?'#ff8c1f':P.or;
+          c.beginPath(); c.moveTo(x-9+i*4,y+6);
+          c.quadraticCurveTo(x-7+i*4+dec,y+6-hh,x-3+i*4,y+6); c.closePath(); c.fill(); }
+        for(let i=0;i<7;i++){ const k=((t*.6+i*.14)%1);
+          c.globalAlpha=(1-k)*.8; c.fillStyle=P.or;
+          c.fillRect(x+Math.sin(t*3+i)*16, y-k*70, 2, 2); }
+        c.globalAlpha=1; } } }
+];
+
+/* ===========================================================================
+   COMPOSITION — l'ordre des couches, identique à ce que sera drawCourtNoel().
+   ======================================================================== */
+
+/* La neige autour du terrain : plus sombre que celle de l'aire de jeu, c'est
+   ce contraste qui dit où l'on joue (même principe que le sable de Dune de Râ). */
+function solExterieur(c){
+  const g = c.createLinearGradient(0, HORIZON, 0, H);
+  g.addColorStop(0, '#1b2c4a'); g.addColorStop(1, '#0d1729');
+  c.fillStyle = g; c.fillRect(0, HORIZON, W, H - HORIZON);
+  c.globalAlpha = .5;
+  for (let i = 0; i < 130; i++){
+    const x = alea(i + 400, 0, W), y = alea(i + 500, HORIZON, H);
+    c.fillStyle = graine(i + 600) > .5 ? 'rgba(200,220,250,.5)' : 'rgba(60,84,120,.6)';
+    c.fillRect(x, y, 2, 2);
+  }
+  c.globalAlpha = 1;
+}
+
+/* Le calque lisibilité : deux joueurs et le disque, à l'échelle réelle du jeu
+   (sprites 16×20 × SCALE 1.6). Il ne sert qu'à une chose — vérifier que le sol
+   choisi n'avale pas le disque. */
+function action(c, t){
+  const d = { x: CX + Math.cos(t * .9) * 300, y: CY + Math.sin(t * 1.7) * 150 };
+  for (const [px, py, robe, peau] of [
+      [CX - 250 + Math.sin(t * .8) * 40, CY + Math.cos(t * .6) * 90, '#1f8a4d', '#f0d3b0'],
+      [CX + 250 + Math.cos(t * .7) * 40, CY + Math.sin(t * .9) * 90, '#c22a3e', '#f0d3b0']]){
+    c.fillStyle = 'rgba(0,0,0,.3)';
+    c.beginPath(); c.ellipse(px, py + 15, 15, 5, 0, 0, TAU); c.fill();
+    c.fillStyle = robe; c.fillRect(px - 13, py - 8, 26, 24);
+    c.fillStyle = peau; c.fillRect(px - 10, py - 24, 20, 16);
+    c.fillStyle = '#e5384f'; c.fillRect(px - 11, py - 27, 22, 5);
+    c.fillStyle = '#f2f6ff'; c.fillRect(px - 12, py - 10, 24, 4);
+    c.fillStyle = '#1a1f2b'; c.fillRect(px - 6, py - 19, 4, 4); c.fillRect(px + 2, py - 19, 4, 4);
+  }
+  c.fillStyle = 'rgba(0,0,0,.28)';
+  c.beginPath(); c.ellipse(d.x, d.y + 12, 13, 4, 0, 0, TAU); c.fill();
+  c.save(); c.translate(d.x, d.y); c.rotate(t * 6);
+  c.fillStyle = '#f2f6ff'; c.beginPath(); c.ellipse(0, 0, 14, 12, 0, 0, TAU); c.fill();
+  c.strokeStyle = '#9fb6d6'; c.lineWidth = 2; c.stroke();
+  c.fillStyle = '#35e0ff'; c.beginPath(); c.ellipse(0, 0, 7, 6, 0, 0, TAU); c.fill();
+  c.restore();
+}
+
+const SECTIONS = [
+  { cle:'sol',      titre:'sol',      liste:SOL },
+  { cle:'marquage', titre:'marquage', liste:MARQUAGE },
+  { cle:'cages',    titre:'cages',    liste:CAGES },
+  { cle:'foret',    titre:'forêt',    liste:FORET },
+  { cle:'ciel',     titre:'ciel',     liste:CIEL },
+  { cle:'neige',    titre:'neige',    liste:NEIGE },
+  { cle:'public',   titre:'public',   liste:PUBLIC },
+  { cle:'lumieres', titre:'lumières', liste:LUMIERES }
+];
+
+const CHOIX = { sol:0, marquage:0, cages:0, foret:0, ciel:0, neige:0, public:0, lumieres:0 };
+let montrerAction = false;
+
+function peindre(c, t, ch){
+  c.clearRect(0, 0, W, H);
+  CIEL[ch.ciel].f(c, t);
+  solExterieur(c);
+  FORET[ch.foret].f(c, t);
+  PUBLIC[ch.public].f(c, t);
+  SOL[ch.sol].f(c, t);
+  MARQUAGE[ch.marquage].f(c, t);
+  CAGES[ch.cages].f(c, t);
+  if (montrerAction) action(c, t);
+  LUMIERES[ch.lumieres].f(c, t);
+  NEIGE[ch.neige].f(c, t);
+}
+
+/* ===========================================================================
+   MONTAGE DE LA PAGE
+   ======================================================================== */
+const CARTES = [];
+const LARG_CARTE = 384, HAUT_CARTE = 240, ECH = LARG_CARTE / W;
+
+function fabriquerCarte(sec, v, i){
+  const el = document.createElement('div');
+  el.className = 'card' + (CHOIX[sec.cle] === i ? ' on' : '');
+  const cv = document.createElement('canvas');
+  cv.width = LARG_CARTE; cv.height = HAUT_CARTE;
+  const lbl = document.createElement('div');
+  lbl.className = 'lbl';
+  lbl.innerHTML = '<b>' + v.id + ' · ' + v.nom + '</b>' + v.desc;
+  el.appendChild(cv); el.appendChild(lbl);
+  el.addEventListener('click', () => { CHOIX[sec.cle] = i; rafraichir(); });
+  const ctx2 = cv.getContext('2d');
+  const carte = { el, ctx: ctx2, cle: sec.cle, idx: i, visible: false };
+  CARTES.push(carte);
+  observateur.observe(el);
+  return el;
+}
+
+/* On ne repeint que ce qui est à l'écran : 80 mini-terrains dessinés en
+   permanence mettraient la page à genoux, et personne ne regarde huit sections
+   à la fois. */
+const observateur = new IntersectionObserver(entries => {
+  for (const e of entries){
+    const c = CARTES.find(c => c.el === e.target);
+    if (c){ c.visible = e.isIntersecting; if (e.isIntersecting) dessinerCarte(c, horloge); }
+  }
+}, { rootMargin: '150px' });
+
+function dessinerCarte(carte, t){
+  const c = carte.ctx;
+  c.save(); c.scale(ECH, ECH);
+  peindre(c, t, Object.assign({}, CHOIX, { [carte.cle]: carte.idx }));
+  c.restore();
+}
+
+for (const sec of SECTIONS){
+  const row = document.getElementById('sec-' + sec.cle);
+  sec.liste.slice(0, 5).forEach((v, i) => row.appendChild(fabriquerCarte(sec, v, i)));
+  const bt = document.createElement('button');
+  bt.className = 'plus'; bt.textContent = '5 de plus (F à J)';
+  const res = document.createElement('div');
+  res.className = 'row reserve';
+  sec.liste.slice(5).forEach((v, i) => res.appendChild(fabriquerCarte(sec, v, i + 5)));
+  bt.addEventListener('click', () => {
+    const ouvert = res.classList.toggle('ouverte');
+    bt.textContent = ouvert ? 'replier F à J' : '5 de plus (F à J)';
+    bt.classList.toggle('on', ouvert);
+  });
+  row.after(res); row.after(bt);
+}
+
+const elRecette = document.getElementById('recette');
+function rafraichir(){
+  elRecette.innerHTML = SECTIONS.map(s =>
+    s.titre + ' <b>' + s.liste[CHOIX[s.cle]].id + '</b>').join(' · ');
+  for (const c of CARTES){
+    c.el.classList.toggle('on', CHOIX[c.cle] === c.idx);
+    if (c.visible) dessinerCarte(c, horloge);
+  }
+}
+
+document.getElementById('btAction').addEventListener('click', e => {
+  montrerAction = !montrerAction;
+  e.currentTarget.classList.toggle('on', montrerAction);
+});
+document.getElementById('btHasard').addEventListener('click', () => {
+  for (const s of SECTIONS) CHOIX[s.cle] = (Math.random() * s.liste.length) | 0;
+  rafraichir();
+});
+document.getElementById('btCopie').addEventListener('click', e => {
+  const txt = SECTIONS.map(s => s.titre + ' ' + s.liste[CHOIX[s.cle]].id).join(', ');
+  try { navigator.clipboard.writeText(txt); e.currentTarget.textContent = 'copié !';
+        setTimeout(() => e.currentTarget.textContent = 'Copier la recette', 1200); }
+  catch (err){ prompt('Recette :', txt); }
+});
+
+/* Une seule boucle pour tout : l'aperçu à 60 images/s, les vignettes visibles
+   à 8 — c'est amplement suffisant pour juger une neige qui tombe. */
+const grand = document.getElementById('grand').getContext('2d');
+let horloge = 0, dernierTick = 0;
+rafraichir();
+requestAnimationFrame(function boucle(ms){
+  horloge = ms / 1000;
+  peindre(grand, horloge, CHOIX);
+  if (ms - dernierTick > 125){
+    dernierTick = ms;
+    for (const c of CARTES) if (c.visible) dessinerCarte(c, horloge);
+  }
+  requestAnimationFrame(boucle);
+});
+</script>
+</body>
+</html>
