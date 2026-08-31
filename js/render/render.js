@@ -1850,69 +1850,165 @@ function drawOndesBut() {
   ctx.globalAlpha = 1;
 }
 
+// Éclaircit une couleur vers le blanc (mockup hud-jauge-score-final.html) :
+// sert au dégradé de l'étiquette nom/score et au fond très clair du portrait.
+function paleHUD(hex, w) {
+  const n = parseInt(hex.slice(1), 16);
+  const m = v => Math.round(v + (255 - v) * w);
+  return `rgb(${m((n >> 16) & 255)},${m((n >> 8) & 255)},${m(n & 255)})`;
+}
+
+// Hexagone à pointe (mockup piste E) : coins coupés en haut-gauche/bas-droite
+// pour un camp, en haut-droite/bas-gauche pour l'autre (la pointe regarde
+// toujours vers le centre du terrain).
+function hexPathHUD(x, y, w, h, mirror, cut) {
+  ctx.beginPath();
+  if (!mirror) {
+    ctx.moveTo(x + w * cut, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + h * (1 - cut));
+    ctx.lineTo(x + w * (1 - cut), y + h); ctx.lineTo(x, y + h); ctx.lineTo(x, y + h * cut);
+  } else {
+    ctx.moveTo(x, y); ctx.lineTo(x + w * (1 - cut), y); ctx.lineTo(x + w, y + h * cut);
+    ctx.lineTo(x + w, y + h); ctx.lineTo(x + w * cut, y + h); ctx.lineTo(x, y + h * (1 - cut));
+  }
+  ctx.closePath();
+}
+
+// Portrait du HUD (mockup hud-jauge-score-final.html, cadre retenu) :
+// bordure noire épaisse + lueur externe noire (ombre) + lueur interne blanche
+// posée EN MODE 'screen' par-dessus le sprite (donc visible sur le perso,
+// contrairement à un simple fond clair) + fond très clair teinté du perso.
+function drawHexPortrait(p, x, y, s, mirror) {
+  const c = p.char, border = 5, bob = Math.sin(G.now * 2.4 + p.side) * 1.6, breathe = 1 + Math.sin(G.now * 1.85 + p.side) * .015;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 9;
+  ctx.fillStyle = '#111318';
+  hexPathHUD(x, y, s, s, mirror, .2); ctx.fill();
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+  hexPathHUD(x + border, y + border, s - border * 2, s - border * 2, mirror, .2);
+  ctx.fillStyle = paleHUD(c.color, .88);
+  ctx.fill();
+  ctx.save();
+  ctx.clip();
+  const img = (p.frames || c.frames).idle, sw = 16, sh = 16; // tête + haut du torse : jambes coupées
+  const scale = (s - border * 2) * breathe / sw, dw = sw * scale, dh = sh * scale;
+  const dx = x + border + (s - border * 2 - dw) / 2, dy = y + border - (dh - (s - border * 2)) / 2 + bob;
+  ctx.drawImage(img, 0, 0, sw, sh, dx, dy, dw, dh);
+  // Lueur interne : mode 'screen' pour éclaircir le perso plutôt que le recouvrir.
+  ctx.globalCompositeOperation = 'screen';
+  const g = ctx.createRadialGradient(x + s / 2, y + s / 2, s * .18, x + s / 2, y + s / 2, s * .62);
+  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,.85)');
+  ctx.fillStyle = g;
+  ctx.fillRect(x, y, s, s);
+  ctx.restore(); // lève le clip + le mode 'screen'
+  ctx.restore(); // lève l'ombre externe
+}
+
 function drawHUD() {
   ctx.textAlign = 'left';
-  const panel = (p, x, alignRight) => {
+  const S = 72;
+  const panel = (p, edgeX, alignRight) => {
     const c = p.char;
-    ctx.drawImage((p.frames || c.frames).idle, 0, 0, 16, 20, alignRight ? x + 150 : x + 6, 8, 24, 30);
-    ctx.fillStyle = c.accent;
-    ctx.font = '10px "Archivo Black", system-ui, sans-serif';
+    const hexX = alignRight ? edgeX - S : edgeX;
+    drawHexPortrait(p, hexX, 8, S, alignRight);
+    const infoX = alignRight ? hexX - 10 : hexX + S + 10;
     ctx.textAlign = alignRight ? 'right' : 'left';
-    ctx.fillText(c.short + ' ' + c.icon, alignRight ? x + 144 : x + 36, 20);
+    // Étiquette nom + score, dégradé clair de la couleur du perso (piste A).
+    ctx.font = '11px "Archivo Black", system-ui, sans-serif';
+    const label = c.short + ' · ' + p.score;
+    const tw = ctx.measureText(label).width + 16;
+    const tx = alignRight ? infoX - tw : infoX;
+    const grad = ctx.createLinearGradient(tx, 0, tx + tw, 0);
+    grad.addColorStop(0, c.color); grad.addColorStop(1, paleHUD(c.color, .45));
+    ctx.fillStyle = grad;
+    ctx.fillRect(tx, 10, tw, 20);
+    ctx.strokeStyle = '#111318'; ctx.lineWidth = 2.5;
+    ctx.strokeRect(tx, 10, tw, 20);
     ctx.fillStyle = '#fff';
-    ctx.font = '20px "Archivo Black", system-ui, sans-serif';
-    ctx.fillText(String(p.score), alignRight ? x + 144 : x + 36, 44);
-    const bx = alignRight ? x - 60 : x + 36;
-    ctx.fillStyle = '#0a1430';
-    ctx.fillRect(bx, 52, 180, 9);
-    ctx.fillStyle = p.meter >= 100 ? (Math.sin(G.now * 10) > 0 ? '#ffffff' : c.accent) : c.color;
-    ctx.fillRect(bx, 52, 180 * p.meter / 100, 9);
-    ctx.strokeStyle = '#3d5ba6';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(bx, 52, 180, 9);
+    ctx.textAlign = 'center';
+    ctx.fillText(label, tx + tw / 2, 25);
+    // Jauge d'ultime : agrandie, reflet qui balaie en continu, halo fixe (pas de
+    // clignotement dur) qui respire doucement une fois pleine.
+    const bw = 150, bh = 16, by = 34, bx = alignRight ? infoX - bw : infoX;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(bx, by, bw, bh);
+    const full = p.meter >= 100;
+    ctx.fillStyle = full ? '#ffffff' : c.color;
+    ctx.fillRect(bx, by, bw * p.meter / 100, bh);
+    // Reflet diagonal qui balaie la jauge, façon .bar i des menus.
+    ctx.save();
+    ctx.beginPath(); ctx.rect(bx, by, bw * p.meter / 100, bh); ctx.clip();
+    const shineX = bx + ((G.now * 70) % (bw + 60)) - 60;
+    const shine = ctx.createLinearGradient(shineX, 0, shineX + 40, 0);
+    shine.addColorStop(0, 'rgba(255,255,255,0)'); shine.addColorStop(.5, 'rgba(255,255,255,.55)'); shine.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = shine;
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.restore();
+    if (full) {
+      ctx.save();
+      ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 6 + Math.sin(G.now * 3.4) * 3;
+      ctx.strokeStyle = '#111318'; ctx.lineWidth = 3;
+      ctx.strokeRect(bx, by, bw, bh);
+      ctx.restore();
+    } else {
+      ctx.strokeStyle = '#111318'; ctx.lineWidth = 3;
+      ctx.strokeRect(bx, by, bw, bh);
+    }
     // En ligne on nomme les deux joueurs sous leur jauge. Hors ligne on garde
     // le seul repère utile, le « J2 » du second clavier.
     const etiq = Partie.active ? etiquetteJoueur(p) : (G.isJ2J && p.side === 2 ? 'J2' : null);
     if (etiq) {
       ctx.fillStyle = Partie.active ? c.accent : '#35e0ff';
       ctx.font = '9px "Archivo Black", system-ui, sans-serif';
-      ctx.fillText(etiq, alignRight ? bx + 180 : bx, 71);
+      ctx.textAlign = alignRight ? 'right' : 'left';
+      ctx.fillText(etiq, alignRight ? bx + bw : bx, by + bh + 12);
     }
   };
   // En vue miroir, celui qui occupe le côté gauche de CET écran n'est plus
   // forcément G.p1 : c'est toujours son propre joueur qui doit s'y trouver.
   const [gauche, droite] = enMiroir() ? [G.p2, G.p1] : [G.p1, G.p2];
-  panel(gauche, 16, false);
-  panel(droite, W - 16 - 210, true);
-  ctx.fillStyle = '#0d1936';
-  ctx.fillRect(CX - 78, 10, 156, 30);
-  ctx.strokeStyle = '#ffd23e';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(CX - 78, 10, 156, 30);
-  ctx.fillStyle = '#ffd23e';
-  ctx.font = '10px "Archivo Black", system-ui, sans-serif';
+  panel(gauche, 14, false);
+  panel(droite, W - 14, true);
+
+  // ----- Bandeau central (mockup hud-bandeau-central-final.html) -----
   ctx.textAlign = 'center';
-  ctx.fillText('PREMIER À ' + TARGET, CX, 29);
-  // Ping de la liaison, sous le panneau central. Il n'était pas affiché parce
-  // qu'il n'était pas mesuré : `mesurerPing` n'avait aucun appelant et la
-  // valeur restait à zéro. Un joueur en ligne a le droit de savoir dans quelles
-  // conditions il joue — c'est aussi la première chose qu'on regarde quand on
-  // trouve que « ça rame », et ça évite de blâmer le jeu pour le réseau.
-  // Posé à DROITE du panneau, pas dessous : le compteur d'échange occupe déjà
-  // la colonne centrale six pixels plus bas, et les deux se chevauchaient.
+  ctx.font = '11px "Archivo Black", system-ui, sans-serif';
+  const label = 'PREMIER À ' + TARGET;
+  const pw = ctx.measureText(label).width + 28, ph = 20, px = CX - pw / 2, py = 8;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.roundRect(px, py, pw, ph, ph / 2); ctx.fill();
+  ctx.strokeStyle = '#111318'; ctx.lineWidth = 2.5; ctx.stroke();
+  ctx.fillStyle = '#111318';
+  ctx.fillText(label, CX, py + 14);
+
+  // Ping de la liaison : barres de signal + texte, sans cadre (piste D). Il
+  // n'était pas affiché avant parce qu'il n'était pas mesuré : `mesurerPing`
+  // n'avait aucun appelant et la valeur restait à zéro.
   if (Partie.active) {
     const ms = Reseau.ping | 0;
-    ctx.fillStyle = ms === 0 ? '#7c8c98' : (ms < 60 ? '#7bd66a' : (ms < 120 ? '#ffd23e' : '#ff5340'));
+    const col = ms === 0 ? '#9aa0ac' : (ms < 60 ? '#7bd66a' : (ms < 120 ? '#ffd23e' : '#ff5340'));
+    const bx0 = CX - 20, by0 = py + ph + 12;
+    ctx.fillStyle = col;
+    [[0, 4], [4, 6], [8, 8]].forEach(([dx, h]) => ctx.fillRect(bx0 + dx, by0 - h, 3, h));
+    ctx.fillStyle = '#eaf2ff';
     ctx.font = '9px "Archivo Black", system-ui, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(ms === 0 ? '— MS' : ms + ' MS', CX + 88, 28);
+    ctx.fillText(ms === 0 ? '— MS' : ms + ' MS', bx0 + 14, by0);
     ctx.textAlign = 'center';
   }
+
+  // Compteur d'échange : grand chiffre lumineux qui respire doucement en
+  // continu (jamais figé, mais sans clignoter dur — piste D).
   if (G.rally >= 4) {
-    ctx.fillStyle = '#7bd66a';
-    ctx.font = '9px "Archivo Black", system-ui, sans-serif';
-    ctx.fillText('ÉCHANGE ×' + G.rally, CX, 56);
+    const ry = py + ph + 40, breathe = 1 + Math.sin(G.now * 3.5) * .07;
+    ctx.save();
+    ctx.translate(CX, ry); ctx.scale(breathe, breathe);
+    ctx.shadowColor = 'rgba(255,210,80,.85)'; ctx.shadowBlur = 14 + Math.sin(G.now * 3.5) * 6;
+    ctx.fillStyle = '#ffe27a';
+    ctx.font = '26px "Archivo Black", system-ui, sans-serif';
+    ctx.fillText('×' + G.rally, 0, 0);
+    ctx.restore();
   }
+
   if (G.state === 'serve') {
     const server = G.serveTo === 1 ? G.p1 : G.p2;
     ctx.fillStyle = '#fff';
