@@ -166,19 +166,29 @@ export function doDive(p, aim) {
   if (!jeSimule()) return;
 
   const inRange = d.free && Math.hypot(d.x - p.x, d.y - p.y) < DIVE_RANGE + DISC_RADIUS;
-  if (!inRange) {
-    // Whiff : plongeon dans le vide, le joueur reste au sol un instant.
+  // Un disque qui ne vient pas vers nous n'est pas une menace à contrer — ni
+  // notre propre disque tout juste lâché (il repart forcément dans l'autre
+  // sens), ni un disque immobile ou qui s'éloigne. Sans cette condition, se
+  // plonger dessus déclenchait quand même le CONTRE : un double-clic — lâcher
+  // le disque puis se replonger dessus dans la foulée — suffisait à le
+  // relancer une seconde fois, plus fort qu'un tir chargé à fond (DIVE_POWER),
+  // sans une image de charge. Gratuit, offensif, et tout ce que ce geste
+  // n'est pas censé être : « purement défensif ».
+  const closing = inRange && (d.x - p.x) * d.vx + (d.y - p.y) * d.vy < 0;
+  if (!inRange || !closing) {
+    // Whiff : rien à contrer, le joueur reste au sol un instant — que le
+    // disque ait été hors de portée ou simplement pas une menace.
     p.diveDown = DIVE_WHIFF_DOWN;
     return;
   }
   p.diveHit = true;
-  // Perfect Dive : le disque doit venir vers nous ET être sur le point d'arriver.
-  // On exige les deux conditions, sinon un disque lent déclencherait le parry
-  // alors qu'il est encore loin.
-  const closing = (d.x - p.x) * d.vx + (d.y - p.y) * d.vy < 0;
+  // Perfect Dive : le disque doit être sur le point d'arriver, pas seulement
+  // se rapprocher. Sans cette seconde condition, un disque lent qui vient tout
+  // juste d'amorcer sa route vers nous déclencherait le parry alors qu'il est
+  // encore loin.
   const dist = Math.hypot(d.x - p.x, d.y - p.y);
   const tti = dist / Math.max(1, Math.hypot(d.vx, d.vy));
-  if (closing && tti <= PERFECT_WINDOW && dist < DIVE_RANGE) perfectDive(p);
+  if (tti <= PERFECT_WINDOW && dist < DIVE_RANGE) perfectDive(p);
   else {
     throwDisc(p, aim, DIVE_POWER * p.char.power);
     burst(d.x, d.y, p.char.accent, 16);
