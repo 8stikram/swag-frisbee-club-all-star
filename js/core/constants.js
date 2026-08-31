@@ -39,7 +39,11 @@ export const DASH_SLIDE = .12;
 export const DASH_THROW_WINDOW = .5;  // délai pour déclencher un Dash Throw après le catch
 
 // --- Plongeon : purement défensif, il repousse le disque mais ne l'attrape jamais.
-export const DIVE_TIME = .3, DIVE_RANGE = 52, DIVE_WHIFF_DOWN = .5;
+// DIVE_RANGE élargi de 52 à 72 (+38 %) : la portée réelle jugée à l'appui —
+// zone de contact ET distance maximale du Perfect Dive — était si étroite
+// qu'à moins d'être déjà quasiment aligné, le plongeon ratait tout court,
+// bien avant même de discuter du timing.
+export const DIVE_TIME = .3, DIVE_RANGE = 72, DIVE_WHIFF_DOWN = .5;
 export const DIVE_POWER = 1180;       // plus fort qu'un tir chargé à fond
 
 // --- Cancel Dash : réappuyer sur la touche de dash stoppe net le joueur.
@@ -55,10 +59,15 @@ export const CANCEL_GAP = .35, CANCEL_CATCH = .2;
 export const FEINT_TIME = .26, FEINT_FREE = .14, FEINT_CD = .35, FEINT_REACH = 44;
 
 // --- Perfect Dive : plonger dans la fenêtre exacte où le disque arrive.
-// 45 ms, soit moins de 3 images à 60 fps. À 0,1 s la fenêtre était illusoire :
-// un disque à 800 px/s traverse toute la portée du plongeon en 0,08 s, donc
-// n'importe quel plongeon à portée passait pour un timing parfait.
-export const PERFECT_WINDOW = .045, PERFECT_SPEED = 1520;
+// 60 ms (était 45) : élargi dans la même proportion que DIVE_RANGE, pour
+// garder EXACTEMENT le même écart relatif avec le CONTRE simple plutôt que
+// de le resserrer par accident. La contrainte reste celle d'origine : à
+// 800 px/s, un disque traverse la portée de contact (DIVE_RANGE + rayon du
+// disque, donc 86 px) en 0,1075 s — la fenêtre parfaite doit rester
+// nettement en dessous, sans quoi n'importe quel plongeon à portée
+// passerait pour un timing parfait. 60 ms en couvre 56 %, contre 55 %
+// avant : le rapport entre les deux tient.
+export const PERFECT_WINDOW = .06, PERFECT_SPEED = 1520;
 
 // dive  : à quel point l'IA tente le contre au plongeon
 // parry : à quel point elle vise la fenêtre du Perfect Dive plutôt qu'un contre simple
