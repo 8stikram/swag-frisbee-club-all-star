@@ -100,6 +100,17 @@
 // mockup est autonome.
 // ---------------------------------------------------------------------------
 import { CHARS, ROSTER } from '../js/data/characters.js';
+// Tous les contrôles vivent dans un module commun. Chaque erreur commise sur
+// un perso y devient un contrôle, qui s'applique ensuite à TOUS — y compris
+// aux mockups déjà écrits. C'est la seule chose qu'on mutualise : le moteur
+// d'affichage, lui, reste propre à chaque fichier, parce qu'un mockup est une
+// trace de décision et que son rendu ne doit pas changer dans le dos.
+//
+// Pour un NOUVEAU perso : déclarer ses traits obligatoires dans _verif.js dès
+// que le design est validé. C'est ce qui attrape les régressions — sur Yoshi,
+// les épines rouges avaient disparu au détour d'une refonte sans que rien ne
+// le signale.
+import { verifier, afficher } from './_verif.js';
 
 const TAU = Math.PI * 2;
 // Échelle du match : SCALE 1,6 dans render.js, sprite dessiné en 48×60 unités
@@ -123,6 +134,11 @@ const ECH_APERCU = 9;     // l'aperçu du haut a le droit d'être plus gros
    =========================================================================== */
 const PERSO = {
   nom: 'NOUVEAU PERSO',
+  // Les lettres qui composent la couleur dominante du perso. Le module de
+  // contrôle vérifie qu'elle porte au moins TROIS valeurs : en dessous, le
+  // personnage devient un aplat où le volume ne se lit pas. Constaté sur Yuki
+  // (blanc sur 2 tons) puis sur Yoshi (vert sur 1 ton).
+  dominante: 'Vv',
   // Libellé affiché sous le perso dans l'écran de sélection, comme KONOHA,
   // RACCOON CITY ou MAISON DE MAMIE. Pas de variantes : on l'écrit ici.
   univers: 'PROVENANCE',
@@ -390,37 +406,10 @@ function assembler() {
    Une lettre absente de la palette ne lève aucune erreur : le pixel est
    simplement ignoré et le trou passe inaperçu. On vérifie donc les deux :
    la géométrie (16 colonnes, 20 lignes) ET l'existence de chaque lettre. */
-const bad = [];
-function verifier(nom, rows, pal) {
-  if (rows.length !== 20) bad.push(nom + ' : ' + rows.length + ' lignes (attendu 20)');
-  rows.forEach((r, i) => {
-    if (r.length !== 16) bad.push(nom + '[' + i + '] : ' + r.length + ' colonnes (attendu 16)');
-    for (const ch of r) if (ch !== '.' && !pal[ch]) bad.push(nom + '[' + i + '] : lettre « ' + ch + ' » absente de la palette');
-  });
-}
-// Chaque variante DOIT porter son explication écrite, et chaque section la
-// sienne. Une carte sans texte oblige à deviner ce qu'on regarde et ce qu'on
-// y perd — c'est vérifié ici plutôt que laissé à la bonne volonté, au même
-// titre que la géométrie des sprites. Une description doit dire ce que c'est
-// ET ce que ça coûte : d'où la longueur minimale, qui écarte les « joli ».
-const MIN_DESC = 40;
-for (const s of SECTIONS) {
-  if (!s.note || s.note.trim().length < MIN_DESC) bad.push(s.id + ' : la section n\'explique pas ce qu\'on y juge');
-  for (const va of s.variantes) {
-    if (!va.nom || !va.nom.trim()) bad.push(s.id + '-' + va.id + ' : pas de nom');
-    if (!va.desc || va.desc.trim().length < MIN_DESC) {
-      bad.push(s.id + '-' + va.id + ' : explication manquante ou trop courte — dire l\'allure ET l\'avantage/inconvénient');
-    }
-    if (!va.tete && !va.corps && !va.pal) continue;
-    const pal = { ...PERSO.pal, ...(va.pal || {}) };
-    verifier(s.id + '-' + va.id, [...(va.tete || PERSO.tete), ...(va.corps || PERSO.corps)], pal);
-  }
-}
+// `id` sert à retrouver les traits obligatoires du perso dans _verif.js.
+const bad = verifier({ id: 'gabarit', PERSO, SECTIONS });
 const boite = document.getElementById('errs');
-boite.textContent = bad.length
-  ? bad.length + ' à corriger :\n' + bad.slice(0, 24).join('\n') + (bad.length > 24 ? '\n…' : '')
-  : 'OK — gabarit 16 × 20 tenu, palettes complètes, et chaque section comme chaque variante porte son explication.';
-if (bad.length) boite.className = 'bad';
+afficher(bad, boite);
 
 /* --- Bande de comparaison au roster --- */
 (function bandeRoster() {

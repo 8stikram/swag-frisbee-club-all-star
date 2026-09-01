@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Yoshi — chara-design</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:34px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:970px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;
+        flex:1 1 0;min-width:188px;cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d5c8a}
+  .card.on{border-color:var(--or);transform:translateY(-2px)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:68px}
+  .lbl b{display:block;font-size:14px;color:var(--or);letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px;image-rendering:pixelated}
+  .reserve{display:none}
+  .reserve.ouverte{display:flex}
+  .plus{margin-top:9px;background:#132038;color:#9fb4dd;border:1px solid var(--edge);
+        border-radius:7px;padding:6px 13px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#1a2b48;color:var(--ink)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 420px}
+  .apercu canvas{background:#0a1220}
+  .choix{font-size:11.5px;color:#9fb4dd;margin-top:9px;font-family:Consolas,monospace;line-height:1.7}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#24395e}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .roster{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 320px}
+  .roster h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .rosterRow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .rosterOne{text-align:center}
+  .rosterOne canvas{background:#0a1220;border-radius:5px}
+  .rosterOne span{display:block;font-size:9.5px;color:#7f93b3;margin-top:3px;max-width:78px;
+                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rosterOne.neuf span{color:var(--or)}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+  .stats{font-family:Consolas,monospace;font-size:11px;color:#9fb4dd;line-height:1.6;margin-top:7px}
+  .stats i{color:var(--or);font-style:normal}
+  .alerte{background:#2a1a10;border:1px solid #7a4a1e;border-radius:10px;padding:12px 14px;
+          margin:0 0 16px;font-size:12.5px;line-height:1.7;color:#f0d0a8;max-width:970px}
+  .alerte b{color:#ffb020}
+</style>
+</head>
+<body>
+
+<h1>YOSHI — CHARA-DESIGN</h1>
+<p class="note">
+  Le dinosaure de <b>L'Île des Yoshi</b>. Ce mockup ne couvre que le chara-design — l'ultime aura le
+  sien, et les skins de couleur viendront après, une fois le design figé.
+  <br><br>
+  <b>Sur les skins de couleur :</b> le vert est écrit sur <b>quatre valeurs</b> — éclairé, base, ombre,
+  creux. Un seul ton donnait un aplat où ni la sphère du crâne ni la masse du museau ne se lisaient.
+  Ça ne complique pas les skins pour autant : un skin ne fournira que la <b>couleur de base</b>, et les
+  trois autres tons s'en déduiront par éclaircissement et assombrissement. Le blanc du ventre, le rouge
+  de la selle et l'orange des bottes ne bougeront jamais — c'est ce qui rendra un Yoshi rose
+  immédiatement reconnaissable.
+  <br><br>
+  <b>La contrainte du gabarit :</b> Yoshi a une tête énorme par rapport au corps, et un museau qui
+  dépasse loin devant. Dans une boîte de 16 × 20 dont seulement 12 colonnes sont utilisables, chaque
+  pixel donné au museau est un pixel retiré au crâne. C'est l'arbitrage de la section 1.
+</p>
+
+
+
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvApercu" width="620" height="300"></canvas>
+    <div class="choix" id="choix"></div>
+    <div class="copier">
+      <input class="codeChoix" id="codeChoix" readonly>
+      <button class="btnCopier" id="btnCopier">copier mes choix</button>
+    </div>
+  </div>
+  <div class="roster">
+    <h3>À côté du roster en place</h3>
+    <div class="rosterRow" id="rosterRow"></div>
+    <p class="note" style="margin:9px 0 0;font-size:11px">
+      Yoshi est en or. Sa grosse tête ronde tranche avec tout le reste du casting : c'est ici
+      qu'on juge si elle passe ou si elle écrase le reste.
+    </p>
+  </div>
+</div>
+
+<div id="sections"></div>
+
+<script type="module">
+import { CHARS, ROSTER } from '../js/data/characters.js';
+// Tous les contrôles vivent dans un module commun : chaque erreur commise sur
+// un perso y devient un contrôle qui s'applique ensuite à tous, y compris aux
+// mockups déjà écrits. Le moteur d'affichage, lui, reste propre à ce fichier —
+// un mockup est une trace de décision, son rendu ne doit pas bouger tout seul.
+import { verifier, afficher } from './_verif.js';
+
+const TAU = Math.PI * 2;
+// Échelle réelle du match : 4,8 px par pixel de sprite (SCALE 1,6 dans
+// render.js). C'est celle de la bande roster, qui sert à juger la lisibilité
+// telle qu'on la verra en jouant.
+const ECH_ROSTER = 5;
+// Les CARTES, elles, agrandissent. À l'échelle du match le sprite ne couvrait
+// qu'un cinquième de la carte, noyé dans du terrain vide : deux variantes qui
+// changeaient un dixième du personnage ne changeaient que 2 % de l'image, et
+// toutes les cartes se ressemblaient. On compare mieux de près.
+const ECH_CARTE = 8;
+const ECH_APERCU = 9;
+
+/* =========================== LE PERSONNAGE =========================== */
+const PERSO = {
+  nom: 'Yoshi',
+  univers: "L'ÎLE DES YOSHI",
+  // QUATRE valeurs de vert, pas une. Un seul ton donnait un aplat où ni la
+  // sphère du crâne ni la masse du museau ne se lisaient. Pour les skins, ce
+  // n'est pas un problème : un skin ne fournit que la couleur de base, les
+  // trois autres tons s'en déduisent par éclaircissement et assombrissement.
+  pal: {
+    l: '#7ee05c',                 // vert éclairé : dessus du crâne et du museau
+    G: '#5cc63d',                 // LE vert de base, celui qu'un skin remplace
+    g: '#3f9e28',                 // son ombre
+    h: '#2a6e18',                 // son creux
+    W: '#ffffff', w: '#dfe6e0',   // mâchoire, ventre et blanc des yeux / ombre
+    E: '#1a1a3a',                 // pupilles
+    R: '#e8452f', r: '#b02a1c',   // selle et épines du dos / ombre
+    O: '#f08a2a', o: '#c96410',   // bottes / ombre
+    Y: '#f5d84a',                 // semelle des bottes
+    N: '#3f9e28'                  // narine, sur le dessus du museau
+  },
+  // Tête : le crâne est une sphère éclairée en haut, le museau une SECONDE
+  // masse ronde posée devant, et le nez vert est la partie la plus en avant —
+  // il passe devant la mâchoire. Le blanc n'est pas une bouche : c'est TOUTE
+  // la mâchoire inférieure, une grosse masse sous le museau. La fine ligne
+  // rouge entre les deux est l'ouverture de la gueule.
+  tete: ["..RRlGGGGg......",".RRRlGGWWWGg....",".RRGGGGWWEEGg...","..RGGGGWWEEGGg..","..GGGGGGWWGGGg..","..GGlllGGGGGGg..","..GGllGGGGGGGg..","..GWWGGGGGhhhg..",".GWWWWGGGGGGg...",".WWWWWWGGGGg...."],
+  // Corps : ventre blanc modélé, selle rouge avec son ombre dans le dos, et
+  // les grosses bottes oranges à semelle jaune.
+  corps: [".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGGGGGGGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..YYYY..YYYY...."]
+};
+
+/* =========================== LES SECTIONS =========================== */
+function v(id, nom, desc, o) { return { id, nom, desc, ...o }; }
+
+const SECTIONS = [
+  {
+    id:'tete', titre:'1 · La tête',
+    note:'Trois masses à faire lire : la sphère du crâne, le museau posé devant, et la mâchoire blanche dessous. Le nez vert doit passer DEVANT la mâchoire, sinon la tête redevient un aplat. Compare le G, sans aucune ombre, pour voir ce que le modelé apporte.',
+    variantes:[
+      v('A','TON DESSIN','Transposition directe de ce que tu as dessiné : grand œil à grosse pupille, épine rouge massive, museau cerné de vert clair, blanc continu du menton au ventre.',{tete:["..RRlGGGGg......",".RRRlGGWWWGg....",".RRGGGGWWEEGg...","..RGGGGWWEEGGg..","..GGGGGGWWGGGg..","..GGlllGGGGGGg..","..GGllGGGGGGGg..","..GWWGGGGGhhhg..",".GWWWWGGGGGGg...",".WWWWWWGGGGg...."]}),
+      v('B','ŒIL ÉNORME','L\'œil s\'étale sur cinq rangées et prend presque tout le crâne. Le plus expressif de tous — un vrai regard de dessin animé — mais il ne reste plus de front vert.',{tete:["..RRlGGGGg......",".RRlGWWWWWWg....",".RRGGWWWWWWWg...","..RGGWWWEEEWg...","..GGGWWWEEEWGg..","..GGlWWWWWWGGg..","..GGllGGGGGGGg..","..GWWGGGGGhhhg..",".GWWWWGGGGGGg...",".WWWWWWGGGGg...."]}),
+      v('C','ŒIL PETIT','L\'œil se réduit à deux pixels et le crâne s\'arrondit. La tête paraît plus adulte et plus reptilienne, mais on perd le regard naïf qui fait le personnage.',{tete:["...GGGGGGg......","..GGGGGGGGg.....","..GGGGGGGEGg....","..RGGGGGGEGGg...","..GGGGGGGGGGGg..","..GGGGGGGGGGGg..","..GGGGGGGGGGGg..","..GWWGGGGGGGGg..",".GWWWWGGGGGGg...",".WWWWWWGGGGg...."]}),
+      v('D','MUSEAU TRÈS LONG','Le museau s\'étale sur deux rangées de plus vers l\'avant. Il domine franchement le crâne comme sur les visuels, mais il mange la largeur du corps.',{tete:["..RRlGGGGg......",".RRRlGGWWWGg....",".RRGGGGWWEEGg...","..RGGGGWWEEGGg..","..GGGGGllllllg..","..GGllllllllGg..","..GGlllllllGGg..","..GWWGGGGGGGhg..",".GWWWWGGGGGGGg..",".WWWWWWGGGGGg..."]}),
+      v('E','MUSEAU RETROUSSÉ','Le bout du museau se relève franchement vers le haut. Il a l\'air joyeux et bondissant, mais le nez ne domine plus la mâchoire comme sur ton dessin.',{tete:["..RRlGGGGlllg...",".RRRlGGWWWlllg..",".RRGGGGWWEEllg..","..RGGGGWWEEGgg..","..GGGGGGWWGGg...","..GGGGGGGGGGg...","..GGGGGGGGGGg...","..GWWGGGGGhhg...",".GWWWWGGGGGGg...",".WWWWWWGGGGg...."]}),
+      v('F','GUEULE OUVERTE','La ligne sombre sous le museau s\'ouvre en une grande gueule rouge sur trois rangées. Le plus vivant du lot, mais le rouge envahit tout le bas du visage.',{tete:["..RRlGGGGg......",".RRRlGGWWWGg....",".RRGGGGWWEEGg...","..RGGGGWWEEGGg..","..GGGGGGWWGGGg..","..GGlllGGGGGGg..","..GGllGGGGGGGg..","..GWWRRRRRRRRg..",".GWWWRrrrrrrg...",".WWWWWRrrrGg...."]}),
+      v('G','ÉPINE DISCRÈTE','L\'épine rouge disparaît presque et le crâne s\'arrondit sur le dessus. La tête est bien plus lisible en petit, mais il perd le signe qui l\'identifie de dos.',{tete:["...lllGGGg......","..GllGGGWWWg....","..GGGGGGWWEEg...","..GGGGGGWWEEGg..","..GGGGGGGWWGGg..","..GGlllGGGGGGg..","..GGllGGGGGGGg..","..GWWGGGGGhhhg..",".GWWWWGGGGGGg...",".WWWWWWGGGGg...."]}),
+      v('H','ÉPINE EN CRÊTE','L\'épine rouge devient une crête qui court sur tout l\'arrière du crâne. Beaucoup plus reptilien et agressif, mais le rouge concurrence le visage.',{tete:["RRRRRRlGGg......","RRRRrlGGWWWg....","RRRrGGGGWWEEg...","RRRrGGGGWWEEGg..","RRrGGGGGGWWGGg..","RRrGGlllGGGGGg..",".RGGGllGGGGGGg..","..GWWGGGGGhhhg..",".GWWWWGGGGGGg...",".WWWWWWGGGGg...."]}),
+      v('I','TÊTE BAISSÉE','Tout le visage descend d\'une rangée et le museau pointe vers le bas. Il a l\'air de charger, ce qui colle à sa ruée, mais l\'œil se lit moins bien.',{tete:["..RRGGGGg.......",".RRRGGGGGGg.....",".RRGGGWWWGGg....","..RGGGWWEEGGg...","..GGGGGWWEEGGg..","..GGGGGGWWGGGg..","..GGlllGGGGGGg..","..GWWllGGGhhhg..",".GWWWWGGGGGGg...",".WWWWWWGGGGg...."]}),
+      v('J','SANS MODELÉ','La même structure, mais tout le vert sur une seule valeur et sans ombre. À comparer avec le A : c\'est exactement ce que le modelé apporte au museau.',{tete:["..RRGGGGGG......",".RRRGGGWWWGG....",".RRGGGGWWEEGG...","..RGGGGWWEEGGG..","..GGGGGGWWGGGG..","..GGGGGGGGGGGG..","..GGGGGGGGGGGG..","..GWWGGGGGGGGG..",".GWWWWGGGGGGG...",".WWWWWWGGGGG...."]})
+    ]
+  },
+  {
+    id:'tenue', titre:'2 · Le corps',
+    note:'Le ventre blanc, la selle rouge et les bottes oranges sont ses trois signes distinctifs — on le reconnaît par eux avant même sa couleur. Le J montre le même corps sans modelé, pour comparaison.',
+    variantes:[
+      v('A','TON DESSIN','Blanc continu du menton jusqu\'au bas du ventre, carapace rouge derrière, bottes rondes à semelle jaune. Transposition directe de ton dessin.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGGGGGGGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..YYYY..YYYY...."]}),
+      v('B','VENTRE ÉNORME','Le blanc s\'étale sur toute la largeur et déborde des flancs. C\'est le poussin joufflu des visuels, mais il ne reste presque plus de vert pour les skins.',{corps:["WWWWWWWWWGGg....","WWWWWWWWWWGGg...","WWWWWWWWWWWGg...","WWWWWWWWWWWGg...",".WWWWWWWWWWGg...","..WWWWWWWWGGg...","..GGGGGGGGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..YYYY..YYYY...."]}),
+      v('C','VENTRE ÉTROIT','Le blanc se resserre en une bande centrale et le vert domine partout. Les skins de couleur ressortiront au maximum, mais il perd toute sa rondeur.',{corps:[".WWWGGGGGGGg....","rWWWWGGGGGGg....","rrWWWWGGGGGg....",".rWWWWGGGGGg....","..GWWWWGGGGg....","..GGWWWGGGGg....","..GGGGGGGGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..YYYY..YYYY...."]}),
+      v('D','SANS CARAPACE','Le dos est nu, tout en vert, et les épaules s\'arrondissent. La silhouette est la plus simple à lire et les skins colorent davantage, mais il perd un signe.',{corps:["..GWWWWWGGGg....",".GGWWWWWWGGGg...","GGGWWWWWWWGGg...","GGGWWWWWWWWGg...",".GGWWWWWWWGGg...","..GGWWWWWGGGg...","..GGGGGGGGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..YYYY..YYYY...."]}),
+      v('E','GRANDE CARAPACE','La carapace rouge remonte jusqu\'aux épaules et couvre tout l\'arrière. Très visible de dos, au prix du vert que les skins doivent colorer.',{corps:["RRWWWWWGGGGg....","RRRWWWWWGGGGg...","RRRWWWWWWGGGg...","RRRWWWWWWWGGg...","RRrGWWWWWWGGg...",".rrGGWWWWWGGg...","..GGGGGGGGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..YYYY..YYYY...."]}),
+      v('F','BOTTES ÉNORMES','Les bottes doublent de largeur et de hauteur. C\'est le détail le plus drôle de sa silhouette, mais elles sortent franchement du gabarit du roster.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","GGGGGGGGGGGGg...","OOOOOOo.oOOOOO..","OOOOOOo.oOOOOO..","YYYYYY..YYYYYY.."]}),
+      v('G','PIEDS NUS','Pas de bottes du tout, juste les pattes vertes à trois orteils. Le vert descend jusqu\'au sol donc les skins colorent davantage — mais il n\'est plus Yoshi.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGGGGGGGGGg...","..GGgg..ggGGg...","..GGgg..ggGGg...","..hghg..ghgh...."]}),
+      v('H','BRAS EN AVANT','Les deux bras verts se tendent devant lui, comme sur sa pose de course. Le plus dynamique au repos, mais il occupe toute la largeur du gabarit.',{corps:["llWWWWWWGGGll...","lllWWWWWWGGll...","rllWWWWWWWGll...","rrlWWWWWWWWll...",".rGGWWWWWWWGg...","..GGGWWWWGGGg...","..GGGGGGGGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..YYYY..YYYY...."]}),
+      v('I','QUEUE ÉNORME','Une grosse queue verte part du bas du dos et occupe tout le coin gauche. La silhouette du dinosaure est complète, mais elle déséquilibre tout vers l\'arrière.',{corps:["hWWWWWWGGGGg....","hhWWWWWWGGGGg...","hhhWWWWWWGGGg...","hhhWWWWWWWGGg...","hhhGWWWWWWGGg...","hhhGWWWWWGGGg...","hhGGGGGGGGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..YYYY..YYYY...."]}),
+      v('J','ACCROUPI','Il se tasse complètement sur ses bottes, prêt à bondir. Il gêne beaucoup moins la lecture du disque au-dessus de lui, mais perd toute sa présence verticale.',{corps:["................",".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGGGGGGGGGg...",".OOOOOo.oOOOOO..",".YYYYYY.YYYYYY..","................"]})
+    ]
+  },
+  {
+    id:'palette', titre:'3 · La palette',
+    note:'Le vert de base, celui dont les skins de couleur seront les déclinaisons. Il doit ressortir sur le terrain bleu nuit sans écraser le blanc du ventre ni le rouge de la selle.',
+    variantes:[
+      v('A','VERT YOSHI','Le vert classique, celui de tous les visuels. C\'est la couleur de référence dont les skins seront les déclinaisons.',{pal:{}}),
+      v('B','VERT PLUS VIF','Un vert plus saturé, qui claque davantage sur le fond sombre du stade. Très lisible, mais un peu criard à côté du reste du casting.',{pal:{G:'#4ee02a',g:'#2fb515'}}),
+      v('C','VERT PLUS SOMBRE','Un vert plus profond, plus proche des rendus 3D récents. Plus adulte et mieux intégré, mais il se détache moins du terrain bleu nuit.',{pal:{G:'#3f9e28',g:'#2a6e18',h:'#1d4f10'}}),
+      v('D','SELLE PLUS ROUGE','Même vert, mais la selle et les épines virent au rouge franc. Le contraste est maximal, au risque de concurrencer les effets de dégâts du jeu.',{pal:{R:'#ff2a1a',r:'#c40f00'}}),
+      v('E','BOTTES PLUS CLAIRES','Les bottes passent à l\'orange clair avec une semelle plus jaune. Le bas du perso s\'allège, mais il perd un peu de son ancrage au sol.',{pal:{O:'#ffa348',o:'#e07a1a',Y:'#ffee6a'}}),
+      v('F','VENTRE CRÈME','Le ventre passe du blanc pur au crème. Plus doux et moins clinique, mais il se distingue moins du vert sur une petite image.',{pal:{W:'#fff4dd',w:'#e6d9bd'}}),
+      v('G','PUPILLES BLEUES','Les pupilles passent du presque noir au bleu profond, comme sur les rendus Nintendo. Le regard s\'adoucit, mais se lit moins bien en petit.',{pal:{E:'#2440a8'}}),
+      v('H','TOUT PLUS CONTRASTÉ','Vert plus vif, blanc plus pur, rouge plus franc. Il claque à l\'écran comme aucun autre, au risque de paraître dur et sans matière.',{pal:{G:'#4ee02a',W:'#ffffff',R:'#ff2a1a',O:'#ff9a2a'}}),
+      v('I','TONS PASTEL','Toute la palette tirée vers le pastel. Très doux et très enfantin, mais il disparaît presque sur un terrain sombre.',{pal:{G:'#8fe07a',g:'#6bbd58',W:'#fffdf8',R:'#ff8a7a',O:'#ffc07a'}}),
+      v('J','ÉPINES ORANGÉES','Les épines du dos passent à l\'orange, comme les bottes. La palette se resserre sur trois couleurs, mais on perd le rouge qui signalait la selle.',{pal:{R:'#f08a2a',r:'#c96410'}})
+    ]
+  },
+  {
+    id:'pose', titre:'4 · La pose signature',
+    note:'La pose au repos, celle qu\'on regarde le plus longtemps. Yoshi est rond et léger : se tient-il droit comme les humains du casting, ou plus bas, prêt à bondir ?',
+    variantes:[
+      v('A','DEBOUT','Il se tient droit, bottes sous les hanches. La plus proche du reste du roster, donc la plus cohérente — mais aussi la plus statique des dix.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGGGGGGGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..YYYY..YYYY...."]}),
+      v('B','APPUI LARGE','Bottes largement écartées, appui planté. Il paraît bien plus stable, mais sa base devient plus large que ses épaules et il tasse la silhouette.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...",".GGgg....ggGGg..",".OOOo....oOOO...",".OOoo....ooOO...",".YYYY....YYYY..."]}),
+      v('C','BRAS LEVÉ','Un bras se lève vers l\'avant, comme sur son visuel Smash. Très vivant et très reconnaissable, mais le bras masque une partie du ventre blanc.',{corps:["lWWWWWWGGGGgll..","llWWWWWWGGGGll..","rlWWWWWWWGGGll..",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGGGGGGGGGg...",".OOOO....OOOO...",".OOOO....OOOO...",".YYYY....YYYY..."]}),
+      v('D','GENOUX FLÉCHIS','Il se tasse sur ses jambes, prêt à bondir. La plus animale et la plus élastique, mais il perd de la hauteur face aux autres persos.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","...GGgg.ggGGg...","...OOOo.oOOO....","...OOoo.ooOO....","...YYYY.YYYY...."]}),
+      v('E','ACCROUPI','Complètement ramassé au sol. Il gêne beaucoup moins la lecture du disque au-dessus de lui, mais on perd toute sa présence verticale.',{corps:["................",".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...",".GGgggg.ggggGg..",".OOOOo..oOOOO...",".YYYYY..YYYYY...","................"]}),
+      v('F','BOTTES SERRÉES','Les deux bottes se collent au centre. La silhouette s\'affine et laisse voir la selle, mais l\'appui paraît instable pour un perso aussi rond.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","...GGggggGGg....","...OOOoooOOO....","...OOooooOOO....","...YYYYYYYY....."]}),
+      v('G','PENCHÉ EN AVANT','Le buste bascule vers l\'avant, museau bas. Il a l\'air de charger, ce qui colle à son ultime, mais au repos ça le fait paraître voûté.',{corps:["..WWWWWWWGGGg...",".rWWWWWWWWGGGg..","rrWWWWWWWWWGGg..","rrGWWWWWWWWGGg..",".rGGWWWWWWWGGg..","..GGGWWWWWWGGg..","...GGGGGGGGGGg..","...OOOO..OOOOg..","...OOOO..OOOO...","...YYYY..YYYY..."]}),
+      v('H','APPUI DE CÔTÉ','Le poids sur une botte, l\'autre en retrait. Ça casse la symétrie et donne de la vie, mais rend le miroir horizontal moins propre.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGGGGGGGGGg...","OOOO......OOOO..","OOOO......OOOO..","YYYY......YYYY.."]}),
+      v('I','QUEUE BASSE','Sa queue traîne derrière lui, au sol. La silhouette du dinosaure est enfin complète, mais la queue mange le coin bas gauche.',{corps:["..GllGGGGg......",".RGlWWWWWGg.....","hRGGWWWWWWGg....","hhGgWWWWWWWGg...",".hGgWWWWWWGGg...","hhGgGGGGGGGg....","..GGGGGGGGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..YYYY..YYYY...."]}),
+      v('J','BRAS BALLANTS','Les bras pendent le long du corps. Le plus calme et le plus lisible, mais il perd l\'énergie qui caractérise le personnage.',{corps:[".WWWWWWGGGGg....",".RGlWWWWWGg.....",".RGGWWWWWWGg....",".RGgWWWWWWWGg...","..GgWWWWWWGGg...","..GgGGGGGGGg....","..GGGGGGGGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..YYYY..YYYY...."]})
+    ]
+  },
+  {
+    id:'anim', titre:'5 · L’animation',
+    note:'Course, lancer, dash, plongeon. Il peut courir comme un humain ou bondir comme un animal — c\'est ce choix qui donnera son tempérament en match.',
+    variantes:[
+      v('A','COURSE BONDISSANTE','Grande foulée, les deux bottes très écartées. Très vive et très Yoshi, mais elle se lit mal quand il change souvent de direction.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...",".GGgg....ggGGg..",".OOOo....oOOO...","OOOo......oOOO..","YYYY......YYYY.."]}),
+      v('B','LANCER BRAS TENDU','Le bras se déploie loin devant pour lancer. Geste ample et lisible, mais il déporte le sprite d\'un pixel à droite au moment du tir.',{corps:[".WWWWWWGGGGg....",".RGlWWWWWGggg...","rRGGWWWWWWGGgg..",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGGGGGGGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..YYYY..YYYY...."]}),
+      v('C','DASH TÊTE EN AVANT','Il charge museau en avant, bottes rejetées en arrière. Parfait pour annoncer sa ruée, mais ça ressemble à une attaque plus qu\'à un déplacement.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rRGGWWWWWWGGg...","rRGgWWWWWWWGGg..","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGgg.ggGGg....","..OOOo.oOOO.....",".OOOo.oOOO......",".YYYY.YYYY......"]}),
+      v('D','PLONGEON','Il se jette de tout son long, bottes tendues. Le plus spectaculaire, mais il remplit alors toute la boîte du gabarit.',{corps:["..GllGGGGgg.....",".RGlWWWWWGgg....","rRGGWWWWWWGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...",".GGgg....ggGGg..","OOOo......oOOO..","OOO........OOO..","YYY........YYY.."]}),
+      v('E','PETITS PAS','Pas courts et rapprochés. Le sprite reste compact et parfaitement lisible, mais on sent à peine qu\'il se déplace.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","...GGgg.ggGGg...","...OOOo.oOOO....","...OOoo.ooOO....","...YYYY.YYYY...."]}),
+      v('F','BATTEMENT DE JAMBES','Les deux bottes s\'agitent en l\'air, comme son saut plané dans Mario. Le clin d\'œil le plus direct à ses jeux, mais illisible comme animation de course.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...",".GGgg....ggGGg..",".OOOo....oOOO...",".YYYY....YYYY...","................"]}),
+      v('G','ROULIS','Tout le corps se balance latéralement sans grand pas. Très caractéristique de sa démarche, mais le balancement fatigue l\'œil à la longue.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGgg..ggGGg...","..OOOo..oOOO....",".OOOo..oOOO.....",".YYYY..YYYY....."]}),
+      v('H','APPUI ASYMÉTRIQUE','Une botte reste plantée pendant que l\'autre avance. La démarche devient crédible, mais l\'asymétrie complique le miroir horizontal.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGgg..ggGGg...","..OOOoo.oOOO....","..OOooo.ooOO....","..YYYYY.YYYY...."]}),
+      v('I','COURSE À FOND','Foulée maximale, corps presque à l\'horizontale. La plus rapide à l\'œil, mais elle sort franchement du gabarit en largeur.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGGGGGGGGGg...","OOOO......OOOO..","OOO........OOO..","YYY........YYY.."]}),
+      v('J','GLISSADE','Il freine en dérapant, bottes bloquées devant. Excellent pour le cancel dash, mais inutilisable comme course normale.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...",".GGgggggggGGg...",".OOOOOOOOOOO....",".OOooooooooO....",".YYYYYYYYYYY...."]})
+    ]
+  },
+  {
+    id:'profil', titre:'6 · Le profil de jeu',
+    note:'Les vrais chiffres du personnage. Sa silhouette annonce de l\'agilité : reste à décider ce qu\'il paie en échange — la puissance du bras, la zone d\'attrapé, ou la charge de son ultime.',
+    variantes:[
+      v('A','AGILE','Rapide et très bon contrôle, mais un bras faible. Il court partout et récupère tout, sans jamais conclure d\'un tir — sa ruée est là pour ça.',{stats:{spd:4,pow:2,ctl:5,speed:350,power:0.88,catchR:33,chargeT:0.75}}),
+      v('B','ÉQUILIBRÉ','Exactement la moyenne du roster. Facile à prendre en main, mais un perso sans faiblesse ne raconte rien.',{stats:{spd:3,pow:3,ctl:3,speed:330,power:1.0,catchR:30,chargeT:0.8}}),
+      v('C','SAUTEUR','Très rapide, contrôle correct, puissance faible. Le plus nerveux du roster après Yuki, mais il ne menace jamais vraiment la cage.',{stats:{spd:5,pow:2,ctl:3,speed:366,power:0.85,catchR:29,chargeT:0.8}}),
+      v('D','GLOUTON','Une zone d\'attrapé énorme, tout le reste moyen. Il gobe tout ce qui passe à sa portée — c\'est le clin d\'œil à sa langue, sans en faire un ultime.',{stats:{spd:3,pow:3,ctl:5,speed:326,power:0.96,catchR:35,chargeT:0.85}}),
+      v('E','MEUTE','Équilibré partout, mais la charge d\'ultime la plus rapide. Sa ruée sort souvent, ce qui en fait toute son identité.',{stats:{spd:3,pow:3,ctl:4,speed:334,power:0.98,catchR:31,chargeT:0.55}}),
+      v('F','LOURD','Lent mais puissant et solide. À rebours de ce que sa silhouette annonce, ce qui peut surprendre — ou juste paraître faux.',{stats:{spd:2,pow:4,ctl:4,speed:296,power:1.14,catchR:32,chargeT:0.9}}),
+      v('G','TECHNIQUE','Contrôle maximal, vitesse moyenne, bras faible. Récompense le placement plutôt que les réflexes, mais demande de bien connaître le jeu.',{stats:{spd:3,pow:2,ctl:5,speed:332,power:0.9,catchR:34,chargeT:0.78}}),
+      v('H','EXPLOSIF','Rapide et puissant, mais la plus petite zone d\'attrapé. Tout ou rien : il rate beaucoup et punit fort.',{stats:{spd:4,pow:4,ctl:1,speed:348,power:1.12,catchR:26,chargeT:0.88}}),
+      v('I','ENDURANT','Vitesse correcte et très grande zone d\'attrapé, ultime lent. Il tient le terrain longtemps sans jamais accélérer le point.',{stats:{spd:4,pow:2,ctl:5,speed:344,power:0.9,catchR:34,chargeT:1.0}}),
+      v('J','IMPRÉVISIBLE','Très rapide et très puissant, mais un contrôle catastrophique. Le plus amusant à jouer, le plus frustrant à maîtriser.',{stats:{spd:5,pow:5,ctl:1,speed:362,power:1.16,catchR:24,chargeT:0.95}})
+    ]
+  },
+  {
+    id:'bottes', titre:'7 · Les bottes (sur mesure)',
+    note:'La pièce qu\'aucun autre perso n\'a. Elles sont énormes par rapport à ses jambes, et c\'est ce déséquilibre qui fait le personnage — le corriger le rendrait plus propre et moins reconnaissable.',
+    variantes:[
+      v('A','ORANGE À SEMELLE JAUNE','Les bottes classiques, avec leur ombre : orange, grosse semelle jaune. Le détail le plus reconnaissable après son museau.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGGGGGGGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..YYYY..YYYY...."]}),
+      v('B','SANS SEMELLE','Oranges de bas en haut. Plus sobre et plus facile à lire en petit, mais elles perdent leur détail signature.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGgg..ggGGg...","..OOOo..oOOO....","..OOoo..ooOO....","..OOoo..ooOO...."]}),
+      v('C','ÉNORMES','Un pixel de plus de chaque côté. C\'est le détail le plus drôle de sa silhouette, mais elles sortent du gabarit du roster.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGgg..ggGGg...",".OOOOo..oOOOO...",".OOOoo..ooOOO...",".YYYYY..YYYYY..."]}),
+      v('D','BOTTES HAUTES','Les bottes remontent sur tout le mollet, comme des cuissardes. Elles ancrent lourdement le personnage au sol, mais elles mangent le vert des jambes que les skins doivent colorer.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..OOOO..OOOOg...","..OOOO..OOOO....","..oooo..oooo....","..YYYY..YYYY...."]}),
+      v('E','BASSES','Des bottines courtes qui laissent voir la cheville verte. Plus légères et plus proches de sa vitesse annoncée, mais moins caractéristiques.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGgg..ggGGg...","..GGgg..ggGGg...","..OOOo..oOOO....","..YYYY..YYYY...."]}),
+      v('F','SEMELLE ÉPAISSE','La semelle jaune double de hauteur. Elle ancre bien le perso au sol, mais elle attire l\'œil tout en bas de l\'écran.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGgg..ggGGg...","..OOOo..oOOO....","..YYYY..YYYY....","..YYYY..YYYY...."]}),
+      v('G','ROUGES','Les bottes passent au rouge de la selle. La palette se resserre à trois couleurs, mais on perd l\'orange qui équilibrait le vert.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGgg..ggGGg...","..RRRr..rRRR....","..RRrr..rrRR....","..YYYY..YYYY...."]}),
+      v('H','À CRAMPONS','La semelle est dentée, comme des crampons. Un détail de sportif qui colle au jeu, mais illisible à l\'échelle du match.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGGGGGGGGGg...","..OOOO..OOOO....","..oooo..oooo....",".YoYoYo.oYoYoY.."]}),
+      v('I','PIEDS NUS','Pas de bottes du tout, juste les pattes vertes. Le vert descend jusqu\'au sol donc les skins colorent davantage — mais il n\'est plus Yoshi.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGgg..ggGGg...","..GGgg..ggGGg...","..GGgg..ggGGg...","..hhgg..gghhg..."]}),
+      v('J','SEMELLE BLANCHE','Même botte, semelle blanche au lieu de jaune. Elle fait écho au ventre, mais le blanc se perd sur le sol clair de certains terrains.',{corps:[".WWWWWWGGGGg....","rWWWWWWWGGGGg...","rrWWWWWWWGGGg...",".rWWWWWWWWGGg...","..GWWWWWWWGGg...","..GGWWWWWGGGg...","..GGgg..ggGGg...","..OOOo..oOOO....","..OOoo..ooOO....","..WWWW..WWWW...."]})
+    ]
+  }
+];
+
+/* =========================== LE MOTEUR =========================== */
+function bati(rows, pal, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x*ech, y*ech, ech, ech); }
+  }});
+  return c;
+}
+function terrain(g, w, h) {
+  g.fillStyle = '#0a1220'; g.fillRect(0, 0, w, h);
+  const solY = h * .58;
+  g.fillStyle = '#0c1424'; g.fillRect(0, solY, w, h - solY);
+  g.fillStyle = 'rgba(15,26,46,0.7)'; g.fillRect(0, solY, w, h - solY);
+  g.strokeStyle = 'rgba(255,255,255,.16)'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, solY + .5); g.lineTo(w, solY + .5); g.stroke();
+  g.strokeStyle = 'rgba(53,224,255,.13)';
+  for (let x = 22; x < w; x += 46) { g.beginPath(); g.moveTo(x, solY); g.lineTo(x-14, h); g.stroke(); }
+}
+function ombre(g, x, y, r) {
+  g.save(); g.globalAlpha = .34; g.fillStyle = '#000';
+  g.beginPath(); g.ellipse(x, y, r, r*.32, 0, 0, TAU); g.fill(); g.restore();
+}
+
+const choix = {};
+SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+
+function assembler() {
+  let tete = PERSO.tete, corps = PERSO.corps, pal = { ...PERSO.pal }, stats = null;
+  for (const s of SECTIONS) {
+    const va = s.variantes.find(x => x.id === choix[s.id]);
+    if (!va) continue;
+    if (va.tete) tete = va.tete;
+    if (va.corps) corps = va.corps;
+    if (va.pal) pal = { ...pal, ...va.pal };
+    if (va.stats) stats = va.stats;
+  }
+  return { rows: [...tete, ...corps], pal, stats };
+}
+
+const bad = verifier({ id: 'yoshi', PERSO, SECTIONS });
+const boite = document.getElementById('errs');
+afficher(bad, boite);
+
+(function bandeRoster() {
+  const hote = document.getElementById('rosterRow');
+  for (const ck of ROSTER) {
+    const c = CHARS[ck];
+    const d = document.createElement('div'); d.className = 'rosterOne';
+    const cv = document.createElement('canvas');
+    cv.width = 16 * ECH_ROSTER; cv.height = 20 * ECH_ROSTER;
+    const g = cv.getContext('2d');
+    terrain(g, cv.width, cv.height);
+    g.imageSmoothingEnabled = false;
+    g.drawImage(c.frames.idle, 0, 0, cv.width, cv.height);
+    const s = document.createElement('span'); s.textContent = c.short || ck;
+    d.appendChild(cv); d.appendChild(s); hote.appendChild(d);
+  }
+  const d = document.createElement('div'); d.className = 'rosterOne neuf';
+  const cv = document.createElement('canvas'); cv.id = 'cvRosterNeuf';
+  cv.width = 16 * ECH_ROSTER; cv.height = 20 * ECH_ROSTER;
+  const s = document.createElement('span'); s.textContent = PERSO.nom;
+  d.appendChild(cv); d.appendChild(s); hote.appendChild(d);
+})();
+
+function peindreRosterNeuf() {
+  const cv = document.getElementById('cvRosterNeuf');
+  const g = cv.getContext('2d');
+  const { rows, pal } = assembler();
+  terrain(g, cv.width, cv.height);
+  g.imageSmoothingEnabled = false;
+  g.drawImage(bati(rows, pal, 8), 0, 0, cv.width, cv.height);
+}
+
+const cartes = [];
+(function poserSections() {
+  const hote = document.getElementById('sections');
+  for (const s of SECTIONS) {
+    const h2 = document.createElement('h2'); h2.textContent = s.titre; hote.appendChild(h2);
+    const p = document.createElement('p'); p.className = 'note'; p.textContent = s.note; hote.appendChild(p);
+    const rangee = document.createElement('div'); rangee.className = 'row';
+    const reserve = document.createElement('div'); reserve.className = 'row reserve';
+    hote.appendChild(rangee);
+    s.variantes.forEach((va, i) => {
+      const card = document.createElement('div');
+      card.className = 'card' + (va.id === choix[s.id] ? ' on' : '');
+      const lbl = document.createElement('div'); lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + va.desc;
+      // Hauteur calculée, pas choisie au hasard : le sprite fait 20 rangées à
+      // ECH_CARTE et ses pieds se posent sur la ligne de sol, à 58 % de la
+      // hauteur. À 132 px la ligne de sol tombait à 77 px alors que le sprite
+      // en fait 100 — le haut du crâne et les oreilles étaient coupés hors du
+      // canvas, et deux variantes qui ne différaient que par les oreilles
+      // rendaient exactement la même image.
+      const cv = document.createElement('canvas');
+      cv.width = 16 * ECH_CARTE + 40; cv.height = Math.ceil((20 * ECH_CARTE + 10) / 0.58);
+      card.appendChild(lbl); card.appendChild(cv);
+      if (va.stats) card.appendChild(barres(va.stats));
+      if (i >= 5 && va.id === choix[s.id]) reserve.classList.add('ouverte');
+      (i < 5 ? rangee : reserve).appendChild(card);
+      cartes.push({ cv, s, va, card });
+      card.addEventListener('click', () => {
+        choix[s.id] = va.id;
+        cartes.filter(c => c.s === s).forEach(c => c.card.classList.toggle('on', c.va === va));
+        rafraichir();
+      });
+    });
+    const bouton = document.createElement('button');
+    bouton.className = 'plus';
+    bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
+    bouton.addEventListener('click', () => {
+      reserve.classList.toggle('ouverte');
+      bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
+    });
+    hote.appendChild(bouton); hote.appendChild(reserve);
+  }
+})();
+
+function barres(st) {
+  const d = document.createElement('div'); d.className = 'stats';
+  const b = n => '<i>' + '■'.repeat(n) + '</i>' + '□'.repeat(5 - n);
+  d.innerHTML = 'VIT ' + b(st.spd) + '  ·  ' + st.speed + ' px/s<br>' +
+                'PUI ' + b(st.pow) + '  ·  ×' + st.power + '<br>' +
+                'CTL ' + b(st.ctl) + '  ·  r' + st.catchR + '<br>' +
+                'CHARGE ' + st.chargeT + ' s';
+  return d;
+}
+
+function peindreCartes() {
+  for (const { cv, s, va } of cartes) {
+    const g = cv.getContext('2d');
+    terrain(g, cv.width, cv.height);
+    g.imageSmoothingEnabled = false;
+    const base = assembler();
+    const tete = va.tete || base.rows.slice(0, 10);
+    const corps = va.corps || base.rows.slice(10);
+    const pal = { ...base.pal, ...(va.pal || {}) };
+    const sp = bati([...tete, ...corps], pal, ECH_CARTE);
+    const x = (cv.width - sp.width) / 2, y = cv.height * .58 - sp.height + 6;
+    ombre(g, cv.width / 2, cv.height * .58 + 2, sp.width * .34);
+    g.drawImage(sp, x, y);
+  }
+}
+
+function codeChoix() { return SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' '); }
+
+function rafraichir() {
+  peindreCartes(); peindreRosterNeuf();
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '').replace(/ \(sur mesure\)$/, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value = codeChoix();
+}
+
+(function brancherCopie() {
+  const btn = document.getElementById('btnCopier'), champ = document.getElementById('codeChoix');
+  btn.addEventListener('click', async () => {
+    const texte = codeChoix(); let ok = false;
+    try { await navigator.clipboard.writeText(texte); ok = true; }
+    catch (e) { champ.select(); champ.setSelectionRange(0, 999);
+      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; } }
+    btn.textContent = ok ? '✓ copié' : 'Ctrl+C pour copier';
+    btn.classList.toggle('ok', ok);
+    setTimeout(() => { btn.textContent = 'copier mes choix'; btn.classList.remove('ok'); }, 1800);
+  });
+})();
+
+const cvA = document.getElementById('cvApercu'), gA = cvA.getContext('2d');
+(function boucle(ms) {
+  const t = ms / 1000;
+  const { rows, pal } = assembler();
+  terrain(gA, cvA.width, cvA.height);
+  gA.imageSmoothingEnabled = false;
+  const sp = bati(rows, pal, ECH_APERCU);
+  const flot = Math.round(Math.sin(t * 2.4) * 2);
+  const solY = cvA.height * .58;
+  const x = cvA.width * .5 - sp.width / 2, y = solY - sp.height + flot;
+  ombre(gA, cvA.width * .5, solY + 2, sp.width * .34);
+  gA.drawImage(sp, x, y);
+  requestAnimationFrame(boucle);
+})(0);
+
+rafraichir();
+</script>
+</body>
+</html>
