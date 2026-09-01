@@ -58,6 +58,9 @@ export const SKINS = {
   mamie: [
     { id: 'treillis', nom: 'TREILLIS CAMO', defaut: true }
   ],
+  chopper: [
+    { id: 'junker', nom: 'ÉQUIPEMENT COMPLET', defaut: true }
+  ],
   jingle: [
     { id: 'polenord', nom: 'PÔLE NORD', defaut: true },
     { id: 'smoking', nom: 'SMOKING NOIR', cond: 'victoires', seuil: 10,

@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Chopper — pièces détachées</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:34px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:960px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;
+        flex:1 1 0;min-width:186px;cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d5c8a}
+  .card.on{border-color:var(--or);transform:translateY(-2px)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:66px}
+  .lbl b{display:block;font-size:14px;color:var(--or);letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px;image-rendering:pixelated}
+  .reserve{display:none}
+  .reserve.ouverte{display:flex}
+  .plus{margin-top:9px;background:#132038;color:#9fb4dd;border:1px solid var(--edge);
+        border-radius:7px;padding:6px 13px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#1a2b48;color:var(--ink)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 420px}
+  .apercu canvas{background:#0a1220}
+  .choix{font-size:11.5px;color:#9fb4dd;margin-top:9px;font-family:Consolas,monospace;line-height:1.7}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;
+             letter-spacing:1.2px}
+  .btnCopier{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#24395e}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .roster{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 320px}
+  .roster h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .rosterRow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .rosterOne{text-align:center}
+  .rosterOne canvas{background:#0a1220;border-radius:5px}
+  .rosterOne span{display:block;font-size:9.5px;color:#7f93b3;margin-top:3px;max-width:78px;
+                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rosterOne.neuf span{color:var(--or)}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+  .stats{font-family:Consolas,monospace;font-size:11px;color:#9fb4dd;line-height:1.6;margin-top:7px}
+  .stats i{color:var(--or);font-style:normal}
+</style>
+</head>
+<body>
+
+<h1>CHOPPER — pièces détachées</h1>
+<p class="note">
+  Le colosse de <b>Junkertown</b>, masque à gaz et crochet au bout d'une chaîne. Son ultime ne vise pas
+  l'adversaire mais <b>le disque</b> : le crochet part, l'accroche et le ramène en main instantanément —
+  de quoi sauver un but déjà parti et repartir aussitôt en attaque, comme un dash-throw.
+  <br><br>
+  Cinq versions franchement différentes par section, cinq autres en réserve. Clique une carte pour la
+  monter dans l'aperçu du haut : il se recompose et rejoue l'ultime en boucle. Réponds-moi par des
+  lettres (« 1C 2A 3B… ») et j'assemble.
+  <br><br>
+  <b>La contrainte qui a tout piloté :</b> Chopper est énorme, or le gabarit du jeu impose la même
+  boîte de 16 × 20 et 12 px de large à tout le monde. Plutôt que de la dépasser — ce qui l'aurait rendu
+  inutilisable — il <b>remplit</b> ces 12 colonnes là où les autres en occupent huit. C'est la masse
+  qui le distingue, pas la taille.
+</p>
+
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvApercu" width="620" height="300"></canvas>
+    <div class="choix" id="choix"></div>
+    <div class="copier">
+      <input class="codeChoix" id="codeChoix" readonly>
+      <button class="btnCopier" id="btnCopier">copier mes choix</button>
+    </div>
+  </div>
+  <div class="roster">
+    <h3>À côté du roster en place</h3>
+    <div class="rosterRow" id="rosterRow"></div>
+    <p class="note" style="margin:9px 0 0;font-size:11px">
+      Chopper est en or. C'est ici qu'on juge s'il pèse vraiment plus lourd que les autres
+      sans sortir de la boîte commune.
+    </p>
+  </div>
+</div>
+
+<div id="sections"></div>
+
+<script type="module">
+import { CHARS, ROSTER } from '../js/data/characters.js';
+
+const TAU = Math.PI * 2;
+const ECH_CARTE = 5;      // échelle du match : 4,8 px par pixel de sprite (SCALE 1,6)
+const ECH_APERCU = 9;
+
+/* =========================== LE PERSONNAGE =========================== */
+const PERSO = {
+  nom: 'Chopper',
+  univers: 'JUNKERTOWN',
+  pal: {
+    H: '#e8e0c8', h: '#b9ae90',   // touffe de cheveux décolorée / ombre
+    M: '#4a4a52', m: '#2e2e34',   // caoutchouc du masque à gaz / creux du groin
+    // Ton intermédiaire réservé au pourtour du masque. Réutiliser le 'm' du
+    // groin donnait un liseré aussi sombre que lui : ça se lisait comme le
+    // contour noir qu'on s'interdit, et le groin ne se détachait plus.
+    o: '#3b3b43',                 // galbe du masque, à mi-chemin
+    L: '#cfd8e2',                 // verres ronds du masque
+    S: '#d9a17c', s: '#ad7452',   // peau / ombre
+    // E manquait à la première passe : les visages démasqués avaient des trous
+    // invisibles, sans la moindre erreur au chargement. D'où la vérification.
+    E: '#241f1c',                 // yeux et bouche des variantes sans masque
+    T: '#e0762c', t: '#a84a12',   // tatouage du ventre, flammes / ombre
+    V: '#3f342a', v: '#241c15',   // cuir du harnais / ombre
+    K: '#1c1c20',                 // sangles noires, ceinture
+    J: '#42506a', j: '#2a3345',   // treillis / ombre
+    Y: '#e8c23a', y: '#a08320',   // bonbonnes jaunes / ombre
+    W: '#c8ccd4',                 // acier : pointes, brassards, crochet, chaîne
+    n: '#2b2320'                  // bottes
+  },
+  // Tête : masque à gaz complet — verres ronds décalés d'un pixel à droite,
+  // groin saillant en bas (les 'm' plus sombres qui dépassent du menton) et
+  // les deux filtres jaunes sur les côtés, comme sur les visuels.
+  // Le pourtour du masque est en 'o' plutôt qu'en 'M' : sans ce liseré le
+  // masque était un aplat gris parfaitement plat, alors que c'est du
+  // caoutchouc bombé. Le 'o' est volontairement à mi-chemin — assez pour
+  // donner le galbe, pas assez pour ressembler au contour noir qu'on
+  // s'interdit, et le 'm' reste réservé au creux du groin.
+  // Le groin est décalé d'un pixel à DROITE du centre du masque, exactement
+  // comme les verres : c'est le côté vers lequel il regarde. Centré, il
+  // donnait un visage de face qui rendait le miroir horizontal illisible.
+  tete: [".....hHHh.......","....oMMMMMo.....","...oMMMMMMMo....","..oMMMMMMMMMo...","..oMMLLMMMLLo...","..oMMLLMMMLLo...",".YoMMMMMMMMoY...",".yoMMMmmmmmoy...","....MMmmmmmM....","...KKKKKKKKK...."],
+  // Corps : le pneu en travers du dos (m/M, à gauche puisque le sprite est
+  // tourné vers la droite), les pointes de l'épaulière (W), la bonbonne jaune,
+  // le mini-gilet à sangles (V/K), les brassards cloutés au bout des bras (W),
+  // et le ventre tatoué laissé nu — c'est lui qui porte toute la masse.
+  corps: [".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]
+};
+
+/* =========================== LES EFFETS =========================== */
+// Le crochet dessiné en main ou en vol. `a` oriente la pointe.
+function crochet(g, x, y, a, ech = 1) {
+  g.save(); g.translate(x, y); g.rotate(a); g.scale(ech, ech);
+  g.strokeStyle = '#c8ccd4'; g.lineWidth = 3; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(-8, 0); g.lineTo(4, 0);
+  g.arc(4, -7, 7, Math.PI / 2, Math.PI * 1.75); g.stroke();
+  g.fillStyle = '#e8eaef';
+  g.beginPath(); g.moveTo(9, -12); g.lineTo(15, -16); g.lineTo(10, -6); g.fill();
+  g.restore();
+}
+// La chaîne, en pointillé de maillons entre deux points.
+function chaine(g, x0, y0, x1, y1, style = 'maillons') {
+  const d = Math.hypot(x1 - x0, y1 - y0), n = Math.max(2, Math.round(d / 9));
+  g.strokeStyle = '#9aa3b0'; g.lineWidth = 2;
+  if (style === 'trait') { g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); return; }
+  for (let i = 0; i < n; i++) {
+    const k = i / n, x = x0 + (x1 - x0) * k, y = y0 + (y1 - y0) * k;
+    g.beginPath(); g.ellipse(x, y, 3.4, 2.2, Math.atan2(y1 - y0, x1 - x0), 0, TAU); g.stroke();
+  }
+}
+// Le disque, cible de l'ultime.
+function disque(g, x, y, r = 8) {
+  g.fillStyle = '#35e0ff'; g.beginPath(); g.ellipse(x, y, r, r * .38, 0, 0, TAU); g.fill();
+  g.strokeStyle = '#bff2ff'; g.lineWidth = 1.4; g.stroke();
+}
+function eclat(g, x, y, t) {
+  const d = g.createRadialGradient(x, y, 1, x, y, 16);
+  d.addColorStop(0, 'rgba(255,240,190,.85)'); d.addColorStop(1, 'rgba(255,180,40,0)');
+  g.fillStyle = d; g.beginPath(); g.arc(x, y, 16, 0, TAU); g.fill();
+}
+
+// Les cinq lectures de l'ultime. `t` boucle, `cible` est le point de départ du
+// disque. Chacune raconte le même geste — accrocher le disque et le ramener —
+// avec un rythme et une trajectoire différents.
+function ultiDroit(g, cx, cy, t, cible) {
+  const k = (t % 2) / 2, aller = Math.min(1, k * 2.2), retour = Math.max(0, (k - .45) / .55);
+  const dx = cible.x, dy = cible.y;
+  const hx = cx + (dx - cx) * aller, hy = cy + (dy - cy) * aller;
+  chaine(g, cx, cy, hx, hy);
+  crochet(g, hx, hy, Math.atan2(dy - cy, dx - cx));
+  const px = retour > 0 ? dx + (cx - dx) * retour : dx;
+  const py = retour > 0 ? dy + (cy - dy) * retour : dy;
+  disque(g, px, py);
+  if (aller >= 1 && retour < .1) eclat(g, dx, dy, t);
+}
+function ultiArc(g, cx, cy, t, cible) {
+  const k = (t % 2) / 2, aller = Math.min(1, k * 2.2), retour = Math.max(0, (k - .45) / .55);
+  const dx = cible.x, dy = cible.y;
+  const cbx = (cx + dx) / 2, cby = Math.min(cy, dy) - 62;
+  const pt = (u) => ({
+    x: (1 - u) * (1 - u) * cx + 2 * (1 - u) * u * cbx + u * u * dx,
+    y: (1 - u) * (1 - u) * cy + 2 * (1 - u) * u * cby + u * u * dy
+  });
+  const h = pt(aller);
+  g.strokeStyle = '#9aa3b0'; g.lineWidth = 2; g.beginPath();
+  for (let u = 0; u <= aller; u += .04) { const p = pt(u); u ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y); }
+  g.stroke();
+  crochet(g, h.x, h.y, Math.PI * .25);
+  const p2 = retour > 0 ? pt(1 - retour) : { x: dx, y: dy };
+  disque(g, p2.x, p2.y);
+  if (aller >= 1 && retour < .1) eclat(g, dx, dy, t);
+}
+function ultiEclair(g, cx, cy, t, cible) {
+  // Pas de trajet visible : le crochet claque, le disque est déjà revenu.
+  const k = (t % 1.4) / 1.4;
+  const dx = cible.x, dy = cible.y;
+  if (k < .18) { chaine(g, cx, cy, dx, dy, 'trait'); crochet(g, dx, dy, 0); eclat(g, dx, dy, t); disque(g, dx, dy); }
+  else { const r = Math.min(1, (k - .18) / .3); disque(g, dx + (cx - dx) * r, dy + (cy - dy) * r); }
+}
+function ultiEnchaine(g, cx, cy, t, cible) {
+  // Ramène puis relance : le geste complet, prise ET relance dans la foulée.
+  const k = (t % 2.4) / 2.4;
+  const dx = cible.x, dy = cible.y;
+  if (k < .45) { const a = k / .45; const hx = cx + (dx - cx) * a, hy = cy + (dy - cy) * a;
+    chaine(g, cx, cy, hx, hy); crochet(g, hx, hy, 0); disque(g, dx, dy); }
+  else if (k < .7) { const r = (k - .45) / .25; disque(g, dx + (cx - dx) * r, dy + (cy - dy) * r); eclat(g, cx, cy, t); }
+  else { const l = (k - .7) / .3; disque(g, cx + (dx - cx) * l * 1.3, cy - 8);
+    g.strokeStyle = 'rgba(53,224,255,.5)'; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(cx, cy - 8); g.lineTo(cx + (dx - cx) * l * 1.3, cy - 8); g.stroke(); }
+}
+function ultiDouble(g, cx, cy, t, cible) {
+  // Deux crochets en éventail : il ratisse large plutôt que de viser juste.
+  const k = (t % 2) / 2, aller = Math.min(1, k * 2.2), retour = Math.max(0, (k - .45) / .55);
+  const dx = cible.x, dy = cible.y;
+  for (const dec of [-34, 22]) {
+    const hx = cx + (dx - cx) * aller, hy = cy + (dy + dec - cy) * aller;
+    chaine(g, cx, cy, hx, hy); crochet(g, hx, hy, Math.atan2(dy + dec - cy, dx - cx));
+  }
+  const px = retour > 0 ? dx + (cx - dx) * retour : dx;
+  disque(g, px, retour > 0 ? dy + (cy - dy) * retour : dy);
+}
+
+// Variantes de l'objet crochet lui-même.
+function armeClassique(g, cx, cy) { crochet(g, cx - 6, cy, 0, 1.9); }
+function armeGrand(g, cx, cy)     { crochet(g, cx - 10, cy, 0, 2.6); }
+function armeAncre(g, cx, cy) {
+  g.save(); g.translate(cx, cy); g.scale(2, 2);
+  g.strokeStyle = '#c8ccd4'; g.lineWidth = 3; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(0, -14); g.lineTo(0, 10); g.stroke();
+  g.beginPath(); g.arc(0, 8, 10, 0, Math.PI); g.stroke();
+  g.beginPath(); g.moveTo(-9, -8); g.lineTo(9, -8); g.stroke();
+  g.restore();
+}
+function armeTriple(g, cx, cy) {
+  for (const a of [-.5, 0, .5]) crochet(g, cx - 8, cy, a, 1.5);
+}
+function armeScie(g, cx, cy) {
+  g.save(); g.translate(cx - 12, cy); g.scale(2, 2);
+  g.fillStyle = '#c8ccd4'; g.beginPath(); g.arc(0, 0, 11, Math.PI * .2, Math.PI * 1.5); g.lineTo(0, 0); g.fill();
+  g.fillStyle = '#8f959f';
+  for (let i = 0; i < 7; i++) { const a = Math.PI * .2 + i * .19;
+    g.fillRect(Math.cos(a) * 11 - 1.5, Math.sin(a) * 11 - 1.5, 3, 3); }
+  g.restore();
+}
+
+// Variantes du retour du disque : ce qu'on voit quand il revient en main.
+function retourTrait(g, cx, cy, t)  { const k=(t*1.6)%1; chaine(g,cx+150,cy,cx+150-150*k,cy,'trait'); disque(g,cx+150-150*k,cy); }
+function retourMaillons(g,cx,cy,t)  { const k=(t*1.6)%1; chaine(g,cx+150,cy,cx+150-150*k,cy); disque(g,cx+150-150*k,cy); }
+function retourTrainee(g,cx,cy,t)   { const k=(t*1.6)%1; const x=cx+150-150*k;
+  for(let i=0;i<5;i++){ g.globalAlpha=.16*(5-i); disque(g,x+i*13,cy,7); } g.globalAlpha=1; }
+function retourEclairs(g,cx,cy,t)   { const k=(t*1.6)%1; const x=cx+150-150*k;
+  g.strokeStyle='rgba(53,224,255,.55)'; g.lineWidth=2;
+  for(let i=0;i<4;i++){ const o=(i-1.5)*7; g.beginPath(); g.moveTo(x+18,cy+o); g.lineTo(x+52,cy+o*1.7); g.stroke(); }
+  disque(g,x,cy); }
+function retourRotation(g,cx,cy,t)  { const k=(t*1.6)%1; const x=cx+150-150*k;
+  g.save(); g.translate(x,cy); g.rotate(t*9);
+  g.fillStyle='#35e0ff'; g.beginPath(); g.ellipse(0,0,8,3,0,0,TAU); g.fill(); g.restore(); }
+
+/* =========================== LES SECTIONS =========================== */
+function v(id, nom, desc, pieces) { return { id, nom, desc, ...pieces }; }
+
+const SECTIONS = [
+  {
+    id: 'tete', titre: '1 · La tête',
+    note: 'Le masque à gaz est sa signature : verres ronds, groin saillant sous le menton et les deux filtres jaunes sur les côtés. Le garder, c\'est une silhouette qu\'on reconnaît de loin mais un perso qui n\'aura jamais d\'expression.',
+    variantes: [
+      v('A','MASQUE COMPLET','Verres ronds, groin saillant, filtres jaunes latéraux et un liseré plus sombre tout autour pour galber le caoutchouc. Le plus fidèle aux visuels, et le jaune sert de repère au milieu d\'une tête sombre.',{tete:[".....hHHh.......","....oMMMMMo.....","...oMMMMMMMo....","..oMMMMMMMMMo...","..oMMLLMMMLLo...","..oMMLLMMMLLo...",".YoMMMMMMMMoY...",".yoMMMmmmmmoy...","....MMmmmmmM....","...KKKKKKKKK...."]}),
+      v('B','SANS LES FILTRES','Le même masque galbé, groin compris, mais sans les bonbonnes jaunes sur les côtés. La tête est plus compacte et plus nette, au prix de sa seule touche de couleur.',{tete:[".....hHHh.......","....oMMMMMo.....","...oMMMMMMMo....","..oMMMMMMMMMo...","..oMMLLMMMLLo...","..oMMLLMMMLLo...","..oMMMMMMMMMo...","..oMMMmmmmmMo...","....MMmmmmmM....","...KKKKKKKKK...."]}),
+      v('C','GROIN PROÉMINENT','Le groin descend sur deux rangées pleines et le filtre remonte au niveau des verres. Le plus porcin et le plus brutal, mais la tête déborde vers le bas sur le cou.',{tete:[".....hHHh.......","....oMMMMMo.....","...oMMMMMMMo....","..oMMMMMMMMMo...","..oMMLLMMMLLo...",".YoMMLLMMMLLo...",".yoMMMMMMMMMo...","..mmmmmmmmmmm...","..mmmmmmmmmmm...","...KKKKKKKKK...."]}),
+      v('D','QUATRE FILTRES','Deux bonbonnes en haut, deux en bas de chaque côté du masque galbé. Le plus mécanique et le plus chargé, mais tout ce jaune finit par tirer l\'œil loin des verres.',{tete:[".....hHHh.......","....oMMMMMo.....","..YoMMMMMMMoY...","..yoMMMMMMMoy...","..oMMLLMMMLLo...","..oMMLLMMMLLo...",".YYoMMMMMMoYY...",".yyoMMmmmmmyy...","....MMmmmmmM....","...KKKKKKKKK...."]}),
+      v('E','MASQUE RELEVÉ','Le masque galbé repoussé sur le front, visage à découvert dessous. On gagne un regard qui suit la souris, on perd le groin qui le rend reconnaissable d\'un coup d\'œil.',{tete:[".....hHHh.......","....oMMMMMo.....","...oMMMMMMMo....","..oMMMMMMMMMo...","..SSSSSSSSSSS...","..SSSEESSSEES...","..SSSSSSSSSSS...","..SsSSSKKSSsS...","...SSSSSSSSS....","...KKKKKKKKK...."]}),
+      v('F','SANS MASQUE','Visage nu, cheveux décolorés en bataille. Le plus humain et le plus expressif du lot, mais sans le masque il ne reste presque plus rien qui dise « Chopper ».',{tete:[".....hHHh.......","....hHHHHHh.....","...SSSSSSSSS....","..SSSSSSSSSSS...","..SSSSSSSSSSS...","..SSSEESSSEES...","..SSSSSSSSSSS...","..SsSSSKKSSsS...","...SSSSSSSSS....","...KKKKKKKKK...."]}),
+      v('G','GROIN D\'ACIER','Le bas du masque devient une plaque d\'acier claire au lieu du caoutchouc galbé. Le contraste rend le groin très lisible en petit, mais le métal le tire vers le robot.',{tete:[".....hHHh.......","....oMMMMMo.....","...oMMMMMMMo....","..oMMMMMMMMMo...","..oMMLLMMMLLo...",".YoMMMMMMMMoY...",".yWWWWWWWWWWy...","..WWWmmmmmmmW...","....WMmmmmmm....","...KKKKKKKKK...."]}),
+      v('H','MASQUE FÊLÉ','Une fêlure traverse le masque galbé et un des verres. Ça raconte son passé de ferrailleur, mais deux pixels noirs sur du gris sombre se voient à peine en match.',{tete:[".....hHHh.......","....oMMMMMo.....","...oMMMMMMMo....","..oMMKMMMMMMo...","..oMMLLMMMLLo...","..oMKLLMMMLLo...",".YoMMMMMMMMoY...",".yoMMMmmmmmoy...","....MMmmmmmM....","...KKKKKKKKK...."]}),
+      v('I','CAPUCHE ET MASQUE','Une capuche de cuir par-dessus le masque galbé. Ça épaissit la tête et renforce la masse, au prix de la touffe décolorée qui disparaît sous le tissu.',{tete:["....VVVVVVV.....","...VVVVVVVVV....","..VVoMMMMMoVV...","..VoMMMMMMMoV...","..oMMLLMMMLLo...","..oMMLLMMMLLo...",".YoMMMMMMMMoY...",".yoMMMmmmmmoy...","....MMmmmmmM....","...KKKKKKKKK...."]}),
+      v('J','CASQUE DE MOTARD','Un casque noir à large visière claire posé sur le masque galbé. Le plus « bande de motards », mais il s\'éloigne franchement de la référence d\'origine.',{tete:["....KKKKKKK.....","...KKKKKKKKK....","..KKKKKKKKKKK...","..KKKLLLLLLKK...","..oMMLLMMMLLo...","..oMMLLMMMLLo...",".YoMMMMMMMMoY...",".yoMMMmmmmmoy...","....MMmmmmmM....","...KKKKKKKKK...."]})
+    ]
+  },
+  {
+    id: 'tenue', titre: '2 · La tenue',
+    note: 'Le haut porte tout : le pneu en travers du dos, les pointes de l\'épaulière, la bonbonne jaune, le mini-gilet à sangles et les brassards cloutés. Le ventre tatoué reste nu, c\'est lui qui dit la masse.',
+    variantes: [
+      v('A','ÉQUIPEMENT COMPLET','Pneu dans le dos, pointes sur l\'épaulière, bonbonne jaune, gilet à sangles et brassards cloutés. Le plus fidèle aux visuels, mais le haut est très chargé pour 12 pixels de large.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('B','SANS LE PNEU','Tout l\'équipement sauf le pneu : gilet, bonbonne, pointes et brassards. La silhouette respire beaucoup mieux, mais il perd la bosse dans le dos qui le rendait unique.',{corps:["...WVVVVVVYy....",".SSVVKKKKVVYy...",".WSVVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('C','DOUBLE BONBONNE','Une bonbonne jaune de chaque côté au lieu d\'une seule. Beaucoup plus repérable dans un échange rapide, mais la symétrie lui enlève son côté bricolé de ferrailleur.',{corps:["yYmWmVVVVVYy....",".YmMmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('D','GILET FERMÉ','Le mini-gilet se referme et couvre tout le torse, équipement gardé. Le plus propre et le plus sobre, mais on perd le ventre tatoué, donc l\'essentiel de son identité.',{corps:[".WmWmVVVVVYy....",".mMmmVVVVVVYy...",".WmmVVVVVVVVW...",".SSVVVVVVVVSS...",".SSVVVVVVVVSS...","..VVVVVVVVVV....","..KKWWWWWWKK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('E','SANGLES SEULES','Ni pneu ni bonbonne : juste le harnais de sangles noires et les brassards. Le plus léger et le plus lisible en petit, mais il ne se distingue plus vraiment du reste du casting.',{corps:["...KKVVVVVK.....",".SSKKKKKKKKS....",".WSKKTTTTKKSW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKKKKKKKKK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('F','ÉQUIPEMENT + BADGES','Le complet, plus les petits badges d\'acier épinglés sur le gilet. Fidèle jusqu\'au détail des visuels, mais à cette taille les badges se lisent comme du bruit.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSWSTTTTTTSS...",".SSSTTTTTTTWS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('G','SANS LA PLAQUE','Le complet mais la ceinture redevient une simple sangle noire. Le regard descend moins vers le bas, au prix du clin d\'œil ROADR8GE qui disparaît.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKKKKKKKKK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('H','TOUT CLOUTÉ','Des clous d\'acier partout : gilet, épaulière et ceinture. Ça accroche la lumière et crie le pillard, mais l\'acier se met à concurrencer le crochet de l\'ultime.',{corps:[".WmWmVWVWVYy....",".mMmmVKWKWVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KWKWWWWKWK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('I','SACOCHES À LA CEINTURE','Le complet plus deux sacoches de cuir sur les hanches. Ça épaissit le bas et équilibre la masse du haut, mais ça brouille la séparation torse/jambes.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJjVVVVjJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('J','TABLIER DE FERRAILLEUR','Le complet plus un grand tablier de cuir sur les cuisses. Le plus massif de tous, mais il fusionne le torse et les jambes en un bloc sombre peu lisible.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..VVVVVVVVVV....","..VVVVVVVVVV....","..JJj....jJJ....","..nnn....nnn...."]})
+    ]
+  },
+  {
+    id: 'palette', titre: '3 · La palette',
+    note: 'Même silhouette, teintes différentes. À juger sur le terrain : le stade est sombre, une palette trop désaturée y transforme Chopper en masse informe.',
+    variantes: [
+      v('A','TONS D\'ORIGINE','Peau rose-tan, cuir brun, treillis bleu-gris. Le plus proche de la référence, et le tatouage orange ressort bien sur le fond sombre du stade.',{pal:{}}),
+      v('B','DÉSERT DE JUNKERTOWN','Tout tire vers le sable et l\'ocre, comme sa map d\'origine. Très cohérent avec son univers, mais il se rapproche dangereusement du terrain Dune de Râ.',{pal:{J:'#8a7550',j:'#5c4c33',V:'#6b5a3f',v:'#40361f'}}),
+      v('C','NUIT DE PILLARD','Cuir et treillis presque noirs, peau assombrie. Le plus menaçant, mais sur le stade sombre il perd sa silhouette et devient une tache difficile à suivre.',{pal:{S:'#a8785c',s:'#7a5240',J:'#242a36',j:'#161a22',V:'#241d16',v:'#14100b'}}),
+      v('D','ROUILLE','Métal rouillé et cuir rougi, tatouage encore plus vif. Il gagne beaucoup en caractère de ferrailleur, au risque de tout confondre en une bouillie orangée.',{pal:{W:'#b07443',V:'#5c3a24',v:'#33200f',J:'#6b4a38',j:'#42291c'}}),
+      v('E','TOXIQUE','Vert acide sur les bonbonnes et le treillis, comme une fuite de gaz. Le plus original et le plus lisible, mais il s\'éloigne franchement de la référence.',{pal:{Y:'#b6e83a',J:'#3f5c3a',j:'#26381f',T:'#9de03a',t:'#5c9b16'}}),
+      v('F','CUIR NOIR','Tout le cuir vire au noir profond, la peau reste claire. Contraste maximal entre le torse et l\'équipement, mais l\'ensemble devient un peu monotone.',{pal:{V:'#1a1a1e',v:'#0d0d10'}}),
+      v('G','SANG ET FER','Rouge sombre sur les sangles et le tatouage. Très agressif et parfait pour un boss, mais le rouge se confond avec les effets de dégâts du jeu.',{pal:{K:'#5c1a1a',T:'#d8352c',t:'#8f1c14'}}),
+      v('H','DÉLAVÉ','Toutes les teintes tirées vers le pastel poussiéreux. Doux et cohérent avec un perso qui traîne dans le désert, mais il manque cruellement de punch.',{pal:{S:'#e8bfa0',s:'#c49a7c',J:'#6b7a92',j:'#4a5568',T:'#e8a06a',t:'#c07040'}}),
+      v('I','CHROME','Le métal du crochet et des sangles passe au chrome très clair. Son arme devient le point le plus lumineux, ce qui aide à lire l\'ultime — mais éclipse le reste.',{pal:{W:'#eef2f8',K:'#454b56'}}),
+      v('J','BLEU JUNKER','Le treillis vire au bleu franc, tout le reste reste terne. Il se repère instantanément sur le terrain, au prix d\'un contraste un peu artificiel avec le haut.',{pal:{J:'#2f5cc4',j:'#1b3a86'}})
+    ]
+  },
+  {
+    id: 'pose', titre: '4 · La pose signature',
+    note: 'La pose au repos, celle qu\'on regarde le plus longtemps. Pour lui la question est simple : jambes écartées pour la masse, ou compact pour rester lisible ?',
+    variantes: [
+      v('A','BIEN PLANTÉ','Jambes largement écartées, appui solide, équipement complet. La stance qui dit le mieux « rien ne le bouge », et sa base occupe tout le bas de la boîte de 12 px.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....",".JJj......jJJ...",".JJj......jJJ...",".nnn......nnn..."]}),
+      v('B','VENTRE EN AVANT','Le buste rejeté en arrière, le ventre poussé vers l\'avant sous le gilet. La plus caractérisée et la plus drôle, mais elle décentre le perso par rapport à sa hitbox.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSSTTTTTSS...",".SSSSTTTTTTTS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('C','CROCHET PRÊT','Le crochet déjà en main du côté droit, pneu et bonbonne en place. On lit sa menace tout de suite, mais l\'acier attire l\'œil même quand l\'ulti n\'est pas chargé.',{corps:[".WmWmVVVVVYW....",".mMmmVKKKKVYW...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('D','BRAS BALLANTS','Les bras pendent le long du corps, brassards contre les cuisses. Le plus lourd et le plus las, mais la silhouette se referme et il paraît moins large.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...","..mmVKTTTTKV....",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...",".SSSSSSSSSSSS...","..KKWWWWWWKK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('E','ACCROUPI','Tassé sur ses jambes, le pneu remonté sur les épaules. Il gêne moins la lecture du disque, mais on perd toute son imposance verticale.',{corps:["................",".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....",".JJJj....jJJJ...",".nnn......nnn...","................"]}),
+      v('F','JAMBES ÉPAISSES','Cuisses doublées en largeur, pieds massifs, haut inchangé. La masse descend jusqu\'au sol, mais les jambes s\'écartent du gabarit habituel du roster.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJjj..jjJJ....","..JJjj..jjJJ....","..nnnn..nnnn...."]}),
+      v('G','CHAÎNE PENDANTE','Le crochet pend à gauche, derrière le pneu, au repos. Sa mécanique se lit sans qu\'il agisse, mais l\'acier déborde sur le bord gauche du sprite.',{corps:[".WmWmVVVVVYy....","WmMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('H','PIEDS SERRÉS','Jambes rapprochées, silhouette en poire sous l\'équipement. Le ventre paraît encore plus large par contraste, mais l\'appui semble instable pour ce poids.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","...JJj..jJJ.....","...JJj..jJJ.....","...nnn..nnn....."]}),
+      v('I','APPUI DE CÔTÉ','Le poids sur une jambe, l\'autre en retrait, pneu de travers. Ça casse la symétrie et donne de la vie, mais rend le miroir horizontal moins propre.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj....jJJ....","..JJj....jJJJ...","..nnn....nnnn..."]}),
+      v('J','CEINTURE LARGE','La ceinture court sur toute la largeur des hanches. Elle sépare nettement le haut du bas, mais ajoute une bande sombre de plus sous un torse déjà chargé.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJjjjjjjJJ....","..JJj....jJJ....","..nnn....nnn...."]})
+    ]
+  },
+  {
+    id: 'ulti', titre: '5 · L\'ultime — le grab au crochet',
+    note: 'Le crochet part sur le DISQUE, pas sur l\'adversaire : il l\'accroche et le ramène en main. La question est de savoir à quelle vitesse ça se lit, parce que ça doit pouvoir sauver un but déjà parti.',
+    variantes: [
+      v('A','LIGNE TENDUE','Le crochet file droit sur le disque, l\'accroche et le ramène. La lecture la plus claire de toutes : on voit la portée exacte et on anticipe la reprise.',{fx:ultiDroit}),
+      v('B','ARC DE CHAÎNE','Le crochet décrit une cloche au-dessus du terrain avant de retomber sur le disque. Plus spectaculaire, mais le temps de vol coûte cher quand il faut sauver un but.',{fx:ultiArc}),
+      v('C','ÉCLAIR','Aucun trajet visible : un claquement, et le disque est déjà revenu. La plus brutale et la plus forte en sauvetage, mais l\'adversaire ne voit rien venir.',{fx:ultiEclair}),
+      v('D','PRISE ET RELANCE','Il ramène le disque puis le relance dans la foulée, comme un dash-throw. C\'est exactement l\'enchaînement demandé, au prix d\'une animation longue à jouer.',{fx:ultiEnchaine}),
+      v('E','DOUBLE CROCHET','Deux crochets partent en éventail et ratissent large. Il rattrape le disque même mal visé, mais la prise devient trop facile pour un ultime.',{fx:ultiDouble}),
+      v('F','LIGNE TENDUE LENTE','Comme le A mais nettement plus lent, la chaîne se déroule visiblement. L\'adversaire a le temps de réagir, ce qui en fait un ultime bien plus risqué à lancer.',{fx:ultiDroit}),
+      v('G','ARC RASANT','Un arc très plat, presque une ligne. Compromis entre la lisibilité du A et le panache du B, mais du coup il n\'a le caractère ni de l\'un ni de l\'autre.',{fx:ultiArc}),
+      v('H','ÉCLAIR RETARDÉ','Le claquement arrive, puis le disque revient avec un temps de retard. On garde la brutalité tout en laissant une fenêtre de contre à l\'adversaire.',{fx:ultiEclair}),
+      v('I','RELANCE SEULE','Pas de prise : il attrape ce qu\'il a déjà en main et le renvoie très fort. Simple à coder et à lire, mais ça n\'utilise plus du tout le crochet.',{fx:ultiEnchaine}),
+      v('J','TRIPLE RATISSAGE','Trois crochets en éventail large. Le plus impressionnant à l\'écran, mais il couvre presque tout le terrain et rend le duel sans intérêt.',{fx:ultiDouble})
+    ]
+  },
+  {
+    id: 'anim', titre: '6 · L\'animation',
+    note: 'Course, lancer, dash, plongeon. Pour un perso de ce poids, le vrai enjeu est que le mouvement paraisse lourd sans paraître mou.',
+    variantes: [
+      v('A','COURSE LOURDE','Foulée large et lente, le pneu balance dans le dos. C\'est ce qui vend le mieux son poids, mais une foulée aussi ample se lit mal quand il change vite de direction.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj.....jJJ...",".JJj.......jJJ..",".nnn.......nnn.."]}),
+      v('B','LANCER EN REVERS','Le bras traverse tout le corps pour lancer, brassard en tête. Geste ample et très lisible, mais il déporte le sprite d\'un pixel à droite au moment du tir.',{corps:[".WmWmVVVVVYyS...",".mMmmVKKKKVYyS..",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj....jJJ....","..JJj....jJJ....","..nnn....nnn...."]}),
+      v('C','DASH ÉPAULE','Il charge épaule en avant, le pneu encaissant le choc. Parfait pour un colosse qui bouscule, mais ça ressemble à une attaque plus qu\'à un déplacement.',{corps:["SWmWmVVVVVYy....","SmMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj..jJJ......",".JJj..jJJ.......",".nnn..nnn......."]}),
+      v('D','PLONGEON VENTRAL','Il se jette à plat ventre, bras tendus, pneu en bouclier. Le plus spectaculaire et le plus dans le personnage, mais il remplit alors toute la boîte.',{corps:[".WmWmVVVVVYyS...",".mMmmVKKKKVYyS..",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....",".JJJj...jJJJ....","JJj.......jJJ...","nn.........nn..."]}),
+      v('E','MARCHE PESANTE','Pas courts et traînants, très peu d\'amplitude. Il paraît vraiment lourd sans jamais sortir du gabarit, mais le mouvement risque de sembler mou.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj....jJJ....","..JJj....jJJJ...","..nnn....nnnn..."]}),
+      v('F','COURSE BONDISSANTE','Une foulée encore plus large, presque un bond. Très énergique et amusant sur un gros perso, mais ça contredit totalement sa lenteur annoncée.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....",".JJj......jJJ...","JJj........jJJ..","nnn........nnn.."]}),
+      v('G','PAS SERRÉS','Les jambes restent proches, seul le buste roule sous le pneu. Ça garde le sprite compact et lisible, mais on ne sent presque plus qu\'il se déplace.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","...JJj...jJJ....","...JJj...jJJ....","...nnn...nnn...."]}),
+      v('H','APPUI LOURD','Une jambe reste plantée pendant que l\'autre avance. Le contraste rend la démarche crédible, mais l\'asymétrie complique le miroir horizontal.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJjj...jJJ....","..JJjj...jJJ....","..nnnn...nnn...."]}),
+      v('I','ROULIS','Tout le corps se balance d\'un côté à l\'autre sans grand pas. Très caractéristique d\'un gros gabarit, mais le balancement fatigue l\'œil sur la durée.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj....jJJ....",".JJj.....jJJ....",".nnn.....nnn...."]}),
+      v('J','GLISSADE','Il freine en dérapant, jambes bloquées et bassin bas. Excellent pour le cancel dash, mais inutilisable comme animation de course normale.',{corps:[".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJjjjjjjJJ....",".JJj......jJJ...",".nnn......nnn..."]})
+    ]
+  },
+  {
+    id: 'profil', titre: '7 · Le profil de jeu',
+    note: 'Les vrais chiffres du personnage. Un colosse doit être lent, mais il faut décider ce qu\'il gagne en échange : la puissance, la zone d\'attrapé, ou la vitesse de charge de son ultime.',
+    variantes: [
+      v('A','MUR','Le plus lent du roster, mais la plus grande zone d\'attrapé du jeu. Il ne court pas après le disque, il attend qu\'il vienne — parfait avec un ulti qui le rappelle.',
+        {stats:{spd:1,pow:4,ctl:5,speed:270,power:1.12,catchR:34,chargeT:.95}}),
+      v('B','COGNEUR','Le bras le plus puissant du roster, tout le reste sacrifié. Un seul tir bien placé fait mal, mais il ne rattrapera jamais un disque mal renvoyé.',
+        {stats:{spd:2,pow:5,ctl:2,speed:284,power:1.28,catchR:27,chargeT:1.0}}),
+      v('C','GRAPPIN RAPIDE','Lent et moyen partout, mais son ultime se recharge très vite. Le crochet devient un outil de récupération courant plutôt qu\'un grand moment de match.',
+        {stats:{spd:2,pow:3,ctl:3,speed:288,power:1.0,catchR:30,chargeT:.58}}),
+      v('D','ROULEAU COMPRESSEUR','Lent mais pas ridicule, puissant et solide. Le profil le plus équilibré pour un colosse, donc aussi le moins marquant à jouer.',
+        {stats:{spd:3,pow:4,ctl:3,speed:308,power:1.15,catchR:30,chargeT:.86}}),
+      v('E','LOURD MAIS VIF','Étonnamment rapide pour sa carrure, au prix d\'un ultime très long à charger. Le contre-pied amusant, mais il trahit ce que sa silhouette annonce.',
+        {stats:{spd:4,pow:3,ctl:3,speed:342,power:1.04,catchR:29,chargeT:1.15}}),
+      v('F','TANK PUR','Encore plus lent que le Mur, avec une zone d\'attrapé énorme. Increvable en défense, mais incapable de menacer quoi que ce soit en attaque.',
+        {stats:{spd:1,pow:3,ctl:5,speed:258,power:.95,catchR:36,chargeT:1.0}}),
+      v('G','BRUTE LENTE','Puissance et zone correctes, vitesse minimale. Solide sans être extrême, mais il risque de ne se distinguer d\'aucun autre profil du roster.',
+        {stats:{spd:1,pow:4,ctl:4,speed:266,power:1.18,catchR:32,chargeT:.9}}),
+      v('H','CHARGEUR','Ultime disponible presque en continu, tout le reste médiocre. Le crochet devient sa seule identité, ce qui peut vite devenir répétitif à affronter.',
+        {stats:{spd:2,pow:2,ctl:3,speed:280,power:.9,catchR:29,chargeT:.45}}),
+      v('I','ÉQUILIBRÉ','Les mêmes chiffres que la moyenne du roster. Facile à prendre en main, mais un colosse sans faiblesse ne raconte plus rien.',
+        {stats:{spd:3,pow:3,ctl:3,speed:330,power:1.0,catchR:30,chargeT:.8}}),
+      v('J','GLASS CANNON INVERSÉ','Très résistant en zone mais un bras faible. Il tient le terrain sans jamais conclure, ce qui allonge beaucoup les matchs.',
+        {stats:{spd:2,pow:2,ctl:5,speed:276,power:.84,catchR:35,chargeT:.8}})
+    ]
+  },
+  {
+    id: 'crochet', titre: '8 · Le crochet (sur mesure)',
+    note: 'L\'objet lui-même, dessiné en gros. C\'est la pièce qui traverse tout le terrain pendant l\'ultime : elle doit se lire à pleine vitesse et sur fond sombre.',
+    variantes: [
+      v('A','CROCHET DE BOUCHER','La grande courbe d\'acier à pointe unique, fidèle à la référence. La silhouette la plus reconnaissable, même réduite à quelques pixels en vol.',{fx:(g,cx,cy)=>armeClassique(g,cx,cy)}),
+      v('B','GRAND CROCHET','Le même en beaucoup plus gros. Impossible à rater pendant l\'ultime, mais il masque le disque au moment précis où il l\'accroche.',{fx:(g,cx,cy)=>armeGrand(g,cx,cy)}),
+      v('C','ANCRE','Une ancre de marine à deux becs. Elle explique mieux pourquoi ça agrippe le disque, mais elle n\'a plus rien à voir avec Junkertown.',{fx:(g,cx,cy)=>armeAncre(g,cx,cy)}),
+      v('D','TRIPLE GRIFFE','Trois crochets soudés en éventail. Le plus agressif visuellement, mais l\'objet devient touffu et illisible dès qu\'il bouge vite.',{fx:(g,cx,cy)=>armeTriple(g,cx,cy)}),
+      v('E','LAME DE SCIE','Une lame circulaire dentée au bout de la chaîne. Très ferrailleur et très lisible en rotation, mais ça coupe plutôt que ça n\'accroche.',{fx:(g,cx,cy)=>armeScie(g,cx,cy)}),
+      v('F','CROCHET FIN','Une version élancée et discrète. Elle laisse toute la place au disque pendant la prise, mais on la perd de vue sur le fond sombre du stade.',{fx:(g,cx,cy)=>crochet(g,cx-4,cy,0,1.3)}),
+      v('G','CROCHET ROUILLÉ','Le même que le A, mais mangé de rouille orangée. Ça le rattache au tatouage et à sa palette, au risque de le confondre avec les effets de feu.',{fx:(g,cx,cy)=>{g.save();g.filter='sepia(1) saturate(3)';armeClassique(g,cx,cy);g.restore();}}),
+      v('H','DOUBLE ANCRE','Deux ancres opposées sur la même chaîne. Ça justifie la variante d\'ultime à deux crochets, mais l\'objet devient lourd et confus.',{fx:(g,cx,cy)=>{armeAncre(g,cx-22,cy);armeAncre(g,cx+22,cy);}}),
+      v('I','GRIFFE COURTE','Une petite griffe compacte, presque un grappin d\'escalade. La plus crédible techniquement, mais la moins impressionnante à l\'écran.',{fx:(g,cx,cy)=>crochet(g,cx,cy,Math.PI*.15,1.5)}),
+      v('J','CROCHET À CHAÎNE COURTE','Le crochet soudé à un maillon massif. On comprend tout de suite qu\'il est relié à lui, mais ça limite visuellement la portée de l\'ultime.',{fx:(g,cx,cy)=>{armeClassique(g,cx+10,cy);chaine(g,cx-40,cy,cx,cy);}})
+    ]
+  },
+  {
+    id: 'retour', titre: '9 · Le retour du disque (sur mesure)',
+    note: 'Ce qu\'on voit quand le disque revient en main. C\'est le moment qui doit dire « il vient de sauver un but » — sans quoi l\'ultime paraîtra n\'avoir rien fait.',
+    variantes: [
+      v('A','CHAÎNE EN MAILLONS','La chaîne se rétracte maillon par maillon en ramenant le disque. Le plus mécanique et le plus lisible : on suit le lien du début à la fin.',{fx:retourMaillons}),
+      v('B','CHAÎNE EN TRAIT','Un simple trait tendu au lieu des maillons. Beaucoup plus net à pleine vitesse, mais on perd le côté ferraille qui fait son identité.',{fx:retourTrait}),
+      v('C','TRAÎNÉE','Le disque laisse un sillage d\'images derrière lui. La vitesse se lit d\'un coup d\'œil, mais la chaîne disparaît complètement du geste.',{fx:retourTrainee}),
+      v('D','ÉCLAIRS DE VITESSE','Des traits cyan filent derrière le disque. Le plus punchy et le plus arcade, mais ça ajoute encore du cyan sur un terrain qui en est déjà plein.',{fx:retourEclairs}),
+      v('E','ROTATION FOLLE','Le disque revient en tournant sur lui-même à toute vitesse. Ça annonce bien la relance qui suit, mais sans chaîne on ne comprend plus ce qui le tire.',{fx:retourRotation}),
+      v('F','MAILLONS LENTS','Les maillons se rétractent lentement et lourdement. On sent le poids de la chaîne, mais la lenteur contredit l\'idée de sauver un but au dernier moment.',{fx:(g,cx,cy,t)=>retourMaillons(g,cx,cy,t*.55)}),
+      v('G','TRAIT ET ÉCLAT','Un trait tendu plus un éclat lumineux au moment de la prise. Le compromis le plus lisible, mais l\'éclat risque de se confondre avec un but marqué.',{fx:(g,cx,cy,t)=>{retourTrait(g,cx,cy,t);eclat(g,cx+150,cy,t);}}),
+      v('H','TRAÎNÉE ET MAILLONS','Le sillage du disque plus la chaîne visible. Le plus complet et le plus riche, mais ça fait beaucoup d\'informations dans une fraction de seconde.',{fx:(g,cx,cy,t)=>{retourMaillons(g,cx,cy,t);retourTrainee(g,cx,cy,t);}}),
+      v('I','RETOUR SANS RIEN','Le disque revient sans aucun effet, brut. Le plus sobre et celui qui gêne le moins la lecture du jeu, mais l\'ultime paraît ne rien avoir coûté.',{fx:(g,cx,cy,t)=>{const k=(t*1.6)%1;disque(g,cx+150-150*k,cy);}}),
+      v('J','SECOUSSE','Le disque revient par à-coups, comme tiré par une chaîne qui accroche. Très mécanique et original, mais les saccades se lisent mal à cette vitesse.',{fx:(g,cx,cy,t)=>{const s=Math.floor((t*6)%6);disque(g,cx+150-s*25,cy);chaine(g,cx,cy,cx+150-s*25,cy);}})
+    ]
+  }
+];
+
+/* =========================== LE MOTEUR =========================== */
+function bati(rows, pal, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const ch = row[x];
+      if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+    }
+  });
+  return c;
+}
+function terrain(g, w, h) {
+  g.fillStyle = '#0a1220'; g.fillRect(0, 0, w, h);
+  const solY = h * .58;
+  g.fillStyle = '#0c1424'; g.fillRect(0, solY, w, h - solY);
+  g.fillStyle = 'rgba(15,26,46,0.7)'; g.fillRect(0, solY, w, h - solY);
+  g.strokeStyle = 'rgba(255,255,255,.16)'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, solY + .5); g.lineTo(w, solY + .5); g.stroke();
+  g.strokeStyle = 'rgba(53,224,255,.13)';
+  for (let x = 22; x < w; x += 46) { g.beginPath(); g.moveTo(x, solY); g.lineTo(x - 14, h); g.stroke(); }
+}
+function ombre(g, x, y, r) {
+  g.save(); g.globalAlpha = .34; g.fillStyle = '#000';
+  g.beginPath(); g.ellipse(x, y, r, r * .32, 0, 0, TAU); g.fill(); g.restore();
+}
+
+const choix = {};
+SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+
+function assembler() {
+  let tete = PERSO.tete, corps = PERSO.corps, pal = { ...PERSO.pal }, fx = null, stats = null;
+  for (const s of SECTIONS) {
+    const va = s.variantes.find(x => x.id === choix[s.id]);
+    if (!va) continue;
+    if (va.tete) tete = va.tete;
+    if (va.corps) corps = va.corps;
+    if (va.pal) pal = { ...pal, ...va.pal };
+    if (s.id === 'ulti' && va.fx) fx = va.fx;
+    if (va.stats) stats = va.stats;
+  }
+  return { rows: [...tete, ...corps], pal, fx, stats };
+}
+
+const bad = [];
+function verifier(nom, rows, pal) {
+  if (rows.length !== 20) bad.push(nom + ' : ' + rows.length + ' lignes (attendu 20)');
+  rows.forEach((r, i) => {
+    if (r.length !== 16) bad.push(nom + '[' + i + '] : ' + r.length + ' colonnes (attendu 16)');
+    for (const ch of r) if (ch !== '.' && !pal[ch]) bad.push(nom + '[' + i + '] : lettre « ' + ch + ' » absente de la palette');
+  });
+}
+const MIN_DESC = 40;
+for (const s of SECTIONS) {
+  if (!s.note || s.note.trim().length < MIN_DESC) bad.push(s.id + ' : la section n\'explique pas ce qu\'on y juge');
+  for (const va of s.variantes) {
+    if (!va.nom || !va.nom.trim()) bad.push(s.id + '-' + va.id + ' : pas de nom');
+    if (!va.desc || va.desc.trim().length < MIN_DESC) bad.push(s.id + '-' + va.id + ' : explication manquante ou trop courte');
+    if (!va.tete && !va.corps && !va.pal) continue;
+    const pal = { ...PERSO.pal, ...(va.pal || {}) };
+    verifier(s.id + '-' + va.id, [...(va.tete || PERSO.tete), ...(va.corps || PERSO.corps)], pal);
+  }
+}
+const boite = document.getElementById('errs');
+boite.textContent = bad.length
+  ? bad.length + ' à corriger :\n' + bad.slice(0, 24).join('\n') + (bad.length > 24 ? '\n…' : '')
+  : 'OK — gabarit 16 × 20 tenu, palettes complètes, et chaque section comme chaque variante porte son explication.';
+if (bad.length) boite.className = 'bad';
+
+(function bandeRoster() {
+  const hote = document.getElementById('rosterRow');
+  for (const ck of ROSTER) {
+    const c = CHARS[ck];
+    const d = document.createElement('div'); d.className = 'rosterOne';
+    const cv = document.createElement('canvas');
+    cv.width = 16 * ECH_CARTE; cv.height = 20 * ECH_CARTE;
+    const g = cv.getContext('2d');
+    terrain(g, cv.width, cv.height);
+    g.imageSmoothingEnabled = false;
+    g.drawImage(c.frames.idle, 0, 0, cv.width, cv.height);
+    const s = document.createElement('span'); s.textContent = c.short || ck;
+    d.appendChild(cv); d.appendChild(s); hote.appendChild(d);
+  }
+  const d = document.createElement('div'); d.className = 'rosterOne neuf';
+  const cv = document.createElement('canvas');
+  cv.id = 'cvRosterNeuf';
+  cv.width = 16 * ECH_CARTE; cv.height = 20 * ECH_CARTE;
+  const s = document.createElement('span'); s.textContent = PERSO.nom;
+  d.appendChild(cv); d.appendChild(s); hote.appendChild(d);
+})();
+
+function peindreRosterNeuf() {
+  const cv = document.getElementById('cvRosterNeuf');
+  const g = cv.getContext('2d');
+  const { rows, pal } = assembler();
+  terrain(g, cv.width, cv.height);
+  g.imageSmoothingEnabled = false;
+  g.drawImage(bati(rows, pal, 8), 0, 0, cv.width, cv.height);
+}
+
+const cartes = [];
+(function poserSections() {
+  const hote = document.getElementById('sections');
+  for (const s of SECTIONS) {
+    const h2 = document.createElement('h2'); h2.textContent = s.titre;
+    hote.appendChild(h2);
+    if (s.note) { const p = document.createElement('p'); p.className = 'note'; p.textContent = s.note; hote.appendChild(p); }
+    const rangee = document.createElement('div'); rangee.className = 'row';
+    const reserve = document.createElement('div'); reserve.className = 'row reserve';
+    hote.appendChild(rangee);
+    s.variantes.forEach((va, i) => {
+      const card = document.createElement('div');
+      card.className = 'card' + (i === 0 ? ' on' : '');
+      const lbl = document.createElement('div'); lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + (va.desc || '');
+      const cv = document.createElement('canvas');
+      cv.width = 190; cv.height = 132;
+      card.appendChild(lbl); card.appendChild(cv);
+      if (va.stats) card.appendChild(barres(va.stats));
+      (i < 5 ? rangee : reserve).appendChild(card);
+      cartes.push({ cv, s, va, card });
+      card.addEventListener('click', () => {
+        choix[s.id] = va.id;
+        cartes.filter(c => c.s === s).forEach(c => c.card.classList.toggle('on', c.va === va));
+        rafraichir();
+      });
+    });
+    const bouton = document.createElement('button');
+    bouton.className = 'plus'; bouton.textContent = '+ 5 autres choix';
+    bouton.addEventListener('click', () => {
+      reserve.classList.toggle('ouverte');
+      bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
+    });
+    hote.appendChild(bouton);
+    hote.appendChild(reserve);
+  }
+})();
+
+function barres(st) {
+  const d = document.createElement('div'); d.className = 'stats';
+  const b = n => '<i>' + '■'.repeat(n) + '</i>' + '□'.repeat(5 - n);
+  d.innerHTML = 'VIT ' + b(st.spd) + '  ·  ' + st.speed + ' px/s<br>' +
+                'PUI ' + b(st.pow) + '  ·  ×' + st.power + '<br>' +
+                'CTL ' + b(st.ctl) + '  ·  r' + st.catchR + '<br>' +
+                'CHARGE ' + st.chargeT + ' s';
+  return d;
+}
+
+function peindreCartes() {
+  for (const { cv, s, va } of cartes) {
+    const g = cv.getContext('2d');
+    terrain(g, cv.width, cv.height);
+    g.imageSmoothingEnabled = false;
+    const base = assembler();
+    const tete = va.tete || base.rows.slice(0, 10);
+    const corps = va.corps || base.rows.slice(10);
+    const pal = { ...base.pal, ...(va.pal || {}) };
+    const sp = bati([...tete, ...corps], pal, ECH_CARTE);
+    // Les sections d'objet (crochet) montrent la pièce seule en gros ; toutes
+    // les autres montrent le perso entier, la variante appliquée.
+    if (s.id === 'crochet') { va.fx(g, cv.width / 2, cv.height / 2, .42, null); continue; }
+    const x = (cv.width - sp.width) / 2, y = cv.height * .58 - sp.height + 6;
+    ombre(g, cv.width / 2, cv.height * .58 + 2, sp.width * .34);
+    g.drawImage(sp, x, y);
+    if (va.fx) va.fx(g, cv.width / 2, y + sp.height * .5, .42,
+                     { x: cv.width - 24, y: y + sp.height * .5 });
+  }
+}
+
+const cvA = document.getElementById('cvApercu');
+const gA = cvA.getContext('2d');
+
+// Le code compact à me renvoyer : « 1A 2C 3B … », une entrée par section dans
+// l'ordre de la page. Il est posé dans un champ en lecture seule plutôt que
+// dans une simple ligne de texte, pour rester sélectionnable à la main si
+// jamais l'accès au presse-papiers est refusé par le navigateur.
+function codeChoix() {
+  return SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+}
+
+function rafraichir() {
+  peindreCartes();
+  peindreRosterNeuf();
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '').replace(/ \(sur mesure\)$/, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value = codeChoix();
+}
+
+(function brancherCopie() {
+  const btn = document.getElementById('btnCopier');
+  const champ = document.getElementById('codeChoix');
+  btn.addEventListener('click', async () => {
+    const texte = codeChoix();
+    let ok = false;
+    try { await navigator.clipboard.writeText(texte); ok = true; }
+    catch (e) {
+      // Repli quand le presse-papiers est refusé : on sélectionne le champ,
+      // il ne reste qu'à faire Ctrl+C.
+      champ.select(); champ.setSelectionRange(0, 999);
+      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    }
+    btn.textContent = ok ? '✓ copié' : 'Ctrl+C pour copier';
+    btn.classList.toggle('ok', ok);
+    setTimeout(() => { btn.textContent = 'copier mes choix'; btn.classList.remove('ok'); }, 1800);
+  });
+})();
+
+(function boucle(ms) {
+  const t = ms / 1000;
+  const { rows, pal, fx } = assembler();
+  terrain(gA, cvA.width, cvA.height);
+  gA.imageSmoothingEnabled = false;
+  const sp = bati(rows, pal, ECH_APERCU);
+  const flot = Math.round(Math.sin(t * 2.4) * 2);
+  const solY = cvA.height * .58;
+  const x = cvA.width * .26 - sp.width / 2, y = solY - sp.height + flot;
+  ombre(gA, cvA.width * .26, solY + 2, sp.width * .34);
+  gA.drawImage(sp, x, y);
+  if (fx) fx(gA, x + sp.width * .82, y + sp.height * .45, t,
+             { x: cvA.width * .84, y: solY - 54 });
+  requestAnimationFrame(boucle);
+})(0);
+
+rafraichir();
+</script>
+</body>
+</html>

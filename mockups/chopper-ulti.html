@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Chopper — l'ultime</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:34px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:980px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;
+        flex:1 1 0;min-width:190px;cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d5c8a}
+  .card.on{border-color:var(--or);transform:translateY(-2px)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:70px}
+  .lbl b{display:block;font-size:14px;color:var(--or);letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px;image-rendering:pixelated}
+  .reserve{display:none}
+  .reserve.ouverte{display:flex}
+  .plus{margin-top:9px;background:#132038;color:#9fb4dd;border:1px solid var(--edge);
+        border-radius:7px;padding:6px 13px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#1a2b48;color:var(--ink)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 560px}
+  .apercu canvas{background:#0a1220}
+  .choix{font-size:11.5px;color:#9fb4dd;margin-top:9px;font-family:Consolas,monospace;line-height:1.7}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#24395e}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  /* Frise des phases : elle montre le rythme réel de l'ultime pendant qu'il joue. */
+  .frise{display:flex;gap:3px;margin-top:10px}
+  .ph{flex:1 1 0;text-align:center;font-size:9.5px;font-family:Consolas,monospace;
+      padding:5px 2px;border-radius:5px;background:#101a2e;color:#6d82a6;
+      border:1px solid transparent;transition:background .1s,color .1s}
+  .ph.on{background:#24395e;color:var(--or);border-color:var(--or)}
+  .ph i{display:block;font-style:normal;font-size:8.5px;opacity:.75}
+  .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 280px}
+  .fiche h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .fiche table{width:100%;border-collapse:collapse;font-size:11.5px;font-family:Consolas,monospace}
+  .fiche td{padding:3px 0;color:#9fb4dd;vertical-align:top}
+  .fiche td:last-child{color:var(--or);text-align:right;white-space:nowrap;padding-left:8px}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>CHOPPER — L'ULTIME</h1>
+<p class="note">
+  Mockup dédié, séparé du chara-design (celui-ci est déjà validé : <code>1A 2A 3A 4A 5D 6A 7A 8J 9A</code>).
+  Il est calqué sur le vrai <b>Chain Hook</b> d'Overwatch, dont j'ai repris le découpage en phases :
+  armement, vol du crochet, accroche, retour, relance. Dans Overwatch le crochet vole à
+  <b>62 m/s sur 20 m</b>, avec un temps d'incantation de <b>0,1 + 0,2 s</b>, une <b>latence de 0,3 s</b>
+  après l'accroche pendant laquelle la ligne de vue doit rester dégagée, puis la cible est ramenée
+  à <b>3 m</b> devant lui. L'ability est <b>canalisée</b> : Roadhog ne peut ni tirer ni agir tant qu'elle
+  tourne. Et le combo signature, c'est <b>crochet → tir → mêlée</b>, ce qui correspond exactement à ta
+  « prise et relance ».
+  <br><br>
+  Ici le crochet part sur <b>le disque</b>, pas sur l'adversaire. Chaque section décide d'une phase.
+  Clique les cartes : l'aperçu du haut rejoue la séquence complète avec tes choix, et la frise sous
+  l'aperçu s'allume phase par phase pour que tu voies le rythme.
+</p>
+
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvApercu" width="820" height="290"></canvas>
+    <div class="frise" id="frise"></div>
+    <div class="choix" id="choix"></div>
+    <div class="copier">
+      <input class="codeChoix" id="codeChoix" readonly>
+      <button class="btnCopier" id="btnCopier">copier mes choix</button>
+    </div>
+  </div>
+  <div class="fiche">
+    <h3>Le Chain Hook d'origine</h3>
+    <table>
+      <tr><td>Portée</td><td>20 m</td></tr>
+      <tr><td>Vitesse du projectile</td><td>62 m/s</td></tr>
+      <tr><td>Temps de vol à portée max</td><td>≈ 0,32 s</td></tr>
+      <tr><td>Incantation</td><td>0,1 + 0,2 s</td></tr>
+      <tr><td>Latence avant traction</td><td>0,3 s</td></tr>
+      <tr><td>Cible ramenée à</td><td>3 m devant</td></tr>
+      <tr><td>Immobilisation</td><td>0,7 à 1,2 s</td></tr>
+      <tr><td>Recharge</td><td>7 s</td></tr>
+      <tr><td>Canalisé</td><td>oui</td></tr>
+      <tr><td>Réorientation en fin de latence</td><td>70°</td></tr>
+    </table>
+    <p class="note" style="margin:9px 0 0;font-size:10.5px">
+      Ces chiffres servent de repère de rythme, pas de cible à copier : un match de disque
+      n'a pas la même échelle qu'un couloir d'Overwatch.
+    </p>
+  </div>
+</div>
+
+<div id="sections"></div>
+
+<script type="module">
+const TAU = Math.PI * 2;
+const ECH = 6;   // le perso dans l'aperçu
+const ECH_C = 4; // le perso dans les cartes
+
+/* ===================== LE PERSO VALIDÉ ===================== */
+// Reprise exacte du build choisi dans chopper.html : masque complet au groin
+// décalé à droite, équipement complet, pose bien plantée.
+const PAL = {
+  H:'#e8e0c8', h:'#b9ae90', M:'#4a4a52', m:'#2e2e34', o:'#3b3b43', L:'#cfd8e2',
+  S:'#d9a17c', s:'#ad7452', E:'#241f1c', T:'#e0762c', t:'#a84a12',
+  V:'#3f342a', v:'#241c15', K:'#1c1c20', J:'#42506a', j:'#2a3345',
+  Y:'#e8c23a', y:'#a08320', W:'#c8ccd4', n:'#2b2320'
+};
+const TETE = [".....hHHh.......","....oMMMMMo.....","...oMMMMMMMo....","..oMMMMMMMMMo...","..oMMLLMMMLLo...","..oMMLLMMMLLo...",".YoMMMMMMMMoY...",".yoMMMmmmmmoy...","....MMmmmmmM....","...KKKKKKKKK...."];
+const CORPS = [".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....",".JJj......jJJ...",".JJj......jJJ...",".nnn......nnn..."];
+// Bras ramené en arrière : la pose d'armement, le crochet dans le dos.
+const CORPS_ARME = [".WmWmVVVVVYy....","WmMmmVKKKKVYy...","WWmmVKTTTTKV....",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....",".JJj......jJJ...",".JJj......jJJ...",".nnn......nnn..."];
+// Bras projeté en avant : le lancer.
+const CORPS_LANCE = [".WmWmVVVVVYyW...",".mMmmVKKKKVYyW..",".WmmVKTTTTKVWW..",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....",".JJj......jJJ...",".JJj......jJJ...",".nnn......nnn..."];
+
+function bati(rows, pal, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x*ech, y*ech, ech, ech); }
+  }});
+  return c;
+}
+
+/* ===================== LE DÉCOR ===================== */
+function terrain(g, w, h) {
+  g.fillStyle = '#0a1220'; g.fillRect(0, 0, w, h);
+  const solY = h * .62;
+  g.fillStyle = '#0c1424'; g.fillRect(0, solY, w, h - solY);
+  g.fillStyle = 'rgba(15,26,46,0.7)'; g.fillRect(0, solY, w, h - solY);
+  g.strokeStyle = 'rgba(255,255,255,.16)'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, solY + .5); g.lineTo(w, solY + .5); g.stroke();
+  g.strokeStyle = 'rgba(53,224,255,.1)';
+  for (let x = 24; x < w; x += 48) { g.beginPath(); g.moveTo(x, solY); g.lineTo(x-16, h); g.stroke(); }
+  return solY;
+}
+// La cage adverse, à droite : c'est elle qui donne l'enjeu — sans elle on ne
+// comprend pas que l'ultime sert à empêcher un but.
+function cage(g, w, h, solY) {
+  const x = w - 26;
+  g.fillStyle = 'rgba(53,224,255,0.13)'; g.fillRect(x, solY - 96, 26, 96);
+  g.strokeStyle = '#35e0ff'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(x, solY - 96); g.lineTo(x, solY); g.stroke();
+}
+function ombre(g, x, y, r) {
+  g.save(); g.globalAlpha = .34; g.fillStyle = '#000';
+  g.beginPath(); g.ellipse(x, y, r, r*.32, 0, 0, TAU); g.fill(); g.restore();
+}
+// `ecrase` étire le disque perpendiculairement au choc : il s'aplatit à
+// l'impact puis reprend sa forme. Sans cette déformation, le moment de
+// l'accroche n'a aucun poids — le disque traverse l'événement sans réagir.
+function disque(g, x, y, r = 9, rot = 0, ecrase = 0) {
+  g.save(); g.translate(x, y); g.rotate(rot);
+  const rx = r * (1 - ecrase * .35), ry = r * .36 * (1 + ecrase * 1.1);
+  g.fillStyle = '#35e0ff'; g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, TAU); g.fill();
+  g.strokeStyle = '#bff2ff'; g.lineWidth = 1.4; g.stroke(); g.restore();
+}
+// Sillage : plusieurs copies du disque derrière lui, l'opacité en dégradé.
+// C'est la variante « droit avec traînée » — un simple trait ne rendait pas
+// la vitesse, alors que des copies espacées se lisent instantanément.
+function sillage(g, pts) {
+  for (let i = pts.length - 1; i >= 0; i--) {
+    g.globalAlpha = .10 + .13 * (pts.length - i);
+    disque(g, pts[i].x, pts[i].y, 8 - i * .5, pts[i].a || 0);
+  }
+  g.globalAlpha = 1;
+}
+function eclat(g, x, y, force = 1) {
+  const R = 20 * force;
+  const d = g.createRadialGradient(x, y, 1, x, y, R);
+  d.addColorStop(0, `rgba(255,240,190,${.9*force})`); d.addColorStop(1, 'rgba(255,180,40,0)');
+  g.fillStyle = d; g.beginPath(); g.arc(x, y, R, 0, TAU); g.fill();
+}
+function crochet(g, x, y, a, ech = 1) {
+  g.save(); g.translate(x, y); g.rotate(a); g.scale(ech, ech);
+  g.strokeStyle = '#c8ccd4'; g.lineWidth = 3; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(-9, 0); g.lineTo(3, 0); g.stroke();
+  g.beginPath(); g.arc(3, -7, 7, Math.PI*.5, Math.PI*1.75); g.stroke();
+  g.fillStyle = '#e8eaef';
+  g.beginPath(); g.moveTo(8, -12); g.lineTo(14, -16); g.lineTo(9, -6); g.fill();
+  g.restore();
+}
+
+/* ===================== LES PHASES ===================== */
+// Le découpage vient directement du Chain Hook : armement, vol, accroche,
+// retour, relance. Les durées sont proportionnelles à celles d'Overwatch,
+// étirées pour rester lisibles à l'écran.
+const PHASES = [
+  { id:'arme',    nom:'ARMEMENT',  detail:'0,1 + 0,2 s' },
+  { id:'vol',     nom:'VOL',       detail:'62 m/s'      },
+  { id:'accroche',nom:'ACCROCHE',  detail:'0,3 s'       },
+  { id:'retour',  nom:'RETOUR',    detail:'traction'    },
+  { id:'relance', nom:'RELANCE',   detail:'combo'       }
+];
+
+/* ===================== LES SECTIONS ===================== */
+function v(id, nom, desc, o) { return { id, nom, desc, ...o }; }
+
+const SECTIONS = [
+  {
+    id:'armement', titre:'1 · Le geste d\'armement',
+    note:'Le temps mort avant que le crochet parte — dans Overwatch, 0,1 + 0,2 s. C\'est la seule fenêtre où l\'adversaire peut lire le coup et réagir : la supprimer rend l\'ultime imparable.',
+    variantes:[
+      v('A','BRAS EN ARRIÈRE','Il ramène le crochet derrière l\'épaule avant de lancer. Le geste le plus lisible et le plus fidèle, et il laisse à l\'adversaire une vraie fenêtre de lecture.',{arme:'arriere'}),
+      v('B','MOULINET','Il fait tourner le crochet au-dessus de sa tête avant de l\'envoyer. Très spectaculaire et impossible à rater, mais ça rallonge nettement le temps mort.',{arme:'moulinet'}),
+      v('C','AUCUN','Le crochet part instantanément, sans armement. La réponse la plus sèche pour sauver un but au dernier moment, mais l\'adversaire ne voit strictement rien venir.',{arme:'aucun'}),
+      v('D','PAS EN AVANT','Il avance d\'un pas lourd en armant. Le geste engage tout le corps et vend son poids, mais le déplacement le sort de sa position défensive.',{arme:'pas'}),
+      v('E','CHAÎNE QUI SE TEND','La chaîne se déroule au sol puis se tend d\'un coup. Ça annonce la portée avant le tir, mais ça mange de la place en bas de l\'écran.',{arme:'chaine'}),
+      v('F','ACCROUPI','Il se tasse sur ses jambes pour prendre appui. Cohérent avec son poids, mais l\'accroupissement se confond avec l\'animation de plongeon.',{arme:'accroupi'}),
+      v('G','DOUBLE MOULINET','Deux tours de chaîne au lieu d\'un. Encore plus impressionnant, mais le temps mort devient si long que l\'ultime rate ce qu\'il devait sauver.',{arme:'moulinet'}),
+      v('H','ÉPAULE SEULE','Seule l\'épaule recule, le reste du corps ne bouge pas. Le plus économe en pixels, mais on ne sent presque pas l\'effort d\'un colosse.',{arme:'epaule'}),
+      v('I','TEMPS SUSPENDU','Il se fige une fraction de seconde, immobile, avant de lancer. Ça crée une vraie tension, mais un arrêt net peut se lire comme une saccade du jeu.',{arme:'fige'}),
+      v('J','GRONDEMENT','Il gonfle le torse et les filtres du masque crachent de la vapeur. La plus caractérisée, mais l\'effet de vapeur coûte cher pour trois frames.',{arme:'vapeur'})
+    ]
+  },
+  {
+    id:'vol', titre:'2 · Le vol du crochet',
+    note:'Le trajet du crochet jusqu\'au disque. Dans Overwatch il file à 62 m/s sur 20 m, soit à peine un tiers de seconde : c\'est rapide, presque instantané, mais on le voit passer.',
+    variantes:[
+      v('A','DROIT ET RAPIDE','Une ligne tendue vers le disque, très rapide. Le plus fidèle aux 62 m/s de la référence, et la trajectoire se lit d\'un seul coup d\'œil.',{vol:'droit'}),
+      v('B','ARC HAUT','Le crochet décrit une cloche avant de retomber sur le disque. Beaucoup plus spectaculaire, mais le temps de vol coûte cher quand il faut sauver un but.',{vol:'arc'}),
+      v('C','ARC RASANT','Un arc très plat, à peine courbé. Compromis entre la lisibilité du droit et le panache de l\'arc, mais il n\'a le caractère ni de l\'un ni de l\'autre.',{vol:'rasant'}),
+      v('D','EN TOURNOYANT','Le crochet tourne sur lui-même pendant le vol. Ça donne du poids à l\'objet, mais la rotation brouille sa silhouette à pleine vitesse.',{vol:'tournant'}),
+      v('E','INSTANTANÉ','Un éclair : la chaîne apparaît déjà tendue jusqu\'au disque. Imparable pour sauver un but, mais on perd toute la lecture du trajet.',{vol:'instant'}),
+      v('F','LENT ET LOURD','Le crochet part visiblement plus lentement, comme une masse. On sent son poids, mais l\'adversaire a largement le temps de repositionner le disque.',{vol:'lent'}),
+      v('G','ACCÉLÉRATION','Il part lentement puis accélère brutalement. Le rythme le plus intéressant à l\'œil, mais difficile à anticiper pour celui qui le subit.',{vol:'accel'}),
+      v('H','RICOCHET','Le crochet rebondit une fois sur le mur avant d\'atteindre le disque. Très arcade et amusant, mais la trajectoire devient impossible à prévoir.',{vol:'ricochet'}),
+      v('I','DROIT AVEC TRAÎNÉE','Une ligne tendue plus un sillage derrière le crochet. La vitesse se lit encore mieux, au prix d\'un effet de plus sur un terrain déjà chargé.',{vol:'trainee'}),
+      v('J','GUIDÉ','Le crochet corrige légèrement sa course vers le disque. Ça pardonne les visées approximatives, mais l\'ultime devient trop facile à réussir.',{vol:'guide'})
+    ]
+  },
+  {
+    id:'accroche', titre:'3 · L\'accroche',
+    note:'Le moment où le crochet mord le disque. Overwatch y met une latence de 0,3 s avant que la traction commence — c\'est ce battement qui rend la prise satisfaisante au lieu d\'un simple téléport.',
+    variantes:[
+      v('A','TEMPS D\'ARRÊT','Tout se fige un court instant à l\'impact, puis la traction part. C\'est le battement de 0,3 s de la référence : sans lui la prise n\'a aucun poids.',{acc:'arret'}),
+      v('B','ÉCLAT','Une gerbe lumineuse au point d\'accroche. On voit tout de suite que ça a mordu, mais l\'éclat ressemble beaucoup à celui d\'un but marqué.',{acc:'eclat'}),
+      v('C','SECOUSSE D\'ÉCRAN','L\'image tremble une fraction de seconde à l\'impact. L\'impact se ressent physiquement, mais une secousse gêne la lecture d\'un jeu aussi rapide.',{acc:'secousse'}),
+      v('D','ANNEAU DE CHOC','Un anneau se propage depuis le point d\'accroche. Net et lisible, mais c\'est un effet déjà très utilisé ailleurs dans le jeu.',{acc:'anneau'}),
+      v('E','RIEN','Le crochet mord et la traction part sans transition. Le plus fluide et le plus rapide, mais la prise paraît molle et sans conséquence.',{acc:'rien'}),
+      v('F','ARRÊT + ÉCLAT','Le battement de la référence plus la gerbe lumineuse. Le plus complet et le plus satisfaisant, au risque d\'en faire un peu trop.',{acc:'arretEclat'}),
+      v('G','CHAÎNE QUI CLAQUE','La chaîne se tend brutalement en vibrant. Très mécanique et fidèle à l\'objet, mais la vibration se lit mal à cette taille.',{acc:'claque'}),
+      v('H','DISQUE QUI S\'ARRÊTE NET','Le disque s\'immobilise brutalement avant d\'être tiré. On comprend instantanément qu\'il est capturé, mais l\'arrêt sec paraît peu naturel.',{acc:'stop'}),
+      v('I','ÉTINCELLES','Des étincelles jaillissent du contact acier-disque. Joli et cohérent avec le ferrailleur, mais ça ajoute encore des particules à l\'écran.',{acc:'etincelles'}),
+      v('J','RALENTI','Un très bref ralenti au moment de la morsure. Le plus dramatique, mais toucher au temps du jeu est risqué en multijoueur.',{acc:'ralenti'})
+    ]
+  },
+  {
+    id:'retour', titre:'4 · Le retour du disque',
+    note:'La traction. Dans Overwatch la cible atterrit à 3 m devant Roadhog, pas dans ses mains : c\'est ce qui laisse la place au tir qui suit. Ici, le disque doit revenir assez près pour être relancé.',
+    variantes:[
+      v('A','TRACTION EN MAILLONS','La chaîne se rétracte maillon par maillon en ramenant le disque. Le plus mécanique et le plus lisible : on suit le lien du début à la fin.',{ret:'maillons'}),
+      v('B','TRACTION SÈCHE','Un seul coup sec, le disque arrive d\'un coup. Le plus brutal et le plus rapide, mais si violent qu\'on distingue à peine le trajet.',{ret:'seche'}),
+      v('C','DEVANT LUI','Le disque s\'arrête à un pas devant lui plutôt que dans sa main. Fidèle aux 3 m de la référence, et ça laisse la place au geste de relance.',{ret:'devant'}),
+      v('D','EN TOURNOYANT','Le disque revient en tournant sur lui-même à toute vitesse. Ça annonce bien la relance qui suit, mais on ne voit plus ce qui le tire.',{ret:'tournant'}),
+      v('E','AVEC TRAÎNÉE','Le disque laisse un sillage derrière lui pendant la traction. La vitesse se lit d\'un coup d\'œil, mais la chaîne passe au second plan.',{ret:'trainee'}),
+      v('F','PAR À-COUPS','Le disque revient par saccades, comme une chaîne qui accroche. Très mécanique et original, mais les saccades se lisent mal à cette vitesse.',{ret:'acoups'}),
+      v('G','COURBE','Le disque décrit une courbe au lieu d\'une ligne droite. Plus organique et plus joli, mais moins clair sur l\'endroit où il va atterrir.',{ret:'courbe'}),
+      v('H','LENT PUIS VITE','La traction démarre lentement puis s\'emballe. On sent l\'effort du colosse, mais le début lent gâche l\'urgence du sauvetage.',{ret:'accel'}),
+      v('I','DANS LA MAIN','Le disque revient directement se coller dans sa main. Le plus net et le plus satisfaisant, mais il n\'y a plus de place pour armer la relance.',{ret:'main'}),
+      v('J','AVEC L\'ADVERSAIRE','La traction emporte aussi l\'adversaire s\'il était sur la trajectoire. Le plus proche du Chain Hook d\'origine, mais ça change complètement l\'équilibre du duel.',{ret:'adversaire'})
+    ]
+  },
+  {
+    id:'relance', titre:'5 · La relance',
+    note:'L\'équivalent du combo « crochet → tir → mêlée » d\'Overwatch : ce qui suit immédiatement la prise. C\'est ce qui transforme un sauvetage défensif en contre-attaque.',
+    variantes:[
+      v('A','TIR IMMÉDIAT','Il relance le disque dans la foulée, sans temps mort. Le plus fidèle au combo d\'origine, mais l\'enchaînement complet est long à jouer.',{rel:'immediat'}),
+      v('B','FENÊTRE DE CONTRÔLE','Le disque reste en main un instant, à toi de viser. Tu gardes la main sur la contre-attaque, mais la fenêtre casse l\'élan du combo.',{rel:'fenetre'}),
+      v('C','TIR CHARGÉ','La relance part automatiquement en tir chargé, plus puissant. Très gratifiant après une belle prise, mais ça cumule deux avantages d\'un coup.',{rel:'charge'}),
+      v('D','COUP DE CROCHET','Il frappe le disque avec le crochet plutôt que de le lancer. C\'est la mêlée du combo d\'origine, mais on perd le contrôle de la direction.',{rel:'melee'}),
+      v('E','AUCUNE','La prise s\'arrête là, il récupère simplement le disque. Le plus sobre et le plus équilibré, mais l\'ultime redevient purement défensif.',{rel:'aucune'}),
+      v('F','TIR EN CLOCHE','La relance part en lob par-dessus l\'adversaire. Surprenant et difficile à contrer, mais la trajectoire haute est lente à arriver.',{rel:'cloche'}),
+      v('G','DOUBLE RELANCE','Il enchaîne deux tirs rapides après la prise. Le plus spectaculaire, mais deux disques d\'affilée cassent la logique du jeu.',{rel:'double'}),
+      v('H','RELANCE + PAS EN AVANT','Il avance en relançant, gagnant du terrain. Ça change sa position pour l\'échange suivant, mais un colosse lent ne devrait pas gagner de terrain gratuitement.',{rel:'avance'}),
+      v('I','FLOURISH','Il fait tourner le crochet au-dessus de sa tête avant de relancer, comme le geste de victoire de Roadhog après un hook réussi. Superbe, mais purement décoratif et coûteux en temps.',{rel:'flourish'}),
+      v('J','RELANCE RASANTE','Le disque repart au ras du sol, très vite et très bas. Difficile à intercepter, mais il passe sous le regard et se perd visuellement.',{rel:'rasante'})
+    ]
+  },
+  {
+    id:'portee', titre:'6 · La portée',
+    note:'Jusqu\'où le crochet va chercher le disque. Overwatch cadre à 20 m, soit une bonne moitié d\'un couloir : trop court, l\'ultime ne sauve rien ; trop long, il annule tout tir adverse.',
+    variantes:[
+      v('A','MOITIÉ DE TERRAIN','Il attrape le disque jusqu\'au milieu du terrain. L\'équivalent des 20 m de la référence : assez pour sauver un but, pas assez pour tout annuler.',{portee:.5}),
+      v('B','TERRAIN ENTIER','Le crochet traverse tout le terrain. Aucun tir n\'est jamais à l\'abri, mais l\'adversaire n\'a plus aucune option de contournement.',{portee:1}),
+      v('C','COURTE','Un tiers de terrain seulement. Il faut vraiment bien se placer pour en profiter, ce qui récompense la lecture — mais l\'ultime rate souvent.',{portee:.33}),
+      v('D','JUSQU\'À SA CAGE','La portée couvre exactement sa moitié défensive. Très lisible comme règle, mais inutile dès qu\'il monte à l\'attaque.',{portee:.6}),
+      v('E','DEUX TIERS','Un compromis entre la moitié et le terrain entier. Le plus souple à jouer, mais aussi le plus fade des choix.',{portee:.66}),
+      v('F','TRÈS COURTE','Un quart de terrain. Réservé aux sauvetages de dernière seconde, ce qui rend l\'ultime rare mais spectaculaire quand il passe.',{portee:.25}),
+      v('G','VARIABLE À LA CHARGE','Plus tu tiens la touche, plus le crochet va loin. Beaucoup de contrôle, mais ça rallonge encore un ultime déjà long.',{portee:.75}),
+      v('H','MOITIÉ + REBOND','Une demi-portée, mais le crochet rebondit sur les murs. La couverture réelle devient large sans être une ligne droite ennuyeuse.',{portee:.5}),
+      v('I','TOUT SAUF LA CAGE','Le crochet couvre tout sauf les derniers mètres devant la cage adverse. Ça protège l\'attaque adverse de dernière seconde, mais la règle est difficile à lire.',{portee:.85}),
+      v('J','ILLIMITÉE','Aucune limite de portée. Le plus simple à comprendre et à coder, mais il n\'y a plus aucun placement à réfléchir.',{portee:1.2})
+    ]
+  }
+];
+
+/* ===================== LE MOTEUR D'ANIMATION ===================== */
+// Le build validé : 1A 2I 3A 4A 5B 6B. La page s'ouvre dessus, mais toutes
+// les variantes restent là pour pouvoir en changer plus tard.
+const VALIDE = { armement:'A', vol:'I', accroche:'A', retour:'A', relance:'B', portee:'B' };
+const choix = {};
+SECTIONS.forEach(s => { choix[s.id] = VALIDE[s.id] || s.variantes[0].id; });
+function actuel(id) { const s = SECTIONS.find(x => x.id === id); return s.variantes.find(v => v.id === choix[id]); }
+
+// Durées relatives des phases, dans l'esprit du Chain Hook : un armement
+// court, un vol très rapide, un battement à l'accroche, une traction un peu
+// plus longue, puis la relance.
+function durees() {
+  const a = actuel('armement').arme, vo = actuel('vol').vol, ac = actuel('accroche').acc, re = actuel('relance').rel;
+  return {
+    arme:     a==='aucun' ? .05 : a==='moulinet' ? .75 : a==='moulinetD' ? 1.1 : a==='fige' ? .5 : .32,
+    vol:      vo==='instant' ? .06 : vo==='lent' ? .85 : vo==='arc' ? .6 : .34,
+    accroche: ac==='rien' ? .04 : ac==='ralenti' ? .55 : .3,
+    retour:   .5,
+    relance:  re==='aucune' ? .2 : re==='flourish' ? .9 : re==='double' ? .8 : .45
+  };
+}
+
+// Position du crochet pendant le vol, selon la variante choisie.
+function pointVol(u, x0, y0, x1, y1, mode) {
+  if (mode === 'arc' || mode === 'rasant') {
+    const hauteur = mode === 'arc' ? 95 : 34;
+    const cx = (x0+x1)/2, cy = Math.min(y0,y1) - hauteur;
+    return { x:(1-u)*(1-u)*x0 + 2*(1-u)*u*cx + u*u*x1, y:(1-u)*(1-u)*y0 + 2*(1-u)*u*cy + u*u*y1 };
+  }
+  if (mode === 'accel') { const k = u*u; return { x:x0+(x1-x0)*k, y:y0+(y1-y0)*k }; }
+  if (mode === 'ricochet') {
+    const k = u < .5 ? u*2 : 1;
+    const yh = u < .5 ? y0 - 70*k : y0 - 70 + (y1-(y0-70))*((u-.5)*2);
+    return { x:x0+(x1-x0)*u, y:yh };
+  }
+  return { x:x0+(x1-x0)*u, y:y0+(y1-y0)*u };
+}
+/* --- Courbes d'accélération. Tout bougeait en linéaire, ce qui donne ce
+   rendu « mécanique » de prototype : rien ne démarre ni ne s'arrête vraiment.
+   Chaque phase reçoit maintenant la courbe qui correspond à son geste. --- */
+const sortieCubique = u => 1 - Math.pow(1 - u, 3);          // démarre vif, se pose
+const entreeCubique = u => u * u * u;                        // s'arrache lentement
+const entreeSortie  = u => u < .5 ? 4*u*u*u : 1 - Math.pow(-2*u + 2, 3) / 2;
+const rebond = u => { const c = 1.9; const k = u - 1;        // dépasse puis revient
+  return 1 + (c + 1) * k*k*k + c * k*k; };
+
+// La chaîne pend sous son propre poids. `mou` est la flèche en pixels : elle
+// est forte quand la chaîne est lâche (le vol) et nulle quand elle est tendue
+// (la traction). Sans ça la chaîne était un segment rigide, ce qui est le
+// détail qui trahissait le plus l'animation.
+function chaine(g, x0, y0, x1, y1, mou = 0) {
+  const d = Math.hypot(x1 - x0, y1 - y0);
+  const n = Math.max(2, Math.round(d / 9));
+  const mx = (x0 + x1) / 2, my = (y0 + y1) / 2 + mou;
+  const pt = u => ({
+    x: (1-u)*(1-u)*x0 + 2*(1-u)*u*mx + u*u*x1,
+    y: (1-u)*(1-u)*y0 + 2*(1-u)*u*my + u*u*y1
+  });
+  g.strokeStyle = '#9aa3b0'; g.lineWidth = 2;
+  for (let i = 0; i <= n; i++) {
+    const u = i / n, p = pt(u), q = pt(Math.min(1, u + .04));
+    g.beginPath();
+    g.ellipse(p.x, p.y, 3.6, 2.3, Math.atan2(q.y - p.y, q.x - p.x), 0, TAU);
+    g.stroke();
+  }
+}
+
+// Joue la séquence complète. `t` est le temps dans le cycle, `dims` la scène.
+// Renvoie l'index de la phase en cours, pour allumer la frise.
+// Repère de portée au sol : une règle graduée entre le perso et la limite
+// d'accroche. Sans elle, sur une carte de 200 px, « moitié de terrain »,
+// « terrain entier » et « illimitée » butent toutes sur le bord et donnent
+// exactement la même image — c'est pourtant la seule chose que cette
+// section demande de comparer.
+function regle(g, x0, x1, y, portee) {
+  g.strokeStyle = 'rgba(255,210,62,.55)'; g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke();
+  for (const x of [x0, x1]) { g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x, y + 6); g.stroke(); }
+  g.fillStyle = 'rgba(255,210,62,.9)';
+  g.font = '9px Consolas, monospace';
+  // On écrit la portée DÉCLARÉE, pas la distance mesurée à l'écran : au-delà
+  // des quatre cinquièmes du terrain, toutes les portées butent sur le bord et
+  // affichent le même nombre de pixels, alors qu'elles ne disent pas la même
+  // règle. C'est la règle qu'on compare ici.
+  const txt = portee >= 1.1 ? 'illimitée' : Math.round(portee * 100) + '% du terrain';
+  g.fillText(txt, x0 + 4, y - 8);
+}
+
+function jouer(g, t, W, H, ech, marqueur) {
+  const solY = terrain(g, W, H);
+  cage(g, W, H, solY);
+  const D = durees();
+  const total = D.arme + D.vol + D.accroche + D.retour + D.relance + .35;
+  const tt = t % total;
+
+  const spr = bati([...TETE, ...CORPS], PAL, ech);
+  const sprArme = bati([...TETE, ...CORPS_ARME], PAL, ech);
+  const sprLance = bati([...TETE, ...CORPS_LANCE], PAL, ech);
+  const px = W * .13, py = solY - spr.height;
+  const mainX = px + spr.width * .82, mainY = py + spr.height * .42;
+
+  const portee = actuel('portee').portee;
+  // Le disque part vers la cage : c'est le but qu'on essaie d'empêcher.
+  // Le plafond est volontairement proche du bord : serré à W-60, les portées
+  // « terrain entier » et « deux tiers » butaient sur la même valeur et leurs
+  // deux cartes devenaient identiques.
+  const cibleX = Math.min(W - 30, px + (W - px) * Math.min(1.15, portee));
+  const cibleY = solY - 70;
+
+  let phase = 0, corps = spr;
+  // Décalage du personnage : le pas en avant de l'armement et la secousse de
+  // l'accroche s'appliquent au sprite lui-même, sinon ces variantes rendaient
+  // exactement la même image que les autres.
+  let decalX = 0, decalY = 0;
+  let bornes = [D.arme, D.arme+D.vol, D.arme+D.vol+D.accroche, D.arme+D.vol+D.accroche+D.retour,
+                D.arme+D.vol+D.accroche+D.retour+D.relance];
+
+  if (tt < bornes[0]) {                                  // ---- ARMEMENT
+    phase = 0; corps = sprArme;
+    const u = tt / D.arme;
+    disque(g, cibleX, cibleY, 9, tt*6);
+    const mode = actuel('armement').arme;
+    if (mode === 'moulinet') {
+      const a = u * TAU * 2;
+      crochet(g, mainX + Math.cos(a)*26, mainY - 28 + Math.sin(a)*16, a);
+      chaine(g, mainX, mainY, mainX + Math.cos(a)*26, mainY - 28 + Math.sin(a)*16);
+    } else if (mode === 'chaine') {
+      // La chaîne traîne au sol puis se tend : elle annonce la portée avant le tir.
+      const bx = mainX - 34 - u*46, by = solY - 5;
+      chaine(g, mainX, mainY, bx, by); crochet(g, bx, by, .25);
+    } else if (mode === 'accroupi') {
+      decalY = 5 * u; crochet(g, mainX - 16, mainY + 16, -.15);
+    } else if (mode === 'epaule') {
+      crochet(g, mainX - 11 - u*5, mainY - 3, -.12);
+    } else if (mode === 'fige') {
+      crochet(g, mainX - 26, mainY + 4, -.4);            // immobile, aucune amplitude
+    } else if (mode === 'vapeur') {
+      crochet(g, mainX - 20 - u*10, mainY + 4, -.4);
+      g.fillStyle = 'rgba(214,226,240,.34)';
+      for (let i = 0; i < 4; i++) {
+        g.beginPath(); g.arc(px + ech*1.5, py + ech*7 - i*6 - u*10, 3 + i*1.4, 0, TAU); g.fill();
+      }
+    } else if (mode === 'pas') {
+      decalX = sortieCubique(u) * 9;                      // il avance en armant
+      crochet(g, mainX - 20 - u*10 + decalX, mainY + 4, -.4);
+    } else if (mode !== 'aucun') {
+      // Anticipation : le bras part vite en arrière, se pose, puis amorce un
+      // retour vers l'avant juste avant le lancer. C'est ce contre-mouvement
+      // qui fait qu'on sent l'élan au lieu d'un simple glissement.
+      const recul = u < .72 ? sortieCubique(u / .72) : 1 - (u - .72) / .28 * .45;
+      const bras = -18 - recul * 13;
+      crochet(g, mainX + bras, mainY + 4 - recul * 3, -.35 - recul * .25);
+      chaine(g, mainX, mainY, mainX + bras, mainY + 4 - recul * 3, 5);
+    }
+  } else if (tt < bornes[1]) {                           // ---- VOL
+    phase = 1; corps = sprLance;
+    const u = (tt - bornes[0]) / D.vol;
+    const mode = actuel('vol').vol;
+    const p = pointVol(u, mainX, mainY, cibleX, cibleY, mode);
+    const angle = (() => {                                // le crochet suit sa vitesse
+      const q = pointVol(Math.max(0, u - .05), mainX, mainY, cibleX, cibleY, mode);
+      return Math.atan2(p.y - q.y, p.x - q.x);
+    })();
+    // La chaîne est encore lâche pendant le vol : le mou diminue à mesure
+    // qu'elle se déroule et disparaît quand elle arrive au bout.
+    chaine(g, mainX, mainY, p.x, p.y, 16 * (1 - u) + 3);
+    if (mode === 'trainee') {                             // sillage du crochet
+      for (let i = 3; i >= 1; i--) {
+        const q = pointVol(Math.max(0, u - i * .07), mainX, mainY, cibleX, cibleY, mode);
+        g.globalAlpha = .13 * (4 - i);
+        crochet(g, q.x, q.y, angle);
+      }
+      g.globalAlpha = 1;
+    }
+    crochet(g, p.x, p.y, mode === 'tournant' ? u*TAU*3 : angle);
+    disque(g, cibleX, cibleY, 9, tt*6);
+  } else if (tt < bornes[2]) {                           // ---- ACCROCHE
+    phase = 2; corps = sprLance;
+    const u = (tt - bornes[1]) / D.accroche;
+    // La chaîne claque et se tend d'un coup : le mou tombe à zéro très vite.
+    chaine(g, mainX, mainY, cibleX, cibleY, 9 * Math.pow(1 - u, 4));
+    crochet(g, cibleX, cibleY, Math.atan2(cibleY - mainY, cibleX - mainX));
+    const mode = actuel('accroche').acc;
+    // Deux images de blanc pur au contact. C'est court, mais c'est ce qui
+    // donne le « coup » : sans ça l'accroche est une transition molle.
+    if (u < .12 && mode !== 'rien') {
+      g.fillStyle = `rgba(255,255,255,${.5 * (1 - u / .12)})`;
+      g.fillRect(0, 0, W, H);
+    }
+    if (mode === 'eclat' || mode === 'arretEclat') eclat(g, cibleX, cibleY, 1 - u*.5);
+    if (mode === 'anneau') { g.strokeStyle = `rgba(255,226,140,${1-u})`; g.lineWidth = 4*(1-u)+1;
+      g.beginPath(); g.arc(cibleX, cibleY, u*38, 0, TAU); g.stroke(); }
+    if (mode === 'etincelles') { g.fillStyle = 'rgba(255,226,140,.9)';
+      for (let i=0;i<7;i++){ const a=i*.9+u*3; g.fillRect(cibleX+Math.cos(a)*(9+u*16), cibleY+Math.sin(a)*(9+u*16), 3, 2); } }
+    // Le temps d'arrêt et la secousse doivent se voir sur une image figée,
+    // sinon ces cartes sont indiscernables de « rien » : des traits d'impact
+    // pour l'un, un décalage du personnage pour l'autre.
+    if (mode === 'arret' || mode === 'arretEclat') {
+      g.strokeStyle = 'rgba(255,240,190,.85)'; g.lineWidth = 2;
+      for (let i = 0; i < 6; i++) { const a = i * (TAU/6) + .3;
+        g.beginPath();
+        g.moveTo(cibleX + Math.cos(a)*13, cibleY + Math.sin(a)*13);
+        g.lineTo(cibleX + Math.cos(a)*(21 + (1-u)*7), cibleY + Math.sin(a)*(21 + (1-u)*7));
+        g.stroke(); }
+    }
+    if (mode === 'secousse') { decalX = Math.sin(u*38)*4; decalY = Math.cos(u*31)*3; }
+    if (mode === 'claque') {
+      g.strokeStyle = 'rgba(200,210,225,.8)'; g.lineWidth = 2;
+      for (const o of [-5, 5]) { g.beginPath();
+        g.moveTo(mainX, mainY + o); g.lineTo(cibleX, cibleY + o); g.stroke(); }
+    }
+    if (mode === 'stop') {
+      g.strokeStyle = 'rgba(53,224,255,.7)'; g.lineWidth = 2;
+      for (let i = 1; i <= 3; i++) { g.beginPath();
+        g.moveTo(cibleX + 14 + i*7, cibleY - 5); g.lineTo(cibleX + 10 + i*7, cibleY + 5); g.stroke(); }
+    }
+    if (mode === 'ralenti') {
+      g.fillStyle = 'rgba(10,18,32,.28)'; g.fillRect(0, 0, W, H);
+    }
+    // Le disque encaisse : il s'écrase au contact puis reprend sa forme.
+    disque(g, cibleX, cibleY, 9, 0, Math.max(0, 1 - u * 3.2));
+  } else if (tt < bornes[3]) {                           // ---- RETOUR
+    phase = 3; corps = sprLance;
+    let u = (tt - bornes[2]) / D.retour;
+    const mode = actuel('retour').ret;
+    if (mode === 'seche') u = sortieCubique(Math.min(1, u*1.6));
+    else if (mode === 'accel') u = entreeCubique(u);
+    else if (mode === 'acoups') u = Math.floor(u*5)/5;
+    else if (mode === 'maillons') u = entreeSortie(u);   // il s'arrache, puis emballe
+    else u = entreeSortie(u);
+    // Où le disque s'arrête. « Devant lui » le pose nettement plus court, comme
+    // les 3 m de la référence : c'est ce qui laisse la place au geste de
+    // relance. Sans ce cas distinct il arrivait au même endroit que le retour
+    // en maillons, et les deux cartes montraient exactement la même image.
+    const arrivee = mode === 'main' ? 1 : mode === 'devant' ? .58 : .82;
+    const uu = u * arrivee;
+    let dx = cibleX + (mainX - cibleX) * uu, dy = cibleY + (mainY - cibleY) * uu;
+    if (mode === 'courbe') dy -= Math.sin(u*Math.PI) * 40;
+    // La chaîne se ravale : elle reste tendue au début de la traction puis
+    // reprend un peu de mou en arrivant, quand elle n'est plus sous tension.
+    chaine(g, mainX, mainY, dx, dy, 4 * u);
+    // Sillage court derrière le disque tiré : c'est ce qui donne la vitesse.
+    const trace = [];
+    for (let i = 4; i >= 1; i--) {
+      const k = Math.max(0, uu - i * .055);
+      trace.push({ x: cibleX + (mainX - cibleX) * k, y: cibleY + (mainY - cibleY) * k });
+    }
+    if (mode === 'trainee' || mode === 'maillons' || mode === 'seche') sillage(g, trace);
+    disque(g, dx, dy, 9, mode === 'tournant' ? tt*22 : 0);
+  } else if (tt < bornes[4]) {                           // ---- RELANCE
+    phase = 4; corps = sprLance;
+    const u = (tt - bornes[3]) / D.relance;
+    const mode = actuel('relance').rel;
+    if (mode === 'aucune') { disque(g, mainX, mainY, 9, 0); }
+    else if (mode === 'fenetre') {
+      // Le disque tenu en main, et un réticule qui balaie : on doit lire qu'on
+      // a la main sur la visée, pas qu'il ne se passe rien. Un simple disque
+      // immobile donnait l'impression que l'ultime s'était arrêté en panne.
+      const bat = .5 + .5 * Math.sin(u * 18);
+      g.strokeStyle = `rgba(255,210,62,${.25 + .35 * bat})`; g.lineWidth = 2;
+      g.beginPath(); g.arc(mainX, mainY, 15 + bat * 4, 0, TAU); g.stroke();
+      const vise = Math.sin(u * 3.4) * .45;                // la visée balaie
+      g.strokeStyle = 'rgba(255,210,62,.3)'; g.lineWidth = 1.5;
+      g.setLineDash([5, 5]);
+      g.beginPath(); g.moveTo(mainX, mainY);
+      g.lineTo(mainX + Math.cos(vise) * 150, mainY + Math.sin(vise) * 150);
+      g.stroke(); g.setLineDash([]);
+      disque(g, mainX, mainY - bat * 2, 9, u * 3);
+    }
+    else if (mode === 'flourish') { const a = u*TAU*2;
+      crochet(g, mainX + Math.cos(a)*24, mainY - 30 + Math.sin(a)*15, a);
+      disque(g, mainX, mainY, 9, 0); }
+    else if (mode === 'melee') {
+      // Il frappe le disque au crochet au lieu de le lancer : l'acier reste
+      // visible sur le disque, et le disque part sans traînée de tir.
+      const lx = mainX + (W - mainX) * u * .9;
+      crochet(g, mainX + 26, mainY - 6, .5);
+      disque(g, lx, mainY - 8, 9, u*26);
+    }
+    else {
+      const lx = mainX + (W - mainX) * u * (mode === 'avance' ? 1.05 : 1.15);
+      const ly = mode === 'cloche' ? mainY - Math.sin(u*Math.PI)*70
+               : mode === 'rasante' ? mainY + 34 : mainY;
+      if (mode === 'charge') eclat(g, lx, ly, .5);
+      if (mode === 'avance') decalX = u * 14;             // il gagne du terrain
+      disque(g, lx, ly, mode === 'charge' ? 11 : 9, u*20);
+      g.strokeStyle = 'rgba(53,224,255,.35)'; g.lineWidth = 3;
+      g.beginPath(); g.moveTo(mainX, mainY); g.lineTo(lx, ly); g.stroke();
+      if (mode === 'double') {                            // un second disque suit
+        const l2 = mainX + (W - mainX) * Math.max(0, u - .3) * 1.15;
+        disque(g, l2, ly, 9, u*20);
+      }
+    }
+  } else {                                               // ---- repos
+    phase = -1;
+    disque(g, W*.55, cibleY, 9, tt*4);
+  }
+
+  ombre(g, px + decalX + corps.width/2, solY + 2, corps.width * .34);
+  g.imageSmoothingEnabled = false;
+  g.drawImage(corps, px + decalX, py + decalY);
+  if (marqueur === 'portee') regle(g, px + corps.width/2, cibleX, solY + 14, portee);
+  return phase;
+}
+
+/* ===================== VÉRIFICATION ===================== */
+const bad = [];
+const MIN_DESC = 40;
+for (const s of SECTIONS) {
+  if (!s.note || s.note.trim().length < MIN_DESC) bad.push(s.id + ' : la section n\'explique pas ce qu\'on y juge');
+  if (s.variantes.length !== 10) bad.push(s.id + ' : ' + s.variantes.length + ' variantes (attendu 10)');
+  for (const va of s.variantes) {
+    if (!va.nom || !va.nom.trim()) bad.push(s.id + '-' + va.id + ' : pas de nom');
+    if (!va.desc || va.desc.trim().length < MIN_DESC) bad.push(s.id + '-' + va.id + ' : explication manquante ou trop courte');
+  }
+}
+for (const r of [TETE, CORPS, CORPS_ARME, CORPS_LANCE]) {
+  r.forEach((l, i) => {
+    if (l.length !== 16) bad.push('sprite[' + i + '] : ' + l.length + ' colonnes (attendu 16)');
+    for (const ch of l) if (ch !== '.' && !PAL[ch]) bad.push('sprite[' + i + '] : lettre « ' + ch + ' » absente de la palette');
+  });
+}
+const boite = document.getElementById('errs');
+boite.textContent = bad.length
+  ? bad.length + ' à corriger :\n' + bad.slice(0, 20).join('\n')
+  : 'OK — 6 sections de 10 variantes, toutes expliquées, et les sprites tiennent le gabarit 16 × 20.';
+if (bad.length) boite.className = 'bad';
+
+/* ===================== LA PAGE ===================== */
+(function poserFrise() {
+  const f = document.getElementById('frise');
+  PHASES.forEach(p => {
+    const d = document.createElement('div'); d.className = 'ph'; d.dataset.ph = p.id;
+    d.innerHTML = p.nom + '<i>' + p.detail + '</i>';
+    f.appendChild(d);
+  });
+})();
+
+const cartes = [];
+(function poserSections() {
+  const hote = document.getElementById('sections');
+  for (const s of SECTIONS) {
+    const h2 = document.createElement('h2'); h2.textContent = s.titre; hote.appendChild(h2);
+    const p = document.createElement('p'); p.className = 'note'; p.textContent = s.note; hote.appendChild(p);
+    const rangee = document.createElement('div'); rangee.className = 'row';
+    const reserve = document.createElement('div'); reserve.className = 'row reserve';
+    hote.appendChild(rangee);
+    s.variantes.forEach((va, i) => {
+      const card = document.createElement('div');
+      card.className = 'card' + (va.id === choix[s.id] ? ' on' : '');
+      const lbl = document.createElement('div'); lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + va.desc;
+      const cv = document.createElement('canvas'); cv.width = 200; cv.height = 118;
+      card.appendChild(lbl); card.appendChild(cv);
+      // Une variante retenue qui vit dans la réserve doit rester visible :
+      // sinon la page s'ouvre sur un choix marqué nulle part (c'est le cas
+      // du vol « droit avec traînée », en I).
+      if (i >= 5 && va.id === choix[s.id]) reserve.classList.add('ouverte');
+      (i < 5 ? rangee : reserve).appendChild(card);
+      cartes.push({ cv, s, va, card });
+      card.addEventListener('click', () => {
+        choix[s.id] = va.id;
+        cartes.filter(c => c.s === s).forEach(c => c.card.classList.toggle('on', c.va === va));
+        rafraichir();
+      });
+    });
+    const bouton = document.createElement('button');
+    bouton.className = 'plus';
+    bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
+    bouton.addEventListener('click', () => {
+      reserve.classList.toggle('ouverte');
+      bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
+    });
+    hote.appendChild(bouton); hote.appendChild(reserve);
+  }
+})();
+
+// Les cartes sont figées sur l'instant le plus parlant de LEUR phase : on
+// compare des images arrêtées, pas six animations qui tournent en même temps.
+// La portée se juge en plein vol, chaîne bien déployée : à 0,75 on voit la
+// distance parcourue. Elle était réglée pour tomber après la fin du vol, donc
+// en pleine phase d'accroche — ses cartes montraient l'accroche, pas la portée.
+const INSTANT = { armement:.18, vol:.5, accroche:.5, retour:.55, relance:.5, portee:.75 };
+function peindreCartes() {
+  for (const { cv, s, va } of cartes) {
+    const g = cv.getContext('2d');
+    // On force temporairement le choix de cette carte pour la peindre.
+    const memoire = choix[s.id];
+    choix[s.id] = va.id;
+    const D = durees();
+    const debut = { armement:0, vol:D.arme, accroche:D.arme+D.vol,
+                    retour:D.arme+D.vol+D.accroche, relance:D.arme+D.vol+D.accroche+D.retour,
+                    portee:D.arme };
+    const duree = { armement:D.arme, vol:D.vol, accroche:D.accroche,
+                    retour:D.retour, relance:D.relance, portee:D.vol };
+    jouer(g, debut[s.id] + duree[s.id] * INSTANT[s.id], cv.width, cv.height, ECH_C,
+          s.id === 'portee' ? 'portee' : null);
+    choix[s.id] = memoire;
+  }
+}
+
+function codeChoix() { return SECTIONS.map((s, i) => (i+1) + choix[s.id]).join(' '); }
+
+function rafraichir() {
+  peindreCartes();
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value = codeChoix();
+}
+
+(function brancherCopie() {
+  const btn = document.getElementById('btnCopier'), champ = document.getElementById('codeChoix');
+  btn.addEventListener('click', async () => {
+    const texte = codeChoix(); let ok = false;
+    try { await navigator.clipboard.writeText(texte); ok = true; }
+    catch (e) { champ.select(); champ.setSelectionRange(0, 999);
+      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; } }
+    btn.textContent = ok ? '✓ copié' : 'Ctrl+C pour copier';
+    btn.classList.toggle('ok', ok);
+    setTimeout(() => { btn.textContent = 'copier mes choix'; btn.classList.remove('ok'); }, 1800);
+  });
+})();
+
+const cvA = document.getElementById('cvApercu'), gA = cvA.getContext('2d');
+const cases = [...document.querySelectorAll('.ph')];
+(function boucle(ms) {
+  const phase = jouer(gA, ms/1000, cvA.width, cvA.height, ECH);
+  cases.forEach((c, i) => c.classList.toggle('on', i === phase));
+  requestAnimationFrame(boucle);
+})(0);
+
+rafraichir();
+</script>
+</body>
+</html>

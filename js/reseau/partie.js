@@ -234,8 +234,8 @@ function commentaireNeuf() {
 
 function scenesPourLeReseau() {
   const c = G.cine, b = G.bell, h = G.hack, l = G.leg, t = G.tempete;
-  const ba = G.banner, zo = G.zoom, ra = G.rafale;
-  if (!c && !b && !h && !l && !t && !ba && !zo && !ra) return 0;
+  const ba = G.banner, zo = G.zoom, ra = G.rafale, gr = G.grappin;
+  if (!c && !b && !h && !l && !t && !ba && !zo && !ra && !gr) return 0;
   const q = p => (p === G.p1 ? 1 : (p === G.p2 ? 2 : 0));
   return {
     // Le bandeau qui annonce l'ultime, et le zoom du Perfect Dive. Ils vivent
@@ -252,7 +252,12 @@ function scenesPourLeReseau() {
     // deux côtés au même rythme puisque la cadence est fixe et la dispersion
     // semée. Les transmettre une par une aurait gonflé chaque paquet d'une
     // trentaine d'entrées pour un gain nul.
-    ra: ra ? [q(ra.owner), +ra.t.toFixed(2), ra.dur] : 0
+    ra: ra ? [q(ra.owner), +ra.t.toFixed(2), ra.dur] : 0,
+    // Le crochet relaie sa position, pas seulement son minuteur : contrairement
+    // aux balles de la rafale, il n'y en a qu'un et sa trajectoire se corrige
+    // en vol sur un disque qui bouge. Le recalculer chez l'invité l'aurait fait
+    // diverger de celui que l'hôte arbitre.
+    gr: gr ? [q(gr.owner), gr.phase, +gr.t.toFixed(2), Math.round(gr.hx), Math.round(gr.hy)] : 0
   };
 }
 
@@ -262,7 +267,7 @@ function scenesPourLeReseau() {
 // resonnerait à chaque fois.
 function appliquerScenes(sc) {
   const j = n => (n === 1 ? G.p1 : (n === 2 ? G.p2 : null));
-  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.banner = null; G.zoom = null; G.rafale = null; return; }
+  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.banner = null; G.zoom = null; G.rafale = null; G.grappin = null; return; }
   const ba = sc.ba;
   if (ba) { if (!G.banner || G.banner.text !== ba[0]) G.banner = { text: ba[0], color: ba[1], t: ba[2], dur: ba[3] };
     else G.banner.t = ba[2]; }
@@ -294,6 +299,11 @@ function appliquerScenes(sc) {
   if (ra) { if (!G.rafale) G.rafale = { owner: j(ra[0]), t: 0, dur: ra[2], prochainTir: 0 };
     G.rafale.owner = j(ra[0]); G.rafale.t = ra[1]; G.rafale.dur = ra[2]; }
   else G.rafale = null;
+  const gr = sc.gr;
+  if (gr) { if (!G.grappin) G.grappin = { owner: j(gr[0]), phase: gr[1], t: 0, ax: 0, ay: 0, hx: gr[3], hy: gr[4], prise: false, verrou: true };
+    G.grappin.owner = j(gr[0]); G.grappin.phase = gr[1]; G.grappin.t = gr[2];
+    G.grappin.hx = gr[3]; G.grappin.hy = gr[4]; }
+  else G.grappin = null;
 }
 
 // ---------------------------------------------------------------------------

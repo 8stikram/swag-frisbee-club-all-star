@@ -2,7 +2,7 @@ import { G, comment } from './state.js';
 import { SPECIALS } from '../data/specials.js';
 import { sfx } from '../audio/audio.js';
 import { addPopup, burst, dust } from './fx.js';
-import { dropDisc } from './actions.js';
+import { dropDisc, onCatch } from './actions.js';
 import { gauss, rand } from '../core/utils.js';
 import { gaussJeu, randJeu } from '../core/alea.js';
 import { jeSimule } from '../reseau/partie.js';
@@ -86,6 +86,121 @@ const BALLE_R = 26;
 // sans effet. À cette valeur, une rafale complète le repousse d'un bon tiers
 // de terrain — c'est le sens de l'ultime.
 const POUSSEE = 420;
+
+// ---------------------------------------------------------------------------
+// Crochet de Chopper. Les cinq phases sont calquées sur le Chain Hook
+// d'Overwatch, dont les proportions ont servi de repère de rythme :
+// incantation 0,1 + 0,2 s, projectile à 62 m/s, latence de 0,3 s à l'accroche,
+// puis la cible ramenée à 3 m devant — pas dans les mains, ce qui laisse la
+// place au geste qui suit. Les durées ici sont un peu étirées : un terrain de
+// disque n'a pas l'échelle d'un couloir d'Overwatch.
+const GR_ARME = .3;        // armement, le bras part en arrière
+const GR_ACCROCHE = .3;    // le temps d'arrêt qui donne son poids à la prise
+const GR_FENETRE = .8;     // fenêtre de contrôle : le disque attend en main
+const GR_V = 1150;         // vitesse du crochet, aller
+const GR_RETOUR_V = 900;   // vitesse de la traction, retour
+const GR_PORTEE = 900;     // portée : tout le terrain (court left 70 → right 890)
+const GR_R = 30;           // rayon d'accroche sur le disque
+
+export function updateGrappin(dt) {
+  const g = G.grappin;
+  if (!g) return;
+  const p = g.owner;
+  g.t += dt;
+
+  // Il est planté pendant tout l'ultime, comme le Chain Hook qui est canalisé.
+  // Sans ça il continuait de glisser sur le terrain, le crochet accroché au
+  // disque, ce qui rendait la chaîne incompréhensible.
+  p.vx = 0; p.vy = 0;
+
+  const mainX = p.x + p.face * 14, mainY = p.y - 18;
+
+  // Le disque reste figé pendant l'armement et le vol du crochet. C'est la
+  // condition pour que l'ultime serve à quelque chose : sans ça le disque
+  // franchissait la ligne avant que le crochet l'atteigne, et un ultime censé
+  // annuler un but arrivait toujours trop tard.
+  if (g.phase === 'arme' || g.phase === 'vol') {
+    const d = G.disc;
+    if (d && !d.heldBy) { d.vx = 0; d.vy = 0; }
+  }
+
+  if (g.phase === 'arme') {
+    if (g.t >= GR_ARME) { g.phase = 'vol'; g.t = 0; g.hx = mainX; g.hy = mainY; sfx('dash'); }
+    return;
+  }
+
+  if (g.phase === 'vol') {
+    // Le crochet se guide sur le disque tant qu'il est libre : c'est un
+    // ultime de sauvetage, il doit rattraper un disque qui bouge encore.
+    const d = G.disc;
+    if (g.verrou && d && !d.heldBy) {
+      const dx = d.x - g.hx, dy = d.y - g.hy, n = Math.hypot(dx, dy) || 1;
+      g.ax = dx / n; g.ay = dy / n;
+    }
+    g.hx += g.ax * GR_V * dt; g.hy += g.ay * GR_V * dt;
+    const parcouru = Math.hypot(g.hx - mainX, g.hy - mainY);
+    // L'accroche est de l'arbitrage : l'invité voit le crochet voler, mais
+    // c'est l'hôte qui décide s'il mord et le lui envoie par l'état.
+    if (jeSimule() && d && !d.heldBy && Math.hypot(d.x - g.hx, d.y - g.hy) < GR_R) {
+      g.phase = 'accroche'; g.t = 0; g.prise = true;
+      g.hx = d.x; g.hy = d.y;
+      d.vx = 0; d.vy = 0; d.free = false;
+      G.shake = Math.max(G.shake, 9);
+      burst(d.x, d.y, '#e8c23a', 8); sfx('bigbounce');
+      addPopup('HARPONNÉ !', '#e8c23a', 15, .9, d.y - 50);
+    } else if (parcouru > GR_PORTEE) {
+      // Rentré bredouille : la chaîne se ravale et l'ultime est perdu. Le
+      // disque récupère la vitesse qu'il avait à l'activation — le laisser
+      // figé aurait bloqué le point pour de bon.
+      g.phase = 'vide'; g.t = 0; sfx('deny');
+      if (d && !d.heldBy && g.vitesse) { d.vx = g.vitesse.x; d.vy = g.vitesse.y; }
+      addPopup('DANS LE VIDE...', '#9fb4dd', 12, .8, p.y - 56);
+    }
+    return;
+  }
+
+  if (g.phase === 'accroche') {
+    // Le disque reste collé au crochet pendant le temps d'arrêt.
+    const d = G.disc;
+    if (d && !d.heldBy) { d.x = g.hx; d.y = g.hy; d.vx = 0; d.vy = 0; }
+    if (g.t >= GR_ACCROCHE) { g.phase = 'retour'; g.t = 0; }
+    return;
+  }
+
+  if (g.phase === 'retour' || g.phase === 'vide') {
+    // La chaîne se ravale vers la main. Dans les deux cas le crochet revient :
+    // seule la présence du disque au bout change.
+    const dx = mainX - g.hx, dy = mainY - g.hy, n = Math.hypot(dx, dy);
+    const pas = GR_RETOUR_V * dt;
+    if (n <= pas) {
+      g.hx = mainX; g.hy = mainY;
+      if (g.phase === 'vide') { G.grappin = null; return; }
+      // Il récupère le disque. On passe par onCatch pour hériter de tout ce
+      // qu'une réception normale déclenche (jauge, compteurs, replay), donc
+      // uniquement chez celui qui simule — sans quoi l'invité jouerait une
+      // prise que l'hôte n'a pas décidée.
+      if (jeSimule()) {
+        const d = G.disc;
+        if (d && !d.heldBy) onCatch(p, 0, 0, 0);
+      }
+      g.phase = 'fenetre'; g.t = 0;
+      G.shake = Math.max(G.shake, 6);
+      return;
+    }
+    g.hx += dx / n * pas; g.hy += dy / n * pas;
+    const d = G.disc;
+    if (g.phase === 'retour' && d && !d.heldBy) { d.x = g.hx; d.y = g.hy; d.vx = 0; d.vy = 0; }
+    return;
+  }
+
+  if (g.phase === 'fenetre') {
+    // Fenêtre de contrôle : il garde le disque en main un instant, le temps
+    // de viser sa relance. C'est l'équivalent du combo « crochet → tir » du
+    // personnage d'origine, mais c'est le joueur qui choisit la direction.
+    if (g.t >= GR_FENETRE || !p.holding) { G.grappin = null; }
+    return;
+  }
+}
 
 export function updateRafale(dt) {
   const r = G.rafale;

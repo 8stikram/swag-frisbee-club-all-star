@@ -181,6 +181,50 @@ export const SPECIALS = {
     }
   },
 
+  grappin: {
+    name: 'CROCHET DE CHOPPER',
+    desc: 'Il harponne le disque en vol et se le ramène en main.',
+    // Il ne doit PAS avoir le disque : tout l'ultime consiste à aller le
+    // chercher. Le garde-fou est dans `cast` — sans disque libre à accrocher,
+    // le crochet part dans le vide et gâche la jauge.
+    needsDisc: false,
+    cast(p) {
+      p.meter = 0; p.stats.specials++;
+      const d = G.disc;
+      // La visée vient de la fiche d'intentions, jamais de la souris : un
+      // joueur distant n'a pas de curseur sur cette machine, et son crochet
+      // partirait vers le curseur de l'hôte.
+      const c = p.cmd;
+      let vx = (c && (c.visee.x || c.visee.y)) ? c.visee.x : (p.side === 1 ? 1 : -1);
+      let vy = (c && (c.visee.x || c.visee.y)) ? c.visee.y : 0;
+      // Si le disque est libre et à portée, le crochet se verrouille dessus :
+      // c'est un ultime de sauvetage, pas un tir d'adresse. Sinon il part
+      // droit devant et revient bredouille.
+      const cible = (d && !d.heldBy) ? d : null;
+      if (cible) { const dx = cible.x - p.x, dy = cible.y - p.y;
+        const n = Math.hypot(dx, dy) || 1; vx = dx / n; vy = dy / n; }
+      p.face = vx >= 0 ? 1 : -1;
+      // Le disque se fige à l'instant de l'activation, et reste figé jusqu'à
+      // ce que le crochet le morde. Sans ça l'ultime ne servait à rien : le
+      // disque franchissait la ligne pendant l'armement et le vol du crochet,
+      // alors que tout son intérêt est d'annuler un but déjà parti. Sa vitesse
+      // est mise de côté pour lui être rendue si le crochet le rate.
+      const vitesse = cible ? { x: cible.vx, y: cible.vy } : null;
+      if (cible) { cible.vx = 0; cible.vy = 0; }
+      // Les cinq phases du Chain Hook d'origine : armement, vol, accroche,
+      // traction, fenêtre de contrôle. `phase` avance dans updateGrappin.
+      G.grappin = {
+        owner: p, phase: 'arme', t: 0,
+        ax: vx, ay: vy,
+        hx: p.x, hy: p.y - 18,      // position courante du crochet
+        prise: false, verrou: !!cible, vitesse
+      };
+      G.banner = { text: 'CROCHET DE CHOPPER !!', color: '#e8c23a', t: 0, dur: 1.3 };
+      G.shake = 8;
+      sfx('throw'); comment('IL VA CHERCHER LE DISQUE !');
+    }
+  },
+
   rafale: {
     name: 'RAFALE DE MAMIE',
     desc: 'Elle mitraille dans la direction visée et repousse l\'adversaire.',

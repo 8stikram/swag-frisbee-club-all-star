@@ -2128,6 +2128,60 @@ function drawBalles() {
   ctx.restore();
 }
 
+/* Crochet de Chopper : la chaîne et son crochet, de la main jusqu'au disque.
+   La chaîne pend sous son propre poids — le mou est fort à l'aller, quand elle
+   se déroule, et nul pendant la traction, quand elle est sous tension. Un
+   segment rigide était ce qui trahissait le plus l'animation. */
+function drawGrappin() {
+  const g = G.grappin;
+  const p = g.owner;
+  if (!p) return;
+  const mainX = p.x + p.face * 14, mainY = p.y - 18;
+  // Pendant l'armement le crochet est encore dans la main, en arrière.
+  const enMain = g.phase === 'arme' || g.phase === 'fenetre';
+  const hx = enMain ? mainX - p.face * 18 : g.hx;
+  const hy = enMain ? mainY + 4 : g.hy;
+  const mou = g.phase === 'vol' ? 22 : g.phase === 'accroche' ? 4 : 8;
+
+  const d = Math.hypot(hx - mainX, hy - mainY);
+  const n = Math.max(2, Math.round(d / 11));
+  const mx = (mainX + hx) / 2, my = (mainY + hy) / 2 + mou;
+  const pt = u => ({
+    x: (1 - u) * (1 - u) * mainX + 2 * (1 - u) * u * mx + u * u * hx,
+    y: (1 - u) * (1 - u) * mainY + 2 * (1 - u) * u * my + u * u * hy
+  });
+  ctx.save();
+  ctx.strokeStyle = '#9aa3b0'; ctx.lineWidth = 2.4;
+  for (let i = 0; i <= n; i++) {
+    const u = i / n, a = pt(u), b = pt(Math.min(1, u + .05));
+    ctx.beginPath();
+    ctx.ellipse(a.x, a.y, 4.2, 2.6, Math.atan2(b.y - a.y, b.x - a.x), 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  // Le crochet s'oriente sur sa vitesse, pas sur la cible : c'est ce qui le
+  // rend crédible quand la chaîne se ravale en courbe.
+  const q = pt(.92);
+  ctx.translate(hx, hy);
+  ctx.rotate(Math.atan2(hy - q.y, hx - q.x));
+  ctx.strokeStyle = '#c8ccd4'; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(3, 0); ctx.stroke();
+  ctx.beginPath(); ctx.arc(3, -8, 8, Math.PI * .5, Math.PI * 1.75); ctx.stroke();
+  ctx.fillStyle = '#e8eaef';
+  ctx.beginPath(); ctx.moveTo(9, -13); ctx.lineTo(16, -18); ctx.lineTo(10, -7); ctx.fill();
+  ctx.restore();
+
+  // Fenêtre de contrôle : un anneau qui bat autour du disque en main, pour
+  // qu'on lise qu'on a la main sur la relance et pas que l'ultime s'est arrêté.
+  if (g.phase === 'fenetre') {
+    const bat = .5 + .5 * Math.sin(g.t * 18);
+    ctx.save();
+    ctx.strokeStyle = `rgba(232,194,58,${.25 + .4 * bat})`;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(mainX, mainY, 17 + bat * 5, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+}
+
 function drawBell() {
   const b = G.bell;
   // L'image se charge de façon asynchrone : tant qu'elle n'est pas prête on ne
@@ -2418,6 +2472,7 @@ export function render() {
   if (G.leg && G.leg.phase !== 'shadow') drawLeg();
   if (G.bell) drawBell();
   if (G.balles.length) drawBalles();
+  if (G.grappin) drawGrappin();
   if (G.ondesBut.length) drawOndesBut();
   drawParticles();
   // Le viseur suit la souris EN ESPACE MONDE (Mouse.x/y sont déjà corrigés à

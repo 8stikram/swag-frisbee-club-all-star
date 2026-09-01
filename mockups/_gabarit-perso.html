@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Gabarit — mockup de personnage</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:34px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:960px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;
+        flex:1 1 0;min-width:186px;cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d5c8a}
+  .card.on{border-color:var(--or);transform:translateY(-2px)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:56px}
+  .lbl b{display:block;font-size:14px;color:var(--or);letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px;image-rendering:pixelated}
+  .reserve{display:none}
+  .reserve.ouverte{display:flex}
+  .plus{margin-top:9px;background:#132038;color:#9fb4dd;border:1px solid var(--edge);
+        border-radius:7px;padding:6px 13px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#1a2b48;color:var(--ink)}
+
+  /* --- Bandeau du haut : aperçu assemblé + comparaison au roster --- */
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 420px}
+  .apercu canvas{background:#0a1220}
+  .choix{font-size:11.5px;color:#9fb4dd;margin-top:9px;font-family:Consolas,monospace;line-height:1.7}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;
+             letter-spacing:1.2px}
+  .btnCopier{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#24395e}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .roster{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 320px}
+  .roster h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .rosterRow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .rosterOne{text-align:center}
+  .rosterOne canvas{background:#0a1220;border-radius:5px}
+  .rosterOne span{display:block;font-size:9.5px;color:#7f93b3;margin-top:3px;max-width:78px;
+                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rosterOne.neuf span{color:var(--or)}
+
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+  .stats{font-family:Consolas,monospace;font-size:11px;color:#9fb4dd;line-height:1.6;margin-top:7px}
+  .stats i{color:var(--or);font-style:normal}
+</style>
+</head>
+<body>
+
+<h1>GABARIT — remplacer par le nom du perso</h1>
+<p class="note">
+  <b>Ce fichier est un squelette à copier</b> vers <code>mockups/&lt;perso&gt;.html</code>, un fichier par
+  personnage, mis à jour sur place. Tout ce qu'il y a à écrire tient dans le bloc <code>PERSO</code> et
+  le tableau <code>SECTIONS</code> en bas : le moteur (terrain, aperçu cliquable, réserve, bande roster,
+  vérification du gabarit) ne bouge pas.
+  <br><br>
+  Chaque carte montre le <b>perso entier</b> avec la variante appliquée, posé sur un bout du vrai terrain
+  et à l'échelle du match (un pixel de sprite = 4,8 px à l'écran, SCALE 1,6 dans render.js). Clique une
+  carte pour la monter dans l'aperçu du haut : il se recompose et rejoue l'ultime en boucle.
+</p>
+
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvApercu" width="620" height="300"></canvas>
+    <div class="choix" id="choix"></div>
+    <div class="copier">
+      <input class="codeChoix" id="codeChoix" readonly>
+      <button class="btnCopier" id="btnCopier">copier mes choix</button>
+    </div>
+  </div>
+  <div class="roster">
+    <h3>À côté du roster en place</h3>
+    <div class="rosterRow" id="rosterRow"></div>
+    <p class="note" style="margin:9px 0 0;font-size:11px">
+      Le nouveau perso est en or. C'est ici qu'on voit s'il détonne : Isaac avait dû être refait
+      entièrement parce qu'il paraissait chétif à côté des autres.
+    </p>
+  </div>
+</div>
+
+<div id="sections"></div>
+
+<script type="module">
+// ---------------------------------------------------------------------------
+// Le roster réel est importé du jeu : la bande de comparaison montre donc
+// toujours les personnages tels qu'ils sont aujourd'hui, sans copie à
+// maintenir ici. C'est le seul lien avec le code du jeu — tout le reste du
+// mockup est autonome.
+// ---------------------------------------------------------------------------
+import { CHARS, ROSTER } from '../js/data/characters.js';
+
+const TAU = Math.PI * 2;
+// Échelle du match : SCALE 1,6 dans render.js, sprite dessiné en 48×60 unités
+// pour 16×20 pixels, soit 4,8 px d'écran par pixel de sprite. Les cartes
+// utilisent cette valeur pour qu'on juge la lisibilité réelle, pas un
+// agrandissement flatteur.
+const ECH_JEU = 4.8;
+const ECH_CARTE = 5;      // arrondi, à un dixième près du jeu
+const ECH_APERCU = 9;     // l'aperçu du haut a le droit d'être plus gros
+
+/* ===========================================================================
+   1. LE PERSONNAGE — c'est ici qu'on écrit.
+
+   `pal` : la palette de base. Une lettre absente ne lève AUCUNE erreur, le
+   pixel est simplement ignoré — d'où la vérification automatique plus bas.
+   `tete` / `corps` : 10 lignes de 16 caractères chacune. Gabarit commun à
+   tout le roster : largeur max 12 px (colonnes 1 à 12), jambes aux colonnes
+   3-4 et 9-10, yeux décalés d'un pixel à DROITE du centre (sans quoi le
+   miroir horizontal p.face est illisible quand le perso vise à la souris),
+   pas de contour noir.
+   =========================================================================== */
+const PERSO = {
+  nom: 'NOUVEAU PERSO',
+  // Libellé affiché sous le perso dans l'écran de sélection, comme KONOHA,
+  // RACCOON CITY ou MAISON DE MAMIE. Pas de variantes : on l'écrit ici.
+  univers: 'PROVENANCE',
+  pal: {
+    G: '#d9d9dd', g: '#a9a9b0',   // cheveux / ombre
+    S: '#eccba3', s: '#c99b6e',   // peau / ombre
+    E: '#241f1c',                 // yeux
+    K: '#241f1c',                 // bouche
+    V: '#4f6ea8', v: '#33487094', // vêtement / ombre
+    n: '#2b2320'                  // chaussures
+  },
+  tete: [
+    "....GGGGGG......",
+    "..GGGGGGGGGG....",
+    ".GGSSSSSSSSGG...",
+    ".GSSSSSSSSSSG...",
+    "..SSSSSSSSSS....",
+    "..SSEESSEESS....",
+    "..SSSSSSSSSS....",
+    "..SSSSSKKSSS....",
+    "...SSSSSSSS.....",
+    "...VVVVVVVV....."
+  ],
+  corps: [
+    "....VVVVVV......",
+    "SVVVVVVVVVVS....",
+    ".VVVVVVVVVVV....",
+    ".VVVVVVVVVVV....",
+    "..VVVVVVVVV.....",
+    "..VVVVVVVVVV....",
+    "..VVv....vVV....",
+    "..VVv....vVV....",
+    "..VVv....vVV....",
+    "...nn....nn....."
+  ]
+};
+
+/* ===========================================================================
+   2. LES SECTIONS.
+
+   Colonne vertébrale commune à tous les persos : tête, tenue, palette, pose
+   signature, ultime, animation, profil de jeu. On y ajoute autant de sections
+   SUR MESURE que le perso en demande (une arme, un familier, une monture…) —
+   elles se déclarent exactement pareil.
+
+   Chaque section porte 10 variantes : les 5 premières s'affichent, les 5
+   suivantes attendent derrière « plus de choix ». Une variante décrit ce
+   qu'elle REMPLACE, et rien d'autre :
+     tete   : 10 lignes           → change la tête
+     corps  : 10 lignes           → change le corps
+     pal    : objet partiel       → repeint (fusionné à la palette de base)
+     fx     : (g,cx,cy,t,cible)   → dessine par-dessus (ultime, arme, effet)
+     stats  : {spd,pow,ctl,charge}→ profil de jeu
+     anim   : {idle,run1,run2,…}  → jeux de poses
+   =========================================================================== */
+const SECTIONS = [
+  {
+    id: 'tete', titre: '1 · La tête',
+    note: 'Toujours 10 lignes. Les yeux restent décalés à droite.',
+    variantes: [
+      v('A', 'VARIANTE A', 'Décrire l\'allure, puis son avantage ET son inconvénient.', { tete: PERSO.tete }),
+      v('B', 'VARIANTE B', 'Un parti pris franchement différent, pas un réglage fin du A.', { tete: PERSO.tete }),
+      v('C', 'VARIANTE C', '', { tete: PERSO.tete }),
+      v('D', 'VARIANTE D', '', { tete: PERSO.tete }),
+      v('E', 'VARIANTE E', '', { tete: PERSO.tete }),
+      v('F', 'RÉSERVE F', '', { tete: PERSO.tete }),
+      v('G', 'RÉSERVE G', '', { tete: PERSO.tete }),
+      v('H', 'RÉSERVE H', '', { tete: PERSO.tete }),
+      v('I', 'RÉSERVE I', '', { tete: PERSO.tete }),
+      v('J', 'RÉSERVE J', '', { tete: PERSO.tete })
+    ]
+  },
+  {
+    id: 'tenue', titre: '2 · La tenue',
+    note: 'Le corps entier. Attention aux silhouettes anguleuses à bloc de couleur vive : elles virent vite au costume de super-héros.',
+    variantes: [
+      v('A', 'VARIANTE A', '', { corps: PERSO.corps }),
+      v('B', 'VARIANTE B', '', { corps: PERSO.corps }),
+      v('C', 'VARIANTE C', '', { corps: PERSO.corps }),
+      v('D', 'VARIANTE D', '', { corps: PERSO.corps }),
+      v('E', 'VARIANTE E', '', { corps: PERSO.corps }),
+      v('F', 'RÉSERVE F', '', { corps: PERSO.corps }),
+      v('G', 'RÉSERVE G', '', { corps: PERSO.corps }),
+      v('H', 'RÉSERVE H', '', { corps: PERSO.corps }),
+      v('I', 'RÉSERVE I', '', { corps: PERSO.corps }),
+      v('J', 'RÉSERVE J', '', { corps: PERSO.corps })
+    ]
+  },
+  {
+    id: 'palette', titre: '3 · La palette',
+    note: 'Même silhouette, teintes différentes. À juger sur le terrain : une couleur qui se noie sur le sol rend le perso illisible en match.',
+    variantes: [
+      v('A', 'TONS D\'ORIGINE', '', { pal: {} }),
+      v('B', 'PLUS CHAUD', '', { pal: { V: '#a8624f', v: '#70392c' } }),
+      v('C', 'PLUS FROID', '', { pal: { V: '#3f7d9b', v: '#28516b' } }),
+      v('D', 'PLUS SOMBRE', '', { pal: { V: '#39415c', v: '#232839' } }),
+      v('E', 'PLUS VIF', '', { pal: { V: '#6f5bd8', v: '#43349b' } }),
+      v('F', 'RÉSERVE F', '', { pal: {} }),
+      v('G', 'RÉSERVE G', '', { pal: {} }),
+      v('H', 'RÉSERVE H', '', { pal: {} }),
+      v('I', 'RÉSERVE I', '', { pal: {} }),
+      v('J', 'RÉSERVE J', '', { pal: {} })
+    ]
+  },
+  {
+    id: 'pose', titre: '4 · La pose signature',
+    note: 'La pose au repos, celle qu\'on voit le plus longtemps à l\'écran.',
+    variantes: [
+      v('A', 'VARIANTE A', '', { corps: PERSO.corps }),
+      v('B', 'VARIANTE B', '', { corps: PERSO.corps }),
+      v('C', 'VARIANTE C', '', { corps: PERSO.corps }),
+      v('D', 'VARIANTE D', '', { corps: PERSO.corps }),
+      v('E', 'VARIANTE E', '', { corps: PERSO.corps }),
+      v('F', 'RÉSERVE F', '', { corps: PERSO.corps }),
+      v('G', 'RÉSERVE G', '', { corps: PERSO.corps }),
+      v('H', 'RÉSERVE H', '', { corps: PERSO.corps }),
+      v('I', 'RÉSERVE I', '', { corps: PERSO.corps }),
+      v('J', 'RÉSERVE J', '', { corps: PERSO.corps })
+    ]
+  },
+  {
+    id: 'ulti', titre: '5 · L\'ultime',
+    note: 'Une silhouette d\'adversaire encaisse le coup : on juge l\'effet ET ce qu\'il inflige. Les cartes sont figées, l\'aperçu du haut le joue en boucle.',
+    variantes: [
+      v('A', 'VARIANTE A', 'Dire ce que ça fait subir, pas seulement à quoi ça ressemble.', { fx: fxExemple }),
+      v('B', 'VARIANTE B', '', { fx: fxExemple }),
+      v('C', 'VARIANTE C', '', { fx: fxExemple }),
+      v('D', 'VARIANTE D', '', { fx: fxExemple }),
+      v('E', 'VARIANTE E', '', { fx: fxExemple }),
+      v('F', 'RÉSERVE F', '', { fx: fxExemple }),
+      v('G', 'RÉSERVE G', '', { fx: fxExemple }),
+      v('H', 'RÉSERVE H', '', { fx: fxExemple }),
+      v('I', 'RÉSERVE I', '', { fx: fxExemple }),
+      v('J', 'RÉSERVE J', '', { fx: fxExemple })
+    ]
+  },
+  {
+    id: 'anim', titre: '6 · L\'animation',
+    note: 'Course, lancer, dash, plongeon. Les cartes montrent la pose la plus caractéristique du jeu de poses.',
+    variantes: [
+      v('A', 'VARIANTE A', '', { corps: PERSO.corps }),
+      v('B', 'VARIANTE B', '', { corps: PERSO.corps }),
+      v('C', 'VARIANTE C', '', { corps: PERSO.corps }),
+      v('D', 'VARIANTE D', '', { corps: PERSO.corps }),
+      v('E', 'VARIANTE E', '', { corps: PERSO.corps }),
+      v('F', 'RÉSERVE F', '', { corps: PERSO.corps }),
+      v('G', 'RÉSERVE G', '', { corps: PERSO.corps }),
+      v('H', 'RÉSERVE H', '', { corps: PERSO.corps }),
+      v('I', 'RÉSERVE I', '', { corps: PERSO.corps }),
+      v('J', 'RÉSERVE J', '', { corps: PERSO.corps })
+    ]
+  },
+  {
+    id: 'profil', titre: '7 · Le profil de jeu',
+    note: 'Les chiffres réels du personnage. `speed` en px/s, `power` en multiplicateur de puissance de tir, `catchR` le rayon d\'attrapé, `chargeT` le temps de charge.',
+    variantes: [
+      v('A', 'ÉQUILIBRÉ', 'Bon partout, excellent nulle part.',
+        { stats: { spd: 3, pow: 3, ctl: 3, speed: 330, power: 1.0, catchR: 30, chargeT: .8 } }),
+      v('B', 'SPRINTEUR', 'Rapide et technique, mais le bras le plus faible.',
+        { stats: { spd: 5, pow: 2, ctl: 4, speed: 360, power: .86, catchR: 29, chargeT: .66 } }),
+      v('C', 'COGNEUR', 'Frappe le plus fort, se déplace le plus lentement.',
+        { stats: { spd: 2, pow: 5, ctl: 3, speed: 296, power: 1.2, catchR: 28, chargeT: 1.0 } }),
+      v('D', 'GARDIEN', 'La meilleure zone d\'attrapé du jeu, très lent.',
+        { stats: { spd: 2, pow: 4, ctl: 5, speed: 292, power: 1.1, catchR: 33, chargeT: .95 } }),
+      v('E', 'ARTILLEUR', 'Charge son ultime plus vite que tout le monde.',
+        { stats: { spd: 2, pow: 4, ctl: 4, speed: 288, power: 1.02, catchR: 29, chargeT: .62 } }),
+      v('F', 'RÉSERVE F', '', { stats: { spd: 3, pow: 3, ctl: 3, speed: 330, power: 1, catchR: 30, chargeT: .8 } }),
+      v('G', 'RÉSERVE G', '', { stats: { spd: 3, pow: 3, ctl: 3, speed: 330, power: 1, catchR: 30, chargeT: .8 } }),
+      v('H', 'RÉSERVE H', '', { stats: { spd: 3, pow: 3, ctl: 3, speed: 330, power: 1, catchR: 30, chargeT: .8 } }),
+      v('I', 'RÉSERVE I', '', { stats: { spd: 3, pow: 3, ctl: 3, speed: 330, power: 1, catchR: 30, chargeT: .8 } }),
+      v('J', 'RÉSERVE J', '', { stats: { spd: 3, pow: 3, ctl: 3, speed: 330, power: 1, catchR: 30, chargeT: .8 } })
+    ]
+  }
+  // ---- Sections SUR MESURE : les ajouter ici, même forme. ----
+  // { id:'arme', titre:'8 · L\'arme', variantes:[ v('A','TOMMY GUN','…',{ fx: dessinerArme }), … ] }
+];
+
+// Fabrique une variante. `pieces` ne porte que ce que la variante remplace.
+function v(id, nom, desc, pieces) { return { id, nom, desc, ...pieces }; }
+
+// Effet d'ultime d'exemple : à remplacer. La cible est fournie pour qu'on
+// dessine aussi ce que l'ulti lui inflige.
+function fxExemple(g, cx, cy, t, cible) {
+  for (let i = 0; i < 3; i++) {
+    const ph = ((t * .9 + i / 3) % 1);
+    g.strokeStyle = `rgba(255,226,140,${(1 - ph) * .8})`;
+    g.lineWidth = 4 * (1 - ph) + 1;
+    g.beginPath(); g.arc(cx, cy, ph * 70, 0, TAU); g.stroke();
+  }
+  if (cible) {
+    g.fillStyle = '#9aa0a6';
+    g.fillRect(cible.x - 13 + Math.sin(t * 9) * 3, cible.y - 22, 26, 44);
+  }
+}
+
+/* ===========================================================================
+   3. LE MOTEUR — ne pas toucher en copiant.
+   =========================================================================== */
+
+function bati(rows, pal, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const ch = row[x];
+      if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+    }
+  });
+  return c;
+}
+
+// Repeint des pixels déjà remplis sans toucher à la silhouette.
+export function teinter(rows, corresp) {
+  return rows.map(r => [...r].map(ch => corresp[ch] || ch).join(''));
+}
+// Repeint des pixels précis, repérés « ligne,colonne ».
+export function reshade(rows, map) {
+  return rows.map((row, r) => {
+    let out = '';
+    for (let c = 0; c < row.length; c++) out += (map[r + ',' + c] !== undefined) ? map[r + ',' + c] : row[c];
+    return out;
+  });
+}
+
+// Un bout du vrai terrain — mêmes teintes que le thème `arena` de maps.js,
+// pour que la lisibilité jugée ici soit celle du match.
+function terrain(g, w, h) {
+  g.fillStyle = '#0a1220'; g.fillRect(0, 0, w, h);
+  const solY = h * .58;
+  g.fillStyle = '#0c1424'; g.fillRect(0, solY, w, h - solY);
+  g.fillStyle = 'rgba(15,26,46,0.7)'; g.fillRect(0, solY, w, h - solY);
+  g.strokeStyle = 'rgba(255,255,255,.16)'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, solY + .5); g.lineTo(w, solY + .5); g.stroke();
+  g.strokeStyle = 'rgba(53,224,255,.13)';
+  for (let x = 22; x < w; x += 46) { g.beginPath(); g.moveTo(x, solY); g.lineTo(x - 14, h); g.stroke(); }
+}
+
+function ombre(g, x, y, r) {
+  g.save(); g.globalAlpha = .34; g.fillStyle = '#000';
+  g.beginPath(); g.ellipse(x, y, r, r * .32, 0, 0, TAU); g.fill(); g.restore();
+}
+
+// L'état courant : une lettre retenue par section.
+const choix = {};
+SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+
+// Assemble le perso tel que les choix actuels le décrivent. Chaque section
+// n'apporte que la pièce qu'elle remplace, la dernière déclarée l'emporte.
+function assembler() {
+  let tete = PERSO.tete, corps = PERSO.corps, pal = { ...PERSO.pal }, fx = null, stats = null;
+  for (const s of SECTIONS) {
+    const va = s.variantes.find(x => x.id === choix[s.id]);
+    if (!va) continue;
+    if (va.tete) tete = va.tete;
+    if (va.corps) corps = va.corps;
+    if (va.pal) pal = { ...pal, ...va.pal };
+    if (va.fx) fx = va.fx;
+    if (va.stats) stats = va.stats;
+  }
+  return { rows: [...tete, ...corps], pal, fx, stats };
+}
+
+/* --- Vérification du gabarit -------------------------------------------
+   Une lettre absente de la palette ne lève aucune erreur : le pixel est
+   simplement ignoré et le trou passe inaperçu. On vérifie donc les deux :
+   la géométrie (16 colonnes, 20 lignes) ET l'existence de chaque lettre. */
+const bad = [];
+function verifier(nom, rows, pal) {
+  if (rows.length !== 20) bad.push(nom + ' : ' + rows.length + ' lignes (attendu 20)');
+  rows.forEach((r, i) => {
+    if (r.length !== 16) bad.push(nom + '[' + i + '] : ' + r.length + ' colonnes (attendu 16)');
+    for (const ch of r) if (ch !== '.' && !pal[ch]) bad.push(nom + '[' + i + '] : lettre « ' + ch + ' » absente de la palette');
+  });
+}
+// Chaque variante DOIT porter son explication écrite, et chaque section la
+// sienne. Une carte sans texte oblige à deviner ce qu'on regarde et ce qu'on
+// y perd — c'est vérifié ici plutôt que laissé à la bonne volonté, au même
+// titre que la géométrie des sprites. Une description doit dire ce que c'est
+// ET ce que ça coûte : d'où la longueur minimale, qui écarte les « joli ».
+const MIN_DESC = 40;
+for (const s of SECTIONS) {
+  if (!s.note || s.note.trim().length < MIN_DESC) bad.push(s.id + ' : la section n\'explique pas ce qu\'on y juge');
+  for (const va of s.variantes) {
+    if (!va.nom || !va.nom.trim()) bad.push(s.id + '-' + va.id + ' : pas de nom');
+    if (!va.desc || va.desc.trim().length < MIN_DESC) {
+      bad.push(s.id + '-' + va.id + ' : explication manquante ou trop courte — dire l\'allure ET l\'avantage/inconvénient');
+    }
+    if (!va.tete && !va.corps && !va.pal) continue;
+    const pal = { ...PERSO.pal, ...(va.pal || {}) };
+    verifier(s.id + '-' + va.id, [...(va.tete || PERSO.tete), ...(va.corps || PERSO.corps)], pal);
+  }
+}
+const boite = document.getElementById('errs');
+boite.textContent = bad.length
+  ? bad.length + ' à corriger :\n' + bad.slice(0, 24).join('\n') + (bad.length > 24 ? '\n…' : '')
+  : 'OK — gabarit 16 × 20 tenu, palettes complètes, et chaque section comme chaque variante porte son explication.';
+if (bad.length) boite.className = 'bad';
+
+/* --- Bande de comparaison au roster --- */
+(function bandeRoster() {
+  const hote = document.getElementById('rosterRow');
+  for (const ck of ROSTER) {
+    const c = CHARS[ck];
+    const d = document.createElement('div'); d.className = 'rosterOne';
+    const cv = document.createElement('canvas');
+    cv.width = 16 * ECH_CARTE; cv.height = 20 * ECH_CARTE;
+    const g = cv.getContext('2d');
+    terrain(g, cv.width, cv.height);
+    g.imageSmoothingEnabled = false;
+    g.drawImage(c.frames.idle, 0, 0, cv.width, cv.height);
+    const s = document.createElement('span'); s.textContent = c.short || ck;
+    d.appendChild(cv); d.appendChild(s); hote.appendChild(d);
+  }
+  // Le nouveau, en dernier et en or : c'est lui qu'on compare.
+  const d = document.createElement('div'); d.className = 'rosterOne neuf';
+  const cv = document.createElement('canvas');
+  cv.id = 'cvRosterNeuf';
+  cv.width = 16 * ECH_CARTE; cv.height = 20 * ECH_CARTE;
+  const s = document.createElement('span'); s.textContent = PERSO.nom;
+  d.appendChild(cv); d.appendChild(s); hote.appendChild(d);
+})();
+
+function peindreRosterNeuf() {
+  const cv = document.getElementById('cvRosterNeuf');
+  const g = cv.getContext('2d');
+  const { rows, pal } = assembler();
+  terrain(g, cv.width, cv.height);
+  g.imageSmoothingEnabled = false;
+  g.drawImage(bati(rows, pal, 8), 0, 0, cv.width, cv.height);
+}
+
+/* --- Les sections et leurs cartes (statiques) --- */
+const cartes = [];
+(function poserSections() {
+  const hote = document.getElementById('sections');
+  for (const s of SECTIONS) {
+    const h2 = document.createElement('h2'); h2.textContent = s.titre;
+    hote.appendChild(h2);
+    if (s.note) { const p = document.createElement('p'); p.className = 'note'; p.textContent = s.note; hote.appendChild(p); }
+
+    const rangee = document.createElement('div'); rangee.className = 'row';
+    const reserve = document.createElement('div'); reserve.className = 'row reserve';
+    hote.appendChild(rangee);
+
+    s.variantes.forEach((va, i) => {
+      const card = document.createElement('div');
+      card.className = 'card' + (i === 0 ? ' on' : '');
+      const lbl = document.createElement('div'); lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + (va.desc || '');
+      const cv = document.createElement('canvas');
+      cv.width = 190; cv.height = 132;
+      card.appendChild(lbl); card.appendChild(cv);
+      if (va.stats) card.appendChild(barres(va.stats));
+      (i < 5 ? rangee : reserve).appendChild(card);
+      cartes.push({ cv, s, va, card });
+      card.addEventListener('click', () => {
+        choix[s.id] = va.id;
+        cartes.filter(c => c.s === s).forEach(c => c.card.classList.toggle('on', c.va === va));
+        rafraichir();
+      });
+    });
+
+    const bouton = document.createElement('button');
+    bouton.className = 'plus'; bouton.textContent = '+ 5 autres choix';
+    bouton.addEventListener('click', () => {
+      reserve.classList.toggle('ouverte');
+      bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
+    });
+    hote.appendChild(bouton);
+    hote.appendChild(reserve);
+  }
+})();
+
+function barres(st) {
+  const d = document.createElement('div'); d.className = 'stats';
+  const b = n => '<i>' + '■'.repeat(n) + '</i>' + '□'.repeat(5 - n);
+  d.innerHTML = 'VIT ' + b(st.spd) + '  ·  ' + st.speed + ' px/s<br>' +
+                'PUI ' + b(st.pow) + '  ·  ×' + st.power + '<br>' +
+                'CTL ' + b(st.ctl) + '  ·  r' + st.catchR + '<br>' +
+                'CHARGE ' + st.chargeT + ' s';
+  return d;
+}
+
+// Les cartes ne bougent pas : on compare des silhouettes au calme, et 70
+// canvas animés en même temps rameraient pour rien.
+function peindreCartes() {
+  for (const { cv, s, va } of cartes) {
+    const g = cv.getContext('2d');
+    terrain(g, cv.width, cv.height);
+    g.imageSmoothingEnabled = false;
+    // La carte montre le perso ENTIER avec cette variante appliquée, le reste
+    // dans l'état courant : on juge une allure complète, jamais une pièce qui
+    // flotte sur fond noir.
+    const base = assembler();
+    const tete = va.tete || base.rows.slice(0, 10);
+    const corps = va.corps || base.rows.slice(10);
+    const pal = { ...base.pal, ...(va.pal || {}) };
+    const sp = bati([...tete, ...corps], pal, ECH_CARTE);
+    const x = (cv.width - sp.width) / 2, y = cv.height * .58 - sp.height + 6;
+    ombre(g, cv.width / 2, cv.height * .58 + 2, sp.width * .34);
+    g.drawImage(sp, x, y);
+    // Un effet (ultime, arme) se dessine par-dessus, figé à un instant choisi
+    // pour que la carte reste lisible.
+    if (va.fx) va.fx(g, cv.width / 2, y + sp.height * .5, .42,
+                     { x: cv.width - 26, y: y + sp.height * .5 });
+  }
+}
+
+/* --- Aperçu assemblé : animé, il rejoue l'ultime en boucle --- */
+const cvA = document.getElementById('cvApercu');
+const gA = cvA.getContext('2d');
+
+// Le code compact à renvoyer : « 1A 2C 3B … », une entrée par section dans
+// l'ordre de la page. Posé dans un champ en lecture seule plutôt que dans une
+// simple ligne de texte, pour rester sélectionnable à la main si l'accès au
+// presse-papiers est refusé par le navigateur.
+function codeChoix() {
+  return SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+}
+
+function rafraichir() {
+  peindreCartes();
+  peindreRosterNeuf();
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value = codeChoix();
+}
+
+(function brancherCopie() {
+  const btn = document.getElementById('btnCopier');
+  const champ = document.getElementById('codeChoix');
+  btn.addEventListener('click', async () => {
+    const texte = codeChoix();
+    let ok = false;
+    try { await navigator.clipboard.writeText(texte); ok = true; }
+    catch (e) {
+      champ.select(); champ.setSelectionRange(0, 999);
+      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    }
+    btn.textContent = ok ? '✓ copié' : 'Ctrl+C pour copier';
+    btn.classList.toggle('ok', ok);
+    setTimeout(() => { btn.textContent = 'copier mes choix'; btn.classList.remove('ok'); }, 1800);
+  });
+})();
+
+(function boucle(ms) {
+  const t = ms / 1000;
+  const { rows, pal, fx } = assembler();
+  terrain(gA, cvA.width, cvA.height);
+  gA.imageSmoothingEnabled = false;
+  const sp = bati(rows, pal, ECH_APERCU);
+  // Il respire : deux pixels de haut en bas, comme au repos dans le jeu.
+  const flot = Math.round(Math.sin(t * 2.4) * 2);
+  const solY = cvA.height * .58;
+  const x = cvA.width * .3 - sp.width / 2, y = solY - sp.height + flot;
+  ombre(gA, cvA.width * .3, solY + 2, sp.width * .34);
+  gA.drawImage(sp, x, y);
+  // La cible encaisse l'ultime, à droite : on voit l'effet ET ce qu'il inflige.
+  if (fx) fx(gA, x + sp.width * .5, y + sp.height * .5, t,
+             { x: cvA.width * .78, y: solY - 22 });
+  requestAnimationFrame(boucle);
+})(0);
+
+rafraichir();
+</script>
+</body>
+</html>

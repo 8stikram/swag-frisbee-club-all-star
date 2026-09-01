@@ -371,7 +371,49 @@ function construireSixPaths() {
   return out;
 }
 
-export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie'];
+// ---------------------------------------------------------------------------
+// Chopper. Le colosse de Junkertown, masque à gaz et crochet au bout d'une
+// chaîne. Il ne dépasse pas le gabarit commun de 12 px de large — il le
+// REMPLIT là où les autres en occupent huit. C'est la masse qui le distingue,
+// pas la taille : lui donner une boîte plus grande l'aurait rendu inutilisable
+// avec le reste du casting.
+// ---------------------------------------------------------------------------
+const PAL_CH = {
+  H: '#e8e0c8', h: '#b9ae90',   // touffe de cheveux décolorée / ombre
+  M: '#4a4a52', m: '#2e2e34',   // caoutchouc du masque / creux du groin
+  // Ton intermédiaire réservé au pourtour du masque. Réutiliser le 'm' du
+  // groin donnait un liseré aussi sombre que lui : ça se lisait comme le
+  // contour noir qu'on s'interdit, et le groin ne se détachait plus.
+  o: '#3b3b43',                 // galbe du masque, à mi-chemin
+  L: '#cfd8e2',                 // verres ronds du masque
+  S: '#d9a17c', s: '#ad7452',   // peau / ombre
+  E: '#241f1c',                 // yeux, si un jour on le démasque
+  T: '#e0762c', t: '#a84a12',   // tatouage du ventre / ombre
+  V: '#3f342a', v: '#241c15',   // cuir du gilet / ombre
+  K: '#1c1c20',                 // sangles noires, ceinture
+  J: '#42506a', j: '#2a3345',   // treillis / ombre
+  Y: '#e8c23a', y: '#a08320',   // bonbonne jaune / ombre
+  W: '#c8ccd4',                 // acier : pointes, brassards, crochet, plaque
+  n: '#2b2320'                  // bottes
+};
+
+// Tête partagée : verres ronds et groin saillant, tous deux décalés d'un pixel
+// à DROITE du centre — c'est le côté vers lequel il regarde, et sans ce
+// décalage le miroir horizontal (render.js, p.face) ne se lit pas quand il
+// vise à la souris. Les 'Y' sont les filtres du masque.
+const CH_HEAD = [".....hHHh.......","....oMMMMMo.....","...oMMMMMMMo....","..oMMMMMMMMMo...","..oMMLLMMMLLo...","..oMMLLMMMLLo...",".YoMMMMMMMMoY...",".yoMMMmmmmmoy...","....MMmmmmmM....","...KKKKKKKKK...."];
+// Corps : le pneu en travers du dos (m/M, à gauche puisque le sprite est
+// tourné vers la droite), les pointes de l'épaulière et les brassards en
+// acier, la bonbonne jaune, le gilet à sangles, et le ventre tatoué laissé nu
+// — c'est lui qui porte toute la masse du personnage.
+const CH_IDLE_B  = [".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....",".JJj......jJJ...",".JJj......jJJ...",".nnn......nnn..."];
+const CH_RUN1_B  = [".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj.....jJJ...",".JJj.......jJJ..",".nnn.......nnn.."];
+const CH_RUN2_B  = [".WmWmVVVVVYy....",".mMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","...JJj...jJJ....","...JJj...jJJ....","...nnn...nnn...."];
+const CH_THROW_B = [".WmWmVVVVVYyS...",".mMmmVKKKKVYyS..",".WmmVKTTTTKVWW..",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....",".JJj......jJJ...",".JJj......jJJ...",".nnn......nnn..."];
+const CH_DIVE_B  = [".WmWmVVVVVYySS..",".mMmmVKKKKVYyS..",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....",".JJJj...jJJJ....","JJj.......jJJ...","nn.........nn..."];
+const CH_DASH_B  = ["SWmWmVVVVVYy....","SmMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj..jJJ......",".JJj..jJJ.......",".nnn..nnn......."];
+
+export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper'];
 
 export const CHARS = {
   naruto: {
@@ -477,6 +519,26 @@ export const CHARS = {
       throw: buildSprite([...M_HEAD, ...M_THROW_B], PAL_M),
       dive: buildSprite([...M_HEAD, ...M_DIVE_B], PAL_M),
       dash: buildSprite([...M_HEAD, ...M_DASH_B], PAL_M)
+    }
+  },
+  chopper: {
+    name: 'CHOPPER', short: 'CHOPPER', icon: '🪝', universe: 'JUNKERTOWN',
+    // Profil « mur » : le plus lent du roster de loin, mais la plus grande
+    // zone d'attrapé du jeu. Il ne court pas après le disque — il attend
+    // qu'il vienne, et son ultime le lui ramène. Sa charge d'ultime est
+    // lente pour compenser : le crochet annule un but, ça ne peut pas
+    // revenir toutes les dix secondes.
+    speed: 270, power: 1.12, catchR: 34, chargeT: .95,
+    color: '#4a4a52', accent: '#e8c23a',
+    stats: { spd: 1, pow: 4, ctl: 5 },
+    ult: 'grappin',
+    frames: {
+      idle: buildSprite([...CH_HEAD, ...CH_IDLE_B], PAL_CH),
+      run1: buildSprite([...CH_HEAD, ...CH_RUN1_B], PAL_CH),
+      run2: buildSprite([...CH_HEAD, ...CH_RUN2_B], PAL_CH),
+      throw: buildSprite([...CH_HEAD, ...CH_THROW_B], PAL_CH),
+      dive: buildSprite([...CH_HEAD, ...CH_DIVE_B], PAL_CH),
+      dash: buildSprite([...CH_HEAD, ...CH_DASH_B], PAL_CH)
     }
   },
 
