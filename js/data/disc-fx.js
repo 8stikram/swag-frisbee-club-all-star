@@ -139,24 +139,6 @@ export const FX_DISQUES = {
     rebond(d, out) { spirale(out, d.x, d.y, ['#ffffff', '#8ee7ff', '#e2a8ff', '#7b3fe4'], 12, 170, .8); }
   },
 
-  // Volcan : flammèches, cendres qui montent, éruption au rebond.
-  magma: {
-    trainee: ['#ff8c1a', '#ffd23e'],
-    vol(d, out) {
-      if (combien(.55)) {
-        out.push(p(d.x + gauss() * 9, d.y + gauss() * 9, gauss() * 22, -rand(20, 60),
-          .4, Math.random() < .7 ? '#ff7a12' : '#ffd23e', rand(2, 4), -60));
-      }
-      // Les cendres, elles, sont sombres et retombent : ce sont elles qui
-      // donnent le poids, les flammèches ne font que la lumière.
-      if (combien(.2)) {
-        out.push(p(d.x + gauss() * 12, d.y + gauss() * 12, gauss() * 18, -rand(10, 40),
-          .8, '#3a2a24', 2, 120));
-      }
-    },
-    rebond(d, out) { couronne(out, d.x, d.y, ['#ffd23e', '#ff7a12', '#e03a00'], 12, 220, 5, .6); }
-  },
-
   // Bug numérique : le disque perd des pixels, qui s'éparpillent au rebond.
   glitch: {
     trainee: ['#ff2fb9', '#12d0ff', '#00ffa3'],
@@ -167,44 +149,6 @@ export const FX_DISQUES = {
       }
     },
     rebond(d, out) { couronne(out, d.x, d.y, ['#ff2fb9', '#12d0ff', '#00ffa3', '#ffe600'], 12, 200, 4, .5); }
-  },
-
-  // Enluminure : poudre d'or en spirale, rosace au rebond.
-  chaptele: {
-    trainee: ['#c9a227', '#f2e2b0'],
-    vol(d, out) {
-      if (combien(.4)) {
-        // La poudre part en spirale autour du disque, pas droit derrière : le
-        // mouvement tournant est ce qui évoque la plume du copiste.
-        const a = d.spin * 3, r = 12;
-        out.push(p(d.x + Math.cos(a) * r, d.y + Math.sin(a) * r,
-          -Math.sin(a) * 40, Math.cos(a) * 40, .55,
-          Math.random() < .6 ? '#e8c85a' : '#fff3c4', 2, 0, 'star'));
-      }
-    },
-    // Une rosace, donc des pétales réguliers et non un jet au hasard.
-    rebond(d, out) { spirale(out, d.x, d.y, ['#f2e2b0', '#c9a227', '#8a6a12'], 8, 130, .7); }
-  },
-
-  // Égypte : sable doré très fin, pyramide de lumière au rebond.
-  pharaon: {
-    trainee: ['#d4af37', '#e8d5a3'],
-    vol(d, out) {
-      if (combien(.45)) {
-        out.push(p(d.x + gauss() * 10, d.y + gauss() * 10, gauss() * 16, rand(10, 45),
-          .6, ['#d4af37', '#e8d5a3', '#c9a227'][(Math.random() * 3) | 0], 1.5, 30));
-      }
-    },
-    rebond(d, out) {
-      // La pyramide : trois traits qui montent en pointe. Peu de particules,
-      // mais placées — c'est la forme qui doit se lire, pas la quantité.
-      for (let i = 0; i < combien(9); i++) {
-        const k = i / 9;
-        const large = 26 * (1 - k);
-        out.push(p(d.x + (Math.random() < .5 ? -large : large), d.y + 14 - k * 30,
-          gauss() * 8, -rand(10, 25), .55, '#ffe9a8', 3, 0));
-      }
-    }
   },
 
   // Bonbon : gouttes colorées, et le disque qui tremble comme une gelée.
@@ -249,6 +193,24 @@ export const FX_DISQUES = {
         out.push(p(d.x + Math.cos(a) * dist, d.y + Math.sin(a) * dist,
           Math.cos(a) * 12, Math.sin(a) * 12, .9,
           i % 3 === 0 ? '#ffd9f0' : '#ffffff', rand(2, 4), 0, 'star'));
+      }
+    }
+  },
+
+  // Canette : rien en vol, mais elle s'ouvre au rebond.
+  vody: {
+    trainee: ['#b0181e', '#d9ad55', '#141110'],
+    // Le seul disque qui ne seme rien. Sa face porte deja une foule, une
+    // portee et un logo : un semis par-dessus la rendait illisible, et c'est
+    // la face qu'on doit reconnaitre sur ce disque-la.
+    vol() { },
+    rebond(d, out) {
+      couronne(out, d.x, d.y, ['#f6f1e6', '#f4dfa4', '#d9ad55'], 14, 240, 4, .5);
+      // Le jet : quelques gouttes lourdes qui partent vers le haut et
+      // retombent. C'est lui qui fait « canette decapsulee » plutot que
+      // « gerbe » — la couronne seule ne dit rien de la boisson.
+      for (let i = 0; i < combien(4); i++) {
+        out.push(p(d.x, d.y, gauss() * 40, -rand(140, 220), .8, '#f6f1e6', 4, 320));
       }
     }
   },

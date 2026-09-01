@@ -15,7 +15,7 @@ import { burst, dust, ring, confetti, starBurst, addPopup, ondeDeBut, confettiNu
 import { $, cv, showScreen } from '../core/dom.js';
 import { signalerPerfectDive } from './moves.js';
 import { ajouterStat, verifierDeblocages } from '../data/skins-perso.js';
-import { getSkinId } from '../data/skins.js';
+import { getSkinId, teinteDeCharge, chaufferCouleur } from '../data/skins.js';
 import { annoncerSkins } from '../ui/skins-ui.js';
 
 export function setupServe(side) {
@@ -75,7 +75,21 @@ export function throwDisc(p, dir, speed, kind = 'normal') {
   p.throwCd = .32; p.throwPoseT = .28; p.stats.thrown++; p.holdTimer = 0;
   sfx(d.super ? 'superthrow' : 'throw');
   if (d.super) {
-    burst(p.x + dir.x * 24, p.y + dir.y * 24, '#ff5340', 14);
+    // Le recul : la gerbe part vers l'ARRIÈRE, comme le souffle d'une arme.
+    // Elle ne suit donc pas le disque et ne le masque jamais au moment précis
+    // où il faut commencer à le suivre. Teintée du disque, jamais en rouge fixe.
+    // `gauss`/`rand` de core/utils, jamais le tirage semé : les deux machines
+    // engendrent cette gerbe chacune de leur côté, et le semé se décalerait.
+    const chaud = chaufferCouleur(teinteDeCharge(skinDuJoueur(p)), .4);
+    const axe = Math.atan2(-dir.y, -dir.x);
+    for (let i = 0; i < 12; i++) {
+      const a = axe + gauss() * .7, v = rand(120, 260);
+      G.particles.push({
+        x: p.x + dir.x * 18, y: p.y + dir.y * 18,
+        vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+        life: .45, c: i % 3 ? chaud : '#ffffff', s: 3, g: 0
+      });
+    }
     G.shake = Math.max(G.shake, 4);
     comment('QUELLE PUISSANCE !');
   }

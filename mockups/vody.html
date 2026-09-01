@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Vody — mockup de disque</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:30px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:960px;line-height:1.7;margin:0 0 14px}
+  .note code{color:#bcd4f5}
+
+  /* --- Deux colonnes : les cartes défilent, le rallye reste --- */
+  .page{display:flex;gap:16px;align-items:flex-start}
+  .gauche{flex:1 1 0;min-width:0}
+  .aside{flex:0 0 352px;position:sticky;top:14px}
+  @media (max-width:980px){ .page{display:block} .aside{position:static;width:100%} }
+
+  .row{display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(206px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;
+        cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d5c8a}
+  .card.on{border-color:var(--or);transform:translateY(-2px)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:58px}
+  .lbl b{display:block;font-size:13.5px;color:var(--or);letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px}
+  .reserve{display:none}
+  .reserve.ouverte{display:grid}
+  .plus{margin-top:9px;background:#132038;color:#9fb4dd;border:1px solid var(--edge);
+        border-radius:7px;padding:6px 13px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#1a2b48;color:var(--ink)}
+
+  .bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;margin-bottom:12px}
+  .bloc h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .bloc canvas{width:100%;height:auto}
+  .compteur{font-family:Consolas,monospace;font-size:11px;color:#7f93b3;margin-top:7px;line-height:1.6}
+  .compteur i{color:var(--or);font-style:normal}
+  .compteur i.trop{color:#ff5340}
+  .choix{font-size:11.5px;color:#9fb4dd;margin-top:9px;font-family:Consolas,monospace;line-height:1.7}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 150px;min-width:0;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+             padding:8px 14px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#24395e}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+
+  .bande{display:flex;gap:7px;flex-wrap:wrap}
+  .une{text-align:center}
+  .une canvas{width:44px;height:44px;border-radius:5px;display:block}
+  .une span{display:block;font-size:9px;color:#7f93b3;margin-top:2px;max-width:50px;
+            overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .une.neuf span{color:var(--or)}
+  .une.neuf canvas{outline:1px solid var(--or)}
+
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 6px}
+  #retenu{font-size:12.5px;font-family:Consolas,monospace;color:var(--or);margin:0 0 14px}
+  #retenu:empty{display:none}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>VODY</h1>
+<p class="note">
+  <b>Cody's Vody, la canette de vodka energy aplatie en disque.</b> Logo noir au centre, la foule dorée
+  qui fait la fête derrière, les vagues d'or de l'étiquette, le rouge de la canette au fond. Sept
+  sections, dix variantes chacune (cinq visibles, cinq en réserve) : réponds par des lettres, une par
+  section — <code>1A 2C 3B 4A 5A 6A 7B</code>.
+  <br><br>
+  Chaque carte montre le disque <b>en vol sur un bout du vrai terrain, à l'échelle exacte du match</b>
+  (rayon 14 px, <code>DISC_RADIUS</code> dans <code>core/constants.js</code> — aucun facteur d'échelle
+  ne s'applique au disque, contrairement aux sprites). C'est petit, et c'est voulu : un logo magnifique
+  en gros plan qui devient un pâté à 28 px de diamètre est un logo raté. Clique une carte pour la monter
+  dans le rallye de droite, qui rejoue le vol, les rebonds et les particules en boucle.
+</p>
+
+<div id="errs"></div>
+<div id="retenu"></div>
+
+<div class="page">
+  <div class="gauche">
+    <div id="sections"></div>
+  </div>
+
+  <div class="aside">
+    <div class="bloc">
+      <h3>Le rallye</h3>
+      <canvas id="cvRallye" width="326" height="236"></canvas>
+      <div class="compteur" id="compteur"></div>
+      <div class="choix" id="choix"></div>
+      <div class="copier">
+        <input class="codeChoix" id="codeChoix" readonly>
+        <button class="btnCopier" id="btnCopier">copier mes choix</button>
+      </div>
+    </div>
+    <div class="bloc">
+      <h3>À côté des disques en place</h3>
+      <div class="bande" id="bande"></div>
+      <p class="note" style="margin:9px 0 0;font-size:10.5px;line-height:1.6">
+        Les disques existants sont dessinés par le vrai <code>drawSkinDisc</code> de
+        <code>js/data/skins.js</code>, à l'échelle du match. Le nouveau est cerclé d'or. C'est ici qu'on
+        voit s'il fait doublon — trois disques dorés se ressemblent tous à 28 px.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// ---------------------------------------------------------------------------
+// Le registre réel est importé du jeu : la bande de comparaison montre donc
+// toujours les disques tels qu'ils sont aujourd'hui, sans copie à maintenir
+// ici. C'est le seul lien avec le code du jeu — tout le reste est autonome.
+//
+// `tracerContour` est repris tel quel, et non recopié : c'est lui qui découpe
+// la face ET qui trace le liseré dans render.js. Deux tracés différents et la
+// découpe cesserait de coïncider avec le contour, comme sur la Gélatine.
+// ---------------------------------------------------------------------------
+import { DISC_SKINS, drawSkinDisc, deformationDisque, tracerContour } from '../js/data/skins.js';
+
+const TAU = Math.PI * 2;
+
+// Le disque fait 14 px de rayon sur le canvas 960 × 600 du jeu, dessiné tel
+// quel. Cartes, rallye et bande de comparaison l'utilisent tous : ce qu'on
+// juge ici est exactement ce qu'on verra en match, jamais un agrandissement
+// flatteur.
+const R_JEU = 14;
+
+// Plafond de particules du jeu (MAX_PARTICULES dans data/disc-fx.js). Le
+// compteur du rallye l'affiche : un disque qui plafonne en permanence est un
+// disque qui étouffe tous les autres effets à l'écran.
+const MAX_PARTICULES = 50;
+
+// Horloge des animations de face, exactement celle de data/skins.js : les
+// faces écrites ici se recollent sans retouche.
+const horloge = () => performance.now() / 1000;
+
+/* --- Le hasard, débrayable ------------------------------------------------
+   Les cartes sont figées : elles doivent redonner la MÊME image à chaque
+   repeinte, sinon les particules sautent d'un clic à l'autre et on croit
+   comparer deux variantes alors qu'on compare deux tirages. On remplace donc
+   le hasard par une suite déterministe le temps de peindre une carte, et on
+   rend la main au vrai hasard pour le rallye. */
+let alea = Math.random;
+function semer(graine) { let s = graine >>> 0; alea = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+function relacher() { alea = Math.random; }
+
+// Les mêmes outils qu'en vrai, aux mêmes noms : ce qu'on écrit dans `vol` et
+// `rebond` se recolle tel quel dans data/disc-fx.js.
+const rand = (a = 1, b) => b === undefined ? alea() * a : a + alea() * (b - a);
+const gauss = () => (alea() + alea() + alea() - 1.5) * 0.8;
+const pick = a => a[(alea() * a.length) | 0];
+const p = (x, y, vx, vy, life, c, s, g, type) => ({ x, y, vx, vy, life, c, s, g: g || 0, type });
+function combien(n) { const e = Math.floor(n); return e + (alea() < n - e ? 1 : 0); }
+function couronne(out, x, y, cols, n, vitesse, taille, vie) {
+  for (let i = 0; i < combien(n); i++) {
+    const a = rand(TAU), v = rand(vitesse * .5, vitesse);
+    out.push(p(x, y, Math.cos(a) * v, Math.sin(a) * v, rand(vie * .6, vie),
+      pick(cols), rand(taille * .6, taille), 0));
+  }
+}
+function spirale(out, x, y, cols, n, rayon, vie) {
+  for (let i = 0; i < combien(n); i++) {
+    const a = (i / n) * TAU + rand(.4);
+    const v = rayon * rand(.6, 1.2);
+    out.push(p(x, y, Math.cos(a) * v, Math.sin(a) * v, rand(vie * .6, vie),
+      cols[i % cols.length], rand(2, 4), 0, 'star'));
+  }
+}
+
+// Fabrique une variante. `pieces` ne porte que ce que la variante remplace.
+// `contour: null` est une valeur pleine et entière (« ce disque est rond ») :
+// d'où le test sur la présence de la clé plus bas, et non sur sa valeur.
+function v(id, nom, desc, pieces) { return { id, nom, desc, pieces }; }
+
+/* ===========================================================================
+   ==== DÉBUT DU CONTENU — c'est ici, et seulement ici, qu'on écrit. ====
+
+   1. LE DISQUE.
+   =========================================================================== */
+const DISQUE = {
+  nom: 'VODY',
+  // Les lettres validées le 1er septembre 2026. Le mockup ouvre dessus.
+  retenu: '1G 2A 3B 4A 5C 6D 7A',
+  id: 'vody',
+  pitch: 'La canette de Cody\'s Vody aplatie en disque : logo noir au centre, la foule dorée qui fait la fête derrière, et les vagues d\'or de l\'étiquette.',
+  colors: ['#b0181e', '#d9ad55', '#141110'],
+  pal: {
+    rouge:   '#b0181e',   // le rouge de la canette
+    rougeF:  '#6d0d12',   // son ombre
+    rougeC:  '#d8383c',   // son reflet
+    or:      '#d9ad55',
+    orClair: '#f4dfa4',
+    orF:     '#9d7422',
+    noir:    '#141110',
+    blanc:   '#f6f1e6'
+  }
+};
+
+/* --- Outils de dessin propres à Vody -------------------------------------
+   Trois formes reviennent partout : la silhouette de fêtard, les vagues d'or
+   de l'étiquette, et le mot posé au centre. Écrites une fois et paramétrées,
+   pour que les variantes se lisent comme des partis pris et non comme des
+   pavés de canvas.
+   ------------------------------------------------------------------------- */
+
+// Un fêtard bras levés. À 28 px de disque il fait 9 px de haut : tout ce qui
+// est plus fin qu'un pixel et demi disparaît, d'où la tête en gros point et
+// les bras au trait épais plutôt qu'un vrai bonhomme.
+function fetard(g, x, y, h, phase, col) {
+  const w = h * .32;
+  g.fillStyle = col; g.strokeStyle = col;
+  g.lineWidth = h * .15; g.lineCap = 'round';
+  g.beginPath(); g.arc(x, y - h * .84, h * .16, 0, TAU); g.fill();
+  g.beginPath();
+  g.moveTo(x - w * .5, y); g.lineTo(x - w * .46, y - h * .64);
+  g.lineTo(x + w * .46, y - h * .64); g.lineTo(x + w * .5, y);
+  g.closePath(); g.fill();
+  const a = .6 + Math.sin(phase) * .4;
+  g.beginPath();
+  g.moveTo(x - w * .42, y - h * .58); g.lineTo(x - w * .5 - h * .34 * a, y - h * (.92 + a * .12));
+  g.moveTo(x + w * .42, y - h * .58); g.lineTo(x + w * .5 + h * .3 * a, y - h * (.88 + a * .14));
+  g.stroke();
+}
+
+// Les vagues de l'étiquette : des lignes parallèles qui ondulent, serrées
+// comme une portée musicale. `decal` place la portée dans le disque, `amp`
+// donne son ondulation, `ondule` la fait respirer.
+function vagues(g, r, cols, n, decal, amp, ondule, epais) {
+  g.lineCap = 'butt';
+  for (let i = 0; i < n; i++) {
+    g.strokeStyle = cols[i % cols.length];
+    g.lineWidth = r * epais;
+    g.beginPath();
+    for (let x = -r; x <= r; x += 2) {
+      const k = x / r;
+      const y = r * decal + i * r * .13 + Math.sin(k * 2.4 + ondule) * r * amp;
+      x === -r ? g.moveTo(x, y) : g.lineTo(x, y);
+    }
+    g.stroke();
+  }
+}
+
+// Le mot, posé au centre. `tourne` dit s'il suit la rotation du disque comme
+// une vraie impression, ou s'il reste droit comme une étiquette d'interface.
+function mot(g, texte, taille, y, col, tourne, spin, cerne) {
+  g.save();
+  if (tourne) g.rotate(spin);
+  g.font = '900 ' + taille.toFixed(1) + 'px "Archivo Black", Impact, sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  if (cerne) { g.lineWidth = taille * .18; g.strokeStyle = cerne; g.lineJoin = 'round'; g.strokeText(texte, 0, y); }
+  g.fillStyle = col;
+  g.fillText(texte, 0, y);
+  g.restore();
+}
+
+/* ===========================================================================
+   2. LES SECTIONS — le découpage épouse la canette : le rouge, la foule, les
+   vagues d'or, le logo, puis les trois pièces de jeu (sillage, vol, rebond).
+   =========================================================================== */
+const SECTIONS = [
+  {
+    id: 'rouge', titre: '1 · Le rouge de la canette',
+    note: 'Le calque du dessous : la couleur qu\'on voit de l\'autre bout du terrain, avant même de reconnaître le logo. Le sol de l\'arène est bleu nuit, donc un rouge sombre s\'y enfonce — mais un rouge trop clair avale l\'or qu\'on posera dessus.',
+    variantes: [
+      v('A', 'ROUGE PLEIN', 'Le rouge de la canette d\'un seul tenant. Aucun disque du registre n\'est rouge, donc il se reconnaît instantanément ; en contrepartie un aplat pur paraît plat dès que le disque s\'immobilise en main.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = P.rouge; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('B', 'ROUGE VERS OR', 'Rouge en haut, or en bas, exactement comme l\'étiquette. On retrouve la canette au premier coup d\'œil, mais la moitié basse devient claire et y noie les silhouettes dorées.',
+        { calque: (g, r, s, T, P) => { const d = g.createLinearGradient(0, -r, 0, r); d.addColorStop(0, P.rougeC); d.addColorStop(.42, P.rouge); d.addColorStop(1, P.or); g.fillStyle = d; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('C', 'ALUMINIUM BROSSÉ', 'Une bande de reflet verticale traverse le rouge : le disque a l\'air d\'être en métal, comme une canette sous les projecteurs. Le reflet mange en revanche le cinquième central de la surface utile.',
+        { calque: (g, r, s, T, P) => { const d = g.createLinearGradient(-r, 0, r, 0); d.addColorStop(0, P.rougeF); d.addColorStop(.28, P.rouge); d.addColorStop(.5, P.rougeC); d.addColorStop(.72, P.rouge); d.addColorStop(1, P.rougeF); g.fillStyle = d; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('D', 'ROUGE BOMBÉ', 'Clair au centre, sombre sur tout le pourtour : le disque paraît épais et se décolle du sol sans avoir besoin d\'ombre. C\'est aussi le fond le plus attendu, la moitié du registre est bâtie comme ça.',
+        { calque: (g, r, s, T, P) => { const d = g.createRadialGradient(-r * .2, -r * .2, r * .05, 0, 0, r * 1.05); d.addColorStop(0, P.rougeC); d.addColorStop(.55, P.rouge); d.addColorStop(1, P.rougeF); g.fillStyle = d; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('E', 'ROUGE ET NOIR EN DIAGONALE', 'Le bas noir de l\'étiquette remonte en biais. Le contraste est le plus fort du lot et la rotation se lit parfaitement, mais la moitié noire se confond avec le sol de l\'arène.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = P.rouge; g.fillRect(-r, -r, r * 2, r * 2); g.fillStyle = P.noir; g.beginPath(); g.moveTo(-r, r * .1); g.lineTo(r, -r * .45); g.lineTo(r, r); g.lineTo(-r, r); g.closePath(); g.fill(); } }),
+      v('F', 'ROUGE NUIT', 'Un rouge très sombre, presque bordeaux. L\'or et le blanc y claquent comme jamais, mais le disque lui-même devient difficile à suivre sur le sol bleu nuit.',
+        { calque: (g, r, s, T, P) => { const d = g.createRadialGradient(0, 0, r * .05, 0, 0, r); d.addColorStop(0, '#7d1016'); d.addColorStop(1, '#2c0507'); g.fillStyle = d; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('G', 'ROUGE NÉON', 'Saturé au maximum, presque fluo. Impossible à perdre de vue même en plein rallye ; en revanche il jure avec les teintes sourdes de l\'arène et attire l\'œil au détriment des joueurs.',
+        { calque: (g, r, s, T, P) => { const d = g.createRadialGradient(0, 0, r * .05, 0, 0, r); d.addColorStop(0, '#ff4d52'); d.addColorStop(1, '#c00d14'); g.fillStyle = d; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('H', 'ROUGE ÉCLABOUSSÉ', 'Le rouge coule en langues irrégulières sur un fond or, comme la boisson renversée. C\'est le fond qui raconte le plus, et aussi le plus bruyant : le logo posé dessus perd en netteté.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = P.or; g.fillRect(-r, -r, r * 2, r * 2); g.fillStyle = P.rouge; g.beginPath(); for (let i = 0; i <= 40; i++) { const a = (i / 40) * TAU; const rr = r * (.72 + Math.sin(a * 5 + 1.2) * .16 + Math.sin(a * 3) * .1); i ? g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : g.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); } g.closePath(); g.fill(); } }),
+      v('I', 'ROUGE STRIÉ', 'Des stries verticales alternent deux rouges, comme les cannelures d\'une canette. Le disque prend du grain et de la matière, mais les stries scintillent désagréablement en vol rapide.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = P.rouge; g.fillRect(-r, -r, r * 2, r * 2); g.fillStyle = P.rougeF; for (let x = -r; x < r; x += 4) g.fillRect(x, -r, 2, r * 2); } }),
+      v('J', 'OR PLEIN', 'On inverse : l\'or devient le fond et le rouge ne servira plus qu\'au logo. Le disque est le plus lumineux du registre, mais il rejoint la famille dorée déjà tenue par le Chaptèle et le Pharaon.',
+        { calque: (g, r, s, T, P) => { const d = g.createRadialGradient(-r * .2, -r * .2, r * .05, 0, 0, r); d.addColorStop(0, P.orClair); d.addColorStop(1, P.orF); g.fillStyle = d; g.fillRect(-r, -r, r * 2, r * 2); } })
+    ]
+  },
+  {
+    id: 'foule', titre: '2 · La foule dorée',
+    note: 'Les silhouettes de fêtards bras levés qui font tout le caractère de l\'étiquette. Elles passent DERRIÈRE le logo : leur seul travail est de meubler le rouge sans jamais disputer la lisibilité du mot. Attention à la hauteur : une foule posée trop bas passe sous la bande noire de la section 3 et disparaît complètement.',
+    variantes: [
+      v('A', 'TROIS BRAS LEVÉS', 'Trois fêtards alignés debout sur le rouge, le logo passant devant eux. C’est la citation la plus fidèle à la canette ; mais trois silhouettes à 28 px forment une frise vite indistincte. Corrigée à l’assemblage : posés tout en bas comme au départ, ils passaient entièrement sous la bande noire de 3B.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .4); for (let i = 0; i < 3; i++) { const x = (i - 1) * r * .52; fetard(g, x, r * .3, r * .62, T * 3 + i * 1.7, P.or); } g.restore(); } }),
+      v('B', 'COURONNE DE FÊTARDS', 'Sept silhouettes debout tout autour du bord, tournées vers l\'extérieur. Le disque a l\'air entouré d\'une foule vue du ciel et la rotation se lit très bien ; en revanche le bord devient chargé au moment de l\'attrapé.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .5); for (let i = 0; i < 7; i++) { g.save(); g.rotate((i / 7) * TAU); fetard(g, 0, r * .92, r * .5, T * 3 + i, P.or); g.restore(); } g.restore(); } }),
+      v('C', 'UN SEUL DANSEUR, EN GRAND', 'Une silhouette unique occupe presque tout le disque derrière le logo. Elle se lit vraiment, même en vol ; le contrecoup est qu\'on ne comprend plus « une foule en fête », juste « un bonhomme ».',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .3); fetard(g, 0, r * .78, r * 1.5, T * 3, P.or); g.restore(); } }),
+      v('D', 'DEUX RANGS EN CONTRE-JOUR', 'Une bande d\'or barre le disque, et les silhouettes s\'y découpent en noir à contre-jour. C\'est le contraste le plus fort du lot ; il vole aussi la vedette au logo, qui n\'est plus la pièce la plus visible.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .35); g.fillStyle = P.or; g.fillRect(-r, r * .05, r * 2, r * .95); for (let i = 0; i < 4; i++) fetard(g, (i - 1.5) * r * .45, r * .92, r * .58, T * 3.4 + i * 1.3, P.noir); g.restore(); } }),
+      v('E', 'RIEN QUE DES MAINS', 'Pas de corps du tout : seulement des mains ouvertes qui dépassent du bas, comme une fosse vue depuis la scène. Très lisible parce que très simple, mais il faut connaître la canette pour comprendre la référence.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .3); g.strokeStyle = P.or; g.lineWidth = r * .11; g.lineCap = 'round'; for (let i = 0; i < 6; i++) { const x = (i - 2.5) * r * .34, h = r * (.5 + (i % 3) * .16); g.beginPath(); g.moveTo(x, r); g.lineTo(x + Math.sin(T * 4 + i) * r * .07, r - h); g.stroke(); g.beginPath(); g.arc(x + Math.sin(T * 4 + i) * r * .07, r - h, r * .09, 0, TAU); g.fillStyle = P.or; g.fill(); } g.restore(); } }),
+      v('F', 'FOULE DENSE', 'Une dizaine de petites silhouettes serrées sur toute la moitié basse. On lit « il y a du monde » ; en contrepartie, à cette taille, c\'est un grumeau doré et plus une foule.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .35); for (let i = 0; i < 10; i++) { const x = (i - 4.5) * r * .22; fetard(g, x, r * (.78 + (i % 3) * .1), r * .38, T * 3 + i * .9, i % 2 ? P.or : P.orF); } g.restore(); } }),
+      v('G', 'DEUX DANSEURS FACE À FACE', 'Deux silhouettes de part et d\'autre du logo, tournées l\'une vers l\'autre. Elles encadrent le mot au lieu de le concurrencer ; mais deux personnes, ce n\'est pas encore une fête.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .3); fetard(g, -r * .62, r * .88, r * .95, T * 3, P.or); g.save(); g.translate(r * .62, 0); g.scale(-1, 1); fetard(g, 0, r * .88, r * .95, T * 3 + 2.1, P.or); g.restore(); g.restore(); } }),
+      v('H', 'FOULE QUI SAUTE', 'Les silhouettes montent et descendent en cadence au lieu de seulement lever les bras. Le disque a l\'air vivant même immobile en main ; mais ce mouvement s\'ajoute à la rotation et finit par brouiller la face.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .4); for (let i = 0; i < 4; i++) { const saut = Math.abs(Math.sin(T * 4 + i * .8)) * r * .22; fetard(g, (i - 1.5) * r * .44, r * .9 - saut, r * .6, T * 4 + i, P.or); } g.restore(); } }),
+      v('I', 'VAGUE D\'OR SANS PERSONNE', 'On garde l\'or de l\'étiquette mais on renonce aux silhouettes : juste une grande coulée dorée. C\'est de loin le plus lisible, et c\'est aussi renoncer à ce qui rend Vody reconnaissable.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .3); g.fillStyle = P.or; g.beginPath(); g.moveTo(-r, r); g.lineTo(-r, r * .2); for (let x = -r; x <= r; x += 3) g.lineTo(x, r * .2 + Math.sin(x / r * 2.6) * r * .22); g.lineTo(r, r); g.closePath(); g.fill(); g.restore(); } }),
+      v('J', 'FOULE À CONTRESENS', 'La foule tourne dans le sens inverse du disque. L\'œil accroche tout de suite parce que quelque chose cloche, et c\'est exactement le problème : ça se remarque plus que le logo.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(-s * .8); for (let i = 0; i < 5; i++) { g.save(); g.rotate((i / 5) * TAU); fetard(g, 0, r * .88, r * .55, T * 3 + i, P.or); g.restore(); } g.restore(); } })
+    ]
+  },
+  {
+    id: 'vagues', titre: '3 · Les vagues d\'or',
+    note: 'Les lignes ondulées qui barrent l\'étiquette sous le « 22 % », serrées comme une portée musicale. Elles servent à séparer le rouge du noir et à donner du rythme — mais chaque ligne ajoutée coûte de la lisibilité au logo.',
+    variantes: [
+      v('A', 'PORTÉE ONDULÉE', 'Cinq lignes d\'or fines qui ondulent en travers du bas, la citation directe de l\'étiquette. Élégant et discret ; à 28 px les cinq lignes finissent par se toucher et former une bande pleine.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .4); vagues(g, r, [P.or, P.orClair], 5, .18, .1, 0, .05); g.restore(); } }),
+      v('B', 'BANDE NOIRE ET PORTÉE', 'Le bas noir de la canette, avec les lignes d\'or qui le franchissent. C\'est la structure complète de l\'étiquette et le contraste est net ; en revanche le noir se fond dans le sol de l\'arène.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .4); g.fillStyle = P.noir; g.beginPath(); g.moveTo(-r, r); g.lineTo(-r, r * .34); for (let x = -r; x <= r; x += 3) g.lineTo(x, r * .34 + Math.sin(x / r * 2.4) * r * .12); g.lineTo(r, r); g.closePath(); g.fill(); vagues(g, r, [P.or, P.orClair], 4, .2, .12, 0, .045); g.restore(); } }),
+      v('C', 'UNE SEULE VAGUE ÉPAISSE', 'Une seule bande d\'or large qui traverse tout le disque. Elle survit à la vitesse là où cinq lignes fines deviennent une bouillie ; mais elle coupe le disque en deux et écrase le logo.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .4); vagues(g, r, [P.or], 1, .3, .16, 0, .3); g.restore(); } }),
+      v('D', 'VAGUES QUI ONDULENT', 'Les lignes respirent en continu, comme une nappe agitée. Le disque semble vibrer d\'énergie même posé ; le mouvement fatigue en revanche l\'œil sur un long échange.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .4); vagues(g, r, [P.or, P.orClair], 5, .18, .12, T * 2.6, .05); g.restore(); } }),
+      v('E', 'ANNEAUX CONCENTRIQUES', 'Les vagues deviennent des cercles d\'or centrés sur le disque. C\'est la seule variante qui ne bouge pas du tout en rotation, donc la plus stable à regarder ; elle abandonne aussi complètement le graphisme de l\'étiquette.',
+        { calque: (g, r, s, T, P) => { for (let i = 1; i <= 4; i++) { g.strokeStyle = i % 2 ? P.or : P.orF; g.lineWidth = r * .05; g.beginPath(); g.arc(0, 0, r * (.28 + i * .17), 0, TAU); g.stroke(); } } }),
+      v('F', 'LIGNES EN BIAIS', 'Les mêmes lignes, mais franchement inclinées. Elles donnent au disque un élan visuel qui va dans le sens du lancer ; en contrepartie elles pointent une direction qui, elle, ne veut rien dire.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .4 - .55); vagues(g, r, [P.or, P.orClair], 6, .0, .06, 0, .05); g.restore(); } }),
+      v('G', 'ÉVENTAIL DEPUIS LE BAS', 'Les lignes partent toutes d\'un même point bas et s\'ouvrent en éventail. On lit un projecteur de scène braqué sur la foule, ce qui sert le thème ; mais l\'éventail crée un « bas » sur un objet qui tourne.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .4); g.strokeStyle = P.or; g.lineWidth = r * .05; for (let i = 0; i < 7; i++) { const a = -Math.PI / 2 + (i - 3) * .34; g.beginPath(); g.moveTo(0, r); g.lineTo(Math.cos(a) * r * 2, r + Math.sin(a) * r * 2); g.stroke(); } g.restore(); } }),
+      v('H', 'VAGUES QUI TOURNENT SEULES', 'Les lignes tournent pour leur propre compte, plus lentement que le disque. Cela donne deux vitesses de rotation superposées, ce qui est très riche ; c\'est aussi le plus difficile à lire quand le disque file.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .18 + T * .5); vagues(g, r, [P.or, P.orClair], 5, .1, .1, 0, .05); g.restore(); } }),
+      v('I', 'UN SEUL TRAIT', 'Un unique trait d\'or traverse le disque de part en part. Le plus sobre du lot, il laisse toute la place au logo ; il ne raconte en revanche presque rien de l\'étiquette.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s * .4); g.strokeStyle = P.orClair; g.lineWidth = r * .09; g.beginPath(); g.moveTo(-r, r * .42); g.lineTo(r, r * .28); g.stroke(); g.restore(); } }),
+      v('J', 'PAS DE VAGUES', 'On supprime la couche entière. Le logo et la foule respirent enfin et le disque devient très net ; mais il perd le rythme graphique qui fait tenir l\'étiquette ensemble.',
+        { calque: () => { } })
+    ]
+  },
+  {
+    id: 'logo', titre: '4 · Le logo « Vody »',
+    note: 'Le mot au centre, posé par-dessus tout le reste. C\'est lui qu\'on doit reconnaître en un dixième de seconde : à 28 px, la question n\'est pas s\'il est joli mais s\'il reste lisible pendant que le disque tourne.',
+    variantes: [
+      v('A', 'VODY NOIR, PLEINE LARGEUR', 'Le mot en noir occupe toute la largeur du disque et tourne avec lui, comme une vraie impression. C\'est le plus fidèle à la canette ; en rotation rapide il devient un pâté noir illisible.',
+        { calque: (g, r, s, T, P) => mot(g, 'Vody', r * .72, r * .04, P.noir, true, s) }),
+      v('B', 'VODY QUI RESTE DROIT', 'Le mot contre-tourne pour rester toujours à l\'endroit. C\'est la seule variante où on lit « Vody » même sur un tir chargé ; mais un texte qui refuse de tourner trahit qu\'il est collé par l\'interface, pas imprimé.',
+        { calque: (g, r, s, T, P) => mot(g, 'Vody', r * .72, r * .04, P.noir, false, s) }),
+      v('C', 'VODY OR CERNÉ DE NOIR', 'Le mot passe en or avec un cerne noir épais. Il ressort sur le rouge comme sur le noir, donc il survit à n\'importe quel fond ; le cerne l\'épaissit et lui fait perdre le tranchant du logo d\'origine.',
+        { calque: (g, r, s, T, P) => mot(g, 'Vody', r * .68, r * .04, P.orClair, true, s, P.noir) }),
+      v('D', 'CODY\'S AU-DESSUS', 'Le mot complet de la canette : « Cody\'s » en petit blanc, « Vody » en gros dessous. C\'est la citation intégrale ; la ligne du haut est illisible à cette taille et ne fait qu\'ajouter du bruit.',
+        { calque: (g, r, s, T, P) => { mot(g, "Cody's", r * .26, -r * .44, P.blanc, true, s); mot(g, 'Vody', r * .64, r * .12, P.noir, true, s); } }),
+      v('E', 'JUSTE LE V', 'Une seule lettre, énorme, au centre. C\'est de très loin le plus lisible en vol et ça marche comme un blason ; en contrepartie on perd le nom, et un V seul ne dit rien à personne.',
+        { calque: (g, r, s, T, P) => mot(g, 'V', r * 1.5, r * .06, P.noir, true, s) }),
+      v('F', 'VODY BLANC', 'Le mot en blanc au lieu du noir. Il claque sur le rouge et reste visible sur la bande noire, donc il ne dépend plus du fond choisi ; mais il perd la brutalité du logo, qui tient justement à son noir.',
+        { calque: (g, r, s, T, P) => mot(g, 'Vody', r * .72, r * .04, P.blanc, true, s) }),
+      v('G', 'VODY ET 22 %', 'Le nom en haut, le « 22 % » en blanc en dessous. C\'est le gag de la canette au complet et il fait sourire ; à cette taille les deux lignes se disputent la place et aucune ne gagne.',
+        { calque: (g, r, s, T, P) => { mot(g, 'Vody', r * .58, -r * .26, P.noir, true, s); mot(g, '22%', r * .5, r * .42, P.blanc, true, s); } }),
+      v('H', 'VODY DÉTOURÉ', 'Seulement le contour du mot, l\'intérieur laisse voir la foule. Le calque du dessous n\'est plus caché, ce qui donne un disque très riche ; le mot, lui, devient nettement plus dur à lire.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s); g.font = '900 ' + (r * .72).toFixed(1) + 'px "Archivo Black", Impact, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = r * .07; g.strokeStyle = P.noir; g.strokeText('Vody', 0, r * .04); g.restore(); } }),
+      v('I', 'VODY EN DIAGONALE', 'Le mot barre le disque en biais, à la façon d\'un tampon. Il occupe plus de longueur donc chaque lettre est plus grande ; mais le biais s\'ajoute à la rotation et donne un mot qui gigote.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(s + .5); mot(g, 'Vody', r * .8, 0, P.noir, false, 0); g.restore(); } }),
+      v('J', '22 % GÉANT', 'On renonce au nom : c\'est le « 22 % » qui devient le logo. Deux chiffres se lisent à n\'importe quelle vitesse, c\'est imbattable en lisibilité ; mais le disque ne s\'appelle plus Vody, il s\'appelle 22.',
+        { calque: (g, r, s, T, P) => { mot(g, '22%', r * .9, r * .04, P.blanc, true, s, P.noir); } })
+    ]
+  },
+  {
+    id: 'trainee', titre: '5 · La traînée',
+    note: 'Le sillage : 26 carrés qui grossissent vers le disque. La couleur change au fil de la rotation, donc une liste de plusieurs teintes donne un dégradé le long du trait — c\'est là que la palette de la canette peut vivre en plein vol.',
+    variantes: [
+      v('A', 'ROUGE ET OR', 'Les deux couleurs maîtresses de la canette alternent. Le sillage est immédiatement identifiable comme celui de Vody, et il reste lisible sur le sol bleu ; il ressemble en revanche à celui du Magma de loin.',
+        { trainee: ['#b0181e', '#d9ad55'] }),
+      v('B', 'OR SEUL', 'Un sillage d\'or uni. La trajectoire se lit comme un trait net, ce qui aide vraiment à anticiper l\'attrapé ; mais il rejoint la famille dorée du Chaptèle et du Pharaon.',
+        { trainee: ['#d9ad55'] }),
+      v('C', 'LES TROIS DE L\'ÉTIQUETTE', 'Rouge, or et noir se succèdent. C\'est toute la canette étalée derrière le disque, très riche ; le noir crée en revanche des trous dans le sillage sur le sol sombre.',
+        { trainee: ['#b0181e', '#d9ad55', '#141110'] }),
+      v('D', 'OR ET MOUSSE', 'De l\'or et un blanc crème, comme une boisson qui déborde. Le blanc est la teinte la plus visible du jeu sur ce sol, donc c\'est le sillage le plus lisible du lot ; il évoque plus la bière que la vodka.',
+        { trainee: ['#d9ad55', '#f6f1e6'] }),
+      v('E', 'ROUGE SEUL', 'Un sillage rouge uni. Aucun autre disque n\'a de sillage rouge, donc on sait qui joue rien qu\'au trait ; sur un fond sombre, ce rouge est aussi le moins lumineux des candidats.',
+        { trainee: ['#b0181e'] }),
+      v('F', 'OR PÂLE', 'Un or très clair, presque champagne. Extrêmement lisible et léger, il n\'écrase pas les effets des autres joueurs ; en contrepartie il perd le côté brutal du rouge.',
+        { trainee: ['#f4dfa4'] }),
+      v('G', 'NOIR ET OR', 'Le bas de l\'étiquette : noir et or en alternance. Le contraste interne au sillage est le plus fort possible ; mais un carré sur deux disparaît sur le sol bleu nuit, le trait paraît haché.',
+        { trainee: ['#141110', '#d9ad55'] }),
+      v('H', 'ROUGE SOMBRE ET OR', 'Un rouge plus profond, adouci par l\'or. Le sillage se remarque sans agresser, bon compromis pour un long échange ; il se distingue mal du rouge vif à pleine vitesse.',
+        { trainee: ['#6d0d12', '#d9ad55'] }),
+      v('I', 'CRÈME UNIQUE', 'Une seule teinte crème, la plus neutre. Elle ne rentre en conflit avec aucun autre effet à l\'écran, ce qui est précieux à quatre joueurs ; elle ne dit en revanche rien de Vody.',
+        { trainee: ['#f6f1e6'] }),
+      v('J', 'LES QUATRE COULEURS', 'Rouge, or, blanc, noir : toute la palette y passe. Le sillage devient un ruban bariolé qu\'on repère de partout ; à quatre teintes il scintille et perd la netteté du trait.',
+        { trainee: ['#b0181e', '#d9ad55', '#f6f1e6', '#141110'] })
+    ]
+  },
+  {
+    id: 'vol', titre: '6 · Ce qu\'il sème en vol',
+    note: 'Les particules lâchées à chaque image de vol. Le compteur sous le rallye est le juge : au-dessus d\'une trentaine en permanence, ce disque mange le budget de tous les autres effets à l\'écran et le téléphone décroche.',
+    variantes: [
+      v('A', 'BULLES QUI MONTENT', 'De petites bulles claires s\'échappent vers le haut, comme d\'une boisson gazeuse. C\'est l\'effet le plus juste pour un energy drink et il reste léger ; il est aussi peu visible sur un tir rapide.',
+        { vol: (d, out) => { if (combien(.45)) out.push(p(d.x + gauss() * 9, d.y + gauss() * 9, gauss() * 10, -rand(30, 70), .5, alea() < .7 ? '#f6f1e6' : '#f4dfa4', 2, -40)); } }),
+      v('B', 'GOUTTES DORÉES', 'Des gouttes d\'or lourdes qui retombent derrière le disque. Elles donnent du poids au disque et se voient très bien ; en contrepartie elles retombent sur le terrain et encombrent le bas de l\'écran.',
+        { vol: (d, out) => { if (combien(.4)) out.push(p(d.x + gauss() * 10, d.y + gauss() * 8, gauss() * 14, rand(10, 45), .6, alea() < .6 ? '#d9ad55' : '#f4dfa4', 3, 140)); } }),
+      v('C', 'CONFETTIS DE FÊTE', 'Des carrés rouges, or et blancs éparpillés au hasard. C\'est le disque le plus festif du registre, en accord direct avec la foule de l\'étiquette ; ça ressemble aussi beaucoup aux confettis de but du jeu.',
+        { vol: (d, out) => { if (combien(.5)) out.push(p(d.x + gauss() * 11, d.y + gauss() * 11, gauss() * 26, gauss() * 26, .45, ['#b0181e', '#d9ad55', '#f6f1e6', '#f4dfa4'][(alea() * 4) | 0], 3, 30)); } }),
+      v('D', 'RIEN', 'Le disque ne sème rien, il n\'a que sa traînée. C\'est le plus lisible du lot et il ne coûte rien à la machine ; c\'est aussi renoncer à tout ce qui distingue Vody en plein vol.',
+        { vol: () => { } }),
+      v('E', 'MOUSSE BLANCHE', 'Une écume blanche qui traîne et s\'évapore lentement. Elle épaissit le sillage sans rien y ajouter de coloré, donc elle ne jure avec aucun terrain ; elle évoque en revanche plus la bière que la vodka.',
+        { vol: (d, out) => { if (combien(.55)) out.push(p(d.x + gauss() * 12, d.y + gauss() * 12, gauss() * 8, gauss() * 8, .7, '#f6f1e6', rand(2, 4), 0)); } }),
+      v('F', 'ÉTINCELLES D\'OR', 'De fines étincelles dorées projetées vif. Le disque paraît électrique, ce qui colle au « energy » de la canette ; à cette finesse elles se perdent complètement sur un fond clair.',
+        { vol: (d, out) => { if (combien(.35)) out.push(p(d.x + gauss() * 8, d.y + gauss() * 8, gauss() * 32, gauss() * 32, .35, '#f4dfa4', 2, 0, 'star')); } }),
+      v('G', 'BULLES ET GOUTTES', 'Les deux à la fois : les bulles montent, les gouttes tombent. C\'est la lecture la plus complète d\'une boisson en mouvement ; c\'est aussi deux fois le coût, et le compteur grimpe vite.',
+        { vol: (d, out) => { if (combien(.4)) out.push(p(d.x + gauss() * 9, d.y + gauss() * 9, gauss() * 10, -rand(30, 60), .5, '#f6f1e6', 2, -40)); if (combien(.3)) out.push(p(d.x + gauss() * 10, d.y + gauss() * 8, gauss() * 12, rand(10, 40), .55, '#d9ad55', 3, 140)); } }),
+      v('H', 'VAPEUR FROIDE', 'Un voile pâle et lent qui s\'attarde, comme une canette sortie du frigo. Il donne beaucoup de présence pour très peu de particules ; il est aussi si discret qu\'on peut le rater complètement.',
+        { vol: (d, out) => { if (combien(.3)) out.push(p(d.x + gauss() * 14, d.y + gauss() * 14, gauss() * 5, gauss() * 5, 1.0, '#d8e6f0', rand(3, 5), -10)); } }),
+      v('I', 'PAILLETTES QUI TOURNENT', 'Les paillettes partent en spirale autour du disque au lieu de derrière. Le mouvement tournant traduit la rotation sans toucher à la face ; en revanche elles collent au disque et gênent la lecture du bord.',
+        { vol: (d, out) => { if (combien(.4)) { const a = d.spin * 3, rr = 13; out.push(p(d.x + Math.cos(a) * rr, d.y + Math.sin(a) * rr, -Math.sin(a) * 42, Math.cos(a) * 42, .5, alea() < .6 ? '#d9ad55' : '#f4dfa4', 2, 0, 'star')); } } }),
+      v('J', 'ÉCLABOUSSURES LOURDES', 'De grosses gouttes rouges rares mais massives. Chacune se remarque et le disque a l\'air de perdre son contenu ; elles sont aussi assez grosses pour qu\'on les confonde avec un projectile.',
+        { vol: (d, out) => { if (combien(.18)) out.push(p(d.x + gauss() * 8, d.y + gauss() * 8, gauss() * 20, rand(20, 60), .7, '#b0181e', rand(4, 6), 220)); } })
+    ]
+  },
+  {
+    id: 'rebond', titre: '7 · L\'éclat au rebond',
+    note: 'Ce que le disque projette en cognant un mur. C\'est le seul moment où il a droit à une vraie gerbe : elle marque le rebond, que le joueur doit lire pour se replacer. Trop discrète, elle ne sert à rien ; trop grosse, elle cache le disque au moment où il repart.',
+    variantes: [
+      v('A', 'LA CANETTE S\'OUVRE', 'Un jet blanc et or part du point d\'impact, comme une canette qu\'on décapsule. C\'est l\'effet le plus parlant du lot et il claque ; il est aussi le plus coûteux, il remplit la moitié du plafond d\'un coup.',
+        { rebond: (d, out) => { couronne(out, d.x, d.y, ['#f6f1e6', '#f4dfa4', '#d9ad55'], 14, 240, 4, .5); for (let i = 0; i < combien(4); i++) out.push(p(d.x, d.y, gauss() * 40, -rand(140, 220), .8, '#f6f1e6', 4, 320)); } }),
+      v('B', 'COURONNE ROUGE ET OR', 'Une gerbe classique aux deux couleurs de la canette. Le rebond se repère du coin de l\'œil sans jamais gêner ; c\'est aussi l\'effet le plus banal du registre, quatre disques en ont déjà un.',
+        { rebond: (d, out) => couronne(out, d.x, d.y, ['#b0181e', '#d9ad55', '#f4dfa4'], 11, 190, 4, .55) }),
+      v('C', 'CONFETTIS', 'Des confettis aux quatre couleurs qui retombent doucement. Le mur a l\'air de déclencher une fête, ce qui sert le thème ; ils traînent en revanche longtemps à l\'écran et se mélangent au rebond suivant.',
+        { rebond: (d, out) => { for (let i = 0; i < combien(12); i++) { const a = rand(TAU); out.push(p(d.x, d.y, Math.cos(a) * rand(60, 150), Math.sin(a) * rand(60, 150) - 40, rand(.6, 1.1), ['#b0181e', '#d9ad55', '#f6f1e6', '#141110'][i % 4], 3, 180)); } } }),
+      v('D', 'SPIRALE DORÉE', 'Les particules partent en tournant : on lit le sens de rotation au moment du choc. C\'est l\'information la plus utile qu\'un rebond puisse donner ; c\'est aussi le plus discret, donc le plus facile à rater.',
+        { rebond: (d, out) => spirale(out, d.x, d.y, ['#f4dfa4', '#d9ad55', '#b0181e'], 9, 160, .6) }),
+      v('E', 'MOUSSE QUI DÉBORDE', 'De grosses gouttes blanches lourdes qui glissent le long du mur. Le rebond a un poids qu\'aucune couronne ne donne ; en contrepartie l\'effet s\'étale au sol et encombre la zone du mur.',
+        { rebond: (d, out) => { for (let i = 0; i < combien(8); i++) out.push(p(d.x, d.y, gauss() * 60, rand(-60, 40), rand(.7, 1.2), alea() < .7 ? '#f6f1e6' : '#f4dfa4', rand(3, 6), 380)); } }),
+      v('F', 'FLASH SEC', 'Quatre particules seulement, très vives et très courtes. Le rebond se marque sans jamais encombrer, idéal quand ça s\'échange vite ; il est si bref qu\'un joueur distrait ne le verra pas.',
+        { rebond: (d, out) => couronne(out, d.x, d.y, ['#f6f1e6', '#f4dfa4'], 4, 260, 3, .22) }),
+      v('G', 'DOUBLE COURONNE', 'Deux gerbes concentriques, une rouge lente et une dorée rapide. L\'impact paraît deux fois plus violent et se lit de très loin ; il double aussi le nombre de particules pour un gain surtout décoratif.',
+        { rebond: (d, out) => { couronne(out, d.x, d.y, ['#b0181e'], 8, 110, 5, .7); couronne(out, d.x, d.y, ['#f4dfa4', '#d9ad55'], 10, 250, 3, .4); } }),
+      v('H', 'GERBE VERS LE HAUT', 'Tout part vers le haut plutôt qu\'en couronne, comme un geyser. La direction dit d\'où vient le choc, ce qu\'une couronne ne fait jamais ; mais l\'effet est identique sur les quatre murs, donc il ment sur trois.',
+        { rebond: (d, out) => { for (let i = 0; i < combien(10); i++) out.push(p(d.x + gauss() * 6, d.y, gauss() * 45, -rand(120, 240), .7, ['#f6f1e6', '#f4dfa4', '#d9ad55'][i % 3], 3, 300)); } }),
+      v('I', 'CANETTE SECOUÉE', 'Le disque lui-même tremble après le choc, comme une canette qu\'on vient d\'agiter, avec trois gouttes pour accompagner. L\'effet est dans le disque et non autour, ce qui est rare et mémorable ; mais la Gélatine tremble déjà, et deux disques qui tremblent, c\'est un de trop.',
+        { rebond: (d, out) => { d.wobble = 1; couronne(out, d.x, d.y, ['#f6f1e6', '#d9ad55'], 3, 120, 4, .4); } }),
+      v('J', 'RIEN', 'Aucun éclat : le disque rebondit et repart, point. Rien ne masque jamais le disque au moment où il faut le suivre ; le mur perd en revanche tout impact et le rebond passe inaperçu.',
+        { rebond: () => { } })
+    ]
+  }
+];
+/* ==== FIN DU CONTENU ==== */
+
+/* ===========================================================================
+   LE MOTEUR — ne pas toucher en copiant.
+   =========================================================================== */
+
+/* --- L'état courant : une lettre retenue par section --- */
+const choix = {};
+// Les lettres validées, quand le disque est arrêté : le mockup doit s'ouvrir
+// sur le disque tel qu'il est en jeu, pas sur la première variante de chaque
+// section. Sans ça il finirait par mentir sur l'état réel du disque.
+const RETENU = (DISQUE.retenu || '').match(/[A-J]/g) || [];
+SECTIONS.forEach((s, i) => {
+  const lettre = RETENU[i];
+  choix[s.id] = s.variantes.some(x => x.id === lettre) ? lettre : s.variantes[0].id;
+});
+if (DISQUE.retenu) {
+  document.getElementById('retenu').textContent =
+    'Choix retenus : ' + DISQUE.retenu + ' — le mockup ouvre dessus, c’est l’état porté dans le jeu.';
+}
+
+// Assemble le disque tel que les choix actuels le décrivent. Les calques
+// s'empilent dans l'ordre des sections ; les autres pièces sont uniques, la
+// dernière déclarée l'emporte. `extra` permet à une carte de forcer SA
+// variante par-dessus l'état courant.
+function assembler(extra) {
+  const d = {
+    calques: [], sur: null, contour: null,
+    pal: { ...DISQUE.pal }, trainee: ['#ffd23e'], vol: () => {}, rebond: () => {}
+  };
+  const poser = pieces => {
+    if (!pieces) return;
+    if (pieces.calque) d.calques.push(pieces.calque);
+    if (pieces.sur) d.sur = pieces.sur;
+    if ('contour' in pieces) d.contour = pieces.contour;
+    if (pieces.pal) d.pal = { ...d.pal, ...pieces.pal };
+    if (pieces.trainee) d.trainee = pieces.trainee;
+    if (pieces.vol) d.vol = pieces.vol;
+    if (pieces.rebond) d.rebond = pieces.rebond;
+  };
+  for (const s of SECTIONS) {
+    const va = s.variantes.find(x => x.id === choix[s.id]);
+    if (va) poser(va.pieces);
+  }
+  // La carte force SA variante : son calque remplace celui de la même section
+  // au lieu de s'ajouter par-dessus, sinon on verrait les deux empilés.
+  if (extra) {
+    if (extra.calque) {
+      const sec = SECTIONS.find(s => s.variantes.some(x => x.pieces === extra));
+      if (sec) {
+        const rang = SECTIONS.indexOf(sec);
+        let n = 0;
+        for (let i = 0; i < rang; i++) {
+          const va = SECTIONS[i].variantes.find(x => x.id === choix[SECTIONS[i].id]);
+          if (va && va.pieces.calque) n++;
+        }
+        d.calques[n] = extra.calque;
+      }
+    }
+    const reste = { ...extra }; delete reste.calque;
+    poser(reste);
+  }
+  return d;
+}
+
+/* --- Le disque, dessiné comme le jeu le dessine --------------------------
+   Découpe au contour, calques empilés, puis les deux couches que drawSkinDisc
+   applique à TOUT LE MONDE (le reflet et l'ombre de bord) et le liseré que
+   render.js trace par-dessus. Les sauter donnerait un disque plus plat en
+   match que dans le mockup. */
+function dessinerDisque(g, d, r, T, piece) {
+  g.save();
+  // Gélatine : le disque s'étire sur un axe et s'écrase sur l'autre après un
+  // rebond, à volume constant.
+  if (d.wobble > 0) {
+    const k = 1 + Math.sin(d.wobble * 26) * d.wobble * .28;
+    g.translate(d.x, d.y); g.scale(k, 1 / k); g.translate(-d.x, -d.y);
+  }
+  g.save();
+  g.translate(d.x, d.y);
+  tracerContour(g, 0, 0, r, piece.contour);
+  g.clip();
+  for (const c of piece.calques) { g.save(); c(g, r, d.spin, T, piece.pal); g.restore(); }
+
+  const gloss = g.createRadialGradient(-r * .32, -r * .36, r * .05, -r * .1, -r * .1, r * .95);
+  gloss.addColorStop(0, 'rgba(255,255,255,0.45)');
+  gloss.addColorStop(.45, 'rgba(255,255,255,0.08)');
+  gloss.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gloss; g.fillRect(-r, -r, r * 2, r * 2);
+
+  const edge = g.createRadialGradient(0, 0, r * .72, 0, 0, r);
+  edge.addColorStop(0, 'rgba(0,0,0,0)');
+  edge.addColorStop(1, 'rgba(0,0,0,0.4)');
+  g.fillStyle = edge; g.fillRect(-r, -r, r * 2, r * 2);
+  g.restore();
+
+  g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = 1.5;
+  tracerContour(g, d.x, d.y, r, piece.contour);
+  g.stroke();
+  g.restore();
+  if (piece.sur) { g.save(); piece.sur(g, d.x, d.y, r, d.spin, T); g.restore(); }
+}
+
+// L'ombre portée, aux mêmes réglages que drawShadow dans render.js : elle
+// tombe 14 px sous le disque, ce qui le décolle du sol.
+function ombre(g, x, y, r) {
+  g.save();
+  g.fillStyle = 'rgba(0,0,20,.33)';
+  g.beginPath(); g.ellipse(x, y + 14, r, r * .36, 0, 0, TAU); g.fill();
+  g.restore();
+}
+
+/* --- Un bout du vrai terrain --------------------------------------------
+   Teintes du thème `arena` de data/maps.js : pont métallique, sol projeté,
+   lignes blanches. La lisibilité jugée ici est celle du match. */
+function terrain(g, w, h) {
+  g.fillStyle = '#0a1220'; g.fillRect(0, 0, w, h);
+  g.fillStyle = 'rgba(15,26,46,0.7)'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = '#1b2c48'; g.lineWidth = 1;
+  for (let x = 32; x < w; x += 34) { g.beginPath(); g.moveTo(x + .5, 0); g.lineTo(x + .5, h); g.stroke(); }
+  for (let y = 32; y < h; y += 34) { g.beginPath(); g.moveTo(0, y + .5); g.lineTo(w, y + .5); g.stroke(); }
+  g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 2;
+  g.strokeRect(3, 3, w - 6, h - 6);
+}
+
+/* --- La traînée et les particules, comme render.js les dessine --- */
+function couleurTrainee(cols, spin) { return cols[Math.abs(Math.floor(spin * 3)) % cols.length]; }
+function peindreTrainee(g, trail) {
+  const n = trail.length;
+  for (let i = 0; i < n; i++) {
+    const t = trail[i], k = (i + 1) / n;
+    g.globalAlpha = k * .5; g.fillStyle = t.c;
+    const s = 3 + k * 5;
+    g.fillRect(t.x - s / 2, t.y - s / 2, s, s);
+  }
+  g.globalAlpha = 1;
+}
+function peindreParticules(g, parts) {
+  for (const q of parts) {
+    g.globalAlpha = Math.max(0, Math.min(1, q.life * 2.5));
+    g.fillStyle = q.c;
+    g.fillRect(q.x - q.s / 2, q.y - q.s / 2, q.s, q.s);
+  }
+  g.globalAlpha = 1;
+}
+// Le plafond du jeu, appliqué ici aussi : sans lui le mockup promettrait une
+// gerbe que le match ne montrera jamais.
+function verser(sortie, parts) {
+  let place = MAX_PARTICULES - parts.length;
+  for (const q of sortie) { if (place <= 0) break; parts.push(q); place--; }
+}
+function majParticules(parts, dt) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const q = parts[i];
+    q.vy += q.g * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt;
+    if (q.life <= 0) parts.splice(i, 1);
+  }
+}
+
+/* --- Vérification du gabarit --------------------------------------------
+   Le découpage est libre, donc rien ne garantit tout seul qu'il décide bien
+   ce que le code réclame : une page de six belles sections peut n'avoir
+   jamais choisi la couleur du sillage. On vérifie donc les trois choses qu'un
+   découpage sur mesure peut oublier — le nombre de sections, les pièces
+   obligatoires, et l'explication écrite de chaque carte. */
+const bad = [];
+const MIN_DESC = 40;
+const OBLIGATOIRES = ['calque', 'trainee', 'vol', 'rebond'];
+
+if (SECTIONS.length < 6) bad.push('découpage : ' + SECTIONS.length + ' sections (six au minimum)');
+const vues = new Set();
+for (const s of SECTIONS) {
+  if (!s.note || s.note.trim().length < MIN_DESC) bad.push(s.id + ' : la section n\'explique pas ce qu\'on y juge');
+  if (s.variantes.length !== 10) bad.push(s.id + ' : ' + s.variantes.length + ' variantes (attendu 10, soit 5 visibles + 5 en réserve)');
+  for (const va of s.variantes) {
+    const ref = s.id + '-' + va.id;
+    if (!va.nom || !va.nom.trim()) bad.push(ref + ' : pas de nom');
+    // Une description doit dire ce que c'est ET ce que ça coûte : d'où la
+    // longueur minimale, qui écarte les « joli ».
+    if (!va.desc || va.desc.trim().length < MIN_DESC) {
+      bad.push(ref + ' : explication manquante ou trop courte — dire l\'allure ET l\'avantage/inconvénient');
+    }
+    const cles = Object.keys(va.pieces || {});
+    if (!cles.length) bad.push(ref + ' : ne remplace rien, la carte serait identique aux autres');
+    cles.forEach(c => vues.add(c));
+    if (va.pieces && va.pieces.trainee && !va.pieces.trainee.length) bad.push(ref + ' : traînée vide, le disque n\'aurait aucun sillage');
+  }
+}
+for (const c of OBLIGATOIRES) {
+  if (!vues.has(c)) bad.push('découpage : aucune section ne décide « ' + c + ' » — le code en a besoin');
+}
+const boite = document.getElementById('errs');
+boite.textContent = bad.length
+  ? bad.length + ' à corriger :\n' + bad.slice(0, 24).join('\n') + (bad.length > 24 ? '\n…' : '')
+  : 'OK — six sections au moins, les quatre pièces du code décidées, et chaque section comme chaque variante porte son explication.';
+if (bad.length) boite.className = 'bad';
+
+/* --- Bande de comparaison : les disques réels du jeu --- */
+(function bande() {
+  const hote = document.getElementById('bande');
+  const une = (id, nom, neuf) => {
+    const d = document.createElement('div'); d.className = 'une' + (neuf ? ' neuf' : '');
+    const cv = document.createElement('canvas');
+    cv.width = 44; cv.height = 44;
+    if (neuf) cv.id = 'cvNeuf';
+    else {
+      const g = cv.getContext('2d');
+      terrain(g, 44, 44);
+      drawSkinDisc(g, 22, 22, R_JEU, id, .7);
+      g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = 1.5;
+      tracerContour(g, 22, 22, R_JEU, deformationDisque(id)); g.stroke();
+    }
+    const s = document.createElement('span'); s.textContent = nom;
+    d.appendChild(cv); d.appendChild(s); hote.appendChild(d);
+  };
+  for (const sk of DISC_SKINS) une(sk.id, sk.name, false);
+  une(DISQUE.id, DISQUE.nom, true);
+})();
+
+function peindreNeuf() {
+  const cv = document.getElementById('cvNeuf');
+  const g = cv.getContext('2d');
+  terrain(g, cv.width, cv.height);
+  dessinerDisque(g, { x: 22, y: 22, spin: .7, wobble: 0 }, R_JEU, horloge(), assembler());
+}
+
+/* --- Les cartes : figées, avec un vol simulé de façon déterministe -------
+   Soixante-dix canvas animés en même temps rameraient pour rien, et on
+   compare mieux des images au calme. Le vol est simulé sur une demi-seconde
+   pour que la traînée et le semis soient ceux du match, pas une décoration
+   posée à la main. Une variante qui déclare `rebond` cogne le mur de droite :
+   sa carte montre l'éclat, sinon elle ne montrerait rien du tout. */
+function peindreCarte(cv, piece, avecRebond) {
+  const g = cv.getContext('2d');
+  const w = cv.width, h = cv.height;
+  terrain(g, w, h);
+  semer(20260901);
+
+  const mur = w - 6 - R_JEU;
+  const d = { x: 22, y: h * .5 + 6, vx: 330, vy: -34, spin: 0, wobble: 0 };
+  const trail = [], parts = [];
+  const dt = 1 / 60;
+  let cogne = false;
+  // Le vol s'arrête avant le bord droit : à 330 px/s et soixante images par
+  // seconde le disque avance 5,5 px par image, et quarante images le feraient
+  // sortir du cadre. La version qui rebondit court jusqu'au mur, puis onze
+  // images de plus pour que la gerbe soit encore fraîche.
+  const images = avecRebond ? 42 : 26;
+  for (let i = 0; i < images; i++) {
+    d.x += d.vx * dt; d.y += d.vy * dt;
+    d.spin += Math.hypot(d.vx, d.vy) * dt * .06;
+    if (d.wobble > 0) d.wobble = Math.max(0, d.wobble - dt * 2.6);
+    trail.push({ x: d.x, y: d.y, c: couleurTrainee(piece.trainee, d.spin) });
+    if (trail.length > 26) trail.shift();
+    const out = []; piece.vol(d, out); if (out.length) verser(out, parts);
+    if (avecRebond && !cogne && d.x >= mur) {
+      cogne = true; d.x = mur; d.vx = -d.vx * .92;
+      const gerbe = []; piece.rebond(d, gerbe); verser(gerbe, parts);
+    }
+    majParticules(parts, dt);
+  }
+
+  relacher();
+  peindreTrainee(g, trail);
+  ombre(g, d.x, d.y, R_JEU + 2);
+  // Instant figé choisi une fois pour toutes : deux cartes comparées doivent
+  // montrer le même moment de l'animation de face, sinon on compare des
+  // phases et non des partis pris.
+  dessinerDisque(g, d, R_JEU, .42, piece);
+  peindreParticules(g, parts);
+}
+
+const cartes = [];
+(function poserSections() {
+  const hote = document.getElementById('sections');
+  for (const s of SECTIONS) {
+    const h2 = document.createElement('h2'); h2.textContent = s.titre;
+    hote.appendChild(h2);
+    if (s.note) { const n = document.createElement('p'); n.className = 'note'; n.textContent = s.note; hote.appendChild(n); }
+
+    const rangee = document.createElement('div'); rangee.className = 'row';
+    const reserve = document.createElement('div'); reserve.className = 'row reserve';
+    hote.appendChild(rangee);
+
+    s.variantes.forEach((va, i) => {
+      const card = document.createElement('div');
+      card.className = 'card' + (i === 0 ? ' on' : '');
+      const lbl = document.createElement('div'); lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + (va.desc || '');
+      const cv = document.createElement('canvas');
+      cv.width = 212; cv.height = 108;
+      card.appendChild(lbl); card.appendChild(cv);
+      (i < 5 ? rangee : reserve).appendChild(card);
+      cartes.push({ cv, s, va, card });
+      card.addEventListener('click', () => {
+        choix[s.id] = va.id;
+        cartes.filter(c => c.s === s).forEach(c => c.card.classList.toggle('on', c.va === va));
+        rafraichir();
+      });
+    });
+
+    const bouton = document.createElement('button');
+    bouton.className = 'plus'; bouton.textContent = '+ 5 autres choix';
+    bouton.addEventListener('click', () => {
+      reserve.classList.toggle('ouverte');
+      bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
+    });
+    hote.appendChild(bouton);
+    hote.appendChild(reserve);
+  }
+})();
+
+function peindreCartes() {
+  for (const { cv, va } of cartes) {
+    // La carte montre le disque ENTIER avec cette variante appliquée, le reste
+    // dans l'état courant : on juge un disque complet, jamais une pièce qui
+    // flotte sur fond noir.
+    peindreCarte(cv, assembler(va.pieces), !!(va.pieces && va.pieces.rebond));
+  }
+}
+
+/* --- Le rallye : le disque tel qu'on le verra vraiment --- */
+const cvR = document.getElementById('cvRallye');
+const gR = cvR.getContext('2d');
+const balle = { x: 60, y: 80, vx: 300, vy: 190, spin: 0, wobble: 0 };
+let trainee = [], parts = [];
+let piece = assembler();
+let dernier = 0, pointe = 0;
+
+function rallye(ms) {
+  const dt = Math.min(.05, (ms - dernier) / 1000 || 0); dernier = ms;
+  const T = ms / 1000;
+  const bord = 4 + R_JEU;
+
+  balle.x += balle.vx * dt; balle.y += balle.vy * dt;
+  balle.spin += Math.hypot(balle.vx, balle.vy) * dt * .06;
+  if (balle.wobble > 0) balle.wobble = Math.max(0, balle.wobble - dt * 2.6);
+
+  let choc = false;
+  if (balle.x < bord) { balle.x = bord; balle.vx = -balle.vx; choc = true; }
+  if (balle.x > cvR.width - bord) { balle.x = cvR.width - bord; balle.vx = -balle.vx; choc = true; }
+  if (balle.y < bord) { balle.y = bord; balle.vy = -balle.vy; choc = true; }
+  if (balle.y > cvR.height - bord) { balle.y = cvR.height - bord; balle.vy = -balle.vy; choc = true; }
+
+  trainee.push({ x: balle.x, y: balle.y, c: couleurTrainee(piece.trainee, balle.spin) });
+  if (trainee.length > 26) trainee.shift();
+  const out = []; piece.vol(balle, out); if (out.length) verser(out, parts);
+  if (choc) { const gerbe = []; piece.rebond(balle, gerbe); verser(gerbe, parts); }
+  majParticules(parts, dt);
+
+  terrain(gR, cvR.width, cvR.height);
+  peindreTrainee(gR, trainee);
+  ombre(gR, balle.x, balle.y, R_JEU + 2);
+  dessinerDisque(gR, balle, R_JEU, T, piece);
+  peindreParticules(gR, parts);
+
+  pointe = Math.max(pointe, parts.length);
+  document.getElementById('compteur').innerHTML =
+    'particules <i' + (parts.length >= MAX_PARTICULES ? ' class="trop"' : '') + '>' + parts.length + '</i>' +
+    ' · pointe <i' + (pointe >= MAX_PARTICULES ? ' class="trop"' : '') + '>' + pointe + '</i>' +
+    ' / plafond ' + MAX_PARTICULES;
+
+  requestAnimationFrame(rallye);
+}
+
+/* --- Le code compact à renvoyer : « 1A 2C 3B … » ------------------------
+   Posé dans un champ en lecture seule plutôt que dans une ligne de texte,
+   pour rester sélectionnable à la main si le presse-papiers est refusé. */
+function codeChoix() { return SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' '); }
+
+function rafraichir() {
+  piece = assembler();
+  pointe = 0; parts = []; trainee = [];
+  peindreCartes();
+  peindreNeuf();
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value = codeChoix();
+}
+
+(function brancherCopie() {
+  const btn = document.getElementById('btnCopier');
+  const champ = document.getElementById('codeChoix');
+  btn.addEventListener('click', async () => {
+    const texte = codeChoix();
+    let ok = false;
+    try { await navigator.clipboard.writeText(texte); ok = true; }
+    catch (e) {
+      champ.select(); champ.setSelectionRange(0, 999);
+      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    }
+    btn.textContent = ok ? '✓ copié' : 'Ctrl+C pour copier';
+    btn.classList.toggle('ok', ok);
+    setTimeout(() => { btn.textContent = 'copier mes choix'; btn.classList.remove('ok'); }, 1800);
+  });
+})();
+
+document.querySelector('h1').textContent = DISQUE.nom;
+// Les faces qui écrivent du texte doivent attendre la police : un canvas
+// peint avant son chargement retombe sur la police système et ne montre pas
+// le vrai dessin.
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(rafraichir);
+rafraichir();
+requestAnimationFrame(rallye);
+</script>
+</body>
+</html>

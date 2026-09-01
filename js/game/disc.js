@@ -12,6 +12,7 @@ import { onCatch, scoreGoal, ownFoul, setupServe } from './actions.js';
 import { disqueVuPar, skinDuDisque } from '../reseau/partie.js';
 import { RASENGAN } from '../data/specials.js';
 import { couleurTrainee, semerEnVol, eclatDeRebond } from '../data/disc-fx.js';
+import { teinteDeCharge, chaufferCouleur } from '../data/skins.js';
 
 export const DISC_R = () => G.disc.big ? DISC_BIG_RADIUS : DISC_RADIUS;
 
@@ -56,7 +57,17 @@ export function updateDisc(dt) {
     // Étincelles semées par le tir en vol : bleu Rasengan, comme le disque.
     if (Math.random() < .7) G.particles.push({ x: d.x, y: d.y, vx: gauss() * 70, vy: gauss() * 70, life: .35, c: Math.random() < .5 ? RASENGAN : '#c8f0ff', s: 3, g: 0 });
   } else { d.vx *= Math.exp(-.08 * dt); d.vy *= Math.exp(-.08 * dt); }
-  if (d.super && Math.random() < .6) G.particles.push({ x: d.x, y: d.y, vx: gauss() * 50, vy: gauss() * 50, life: .3, c: '#ff5340', s: 2.5, g: 0 });
+  // Étincelles du tir chargé, dans la couleur du disque : le rouge unique
+  // effaçait son identité autant que le rond rouge le faisait. Et deux fois
+  // moins nombreuses qu'avant (.35 au lieu de .6) — à ce rythme-là, ce seul
+  // état remplissait le plafond de particules à lui tout seul.
+  if (d.super && Math.random() < .35) {
+    G.particles.push({
+      x: d.x + gauss() * 8, y: d.y + gauss() * 8,
+      vx: gauss() * 28, vy: gauss() * 28, life: .35,
+      c: chaufferCouleur(teinteDeCharge(skinDuDisque()), .5), s: 2, g: 0
+    });
+  }
   if (d.thrower && d.thrower.ck === 'isaac' && Math.random() < .35) G.particles.push({ x: d.x, y: d.y, vx: gauss() * 30, vy: rand(20, 90), life: .5, c: '#7fd8ff', s: 2, g: 400 });
   d.x += d.vx * dt; d.y += d.vy * dt;
   // Hors coups spéciaux, la traînée et ce que le disque sème appartiennent au
@@ -65,7 +76,7 @@ export function updateDisc(dt) {
   G.trail.push({
     x: d.x, y: d.y,
     c: d.kind === 'kurama' ? RASENGAN
-      : (d.super ? '#ff5340'
+      : (d.super ? chaufferCouleur(teinteDeCharge(skinDuDisque()), .35)
         : (d.kind === 'matilda' ? '#8dff6a' : couleurTrainee(skinDuDisque(), d.spin)))
   });
   if (ordinaire) semerEnVol(skinDuDisque(), d, G.particles);

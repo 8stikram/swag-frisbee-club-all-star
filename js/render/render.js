@@ -6,7 +6,7 @@ import { options as optionsTraining } from '../ui/training.js';
 import { centreDunk, centrePanier, ZONES } from '../game/zones.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
-import { getSkinId, drawSkinDisc, deformationDisque, tracerContour } from '../data/skins.js';
+import { getSkinId, drawSkinDisc, deformationDisque, tracerContour, teinteDeCharge, chaufferCouleur, avecAlpha } from '../data/skins.js';
 import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE, CHIEN_VIDEO, CHIEN_DUREE } from '../data/specials.js';
 import { Reglages } from '../data/disc-fx.js';
 import { rayonSables, centreSables, densiteTempete } from '../game/desert.js';
@@ -1691,12 +1691,12 @@ function drawDisc() {
     drawDiscObj(d.x, d.y, d.spin, 1, RASENGAN, r);
     ctx.strokeStyle = 'rgba(90,210,255,.85)'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(d.x, d.y, r + 8 + Math.sin(G.now * 20) * 4, G.now * 9, G.now * 9 + 4.2); ctx.stroke();
-  } else if (d.super) {
-    drawDiscObj(d.x, d.y, d.spin, 1, '#ff5340', r);
-    ctx.strokeStyle = 'rgba(255,83,64,.7)'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(d.x, d.y, r + 4 + Math.sin(G.now * 24) * 2, G.now * 12, G.now * 12 + 4.6); ctx.stroke();
   } else {
     const id = skinDuDisque();   // le disque du lanceur, pas le sien
+    // La charge en main : elle monte avec le porteur et prévient l'adversaire
+    // qu'un tir chargé arrive. En vol, `d.super` prend le relais à fond.
+    const porteur = d.heldBy;
+    const enCharge = (porteur && porteur.charging) ? clamp(porteur.charge, 0, 1) : 0;
     // Gélatine : le disque tremble après un rebond. On étire sur un axe et on
     // écrase sur l'autre, à volume constant — c'est ce qui fait « élastique »
     // plutôt que « qui grandit ».
@@ -1705,7 +1705,14 @@ function drawDisc() {
       ctx.save();
       ctx.translate(d.x, d.y); ctx.scale(k, 1 / k); ctx.translate(-d.x, -d.y);
     }
+    // Les deux arcs passent DERRIÈRE le disque : devant, ils barreraient le
+    // motif qu'on cherche justement à préserver.
+    if (d.super) arcsDeCharge(d.x, d.y, r, id);
     drawSkinDisc(ctx, d.x, d.y, r, id, d.spin);
+    // L'embrasement se pose SUR la face au lieu de la remplacer : c'est tout
+    // l'intérêt d'avoir choisi un skin.
+    if (d.super) braiseDeCharge(d.x, d.y, r, id);
+    if (enCharge > 0) etincellesDeCharge(d.x, d.y, r, id, enCharge);
     // Glitch : le disque se dédouble en rouge et cyan par intermittence,
     // 0,1 s toutes les 2 s. Un décalage permanent deviendrait sa forme
     // normale et ne surprendrait plus personne.
@@ -1719,7 +1726,18 @@ function drawDisc() {
     }
     // Le liseré suit la silhouette réelle : la Gélatine n'est pas ronde, un
     // cercle tracé par-dessus trahirait tout de suite la découpe.
-    ctx.strokeStyle = 'rgba(255,255,255,.3)';
+    if (d.super) {
+      // Double liseré : un trait large et sourd dans la teinte du disque, puis
+      // le trait fin blanc par-dessus. C'est ce décalage qui donne l'épaisseur,
+      // un seul trait paraît toujours plat.
+      ctx.strokeStyle = avecAlpha(teinteDeCharge(id), .5);
+      ctx.lineWidth = 6;
+      tracerContour(ctx, d.x, d.y, r, deformationDisque(id));
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,.9)';
+    } else {
+      ctx.strokeStyle = 'rgba(255,255,255,.3)';
+    }
     ctx.lineWidth = 1.5;
     tracerContour(ctx, d.x, d.y, r, deformationDisque(id));
     ctx.stroke();
@@ -1727,6 +1745,63 @@ function drawDisc() {
     // 20/20 : une formule s'inscrit brièvement à côté du disque en vol.
     if (id === 'vingt' && d.free) drawFormule(d);
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Les trois calques de la charge, retenus sur mockups/disque-charge.html
+   (1B 2B 3B, plus 7D pour la montée en main). Aucun n'écrit une couleur en
+   dur : tout part de la teinte du disque, sans quoi on referait le rond rouge
+   identique pour tout le monde.
+   --------------------------------------------------------------------------- */
+
+// Deux arcs opposés qui tournent. Opposés et non seuls : la silhouette reste
+// symétrique quelle que soit leur position, donc le disque paraît centré.
+function arcsDeCharge(x, y, r, id) {
+  ctx.save();
+  ctx.strokeStyle = avecAlpha(chaufferCouleur(teinteDeCharge(id), .4), .75);
+  ctx.lineWidth = 2.4;
+  for (const o of [0, Math.PI]) {
+    ctx.beginPath();
+    ctx.arc(x, y, r + 5, G.now * 9 + o, G.now * 9 + o + 1.9);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// La braise : le disque rougeoie sur son pourtour et reste net au centre. Le
+// motif central, celui qui identifie le disque, est donc intégralement
+// préservé — c'est ce qui distingue cet embrasement du rond rouge d'avant.
+function braiseDeCharge(x, y, r, id) {
+  const t = teinteDeCharge(id);
+  ctx.save();
+  tracerContour(ctx, x, y, r, deformationDisque(id));
+  ctx.clip();
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(x, y, r * .35, x, y, r);
+  g.addColorStop(0, avecAlpha(t, 0));
+  g.addColorStop(.7, avecAlpha(t, .5));
+  g.addColorStop(1, avecAlpha(chaufferCouleur(t, .7), .95));
+  ctx.fillStyle = g;
+  ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  ctx.restore();
+}
+
+// La montée en charge, disque en main : cinq étincelles aspirées vers lui
+// depuis l'extérieur. Elles ne touchent pas un pixel du motif, et le mouvement
+// rentrant est assez rare dans le jeu pour se remarquer tout de suite.
+function etincellesDeCharge(x, y, r, id, charge) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = avecAlpha(chaufferCouleur(teinteDeCharge(id), .7), .9 * charge);
+  for (let i = 0; i < 5; i++) {
+    const a = G.now * 3 + (i / 5) * TAU;
+    const ph = 1 - ((G.now * 1.4 + i * .2) % 1);
+    const dd = r + 4 + ph * 18;
+    ctx.beginPath();
+    ctx.arc(x + Math.cos(a) * dd, y + Math.sin(a) * dd, 1.8, 0, TAU);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 // Les formules du disque 20/20. Elles changent toutes les 1,2 s et ne durent

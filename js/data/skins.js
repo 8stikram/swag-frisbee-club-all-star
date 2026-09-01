@@ -7,12 +7,10 @@ export const DISC_SKINS = [
   { id: 'palestine', name: 'Palestine', colors: ['#000000', '#ffffff', '#009639', '#ce1126'] },
   { id: 'israel', name: 'Israël', colors: ['#ffffff', '#0038b8'] },
   { id: 'galaxy', name: 'Galaxie', colors: ['#1a0033', '#4a00e0', '#8e2de2', '#00d4ff'] },
-  { id: 'magma', name: 'Magma', colors: ['#2a1410', '#ff4500', '#ffd700'] },
   { id: 'glitch', name: 'Glitch', colors: ['#ff00ff', '#00ffff', '#ff0000', '#00ff00'] },
-  { id: 'chaptele', name: 'Chaptèle', colors: ['#2a1a4a', '#c9a227', '#f2e2b0'] },
-  { id: 'pharaon', name: 'Pharaon', colors: ['#1b3a6b', '#d4af37', '#e8d5a3'] },
   { id: 'gelatine', name: 'Gélatine', colors: ['#ff5fa2', '#ffe14d', '#5ce1a0'] },
   { id: 'pegasus', name: 'Pegasus', colors: ['#1a2a5e', '#ffffff', '#ffd9f0'] },
+  { id: 'vody', name: 'Vody', colors: ['#c00d14', '#d9ad55', '#141110'] },
   // Récompense du tutoriel. `verrou` nomme la condition à remplir : le sélecteur
   // l'affiche grisé et cadenassé tant qu'elle ne l'est pas, plutôt que de le
   // cacher — on ne convoite pas ce qu'on ignore.
@@ -117,6 +115,89 @@ function star(ctx, cx, cy, outer, inner, points, rot) {
   }
   ctx.closePath();
   ctx.fill();
+}
+
+/* Une silhouette de fetard bras leves : la foule doree de l etiquette Vody.
+   A 28 px de disque elle fait 9 px de haut, donc tout ce qui est plus fin
+   qu un pixel et demi disparait : la tete est un gros point et les bras des
+   traits epais, plutot qu un vrai bonhomme. `phase` decale le battement de
+   bras d une silhouette a l autre, sans quoi les trois levent ensemble. */
+function fetard(ctx, x, y, h, phase, col) {
+  const w = h * .32;
+  ctx.fillStyle = col; ctx.strokeStyle = col;
+  ctx.lineWidth = h * .15; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(x, y - h * .84, h * .16, 0, TAU); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x - w * .5, y); ctx.lineTo(x - w * .46, y - h * .64);
+  ctx.lineTo(x + w * .46, y - h * .64); ctx.lineTo(x + w * .5, y);
+  ctx.closePath(); ctx.fill();
+  const a = .6 + Math.sin(phase) * .4;
+  ctx.beginPath();
+  ctx.moveTo(x - w * .42, y - h * .58); ctx.lineTo(x - w * .5 - h * .34 * a, y - h * (.92 + a * .12));
+  ctx.moveTo(x + w * .42, y - h * .58); ctx.lineTo(x + w * .5 + h * .3 * a, y - h * (.88 + a * .14));
+  ctx.stroke();
+}
+
+/* Les vagues de l etiquette Vody : des lignes paralleles qui ondulent, serrees
+   comme une portee musicale. Elles ne bougent pas d elles-memes — c est la
+   rotation du disque qui les anime, sinon deux mouvements se superposent et
+   la face devient illisible. */
+function vagues(ctx, r, cols, n, decal, amp, epais) {
+  ctx.lineCap = 'butt';
+  for (let i = 0; i < n; i++) {
+    ctx.strokeStyle = cols[i % cols.length];
+    ctx.lineWidth = r * epais;
+    ctx.beginPath();
+    for (let x = -r; x <= r; x += 2) {
+      const y = r * decal + i * r * .13 + Math.sin((x / r) * 2.4) * r * amp;
+      x === -r ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   La charge. Un tir chargé n'efface plus le disque : il l'embrase dans SA
+   couleur, poussée vers le blanc. La teinte se déduit du registre plutôt que
+   d'une table tenue à part, pour qu'un disque ajouté demain hérite de la
+   sienne sans qu'on y pense.
+
+   La pastille retenue est la plus vive : la plus claire ET la plus saturée.
+   La luminosité MULTIPLIE au lieu de s'additionner — additionnée, c'est le
+   bleu nuit du Pegasus (#1a2a5e) qui l'emportait, soit une charge invisible
+   sur un terrain déjà bleu nuit.
+   --------------------------------------------------------------------------- */
+const HEXA = c => { const n = parseInt(c.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+
+export function teinteDeCharge(id) {
+  const s = DISC_SKINS.find(k => k.id === id);
+  const cols = (s && s.colors && s.colors.length) ? s.colors : ['#ffffff'];
+  let best = cols[0], score = -1;
+  for (const c of cols) {
+    const [r, g, b] = HEXA(c);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const sat = max ? (max - min) / max : 0;
+    const note = (max / 255) * (.45 + .55 * sat);
+    if (note > score) { score = note; best = c; }
+  }
+  return best;
+}
+
+// Chauffe une couleur vers le blanc. k = 0 la laisse, k = 1 la rend blanche.
+// Rend du #rrggbb et non du rgb() : le résultat repasse par `avecAlpha`, qui
+// relit les composantes en hexadécimal. Un rgb() y donnait NaN, donc du noir,
+// donc rien du tout sous un composite « lighter » — le bug a coûté la moitié
+// des variantes du mockup avant d'être vu.
+export function chaufferCouleur(c, k) {
+  const [r, g, b] = HEXA(c);
+  const m = v => Math.round(v + (255 - v) * k).toString(16).padStart(2, '0');
+  return '#' + m(r) + m(g) + m(b);
+}
+
+// La même couleur, avec une transparence.
+export function avecAlpha(c, a) {
+  const [r, g, b] = HEXA(c);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
 }
 
 // Horloge des animations de face. On lit l'horloge directement plutôt que
@@ -313,82 +394,6 @@ export function drawSkinDisc(ctx, x, y, r, skinId, spin) {
       break;
     }
 
-    /* ---------- Lave en fusion : plaques de roche + fissures incandescentes ---------- */
-    case 'magma': {
-      // Lueur de fond : la lave transparaît sous la croûte.
-      const glow = ctx.createRadialGradient(0, 0, r * .08, 0, 0, r);
-      glow.addColorStop(0, '#fff3b0');
-      glow.addColorStop(.28, '#ffb020');
-      glow.addColorStop(.6, '#e03a00');
-      glow.addColorStop(1, '#7a1500');
-      ctx.fillStyle = glow; ctx.fillRect(-r, -r, r * 2, r * 2);
-
-      // Croûte de roche : blocs irréguliers éparpillés, séparés par des
-      // fissures où la lave transparaît (référence Lava Hound).
-      // La croûte s'ouvre et se referme : les blocs s'écartent du centre, la
-      // lave transparaît entre eux, puis tout se resserre.
-      const ouverture = .5 + .5 * Math.sin(T * 1.6);
-      ctx.save();
-      ctx.rotate(spin * 0.25 + T * .12);
-      const rng = makeRng(4242);
-      const chunks = [];
-      // Semis de centres sur plusieurs couronnes, pour couvrir tout le disque.
-      for (const ring of [0, .34, .62, .86]) {
-        const count = ring === 0 ? 1 : Math.round(4 + ring * 7);
-        for (let i = 0; i < count; i++) {
-          const a = (i / count) * TAU + rng() * .6;
-          chunks.push({ x: Math.cos(a) * r * ring, y: Math.sin(a) * r * ring, s: r * (.2 + rng() * .16), a });
-        }
-      }
-      for (const c of chunks) {
-        // Chaque bloc s'écarte le long de son propre rayon : la fissure part
-        // ainsi du centre, au lieu de faire glisser toute la croûte d'un côté.
-        const ecart = ouverture * r * .16;
-        const cx = c.x + Math.cos(c.a) * ecart, cy = c.y + Math.sin(c.a) * ecart;
-        const pts = 6 + ((rng() * 3) | 0);
-        ctx.beginPath();
-        for (let i = 0; i < pts; i++) {
-          const a = (i / pts) * TAU;
-          const rad = c.s * (.68 + rng() * .5);
-          const px = cx + Math.cos(a) * rad, py = cy + Math.sin(a) * rad;
-          i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-        }
-        ctx.closePath();
-        const shade = 24 + Math.floor(rng() * 26);
-        ctx.fillStyle = `rgb(${shade + 16},${shade + 4},${shade - 2})`;
-        ctx.fill();
-        // Liseré chaud : le bord du bloc chauffé par la lave en dessous.
-        ctx.strokeStyle = 'rgba(255,140,30,.55)';
-        ctx.lineWidth = Math.max(1, r * .028);
-        ctx.stroke();
-      }
-      ctx.restore();
-
-      // Braises qui ressortent au centre.
-      const re = makeRng(7);
-      ctx.globalCompositeOperation = 'lighter';
-      for (let i = 0; i < 12; i++) {
-        const a = re() * TAU, d = re() * r * .8;
-        const sz = r * (.03 + re() * .05);
-        ctx.fillStyle = re() > .5 ? 'rgba(255,200,60,.9)' : 'rgba(255,110,20,.85)';
-        ctx.beginPath(); ctx.arc(Math.cos(a) * d, Math.sin(a) * d, sz, 0, TAU); ctx.fill();
-      }
-      // Bulles de lave : elles gonflent puis crèvent, chacune à son rythme.
-      // Cinq positions fixes, mais des phases décalées — on en voit toujours
-      // trois ou quatre à la fois, jamais toutes ensemble.
-      const rb = makeRng(9);
-      for (let i = 0; i < 5; i++) {
-        const a = rb() * TAU, d = rb() * r * .7, ph = rb(), chaud = rb() > .5;
-        const k = (ph + T * .55) % 1;
-        ctx.globalAlpha = Math.sin(k * Math.PI);
-        ctx.fillStyle = chaud ? '#ffd23e' : '#ff7a12';
-        ctx.beginPath(); ctx.arc(Math.cos(a) * d, Math.sin(a) * d, r * .05 + k * r * .1, 0, TAU); ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = 'source-over';
-      break;
-    }
-
     /* ---------- Datamosh : blocs déplacés, bavures et séparation RVB ---------- */
     case 'glitch': {
       // Image source : dégradé net que l'on va « casser ».
@@ -476,73 +481,6 @@ export function drawSkinDisc(ctx, x, y, r, skinId, spin) {
       ctx.restore();
     }
       break;
-
-    /* ---------- Chaptèle : une lettrine enluminée sur parchemin ---------- */
-    case 'chaptele': {
-      // Parchemin sombre plutôt que clair : l'or ne brille que sur du foncé,
-      // et c'est l'or qu'on doit voir de loin.
-      const fond = ctx.createRadialGradient(0, 0, r * .1, 0, 0, r);
-      fond.addColorStop(0, '#4a2f6e');
-      fond.addColorStop(.6, '#2a1a4a');
-      fond.addColorStop(1, '#160d2c');
-      ctx.fillStyle = fond; ctx.fillRect(-r, -r, r * 2, r * 2);
-
-      // Rinceaux dorés : des arcs qui se dessinent puis se rétractent, comme
-      // sous la plume du copiste, en tournant lentement sur eux-mêmes.
-      const pousse = .5 + .5 * Math.sin(T * 1.3);
-      ctx.save();
-      ctx.rotate(spin * .18 + T * .2);
-      ctx.strokeStyle = 'rgba(201,162,39,.75)';
-      ctx.lineWidth = Math.max(1, r * .06);
-      for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * TAU;
-        ctx.beginPath();
-        ctx.arc(Math.cos(a) * r * .58, Math.sin(a) * r * .58, r * .3, a + 1.2, a + 1.2 + 3 * pousse);
-        ctx.stroke();
-      }
-      ctx.restore();
-
-      // Cadre doré, sans lettre au centre : l'enluminure se suffit, et une
-      // initiale se lirait mal à la taille d'un disque en vol.
-      ctx.strokeStyle = '#c9a227'; ctx.lineWidth = Math.max(1.5, r * .1);
-      ctx.beginPath(); ctx.arc(0, 0, r * .74, 0, TAU); ctx.stroke();
-      break;
-    }
-
-    /* ---------- Pharaon : lapis et or, hiéroglyphes qui s'allument ---------- */
-    case 'pharaon': {
-      ctx.fillStyle = '#1b3a6b'; ctx.fillRect(-r, -r, r * 2, r * 2);
-      // Bandes d'or horizontales : le pectoral égyptien, lisible de haut.
-      ctx.fillStyle = '#d4af37';
-      ctx.fillRect(-r, -r * .86, r * 2, r * .2);
-      ctx.fillRect(-r, r * .66, r * 2, r * .2);
-
-      // Les glyphes s'allument à tour de rôle : un seul brille à la fois,
-      // sinon le disque devient un sapin de Noël.
-      const glyphes = ['𓂀', '𓆃', '𓊖', '𓋹', '𓁹', '𓃭'];
-      const vif = Math.floor(T * 2.2) % glyphes.length;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.font = (r * .34).toFixed(1) + 'px serif';
-      for (let i = 0; i < glyphes.length; i++) {
-        const a = (i / glyphes.length) * TAU + spin * .12 + T * .3;
-        const gx = Math.cos(a) * r * .52, gy = Math.sin(a) * r * .52;
-        ctx.fillStyle = i === vif ? '#fff3c4' : 'rgba(212,175,55,.6)';
-        ctx.fillText(glyphes[i], gx, gy);
-      }
-      // Œil d'Horus au centre : la paupière s'ouvre et se ferme. C'est le seul
-      // point fixe du disque, donc c'est lui qu'on regarde — le scarabée, muet,
-      // ne donnait rien à voir.
-      const ouv = Math.abs(Math.sin(T * .9));
-      ctx.fillStyle = '#e8d5a3';
-      ctx.beginPath(); ctx.ellipse(0, 0, r * .42, r * .26 * ouv + r * .02, 0, 0, TAU); ctx.fill();
-      ctx.fillStyle = '#1b3a6b';
-      ctx.beginPath(); ctx.arc(0, 0, Math.max(0, r * .12 * ouv), 0, TAU); ctx.fill();
-      // Le trait de khôl qui descend de l'œil : c'est lui qui fait lire
-      // « Horus » plutôt que « œil » tout court.
-      ctx.strokeStyle = '#d4af37'; ctx.lineWidth = Math.max(1, r * .045);
-      ctx.beginPath(); ctx.moveTo(r * .40, r * .06); ctx.lineTo(r * .60, r * .24); ctx.stroke();
-      break;
-    }
 
     /* ---------- Gélatine : un bonbon translucide, reflets de fruit ---------- */
     case 'gelatine': {
@@ -658,6 +596,49 @@ export function drawSkinDisc(ctx, x, y, r, skinId, spin) {
         ctx.fill();
         ctx.restore();
       }
+      ctx.restore();
+      break;
+    }
+
+    /* ---------- Vody : la canette de vodka energy aplatie en disque ---------- */
+    case 'vody': {
+      // Rouge neon, sature au maximum. C est le seul rouge du registre et il
+      // ne se perd jamais sur le bleu nuit de l arene ; en contrepartie il
+      // jure avec les teintes sourdes du decor, ce qui est assume.
+      const canette = ctx.createRadialGradient(0, 0, r * .05, 0, 0, r);
+      canette.addColorStop(0, '#ff4d52');
+      canette.addColorStop(1, '#c00d14');
+      ctx.fillStyle = canette; ctx.fillRect(-r, -r, r * 2, r * 2);
+
+      // La foule, la bande noire et la portee tournent ensemble a vitesse
+      // reduite : a la vitesse pleine du spin, les lignes de la portee se
+      // croisent en moire et le bas du disque devient une bouillie.
+      ctx.save();
+      ctx.rotate(spin * .4);
+      // Les fetards se tiennent SUR l arete de la bande noire, pas au fond du
+      // disque : plus bas, la bande les avalait entierement.
+      for (let i = 0; i < 3; i++) {
+        fetard(ctx, (i - 1) * r * .52, r * .3, r * .62, T * 3 + i * 1.7, '#d9ad55');
+      }
+      // Le bas noir de l etiquette, borde par une vague.
+      ctx.fillStyle = '#141110';
+      ctx.beginPath();
+      ctx.moveTo(-r, r); ctx.lineTo(-r, r * .34);
+      for (let x = -r; x <= r; x += 3) ctx.lineTo(x, r * .34 + Math.sin((x / r) * 2.4) * r * .12);
+      ctx.lineTo(r, r); ctx.closePath(); ctx.fill();
+      vagues(ctx, r, ['#d9ad55', '#f4dfa4'], 4, .2, .12, .045);
+      ctx.restore();
+
+      // Le logo par-dessus tout, tourne avec le disque comme une vraie
+      // impression. Il devient un pate noir en tir charge, et c est le prix
+      // assume : un mot qui refuserait de tourner trahirait une etiquette
+      // collee par l interface plutot qu imprimee sur le disque.
+      ctx.save();
+      ctx.rotate(spin);
+      ctx.font = '900 ' + (r * .72).toFixed(1) + 'px "Archivo Black", Impact, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#141110';
+      ctx.fillText('Vody', 0, r * .04);
       ctx.restore();
       break;
     }

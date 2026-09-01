@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Gabarit — mockup de disque</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:30px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:960px;line-height:1.7;margin:0 0 14px}
+  .note code{color:#bcd4f5}
+
+  /* --- Deux colonnes : les cartes défilent, le rallye reste --- */
+  .page{display:flex;gap:16px;align-items:flex-start}
+  .gauche{flex:1 1 0;min-width:0}
+  .aside{flex:0 0 352px;position:sticky;top:14px}
+  @media (max-width:980px){ .page{display:block} .aside{position:static;width:100%} }
+
+  .row{display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(206px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;
+        cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d5c8a}
+  .card.on{border-color:var(--or);transform:translateY(-2px)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:58px}
+  .lbl b{display:block;font-size:13.5px;color:var(--or);letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px}
+  .reserve{display:none}
+  .reserve.ouverte{display:grid}
+  .plus{margin-top:9px;background:#132038;color:#9fb4dd;border:1px solid var(--edge);
+        border-radius:7px;padding:6px 13px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#1a2b48;color:var(--ink)}
+
+  .bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;margin-bottom:12px}
+  .bloc h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .bloc canvas{width:100%;height:auto}
+  .compteur{font-family:Consolas,monospace;font-size:11px;color:#7f93b3;margin-top:7px;line-height:1.6}
+  .compteur i{color:var(--or);font-style:normal}
+  .compteur i.trop{color:#ff5340}
+  .choix{font-size:11.5px;color:#9fb4dd;margin-top:9px;font-family:Consolas,monospace;line-height:1.7}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 150px;min-width:0;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+             padding:8px 14px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#24395e}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+
+  .bande{display:flex;gap:7px;flex-wrap:wrap}
+  .une{text-align:center}
+  .une canvas{width:44px;height:44px;border-radius:5px;display:block}
+  .une span{display:block;font-size:9px;color:#7f93b3;margin-top:2px;max-width:50px;
+            overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .une.neuf span{color:var(--or)}
+  .une.neuf canvas{outline:1px solid var(--or)}
+
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 6px}
+  #retenu{font-size:12.5px;font-family:Consolas,monospace;color:var(--or);margin:0 0 14px}
+  #retenu:empty{display:none}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>GABARIT — mockup de disque</h1>
+<p class="note">
+  <b>Ce fichier est un squelette à copier</b> vers <code>mockups/&lt;disque&gt;.html</code>, un fichier par
+  disque, mis à jour sur place. Tout ce qu'il y a à écrire tient entre les deux repères
+  <code>DÉBUT / FIN DU CONTENU</code> : le moteur (terrain, rallye, réserve, bande de comparaison,
+  vérification) ne bouge pas.
+  <br><br>
+  Le découpage en sections est <b>sur mesure pour chaque disque</b> — il épouse son thème — mais jamais
+  moins de six sections, et l'ensemble doit décider les quatre choses que le code réclame : au moins un
+  <code>calque</code> de face, une <code>trainee</code>, un <code>vol</code> et un <code>rebond</code>.
+  La vérification en haut de page le contrôle toute seule.
+  <br><br>
+  Chaque carte montre le disque <b>en vol sur un bout du vrai terrain, à l'échelle exacte du match</b>
+  (rayon 14 px, <code>DISC_RADIUS</code> dans <code>core/constants.js</code> — aucun facteur d'échelle ne
+  s'applique au disque, contrairement aux sprites). C'est petit, et c'est voulu : un motif magnifique en
+  gros plan qui devient une bouillie à 28 px de diamètre est un motif raté. Clique une carte pour la
+  monter dans le rallye de droite.
+</p>
+
+<div id="errs"></div>
+<div id="retenu"></div>
+
+<div class="page">
+  <div class="gauche">
+    <div id="sections"></div>
+  </div>
+
+  <div class="aside">
+    <div class="bloc">
+      <h3>Le rallye</h3>
+      <canvas id="cvRallye" width="326" height="236"></canvas>
+      <div class="compteur" id="compteur"></div>
+      <div class="choix" id="choix"></div>
+      <div class="copier">
+        <input class="codeChoix" id="codeChoix" readonly>
+        <button class="btnCopier" id="btnCopier">copier mes choix</button>
+      </div>
+    </div>
+    <div class="bloc">
+      <h3>À côté des disques en place</h3>
+      <div class="bande" id="bande"></div>
+      <p class="note" style="margin:9px 0 0;font-size:10.5px;line-height:1.6">
+        Les disques existants sont dessinés par le vrai <code>drawSkinDisc</code> de
+        <code>js/data/skins.js</code>, à l'échelle du match. Le nouveau est cerclé d'or. C'est ici qu'on
+        voit s'il fait doublon — trois disques dorés se ressemblent tous à 28 px.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// ---------------------------------------------------------------------------
+// Le registre réel est importé du jeu : la bande de comparaison montre donc
+// toujours les disques tels qu'ils sont aujourd'hui, sans copie à maintenir
+// ici. C'est le seul lien avec le code du jeu — tout le reste est autonome.
+//
+// `tracerContour` est repris tel quel, et non recopié : c'est lui qui découpe
+// la face ET qui trace le liseré dans render.js. Deux tracés différents et la
+// découpe cesserait de coïncider avec le contour, comme sur la Gélatine.
+// ---------------------------------------------------------------------------
+import { DISC_SKINS, drawSkinDisc, deformationDisque, tracerContour } from '../js/data/skins.js';
+
+const TAU = Math.PI * 2;
+
+// Le disque fait 14 px de rayon sur le canvas 960 × 600 du jeu, dessiné tel
+// quel. Cartes, rallye et bande de comparaison l'utilisent tous : ce qu'on
+// juge ici est exactement ce qu'on verra en match, jamais un agrandissement
+// flatteur.
+const R_JEU = 14;
+
+// Plafond de particules du jeu (MAX_PARTICULES dans data/disc-fx.js). Le
+// compteur du rallye l'affiche : un disque qui plafonne en permanence est un
+// disque qui étouffe tous les autres effets à l'écran.
+const MAX_PARTICULES = 50;
+
+// Horloge des animations de face, exactement celle de data/skins.js : les
+// faces écrites ici se recollent sans retouche.
+const horloge = () => performance.now() / 1000;
+
+/* --- Le hasard, débrayable ------------------------------------------------
+   Les cartes sont figées : elles doivent redonner la MÊME image à chaque
+   repeinte, sinon les particules sautent d'un clic à l'autre et on croit
+   comparer deux variantes alors qu'on compare deux tirages. On remplace donc
+   le hasard par une suite déterministe le temps de peindre une carte, et on
+   rend la main au vrai hasard pour le rallye. */
+let alea = Math.random;
+function semer(graine) { let s = graine >>> 0; alea = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+function relacher() { alea = Math.random; }
+
+// Les mêmes outils qu'en vrai, aux mêmes noms : ce qu'on écrit dans `vol` et
+// `rebond` se recolle tel quel dans data/disc-fx.js.
+const rand = (a = 1, b) => b === undefined ? alea() * a : a + alea() * (b - a);
+const gauss = () => (alea() + alea() + alea() - 1.5) * 0.8;
+const pick = a => a[(alea() * a.length) | 0];
+const p = (x, y, vx, vy, life, c, s, g, type) => ({ x, y, vx, vy, life, c, s, g: g || 0, type });
+function combien(n) { const e = Math.floor(n); return e + (alea() < n - e ? 1 : 0); }
+function couronne(out, x, y, cols, n, vitesse, taille, vie) {
+  for (let i = 0; i < combien(n); i++) {
+    const a = rand(TAU), v = rand(vitesse * .5, vitesse);
+    out.push(p(x, y, Math.cos(a) * v, Math.sin(a) * v, rand(vie * .6, vie),
+      pick(cols), rand(taille * .6, taille), 0));
+  }
+}
+function spirale(out, x, y, cols, n, rayon, vie) {
+  for (let i = 0; i < combien(n); i++) {
+    const a = (i / n) * TAU + rand(.4);
+    const v = rayon * rand(.6, 1.2);
+    out.push(p(x, y, Math.cos(a) * v, Math.sin(a) * v, rand(vie * .6, vie),
+      cols[i % cols.length], rand(2, 4), 0, 'star'));
+  }
+}
+
+// Fabrique une variante. `pieces` ne porte que ce que la variante remplace.
+// `contour: null` est une valeur pleine et entière (« ce disque est rond ») :
+// d'où le test sur la présence de la clé plus bas, et non sur sa valeur.
+function v(id, nom, desc, pieces) { return { id, nom, desc, pieces }; }
+
+/* ===========================================================================
+   ==== DÉBUT DU CONTENU — c'est ici, et seulement ici, qu'on écrit. ====
+
+   1. LE DISQUE.
+
+   `colors` sont les pastilles du sélecteur de disque (data/skins.js), trois
+   ou quatre teintes qui doivent suffire à le reconnaître de loin.
+   `pal` est la palette de travail du mockup : les variantes la complètent ou
+   la repeignent. Elle n'existe pas dans le jeu — au moment du portage, les
+   couleurs sont écrites en dur dans le `case` de drawSkinDisc.
+   =========================================================================== */
+const DISQUE = {
+  nom: 'NOUVEAU DISQUE',
+  id: 'nouveau',
+  // Une ligne : pourquoi ce disque existe. Elle sert de garde-fou — si une
+  // variante ne sert plus le pitch, elle n'a rien à faire dans la page.
+  pitch: 'Le pitch du disque, en une phrase.',
+  colors: ['#0e1a30', '#35e0ff', '#ffd23e'],
+  pal: {
+    fond1: '#16264a',
+    fond2: '#070d1c',
+    vif:   '#35e0ff',
+    clair: '#bff0ff',
+    chaud: '#ffd23e'
+  }
+};
+
+/* ===========================================================================
+   2. LES SECTIONS — sur mesure, six au minimum.
+
+   Le découpage épouse le thème du disque : un disque volcan se découperait en
+   « la croûte », « les fissures », « les cendres »… plutôt qu'en sections
+   abstraites. Les six sections ci-dessous ne sont qu'un exemple qui montre
+   chaque pièce au moins une fois — elles sont là pour être remplacées.
+
+   Chaque section porte 10 variantes : les 5 premières s'affichent, les 5
+   suivantes attendent derrière « + 5 autres choix ».
+
+   Une variante ne décrit QUE ce qu'elle remplace :
+     calque  : (g, r, spin, T, pal)      → un calque de la face, empilé dans l'ordre des sections
+     pal     : objet partiel             → repeint (fusionné à la palette de base)
+     contour : a => facteur, ou null     → déforme la silhouette (null = rond)
+     sur     : (g, x, y, r, spin, T)     → un effet PAR-DESSUS, hors découpe
+     trainee : [couleurs]                → le sillage
+     vol     : (d, out)                  → ce qu'il sème en volant
+     rebond  : (d, out)                  → ce qu'il projette en touchant un mur
+
+   Les calques s'empilent dans l'ordre des sections : la section 1 est tout au
+   fond, la dernière par-dessus tout. C'est ce qui permet un découpage sur
+   mesure de la face — « le fond », « la foule », « le logo » — au lieu d'une
+   seule fonction qui dessinerait tout.
+
+   `calque` et `sur` s'écrivent dans le repère de drawSkinDisc : origine au
+   centre du disque, découpe déjà posée. Ce qui est écrit ici se recolle tel
+   quel dans le `case` de drawSkinDisc. Même chose pour `vol` et `rebond`, qui
+   se recollent dans FX_DISQUES — d'où les mêmes outils (`p`, `couronne`,
+   `spirale`, `combien`) qu'en vrai, aux mêmes noms.
+   =========================================================================== */
+const SECTIONS = [
+  {
+    id: 'fond', titre: '1 · Le fond',
+    note: 'Le calque du dessous, celui qui donne la couleur qu\'on voit de l\'autre bout du terrain. Un fond trop clair noie tout ce qu\'on posera dessus.',
+    variantes: [
+      v('A', 'DÉGRADÉ RADIAL', 'Clair au centre, sombre au bord : le disque paraît bombé et se détache du sol. En revanche il ressemble à la moitié du registre actuel.',
+        { calque: (g, r, spin, T, P) => { const d = g.createRadialGradient(0, 0, r * .05, 0, 0, r); d.addColorStop(0, P.fond1); d.addColorStop(1, P.fond2); g.fillStyle = d; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('B', 'DEUX MOITIÉS', 'Coupé net en deux teintes : la rotation devient parfaitement lisible, on voit le disque tourner. Mais la coupure attire l\'œil plus que le motif du dessus.',
+        { calque: (g, r, spin, T, P) => { g.fillStyle = P.fond2; g.fillRect(-r, -r, r * 2, r * 2); g.fillStyle = P.fond1; g.fillRect(-r, -r, r * 2, r); } }),
+      v('C', 'VARIANTE C', '', { calque: (g, r, spin, T, P) => { g.fillStyle = P.fond1; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('D', 'VARIANTE D', '', { calque: (g, r, spin, T, P) => { g.fillStyle = P.fond1; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('E', 'VARIANTE E', '', { calque: (g, r, spin, T, P) => { g.fillStyle = P.fond1; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('F', 'RÉSERVE F', '', { calque: (g, r, spin, T, P) => { g.fillStyle = P.fond1; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('G', 'RÉSERVE G', '', { calque: (g, r, spin, T, P) => { g.fillStyle = P.fond1; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('H', 'RÉSERVE H', '', { calque: (g, r, spin, T, P) => { g.fillStyle = P.fond1; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('I', 'RÉSERVE I', '', { calque: (g, r, spin, T, P) => { g.fillStyle = P.fond1; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('J', 'RÉSERVE J', '', { calque: (g, r, spin, T, P) => { g.fillStyle = P.fond1; g.fillRect(-r, -r, r * 2, r * 2); } })
+    ]
+  },
+  {
+    id: 'motif', titre: '2 · Le motif',
+    note: 'Ce qui fait reconnaître le disque en un dixième de seconde. À 28 px de diamètre, tout détail plus fin que 2 px disparaît : c\'est la première chose à vérifier sur les cartes.',
+    variantes: [
+      v('A', 'ANNEAU ÉPAIS', 'Un seul anneau bien gras : lisible de partout, il survit à la vitesse. Il ne raconte rien en revanche, c\'est une cible de tir.',
+        { calque: (g, r, spin, T, P) => { g.strokeStyle = P.vif; g.lineWidth = r * .22; g.beginPath(); g.arc(0, 0, r * .58, 0, TAU); g.stroke(); } }),
+      v('B', 'TROIS RAYONS', 'Trois branches qui tournent avec le disque : la rotation saute aux yeux, on lit la vitesse du tir. Mais ça scintille en vol rapide.',
+        { calque: (g, r, spin, T, P) => { g.strokeStyle = P.clair; g.lineWidth = r * .16; for (let i = 0; i < 3; i++) { const a = spin + i * TAU / 3; g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(a) * r * .8, Math.sin(a) * r * .8); g.stroke(); } } }),
+      v('C', 'VARIANTE C', '', { calque: () => {} }),
+      v('D', 'VARIANTE D', '', { calque: () => {} }),
+      v('E', 'VARIANTE E', '', { calque: () => {} }),
+      v('F', 'RÉSERVE F', '', { calque: () => {} }),
+      v('G', 'RÉSERVE G', '', { calque: () => {} }),
+      v('H', 'RÉSERVE H', '', { calque: () => {} }),
+      v('I', 'RÉSERVE I', '', { calque: () => {} }),
+      v('J', 'RÉSERVE J', '', { calque: () => {} })
+    ]
+  },
+  {
+    id: 'palette', titre: '3 · La palette',
+    note: 'Même dessin, teintes différentes. À juger sur le terrain : le sol de l\'arène est bleu nuit, un disque bleu nuit y devient invisible dès qu\'il sort de sa traînée.',
+    variantes: [
+      v('A', 'TONS D\'ORIGINE', 'La palette écrite dans le bloc DISQUE. Sert de repère aux quatre autres, sinon on compare des écarts sans référence.', { pal: {} }),
+      v('B', 'PLUS CHAUD', 'Vire à l\'orange : le disque décolle du sol bleu et reste lisible même sans traînée. Il se confond en revanche avec le Magma et le Pharaon.',
+        { pal: { vif: '#ff8c1a', clair: '#ffd8a0', fond1: '#3a1e10', fond2: '#150803' } }),
+      v('C', 'VARIANTE C', '', { pal: {} }),
+      v('D', 'VARIANTE D', '', { pal: {} }),
+      v('E', 'VARIANTE E', '', { pal: {} }),
+      v('F', 'RÉSERVE F', '', { pal: {} }),
+      v('G', 'RÉSERVE G', '', { pal: {} }),
+      v('H', 'RÉSERVE H', '', { pal: {} }),
+      v('I', 'RÉSERVE I', '', { pal: {} }),
+      v('J', 'RÉSERVE J', '', { pal: {} })
+    ]
+  },
+  {
+    id: 'trainee', titre: '4 · La traînée',
+    note: 'Le sillage laissé derrière le disque : 26 carrés qui grossissent vers l\'avant. La couleur change au fil de la rotation, donc plusieurs teintes donnent un dégradé le long du sillage.',
+    variantes: [
+      v('A', 'UNE SEULE TEINTE', 'Le sillage est d\'un bloc : la trajectoire se lit comme un trait, on anticipe l\'impact. Il manque en revanche de vie sur un long échange.',
+        { trainee: ['#35e0ff'] }),
+      v('B', 'DEUX TEINTES ALTERNÉES', 'Le sillage clignote entre deux couleurs au rythme de la rotation : on lit la vitesse du disque dans son sillage. Ça devient nerveux sur un tir chargé.',
+        { trainee: ['#35e0ff', '#ffd23e'] }),
+      v('C', 'VARIANTE C', '', { trainee: ['#35e0ff'] }),
+      v('D', 'VARIANTE D', '', { trainee: ['#35e0ff'] }),
+      v('E', 'VARIANTE E', '', { trainee: ['#35e0ff'] }),
+      v('F', 'RÉSERVE F', '', { trainee: ['#35e0ff'] }),
+      v('G', 'RÉSERVE G', '', { trainee: ['#35e0ff'] }),
+      v('H', 'RÉSERVE H', '', { trainee: ['#35e0ff'] }),
+      v('I', 'RÉSERVE I', '', { trainee: ['#35e0ff'] }),
+      v('J', 'RÉSERVE J', '', { trainee: ['#35e0ff'] })
+    ]
+  },
+  {
+    id: 'vol', titre: '5 · Ce qu\'il sème en vol',
+    note: 'Les particules lâchées à chaque image de vol. Le compteur du rallye dit tout : au-dessus d\'une trentaine en permanence, ce disque mange le budget de tous les autres effets.',
+    variantes: [
+      v('A', 'RIEN', 'Le disque ne sème rien, il n\'a que sa traînée. Le plus lisible du lot et gratuit pour la machine, mais c\'est le disque le plus fade du registre.',
+        { vol: () => {} }),
+      v('B', 'ÉTINCELLES ÉPARSES', 'Une étincelle une fois sur trois, projetée au hasard : le disque paraît électrique sans jamais saturer l\'écran. Peu visible sur un tir lent.',
+        { vol: (d, out) => { if (combien(.35)) out.push(p(d.x + gauss() * 9, d.y + gauss() * 9, gauss() * 24, gauss() * 24, .4, '#bff0ff', 2, 0)); } }),
+      v('C', 'VARIANTE C', '', { vol: () => {} }),
+      v('D', 'VARIANTE D', '', { vol: () => {} }),
+      v('E', 'VARIANTE E', '', { vol: () => {} }),
+      v('F', 'RÉSERVE F', '', { vol: () => {} }),
+      v('G', 'RÉSERVE G', '', { vol: () => {} }),
+      v('H', 'RÉSERVE H', '', { vol: () => {} }),
+      v('I', 'RÉSERVE I', '', { vol: () => {} }),
+      v('J', 'RÉSERVE J', '', { vol: () => {} })
+    ]
+  },
+  {
+    id: 'rebond', titre: '6 · L\'éclat au rebond',
+    note: 'Ce que le disque projette en cognant un mur. C\'est le seul moment où il a droit à une vraie gerbe : elle marque le rebond, que le joueur doit lire pour se replacer.',
+    variantes: [
+      v('A', 'COURONNE', 'Une gerbe qui part dans toutes les directions : le rebond claque et se repère du coin de l\'œil. C\'est aussi l\'effet le plus banal du registre.',
+        { rebond: (d, out) => couronne(out, d.x, d.y, ['#35e0ff', '#bff0ff', '#ffd23e'], 10, 170, 4, .55) }),
+      v('B', 'SPIRALE', 'Les particules partent en tournant : on lit le sens de rotation au moment du choc. Plus discret qu\'une couronne, donc plus facile à rater.',
+        { rebond: (d, out) => spirale(out, d.x, d.y, ['#bff0ff', '#35e0ff'], 8, 150, .6) }),
+      v('C', 'VARIANTE C', '', { rebond: () => {} }),
+      v('D', 'VARIANTE D', '', { rebond: () => {} }),
+      v('E', 'VARIANTE E', '', { rebond: () => {} }),
+      v('F', 'RÉSERVE F', '', { rebond: () => {} }),
+      v('G', 'RÉSERVE G', '', { rebond: () => {} }),
+      v('H', 'RÉSERVE H', '', { rebond: () => {} }),
+      v('I', 'RÉSERVE I', '', { rebond: () => {} }),
+      v('J', 'RÉSERVE J', '', { rebond: () => {} })
+    ]
+  }
+];
+/* ==== FIN DU CONTENU ==== */
+
+/* ===========================================================================
+   LE MOTEUR — ne pas toucher en copiant.
+   =========================================================================== */
+
+/* --- L'état courant : une lettre retenue par section --- */
+const choix = {};
+// Les lettres validées, quand le disque est arrêté : le mockup doit s'ouvrir
+// sur le disque tel qu'il est en jeu, pas sur la première variante de chaque
+// section. Sans ça il finirait par mentir sur l'état réel du disque.
+const RETENU = (DISQUE.retenu || '').match(/[A-J]/g) || [];
+SECTIONS.forEach((s, i) => {
+  const lettre = RETENU[i];
+  choix[s.id] = s.variantes.some(x => x.id === lettre) ? lettre : s.variantes[0].id;
+});
+if (DISQUE.retenu) {
+  document.getElementById('retenu').textContent =
+    'Choix retenus : ' + DISQUE.retenu + ' — le mockup ouvre dessus, c’est l’état porté dans le jeu.';
+}
+
+// Assemble le disque tel que les choix actuels le décrivent. Les calques
+// s'empilent dans l'ordre des sections ; les autres pièces sont uniques, la
+// dernière déclarée l'emporte. `extra` permet à une carte de forcer SA
+// variante par-dessus l'état courant.
+function assembler(extra) {
+  const d = {
+    calques: [], sur: null, contour: null,
+    pal: { ...DISQUE.pal }, trainee: ['#ffd23e'], vol: () => {}, rebond: () => {}
+  };
+  const poser = pieces => {
+    if (!pieces) return;
+    if (pieces.calque) d.calques.push(pieces.calque);
+    if (pieces.sur) d.sur = pieces.sur;
+    if ('contour' in pieces) d.contour = pieces.contour;
+    if (pieces.pal) d.pal = { ...d.pal, ...pieces.pal };
+    if (pieces.trainee) d.trainee = pieces.trainee;
+    if (pieces.vol) d.vol = pieces.vol;
+    if (pieces.rebond) d.rebond = pieces.rebond;
+  };
+  for (const s of SECTIONS) {
+    const va = s.variantes.find(x => x.id === choix[s.id]);
+    if (va) poser(va.pieces);
+  }
+  // La carte force SA variante : son calque remplace celui de la même section
+  // au lieu de s'ajouter par-dessus, sinon on verrait les deux empilés.
+  if (extra) {
+    if (extra.calque) {
+      const sec = SECTIONS.find(s => s.variantes.some(x => x.pieces === extra));
+      if (sec) {
+        const rang = SECTIONS.indexOf(sec);
+        let n = 0;
+        for (let i = 0; i < rang; i++) {
+          const va = SECTIONS[i].variantes.find(x => x.id === choix[SECTIONS[i].id]);
+          if (va && va.pieces.calque) n++;
+        }
+        d.calques[n] = extra.calque;
+      }
+    }
+    const reste = { ...extra }; delete reste.calque;
+    poser(reste);
+  }
+  return d;
+}
+
+/* --- Le disque, dessiné comme le jeu le dessine --------------------------
+   Découpe au contour, calques empilés, puis les deux couches que drawSkinDisc
+   applique à TOUT LE MONDE (le reflet et l'ombre de bord) et le liseré que
+   render.js trace par-dessus. Les sauter donnerait un disque plus plat en
+   match que dans le mockup. */
+function dessinerDisque(g, d, r, T, piece) {
+  g.save();
+  // Gélatine : le disque s'étire sur un axe et s'écrase sur l'autre après un
+  // rebond, à volume constant.
+  if (d.wobble > 0) {
+    const k = 1 + Math.sin(d.wobble * 26) * d.wobble * .28;
+    g.translate(d.x, d.y); g.scale(k, 1 / k); g.translate(-d.x, -d.y);
+  }
+  g.save();
+  g.translate(d.x, d.y);
+  tracerContour(g, 0, 0, r, piece.contour);
+  g.clip();
+  for (const c of piece.calques) { g.save(); c(g, r, d.spin, T, piece.pal); g.restore(); }
+
+  const gloss = g.createRadialGradient(-r * .32, -r * .36, r * .05, -r * .1, -r * .1, r * .95);
+  gloss.addColorStop(0, 'rgba(255,255,255,0.45)');
+  gloss.addColorStop(.45, 'rgba(255,255,255,0.08)');
+  gloss.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gloss; g.fillRect(-r, -r, r * 2, r * 2);
+
+  const edge = g.createRadialGradient(0, 0, r * .72, 0, 0, r);
+  edge.addColorStop(0, 'rgba(0,0,0,0)');
+  edge.addColorStop(1, 'rgba(0,0,0,0.4)');
+  g.fillStyle = edge; g.fillRect(-r, -r, r * 2, r * 2);
+  g.restore();
+
+  g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = 1.5;
+  tracerContour(g, d.x, d.y, r, piece.contour);
+  g.stroke();
+  g.restore();
+  if (piece.sur) { g.save(); piece.sur(g, d.x, d.y, r, d.spin, T); g.restore(); }
+}
+
+// L'ombre portée, aux mêmes réglages que drawShadow dans render.js : elle
+// tombe 14 px sous le disque, ce qui le décolle du sol.
+function ombre(g, x, y, r) {
+  g.save();
+  g.fillStyle = 'rgba(0,0,20,.33)';
+  g.beginPath(); g.ellipse(x, y + 14, r, r * .36, 0, 0, TAU); g.fill();
+  g.restore();
+}
+
+/* --- Un bout du vrai terrain --------------------------------------------
+   Teintes du thème `arena` de data/maps.js : pont métallique, sol projeté,
+   lignes blanches. La lisibilité jugée ici est celle du match. */
+function terrain(g, w, h) {
+  g.fillStyle = '#0a1220'; g.fillRect(0, 0, w, h);
+  g.fillStyle = 'rgba(15,26,46,0.7)'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = '#1b2c48'; g.lineWidth = 1;
+  for (let x = 32; x < w; x += 34) { g.beginPath(); g.moveTo(x + .5, 0); g.lineTo(x + .5, h); g.stroke(); }
+  for (let y = 32; y < h; y += 34) { g.beginPath(); g.moveTo(0, y + .5); g.lineTo(w, y + .5); g.stroke(); }
+  g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 2;
+  g.strokeRect(3, 3, w - 6, h - 6);
+}
+
+/* --- La traînée et les particules, comme render.js les dessine --- */
+function couleurTrainee(cols, spin) { return cols[Math.abs(Math.floor(spin * 3)) % cols.length]; }
+function peindreTrainee(g, trail) {
+  const n = trail.length;
+  for (let i = 0; i < n; i++) {
+    const t = trail[i], k = (i + 1) / n;
+    g.globalAlpha = k * .5; g.fillStyle = t.c;
+    const s = 3 + k * 5;
+    g.fillRect(t.x - s / 2, t.y - s / 2, s, s);
+  }
+  g.globalAlpha = 1;
+}
+function peindreParticules(g, parts) {
+  for (const q of parts) {
+    g.globalAlpha = Math.max(0, Math.min(1, q.life * 2.5));
+    g.fillStyle = q.c;
+    g.fillRect(q.x - q.s / 2, q.y - q.s / 2, q.s, q.s);
+  }
+  g.globalAlpha = 1;
+}
+// Le plafond du jeu, appliqué ici aussi : sans lui le mockup promettrait une
+// gerbe que le match ne montrera jamais.
+function verser(sortie, parts) {
+  let place = MAX_PARTICULES - parts.length;
+  for (const q of sortie) { if (place <= 0) break; parts.push(q); place--; }
+}
+function majParticules(parts, dt) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const q = parts[i];
+    q.vy += q.g * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt;
+    if (q.life <= 0) parts.splice(i, 1);
+  }
+}
+
+/* --- Vérification du gabarit --------------------------------------------
+   Le découpage est libre, donc rien ne garantit tout seul qu'il décide bien
+   ce que le code réclame : une page de six belles sections peut n'avoir
+   jamais choisi la couleur du sillage. On vérifie donc les trois choses qu'un
+   découpage sur mesure peut oublier — le nombre de sections, les pièces
+   obligatoires, et l'explication écrite de chaque carte. */
+const bad = [];
+const MIN_DESC = 40;
+const OBLIGATOIRES = ['calque', 'trainee', 'vol', 'rebond'];
+
+if (SECTIONS.length < 6) bad.push('découpage : ' + SECTIONS.length + ' sections (six au minimum)');
+const vues = new Set();
+for (const s of SECTIONS) {
+  if (!s.note || s.note.trim().length < MIN_DESC) bad.push(s.id + ' : la section n\'explique pas ce qu\'on y juge');
+  if (s.variantes.length !== 10) bad.push(s.id + ' : ' + s.variantes.length + ' variantes (attendu 10, soit 5 visibles + 5 en réserve)');
+  for (const va of s.variantes) {
+    const ref = s.id + '-' + va.id;
+    if (!va.nom || !va.nom.trim()) bad.push(ref + ' : pas de nom');
+    // Une description doit dire ce que c'est ET ce que ça coûte : d'où la
+    // longueur minimale, qui écarte les « joli ».
+    if (!va.desc || va.desc.trim().length < MIN_DESC) {
+      bad.push(ref + ' : explication manquante ou trop courte — dire l\'allure ET l\'avantage/inconvénient');
+    }
+    const cles = Object.keys(va.pieces || {});
+    if (!cles.length) bad.push(ref + ' : ne remplace rien, la carte serait identique aux autres');
+    cles.forEach(c => vues.add(c));
+    if (va.pieces && va.pieces.trainee && !va.pieces.trainee.length) bad.push(ref + ' : traînée vide, le disque n\'aurait aucun sillage');
+  }
+}
+for (const c of OBLIGATOIRES) {
+  if (!vues.has(c)) bad.push('découpage : aucune section ne décide « ' + c + ' » — le code en a besoin');
+}
+const boite = document.getElementById('errs');
+boite.textContent = bad.length
+  ? bad.length + ' à corriger :\n' + bad.slice(0, 24).join('\n') + (bad.length > 24 ? '\n…' : '')
+  : 'OK — six sections au moins, les quatre pièces du code décidées, et chaque section comme chaque variante porte son explication.';
+if (bad.length) boite.className = 'bad';
+
+/* --- Bande de comparaison : les disques réels du jeu --- */
+(function bande() {
+  const hote = document.getElementById('bande');
+  const une = (id, nom, neuf) => {
+    const d = document.createElement('div'); d.className = 'une' + (neuf ? ' neuf' : '');
+    const cv = document.createElement('canvas');
+    cv.width = 44; cv.height = 44;
+    if (neuf) cv.id = 'cvNeuf';
+    else {
+      const g = cv.getContext('2d');
+      terrain(g, 44, 44);
+      drawSkinDisc(g, 22, 22, R_JEU, id, .7);
+      g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = 1.5;
+      tracerContour(g, 22, 22, R_JEU, deformationDisque(id)); g.stroke();
+    }
+    const s = document.createElement('span'); s.textContent = nom;
+    d.appendChild(cv); d.appendChild(s); hote.appendChild(d);
+  };
+  for (const sk of DISC_SKINS) une(sk.id, sk.name, false);
+  une(DISQUE.id, DISQUE.nom, true);
+})();
+
+function peindreNeuf() {
+  const cv = document.getElementById('cvNeuf');
+  const g = cv.getContext('2d');
+  terrain(g, cv.width, cv.height);
+  dessinerDisque(g, { x: 22, y: 22, spin: .7, wobble: 0 }, R_JEU, horloge(), assembler());
+}
+
+/* --- Les cartes : figées, avec un vol simulé de façon déterministe -------
+   Soixante-dix canvas animés en même temps rameraient pour rien, et on
+   compare mieux des images au calme. Le vol est simulé sur une demi-seconde
+   pour que la traînée et le semis soient ceux du match, pas une décoration
+   posée à la main. Une variante qui déclare `rebond` cogne le mur de droite :
+   sa carte montre l'éclat, sinon elle ne montrerait rien du tout. */
+function peindreCarte(cv, piece, avecRebond) {
+  const g = cv.getContext('2d');
+  const w = cv.width, h = cv.height;
+  terrain(g, w, h);
+  semer(20260901);
+
+  const mur = w - 6 - R_JEU;
+  const d = { x: 22, y: h * .5 + 6, vx: 330, vy: -34, spin: 0, wobble: 0 };
+  const trail = [], parts = [];
+  const dt = 1 / 60;
+  let cogne = false;
+  // Le vol s'arrête avant le bord droit : à 330 px/s et soixante images par
+  // seconde le disque avance 5,5 px par image, et quarante images le feraient
+  // sortir du cadre. La version qui rebondit court jusqu'au mur, puis onze
+  // images de plus pour que la gerbe soit encore fraîche.
+  const images = avecRebond ? 42 : 26;
+  for (let i = 0; i < images; i++) {
+    d.x += d.vx * dt; d.y += d.vy * dt;
+    d.spin += Math.hypot(d.vx, d.vy) * dt * .06;
+    if (d.wobble > 0) d.wobble = Math.max(0, d.wobble - dt * 2.6);
+    trail.push({ x: d.x, y: d.y, c: couleurTrainee(piece.trainee, d.spin) });
+    if (trail.length > 26) trail.shift();
+    const out = []; piece.vol(d, out); if (out.length) verser(out, parts);
+    if (avecRebond && !cogne && d.x >= mur) {
+      cogne = true; d.x = mur; d.vx = -d.vx * .92;
+      const gerbe = []; piece.rebond(d, gerbe); verser(gerbe, parts);
+    }
+    majParticules(parts, dt);
+  }
+
+  relacher();
+  peindreTrainee(g, trail);
+  ombre(g, d.x, d.y, R_JEU + 2);
+  // Instant figé choisi une fois pour toutes : deux cartes comparées doivent
+  // montrer le même moment de l'animation de face, sinon on compare des
+  // phases et non des partis pris.
+  dessinerDisque(g, d, R_JEU, .42, piece);
+  peindreParticules(g, parts);
+}
+
+const cartes = [];
+(function poserSections() {
+  const hote = document.getElementById('sections');
+  for (const s of SECTIONS) {
+    const h2 = document.createElement('h2'); h2.textContent = s.titre;
+    hote.appendChild(h2);
+    if (s.note) { const n = document.createElement('p'); n.className = 'note'; n.textContent = s.note; hote.appendChild(n); }
+
+    const rangee = document.createElement('div'); rangee.className = 'row';
+    const reserve = document.createElement('div'); reserve.className = 'row reserve';
+    hote.appendChild(rangee);
+
+    s.variantes.forEach((va, i) => {
+      const card = document.createElement('div');
+      card.className = 'card' + (i === 0 ? ' on' : '');
+      const lbl = document.createElement('div'); lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + (va.desc || '');
+      const cv = document.createElement('canvas');
+      cv.width = 212; cv.height = 108;
+      card.appendChild(lbl); card.appendChild(cv);
+      (i < 5 ? rangee : reserve).appendChild(card);
+      cartes.push({ cv, s, va, card });
+      card.addEventListener('click', () => {
+        choix[s.id] = va.id;
+        cartes.filter(c => c.s === s).forEach(c => c.card.classList.toggle('on', c.va === va));
+        rafraichir();
+      });
+    });
+
+    const bouton = document.createElement('button');
+    bouton.className = 'plus'; bouton.textContent = '+ 5 autres choix';
+    bouton.addEventListener('click', () => {
+      reserve.classList.toggle('ouverte');
+      bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
+    });
+    hote.appendChild(bouton);
+    hote.appendChild(reserve);
+  }
+})();
+
+function peindreCartes() {
+  for (const { cv, va } of cartes) {
+    // La carte montre le disque ENTIER avec cette variante appliquée, le reste
+    // dans l'état courant : on juge un disque complet, jamais une pièce qui
+    // flotte sur fond noir.
+    peindreCarte(cv, assembler(va.pieces), !!(va.pieces && va.pieces.rebond));
+  }
+}
+
+/* --- Le rallye : le disque tel qu'on le verra vraiment --- */
+const cvR = document.getElementById('cvRallye');
+const gR = cvR.getContext('2d');
+const balle = { x: 60, y: 80, vx: 300, vy: 190, spin: 0, wobble: 0 };
+let trainee = [], parts = [];
+let piece = assembler();
+let dernier = 0, pointe = 0;
+
+function rallye(ms) {
+  const dt = Math.min(.05, (ms - dernier) / 1000 || 0); dernier = ms;
+  const T = ms / 1000;
+  const bord = 4 + R_JEU;
+
+  balle.x += balle.vx * dt; balle.y += balle.vy * dt;
+  balle.spin += Math.hypot(balle.vx, balle.vy) * dt * .06;
+  if (balle.wobble > 0) balle.wobble = Math.max(0, balle.wobble - dt * 2.6);
+
+  let choc = false;
+  if (balle.x < bord) { balle.x = bord; balle.vx = -balle.vx; choc = true; }
+  if (balle.x > cvR.width - bord) { balle.x = cvR.width - bord; balle.vx = -balle.vx; choc = true; }
+  if (balle.y < bord) { balle.y = bord; balle.vy = -balle.vy; choc = true; }
+  if (balle.y > cvR.height - bord) { balle.y = cvR.height - bord; balle.vy = -balle.vy; choc = true; }
+
+  trainee.push({ x: balle.x, y: balle.y, c: couleurTrainee(piece.trainee, balle.spin) });
+  if (trainee.length > 26) trainee.shift();
+  const out = []; piece.vol(balle, out); if (out.length) verser(out, parts);
+  if (choc) { const gerbe = []; piece.rebond(balle, gerbe); verser(gerbe, parts); }
+  majParticules(parts, dt);
+
+  terrain(gR, cvR.width, cvR.height);
+  peindreTrainee(gR, trainee);
+  ombre(gR, balle.x, balle.y, R_JEU + 2);
+  dessinerDisque(gR, balle, R_JEU, T, piece);
+  peindreParticules(gR, parts);
+
+  pointe = Math.max(pointe, parts.length);
+  document.getElementById('compteur').innerHTML =
+    'particules <i' + (parts.length >= MAX_PARTICULES ? ' class="trop"' : '') + '>' + parts.length + '</i>' +
+    ' · pointe <i' + (pointe >= MAX_PARTICULES ? ' class="trop"' : '') + '>' + pointe + '</i>' +
+    ' / plafond ' + MAX_PARTICULES;
+
+  requestAnimationFrame(rallye);
+}
+
+/* --- Le code compact à renvoyer : « 1A 2C 3B … » ------------------------
+   Posé dans un champ en lecture seule plutôt que dans une ligne de texte,
+   pour rester sélectionnable à la main si le presse-papiers est refusé. */
+function codeChoix() { return SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' '); }
+
+function rafraichir() {
+  piece = assembler();
+  pointe = 0; parts = []; trainee = [];
+  peindreCartes();
+  peindreNeuf();
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value = codeChoix();
+}
+
+(function brancherCopie() {
+  const btn = document.getElementById('btnCopier');
+  const champ = document.getElementById('codeChoix');
+  btn.addEventListener('click', async () => {
+    const texte = codeChoix();
+    let ok = false;
+    try { await navigator.clipboard.writeText(texte); ok = true; }
+    catch (e) {
+      champ.select(); champ.setSelectionRange(0, 999);
+      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    }
+    btn.textContent = ok ? '✓ copié' : 'Ctrl+C pour copier';
+    btn.classList.toggle('ok', ok);
+    setTimeout(() => { btn.textContent = 'copier mes choix'; btn.classList.remove('ok'); }, 1800);
+  });
+})();
+
+document.querySelector('h1').textContent = DISQUE.nom;
+// Les faces qui écrivent du texte doivent attendre la police : un canvas
+// peint avant son chargement retombe sur la police système et ne montre pas
+// le vrai dessin.
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(rafraichir);
+rafraichir();
+requestAnimationFrame(rallye);
+</script>
+</body>
+</html>

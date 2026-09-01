@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Le disque chargé — mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:30px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:960px;line-height:1.7;margin:0 0 14px}
+  .note code{color:#bcd4f5}
+
+  .page{display:flex;gap:16px;align-items:flex-start}
+  .gauche{flex:1 1 0;min-width:0}
+  .aside{flex:0 0 352px;position:sticky;top:14px}
+  @media (max-width:980px){ .page{display:block} .aside{position:static;width:100%} }
+
+  .row{display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(206px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;
+        cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d5c8a}
+  .card.on{border-color:var(--or);transform:translateY(-2px)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:58px}
+  .lbl b{display:block;font-size:13.5px;color:var(--or);letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px}
+  .reserve{display:none}
+  .reserve.ouverte{display:grid}
+  .plus{margin-top:9px;background:#132038;color:#9fb4dd;border:1px solid var(--edge);
+        border-radius:7px;padding:6px 13px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#1a2b48;color:var(--ink)}
+
+  .bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;margin-bottom:12px}
+  .bloc h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .bloc canvas{width:100%;height:auto}
+  .compteur{font-family:Consolas,monospace;font-size:11px;color:#7f93b3;margin-top:7px;line-height:1.6}
+  .compteur i{color:var(--or);font-style:normal}
+  .compteur i.trop{color:#ff5340}
+  .choix{font-size:11.5px;color:#9fb4dd;margin-top:9px;font-family:Consolas,monospace;line-height:1.7}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 150px;min-width:0;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+             padding:8px 14px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#24395e}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+
+  .quel{display:flex;gap:6px;margin-bottom:9px;flex-wrap:wrap}
+  .quel button{flex:1 1 0;background:#132038;color:#9fb4dd;border:1px solid var(--edge);border-radius:7px;
+               padding:6px 4px;font-size:11px;cursor:pointer;letter-spacing:.3px}
+  .quel button.on{background:#24395e;color:var(--ink);border-color:var(--or)}
+
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 6px}
+  #errs.bad{color:#ff5340}
+  #retenu{font-size:12.5px;font-family:Consolas,monospace;color:var(--or);margin:0 0 14px}
+  #retenu:empty{display:none}
+</style>
+</head>
+<body>
+
+<h1>LE DISQUE CHARGÉ</h1>
+<p class="note">
+  <b>Aujourd'hui, un tir chargé efface le disque.</b> <code>d.super</code> agit à trois endroits :
+  <code>render.js</code> remplace toute la face par un rond rouge plat, <code>disc.js</code> force la
+  traînée en <code>#ff5340</code> et sème des particules rouges. Le skin qu'on a choisi disparaît donc
+  au moment précis où on le regarde le plus.
+  <br><br>
+  Ce mockup remplace ce rond par un <b>embrasement posé PAR-DESSUS chaque disque</b>, dans
+  <b>sa propre teinte poussée vers le blanc</b>. La teinte est prise dans le registre
+  (<code>DISC_SKINS[].colors</code>, la pastille la plus vive) : un disque ajouté demain aura sa
+  couleur de charge sans qu'on y pense. Le Captain chauffe au rouge-blanc, la Galaxie au cyan, Vody au
+  rouge-or.
+  <br><br>
+  <b>Chaque carte montre le même effet sur trois disques</b>, en vol, à l'échelle exacte du match
+  (rayon 14 px). C'est tout le sujet : un embrasement qui ne tient que sur le Captain ne sert à rien.
+  Surveille <b>Vody</b> en particulier — il est déjà rouge, c'est lui qui dira si « chargé » se lit
+  encore. Clique une carte pour la monter dans le rallye de droite, qui rejoue en boucle la montée en
+  main, le tir, le vol et les rebonds.
+</p>
+
+<div id="errs"></div>
+<div id="retenu"></div>
+
+<div class="page">
+  <div class="gauche">
+    <div id="sections"></div>
+  </div>
+
+  <div class="aside">
+    <div class="bloc">
+      <h3>Le rallye chargé</h3>
+      <div class="quel" id="quel"></div>
+      <canvas id="cvRallye" width="326" height="236"></canvas>
+      <div class="compteur" id="compteur"></div>
+      <div class="choix" id="choix"></div>
+      <div class="copier">
+        <input class="codeChoix" id="codeChoix" readonly>
+        <button class="btnCopier" id="btnCopier">copier mes choix</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// ---------------------------------------------------------------------------
+// Les disques sont les VRAIS : dessinés par drawSkinDisc, découpés par
+// tracerContour. L'effet de charge se pose par-dessus, exactement comme il le
+// fera dans render.js. C'est le seul moyen de juger un calque qui doit tenir
+// sur n'importe quelle face.
+// ---------------------------------------------------------------------------
+import { DISC_SKINS, drawSkinDisc, deformationDisque, tracerContour } from '../js/data/skins.js';
+
+const TAU = Math.PI * 2;
+const R_JEU = 14;              // DISC_RADIUS, sans facteur d'échelle
+const MAX_PARTICULES = 50;     // MAX_PARTICULES de data/disc-fx.js
+const horloge = () => performance.now() / 1000;
+
+/* --- Les trois disques d'épreuve -----------------------------------------
+   Un clair et très contrasté, un sombre et déjà lumineux, un rouge. Si
+   l'effet tient sur ces trois-là, il tient sur le registre entier. */
+const EPREUVE = ['captain', 'galaxy', 'vody'];
+
+/* --- Le hasard, débrayable : les cartes doivent redonner la même image --- */
+let alea = Math.random;
+function semer(graine) { let s = graine >>> 0; alea = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+function relacher() { alea = Math.random; }
+const rand = (a = 1, b) => b === undefined ? alea() * a : a + alea() * (b - a);
+const gauss = () => (alea() + alea() + alea() - 1.5) * 0.8;
+const p = (x, y, vx, vy, life, c, s, g) => ({ x, y, vx, vy, life, c, s, g: g || 0 });
+function combien(n) { const e = Math.floor(n); return e + (alea() < n - e ? 1 : 0); }
+function couronne(out, x, y, cols, n, vitesse, taille, vie) {
+  for (let i = 0; i < combien(n); i++) {
+    const a = rand(TAU), v = rand(vitesse * .5, vitesse);
+    out.push(p(x, y, Math.cos(a) * v, Math.sin(a) * v, rand(vie * .6, vie),
+      cols[(alea() * cols.length) | 0], rand(taille * .6, taille), 0));
+  }
+}
+
+/* --- La teinte de charge ---------------------------------------------------
+   Prise dans le registre plutôt que dans une table à part : la pastille la
+   plus vive du disque, c'est-à-dire la plus saturée et la plus claire à la
+   fois. Un disque ajouté demain aura sa couleur de charge sans qu'on y pense.
+   Le cas qui coince est Vody, déjà rouge : sa charge ne se distingue que par
+   la quantité de blanc qu'on y pousse — d'où l'importance de le regarder. */
+const HEX = c => { const n = parseInt(c.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+function teinteDeCharge(id) {
+  const s = DISC_SKINS.find(k => k.id === id);
+  const cols = (s && s.colors && s.colors.length) ? s.colors : ['#ffffff'];
+  let best = cols[0], score = -1;
+  for (const c of cols) {
+    const [r, g, b] = HEX(c);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const sat = max ? (max - min) / max : 0;
+    // La luminosite multiplie au lieu de s'additionner : une teinte de charge
+    // doit d'abord etre CLAIRE. Additionnee, la saturation faisait gagner le
+    // bleu nuit du Pegasus (#1a2a5e), c'est-a-dire une charge invisible sur un
+    // terrain deja bleu nuit ; multipliee, c'est son rose pale qui l'emporte.
+    const note = (max / 255) * (.45 + .55 * sat);
+    if (note > score) { score = note; best = c; }
+  }
+  return best;
+}
+// Chauffe une couleur vers le blanc. k = 0 la laisse, k = 1 la rend blanche.
+// Rend du #rrggbb et non du rgb(), parce que le resultat repasse par alpha()
+// qui relit les composantes en hexadecimal : un rgb() y devenait NaN, donc du
+// noir, donc rien du tout sous un composite 'lighter'.
+function chauffer(c, k) {
+  const [r, g, b] = HEX(c);
+  const m = v => Math.round(v + (255 - v) * k).toString(16).padStart(2, '0');
+  return '#' + m(r) + m(g) + m(b);
+}
+function alpha(c, a) { const [r, g, b] = HEX(c); return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')'; }
+
+// Fabrique une variante. `pieces` ne porte que ce que la variante remplace.
+function v(id, nom, desc, pieces) { return { id, nom, desc, pieces }; }
+
+/* ===========================================================================
+   LES SECTIONS — les six étages de l'effet, plus la montée en main.
+
+   Une variante ne décrit QUE son étage :
+     face   : (g, r, spin, T, k, teinte)   → posé sur la face, DANS la découpe
+     lisere : (g, r, spin, T, k, teinte)   → le bord du disque
+     autour : (g, r, spin, T, k, teinte)   → hors découpe, autour du disque
+     sillage: (teinte, spin, k) => couleur → la couleur de la traînée chargée
+     vol    : (d, out, teinte)             → ce qu'il sème en volant, chargé
+     depart : (d, out, teinte, dir)        → la gerbe au moment du tir
+     main   : (g, r, spin, T, charge, teinte) → la montée pendant qu'on charge
+
+   `k` vaut 1 en vol (pleine charge) et monte de 0 à 1 dans la main. `teinte`
+   est la couleur de charge du disque affiché, jamais une couleur en dur : une
+   variante qui écrirait '#ff5340' referait exactement le défaut d'aujourd'hui.
+   =========================================================================== */
+const SECTIONS = [
+  {
+    id: 'face', titre: '1 · L\'embrasement de la face',
+    note: 'Ce qui se pose SUR le disque, par-dessus son motif. C\'est l\'étage qui décide si le skin survit à la charge : trop couvrant, il refait le rond rouge d\'aujourd\'hui ; trop discret, personne ne voit que le tir est chargé.',
+    variantes: [
+      v('A', 'HALO DU CENTRE', 'Une lueur part du cœur et s\'éteint vers le bord. Le motif reste visible sur tout le pourtour, là où il y a le plus de surface ; en revanche le centre du dessin est effacé.',
+        { face: (g, r, s, T, k, t) => { g.globalCompositeOperation = 'lighter'; const d = g.createRadialGradient(0, 0, 0, 0, 0, r); d.addColorStop(0, alpha(chauffer(t, .75), .95 * k)); d.addColorStop(.5, alpha(t, .45 * k)); d.addColorStop(1, alpha(t, 0)); g.fillStyle = d; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('B', 'BRAISE DU BORD', 'L\'inverse : le disque rougeoie sur son pourtour et reste net au centre. Le motif central, celui qui identifie le disque, est intégralement préservé ; mais le bord est aussi ce qui touche le mur, et l\'effet s\'y confond avec le rebond.',
+        { face: (g, r, s, T, k, t) => { g.globalCompositeOperation = 'lighter'; const d = g.createRadialGradient(0, 0, r * .35, 0, 0, r); d.addColorStop(0, alpha(t, 0)); d.addColorStop(.7, alpha(t, .5 * k)); d.addColorStop(1, alpha(chauffer(t, .7), .95 * k)); g.fillStyle = d; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('C', 'SURCHAUFFE PLEINE', 'Toute la face est lavée vers le blanc, motif compris. On lit « chargé » de l\'autre bout du terrain sans la moindre ambiguïté ; c\'est aussi la variante la plus proche du défaut actuel, le skin devient une teinte et rien de plus.',
+        { face: (g, r, s, T, k, t) => { g.globalCompositeOperation = 'lighter'; g.fillStyle = alpha(chauffer(t, .55), .72 * k); g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('D', 'VEINES INCANDESCENTES', 'Des fissures de lumière courent sur la face, comme un métal qui craque de chaleur. Le motif reste lisible entre les veines et l\'effet est le plus mémorable du lot ; mais à 28 px les veines frôlent le pixel et scintillent en rotation.',
+        { face: (g, r, s, T, k, t) => { g.globalCompositeOperation = 'lighter'; g.strokeStyle = alpha(chauffer(t, .6), .9 * k); g.lineWidth = r * .09; g.lineCap = 'round'; for (let i = 0; i < 5; i++) { const a = s * .5 + (i / 5) * TAU; g.beginPath(); g.moveTo(Math.cos(a) * r * .12, Math.sin(a) * r * .12); g.lineTo(Math.cos(a + .5) * r * .92, Math.sin(a + .5) * r * .92); g.stroke(); } } }),
+      v('E', 'PULSATION', 'La face entière bat, du sombre au blanc, deux fois par seconde. Le clignotement attire l\'œil même en périphérie, ce qu\'aucune lueur fixe ne fait ; en contrepartie le disque est illisible une image sur deux.',
+        { face: (g, r, s, T, k, t) => { const b = .5 + .5 * Math.sin(T * 12); g.globalCompositeOperation = 'lighter'; g.fillStyle = alpha(chauffer(t, .4 + b * .5), (.3 + b * .55) * k); g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('F', 'BALAYAGE', 'Une bande de lumière traverse la face en boucle, comme un scanner. Elle ne cache jamais plus d\'un tiers du motif à la fois ; mais son sens de balayage est fixe alors que le disque tourne, ce qui se remarque.',
+        { face: (g, r, s, T, k, t) => { g.globalCompositeOperation = 'lighter'; const bx = ((T * 1.6) % 2 - .5) * r * 2.4; const d = g.createLinearGradient(bx - r * .5, 0, bx + r * .5, 0); d.addColorStop(0, alpha(t, 0)); d.addColorStop(.5, alpha(chauffer(t, .7), .9 * k)); d.addColorStop(1, alpha(t, 0)); g.fillStyle = d; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('G', 'POINTS CHAUDS', 'Quelques braises éparses s\'allument et s\'éteignent sur la face. C\'est l\'effet le moins couvrant du lot, le skin est intégralement préservé ; c\'est aussi le moins lisible, on peut le confondre avec le motif du disque.',
+        { face: (g, r, s, T, k, t) => { g.globalCompositeOperation = 'lighter'; for (let i = 0; i < 6; i++) { const a = s * .3 + i * 1.7, d = r * (.25 + (i % 3) * .22); const b = .5 + .5 * Math.sin(T * 7 + i * 2.1); g.fillStyle = alpha(chauffer(t, .6), b * .95 * k); g.beginPath(); g.arc(Math.cos(a) * d, Math.sin(a) * d, r * .14, 0, TAU); g.fill(); } } }),
+      v('H', 'ANNEAU INTÉRIEUR', 'Un anneau de feu à mi-rayon, net et net seulement là. Il laisse voir le centre ET le bord, donc les deux zones du motif ; mais un anneau ressemble beaucoup à ce que dessinent déjà le Captain et le Chaptèle.',
+        { face: (g, r, s, T, k, t) => { g.globalCompositeOperation = 'lighter'; g.strokeStyle = alpha(chauffer(t, .65), .95 * k); g.lineWidth = r * .2; g.beginPath(); g.arc(0, 0, r * .6, 0, TAU); g.stroke(); } }),
+      v('I', 'RIEN SUR LA FACE', 'Le motif reste absolument intact, toute la charge se joue au bord et autour. C\'est le seul choix où le skin est parfaitement respecté ; mais si les autres étages sont discrets, un tir chargé passe inaperçu.',
+        { face: () => { } }),
+      v('J', 'NÉGATIF', 'La face passe en négatif le temps du vol. Personne ne peut rater ça et le motif reste entièrement lisible, juste inversé ; mais l\'effet est étrange plus que puissant, et il ne dit pas « chaud ».',
+        { face: (g, r, s, T, k, t) => { g.globalCompositeOperation = 'difference'; g.fillStyle = 'rgba(255,255,255,' + (.9 * k) + ')'; g.fillRect(-r, -r, r * 2, r * 2); } })
+    ]
+  },
+  {
+    id: 'lisere', titre: '2 · Le liseré du bord',
+    note: 'Tous les disques portent déjà un liseré blanc fin, tracé par render.js pour les détacher du sol. Le charger est le geste le moins coûteux du lot : il ne touche pas un pixel du motif, mais il ne se voit que sur 2 px de large.',
+    variantes: [
+      v('A', 'ÉPAISSI ET TEINTÉ', 'Le liseré existant passe à la teinte de charge et triple d\'épaisseur. Le disque est cerclé de sa propre couleur sans qu\'un pixel du motif bouge ; en contrepartie 2 px de plus, ça reste 2 px.',
+        { lisere: (g, r, s, T, k, t) => { g.strokeStyle = alpha(chauffer(t, .45), .95 * k); g.lineWidth = 1.5 + 3 * k; return true; } }),
+      v('B', 'DOUBLE LISERÉ', 'Deux traits concentriques, un large et sourd, un fin et blanc. C\'est ce décalage qui donne l\'épaisseur, un trait seul paraît toujours plat ; mais deux cercles sur un disque de 28 px, ça commence à faire beaucoup.',
+        { lisere: (g, r, s, T, k, t) => { g.strokeStyle = alpha(t, .5 * k); g.lineWidth = 6 * k; g.beginPath(); tracerContour(g, 0, 0, r, null); g.stroke(); g.strokeStyle = 'rgba(255,255,255,' + (.9 * k) + ')'; g.lineWidth = 1.5; return true; } }),
+      v('C', 'HALO EXTÉRIEUR FLOU', 'Un flou coloré déborde autour du disque, comme une source lumineuse. C\'est ce qui ressemble le plus à quelque chose de vraiment chaud ; mais le flou coûte cher au GPU et le réglage « ombres faible » l\'enlèverait.',
+        { lisere: (g, r, s, T, k, t) => { g.shadowColor = chauffer(t, .3); g.shadowBlur = 16 * k; g.strokeStyle = alpha(chauffer(t, .6), .95 * k); g.lineWidth = 2.5; return true; } }),
+      v('D', 'QUI BAT', 'Le liseré enfle et se rétracte deux fois par seconde. Le battement se repère du coin de l\'œil sans jamais cacher le motif ; en revanche il se confond avec la déformation permanente de la Gélatine.',
+        { lisere: (g, r, s, T, k, t) => { const b = .5 + .5 * Math.sin(T * 11); g.strokeStyle = alpha(chauffer(t, .3 + b * .5), .95 * k); g.lineWidth = 1.5 + (1 + b * 4) * k; return true; } }),
+      v('E', 'SEGMENTÉ QUI TOURNE', 'Le liseré devient des tirets qui tournent autour du disque. On lit le sens et la vitesse de rotation, ce qu\'aucun autre étage ne donne ; mais un pointillé de 28 px de circonférence se lit mal.',
+        { lisere: (g, r, s, T, k, t) => { g.strokeStyle = alpha(chauffer(t, .55), .95 * k); g.lineWidth = 3 * k + 1.5; g.setLineDash([5, 4]); g.lineDashOffset = -s * 10; return true; } }),
+      v('F', 'BLANC PUR', 'Le liseré chauffe à blanc, sans teinte du tout. Le blanc est la couleur la plus visible sur le sol bleu nuit, donc c\'est le plus lisible du lot ; mais il est identique sur tous les disques et perd l\'idée de la teinte propre.',
+        { lisere: (g, r, s, T, k, t) => { g.strokeStyle = 'rgba(255,255,255,' + (.95 * k) + ')'; g.lineWidth = 1.5 + 3.5 * k; return true; } }),
+      v('G', 'OMBRE PORTÉE COLORÉE', 'Le liseré reste fin mais le disque projette une ombre de sa teinte au sol. Le disque paraît vraiment éclairer ce qui l\'entoure ; en contrepartie l\'ombre au sol sert déjà à dire la hauteur du disque.',
+        { lisere: (g, r, s, T, k, t) => { g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = 1.5; return true; }, autourSol: true }),
+      v('H', 'INCHANGÉ', 'On garde le liseré blanc fin de tous les jours. Zéro risque, zéro coût, et le motif ne bouge pas d\'un pixel ; mais alors la charge ne se lit nulle part au bord, tout repose sur les autres étages.',
+        { lisere: (g, r, s, T, k, t) => { g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = 1.5; return true; } }),
+      v('I', 'QUI DÉBORDE', 'Un anneau nettement plus grand que le disque, comme une onde figée autour de lui. Le disque paraît plus gros donc plus dangereux, ce qui colle au tir chargé ; mais il ment sur le rayon réel, celui qu\'on doit viser pour attraper.',
+        { lisere: (g, r, s, T, k, t) => { g.strokeStyle = alpha(chauffer(t, .5), .55 * k); g.lineWidth = 2; g.beginPath(); g.arc(0, 0, r + 5 * k, 0, TAU); g.stroke(); g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = 1.5; return true; } }),
+      v('J', 'BICOLORE', 'La moitié du liseré prend la teinte, l\'autre reste blanche, et l\'ensemble tourne. La rotation devient parfaitement lisible au bord, sans toucher au motif ; mais c\'est un détail de 2 px, il faut vraiment regarder pour le voir.',
+        { lisere: (g, r, s, T, k, t) => { g.lineWidth = 1.5 + 3 * k; g.strokeStyle = alpha(chauffer(t, .5), .95 * k); g.beginPath(); g.arc(0, 0, r, s, s + Math.PI); g.stroke(); g.strokeStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.arc(0, 0, r, s + Math.PI, s + TAU); g.stroke(); return false; } })
+    ]
+  },
+  {
+    id: 'autour', titre: '3 · Ce qui tourne autour',
+    note: 'Le seul étage qui déborde du disque, donc le seul visible quand le disque passe derrière un joueur. Aujourd\'hui c\'est un arc rouge qui tourne vite. Tout ce qu\'on met ici agrandit la silhouette du disque et peut tromper sur sa zone d\'attrapé.',
+    variantes: [
+      v('A', 'L\'ARC ACTUEL, TEINTÉ', 'On garde exactement l\'arc d\'aujourd\'hui, mais dans la teinte du disque. Rien à réapprendre pour qui joue déjà, et la rotation se lit bien ; mais c\'est aussi renoncer à améliorer quoi que ce soit ici.',
+        { autour: (g, r, s, T, k, t) => { g.strokeStyle = alpha(chauffer(t, .35), .7 * k); g.lineWidth = 2; g.beginPath(); g.arc(0, 0, r + 4 + Math.sin(T * 24) * 2, T * 12, T * 12 + 4.6); g.stroke(); } }),
+      v('B', 'DEUX ARCS OPPOSÉS', 'Deux arcs face à face qui tournent ensemble. La silhouette reste symétrique quelle que soit la position, donc le disque paraît centré ; en contrepartie deux arcs, c\'est deux fois plus de choses autour d\'un objet déjà petit.',
+        { autour: (g, r, s, T, k, t) => { g.strokeStyle = alpha(chauffer(t, .4), .75 * k); g.lineWidth = 2.4; for (const o of [0, Math.PI]) { g.beginPath(); g.arc(0, 0, r + 5, T * 9 + o, T * 9 + o + 1.9); g.stroke(); } } }),
+      v('C', 'ANNEAU QUI PULSE', 'Un cercle complet qui enfle et s\'estompe en boucle, comme une onde répétée. Il dit « énergie » sans indiquer de direction trompeuse ; mais un anneau qui grandit ressemble beaucoup à l\'onde de but.',
+        { autour: (g, r, s, T, k, t) => { const ph = (T * 1.8) % 1; g.strokeStyle = alpha(chauffer(t, .5), (1 - ph) * .8 * k); g.lineWidth = 2 + (1 - ph) * 2; g.beginPath(); g.arc(0, 0, r + 2 + ph * 14, 0, TAU); g.stroke(); } }),
+      v('D', 'ÉTINCELLES EN ORBITE', 'Trois points de lumière tournent autour du disque. C\'est léger, ça ne masque rien, et ça donne la rotation ; en revanche ce sont des points de 2 px, ils disparaissent dès que le disque va vite.',
+        { autour: (g, r, s, T, k, t) => { g.fillStyle = alpha(chauffer(t, .7), .95 * k); for (let i = 0; i < 3; i++) { const a = T * 6 + (i / 3) * TAU; g.beginPath(); g.arc(Math.cos(a) * (r + 6), Math.sin(a) * (r + 6), r * .13, 0, TAU); g.fill(); } } }),
+      v('E', 'QUEUE DE COMÈTE', 'Un croissant lumineux traîne derrière le disque dans le sens du vol. Il dit la direction, ce qu\'aucun autre étage ne fait, et prolonge la traînée ; mais il double avec le sillage et peut le rendre confus.',
+        { autour: (g, r, s, T, k, t) => { g.strokeStyle = alpha(chauffer(t, .45), .6 * k); g.lineWidth = 5; g.beginPath(); g.arc(0, 0, r + 3, s * .6 + 2.2, s * .6 + 4.1); g.stroke(); } }),
+      v('F', 'QUATRE CHEVRONS', 'Quatre pointes tournées vers l\'extérieur, comme une cible qui se verrouille. Très lisible et clairement « armé » ; mais les chevrons servent déjà à signaler le piratage du terminal.',
+        { autour: (g, r, s, T, k, t) => { g.strokeStyle = alpha(chauffer(t, .55), .85 * k); g.lineWidth = 2; for (let i = 0; i < 4; i++) { const a = s * .5 + (i / 4) * TAU, d = r + 5; g.save(); g.rotate(a); g.beginPath(); g.moveTo(d, -3.5); g.lineTo(d + 4, 0); g.lineTo(d, 3.5); g.stroke(); g.restore(); } } }),
+      v('G', 'CERCLE QUI SE RESSERRE', 'Un anneau large se rétracte sur le disque en boucle, l\'inverse de l\'onde. L\'œil est ramené vers le disque au lieu d\'en être écarté ; mais le mouvement rentrant est moins spectaculaire, il calme au lieu d\'exciter.',
+        { autour: (g, r, s, T, k, t) => { const ph = (T * 1.6) % 1; g.strokeStyle = alpha(chauffer(t, .5), ph * .8 * k); g.lineWidth = 2; g.beginPath(); g.arc(0, 0, r + 16 - ph * 14, 0, TAU); g.stroke(); } }),
+      v('H', 'AURA IMMOBILE', 'Un halo diffus fixe autour du disque, sans rotation. Rien ne bouge donc rien ne fatigue, et le disque paraît chaud en permanence ; en contrepartie ça ne dit pas la rotation et ça alourdit la silhouette.',
+        { autour: (g, r, s, T, k, t) => { const d = g.createRadialGradient(0, 0, r * .8, 0, 0, r + 12); d.addColorStop(0, alpha(t, .45 * k)); d.addColorStop(1, alpha(t, 0)); g.fillStyle = d; g.beginPath(); g.arc(0, 0, r + 12, 0, TAU); g.fill(); } }),
+      v('I', 'RIEN AUTOUR', 'Tout se joue sur le disque lui-même, rien ne déborde. La silhouette reste exactement celle d\'un disque normal, donc la zone d\'attrapé ne ment jamais ; mais on perd le seul étage visible quand le disque passe derrière un joueur.',
+        { autour: () => { } }),
+      v('J', 'TRIANGLE DE VISÉE', 'Trois traits fins forment un triangle qui tourne lentement autour du disque. On dirait une cible verrouillée, ce qui va très bien à un tir chargé ; mais des traits de 1 px à cette échelle, c\'est presque invisible.',
+        { autour: (g, r, s, T, k, t) => { g.strokeStyle = alpha(chauffer(t, .6), .8 * k); g.lineWidth = 1.5; g.beginPath(); for (let i = 0; i <= 3; i++) { const a = T * 2 - Math.PI / 2 + (i % 3) * TAU / 3, d = r + 7; const x = Math.cos(a) * d, y = Math.sin(a) * d; i ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath(); g.stroke(); } })
+    ]
+  },
+  {
+    id: 'sillage', titre: '4 · La traînée chargée',
+    note: 'Aujourd\'hui la traînée est forcée en rouge, ce qui efface la couleur du disque tout autant que le rond rouge. C\'est pourtant l\'étage le plus visible : 26 carrés étalés sur toute la trajectoire, bien plus de surface que le disque lui-même.',
+    variantes: [
+      v('A', 'LA TEINTE, CHAUFFÉE', 'Le sillage prend la teinte de charge du disque, poussée vers le blanc. Chaque disque garde son identité sur toute la trajectoire ; mais on perd le code couleur commun qui disait « chargé » d\'un coup d\'œil.',
+        { sillage: (t, s, k) => chauffer(t, .35) }),
+      v('B', 'BLANC PUR', 'Un sillage entièrement blanc. C\'est la teinte la plus visible du jeu sur le sol bleu nuit, et « blanc = chargé » se lit sans hésitation ; en contrepartie tous les disques laissent alors le même sillage.',
+        { sillage: () => '#ffffff' }),
+      v('C', 'ALTERNANCE TEINTE ET BLANC', 'Le sillage clignote entre la teinte du disque et le blanc au rythme de la rotation. On lit à la fois l\'identité du disque ET l\'état chargé ; mais l\'alternance scintille sur un tir rapide, qui est justement le cas.',
+        { sillage: (t, s, k) => (Math.abs(Math.floor(s * 3)) % 2 ? '#ffffff' : chauffer(t, .2)) }),
+      v('D', 'DÉGRADÉ VERS LE BLANC', 'Le sillage part de la teinte au loin et chauffe à blanc près du disque. On lit le sens du vol dans le sillage seul, ce qu\'aucune autre variante ne donne ; en revanche la nuance est subtile sur 26 carrés.',
+        { sillage: (t, s, k) => chauffer(t, .15 + (Math.abs(Math.floor(s * 3)) % 4) * .22) }),
+      v('E', 'INCHANGÉE', 'Le sillage reste exactement celui du disque, comme hors charge. Le disque est parfaitement reconnaissable et il n\'y a rien à coder ; mais l\'étage le plus visible du lot ne dit alors rien de la charge.',
+        { sillage: null }),
+      v('F', 'TEINTE ET NOIR', 'Un carré sur deux passe en noir, ce qui hache le sillage. Le contraste interne est le plus fort possible et la vitesse se lit dans le hachage ; mais un carré sur deux disparaît sur le sol sombre, le trait paraît troué.',
+        { sillage: (t, s, k) => (Math.abs(Math.floor(s * 3)) % 2 ? '#0b0b0b' : chauffer(t, .3)) }),
+      v('G', 'ROUGE, COMME AUJOURD\'HUI', 'On garde le rouge unique pour tout le monde. Rien à réapprendre et le code couleur reste ; mais c\'est précisément la moitié du problème qu\'on cherche à régler, et sur Vody ça ne se distingue de rien.',
+        { sillage: () => '#ff5340' }),
+      v('H', 'TEINTE SATURÉE, SANS BLANC', 'La couleur du disque à pleine saturation, sans être chauffée. Le disque est identifiable au premier carré de sillage ; mais sans blanc, un disque déjà sombre laisse un sillage qui se noie sur le terrain.',
+        { sillage: (t) => t }),
+      v('I', 'BLANC AVEC UN CŒUR DE TEINTE', 'Trois carrés blancs pour un de la teinte du disque. Le sillage claque comme un sillage blanc tout en gardant une pulsation colorée ; mais l\'identité du disque ne tient plus qu\'à un carré sur quatre.',
+        { sillage: (t, s, k) => (Math.abs(Math.floor(s * 3)) % 4 === 0 ? chauffer(t, .1) : '#ffffff') }),
+      v('J', 'OR POUR TOUT LE MONDE', 'Un sillage doré unique, quel que soit le disque. L\'or dit « puissance » mieux que le rouge et ressort très bien sur le bleu nuit ; mais il entre en conflit direct avec Vody et le disque 20/20, qui sont déjà dorés.',
+        { sillage: () => '#ffd23e' })
+    ]
+  },
+  {
+    id: 'vol', titre: '5 · Ce qu\'il sème en vol',
+    note: 'Aujourd\'hui le disque chargé lâche une particule rouge presque à chaque image — 60 % de chance, soit trois fois plus qu\'un disque normal. Le compteur du rallye dit tout : ce seul état peut à lui seul saturer le plafond de cinquante particules.',
+    variantes: [
+      v('A', 'ÉTINCELLES DE LA TEINTE', 'Des étincelles rares dans la couleur du disque, projetées au hasard. Léger pour la machine et l\'identité du disque suit jusque dans les particules ; mais rare veut dire discret, on peut le rater sur un tir court.',
+        { vol: (d, out, t) => { if (combien(.35)) out.push(p(d.x + gauss() * 8, d.y + gauss() * 8, gauss() * 28, gauss() * 28, .35, chauffer(t, .5), 2, 0)); } }),
+      v('B', 'BRAISES QUI RETOMBENT', 'Des braises lourdes qui décrochent et tombent derrière. Le disque a l\'air de brûler vraiment, pas juste de briller ; en contrepartie elles s\'accumulent au sol et encombrent la zone de jeu.',
+        { vol: (d, out, t) => { if (combien(.45)) out.push(p(d.x + gauss() * 9, d.y + gauss() * 9, gauss() * 16, rand(10, 40), .6, chauffer(t, .3), 3, 180)); } }),
+      v('C', 'ÉCLATS BLANCS RAPIDES', 'Des éclats blancs projetés vite et loin, très brefs. Le blanc se voit de partout et la brièveté empêche l\'écran de se charger ; mais ils ne disent rien du disque, tous les disques sèmeraient pareil.',
+        { vol: (d, out, t) => { if (combien(.4)) out.push(p(d.x + gauss() * 7, d.y + gauss() * 7, gauss() * 46, gauss() * 46, .25, '#ffffff', 2, 0)); } }),
+      v('D', 'PLUIE DENSE, COMME AUJOURD\'HUI', 'Une particule presque à chaque image, dans la teinte du disque au lieu du rouge. C\'est le plus spectaculaire, le disque laisse une vraie comète ; mais c\'est aussi ce qui sature le plafond et fait disparaître les effets des autres.',
+        { vol: (d, out, t) => { if (combien(.6)) out.push(p(d.x, d.y, gauss() * 50, gauss() * 50, .3, chauffer(t, .4), 2.5, 0)); } }),
+      v('E', 'RIEN', 'Le disque chargé ne sème rien de plus qu\'un disque normal. Gratuit pour la machine et l\'écran reste parfaitement lisible à quatre effets simultanés ; mais le tir chargé perd la moitié de sa présence.',
+        { vol: () => { } }),
+      v('F', 'FUMÉE CLAIRE', 'Un voile pâle et lent qui s\'attarde sur la trajectoire. Il épaissit le sillage sans rien y ajouter de vif, donc il ne jure avec aucun terrain ; mais il traîne longtemps et brouille la lecture de la trajectoire de retour.',
+        { vol: (d, out, t) => { if (combien(.4)) out.push(p(d.x + gauss() * 11, d.y + gauss() * 11, gauss() * 6, gauss() * 6, .9, alpha(chauffer(t, .8), .5), 4, -12)); } }),
+      v('G', 'ANNEAUX LAISSÉS DERRIÈRE', 'Le disque abandonne des anneaux qui s\'élargissent sur son passage, façon mur du son. C\'est l\'effet le plus lisible pour dire la vitesse ; mais des anneaux au sol se confondent avec l\'onde de but.',
+        { vol: (d, out, t) => { if (combien(.2)) for (let i = 0; i < 6; i++) { const a = (i / 6) * TAU; out.push(p(d.x, d.y, Math.cos(a) * 46, Math.sin(a) * 46, .35, chauffer(t, .5), 2, 0)); } } }),
+      v('H', 'POUSSIÈRE LENTE', 'Une poussière fine, nombreuse mais presque immobile, qui reste sur la trajectoire. Elle dessine le trajet du disque comme un trait de craie ; en contrepartie elle rend le terrain sale après plusieurs échanges.',
+        { vol: (d, out, t) => { if (combien(.5)) out.push(p(d.x + gauss() * 13, d.y + gauss() * 13, gauss() * 4, gauss() * 4, .8, chauffer(t, .6), 1.5, 0)); } }),
+      v('I', 'ÉTINCELLES ET BRAISES', 'Les deux à la fois : des étincelles vives qui montent, des braises sombres qui tombent. C\'est la lecture la plus complète de quelque chose qui brûle ; c\'est aussi deux fois le coût, et le compteur grimpe vite.',
+        { vol: (d, out, t) => { if (combien(.35)) out.push(p(d.x + gauss() * 8, d.y + gauss() * 8, gauss() * 26, -rand(20, 50), .35, chauffer(t, .65), 2, -30)); if (combien(.25)) out.push(p(d.x + gauss() * 9, d.y + gauss() * 9, gauss() * 14, rand(15, 45), .6, t, 3, 160)); } }),
+      v('J', 'UNE SEULE BRAISE, GROSSE', 'Une braise rare mais massive, lâchée une fois toutes les cinq images. Chacune se remarque et l\'effet coûte presque rien ; mais elle est assez grosse pour qu\'on la confonde un instant avec le disque lui-même.',
+        { vol: (d, out, t) => { if (combien(.2)) out.push(p(d.x, d.y, gauss() * 20, gauss() * 20, .5, chauffer(t, .45), 5, 60)); } })
+    ]
+  },
+  {
+    id: 'depart', titre: '6 · Le départ du tir',
+    note: 'L\'instant où le disque quitte la main. Aujourd\'hui : quatorze particules rouges devant le joueur et une secousse d\'écran. C\'est le seul étage qui a droit à une vraie dépense, parce qu\'il ne dure qu\'une fraction de seconde et ne se répète pas.',
+    variantes: [
+      v('A', 'LA GERBE ACTUELLE, TEINTÉE', 'Les quatorze particules d\'aujourd\'hui, dans la teinte du disque. Rien à réapprendre, et la secousse d\'écran fait déjà tout le travail ; mais une gerbe omnidirectionnelle ne dit pas où part le disque.',
+        { depart: (d, out, t) => couronne(out, d.x, d.y, [chauffer(t, .5), chauffer(t, .2), '#ffffff'], 14, 220, 4, .5) }),
+      v('B', 'CÔNE VERS L\'AVANT', 'Tout part dans l\'axe du tir, en cône serré. On lit la direction du tir à l\'instant même où il part, ce qui aide l\'adversaire à se placer ; mais c\'est aussi lui donner une information qu\'il n\'avait pas.',
+        { depart: (d, out, t, dir) => { for (let i = 0; i < combien(12); i++) { const a = Math.atan2(dir.y, dir.x) + gauss() * .5; const v = rand(150, 300); out.push(p(d.x, d.y, Math.cos(a) * v, Math.sin(a) * v, .4, i % 3 ? chauffer(t, .5) : '#ffffff', 3, 0)); } } }),
+      v('C', 'ONDE CIRCULAIRE', 'Un anneau de particules qui s\'ouvre d\'un coup autour du point de départ. Très net, très bref, et il marque le lieu du tir sans indiquer sa direction ; mais il ressemble à l\'onde de but.',
+        { depart: (d, out, t) => { for (let i = 0; i < combien(16); i++) { const a = (i / 16) * TAU; out.push(p(d.x, d.y, Math.cos(a) * 260, Math.sin(a) * 260, .3, chauffer(t, .55), 3, 0)); } } }),
+      v('D', 'DEUX ANNEAUX', 'Deux ondes concentriques, une rapide et blanche, une lente et teintée. Le départ paraît deux fois plus violent et se lit de très loin ; en contrepartie ça double la dépense pour un gain surtout décoratif.',
+        { depart: (d, out, t) => { for (let i = 0; i < combien(10); i++) { const a = (i / 10) * TAU; out.push(p(d.x, d.y, Math.cos(a) * 300, Math.sin(a) * 300, .25, '#ffffff', 2, 0)); } for (let i = 0; i < combien(10); i++) { const a = (i / 10) * TAU + .3; out.push(p(d.x, d.y, Math.cos(a) * 140, Math.sin(a) * 140, .55, chauffer(t, .3), 4, 0)); } } }),
+      v('E', 'FLASH SEC', 'Quatre particules blanches très vives et très courtes, rien de plus. Le départ se marque sans jamais encombrer, ce qui compte quand ça s\'échange vite ; mais c\'est si bref qu\'un joueur concentré sur sa position ne le verra pas.',
+        { depart: (d, out, t) => couronne(out, d.x, d.y, ['#ffffff'], 4, 320, 3, .18) }),
+      v('F', 'RECUL', 'Tout part vers l\'ARRIÈRE, comme le souffle d\'une arme. La gerbe ne suit pas le disque donc ne le masque jamais, et l\'effet de puissance est le plus fort du lot ; mais il faut connaître la direction du tir pour le calculer.',
+        { depart: (d, out, t, dir) => { for (let i = 0; i < combien(12); i++) { const a = Math.atan2(-dir.y, -dir.x) + gauss() * .7; const v = rand(120, 260); out.push(p(d.x, d.y, Math.cos(a) * v, Math.sin(a) * v, .45, i % 3 ? chauffer(t, .4) : '#ffffff', 3, 0)); } } }),
+      v('G', 'TRAÎNÉE DE DÉPART', 'Un chapelet de particules posé sur les premiers pixels de la trajectoire, presque immobiles. Le trajet reste marqué une demi-seconde après le tir ; mais il double avec le sillage et peut le rendre confus.',
+        { depart: (d, out, t, dir) => { for (let i = 0; i < combien(10); i++) { const k = i / 10; out.push(p(d.x + dir.x * k * 60, d.y + dir.y * k * 60, gauss() * 8, gauss() * 8, .5 - k * .2, chauffer(t, .5), 3, 0)); } } }),
+      v('H', 'ÉCLAIR', 'Une gerbe très rapide et très blanche, projetée loin, qui disparaît en un dixième de seconde. On la voit sans la comprendre, exactement comme un flash ; mais elle blanchit l\'écran une image entière, ce qui gêne à quatre joueurs.',
+        { depart: (d, out, t) => couronne(out, d.x, d.y, ['#ffffff', '#ffffff', chauffer(t, .8)], 20, 420, 3, .14) }),
+      v('I', 'RIEN', 'Le disque part sans gerbe, seule la secousse d\'écran marque le coup. Rien ne masque le disque au moment où il faut commencer à le suivre ; mais le tir chargé perd son instant de bravoure.',
+        { depart: () => { } }),
+      v('J', 'ÉCLATS LOURDS', 'Six gros éclats projetés lentement qui retombent au sol. Le départ a un poids qu\'aucune gerbe rapide ne donne ; en contrepartie ils traînent près du lanceur et encombrent sa zone.',
+        { depart: (d, out, t) => { for (let i = 0; i < combien(6); i++) { const a = rand(TAU); out.push(p(d.x, d.y, Math.cos(a) * rand(60, 130), Math.sin(a) * rand(60, 130) - 50, .9, chauffer(t, .35), 5, 300)); } } })
+    ]
+  },
+  {
+    id: 'main', titre: '7 · La montée en main',
+    note: 'Nouveau : aujourd\'hui le disque ne change pas du tout pendant qu\'on charge, seul un anneau monte autour du joueur. Le faire chauffer dans la main prévient l\'adversaire — c\'est un vrai changement de règle du duel, et c\'est ce qu\'on juge ici. Les cartes montrent la charge à 70 %.',
+    variantes: [
+      v('A', 'LUEUR QUI GRANDIT', 'Une lueur naît au centre du disque et enfle avec la charge. C\'est la lecture la plus directe : plus c\'est lumineux, plus c\'est chargé ; mais elle mange le centre du motif pendant toute la charge, qui peut durer une seconde.',
+        { main: (g, r, s, T, c, t) => { g.globalCompositeOperation = 'lighter'; const d = g.createRadialGradient(0, 0, 0, 0, 0, r * (.2 + c * .9)); d.addColorStop(0, alpha(chauffer(t, .6), .9 * c)); d.addColorStop(1, alpha(t, 0)); g.fillStyle = d; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('B', 'ANNEAU QUI SE REMPLIT', 'Un arc se dessine autour du disque et se referme à 100 %. On lit la charge exacte, pas seulement « ça monte », donc on sait quand relâcher ; mais un deuxième anneau de charge existe déjà autour du joueur, ça fait doublon.',
+        { main: (g, r, s, T, c, t) => { g.strokeStyle = alpha(chauffer(t, .5), .9); g.lineWidth = 2.5; g.beginPath(); g.arc(0, 0, r + 5, -Math.PI / 2, -Math.PI / 2 + TAU * c); g.stroke(); }, horsDecoupe: true }),
+      v('C', 'LE DISQUE VIBRE', 'Le disque tremble dans la main, de plus en plus fort. Rien ne masque le motif et la tension est physique, on sent que ça va partir ; mais la Gélatine tremble déjà en permanence, sa charge serait illisible.',
+        { main: (g, r, s, T, c, t) => { g.globalCompositeOperation = 'lighter'; g.fillStyle = alpha(chauffer(t, .5), .25 * c); g.fillRect(-r, -r, r * 2, r * 2); }, vibre: true }),
+      v('D', 'ÉTINCELLES QUI CONVERGENT', 'Des étincelles sont aspirées vers le disque depuis l\'extérieur. On lit « ça se charge » sans toucher un pixel du motif, et le mouvement rentrant est rare dans le jeu ; en contrepartie ça coûte des particules pendant toute la charge.',
+        { main: (g, r, s, T, c, t) => { g.globalCompositeOperation = 'lighter'; g.fillStyle = alpha(chauffer(t, .7), .9 * c); for (let i = 0; i < 5; i++) { const a = T * 3 + (i / 5) * TAU; const ph = 1 - ((T * 1.4 + i * .2) % 1); const dd = r + 4 + ph * 18; g.beginPath(); g.arc(Math.cos(a) * dd, Math.sin(a) * dd, 1.8, 0, TAU); g.fill(); } }, horsDecoupe: true }),
+      v('E', 'LA FACE CHAUFFE', 'Le motif entier se délave progressivement vers le blanc. La transition vers le disque en vol est parfaitement continue, on ne voit pas de rupture au tir ; mais à pleine charge le skin a déjà disparu avant même de partir.',
+        { main: (g, r, s, T, c, t) => { g.globalCompositeOperation = 'lighter'; g.fillStyle = alpha(chauffer(t, .5), .65 * c * c); g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('F', 'RIEN, PUIS FLASH À 100 %', 'Le disque reste normal, et un flash marque l\'instant exact où la charge est pleine. L\'adversaire n\'est prévenu qu\'au dernier moment, ce qui garde la surprise ; mais celui qui charge n\'a alors aucun retour visuel sur le disque.',
+        { main: (g, r, s, T, c, t) => { if (c < .97) return; g.globalCompositeOperation = 'lighter'; const b = .5 + .5 * Math.sin(T * 16); g.fillStyle = alpha('#ffffff', .35 + b * .4); g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('G', 'PULSATION QUI S\'ACCÉLÈRE', 'Le disque bat de plus en plus vite à mesure que la charge monte. Le rythme dit la progression sans rien afficher, comme un cœur qui s\'emballe ; mais un clignotement long est fatigant et masque le motif une image sur deux.',
+        { main: (g, r, s, T, c, t) => { const b = .5 + .5 * Math.sin(T * (4 + c * 22)); g.globalCompositeOperation = 'lighter'; g.fillStyle = alpha(chauffer(t, .45), b * .6 * c); g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('H', 'AURA QUI ENFLE', 'Un halo autour du disque grossit avec la charge, sans toucher à la face. Le motif est intégralement préservé du début à la fin ; en revanche l\'aura agrandit la silhouette et trompe sur la zone d\'attrapé.',
+        { main: (g, r, s, T, c, t) => { const R = r + 4 + c * 12; const d = g.createRadialGradient(0, 0, r * .9, 0, 0, R); d.addColorStop(0, alpha(t, .5 * c)); d.addColorStop(1, alpha(t, 0)); g.fillStyle = d; g.beginPath(); g.arc(0, 0, R, 0, TAU); g.fill(); }, horsDecoupe: true }),
+      v('I', 'CRAQUELURES QUI S\'ALLUMENT', 'Des fissures lumineuses apparaissent une à une sur la face. La progression se compte, littéralement : on voit combien de veines sont allumées ; mais à 28 px on distingue mal quatre veines de cinq.',
+        { main: (g, r, s, T, c, t) => { g.globalCompositeOperation = 'lighter'; g.strokeStyle = alpha(chauffer(t, .6), .9); g.lineWidth = r * .08; g.lineCap = 'round'; const n = Math.floor(c * 5 + .001); for (let i = 0; i < n; i++) { const a = (i / 5) * TAU; g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(a) * r * .9, Math.sin(a) * r * .9); g.stroke(); } } }),
+      v('J', 'RIEN DU TOUT', 'On garde l\'état actuel : le disque en main ne change jamais, seul l\'anneau autour du joueur monte. Aucun travail, aucun risque, et la surprise du tir chargé reste entière ; mais on renonce au télégraphe qui rendrait le duel lisible.',
+        { main: () => { } })
+    ]
+  }
+];
+
+/* ===========================================================================
+   LE MOTEUR
+   =========================================================================== */
+
+const choix = {};
+// Les lettres validees le 1er septembre 2026. Le mockup ouvre dessus :
+// c'est l'etat porte dans le jeu.
+const CHOIX_RETENUS = '1B 2B 3B 4A 5A 6F 7D';
+const RETENU = CHOIX_RETENUS.match(/[A-J]/g) || [];
+SECTIONS.forEach((s, i) => {
+  const lettre = RETENU[i];
+  choix[s.id] = s.variantes.some(x => x.id === lettre) ? lettre : s.variantes[0].id;
+});
+document.getElementById('retenu').textContent =
+  'Choix retenus : ' + CHOIX_RETENUS + ' — le mockup ouvre dessus, c’est l’état porté dans le jeu.';
+
+function assembler(extra) {
+  const d = { face: null, lisere: null, autour: null, sillage: null, vol: () => { }, depart: () => { }, main: null, vibre: false, horsDecoupe: false };
+  const poser = pi => {
+    if (!pi) return;
+    if (pi.face) d.face = pi.face;
+    if (pi.lisere) d.lisere = pi.lisere;
+    if (pi.autour) d.autour = pi.autour;
+    if ('sillage' in pi) d.sillage = pi.sillage;
+    if (pi.vol) d.vol = pi.vol;
+    if (pi.depart) d.depart = pi.depart;
+    if (pi.main) d.main = pi.main;
+    if (pi.vibre) d.vibre = true;
+    if (pi.horsDecoupe) d.horsDecoupe = true;
+  };
+  for (const s of SECTIONS) {
+    const va = s.variantes.find(x => x.id === choix[s.id]);
+    if (va) poser(va.pieces);
+  }
+  poser(extra);
+  return d;
+}
+
+/* --- Le disque, VRAI skin plus l'effet de charge par-dessus --------------
+   L'ordre reproduit celui de render.js : la face du skin, puis ce qu'on pose
+   dessus dans la découpe, puis le liseré sur le contour, puis ce qui déborde.
+   `charge` vaut 1 en vol et monte de 0 à 1 dans la main. */
+function dessinerDisque(g, x, y, r, id, spin, T, e, charge, enMain) {
+  const t = teinteDeCharge(id);
+  const k = enMain ? 0 : 1;
+  const deform = deformationDisque(id);
+
+  g.save();
+  if (e.vibre && enMain && charge > 0) {
+    const a = charge * 1.8;
+    g.translate(x + gauss() * a, y + gauss() * a);
+  } else {
+    g.translate(x, y);
+  }
+
+  // Ce qui déborde et passe DERRIÈRE le disque : une aura doit être dessous,
+  // sinon elle voile le motif qu'elle est censée entourer.
+  if (enMain && e.main && e.horsDecoupe) { g.save(); e.main(g, r, spin, T, charge, t); g.restore(); }
+  if (!enMain && e.autour) { g.save(); e.autour(g, r, spin, T, k, t); g.restore(); }
+
+  // La vraie face du disque, telle que le jeu la dessine.
+  g.save();
+  g.translate(-x, -y);
+  drawSkinDisc(g, x, y, r, id, spin);
+  g.restore();
+
+  // L'embrasement, découpé au contour du disque.
+  g.save();
+  tracerContour(g, 0, 0, r, deform);
+  g.clip();
+  if (enMain) { if (e.main && !e.horsDecoupe) e.main(g, r, spin, T, charge, t); }
+  else if (e.face) e.face(g, r, spin, T, k, t);
+  g.restore();
+
+  // Le liseré. La variante rend `false` si elle a déjà tout tracé elle-même.
+  g.save();
+  let tracer = true;
+  if (!enMain && e.lisere) tracer = e.lisere(g, r, spin, T, k, t) !== false;
+  else { g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = 1.5; }
+  if (tracer) { g.beginPath(); tracerContour(g, 0, 0, r, deform); g.stroke(); }
+  g.restore();
+  g.restore();
+}
+
+function ombre(g, x, y, r) {
+  g.save(); g.fillStyle = 'rgba(0,0,20,.33)';
+  g.beginPath(); g.ellipse(x, y + 14, r, r * .36, 0, 0, TAU); g.fill(); g.restore();
+}
+
+function terrain(g, w, h) {
+  g.fillStyle = '#0a1220'; g.fillRect(0, 0, w, h);
+  g.fillStyle = 'rgba(15,26,46,0.7)'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = '#1b2c48'; g.lineWidth = 1;
+  for (let x = 32; x < w; x += 34) { g.beginPath(); g.moveTo(x + .5, 0); g.lineTo(x + .5, h); g.stroke(); }
+  for (let y = 32; y < h; y += 34) { g.beginPath(); g.moveTo(0, y + .5); g.lineTo(w, y + .5); g.stroke(); }
+  g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 2;
+  g.strokeRect(3, 3, w - 6, h - 6);
+}
+
+// Le sillage. Sans variante de charge, on retombe sur la couleur normale du
+// disque — c'est le comportement de la variante « inchangée ».
+const TRAINEE_NORMALE = { captain: ['#c2131a', '#f2f2f2', '#1b3f94'], galaxy: ['#e2a8ff', '#8ee7ff', '#7b3fe4'], vody: ['#b0181e', '#d9ad55', '#141110'] };
+function couleurSillage(id, spin, e) {
+  const t = teinteDeCharge(id);
+  if (e.sillage) return e.sillage(t, spin, 1);
+  const c = TRAINEE_NORMALE[id] || ['#ffd23e'];
+  return c[Math.abs(Math.floor(spin * 3)) % c.length];
+}
+function peindreTrainee(g, trail) {
+  const n = trail.length;
+  for (let i = 0; i < n; i++) {
+    const t = trail[i], k = (i + 1) / n;
+    g.globalAlpha = k * .5; g.fillStyle = t.c;
+    const s = 3 + k * 5;
+    g.fillRect(t.x - s / 2, t.y - s / 2, s, s);
+  }
+  g.globalAlpha = 1;
+}
+function peindreParticules(g, parts) {
+  for (const q of parts) {
+    g.globalAlpha = Math.max(0, Math.min(1, q.life * 2.5));
+    g.fillStyle = q.c;
+    g.fillRect(q.x - q.s / 2, q.y - q.s / 2, q.s, q.s);
+  }
+  g.globalAlpha = 1;
+}
+function verser(sortie, parts) {
+  let place = MAX_PARTICULES - parts.length;
+  for (const q of sortie) { if (place <= 0) break; parts.push(q); place--; }
+}
+function majParticules(parts, dt) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const q = parts[i];
+    q.vy += q.g * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt;
+    if (q.life <= 0) parts.splice(i, 1);
+  }
+}
+
+/* --- Vérification --- */
+const bad = [];
+const MIN_DESC = 40;
+const OBLIGATOIRES = ['face', 'lisere', 'autour', 'sillage', 'vol', 'depart', 'main'];
+if (SECTIONS.length < 6) bad.push('découpage : ' + SECTIONS.length + ' sections (six au minimum)');
+const vues = new Set();
+for (const s of SECTIONS) {
+  if (!s.note || s.note.trim().length < MIN_DESC) bad.push(s.id + ' : la section n\'explique pas ce qu\'on y juge');
+  if (s.variantes.length !== 10) bad.push(s.id + ' : ' + s.variantes.length + ' variantes (attendu 10)');
+  for (const va of s.variantes) {
+    const ref = s.id + '-' + va.id;
+    if (!va.desc || va.desc.trim().length < MIN_DESC) bad.push(ref + ' : explication manquante ou trop courte');
+    const cles = Object.keys(va.pieces || {});
+    if (!cles.length) bad.push(ref + ' : ne remplace rien');
+    cles.forEach(c => vues.add(c));
+  }
+}
+for (const c of OBLIGATOIRES) if (!vues.has(c)) bad.push('découpage : aucune section ne décide « ' + c + ' »');
+// Une variante qui écrirait une couleur en dur referait le défaut d'aujourd'hui :
+// un effet identique sur tous les disques. On le signale plutôt que de l'interdire,
+// parce que certaines variantes le font exprès (« blanc pur », « rouge comme avant »).
+const boite = document.getElementById('errs');
+boite.textContent = bad.length
+  ? bad.length + ' à corriger :\n' + bad.slice(0, 20).join('\n') + (bad.length > 20 ? '\n…' : '')
+  : 'OK — sept sections, les sept étages de l’effet décidés, et chaque section comme chaque variante porte son explication.';
+if (bad.length) boite.className = 'bad';
+
+/* --- Les cartes : trois disques, trois couloirs, image figée ------------
+   Trois couloirs empilés plutôt que trois disques côte à côte : un disque
+   chargé se juge en vol, avec sa traînée, et trois traînées côte à côte
+   n'auraient que soixante pixels de long chacune. */
+function peindreCarte(cv, e, section) {
+  const g = cv.getContext('2d', { willReadFrequently: true });
+  const w = cv.width, h = cv.height;
+  terrain(g, w, h);
+  const enMain = section.id === 'main';
+
+  EPREUVE.forEach((id, n) => {
+    semer(20260901 + n * 7);
+    const y = 26 + n * 42;
+    if (enMain) {
+      // Charge à 70 % : assez pour que l'effet soit franc, assez loin de 100 %
+      // pour qu'une variante qui ne se déclenche qu'à plein le montre aussi.
+      dessinerDisque(g, w * .5, y, R_JEU, id, .7, .42, e, .7, true);
+      relacher();
+      return;
+    }
+    const d = { x: 24, y, spin: 0 };
+    const trail = [], parts = [];
+    const dt = 1 / 60;
+    for (let i = 0; i < 26; i++) {
+      d.x += 330 * dt; d.spin += 330 * dt * .06;
+      trail.push({ x: d.x, y: d.y, c: couleurSillage(id, d.spin, e) });
+      if (trail.length > 26) trail.shift();
+      const out = []; e.vol(d, out, teinteDeCharge(id)); if (out.length) verser(out, parts);
+      majParticules(parts, dt);
+    }
+    relacher();
+    peindreTrainee(g, trail);
+    ombre(g, d.x, d.y, R_JEU + 2);
+    dessinerDisque(g, d.x, d.y, R_JEU, id, d.spin, .42, e, 1, false);
+    peindreParticules(g, parts);
+  });
+
+  // Les noms des trois disques, discrets, pour savoir lequel est lequel.
+  g.font = '9px Consolas,monospace'; g.textAlign = 'left'; g.textBaseline = 'top';
+  g.fillStyle = 'rgba(143,164,196,.75)';
+  EPREUVE.forEach((id, n) => g.fillText((DISC_SKINS.find(s => s.id === id) || {}).name || id, 6, 8 + n * 42));
+}
+
+const cartes = [];
+(function poserSections() {
+  const hote = document.getElementById('sections');
+  for (const s of SECTIONS) {
+    const h2 = document.createElement('h2'); h2.textContent = s.titre; hote.appendChild(h2);
+    const n = document.createElement('p'); n.className = 'note'; n.textContent = s.note; hote.appendChild(n);
+    const rangee = document.createElement('div'); rangee.className = 'row';
+    const reserve = document.createElement('div'); reserve.className = 'row reserve';
+    hote.appendChild(rangee);
+    s.variantes.forEach((va, i) => {
+      const card = document.createElement('div');
+      card.className = 'card' + (i === 0 ? ' on' : '');
+      const lbl = document.createElement('div'); lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + (va.desc || '');
+      const cv = document.createElement('canvas');
+      cv.width = 212; cv.height = 132;
+      card.appendChild(lbl); card.appendChild(cv);
+      (i < 5 ? rangee : reserve).appendChild(card);
+      cartes.push({ cv, s, va, card });
+      card.addEventListener('click', () => {
+        choix[s.id] = va.id;
+        cartes.filter(c => c.s === s).forEach(c => c.card.classList.toggle('on', c.va === va));
+        rafraichir();
+      });
+    });
+    const bouton = document.createElement('button');
+    bouton.className = 'plus'; bouton.textContent = '+ 5 autres choix';
+    bouton.addEventListener('click', () => {
+      reserve.classList.toggle('ouverte');
+      bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
+    });
+    hote.appendChild(bouton); hote.appendChild(reserve);
+  }
+})();
+
+function peindreCartes() {
+  for (const { cv, s, va } of cartes) peindreCarte(cv, assembler(va.pieces), s);
+}
+
+/* --- Le rallye : un cycle complet charge → tir → vol → rebonds --------- */
+let quelDisque = EPREUVE[0];
+(function boutons() {
+  const hote = document.getElementById('quel');
+  for (const id of EPREUVE) {
+    const b = document.createElement('button');
+    b.textContent = (DISC_SKINS.find(s => s.id === id) || {}).name || id;
+    b.className = id === quelDisque ? 'on' : '';
+    b.addEventListener('click', () => {
+      quelDisque = id;
+      [...hote.children].forEach(c => c.classList.toggle('on', c === b));
+      parts = []; trainee = []; pointe = 0;
+    });
+    hote.appendChild(b);
+  }
+})();
+
+const cvR = document.getElementById('cvRallye');
+const gR = cvR.getContext('2d');
+const CHARGE_MS = 1.7, VOL_MS = 4.2;
+const balle = { x: 52, y: 118, vx: 0, vy: 0, spin: 0 };
+let trainee = [], parts = [];
+let effet = assembler();
+let dernier = 0, pointe = 0, phase = 'charge', tPhase = 0;
+
+function rallye(ms) {
+  const dt = Math.min(.05, (ms - dernier) / 1000 || 0); dernier = ms;
+  const T = ms / 1000;
+  const bord = 4 + R_JEU;
+  const teinte = teinteDeCharge(quelDisque);
+  tPhase += dt;
+
+  if (phase === 'charge') {
+    balle.x = 52; balle.y = 118; balle.spin += dt * 4;
+    if (tPhase >= CHARGE_MS) {
+      // Le tir. La direction sert aux variantes de départ qui la demandent.
+      const dir = { x: .82, y: .57 };
+      const out = []; effet.depart(balle, out, teinte, dir); verser(out, parts);
+      balle.vx = dir.x * 420; balle.vy = dir.y * 420;
+      phase = 'vol'; tPhase = 0;
+    }
+  } else {
+    balle.x += balle.vx * dt; balle.y += balle.vy * dt;
+    balle.spin += Math.hypot(balle.vx, balle.vy) * dt * .06;
+    if (balle.x < bord) { balle.x = bord; balle.vx = -balle.vx; }
+    if (balle.x > cvR.width - bord) { balle.x = cvR.width - bord; balle.vx = -balle.vx; }
+    if (balle.y < bord) { balle.y = bord; balle.vy = -balle.vy; }
+    if (balle.y > cvR.height - bord) { balle.y = cvR.height - bord; balle.vy = -balle.vy; }
+    trainee.push({ x: balle.x, y: balle.y, c: couleurSillage(quelDisque, balle.spin, effet) });
+    if (trainee.length > 26) trainee.shift();
+    const out = []; effet.vol(balle, out, teinte); if (out.length) verser(out, parts);
+    if (tPhase >= VOL_MS) { phase = 'charge'; tPhase = 0; trainee = []; }
+  }
+  majParticules(parts, dt);
+
+  terrain(gR, cvR.width, cvR.height);
+  peindreTrainee(gR, trainee);
+  ombre(gR, balle.x, balle.y, R_JEU + 2);
+  const enMain = phase === 'charge';
+  dessinerDisque(gR, balle.x, balle.y, R_JEU, quelDisque, balle.spin, T, effet,
+    enMain ? Math.min(1, tPhase / CHARGE_MS) : 1, enMain);
+  peindreParticules(gR, parts);
+
+  pointe = Math.max(pointe, parts.length);
+  document.getElementById('compteur').innerHTML =
+    (enMain ? 'charge <i>' + Math.round(Math.min(1, tPhase / CHARGE_MS) * 100) + ' %</i>' : 'en vol') +
+    ' · particules <i' + (parts.length >= MAX_PARTICULES ? ' class="trop"' : '') + '>' + parts.length + '</i>' +
+    ' · pointe <i' + (pointe >= MAX_PARTICULES ? ' class="trop"' : '') + '>' + pointe + '</i> / ' + MAX_PARTICULES;
+
+  requestAnimationFrame(rallye);
+}
+
+function codeChoix() { return SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' '); }
+
+function rafraichir() {
+  effet = assembler();
+  parts = []; trainee = []; pointe = 0;
+  peindreCartes();
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value = codeChoix();
+}
+
+(function brancherCopie() {
+  const btn = document.getElementById('btnCopier');
+  const champ = document.getElementById('codeChoix');
+  btn.addEventListener('click', async () => {
+    const texte = codeChoix();
+    let ok = false;
+    try { await navigator.clipboard.writeText(texte); ok = true; }
+    catch (e) {
+      champ.select(); champ.setSelectionRange(0, 999);
+      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    }
+    btn.textContent = ok ? '✓ copié' : 'Ctrl+C pour copier';
+    btn.classList.toggle('ok', ok);
+    setTimeout(() => { btn.textContent = 'copier mes choix'; btn.classList.remove('ok'); }, 1800);
+  });
+})();
+
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(rafraichir);
+rafraichir();
+requestAnimationFrame(rallye);
+</script>
+</body>
+</html>
