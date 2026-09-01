@@ -58,16 +58,13 @@ export function updateBell(dt) {
     }
   }
   b.ring = Math.max(0, b.ring - dt * 2.2);
-  // Elle repousse le disque qui approche de la cage protégée.
-  const d = G.disc;
-  if (jeSimule() && d.free && Math.hypot(d.x - b.x, d.y - b.y) < 62) {
-    const away = b.side === 1 ? 1 : -1;
-    d.vx = Math.abs(d.vx || 400) * away * 1.15;
-    d.vy += gaussJeu() * 180;                 // semé : trajectoire du disque
-    G.shake = Math.max(G.shake, 9);
-    sfx('bigbounce');
-    addPopup('REPOUSSÉ !', '#f5c542', 14, .7, b.y - 60);
-  }
+  // Le blocage lui-même — aucun tir ne doit passer, quelle que soit sa
+  // hauteur — vit dans disc.js, au point exact où un but se déciderait
+  // sinon (voir clocheBloque()). Un cercle de 62 px centré ici ne couvrait
+  // qu'environ 60 % de la hauteur du but : on pouvait viser au-dessus ou en
+  // dessous et marquer quand même, alors que la tête dessinée fait déjà
+  // presque toute la hauteur de la cage. Le blocage suit maintenant ce que
+  // le joueur voit à l'écran, au lieu d'un cercle invisible plus petit.
 }
 
 // Rafale de Mamie Trayette. Deux règles portent tout l'ultime :

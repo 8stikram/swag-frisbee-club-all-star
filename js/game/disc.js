@@ -4,6 +4,7 @@ import {
   FEINT_TIME, FEINT_FREE, FEINT_CD, FEINT_REACH, METER_GAIN, CATCH_RADIUS
 } from '../core/constants.js';
 import { norm, gauss, clamp, rand } from '../core/utils.js';
+import { gaussJeu } from '../core/alea.js';
 import { sfx } from '../audio/audio.js';
 import { disqueImmobile, testerPanier } from './zones.js';
 import { burst, dust, addPopup } from './fx.js';
@@ -83,6 +84,7 @@ export function updateDisc(dt) {
   // cage, même si c'est soi qui l'a lancé : c'est le risque des tirs par la
   // bande. Ce qui est interdit, c'est de VISER en arrière — voir viseVersAvant().
   if (d.x < COURT.left + r) {
+    if (inGoalY && clocheBloque(1)) { repousseParLaCloche(d, 1); return; }
     if (inGoalY) { if (d.x < COURT.left - r) { scoreGoal(G.p2, d.y); return; } }
     else {
       const pre = sp;
@@ -91,6 +93,7 @@ export function updateDisc(dt) {
     }
   }
   if (d.x > COURT.right + r) {
+    if (inGoalY && clocheBloque(2)) { repousseParLaCloche(d, -1); return; }
     if (inGoalY) { if (d.x > COURT.right + r) { scoreGoal(G.p1, d.y); return; } }
     else {
       const pre = sp;
@@ -131,6 +134,30 @@ export function updateDisc(dt) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Cloche de Minuit : tant qu'elle sonne, plus aucun but n'est possible côté
+// protégé — au-dessus comme en dessous. Testé ici, au même point exact que
+// la décision de marquer, avec le même GOAL_TOP/GOAL_BOTTOM : c'est ce qui
+// garantit qu'aucune hauteur ne peut filer entre les deux tests. Un cercle
+// séparé, plus petit, avait laissé passer des tirs visant les extrémités du
+// but pendant que la tête dessinée, elle, semblait déjà tout couvrir.
+// ---------------------------------------------------------------------------
+function clocheBloque(side) {
+  const b = G.bell;
+  return !!b && b.side === side;
+}
+
+function repousseParLaCloche(d, versLeCentre) {
+  d.x = versLeCentre > 0 ? COURT.left + DISC_R() : COURT.right - DISC_R();
+  d.vx = Math.abs(d.vx || 500) * versLeCentre * 1.1;
+  d.vy += gaussJeu() * 160;                 // semé : trajectoire du disque
+  d.bounced = true;
+  G.shake = Math.max(G.shake, 9);
+  sfx('bigbounce');
+  burst(d.x, d.y, '#f5c542', 14);
+  addPopup('REPOUSSÉ !', '#f5c542', 14, .7, d.y - 40);
+}
+
 export function onBounce(d) {
   d.bounced = true;
   if (d.kind === 'kurama') { sfx('bigbounce'); G.shake = Math.max(G.shake, 8); burst(d.x, d.y, RASENGAN, 16); }
@@ -151,8 +178,13 @@ export function updateDecoys(dt) {
     o.x += o.vx * dt; o.y += o.vy * dt; o.life -= dt;
     if (o.y < COURT.top + 9 || o.y > COURT.bottom - 9) o.vy *= -1;
     const inGoalY = o.y > GOAL_TOP && o.y < GOAL_BOTTOM;
-    if (o.x < COURT.left - DISC_R() && inGoalY) { scoreGoal(G.p2, o.y); G.decoys.splice(i, 1); continue; }
-    if (o.x > COURT.right + DISC_R() && inGoalY) { scoreGoal(G.p1, o.y); G.decoys.splice(i, 1); continue; }
+    // Même garde que le disque réel : un leurre qui filerait au but pendant
+    // que la Cloche sonne serait un but que personne n'a vu venir passer.
+    if (o.x < COURT.left - DISC_R() && inGoalY) {
+      if (!clocheBloque(1)) { scoreGoal(G.p2, o.y); G.decoys.splice(i, 1); continue; }
+    } else if (o.x > COURT.right + DISC_R() && inGoalY) {
+      if (!clocheBloque(2)) { scoreGoal(G.p1, o.y); G.decoys.splice(i, 1); continue; }
+    }
     const foe = o.thrower.foe;
     if (foe && !foe.holding && Math.hypot(o.x - foe.x, o.y - foe.y) < foe.char.catchR * CATCH_RADIUS) {
       sfx('catch');

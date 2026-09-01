@@ -2200,8 +2200,10 @@ function drawBell() {
   // partent le halo et les ondes.
   const ox = b.owner ? b.owner.x + (b.x - b.owner.x) * e : b.x;
   const oy = b.owner ? (b.owner.y - 30) + (b.y - (b.owner.y - 30)) * e : b.y;
-  // Un peu plus courte que la cage, pour la garder lisible sans l'avaler.
-  const bh = (GOAL_BOTTOM - GOAL_TOP) * .88 * (0.35 + 0.65 * e);
+  // Aussi haute que la cage : le blocage couvre maintenant tout le but (voir
+  // clocheBloque() dans disc.js), et la dessiner plus courte qu'avant aurait
+  // laissé croire à une brèche en haut et en bas qui n'existe plus.
+  const bh = (GOAL_BOTTOM - GOAL_TOP) * (0.35 + 0.65 * e);
   const bw = bh * (BELL_SPRITE.naturalWidth / BELL_SPRITE.naturalHeight);
 
   ctx.save();

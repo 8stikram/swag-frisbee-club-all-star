@@ -170,8 +170,13 @@ export const SPECIALS = {
     cast(p) {
       p.meter = 0; p.stats.specials++;
       // Sa tête quitte ses épaules pour aller grossir devant sa propre cage.
+      // 2,5 s (était 7) : ce n'est plus une nuisance qui traîne, c'est un
+      // arrêt décisif — de quoi couper un échange dangereux d'un coup, pas
+      // tenir un siège. Elle couvre toute la hauteur du but pendant qu'elle
+      // sonne (voir clocheBloque() dans disc.js) : rien ne passe au-dessus
+      // ni en dessous, mais ça ne dure plus longtemps que ça.
       G.bell = {
-        owner: p, side: p.side, t: 0, dur: 7,
+        owner: p, side: p.side, t: 0, dur: 2.5,
         x: p.side === 1 ? COURT.left + 54 : COURT.right - 54,
         y: CY, ring: 0, bal: 0, sens: undefined
       };
