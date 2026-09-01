@@ -199,6 +199,29 @@ export function updateGrappin(dt) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Le chien de Yuki. Il ne bouge pas et n'a pas de position : il occupe tout
+// l'écran de l'adversaire. Tout ce qui se passe ici, c'est le minuteur — et le
+// handicap infligé à celui qui le subit.
+export function updateChien(dt) {
+  const c = G.chien;
+  if (!c) return;
+  c.t += dt;
+  if (c.t >= c.dur) {
+    G.chien = null;
+    addPopup('LE CHIEN S\'EN VA', '#3a86d6', 13, .9);
+    return;
+  }
+  // L'adversaire ne voit plus rien. Pour un joueur humain, l'écran suffit :
+  // c'est le rendu qui l'aveugle. Pour une IA, qui n'a pas d'écran, il faut
+  // traduire la cécité en comportement — sans quoi l'ultime n'aurait aucun
+  // effet en solo. On réutilise l'hésitation déjà employée par la cloche.
+  if (jeSimule()) {
+    const foe = c.owner.foe;
+    if (foe && foe.ai) foe.ai.hesT = Math.max(foe.ai.hesT || 0, .3);
+  }
+}
+
 export function updateRafale(dt) {
   const r = G.rafale;
   if (r) {

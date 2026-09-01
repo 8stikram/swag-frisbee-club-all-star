@@ -61,6 +61,9 @@ export const SKINS = {
   chopper: [
     { id: 'junker', nom: 'ÉQUIPEMENT COMPLET', defaut: true }
   ],
+  yuki: [
+    { id: 'doudoune', nom: 'DOUDOUNE 雪', defaut: true }
+  ],
   jingle: [
     { id: 'polenord', nom: 'PÔLE NORD', defaut: true },
     { id: 'smoking', nom: 'SMOKING NOIR', cond: 'victoires', seuil: 10,

@@ -51,6 +51,9 @@ export const G = {
   // Crochet de Chopper : null hors ultime. Contrairement à la rafale, tout
   // tient dans un seul objet — le crochet est unique et suit ses phases.
   grappin: null,
+  // Chien de Yuki : null hors ultime. Il ne porte aucune position — il occupe
+  // tout l'écran — seulement son propriétaire et son minuteur.
+  chien: null,
   // Mise en scène du Piratage de Cyberleek : le terminal qui défile.
   hack: null,
   // Cercles bonus au sol du Swag Frisbee Stadium. Vide partout ailleurs.
@@ -169,7 +172,7 @@ export function initMatch(demo, ck, cpu, diffIdx, j2j) {
   semerAlea(graineNeuve());
   G.demo = demo; G.now = 0; G.winner = null; G.banner = null; G.cine = null; G.leg = null; G.bell = null; G.replay = null;
   G.hack = null;
-  G.rafale = null; G.balles.length = 0; G.grappin = null;
+  G.rafale = null; G.balles.length = 0; G.grappin = null; G.chien = null;
   G.particles.length = 0; G.popups.length = 0; G.trail.length = 0; G.decoys.length = 0; G.rec.length = 0;
   // `tsTimer`, `goalT` et `pendingServe` manquaient à cette remise à zéro, et
   // ça se voyait : un match relancé juste après un but héritait du ralenti du

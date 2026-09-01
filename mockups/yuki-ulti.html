@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Yuki — l'ultime</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:34px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:980px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;
+        flex:1 1 0;min-width:196px;cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d5c8a}
+  .card.on{border-color:var(--or);transform:translateY(-2px)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:72px}
+  .lbl b{display:block;font-size:14px;color:var(--or);letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px}
+  .reserve{display:none}
+  .reserve.ouverte{display:flex}
+  .plus{margin-top:9px;background:#132038;color:#9fb4dd;border:1px solid var(--edge);
+        border-radius:7px;padding:6px 13px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#1a2b48;color:var(--ink)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 560px}
+  .apercu canvas{background:#0a1220}
+  .choix{font-size:11.5px;color:#9fb4dd;margin-top:9px;font-family:Consolas,monospace;line-height:1.7}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#24395e}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .frise{display:flex;gap:3px;margin-top:10px}
+  .ph{flex:1 1 0;text-align:center;font-size:9.5px;font-family:Consolas,monospace;
+      padding:5px 2px;border-radius:5px;background:#101a2e;color:#6d82a6;border:1px solid transparent}
+  .ph.on{background:#24395e;color:var(--or);border-color:var(--or)}
+  .ph i{display:block;font-style:normal;font-size:8.5px;opacity:.75}
+  .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 280px}
+  .fiche h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .fiche table{width:100%;border-collapse:collapse;font-size:11.5px;font-family:Consolas,monospace}
+  .fiche td{padding:3px 0;color:#9fb4dd;vertical-align:top}
+  .fiche td:last-child{color:var(--or);text-align:right;white-space:nowrap;padding-left:8px}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+  .alerte{background:#2a1a10;border:1px solid #7a4a1e;border-radius:10px;padding:12px 14px;
+          margin:0 0 16px;font-size:12.5px;line-height:1.7;color:#f0d0a8;max-width:980px}
+  .alerte b{color:#ffb020}
+</style>
+</head>
+<body>
+
+<h1>YUKI — L'ULTIME</h1>
+<p class="note">
+  Le chien qui débarque à l'écran, comme l'objet <b>Nintendogs</b> de Smash Bros. Mockup dédié, séparé
+  du chara-design (déjà validé : <code>1A 2A 3A 4A 5A 6A 7A</code>). Dans Smash, le principe est simple
+  et c'est ce qui le rend si détesté : le chien ne fait <b>aucun dégât</b>, il se contente de
+  <b>masquer l'écran</b> à tout le monde — celui qui l'a lancé compris. Chaque section décide d'un
+  aspect de ça.
+</p>
+
+<div class="alerte">
+  <b>Correction sur la vidéo.</b> Je t'avais dit qu'elle n'avait pas de fond vert : c'était faux.
+  Mon premier test cherchait un vert vif et saturé ; celui de ta vidéo est sombre et désaturé, et
+  surtout la fourrure blanche du chien n'a aucune teinte — je l'avais donc comptée comme « du décor
+  non-vert » et j'en avais conclu qu'il y avait une pièce derrière lui. C'était le chien.
+  <br><br>
+  Analysée par teinte, c'est net : <b>38 % de l'image est en vert</b> (teinte 140-160°) et le vert
+  occupe bien tout le pourtour. Le détourage fonctionne, et la silhouette obtenue est irrégulière
+  — donc bien un chien, pas un rectangle. La <b>vidéo détourée en direct</b> est proposée en
+  section 5, à côté de la photo fixe.
+</div>
+
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvApercu" width="820" height="500"></canvas>
+    <div class="frise" id="frise"></div>
+    <div class="choix" id="choix"></div>
+    <div class="copier">
+      <input class="codeChoix" id="codeChoix" readonly>
+      <button class="btnCopier" id="btnCopier">copier mes choix</button>
+    </div>
+  </div>
+  <div class="fiche">
+    <h3>L'objet Nintendogs d'origine</h3>
+    <table>
+      <tr><td>Dégâts</td><td>aucun</td></tr>
+      <tr><td>Effet</td><td>masque l'écran</td></tr>
+      <tr><td>Gêne</td><td>tout le monde</td></tr>
+      <tr><td>Le lanceur aussi ?</td><td>oui</td></tr>
+      <tr><td>Le chien bouge ?</td><td>très peu</td></tr>
+      <tr><td>Durée</td><td>quelques secondes</td></tr>
+      <tr><td>Ce qui le rend fort</td><td>la confusion</td></tr>
+    </table>
+    <p class="note" style="margin:9px 0 0;font-size:10.5px">
+      C'est un ultime de gêne, pas de dégâts. Toute la question est de savoir jusqu'où on pousse la
+      gêne sans rendre le point injouable — et si Yuki en souffre aussi.
+    </p>
+  </div>
+</div>
+
+<div id="sections"></div>
+
+<script type="module">
+// Le terrain n'est plus inventé : on importe la géométrie et le thème réels
+// du jeu, et les sprites réels du roster. Le premier jet dessinait une vue de
+// côté façon jeu de combat, alors que le jeu est un terrain vu de dessus.
+import { MAPS } from '../js/data/maps.js';
+import { CHARS } from '../js/data/characters.js';
+
+const TAU = Math.PI * 2;
+const ARENE = MAPS[0];
+const CT = ARENE.court;                       // { left, right, top, bottom }
+const CW = CT.right - CT.left, CH = CT.bottom - CT.top;
+const CXX = (CT.left + CT.right) / 2, CYY = (CT.top + CT.bottom) / 2;
+const GOAL_H = ARENE.goal.height, GOAL_D = ARENE.goal.depth;
+const TH = ARENE.theme;
+
+/* ===================== LE CHIEN ===================== */
+const CHIEN = new Image();
+let chienPret = false;
+CHIEN.onload = () => { chienPret = true; rafraichir(); };
+CHIEN.src = '../assets/img/yuki-chien.png';
+
+// La vidéo, détourée image par image. Le test se fait sur la TEINTE et non
+// sur un rapport brut entre canaux : le fond est un vert sombre et désaturé,
+// qu'un seuil du type « vert > rouge × 1,25 » laisse passer, alors que sa
+// teinte reste franchement dans les verts.
+const VIDEO = document.createElement('video');
+VIDEO.src = '../assets/video/yuki-chien.mp4';
+VIDEO.muted = true; VIDEO.loop = true; VIDEO.playsInline = true;
+let videoPrete = false;
+VIDEO.addEventListener('loadeddata', () => { videoPrete = true; VIDEO.play().catch(() => {}); });
+const cleCanvas = document.createElement('canvas');
+const cleCtx = cleCanvas.getContext('2d', { willReadFrequently: true });
+function videoDetouree() {
+  if (!videoPrete || !VIDEO.videoWidth) return null;
+  const L = 320;
+  cleCanvas.width = L; cleCanvas.height = Math.round(L * VIDEO.videoHeight / VIDEO.videoWidth);
+  cleCtx.drawImage(VIDEO, 0, 0, cleCanvas.width, cleCanvas.height);
+  const img = cleCtx.getImageData(0, 0, cleCanvas.width, cleCanvas.height), d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i] / 255, g2 = d[i+1] / 255, b = d[i+2] / 255;
+    const mx = Math.max(r, g2, b), mn = Math.min(r, g2, b), delta = mx - mn;
+    if (delta < 0.06) continue;                       // gris : c'est le chien
+    let h;
+    if (mx === r) h = 60 * (((g2 - b) / delta) % 6);
+    else if (mx === g2) h = 60 * ((b - r) / delta + 2);
+    else h = 60 * ((r - g2) / delta + 4);
+    if (h < 0) h += 360;
+    if (h > 95 && h < 175) d[i+3] = 0;                // vert : on l'efface
+  }
+  cleCtx.putImageData(img, 0, 0);
+  return cleCanvas;
+}
+
+/* ===================== YUKI, BUILD VALIDÉ ===================== */
+const PAL = {
+  W:'#f6f8fc', s:'#dde4ee', w:'#b4bdcb', g:'#8a94a4', p:'#c49aa2',
+  E:'#3a86d6', n:'#26262c', K:'#1e1f24', k:'#101116', Y:'#dfe4ec', S:'#e8e9ee', R:'#c4485a'
+};
+const TETE = ["..gW..Wg........",".gpWWWWpg.......",".WWWWWWWWW......",".WWWWWWWWWWs....",".WWgEEWWgEEWs...",".WWWWWWWWWWWsn..",".wWWWWWWWWWWsn..",".wgWWWWWWWWws...","..ggwwwwwwg.....","...KKKKKKKK....."];
+const CORPS = ["..KKKsssKKK.....",".WKKKsssKKKW....",".WKYKssssKKW....",".WKKKssssKKW....","wWwKKssssKKw....","wwWsssssssW.....","..KKKKKKKKKK....","..WWw....wWW....","..WWw....wWW....","..nnn....nnn...."];
+// Bras levés : la pose d'invocation, il siffle le chien.
+const CORPS_APPEL = ["..KKKsssKKKW....",".WKKKsssKKKWW...",".WKYKssssKKWW...",".WKKKssssKKW....","wWwKKssssKKw....","wwWsssssssW.....","..KKKKKKKKKK....","..WWw....wWW....","..WWw....wWW....","..nnn....nnn...."];
+
+function bati(rows, pal, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x*ech, y*ech, ech, ech); }
+  }});
+  return c;
+}
+
+/* ===================== LE VRAI TERRAIN ===================== */
+// Reprise fidèle de drawCourtNu() du jeu : même géométrie, mêmes teintes,
+// mêmes zones de but. Tout est mis à l'échelle du canvas de la carte, pour
+// qu'une vignette de 230 px montre le même terrain qu'un aperçu de 820 px.
+function terrain(g, W, H) {
+  const e = Math.min(W / (CW + 2 * GOAL_D + 40), H / (CH + 40));
+  const ox = (W - CW * e) / 2, oy = (H - CH * e) / 2;
+  const X = x => ox + (x - CT.left) * e, Y = y => oy + (y - CT.top) * e;
+
+  g.fillStyle = TH.bgOuter; g.fillRect(0, 0, W, H);
+  g.fillStyle = TH.bgInner; g.fillRect(X(CT.left) - GOAL_D * e, Y(CT.top) - 8, CW * e + GOAL_D * 2 * e, CH * e + 16);
+  g.fillStyle = TH.floor;   g.fillRect(X(CT.left), Y(CT.top), CW * e, CH * e);
+
+  g.strokeStyle = TH.line; g.lineWidth = Math.max(1, 2 * e);
+  g.strokeRect(X(CT.left), Y(CT.top), CW * e, CH * e);
+  g.beginPath(); g.moveTo(X(CXX), Y(CT.top)); g.lineTo(X(CXX), Y(CT.bottom)); g.stroke();
+  g.beginPath(); g.arc(X(CXX), Y(CYY), 58 * e, 0, TAU); g.stroke();
+
+  // Les cages, une bande par zone de points, exactement comme dans le jeu.
+  for (const side of [1, 2]) {
+    const gx = side === 1 ? CT.left - GOAL_D : CT.right;
+    for (const z of ARENE.zones) {
+      g.globalAlpha = .5; g.fillStyle = z.color;
+      g.fillRect(X(gx), Y(CYY + z.from), GOAL_D * e, (z.to - z.from) * e);
+      g.globalAlpha = 1;
+      g.strokeStyle = TH.goalStroke; g.lineWidth = 1;
+      g.strokeRect(X(gx), Y(CYY + z.from), GOAL_D * e, (z.to - z.from) * e);
+    }
+    g.strokeStyle = TH.goalStroke; g.lineWidth = Math.max(1, 2 * e);
+    g.strokeRect(X(gx), Y(CYY - GOAL_H / 2), GOAL_D * e, GOAL_H * e);
+  }
+  return { e, X, Y };
+}
+
+// Les personnages sont dessinés à la même échelle que dans le jeu : SCALE 1,6
+// pour un sprite de 16 x 20 rendu en 48 x 60 unités de terrain.
+function perso(g, sprite, x, y, vue, face) {
+  const { e, X, Y } = vue;
+  const w = 48 * 1.6 * e, h = 60 * 1.6 * e;
+  g.save(); g.imageSmoothingEnabled = false;
+  g.translate(X(x), Y(y));
+  if (face < 0) g.scale(-1, 1);
+  g.drawImage(sprite, -w / 2, -h + 10 * e, w, h);
+  g.restore();
+}
+function disque(g, x, y, vue) {
+  const { e, X, Y } = vue;
+  g.fillStyle = '#35e0ff';
+  g.beginPath(); g.arc(X(x), Y(y), 14 * e, 0, TAU); g.fill();
+  g.strokeStyle = '#bff2ff'; g.lineWidth = Math.max(1, 2 * e); g.stroke();
+}
+
+/* ===================== LES PHASES ===================== */
+const PHASES = [
+  { id:'appel',   nom:'L\'APPEL',   detail:'il siffle' },
+  { id:'arrivee', nom:'L\'ARRIVÉE', detail:'le chien entre' },
+  { id:'presence',nom:'LA PRÉSENCE',detail:'il masque' },
+  { id:'sortie',  nom:'LA SORTIE',  detail:'il s\'en va' }
+];
+
+/* ===================== LES SECTIONS ===================== */
+function v(id, nom, desc, o) { return { id, nom, desc, ...o }; }
+
+const SECTIONS = [
+  {
+    id:'arrivee', titre:'1 · L\'arrivée du chien',
+    note:'Par où et comment il débarque. C\'est le seul moment spectaculaire de l\'ultime : après, le chien ne fait plus grand-chose, donc son entrée doit marquer.',
+    variantes:[
+      v('A','IL BONDIT DU BAS','Il jaillit du bas de l\'écran et s\'y installe. La lecture la plus claire et la plus proche de Smash : on comprend tout de suite qu\'on vient de se faire avoir.',{arr:'bas'}),
+      v('B','IL TOMBE DU CIEL','Il descend du haut de l\'écran, pattes en avant. Plus surprenant et plus drôle, mais il traverse la zone où vole le disque et brouille la lecture pendant la descente.',{arr:'haut'}),
+      v('C','IL COURT DEPUIS LE BORD','Il entre en courant par le côté de Yuki. Ça le rattache à son maître, mais l\'entrée latérale est la plus lente des quatre.',{arr:'cote'}),
+      v('D','IL APPARAÎT D\'UN COUP','Un flash, et il est là. Instantané et brutal, mais on perd tout l\'effet d\'arrivée qui fait le sel de l\'ultime.',{arr:'flash'}),
+      v('E','IL GROSSIT DEPUIS YUKI','Il part de Yuki et grandit jusqu\'à occuper l\'écran. On voit bien que c\'est lui qui l\'invoque, mais l\'effet de zoom fait plus magique qu\'animal.',{arr:'zoom'}),
+      v('F','IL BONDIT EN DIAGONALE','Il traverse depuis le coin bas gauche vers le centre. Plus dynamique que la montée droite, mais la diagonale rend son point d\'arrivée moins prévisible.',{arr:'diag'}),
+      v('G','DEUX BONDS','Il entre en deux sauts successifs avant de se poser. Le plus vivant et le plus canin, mais ça allonge encore une entrée déjà longue.',{arr:'deuxbonds'}),
+      v('H','IL SE GLISSE PAR LA DROITE','Il entre par le côté de l\'adversaire, donc pile devant lui. Le plus gênant pour la cible, mais Yuki paraît moins à l\'origine du coup.',{arr:'droite'}),
+      v('I','IL MONTE LENTEMENT','Il émerge du bas très progressivement, comme un rideau. Le plus lisible de tous, mais tellement lent qu\'on a le temps de s\'y préparer.',{arr:'lent'}),
+      v('J','IL DÉBOULE EN COURANT','Il traverse tout l\'écran en courant avant de s\'arrêter au centre. Le plus spectaculaire, mais il masque déjà tout pendant sa course.',{arr:'traverse'})
+    ]
+  },
+  {
+    id:'taille', titre:'2 · La taille du chien',
+    note:'C\'est le réglage qui décide si l\'ultime est une gêne ou une punition. Trop petit, il ne masque rien ; trop grand, le point devient injouable et frustrant pour les deux joueurs.',
+    variantes:[
+      v('A','LA MOITIÉ DE L\'ÉCRAN','Il occupe environ la moitié de la hauteur, centré. On perd la vue sur une bonne partie du terrain sans devenir aveugle : le réglage le plus jouable.',{taille:.55}),
+      v('B','PLEIN ÉCRAN','Il remplit tout. C\'est l\'effet Smash dans toute sa brutalité, mais plus personne ne voit le disque et le point se joue au hasard.',{taille:1}),
+      v('C','PETIT','Un chien de taille modeste, dans un coin. Il gêne à peine, mais l\'ultime cesse d\'en être un et ressemble à une décoration.',{taille:.3}),
+      v('D','TROIS QUARTS','Il couvre les trois quarts de la hauteur. Très oppressant, encore jouable de justesse par les bords — le réglage le plus tendu.',{taille:.78}),
+      v('E','ÉNORME MAIS TRANSPARENT','Il remplit l\'écran mais on voit à travers. On garde la lisibilité tout en subissant la gêne, mais l\'effet perd de sa force comique.',{taille:1, alpha:.55}),
+      v('F','DEUX TIERS','Entre la moitié et les trois quarts. Le compromis le plus sûr, mais aussi le moins mémorable des réglages.',{taille:.66}),
+      v('G','IL GRANDIT PENDANT L\'ULTIME','Il commence petit et enfle progressivement. La montée en tension est excellente, mais on ne sait jamais quand ça va devenir illisible.',{taille:.55, grandit:true}),
+      v('H','JUSTE LA TÊTE','Seule la tête apparaît, mais très grande. Plus lisible qu\'un chien entier à taille égale, et le regard fixe est franchement dérangeant.',{taille:.6, tete:true}),
+      v('I','PLEIN ÉCRAN, COURT','Il remplit tout mais ne reste qu\'un instant. La brutalité sans la frustration, à condition que la durée soit vraiment très courte.',{taille:1}),
+      v('J','MOITIÉ, DÉCENTRÉ','Moitié de l\'écran, mais posé du côté de l\'adversaire. Il gêne surtout la cible, ce qui est plus juste — mais moins fidèle à l\'esprit de l\'objet d\'origine.',{taille:.55, decale:.66})
+    ]
+  },
+  {
+    id:'gene', titre:'3 · Qui est gêné',
+    note:'Dans Smash, le chien masque l\'écran de TOUT LE MONDE, y compris celui qui l\'a lancé — c\'est ce qui en fait un objet de chaos plutôt qu\'une arme. Ici, on peut choisir.',
+    variantes:[
+      v('A','TOUT LE MONDE','Le chien masque l\'écran des deux joueurs, Yuki compris. Le plus fidèle à l\'objet d\'origine, et le plus drôle — mais Yuki subit son propre ultime.',{gene:'tous'}),
+      v('B','SEULEMENT L\'ADVERSAIRE','Yuki voit à travers, l\'adversaire non. Beaucoup plus fort et plus juste comme ultime, mais on perd tout le côté chaotique qui fait le sel de la référence.',{gene:'adv'}),
+      v('C','TOUT LE MONDE, MAIS YUKI MOINS','Le chien est semi-transparent pour Yuki et opaque pour l\'adversaire. Le compromis honnête, mais deux rendus différents en ligne, c\'est deux fois plus de choses à synchroniser.',{gene:'mixte'}),
+      v('D','PERSONNE, C\'EST DÉCORATIF','Le chien apparaît mais ne masque rien : il passe derrière les joueurs. Zéro frustration, mais l\'ultime n\'a alors aucun effet sur la partie.',{gene:'aucun'}),
+      v('E','IL MASQUE AUSSI LE DISQUE','Le disque passe derrière le chien et disparaît vraiment. Le plus radical, mais suivre un disque qu\'on ne voit plus relève de la devinette.',{gene:'disque'}),
+      v('F','IL MASQUE LE HUD','Le chien couvre le score et la jauge plutôt que le terrain. Original et beaucoup moins injuste, mais l\'effet passe presque inaperçu en plein échange.',{gene:'hud'}),
+      v('G','IL MASQUE UNE MOITIÉ','Le chien ne couvre qu\'une moitié du terrain, celle de l\'adversaire. Lisible comme règle, mais il devient un mur plutôt qu\'une gêne.',{gene:'moitie'}),
+      v('H','TOUT LE MONDE, SAUF LE DISQUE','Il masque les personnages mais le disque reste dessiné par-dessus. On garde l\'essentiel du jeu tout en semant la confusion : sans doute le plus jouable.',{gene:'saufdisque'}),
+      v('I','IL SUIT L\'ADVERSAIRE','Le chien se déplace pour rester devant la cible. Le plus méchant de tous, mais un ultime qui poursuit ne laisse aucune échappatoire.',{gene:'suit'}),
+      v('J','IL CLIGNOTE','Il apparaît et disparaît par intermittence. La gêne est réelle sans jamais être totale, mais le clignotement est désagréable à l\'œil.',{gene:'clignote'})
+    ]
+  },
+  {
+    id:'duree', titre:'4 · La durée',
+    note:'Combien de temps il reste. C\'est le curseur qui transforme une bonne blague en punition insupportable — et il dépend directement de la taille choisie plus haut.',
+    variantes:[
+      v('A','DEUX SECONDES','Assez pour perdre le fil de l\'échange, trop court pour être injuste. Le réglage qui va avec un chien de taille moyenne.',{dur:2}),
+      v('B','UNE SECONDE','Un éclair : on est surpris et c\'est déjà fini. Zéro frustration, mais on se demande si l\'ultime a vraiment servi à quelque chose.',{dur:1}),
+      v('C','QUATRE SECONDES','Assez long pour décider du point. Très fort, mais quatre secondes sans rien voir, c\'est très long en plein échange.',{dur:4}),
+      v('D','TROIS SECONDES','Le compromis classique. Il laisse le temps de placer une action, sans dépasser le seuil de l\'agacement.',{dur:3}),
+      v('E','JUSQU\'AU PROCHAIN POINT','Le chien reste jusqu\'à ce que le point se termine. Le plus radical, et probablement le plus mauvais pour le plaisir de jeu.',{dur:6}),
+      v('F','DEUX SECONDES, PUIS IL S\'EFFACE','Deux secondes pleines, puis un fondu d\'une seconde. La sortie en douceur évite le retour brutal de l\'image.',{dur:2, fondu:true}),
+      v('G','TANT QUE LA TOUCHE EST TENUE','La durée dépend du joueur, dans une limite. Beaucoup de contrôle, mais en ligne l\'invité n\'a pas le clavier de l\'hôte — c\'est le piège déjà rencontré avec la rafale de Mamie.',{dur:3}),
+      v('H','UNE SECONDE ET DEMIE','Juste au-dessus du seuil où l\'on a le temps de réagir. Le plus fin des réglages, mais la différence avec deux secondes est presque invisible.',{dur:1.5}),
+      v('I','CINQ SECONDES','Très long. Ça vaut un point à coup sûr, mais l\'adversaire aura le sentiment de n\'avoir rien pu faire.',{dur:5}),
+      v('J','DEUX SECONDES, DEUX FOIS','Il part et revient une seconde fois. La surprise joue deux fois, mais l\'ultime devient long et confus à lire.',{dur:2, double:true})
+    ]
+  },
+  {
+    id:'chien', titre:'5 · Le rendu du chien',
+    note:'Le jeu est en pixel art et le chien est une photo. Ce décalage est exactement la blague de Smash — mais il peut aussi jurer. Chaque variante propose un traitement différent de l\'image.',
+    variantes:[
+      v('A','PHOTO TELLE QUELLE','Le husky en photo fixe, net, posé sur le pixel art. C\'est le contraste qui fait toute la blague, mais c\'est aussi le plus étranger au reste du jeu.',{rendu:'photo'}),
+      v('V','TA VIDÉO, DÉTOURÉE','Ta vidéo, avec le fond vert retiré image par image pendant le jeu. Le chien bouge vraiment, ce qu\'aucune photo ne donnera — mais c\'est 2,5 Mo à charger et un détourage à refaire soixante fois par seconde.',{rendu:'video'}),
+      v('B','PIXELLISÉ','La photo est réduite puis agrandie en gros pixels. Il rentre enfin dans le langage visuel du jeu, au prix de l\'effet de surprise du photoréalisme.',{rendu:'pixel'}),
+      v('C','CONTOUR LUMINEUX','La photo, plus un liseré clair tout autour. Il se détache du fond sombre du stade, mais le liseré fait un peu autocollant.',{rendu:'contour'}),
+      v('D','SILHOUETTE','Seule sa forme, remplie de blanc. Très graphique et parfaitement dans le ton du jeu, mais on perd le chien reconnaissable.',{rendu:'silhouette'}),
+      v('E','PHOTO + OMBRE PORTÉE','La photo avec une vraie ombre projetée derrière. Il se pose enfin dans la scène au lieu de flotter dessus, mais l\'ombre alourdit l\'image.',{rendu:'ombre'}),
+      v('F','PIXELLISÉ GROSSIER','Pixellisation encore plus marquée, presque abstraite. Cohérence maximale avec le jeu, mais le chien devient méconnaissable.',{rendu:'grospixel'}),
+      v('G','NOIR ET BLANC','La photo désaturée. Elle s\'intègre mieux à la palette froide du stade, mais le chien perd son côté vivant et chaleureux.',{rendu:'nb'}),
+      v('H','TEINTÉ EN BLEU','La photo teintée aux couleurs du terrain. La plus intégrée visuellement, mais on dirait un fantôme plutôt qu\'un chien.',{rendu:'bleu'}),
+      v('I','PHOTO TREMBLANTE','La photo bouge très légèrement, comme filmée à la main. Ça la rend vivante sans animation réelle, mais le tremblement peut donner mal au cœur.',{rendu:'tremble'}),
+      v('J','CONTOUR PIXELLISÉ','Photo nette, mais un contour en gros pixels autour. Il fait le lien entre les deux styles, au risque de ne satisfaire ni l\'un ni l\'autre.',{rendu:'contourpixel'})
+    ]
+  }
+];
+
+/* ===================== LE MOTEUR ===================== */
+const VALIDE = {};
+const choix = {};
+SECTIONS.forEach(s => { choix[s.id] = VALIDE[s.id] || s.variantes[0].id; });
+function actuel(id) { const s = SECTIONS.find(x => x.id === id); return s.variantes.find(v => v.id === choix[id]); }
+
+const D_APPEL = .45, D_ARRIVEE = .55, D_SORTIE = .5;
+
+// Dessine le chien selon le rendu choisi, dans un rectangle donné.
+let tampon = null;
+function dessinerChien(g, x, y, w, h, rendu, alpha, t) {
+  // Rendu « vidéo » : la source n'est plus la photo mais l'image courante de
+  // la vidéo, détourée à la volée. Tout le reste du dessin est identique.
+  if (rendu === 'video') {
+    const cadre = videoDetouree();
+    if (!cadre) return;
+    g.save();
+    if (alpha !== undefined) g.globalAlpha = alpha;
+    g.drawImage(cadre, x, y, w, h);
+    g.restore();
+    return;
+  }
+  if (!chienPret) return;
+  g.save();
+  if (alpha !== undefined) g.globalAlpha = alpha;
+  // Le tremblement doit exister aussi sur une image figée, sinon la carte
+  // rendait exactement la même chose que la photo nette.
+  if (rendu === 'tremble') {
+    x += Math.sin((t ?? 0) * 37) * w * .018;
+    y += Math.cos((t ?? 0) * 43) * h * .014;
+  }
+  if (rendu === 'pixel' || rendu === 'grospixel' || rendu === 'contourpixel') {
+    // On réduit fort puis on ré-agrandit sans lissage : c'est ce qui produit
+    // les gros pixels, plutôt qu'un filtre qui coûterait cher par image.
+    const petit = rendu === 'grospixel' ? 22 : 52;
+    if (!tampon) tampon = document.createElement('canvas');
+    tampon.width = petit; tampon.height = Math.round(petit * CHIEN.height / CHIEN.width);
+    const tg = tampon.getContext('2d');
+    tg.clearRect(0, 0, tampon.width, tampon.height);
+    tg.drawImage(CHIEN, 0, 0, tampon.width, tampon.height);
+    g.imageSmoothingEnabled = false;
+    if (rendu === 'contourpixel') { g.globalAlpha = (alpha ?? 1) * .5;
+      g.drawImage(tampon, x - 6, y - 6, w + 12, h + 12); g.globalAlpha = alpha ?? 1;
+      g.imageSmoothingEnabled = true; g.drawImage(CHIEN, x, y, w, h); }
+    else g.drawImage(tampon, x, y, w, h);
+    g.restore(); return;
+  }
+  if (rendu === 'silhouette') {
+    g.drawImage(CHIEN, x, y, w, h);
+    g.globalCompositeOperation = 'source-atop';
+    g.fillStyle = '#f2f4f8'; g.fillRect(x, y, w, h);
+    g.restore(); return;
+  }
+  if (rendu === 'ombre') {
+    g.save(); g.globalAlpha = (alpha ?? 1) * .45;
+    g.filter = 'brightness(0)';
+    g.drawImage(CHIEN, x + 14, y + 14, w, h);
+    g.restore();
+  }
+  if (rendu === 'contour') {
+    g.save(); g.globalAlpha = (alpha ?? 1) * .55; g.filter = 'brightness(3)';
+    for (const [dx, dy] of [[-5,0],[5,0],[0,-5],[0,5]]) g.drawImage(CHIEN, x+dx, y+dy, w, h);
+    g.restore();
+  }
+  if (rendu === 'nb') g.filter = 'grayscale(1)';
+  if (rendu === 'bleu') g.filter = 'sepia(1) hue-rotate(170deg) saturate(2.2)';
+  g.drawImage(CHIEN, x, y, w, h);
+  g.restore();
+}
+
+// Joue la séquence. Renvoie l'index de la phase, pour la frise.
+function jouer(g, t, W, H, ech) {
+  const vue = terrain(g, W, H);
+  const dur = actuel('duree').dur;
+  const total = D_APPEL + D_ARRIVEE + dur + D_SORTIE + .5;
+  const tt = t % total;
+  const b = [D_APPEL, D_APPEL + D_ARRIVEE, D_APPEL + D_ARRIVEE + dur,
+             D_APPEL + D_ARRIVEE + dur + D_SORTIE];
+
+  const spr = bati([...TETE, ...CORPS], PAL, 4);
+  const sprA = bati([...TETE, ...CORPS_APPEL], PAL, 4);
+  // Positions en coordonnées de TERRAIN, pas en pixels d'écran : les mêmes
+  // valeurs donnent la même scène quelle que soit la taille du canvas.
+  const yukiX = CT.left + CW * .22, yukiY = CYY + 40;
+  const advX = CT.left + CW * .78, advY = CYY - 50;
+  const discX = CXX + 40, discY = CYY - 20;
+
+  const va = actuel('taille'), gene = actuel('gene').gene, rendu = actuel('chien').rendu;
+  let taille = va.taille;
+  const decale = va.decale ?? .5;
+
+  let phase = -1, corps = spr, k = 0;
+  if (tt < b[0]) { phase = 0; corps = sprA; }
+  else if (tt < b[1]) { phase = 1; corps = sprA; k = (tt - b[0]) / D_ARRIVEE; }
+  else if (tt < b[2]) { phase = 2; k = 1; }
+  else if (tt < b[3]) { phase = 3; k = 1 - (tt - b[2]) / D_SORTIE; }
+
+  const dessinerScene = () => {
+    perso(g, corps, yukiX, yukiY, vue, 1);
+    perso(g, CHARS.leon.frames.idle, advX, advY, vue, -1);
+    disque(g, discX, discY, vue);
+  };
+  // Bandeau de score : il n'existe que pour que la variante « il masque le
+  // HUD » ait quelque chose à masquer.
+  const dessinerHud = () => {
+    g.fillStyle = 'rgba(14,22,38,.92)'; g.fillRect(0, 0, W, H * .12);
+    g.fillStyle = '#ffd23e'; g.font = 'bold ' + Math.round(H * .06) + 'px Consolas, monospace';
+    g.textAlign = 'center'; g.fillText('3 — 2', W / 2, H * .088); g.textAlign = 'left';
+    g.fillStyle = '#35e0ff'; g.fillRect(W * .05, H * .04, W * .17, H * .028);
+  };
+  dessinerHud();
+
+  // « Personne n'est gêné » : le chien passe DERRIÈRE tout le monde. C'est le
+  // seul cas où l'ordre de dessin change, et sans ça la variante rendait
+  // exactement la même image que « tout le monde ».
+  const derriere = gene === 'aucun';
+  if (!derriere) dessinerScene();
+
+  const pret = rendu === 'video' ? videoPrete : chienPret;
+  if (phase >= 1 && k > 0 && pret) {
+    if (va.grandit && phase === 2) taille = va.taille * (1 + (tt - b[1]) / dur * .55);
+    const h = H * taille * (va.tete ? 1.5 : 1);
+    const ratio = rendu === 'video' && cleCanvas.width
+      ? cleCanvas.width / cleCanvas.height : CHIEN.width / CHIEN.height;
+    const w = h * ratio;
+    let cx = W * decale - w / 2;
+    let cy = H - h;
+    const arr = actuel('arrivee').arr;
+    const e = phase === 1 ? 1 - Math.pow(1 - k, 3) : k;
+    if (phase === 1) {
+      if (arr === 'bas')          cy = H - h + (1 - e) * h;
+      else if (arr === 'haut')    cy = H - h - (1 - e) * H;
+      else if (arr === 'cote')    cx = W * decale - w/2 - (1 - e) * W;
+      else if (arr === 'droite')  cx = W * decale - w/2 + (1 - e) * W;
+      else if (arr === 'diag')  { cx -= (1 - e) * W * .5; cy += (1 - e) * h; }
+      else if (arr === 'zoom')  { const z = e; cx = vue.X(yukiX) + (cx - vue.X(yukiX)) * z;
+                                  cy = vue.Y(yukiY) + (cy - vue.Y(yukiY)) * z; }
+      else if (arr === 'lent')    cy = H - h + (1 - k) * h;
+      else if (arr === 'deuxbonds') cy = H - h + (1 - e) * h - Math.abs(Math.sin(k * TAU)) * H * .18;
+      else if (arr === 'traverse') cx = W * decale - w/2 - (1 - e) * W * 1.4;
+    }
+    let alpha = va.alpha;
+    if (phase === 3) alpha = (alpha ?? 1) * k;
+    if (gene === 'clignote' && phase === 2) alpha = (alpha ?? 1) * (.25 + .35 * (1 + Math.sin(tt * 22)));
+    if (gene === 'mixte') alpha = (alpha ?? 1) * .7;
+    if (gene === 'suit' && phase === 2) cx = vue.X(advX) - w / 2;
+    if (gene === 'moitie') cx = W * .55;
+    if (gene === 'hud') cy = -h * .12;
+
+    if (alpha !== 0) dessinerChien(g, cx, cy, w, h, rendu, alpha, tt);
+
+    if (derriere) dessinerScene();
+    if (gene === 'saufdisque') disque(g, discX, discY, vue);
+    if (gene === 'hud') dessinerScene();
+    if (gene === 'adv') { g.globalAlpha = .35; dessinerScene(); g.globalAlpha = 1; }
+    if (gene === 'disque') {
+      perso(g, corps, yukiX, yukiY, vue, 1);
+      perso(g, CHARS.leon.frames.idle, advX, advY, vue, -1);
+    }
+  }
+  return phase;
+}
+
+// Règle de durée : une barre graduée qui dit combien de temps le chien reste.
+// Sans elle, les dix variantes de la section rendaient exactement la même
+// image — la durée est du temps, elle ne se voit pas sur une image figée.
+function regleDuree(g, W, H, va) {
+  const dur = va.dur, y = H - 13, x0 = 10, x1 = W - 10;
+  const large = (s) => x0 + (x1 - x0) * Math.min(1, s / 6);
+  g.fillStyle = 'rgba(10,18,32,.78)'; g.fillRect(0, H - 26, W, 26);
+  g.strokeStyle = 'rgba(255,210,62,.35)'; g.lineWidth = 1;
+  for (let s = 0; s <= 6; s++) { const x = large(s);
+    g.beginPath(); g.moveTo(x, y - 4); g.lineTo(x, y + 4); g.stroke(); }
+  g.strokeStyle = 'rgba(255,210,62,.9)'; g.lineWidth = 4;
+  g.beginPath(); g.moveTo(x0, y); g.lineTo(large(dur), y); g.stroke();
+  // Les particularités se dessinent, sinon deux variantes de même durée
+  // affichent exactement la même règle : le fondu en dégradé, la seconde
+  // salve en trait détaché, la touche tenue en pointillés.
+  if (va.fondu) { const gr = g.createLinearGradient(large(dur), 0, large(dur + 1), 0);
+    gr.addColorStop(0, 'rgba(255,210,62,.9)'); gr.addColorStop(1, 'rgba(255,210,62,0)');
+    g.strokeStyle = gr; g.beginPath(); g.moveTo(large(dur), y); g.lineTo(large(dur + 1), y); g.stroke(); }
+  if (va.double) { g.strokeStyle = 'rgba(255,210,62,.9)';
+    g.beginPath(); g.moveTo(large(dur + .8), y); g.lineTo(large(dur * 2 + .8), y); g.stroke(); }
+  g.fillStyle = '#ffd23e'; g.font = '10px Consolas, monospace'; g.textAlign = 'left';
+  g.fillText(dur + ' s' + (va.double ? ' ×2' : va.fondu ? ' + fondu' : ''), x0 + 3, y - 8);
+}
+
+/* ===================== VÉRIFICATION ===================== */
+const bad = [];
+const MIN_DESC = 40;
+for (const s of SECTIONS) {
+  if (!s.note || s.note.trim().length < MIN_DESC) bad.push(s.id + ' : la section n\'explique pas ce qu\'on y juge');
+  // Dix variantes par section, sauf « rendu du chien » qui en porte onze : la
+  // vidéo détourée s'ajoute aux dix traitements de la photo plutôt que d'en
+  // remplacer un, parce que c'est la question que l'utilisateur a posée en
+  // premier et qu'elle mérite d'être comparée à toutes les autres.
+  const attendu = s.id === 'chien' ? 11 : 10;
+  if (s.variantes.length !== attendu) bad.push(s.id + ' : ' + s.variantes.length + ' variantes (attendu ' + attendu + ')');
+  for (const va of s.variantes) {
+    if (!va.nom || !va.nom.trim()) bad.push(s.id + '-' + va.id + ' : pas de nom');
+    if (!va.desc || va.desc.trim().length < MIN_DESC) bad.push(s.id + '-' + va.id + ' : explication manquante ou trop courte');
+  }
+}
+for (const r of [TETE, CORPS, CORPS_APPEL]) r.forEach((l, i) => {
+  if (l.length !== 16) bad.push('sprite[' + i + '] : ' + l.length + ' colonnes');
+  for (const ch of l) if (ch !== '.' && !PAL[ch]) bad.push('sprite[' + i + '] : « ' + ch + ' » hors palette');
+});
+const boite = document.getElementById('errs');
+boite.textContent = bad.length ? bad.length + ' à corriger :\n' + bad.slice(0, 20).join('\n')
+  : 'OK — 5 sections de 10 variantes, toutes expliquées, et le sprite de Yuki tient le gabarit 16 × 20.';
+if (bad.length) boite.className = 'bad';
+
+/* ===================== LA PAGE ===================== */
+(function poserFrise() {
+  const f = document.getElementById('frise');
+  PHASES.forEach(p => { const d = document.createElement('div'); d.className = 'ph';
+    d.innerHTML = p.nom + '<i>' + p.detail + '</i>'; f.appendChild(d); });
+})();
+
+const cartes = [];
+(function poserSections() {
+  const hote = document.getElementById('sections');
+  for (const s of SECTIONS) {
+    const h2 = document.createElement('h2'); h2.textContent = s.titre; hote.appendChild(h2);
+    const p = document.createElement('p'); p.className = 'note'; p.textContent = s.note; hote.appendChild(p);
+    const rangee = document.createElement('div'); rangee.className = 'row';
+    const reserve = document.createElement('div'); reserve.className = 'row reserve';
+    hote.appendChild(rangee);
+    s.variantes.forEach((va, i) => {
+      const card = document.createElement('div');
+      card.className = 'card' + (va.id === choix[s.id] ? ' on' : '');
+      const lbl = document.createElement('div'); lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + va.desc;
+      const cv = document.createElement('canvas'); cv.width = 230; cv.height = 140;
+      card.appendChild(lbl); card.appendChild(cv);
+      if (i >= 5 && va.id === choix[s.id]) reserve.classList.add('ouverte');
+      (i < 5 ? rangee : reserve).appendChild(card);
+      cartes.push({ cv, s, va, card });
+      card.addEventListener('click', () => {
+        choix[s.id] = va.id;
+        cartes.filter(c => c.s === s).forEach(c => c.card.classList.toggle('on', c.va === va));
+        rafraichir();
+      });
+    });
+    const bouton = document.createElement('button');
+    bouton.className = 'plus';
+    bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
+    bouton.addEventListener('click', () => {
+      reserve.classList.toggle('ouverte');
+      bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
+    });
+    hote.appendChild(bouton); hote.appendChild(reserve);
+  }
+})();
+
+// Chaque carte est figée sur l'instant le plus parlant de SA section.
+function peindreCartes() {
+  for (const { cv, s, va } of cartes) {
+    const g = cv.getContext('2d');
+    const memoire = choix[s.id];
+    choix[s.id] = va.id;
+    // La section « qui est gêné » ne se démontre que s'il y a vraiment
+    // occultation : ses cartes sont donc peintes avec un chien plein écran,
+    // sinon le chien ne recouvre personne et « devant » et « derrière »
+    // rendent la même image.
+    const memTaille = choix.taille;
+    if (s.id === 'gene') choix.taille = 'B';
+    const dur = actuel('duree').dur;
+    const instant = s.id === 'arrivee' ? D_APPEL + D_ARRIVEE * .55
+                  : s.id === 'duree'   ? D_APPEL + D_ARRIVEE + dur * .5
+                  : D_APPEL + D_ARRIVEE + Math.min(dur * .5, .8);
+    jouer(g, instant, cv.width, cv.height, 3);
+    if (s.id === 'duree') regleDuree(g, cv.width, cv.height, va);
+    choix.taille = memTaille;
+    choix[s.id] = memoire;
+  }
+}
+
+function codeChoix() { return SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' '); }
+
+function rafraichir() {
+  peindreCartes();
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value = codeChoix();
+}
+
+(function brancherCopie() {
+  const btn = document.getElementById('btnCopier'), champ = document.getElementById('codeChoix');
+  btn.addEventListener('click', async () => {
+    const texte = codeChoix(); let ok = false;
+    try { await navigator.clipboard.writeText(texte); ok = true; }
+    catch (e) { champ.select(); champ.setSelectionRange(0, 999);
+      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; } }
+    btn.textContent = ok ? '✓ copié' : 'Ctrl+C pour copier';
+    btn.classList.toggle('ok', ok);
+    setTimeout(() => { btn.textContent = 'copier mes choix'; btn.classList.remove('ok'); }, 1800);
+  });
+})();
+
+const cvA = document.getElementById('cvApercu'), gA = cvA.getContext('2d');
+const cases = [...document.querySelectorAll('.ph')];
+(function boucle(ms) {
+  const phase = jouer(gA, ms / 1000, cvA.width, cvA.height, 6);
+  cases.forEach((c, i) => c.classList.toggle('on', i === phase));
+  requestAnimationFrame(boucle);
+})(0);
+
+rafraichir();
+</script>
+</body>
+</html>

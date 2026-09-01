@@ -413,7 +413,44 @@ const CH_THROW_B = [".WmWmVVVVVYyS...",".mMmmVKKKKVYyS..",".WmmVKTTTTKVWW..",".S
 const CH_DIVE_B  = [".WmWmVVVVVYySS..",".mMmmVKKKKVYyS..",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....",".JJJj...jJJJ....","JJj.......jJJ...","nn.........nn..."];
 const CH_DASH_B  = ["SWmWmVVVVVYy....","SmMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj..jJJ......",".JJj..jJJ.......",".nnn..nnn......."];
 
-export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper'];
+// ---------------------------------------------------------------------------
+// Yuki. Loup blanc de Michou, doudoune noire au kanji 雪 (« neige »).
+// Deux partis pris de dessin qui ont demandé une reprise complète :
+// 1. Un personnage blanc a besoin de QUATRE valeurs, pas deux. Avec seulement
+//    « blanc + ombre » le visage était un aplat où le museau ne se lisait pas.
+//    D'où W (haute lumière), s (ton moyen), w (ombre) et g (creux).
+// 2. La doudoune est OUVERTE et COURTE, comme sur les visuels : deux panneaux
+//    noirs sur les côtés, le poitrail visible entre eux, et le ventre nu
+//    jusqu'à la ceinture. Un gilet fermé effaçait tout le corps du personnage.
+// ---------------------------------------------------------------------------
+const PAL_Y = {
+  W: '#f6f8fc',                 // hautes lumières : dessus du crâne et du museau
+  s: '#dde4ee',                 // fourrure, ton moyen
+  w: '#b4bdcb',                 // ombre : dessous du museau, joue, queue
+  g: '#8a94a4',                 // creux : arcades, sous la mâchoire, oreilles
+  p: '#c49aa2',                 // intérieur des oreilles
+  E: '#3a86d6',                 // yeux bleus
+  n: '#26262c',                 // truffe, griffes
+  K: '#1e1f24', k: '#101116',   // doudoune noire / matelassage
+  Y: '#dfe4ec',                 // le kanji 雪 sur le panneau
+  S: '#e8e9ee',                 // pendentif, boucle
+  R: '#c4485a'                  // gueule
+};
+
+// Tête : oreilles pointues à intérieur rosé, museau qui dépasse vers la DROITE
+// avec la truffe au bout, creux sombres devant chaque œil pour creuser les
+// arcades. Yeux ET museau décalés d'un pixel à droite — c'est le côté vers
+// lequel il regarde, et sans ce décalage le miroir horizontal (render.js,
+// p.face) ne se lit pas quand il vise à la souris.
+const Y_HEAD = ["..gW..Wg........",".gpWWWWpg.......",".WWWWWWWWW......",".WWWWWWWWWWs....",".WWgEEWWgEEWs...",".WWWWWWWWWWWsn..",".wWWWWWWWWWWsn..",".wgWWWWWWWWws...","..ggwwwwwwg.....","...KKKKKKKK....."];
+const Y_IDLE_B  = ["..KKKsssKKK.....",".WKKKsssKKKW....",".WKYKssssKKW....",".WKKKssssKKW....","wWwKKssssKKw....","wwWsssssssW.....","..KKKKKKKKKK....","..WWw....wWW....","..WWw....wWW....","..nnn....nnn...."];
+const Y_RUN1_B  = ["..KKKsssKKK.....",".WKKKsssKKKW....",".WKYKssssKKW....",".WKKKssssKKW....","wWwKKssssKKw....","wwWsssssssW.....","..KKKKKKKKKK....","..WWw.....wWW...",".WWw.......wWW..",".nnn.......nnn.."];
+const Y_RUN2_B  = ["..KKKsssKKK.....",".WKKKsssKKKW....",".WKYKssssKKW....",".WKKKssssKKW....","wWwKKssssKKw....","wwWsssssssW.....","..KKKKKKKKKK....","...WWw..wWW.....","...WWw..wWW.....","...nnn..nnn....."];
+const Y_THROW_B = ["..KKKsssKKK.....",".WKKKsssKKKWWW..",".WKYKssssKKWWW..",".WKKKssssKKW....","wWwKKssssKKw....","wwWsssssssW.....","..KKKKKKKKKK....","..WWw....wWW....","..WWw....wWW....","..nnn....nnn...."];
+const Y_DIVE_B  = ["..KKKsssKKKW....",".WKKKsssKKKWW...",".WKYKssssKKW....",".WKKKssssKKW....","wWwKKssssKKw....","wwWsssssssW.....","..KKKKKKKKKK....",".WWWw...wWWW....","WWw.......wWW...","nn.........nn..."];
+const Y_DASH_B  = ["W..KKKsssKKK....","WWWKKKsssKKKW...","WWWKYKssssKKW...",".WKKKssssKKW....","wWwKKssssKKw....","wwWsssssssW.....","..KKKKKKKKKK....","..WWw..wWW......",".WWw..wWW.......",".nnn..nnn......."];
+
+export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper', 'yuki'];
 
 export const CHARS = {
   naruto: {
@@ -539,6 +576,28 @@ export const CHARS = {
       throw: buildSprite([...CH_HEAD, ...CH_THROW_B], PAL_CH),
       dive: buildSprite([...CH_HEAD, ...CH_DIVE_B], PAL_CH),
       dash: buildSprite([...CH_HEAD, ...CH_DASH_B], PAL_CH)
+    }
+  },
+  yuki: {
+    name: 'YUKI', short: 'YUKI', icon: '🐺', universe: 'MICHOU',
+    // Profil de sprinteur : le plus rapide du roster de loin, mais le bras le
+    // plus faible. Il gagne toutes les courses au disque et ne conclut presque
+    // jamais d'un tir — son ultime est là pour ça.
+    speed: 372, power: .86, catchR: 31, chargeT: .78,
+    // Bleu clair et non blanc : la jauge d'ultime se remplit avec `color` sur
+    // un fond blanc (render.js), donc un perso blanc avait une jauge
+    // parfaitement invisible. Le bleu reste dans sa gamme — c'est celui de ses
+    // yeux, éclairci — tout en se détachant du fond de la barre.
+    color: '#7ab8ea', accent: '#3a86d6',
+    stats: { spd: 5, pow: 2, ctl: 4 },
+    ult: 'chien',
+    frames: {
+      idle: buildSprite([...Y_HEAD, ...Y_IDLE_B], PAL_Y),
+      run1: buildSprite([...Y_HEAD, ...Y_RUN1_B], PAL_Y),
+      run2: buildSprite([...Y_HEAD, ...Y_RUN2_B], PAL_Y),
+      throw: buildSprite([...Y_HEAD, ...Y_THROW_B], PAL_Y),
+      dive: buildSprite([...Y_HEAD, ...Y_DIVE_B], PAL_Y),
+      dash: buildSprite([...Y_HEAD, ...Y_DASH_B], PAL_Y)
     }
   },
 

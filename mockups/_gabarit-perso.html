@@ -474,7 +474,12 @@ const cartes = [];
       const lbl = document.createElement('div'); lbl.className = 'lbl';
       lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + (va.desc || '');
       const cv = document.createElement('canvas');
-      cv.width = 190; cv.height = 132;
+      // Hauteur calculée, pas choisie au hasard : le sprite fait 20 rangées à
+      // ECH_CARTE et ses pieds se posent sur la ligne de sol, à 58 % de la
+      // hauteur. À 132 px la ligne de sol tombait à 77 px alors que le sprite
+      // en fait 100 — le haut du crâne était coupé hors du canvas, et deux
+      // variantes qui ne différaient que par là rendaient la même image.
+      cv.width = 190; cv.height = Math.ceil((20 * ECH_CARTE + 10) / 0.58);
       card.appendChild(lbl); card.appendChild(cv);
       if (va.stats) card.appendChild(barres(va.stats));
       (i < 5 ? rangee : reserve).appendChild(card);

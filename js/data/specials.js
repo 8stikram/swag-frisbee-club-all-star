@@ -85,6 +85,21 @@ export const GUN_SPRITE = buildSprite([
 export const PIRATAGE_DUREE = 6;
 export const PIRATAGE_INTRO = 1.35;
 
+// --- Le chien de Yuki --------------------------------------------------------
+// Trois secondes plein écran. C'est long : dans un jeu de disque, ne pas voir
+// le disque pendant trois secondes revient à ne pas pouvoir l'attraper. Le
+// réglage est assumé tel quel pour l'instant, à revoir en jouant.
+export const CHIEN_DUREE = 3;
+// La vidéo du chien, détourée à la volée. Elle se charge en arrière-plan dès
+// le démarrage : la décoder au moment du cast aurait fait apparaître le chien
+// une demi-seconde trop tard. Muette et en boucle — on ne la « joue » jamais
+// vraiment, on lui prend juste son image courante.
+export const CHIEN_VIDEO = document.createElement('video');
+CHIEN_VIDEO.src = 'assets/video/yuki-chien.mp4';
+CHIEN_VIDEO.muted = true; CHIEN_VIDEO.loop = true;
+CHIEN_VIDEO.playsInline = true; CHIEN_VIDEO.preload = 'auto';
+CHIEN_VIDEO.addEventListener('loadeddata', () => { CHIEN_VIDEO.play().catch(() => { }); });
+
 
 export const SPECIALS = {
   kurama: {
@@ -183,6 +198,25 @@ export const SPECIALS = {
       G.banner = { text: 'CLOCHE DE MINUIT !!', color: '#f5c542', t: 0, dur: 1.3 };
       G.shake = 12;
       sfx('roar'); comment('LA CLOCHE SONNE MINUIT !');
+    }
+  },
+
+  chien: {
+    name: 'LE CHIEN DE YUKI',
+    desc: 'Un chien débarque plein écran et aveugle l\'adversaire.',
+    // Comme l'objet Nintendogs de Smash : aucun dégât, il masque la vue. Ici
+    // il ne masque que celle de l'ADVERSAIRE — Yuki continue de voir le
+    // terrain. C'est un choix assumé, plus fort que l'objet d'origine qui
+    // aveugle tout le monde.
+    needsDisc: false,
+    cast(p) {
+      p.meter = 0; p.stats.specials++;
+      // Le chien apparaît d'un coup, sans entrée : `t` sert seulement à savoir
+      // quand il repart, et à faire trembler l'image à l'instant du surgissement.
+      G.chien = { owner: p, t: 0, dur: CHIEN_DUREE };
+      G.banner = { text: 'LE CHIEN DE YUKI !!', color: '#3a86d6', t: 0, dur: 1.3 };
+      G.shake = 14;
+      sfx('roar'); comment('MAIS D\'OÙ SORT CE CHIEN ?!');
     }
   },
 

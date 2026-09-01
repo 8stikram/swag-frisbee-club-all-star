@@ -663,7 +663,10 @@ const cartes = [];
       card.className = 'card' + (va.id === choix[s.id] ? ' on' : '');
       const lbl = document.createElement('div'); lbl.className = 'lbl';
       lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + va.desc;
-      const cv = document.createElement('canvas'); cv.width = 200; cv.height = 118;
+      // Hauteur calculée : la ligne de sol est à 62 % ici, et le sprite fait
+      // 20 rangées à ECH_C. À 118 px le haut du masque sortait du canvas.
+      const cv = document.createElement('canvas');
+      cv.width = 200; cv.height = Math.ceil((20 * ECH_C + 12) / 0.62);
       card.appendChild(lbl); card.appendChild(cv);
       // Une variante retenue qui vit dans la réserve doit rester visible :
       // sinon la page s'ouvre sur un choix marqué nulle part (c'est le cas

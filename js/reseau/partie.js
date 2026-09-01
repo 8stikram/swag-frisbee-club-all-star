@@ -234,8 +234,8 @@ function commentaireNeuf() {
 
 function scenesPourLeReseau() {
   const c = G.cine, b = G.bell, h = G.hack, l = G.leg, t = G.tempete;
-  const ba = G.banner, zo = G.zoom, ra = G.rafale, gr = G.grappin;
-  if (!c && !b && !h && !l && !t && !ba && !zo && !ra && !gr) return 0;
+  const ba = G.banner, zo = G.zoom, ra = G.rafale, gr = G.grappin, ci = G.chien;
+  if (!c && !b && !h && !l && !t && !ba && !zo && !ra && !gr && !ci) return 0;
   const q = p => (p === G.p1 ? 1 : (p === G.p2 ? 2 : 0));
   return {
     // Le bandeau qui annonce l'ultime, et le zoom du Perfect Dive. Ils vivent
@@ -257,7 +257,11 @@ function scenesPourLeReseau() {
     // aux balles de la rafale, il n'y en a qu'un et sa trajectoire se corrige
     // en vol sur un disque qui bouge. Le recalculer chez l'invité l'aurait fait
     // diverger de celui que l'hôte arbitre.
-    gr: gr ? [q(gr.owner), gr.phase, +gr.t.toFixed(2), Math.round(gr.hx), Math.round(gr.hy)] : 0
+    gr: gr ? [q(gr.owner), gr.phase, +gr.t.toFixed(2), Math.round(gr.hx), Math.round(gr.hy)] : 0,
+    // Le chien n'a pas de position : il occupe tout l'ecran. Seuls son
+    // proprietaire et son minuteur voyagent — c'est le rendu de chaque
+    // machine qui decide de l'afficher ou non, selon qui elle represente.
+    ci: ci ? [q(ci.owner), +ci.t.toFixed(2), ci.dur] : 0
   };
 }
 
@@ -267,7 +271,7 @@ function scenesPourLeReseau() {
 // resonnerait à chaque fois.
 function appliquerScenes(sc) {
   const j = n => (n === 1 ? G.p1 : (n === 2 ? G.p2 : null));
-  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.banner = null; G.zoom = null; G.rafale = null; G.grappin = null; return; }
+  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.banner = null; G.zoom = null; G.rafale = null; G.grappin = null; G.chien = null; return; }
   const ba = sc.ba;
   if (ba) { if (!G.banner || G.banner.text !== ba[0]) G.banner = { text: ba[0], color: ba[1], t: ba[2], dur: ba[3] };
     else G.banner.t = ba[2]; }
@@ -304,6 +308,10 @@ function appliquerScenes(sc) {
     G.grappin.owner = j(gr[0]); G.grappin.phase = gr[1]; G.grappin.t = gr[2];
     G.grappin.hx = gr[3]; G.grappin.hy = gr[4]; }
   else G.grappin = null;
+  const ci = sc.ci;
+  if (ci) { if (!G.chien) G.chien = { owner: j(ci[0]), t: 0, dur: ci[2] };
+    G.chien.owner = j(ci[0]); G.chien.t = ci[1]; G.chien.dur = ci[2]; }
+  else G.chien = null;
 }
 
 // ---------------------------------------------------------------------------

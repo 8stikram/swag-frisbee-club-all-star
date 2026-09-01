@@ -7,7 +7,7 @@ import { centreDunk, centrePanier, ZONES } from '../game/zones.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { getSkinId, drawSkinDisc, deformationDisque, tracerContour } from '../data/skins.js';
-import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE } from '../data/specials.js';
+import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE, CHIEN_VIDEO, CHIEN_DUREE } from '../data/specials.js';
 import { Reglages } from '../data/disc-fx.js';
 import { rayonSables, centreSables, densiteTempete } from '../game/desert.js';
 import { etiquetteJoueur, Partie, monJoueur, enMiroir, skinDuDisque } from '../reseau/partie.js';
@@ -2182,6 +2182,63 @@ function drawGrappin() {
   }
 }
 
+/* Le chien de Yuki. La vidéo est détourée image par image : son fond vert est
+   sombre et désaturé, donc le test porte sur la TEINTE et non sur un rapport
+   entre canaux — un seuil du type « vert > rouge × 1,25 » laisse passer ce
+   vert-là. Les pixels sans teinte (delta faible) sont écartés d'emblée : c'est
+   la fourrure blanche du chien, et la confondre avec du décor était l'erreur
+   qui avait fait conclure que la vidéo n'avait pas de fond vert.
+
+   Le détourage se fait sur une toile réduite puis agrandie : à pleine
+   résolution ce serait presque un million de pixels à parcourir soixante fois
+   par seconde, pour un chien qui est de toute façon flou en plein écran. */
+const chienToile = document.createElement('canvas');
+const chienCtx = chienToile.getContext('2d', { willReadFrequently: true });
+const CHIEN_LARGEUR = 400;
+
+function drawChien() {
+  const c = G.chien;
+  if (!c) return;
+  // Seul l'ADVERSAIRE est aveuglé : la machine de Yuki ne dessine rien. En
+  // solo contre l'IA, c'est donc invisible pour le joueur qui l'a lancé —
+  // c'est le sens de l'ultime, et l'IA le subit par son hésitation (voir
+  // updateChien).
+  if (monJoueur() === c.owner) return;
+  const v = CHIEN_VIDEO;
+  if (!v.videoWidth || v.readyState < 2) return;
+
+  if (chienToile.width !== CHIEN_LARGEUR) {
+    chienToile.width = CHIEN_LARGEUR;
+    chienToile.height = Math.round(CHIEN_LARGEUR * v.videoHeight / v.videoWidth);
+  }
+  chienCtx.drawImage(v, 0, 0, chienToile.width, chienToile.height);
+  const img = chienCtx.getImageData(0, 0, chienToile.width, chienToile.height);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), delta = mx - mn;
+    if (delta < .06) continue;                    // sans teinte : c'est le chien
+    let h;
+    if (mx === r) h = 60 * (((g - b) / delta) % 6);
+    else if (mx === g) h = 60 * ((b - r) / delta + 2);
+    else h = 60 * ((r - g) / delta + 4);
+    if (h < 0) h += 360;
+    if (h > 95 && h < 175) d[i + 3] = 0;          // vert : effacé
+  }
+  chienCtx.putImageData(img, 0, 0);
+
+  // Plein écran, en espace écran : le chien ne fait pas partie du monde, il
+  // est posé devant. Il s'efface en fin d'ultime plutôt que de disparaître
+  // d'un coup, sinon le terrain revient comme une gifle.
+  const reste = c.dur - c.t;
+  ctx.save();
+  ctx.globalAlpha = reste < .35 ? reste / .35 : 1;
+  const ech = Math.max(W / chienToile.width, H / chienToile.height);
+  const w = chienToile.width * ech, h = chienToile.height * ech;
+  ctx.drawImage(chienToile, (W - w) / 2, (H - h) / 2, w, h);
+  ctx.restore();
+}
+
 function drawBell() {
   const b = G.bell;
   // L'image se charge de façon asynchrone : tant qu'elle n'est pas prête on ne
@@ -2496,6 +2553,9 @@ export function render() {
   // La neige du Pôle Nord, comme la tempête de sable : en espace écran, donc
   // par-dessus tout, et jamais retournée chez l'invité.
   drawNeigeNoel();
+  // Le chien passe après tout le reste, HUD compris : il aveugle vraiment.
+  // En espace écran comme la tempête, donc jamais retourné chez l'invité.
+  if (G.chien) drawChien();
   if (G.hack) drawHack();
   drawDebug();
   // Flash du Perfect Dive, appliqué hors zoom pour couvrir tout l'écran.

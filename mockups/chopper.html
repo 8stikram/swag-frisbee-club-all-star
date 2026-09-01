@@ -549,7 +549,9 @@ const cartes = [];
       const lbl = document.createElement('div'); lbl.className = 'lbl';
       lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + (va.desc || '');
       const cv = document.createElement('canvas');
-      cv.width = 190; cv.height = 132;
+      // Hauteur calculée : à 132 px la ligne de sol tombait à 77 px alors que
+      // le sprite en fait 100, et le haut du masque était coupé hors du canvas.
+      cv.width = 190; cv.height = Math.ceil((20 * ECH_CARTE + 10) / 0.58);
       card.appendChild(lbl); card.appendChild(cv);
       if (va.stats) card.appendChild(barres(va.stats));
       (i < 5 ? rangee : reserve).appendChild(card);
