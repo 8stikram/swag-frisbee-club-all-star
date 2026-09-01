@@ -1,7 +1,8 @@
 import { showScreen } from './core/dom.js';
 import { initMatch } from './game/state.js';
 import { frame } from './game/loop.js';
-import { refreshSelect } from './ui/menus.js';
+import { refreshSelect, brancherApercuTerrain } from './ui/menus.js';
+import { peindreTerrain } from './render/render.js';
 import { lancerIntro } from './ui/intro.js';
 import './game/input.js';
 import './ui/keybind-ui.js';
@@ -12,6 +13,10 @@ import './ui/amis-ui.js';
 import './ui/compte-pop.js';
 import './ui/cadrage.js';
 import './ui/alerte.js';
+
+// L'écran de choix du terrain peint ses vignettes avec le moteur de rendu.
+// Branché ici plutôt qu'importé là-bas : voir brancherApercuTerrain().
+brancherApercuTerrain(peindreTerrain);
 
 initMatch(true);
 showScreen('title');

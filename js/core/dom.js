@@ -2,7 +2,18 @@ import { sfx } from '../audio/audio.js';
 
 export const $ = id => document.getElementById(id);
 export const cv = $('game');
-export const ctx = cv.getContext('2d');
+// `let` et non `const` : l'écran de choix du terrain a besoin de faire peindre
+// le vrai terrain dans un canvas hors écran, et render.js dessine toujours dans
+// ce `ctx`. C'est une liaison vivante, donc le basculer ici le bascule là-bas.
+// Personne d'autre que render.js ne l'importe — voir viserCanvas().
+export let ctx = cv.getContext('2d');
+const ctxJeu = ctx;
+// Détourne le dessin vers un autre canvas. Appeler sans argument pour revenir
+// à celui du jeu ; toujours dans un `finally`, sinon le jeu peint dans le vide.
+export function viserCanvas(autre) {
+  ctx = autre || ctxJeu;
+  ctx.imageSmoothingEnabled = false;
+}
 export const W = 960, H = 600;
 
 export const SCREENS = {

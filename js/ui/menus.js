@@ -685,38 +685,27 @@ function afficherResultatVote(mien, son, resultat) {
 }
 let mapIdx = 0;
 
-// Mini-rendu proportionnel du vrai terrain (données de data/maps.js).
+// Le vrai terrain, peint par le moteur lui-même puis réduit. Avant, cette
+// fonction redessinait un rectangle générique à partir de sept couleurs de
+// thème : toutes les maps s'y ressemblaient à la teinte près, et le décor —
+// gradins, dunes, sapins, façades — n'apparaissait nulle part au moment où le
+// joueur choisit.
+//
+// On le reçoit par injection au lieu d'importer render.js : render.js importe
+// admin.js, qui importe menus.js. L'importer d'ici fermerait le cycle, et un
+// import circulaire a déjà cassé la production une fois. Même convention que
+// brancherVerrouTutoMap() et brancherSkins(). Le branchement est fait dans
+// main.js, qui importe déjà tout le monde.
+let _peindreTerrain = null;
+export function brancherApercuTerrain(fn) { _peindreTerrain = fn; }
+
 function drawArena(cv, map, big) {
-  const ctx = cv.getContext('2d');
-  const W = cv.width, H = cv.height;
-  ctx.clearRect(0, 0, W, H);
-  const t = map.theme;
-  const grd = ctx.createRadialGradient(W / 2, H / 2, H * 0.12, W / 2, H / 2, H * 0.9);
-  grd.addColorStop(0, t.bgInner); grd.addColorStop(1, t.bgOuter);
-  ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
-
-  const m = Math.min(W, H) * (big ? 0.1 : 0.14);
-  const L = m, R = W - m, T = m * 0.7, B = H - m * 0.7;
-  ctx.fillStyle = t.floor; ctx.fillRect(L, T, R - L, B - T);
-  ctx.strokeStyle = t.line; ctx.lineWidth = big ? 2 : 1;
-  ctx.strokeRect(L, T, R - L, B - T);
-  ctx.beginPath(); ctx.moveTo((L + R) / 2, T); ctx.lineTo((L + R) / 2, B); ctx.stroke();
-  ctx.beginPath(); ctx.arc((L + R) / 2, (T + B) / 2, (B - T) * 0.16, 0, Math.PI * 2); ctx.stroke();
-
-  const cy = (T + B) / 2, goalW = (R - L) * 0.05;
-  const goalH = (B - T) * (map.goal.height / (map.court.bottom - map.court.top));
-  const scale = (B - T) / (map.court.bottom - map.court.top);
-  for (const side of [0, 1]) {
-    const gx = side === 0 ? L - goalW : R;
-    ctx.fillStyle = t.goalFill; ctx.strokeStyle = t.goalStroke; ctx.lineWidth = big ? 2 : 1;
-    ctx.fillRect(gx, cy - goalH / 2, goalW, goalH);
-    ctx.strokeRect(gx, cy - goalH / 2, goalW, goalH);
-    for (const z of map.zones) {
-      ctx.fillStyle = z.color; ctx.globalAlpha = .55;
-      ctx.fillRect(gx, cy + z.from * scale, goalW, (z.to - z.from) * scale);
-    }
-    ctx.globalAlpha = 1;
-  }
+  if (_peindreTerrain) { _peindreTerrain(cv, map.id); return; }
+  // Repli avant branchement : un aplat aux couleurs du terrain vaut mieux
+  // qu'un cadre vide, qui se lirait comme une erreur de chargement.
+  const g = cv.getContext('2d');
+  g.fillStyle = map.theme.bgOuter;
+  g.fillRect(0, 0, cv.width, cv.height);
 }
 
 // Badge rond posé sur une vignette : la photo si le profil en a une, sinon

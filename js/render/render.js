@@ -1,11 +1,11 @@
 import { G, Mouse } from '../game/state.js';
-import { ctx, W, H } from '../core/dom.js';
-import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG_RADIUS, TARGET, DIVE_TIME, DIVE_RANGE, DASH_CATCH_MULT, DASH_GAP, CATCH_RADIUS } from '../core/constants.js';
+import { ctx, W, H, viserCanvas } from '../core/dom.js';
+import { COURT, CX, CY, GOAL_TOP, GOAL_BOTTOM, GOAL_DEPTH, DISC_RADIUS, DISC_BIG_RADIUS, TARGET, DIVE_TIME, DIVE_RANGE, DASH_CATCH_MULT, DASH_GAP, CATCH_RADIUS, applyMap } from '../core/constants.js';
 import { dbg } from '../ui/admin.js';
 import { options as optionsTraining } from '../ui/training.js';
 import { centreDunk, centrePanier, ZONES } from '../game/zones.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
-import { getMap } from '../data/maps.js';
+import { getMap, getMapId, setMapId } from '../data/maps.js';
 import { getSkinId, drawSkinDisc, deformationDisque, tracerContour, teinteDeCharge, chaufferCouleur, avecAlpha } from '../data/skins.js';
 import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE, CHIEN_VIDEO, CHIEN_DUREE } from '../data/specials.js';
 import { Reglages } from '../data/disc-fx.js';
@@ -1243,6 +1243,58 @@ function drawNeigeNoel() {
     ctx.restore();
   }
   ctx.restore();
+}
+
+/* Peint le VRAI terrain d'une map dans un canvas quelconque. L'écran de choix
+   s'en sert pour ses vignettes et son grand aperçu : jusqu'ici il redessinait
+   un rectangle générique à partir de sept couleurs de thème, si bien que le
+   Pôle Nord et Dune de Râ y avaient la même tête à la teinte près — tout le
+   travail de peinture n'apparaissait nulle part au moment du choix.
+
+   Le terrain se dessine toujours en 960×600 hors écran, puis on le réduit :
+   les peintres lisent COURT et W/H, ils ne savent pas dessiner à une autre
+   échelle. On bascule la map le temps du dessin et on la remet aussitôt —
+   c'est synchrone, donc aucune image du jeu ne peut s'intercaler. */
+const apercuCv = document.createElement('canvas');
+apercuCv.width = W; apercuCv.height = H;
+const apercuCtx = apercuCv.getContext('2d');
+
+export function peindreTerrain(cible, mapId) {
+  // La CSS étire le canvas jusqu'à son cadre. Si sa résolution interne n'a pas
+  // le même format, tout ce qu'on y peint est écrasé — le cadre du grand
+  // aperçu fait près de 3:1 pour un terrain en 16/10. On accorde d'abord la
+  // résolution au cadre, puis on fait tenir le terrain dedans sans le déformer.
+  const lAff = cible.clientWidth, hAff = cible.clientHeight;
+  if (lAff > 0 && hAff > 0) {
+    const voulu = Math.max(1, Math.round(cible.width * hAff / lAff));
+    if (Math.abs(voulu - cible.height) > cible.height * .02) cible.height = voulu;
+  }
+  const avant = getMapId();
+  setMapId(mapId);
+  applyMap();
+  // Relevé pendant que la map visée est active : après le finally, getMap()
+  // aura repris l'ancienne et on peindrait les bandes avec sa couleur.
+  const fond = getMap().theme.bgOuter;
+  viserCanvas(apercuCtx);
+  try {
+    apercuCtx.clearRect(0, 0, W, H);
+    drawCourt();
+  } finally {
+    viserCanvas();          // sans quoi le jeu continuerait de peindre hors écran
+    setMapId(avant);
+    applyMap();
+  }
+  // Le terrain entier, jamais rogné : c'est justement dans les bandes du haut
+  // et du bas que vivent le décor qui distingue les maps — le ciel et les
+  // pyramides de Dune de Râ, les sapins du Pôle Nord, les gradins du stadium.
+  // Un cadrage « remplir » les coupait tous les deux.
+  const g = cible.getContext('2d');
+  const k = Math.min(cible.width / W, cible.height / H);
+  const lc = W * k, hc = H * k;
+  g.fillStyle = fond;
+  g.fillRect(0, 0, cible.width, cible.height);
+  g.imageSmoothingEnabled = true;
+  g.drawImage(apercuCv, (cible.width - lc) / 2, (cible.height - hc) / 2, lc, hc);
 }
 
 function drawCourt() {
