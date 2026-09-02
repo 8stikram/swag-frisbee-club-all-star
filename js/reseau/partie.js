@@ -234,7 +234,7 @@ function commentaireNeuf() {
 
 function scenesPourLeReseau() {
   const c = G.cine, b = G.bell, h = G.hack, l = G.leg, t = G.tempete;
-  const ba = G.banner, zo = G.zoom, ra = G.rafale, gr = G.grappin, ci = G.chien;
+  const ba = G.banner, zo = G.zoom, ra = G.rafale, gr = G.grappin, ci = G.chien, ru = G.ruee;
   if (!c && !b && !h && !l && !t && !ba && !zo && !ra && !gr && !ci) return 0;
   const q = p => (p === G.p1 ? 1 : (p === G.p2 ? 2 : 0));
   return {
@@ -261,7 +261,13 @@ function scenesPourLeReseau() {
     // Le chien n'a pas de position : il occupe tout l'ecran. Seuls son
     // proprietaire et son minuteur voyagent — c'est le rendu de chaque
     // machine qui decide de l'afficher ou non, selon qui elle represente.
-    ci: ci ? [q(ci.owner), +ci.t.toFixed(2), ci.dur] : 0
+    ci: ci ? [q(ci.owner), +ci.t.toFixed(2), ci.dur] : 0,
+    // La ruee relaie la position de son front en plus du minuteur : c'est
+    // lui qui decide de ce qui est pousse, et le recalculer chez l'invite
+    // l'aurait fait diverger de celui que l'hote arbitre. La horde, elle,
+    // ne voyage pas : son etalement est deterministe, chaque machine la
+    // redessine identique a partir de ces cinq valeurs.
+    ru: ru ? [q(ru.owner), +ru.t.toFixed(2), ru.dur, ru.dir, Math.round(ru.x)] : 0
   };
 }
 
@@ -271,7 +277,7 @@ function scenesPourLeReseau() {
 // resonnerait à chaque fois.
 function appliquerScenes(sc) {
   const j = n => (n === 1 ? G.p1 : (n === 2 ? G.p2 : null));
-  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.banner = null; G.zoom = null; G.rafale = null; G.grappin = null; G.chien = null; return; }
+  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.banner = null; G.zoom = null; G.rafale = null; G.grappin = null; G.chien = null; G.ruee = null; return; }
   const ba = sc.ba;
   if (ba) { if (!G.banner || G.banner.text !== ba[0]) G.banner = { text: ba[0], color: ba[1], t: ba[2], dur: ba[3] };
     else G.banner.t = ba[2]; }
@@ -309,9 +315,17 @@ function appliquerScenes(sc) {
     G.grappin.hx = gr[3]; G.grappin.hy = gr[4]; }
   else G.grappin = null;
   const ci = sc.ci;
+  const ru = sc.ru;
   if (ci) { if (!G.chien) G.chien = { owner: j(ci[0]), t: 0, dur: ci[2] };
     G.chien.owner = j(ci[0]); G.chien.t = ci[1]; G.chien.dur = ci[2]; }
   else G.chien = null;
+  // La ruee : proprietaire, minuteur, duree, sens et position du front. La
+  // horde elle-meme n'est pas transmise — elle se recalcule des deux cotes a
+  // partir de ces cinq valeurs, puisque son etalement est deterministe.
+  if (ru) { if (!G.ruee) G.ruee = { owner: j(ru[0]), t: 0, dur: ru[2], dir: ru[3], x: ru[4] };
+    G.ruee.owner = j(ru[0]); G.ruee.t = ru[1]; G.ruee.dur = ru[2];
+    G.ruee.dir = ru[3]; G.ruee.x = ru[4]; }
+  else G.ruee = null;
 }
 
 // ---------------------------------------------------------------------------

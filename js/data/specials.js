@@ -85,6 +85,22 @@ export const GUN_SPRITE = buildSprite([
 export const PIRATAGE_DUREE = 6;
 export const PIRATAGE_INTRO = 1.35;
 
+// --- La ruée des Yoshi -------------------------------------------------------
+// Choix arrêtés dans mockups/yoshi-ulti.html : 1A 2A 3A 4J 5B 6B 7E 8C. La
+// horde débarque de derrière Yoshi, pousse le disque devant elle ET bouscule
+// l'adversaire, en grappe désordonnée multicolore, sur un réglage agressif.
+//
+// Elle cumule donc les deux effets, ce que le mockup signalait comme le vrai
+// risque d'équilibrage : sur ce réglage elle peut gagner le point à elle
+// seule. Le premier bouton à baisser, si ça se confirme en match, est
+// RUEE_POUSSEE — pas la durée, qui est déjà la plus courte du roster.
+export const RUEE_DUREE = 1.2;      // la traversée, d'un bord à l'autre
+export const RUEE_N = 16;           // seize Yoshi, en grappe désordonnée
+export const RUEE_POUSSEE = 540;    // ce que la horde ajoute à la vitesse de l'adversaire
+export const RUEE_DISQUE = 430;     // la vitesse minimale qu'elle impose au disque
+export const RUEE_CTRL = 1;         // seconde de contrôle perdu par l'adversaire
+export const RUEE_LARGEUR = 46;     // demi-épaisseur du front, en unités de terrain
+
 // --- Le chien de Yuki --------------------------------------------------------
 // Trois secondes plein écran. C'est long : dans un jeu de disque, ne pas voir
 // le disque pendant trois secondes revient à ne pas pouvoir l'attraper. Le
@@ -198,6 +214,28 @@ export const SPECIALS = {
       G.banner = { text: 'CLOCHE DE MINUIT !!', color: '#f5c542', t: 0, dur: 1.3 };
       G.shake = 12;
       sfx('roar'); comment('LA CLOCHE SONNE MINUIT !');
+    }
+  },
+
+  ruee: {
+    name: 'LA RUÉE DES YOSHI',
+    desc: 'Une horde traverse le terrain, pousse le disque et bouscule l\'adversaire.',
+    // Elle part de DERRIÈRE Yoshi et fonce vers le but adverse : elle va
+    // toujours dans le sens de son attaque, jamais contre lui.
+    needsDisc: false,
+    cast(p) {
+      p.meter = 0; p.stats.specials++;
+      const dir = p.side === 1 ? 1 : -1;
+      G.ruee = {
+        owner: p, t: 0, dur: RUEE_DUREE, dir,
+        // Le front part hors du terrain, derrière la ligne de fond de Yoshi.
+        x: dir > 0 ? COURT.left - 70 : COURT.right + 70
+      };
+      G.banner = { text: 'LA RUÉE DES YOSHI !!', color: '#63c23c', t: 0, dur: 1.3 };
+      // La secousse EST l'annonce : c'est la variante retenue en section 7.
+      // Sans elle l'adversaire subirait une horde sortie de nulle part.
+      G.shake = 18;
+      sfx('roar'); comment('LA HORDE DÉBOULE !!');
     }
   },
 

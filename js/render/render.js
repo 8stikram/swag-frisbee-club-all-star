@@ -7,7 +7,8 @@ import { centreDunk, centrePanier, ZONES } from '../game/zones.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap, getMapId, setMapId } from '../data/maps.js';
 import { getSkinId, drawSkinDisc, deformationDisque, tracerContour, teinteDeCharge, chaufferCouleur, avecAlpha } from '../data/skins.js';
-import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE, CHIEN_VIDEO, CHIEN_DUREE } from '../data/specials.js';
+import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE, CHIEN_VIDEO, CHIEN_DUREE, RUEE_N } from '../data/specials.js';
+import { CHARS } from '../data/characters.js';
 import { Reglages } from '../data/disc-fx.js';
 import { rayonSables, centreSables, densiteTempete } from '../game/desert.js';
 import { etiquetteJoueur, Partie, monJoueur, enMiroir, skinDuDisque } from '../reseau/partie.js';
@@ -2309,6 +2310,57 @@ function drawGrappin() {
   }
 }
 
+/* La ruée des Yoshi. Le front avance en ligne droite et c'est lui qui pousse
+   (updateRuee) ; la horde dessinée ici n'est que du décor accroché à ce front.
+
+   Chaque Yoshi a son propre retard et sa propre hauteur, tirés d'un
+   pseudo-aléatoire DÉTERMINISTE calculé à partir de son indice. Deux raisons,
+   et la seconde est la plus importante : un Math.random ferait scintiller
+   toute la horde à chaque image, et surtout les deux machines d'une partie en
+   ligne ne verraient pas la même chose. Ce n'est pas non plus le hasard semé
+   du jeu — la horde est purement décorative, y puiser décalerait toute la
+   suite partagée, trajectoires du disque comprises.
+
+   Les couleurs viennent des skins déjà validés : une ruée entièrement verte se
+   lit comme une bouillie. */
+const RUEE_TEINTES = ['vert', 'rouge', 'bleu', 'jaune', 'violet', 'cyan', 'orange', 'rose'];
+const rueeAlea = i => { const v = Math.sin(i * 12.9898) * 43758.5453; return v - Math.floor(v); };
+
+function drawRuee() {
+  const r = G.ruee;
+  const yo = CHARS.yoshi;
+  if (!yo) return;
+  const haut = COURT.bottom - COURT.top;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  for (let i = 0; i < RUEE_N; i++) {
+    const f = i / (RUEE_N - 1);
+    // Le retard etale la horde en profondeur : sans lui les seize sprites se
+    // superposent en une colonne compacte, illisible.
+    const x = r.x - r.dir * rueeAlea(i) * 300;
+    // La hauteur est ramenée dans les lignes : une horde qui court hors du
+    // terrain ne veut rien dire.
+    // Les pieds sont bornes, pas le sprite : un Yoshi dessine pieds sur la
+    // ligne du haut monte 52 * SCALE au-dessus et deborde sur le bandeau de
+    // score. On garde donc toute la hauteur du sprite dans le terrain.
+    const HAUT_SPRITE = 52 * SCALE;
+    const y = clamp(COURT.top + HAUT_SPRITE + f * (haut - HAUT_SPRITE - 16)
+                      + (rueeAlea(i + 91) - .5) * haut * .1,
+                    COURT.top + HAUT_SPRITE, COURT.bottom - 8);
+    const jeu = (yo.skins && yo.skins[RUEE_TEINTES[i % RUEE_TEINTES.length]]) || yo.frames;
+    // Deux poses de jambes qui alternent : c'est ce qui fait qu'une horde
+    // COURT au lieu de glisser. La cadence est décalée d'un Yoshi à l'autre,
+    // sinon ils courent au pas cadencé et ça fait défilé, pas ruée.
+    const spr = (Math.floor(r.t * 9 + rueeAlea(i + 17) * 4) % 2) ? jeu.run2 : jeu.run1;
+    ctx.save();
+    ctx.translate(x, y - 52 * SCALE);
+    if (r.dir < 0) ctx.scale(-1, 1);
+    ctx.drawImage(spr, -24 * SCALE, 0, 48 * SCALE, 60 * SCALE);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
 /* Le chien de Yuki. La vidéo est détourée image par image : son fond vert est
    sombre et désaturé, donc le test porte sur la TEINTE et non sur un rapport
    entre canaux — un seuil du type « vert > rouge × 1,25 » laisse passer ce
@@ -2658,6 +2710,10 @@ export function render() {
   if (G.leg && G.leg.phase !== 'shadow') drawLeg();
   if (G.bell) drawBell();
   if (G.balles.length) drawBalles();
+  // La horde se dessine en coordonnees de TERRAIN, donc ici, dans la
+  // transformation camera. Placee apres le ctx.restore() comme le chien,
+  // elle etait dessinee en espace ecran et partait hors du cadre.
+  if (G.ruee) drawRuee();
   if (G.grappin) drawGrappin();
   if (G.ondesBut.length) drawOndesBut();
   drawParticles();

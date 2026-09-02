@@ -450,7 +450,82 @@ const Y_THROW_B = ["..KKKsssKKK.....",".WKKKsssKKKWWW..",".WKYKssssKKWWW..",".WK
 const Y_DIVE_B  = ["..KKKsssKKKW....",".WKKKsssKKKWW...",".WKYKssssKKW....",".WKKKssssKKW....","wWwKKssssKKw....","wwWsssssssW.....","..KKKKKKKKKK....",".WWWw...wWWW....","WWw.......wWW...","nn.........nn..."];
 const Y_DASH_B  = ["W..KKKsssKKK....","WWWKKKsssKKKW...","WWWKYKssssKKW...",".WKKKssssKKW....","wWwKKssssKKw....","wwWsssssssW.....","..KKKKKKKKKK....","..WWw..wWW......",".WWw..wWW.......",".nnn..nnn......."];
 
-export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper', 'yuki'];
+// ---------------------------------------------------------------------------
+// YOSHI. Le seul personnage du roster vu de PROFIL : tous les autres sont de
+// face. Le jeu applique ctx.scale(-1, 1) quand le perso vise a gauche, donc le
+// profil se lit dans les deux sens — c'est ce qui rend le choix possible.
+//
+// Ordre des masses, de l'arriere vers l'avant : epines rouges, crane, oeil au
+// tiers arriere, museau en vert clair qui projette, machoire blanche dessous.
+// Ce blanc descend d'un seul tenant par le cou jusqu'au ventre : coupe, la
+// tete parait posee sur le corps. La carapace est dans le dos, donc a gauche,
+// et le ventre a l'avant, donc a droite.
+// ---------------------------------------------------------------------------
+const PAL_YO = {
+  l: '#8fd95e',                 // vert eclaire : dessus du crane et du museau
+  G: '#63c23c',                 // LE vert de base, celui qu'un skin remplace
+  g: '#3f9127',                 // son ombre
+  h: '#2a6a19',                 // son creux
+  W: '#ffffff', w: '#d5e2cc',   // machoire et ventre / ombre
+  E: '#231d55',                 // pupille
+  M: '#7a2018',                 // ligne de bouche
+  R: '#e8544b', r: '#b8352e',   // epines du crane et carapace / ombre
+  O: '#d9743a', o: '#a8542a',   // bottes / ombre
+  Y: '#f2d35c'                  // semelle des bottes
+};
+
+const YO_HEAD = ["....GGllg.......", "..RGGWEllllg....", ".RRGGWElllllg...", ".RRGGGGGllllg...", ".RRGGGGlllllg...", ".RRGGGglllllg...", ".rRGGGglllllg...", "..rGWWWWWWWWg...", "..GWWWWWWWWWg...", "...WWWWWWWGg...."];
+const YO_IDLE_B  = ["....rGWWWWGg....", "...rRGGWWWWWg...", "..rRRGWWWWWWg...", "..rRRGWWWWWWg...", ".rRRGGGWWWWWg...", ".rGGGGGWWWGGg...", "...GGGG..GGGg...", "...OOOO..OOOg...", "...OOOO..OOOO...", "...YYYY..YYYY..."];
+const YO_RUN1_B  = ["....rGWWWWGg....", "...rRGGWWWWWg...", "..rRRGWWWWWWg...", "..rRRGWWWWWWg...", ".rRRGGGWWWWWg...", ".rGGGGGWWWGGg...", "..GGGG..GGGGg...", "..OOOO..OOOOg...", "..OOOO...OOO....", "..YYYY...YYY...."];
+const YO_RUN2_B  = ["....rGWWWWGg....", "...rRGGWWWWWg...", "..rRRGWWWWWWg...", "..rRRGWWWWWWg...", ".rRRGGGWWWWWg...", ".rGGGGGWWWGGg...", "..GGGG..GGGGg...", "..OOOO..OOOOg...", "...OOO..OOOO....", "...YYY..YYYY...."];
+const YO_THROW_B = ["GGrGGWWWWWGg....", "GGrRRGWWWWWWg...", "GGrRRGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "...GGGG..GGGg...", "...OOOO..OOOg...", "...OOOO..OOOO...", "...YYYY..YYYY..."];
+const YO_DIVE_B  = ["rRRGGWWWWWWWg...", "rRRGGWWWWWWWg...", ".rGGGWWWWWWGg...", "..GGGGGWWWGGg...", "...GGGGGGGGg....", "....GGGGGGg.....", "..GGGGGGGGGg....", "..OOOOOOOOOOg...", "..OOOOOOOOOO....", "..YYYYYYYYYY...."];
+const YO_DASH_B  = ["....rGGWWWWGg...", "...rRGGWWWWWg...", "..rRRGWWWWWWg...", ".rRRGGWWWWWWg...", "rRRGGGGWWWWWg...", "rRGGGGGWWWGGg...", "...GGGG..GGGg...", "...OOOO..OOOg...", "...OOOO..OOOO...", "...YYYY..YYYY..."];
+
+// Les skins de Yoshi ne sont pas des tenues : ce sont des teintes. Inutile de
+// remapper des lettres comme chez Naruto ou Leon, il suffit de rebatir le
+// sprite avec une palette ou l, G, g et h ont change.
+//
+// Trois skins vont plus loin que la teinte, et c'est mesure : sur le rouge, la
+// carapace tombait a 35 de distance du corps et les bottes a 53 ; sur l'orange
+// a 65 et 34 ; sur le blanc, le ventre a 47. En dessous de 90 deux couleurs
+// fusionnent a l'oeil. Les visuels d'origine reglent eux-memes le probleme —
+// le Yoshi rouge y porte des bottes bleues, le cyan des violettes, le jaune
+// des vertes, le noir des blanches — et c'est ce qu'on reprend. Le pire ecart
+// passe ainsi de 34 a 130.
+const TEINTES_YO = {
+  vert:   { l: '#8fd95e', G: '#63c23c', g: '#3f9127', h: '#2a6a19' },
+  rouge:  { l: '#f0716a', G: '#d63f36', g: '#a32a23', h: '#741a15',
+            O: '#3d7fd6', o: '#2a5aa0', R: '#5e1410', r: '#3d0c08' },
+  bleu:   { l: '#7ab4ee', G: '#3d7fd6', g: '#2a5aa0', h: '#1a3c73' },
+  jaune:  { l: '#f7e06a', G: '#e8c72e', g: '#b89a18', h: '#8a7210',
+            O: '#4aa832', o: '#2f7020' },
+  violet: { l: '#c98ae8', G: '#a352d1', g: '#7a35a0', h: '#562473' },
+  cyan:   { l: '#8fe8e0', G: '#46c9bd', g: '#2e9188', h: '#1e6660',
+            O: '#a352d1', o: '#7a35a0' },
+  orange: { l: '#f7ac5e', G: '#e88521', g: '#b56414', h: '#85480d',
+            O: '#3d7fd6', o: '#2a5aa0', R: '#6e1a14', r: '#47100c' },
+  rose:   { l: '#f79ac9', G: '#e85fa5', g: '#b53f78', h: '#852a56' },
+  noir:   { l: '#6e7480', G: '#3d434d', g: '#262a31', h: '#16181d',
+            O: '#e4e8ee', o: '#aab2bd' },
+  // Corps gris clair et non blanc : en blanc sur blanc le ventre disparaissait
+  // dans le corps, exactement le defaut rencontre sur Yuki.
+  blanc:  { l: '#dfe6ee', G: '#aab4c0', g: '#7d8794', h: '#565f6b' }
+};
+
+const YO_POSES = { idle: YO_IDLE_B, run1: YO_RUN1_B, run2: YO_RUN2_B,
+                   throw: YO_THROW_B, dive: YO_DIVE_B, dash: YO_DASH_B };
+
+function construireSkinYo(teinte) {
+  const pal = { ...PAL_YO, ...TEINTES_YO[teinte] };
+  const out = {};
+  for (const [nom, corps] of Object.entries(YO_POSES)) {
+    out[nom] = buildSprite([...YO_HEAD, ...corps], pal);
+  }
+  return out;
+}
+
+export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper', 'yuki', 'yoshi'];
 
 export const CHARS = {
   naruto: {
@@ -618,6 +693,38 @@ export const CHARS = {
       dive: buildSprite([...C_HEAD, ...C_DIVE_B], PAL_C),
       dash: buildSprite([...C_HEAD, ...C_DASH_B], PAL_C)
     }
+  },
+  yoshi: {
+    name: 'YOSHI', short: 'YOSHI', icon: '🥚', universe: "L'ILE DES YOSHI",
+    // Profil « gourmand » : la plus grande zone d'attrape du roster, et la
+    // charge la plus lente. Il avale tout ce qui passe et met longtemps a
+    // repondre. Ces deux valeurs sont les extremes du casting dans les deux
+    // sens — c'est voulu, mais c'est le premier endroit a regarder si le
+    // personnage parait fort ou faible en match.
+    speed: 318, power: .95, catchR: 35, chargeT: 1.05,
+    color: '#63c23c', accent: '#8fd95e',
+    stats: { spd: 3, pow: 3, ctl: 5 },
+    ult: 'ruee',
+    frames: {
+      idle: buildSprite([...YO_HEAD, ...YO_IDLE_B], PAL_YO),
+      run1: buildSprite([...YO_HEAD, ...YO_RUN1_B], PAL_YO),
+      run2: buildSprite([...YO_HEAD, ...YO_RUN2_B], PAL_YO),
+      throw: buildSprite([...YO_HEAD, ...YO_THROW_B], PAL_YO),
+      dive: buildSprite([...YO_HEAD, ...YO_DIVE_B], PAL_YO),
+      dash: buildSprite([...YO_HEAD, ...YO_DASH_B], PAL_YO)
+    },
+    skins: {
+      vert: null,               // rempli plus bas : c'est `frames` lui-meme
+      rouge: construireSkinYo('rouge'),
+      bleu: construireSkinYo('bleu'),
+      jaune: construireSkinYo('jaune'),
+      violet: construireSkinYo('violet'),
+      cyan: construireSkinYo('cyan'),
+      orange: construireSkinYo('orange'),
+      rose: construireSkinYo('rose'),
+      noir: construireSkinYo('noir'),
+      blanc: construireSkinYo('blanc')
+    }
   }
 };
 
@@ -635,3 +742,4 @@ export function portraitURL(ck) {
 // les sprites de base, ce qui évite de les dupliquer.
 CHARS.naruto.skins.shippuden = CHARS.naruto.frames;
 CHARS.leon.skins.rpd = CHARS.leon.frames;
+CHARS.yoshi.skins.vert = CHARS.yoshi.frames;

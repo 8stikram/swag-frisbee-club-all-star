@@ -1,5 +1,7 @@
 import { G, comment } from './state.js';
-import { SPECIALS } from '../data/specials.js';
+import { SPECIALS, RUEE_DISQUE, RUEE_POUSSEE, RUEE_CTRL, RUEE_LARGEUR }
+  from '../data/specials.js';
+import { COURT } from '../core/constants.js';
 import { sfx } from '../audio/audio.js';
 import { addPopup, burst, dust } from './fx.js';
 import { dropDisc, onCatch } from './actions.js';
@@ -196,6 +198,50 @@ export function updateGrappin(dt) {
     // personnage d'origine, mais c'est le joueur qui choisit la direction.
     if (g.t >= GR_FENETRE || !p.holding) { G.grappin = null; }
     return;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// La ruée des Yoshi. Un front vertical traverse le terrain d'un bord à l'autre.
+// Tout ce qui se trouve dans son épaisseur est emporté : le disque prend au
+// moins la vitesse de la horde, l'adversaire est bousculé et perd la main.
+//
+// La horde elle-même n'est que du décor — c'est le rendu qui dessine les seize
+// Yoshi. Ici il n'y a qu'une position de front et ce qu'elle pousse, ce qui
+// garde la logique arbitrable par l'hôte et légère à transmettre.
+export function updateRuee(dt) {
+  const r = G.ruee;
+  if (!r) return;
+  r.t += dt;
+  // La traversée couvre toute la largeur plus les deux débordements.
+  const course = (COURT.right - COURT.left) + 140;
+  r.x += r.dir * course / r.dur * dt;
+  if (r.t >= r.dur) {
+    G.ruee = null;
+    addPopup('LA HORDE S\'ÉLOIGNE', '#63c23c', 13, .9);
+    return;
+  }
+
+  // Ce que la horde pousse est de l'arbitrage : l'invité la voit passer, mais
+  // c'est l'hôte qui décide de ce qu'elle emporte et le lui envoie par l'état.
+  if (!jeSimule()) return;
+
+  const d = G.disc;
+  // Le disque n'est poussé que s'il est libre : un disque tenu en main suit
+  // son porteur, l'emporter reviendrait à le lui arracher — ce qui est
+  // l'ultime de Chopper, pas celui-ci.
+  if (d && !d.heldBy && Math.abs(d.x - r.x) < RUEE_LARGEUR) {
+    d.vx = r.dir * Math.max(Math.abs(d.vx), RUEE_DISQUE);
+    G.shake = Math.max(G.shake, 6);
+  }
+
+  const foe = r.owner.foe;
+  if (foe && Math.abs(foe.x - r.x) < RUEE_LARGEUR) {
+    foe.vx += r.dir * RUEE_POUSSEE * dt * 4;
+    // L'IA n'a pas d'écran : sans ce handicap, se faire traverser par la horde
+    // ne lui ferait rien du tout et l'ultime n'aurait aucun effet en solo.
+    if (foe.ai) foe.ai.hesT = Math.max(foe.ai.hesT || 0, RUEE_CTRL);
+    G.shake = Math.max(G.shake, 8);
   }
 }
 
