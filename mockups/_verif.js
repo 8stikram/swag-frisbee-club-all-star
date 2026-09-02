@@ -78,18 +78,22 @@ const contient = (rows, lettre, jusqua) =>
 
 export const TRAITS = {
   yoshi: [
-    { nom: 'les épines rouges derrière le crâne',
-      pourquoi: 'elles ont disparu une fois en refaisant les proportions du visage',
+    { nom: 'les épines rouges du crâne',
+      pourquoi: 'elles ont déjà disparu une fois au détour d’une refonte du visage',
       test: r => contient(r, 'R', 8) },
-    { nom: 'le blanc continu du menton jusqu\'au ventre',
+    { nom: 'le blanc continu du menton jusqu’au ventre',
       pourquoi: 'il passe par le cou : coupé, la tête paraît posée sur le corps',
       test: r => colonneContinue(r, 'Ww', 7) },
+    { nom: 'le museau en vert clair, détaché du crâne',
+      pourquoi: 'sans lui la tête redevient un aplat vert et le perso n’est plus reconnaissable',
+      test: r => contient(r, 'l') },
     { nom: 'les bottes à semelle',
-      pourquoi: 'c\'est son détail le plus reconnaissable après le museau',
+      pourquoi: 'c’est son détail le plus reconnaissable après le museau',
       test: r => contient(r, 'O') && contient(r, 'Y') },
-    { nom: 'un œil avec sa pupille',
-      pourquoi: 'sans pupille le regard ne porte pas et le miroir ne se lit pas',
-      test: r => contient(r, 'E') && contient(r, 'W') }
+    { nom: 'deux yeux avec leur pupille',
+      pourquoi: 'le roster est entièrement de face : un seul œil trahit un design de profil',
+      test: r => contient(r, 'E') && contient(r, 'W')
+                 && r.some(l => (l.match(/E/g) || []).length >= 2) }
   ],
   yuki: [
     { nom: 'les bras visibles aux épaules',
