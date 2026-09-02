@@ -90,10 +90,12 @@ export const TRAITS = {
     { nom: 'les bottes à semelle',
       pourquoi: 'c’est son détail le plus reconnaissable après le museau',
       test: r => contient(r, 'O') && contient(r, 'Y') },
-    { nom: 'deux yeux avec leur pupille',
-      pourquoi: 'le roster est entièrement de face : un seul œil trahit un design de profil',
-      test: r => contient(r, 'E') && contient(r, 'W')
-                 && r.some(l => (l.match(/E/g) || []).length >= 2) }
+    { nom: 'un oeil avec sa pupille',
+      pourquoi: 'Yoshi est le seul perso de profil : il n\u2019a qu\u2019un oeil, mais la pupille doit y etre',
+      test: r => contient(r, 'E') && contient(r, 'W') },
+    { nom: 'le blanc de la machoire sous le museau',
+      pourquoi: 'le museau retenu n\u2019a pas de bouche : c\u2019est le blanc qui l\u2019arrete, sinon la tete n\u2019a plus de bas',
+      test: r => r.slice(6, 10).some(l => l.includes('W')) }
   ],
   yuki: [
     { nom: 'les bras visibles aux épaules',

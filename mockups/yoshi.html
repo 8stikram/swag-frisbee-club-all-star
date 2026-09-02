@@ -59,15 +59,19 @@
 
 <h1>YOSHI — CHARA-DESIGN</h1>
 <p class="note">
-  <b>Fiche de référence du chara-design de Yoshi.</b> Reconstruit de zéro le 1er septembre 2026 à
-  partir des six visuels d'origine. La première version était faussée à la racine : elle dessinait
-  un Yoshi de <b>profil</b>, museau en avant, alors que tout le roster est strictement <b>de face</b>.
-  Aucune retouche ne pouvait rattraper ça — d'où la reprise complète.
+  <b>Fiche de référence du chara-design de Yoshi — version de PROFIL.</b> Il regarde sur le
+  côté. C'est le seul du roster dans ce cas : tous les autres sont de face. Techniquement ça ne pose
+  aucun problème, le jeu applique un miroir horizontal quand le perso vise à gauche, donc le profil
+  se lit dans les deux sens.
   <br><br>
-  Chaque carte montre le <b>perso entier</b> avec la variante appliquée, posé sur un bout du vrai
-  terrain et à l'échelle du match (un pixel de sprite = 4,8 px à l'écran). Clique une carte pour la
-  monter dans l'aperçu du haut. Le mockup de l'<b>ultime</b> viendra séparément, une fois ce
-  chara-design validé.
+  Une erreur de la toute première version a été corrigée : le blanc de la mâchoire était placé
+  <b>derrière</b> l’œil, alors qu’il va <b>sous le museau</b>, à l’avant. C’est pour ça que la tête
+  se lisait comme un aplat vert. Même correction pour la carapace, qui est dans le dos donc à
+  gauche, et le ventre blanc à l’avant donc à droite.
+  <br><br>
+  Chaque carte montre le <b>perso entier</b> sur un bout du vrai terrain et à l’échelle du match.
+  Clique une carte pour la monter dans l’aperçu du haut. Le mockup de l’<b>ultime</b> viendra
+  séparément, une fois ce chara-design validé.
 </p>
 
 <div id="errs"></div>
@@ -148,8 +152,8 @@ const PERSO = {
     R: '#e8544b', r: '#b8352e',                               // épines rouges et carapace
     O: '#d9743a', o: '#a8542a', Y: '#f2d35c'                  // bottes et semelle
   },
-  tete: ["...RGRGRGg......", "...GGGGGGg......", "..GGWWGWWGGg....", "..GGWEGWEGGg....", "..GGGGGGGGGg....", "..GGlllllGGg....", "..GlllllllGg....", "..GGMMMMMGGg....", "...GWWWWWGg.....", "....WWWWGg......"],
-  corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."]
+  tete: ["....GGGGg.......", "..RGGWEGGg......", ".RRGGWEGllg.....", ".RRGGGGGllllg...", ".RRGGGGlllllg...", ".RRGGGglllllg...", ".rRGGGglllllg...", "..rGGGgMMMMMg...", "..GWWWWWWWWGg...", "...WWWWWWGg....."],
+  corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "..GGGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."]
 };
 
 /* ===========================================================================
@@ -172,86 +176,86 @@ const PERSO = {
    =========================================================================== */
 const SECTIONS = [
   {
-    id: 'crane', titre: "1 · Le crâne, la crête et les yeux",
-    note: "Le haut du visage seul : forme du crâne, position des épines rouges, taille et écartement des yeux. Le museau reste celui de la section 2 pour qu'on ne juge qu'une chose à la fois.",
+    id: 'crane', titre: "1 · Le crâne, la crête et l’œil",
+    note: "L'arriere de la tete : forme du crane, dessin des epines rouges, taille et position de l'oeil. Le museau ne bouge pas d'une variante a l'autre pour qu'on ne juge qu'une chose a la fois.",
     variantes: [
-      v('A', "CRÊTE À TROIS POINTES", "La crête d'origine : trois pointes rouges plantées sur le sommet du crâne. C'est la lecture la plus fidèle aux visuels, mais elle mange deux lignes de haut et tasse un peu le front.",
-        { tete: ["...RGRGRGg......", "...GGGGGGg......", "..GGWWGWWGGg....", "..GGWEGWEGGg....", "..GGGGGGGGGg....", "..GGlllllGGg....", "..GlllllllGg....", "..GGMMMMMGGg....", "...GWWWWWGg.....", "....WWWWGg......"] }),
-      v('B', "CRÊTE COUCHÉE EN ARRIÈRE", "Les pointes basculent en arrière et le crâne s'arrondit. Silhouette plus douce et plus rapide à l'oeil, au prix du petit côté reptilien que donnent les pointes dressées.",
-        { tete: ["....GGGGg.......", "..RRGGGGGGg.....", "..RGGWWGWWGg....", "...GGWEGWEGg....", "...GGGGGGGGg....", "..GGlllllGGg....", "..GlllllllGg....", "..GGMMMMMGGg....", "...GWWWWWGg.....", "....WWWWGg......"] }),
-      v('C', "DEUX ÉPINES LATÉRALES", "Plus rien sur le dessus : deux grosses épines sortent des côtés, à hauteur des yeux. Très reconnaissable de loin, mais ça élargit la tête et le rapproche d'un casque.",
-        { tete: ["....GGGGGg......", "..RGGGGGGRg.....", "..RGWWGWWGRg....", "...GWEGWEGg.....", "...GGGGGGGg.....", "..GGlllllGGg....", "..GlllllllGg....", "..GGMMMMMGGg....", "...GWWWWWGg.....", "....WWWWGg......"] }),
-      v('D', "CRÂNE PLAT, YEUX ÉCARTÉS", "Crâne écrasé en largeur, yeux très écartés, quatre pointes alignées. Il paraît plus lourd et plus posé, mais perd la rondeur enfantine du modèle.",
-        { tete: ["..RGRGRGRGg.....", "..GGGGGGGGGg....", ".GGWWGGGWWGGg...", ".GGWEGGGWEGGg...", ".GGGGGGGGGGg....", "..GGlllllGGg....", "..GlllllllGg....", "..GGMMMMMGGg....", "...GWWWWWGg.....", "....WWWWGg......"] }),
-      v('E', "YEUX BAS, FRONT HAUT", "Le front prend toute la hauteur et les yeux descendent juste au-dessus du museau. Regard plus expressif, mais le visage devient long et un peu chevalin.",
-        { tete: ["....GGGGg.......", "...RGGGGRg......", "...GGGGGGg......", "..GGWWGWWGg.....", "..GGWEGWEGg.....", "..GGlllllGGg....", "..GlllllllGg....", "..GGMMMMMGGg....", "...GWWWWWGg.....", "....WWWWGg......"] }),
-      v('F', "AILERON UNIQUE", "Une seule grande pointe centrale, comme un aileron. Silhouette unique dans le roster et repérable instantanément, mais on s'éloigne franchement des photos.",
-        { tete: ["....RRg.........", "...RRRGg........", "..GGGGGGGg......", "..GGWWGWWGGg....", "..GGWEGWEGGg....", "..GGlllllGGg....", "..GlllllllGg....", "..GGMMMMMGGg....", "...GWWWWWGg.....", "....WWWWGg......"] }),
-      v('G', "FRONT BOMBÉ, PETITS YEUX", "Front bombé et yeux réduits à un pixel de pupille. Le personnage paraît plus adulte et plus sérieux ; en contrepartie le regard porte beaucoup moins en match.",
-        { tete: ["..RGGGGGGRg.....", "..GGGGGGGGGg....", "..GGWGGGWGGg....", "..GGEGGGEGGg....", "..GGGGGGGGGg....", "..GGlllllGGg....", "..GlllllllGg....", "..GGMMMMMGGg....", "...GWWWWWGg.....", "....WWWWGg......"] }),
-      v('H', "COURONNE DE CINQ POINTES", "Cinq petites pointes en couronne sur un crâne bas. Effet dinosaure marqué, mais à l'échelle du match la couronne se brouille et peut virer à la tache rouge.",
-        { tete: [".RGRGRGRGRg.....", "..GGGGGGGGg.....", "..GWWGGWWGg.....", "..GWEGGWEGg.....", "..GGGGGGGGg.....", "..GGlllllGGg....", "..GlllllllGg....", "..GGMMMMMGGg....", "...GWWWWWGg.....", "....WWWWGg......"] }),
-      v('I', "YEUX ÉNORMES SUR TROIS LIGNES", "Les yeux occupent trois lignes avec une pupille de deux pixels. Le regard porte à l'autre bout du terrain, au prix d'un visage qui n'a presque plus de front.",
-        { tete: ["...RGRGRGg......", "..GGGGGGGGg.....", "..GWWWGWWWGg....", "..GWEEGWEEGg....", "..GGWWGGWWGg....", "..GGlllllGGg....", "..GlllllllGg....", "..GGMMMMMGGg....", "...GWWWWWGg.....", "....WWWWGg......"] }),
-      v('J', "CRÂNE ANGULEUX, YEUX MI-CLOS", "Crâne anguleux et paupières tombantes : il a l'air blasé. Ça lui donne un vrai caractère, mais c'est le plus éloigné de l'expression joyeuse des visuels.",
-        { tete: ["..GRGRGRGGg.....", ".GGGGGGGGGGg....", ".GGGGGGGGGGg....", ".GGGWEGWEGGg....", ".GGGGGGGGGGg....", "..GGlllllGGg....", "..GlllllllGg....", "..GGMMMMMGGg....", "...GWWWWWGg.....", "....WWWWGg......"] })
+      v('A', "TROIS EPINES LE LONG DU CRANE", "Trois épines rouges alignées le long du crâne, œil haut au tiers arrière. La lecture la plus fidèle aux visuels, mais la plus sage : rien ne dépasse.",
+        { tete: ["....GGGGg.......", "..RGGWEGGg......", ".RRGGWEGllg.....", ".RRGGGGGllllg...", ".RRGGGGlllllg...", ".RRGGGglllllg...", ".rRGGGglllllg...", "..rGGGgMMMMMg...", "..GWWWWWWWWGg...", "...WWWWWWGg....."] }),
+      v('B', "CRANE BAS, EPINES HAUTES ET POINTUES", "Crâne écrasé et épines dressées très haut. Silhouette agressive qu'on repère instantanément, mais le front disparaît presque et il perd son air débonnaire.",
+        { tete: ["..RRRGGGg.......", ".RRRRWEGGg......", "..RRGWEGllg.....", "...GGGGGllllg...", "...GGGGlllllg...", "...GGGglllllg...", "...GGGglllllg...", "..GGGGgMMMMMg...", "..GWWWWWWWWGg...", "...WWWWWWGg....."] }),
+      v('C', "CRANE LISSE ET HAUT, AUCUNE EPINE", "Aucune épine, crâne lisse et haut. Profil très épuré et élégant ; en contrepartie on perd le seul rouge de la tête, donc tout contraste dans cette zone.",
+        { tete: ["...GGGGGGg......", "..GGGGWEGGg.....", "..GGGGWEGllg....", "..GGGGGGGlllg...", "..GGGGGlllllg...", "..GGGGglllllg...", "..GGGGglllllg...", "..GGGGgMMMMMg...", "..GWWWWWWWWGg...", "...WWWWWWGg....."] }),
+      v('D', "FRONT TRES BOMBE, OEIL AU SOMMET", "Front énorme et bombé, œil planté au sommet. Air enfantin très marqué, proche des rendus récents, mais la tête paraît lourde sur un cou fin.",
+        { tete: ["..GGWEGGGg......", ".RGGWEGGGGg.....", ".RGGGGGGGllg....", ".RRGGGGGllllg...", ".RRGGGGlllllg...", ".RRGGGglllllg...", ".rRGGGglllllg...", "..rGGGgMMMMMg...", "..GWWWWWWWWGg...", "...WWWWWWGg....."] }),
+      v('E', "OEIL ENORME SUR TROIS LIGNES", "L'œil occupe trois lignes avec une pupille de deux pixels. Le regard porte à l'autre bout du terrain, au prix d'un crâne qui n'a presque plus de matière.",
+        { tete: ["...GWEGGg.......", ".RGWWEWGGg......", ".RRGGGEWGllg....", ".RRGWEEWGlllg...", ".RRGWWWWllllg...", ".RRGGGglllllg...", ".rRGGGglllllg...", "..rGGGgMMMMMg...", "..GWWWWWWWWGg...", "...WWWWWWGg....."] }),
+      v('F', "NUQUE ALLONGEE, PETIT OEIL RECULE", "Nuque allongée vers l'arrière et petit œil reculé. Silhouette de vrai reptile, plus adulte, mais l'œil minuscule se perd à l'échelle du match.",
+        { tete: ["..GGGGGGg.......", "RGGGGGGGGg......", "RRGWGGGGllg.....", "RRGEGGGGllllg...", "RRGGGGGlllllg...", "RRGGGGglllllg...", ".rGGGGglllllg...", "..rGGGgMMMMMg...", "..GWWWWWWWWGg...", "...WWWWWWGg....."] }),
+      v('G', "EPINES SUR TOUT LE DOS DU CRANE", "Les épines courent sur tout le dos du crâne, du sommet à la nuque. C'est la crête la plus visible du lot, mais elle mange la place de l'œil et du front.",
+        { tete: ["RRRGGGGg........", "RRRRGWEGGg......", "RRRRGWEGllg.....", "RRRRGGGGllllg...", "RRRRGGGlllllg...", "RRRRGGglllllg...", "RRRRGGglllllg...", "RRRGGGgMMMMg....", "..GWWWWWWWWGg...", "...WWWWWWGg....."] }),
+      v('H', "CRANE ECRASE, OEIL BAS", "Crâne écrasé et œil descendu près du museau. Regard plus expressif et plus proche du visage, mais la tête perd sa rondeur caractéristique.",
+        { tete: [".....GGGGg......", "...GGGGGGGg.....", "..RGGWEGGllg....", ".RRGGWEGllllg...", ".RRGGGGGllllg...", ".RRGGGglllllg...", ".rRGGGglllllg...", "..rGGGgMMMMMg...", "..GWWWWWWWWGg...", "...WWWWWWGg....."] }),
+      v('I', "DEUX EPINES ENORMES ET SAILLANTES", "Deux épines énormes qui débordent franchement en arrière. Impossible à confondre en ombre chinoise, mais ça déséquilibre la silhouette vers la gauche.",
+        { tete: ["..RRGGGGg.......", "RRRRGGWEGg......", "RRRRGGWEGllg....", "..GGGGGGGlllg...", "RRRRGGGlllllg...", "RRRRGGglllllg...", "..GGGGglllllg...", "..GGGGgMMMMMg...", "..GWWWWWWWWGg...", "...WWWWWWGg....."] }),
+      v('J', "OEIL MI-CLOS, CRANE ANGULEUX", "Œil mi-clos et crâne anguleux, sans épines hautes. Il a l'air blasé et sûr de lui, ce qui lui donne du caractère, mais s'éloigne de l'expression joyeuse des visuels.",
+        { tete: ["..GGGGGGGg......", ".GGGGGGGGGg.....", ".GGGGGGGGllg....", ".GGGGGEGllllg...", ".GGGGGGlllllg...", ".RGGGGglllllg...", ".RGGGGglllllg...", ".RGGGGgMMMMMg...", "..GWWWWWWWWGg...", "...WWWWWWGg....."] })
     ]
   },
   {
     id: 'museau', titre: "2 · Le museau et la bouche (sur mesure)",
-    note: "La moitié basse du visage : le museau en boule, la bouche et la mâchoire blanche. C'est la pièce qui décide si on reconnaît Yoshi ou juste un dinosaure vert.",
+    note: "L'avant de la tete : le museau en boule claire qui projette, la ligne de bouche et la machoire blanche. C'est la piece qui decide si on reconnait Yoshi ou juste un dinosaure vert.",
     variantes: [
-      v('A', "MUSEAU EN BOULE, BOUCHE LARGE", "Le museau en boule qui déborde du crâne, avec la bouche large en dessous. C'est la signature de Yoshi ; en revanche il occupe la moitié basse du visage.",
-        { tete: ["...RGRGRGg......", "...GGGGGGg......", "..GGWWGWWGGg....", "..GGWEGWEGGg....", "..GGGGGGGGGg....", "..GGlllllGGg....", "..GlllllllGg....", "..GGMMMMMGGg....", "...GWWWWWGg.....", "....WWWWGg......"] }),
-      v('B', "MUSEAU TOMBANT JUSQU’AU COU", "Le museau descend jusqu'au cou et la bouche se réduit à un trait court. Profil très bête préhistorique, mais le menton blanc disparaît presque entièrement.",
-        { tete: ["...RGRGRGg......", "...GGGGGGg......", "..GGWWGWWGGg....", "..GGWEGWEGGg....", "..GGGGGGGGGg....", "..GlllllllGg....", ".GlllllllllGg...", ".GlllllllllGg...", ".GGlllMMMllGg...", "..GWWWWWWWGg...."] }),
-      v('C', "BOUCHE OUVERTE", "Bouche grande ouverte sur deux lignes. Vivant et expressif, parfait pour un perso qui gobe ; en contrepartie il a l'air de crier en permanence, même au repos.",
-        { tete: ["...RGRGRGg......", "...GGGGGGg......", "..GGWWGWWGGg....", "..GGWEGWEGGg....", "..GGGGGGGGGg....", "...GlllllGg.....", "..GGlllllGGg....", "..GGMMMMMGGg....", "..GGMMMMMGGg....", "...GWWWWGg......"] }),
-      v('D', "NARINES MARQUÉES, PAS DE BOUCHE", "Pas de bouche du tout, seulement deux narines creusées. Visage calme et lisse, mais sans bouche le personnage perd beaucoup de sa sympathie.",
-        { tete: ["...RGRGRGg......", "...GGGGGGg......", "..GGWWGWWGGg....", "..GGWEGWEGGg....", "..GGGGGGGGGg....", "..GGlllllGGg....", "..GlhlllhlGg....", "..GlllllllGg....", "..GGWWWWWGGg....", "....WWWWGg......"] }),
-      v('E', "MUSEAU ÉTROIT ET POINTU", "Museau étroit et pointu, presque un bec. Silhouette fine et rapide, cohérente avec un perso agile, mais on quitte la rondeur qui fait tout le charme du modèle.",
-        { tete: ["...RGRGRGg......", "...GGGGGGg......", "..GGWWGWWGGg....", "..GGWEGWEGGg....", "..GGGGGGGGGg....", "....lllGg.......", "...GlllllGg.....", "...GMMMMGg......", "...GWWWWWGg.....", "....WWWWGg......"] }),
-      v('F', "MUSEAU QUI DÉBORDE DU CRÂNE", "Le museau déborde de chaque côté du crâne. Massif et impossible à confondre, au prix d'une tête qui devient plus large que les épaules.",
-        { tete: ["...RGRGRGg......", "...GGGGGGg......", "..GGWWGWWGGg....", "..GGWEGWEGGg....", "..GGGGGGGGGg....", ".GGlllllllGGg...", ".GlllllllllGg...", ".GGMMMMMMMGGg...", "..GWWWWWWWGg....", "...GWWWWWGg....."] }),
-      v('G', "JOUES BLANCHES REMONTANTES", "Le blanc de la mâchoire remonte sur les joues et encadre le museau. Très fidèle aux photos de face, mais ça mange le vert sur lequel jouent les skins de couleur.",
-        { tete: ["...RGRGRGg......", "...GGGGGGg......", "..GGWWGWWGGg....", "..GGWEGWEGGg....", "..GGGGGGGGGg....", "..GWlllllWGg....", "..GWlllllWGg....", "..GWMMMMMWGg....", "..GWWWWWWWGg....", "...WWWWWWGg....."] }),
-      v('H', "BAJOUES TOMBANTES", "Bajoues tombantes de part et d'autre de la bouche. Il paraît plus lourd et plus âgé ; l'inconvénient est qu'à petite échelle les bajoues se lisent comme un double menton.",
-        { tete: ["...RGRGRGg......", "...GGGGGGg......", "..GGWWGWWGGg....", "..GGWEGWEGGg....", "..GGGGGGGGGg....", "...GlllllGg.....", "..GllllllllGg...", ".GGlllllllGGg...", ".GGWMMMMMWGGg...", "..GWWWWWWWGg...."] }),
-      v('I', "SOURIRE FENDU D’UNE JOUE À L’AUTRE", "Le sourire traverse tout le visage d'une joue à l'autre. Expression euphorique très lisible de loin, mais le trait coupe la tête en deux à l'échelle du match.",
-        { tete: ["...RGRGRGg......", "...GGGGGGg......", "..GGWWGWWGGg....", "..GGWEGWEGGg....", "..GGGGGGGGGg....", ".GGlllllllGg....", ".GlllllllllGg...", "MMMMMMMMMMMMM...", ".GWWWWWWWWWGg...", "..GWWWWWWWGg...."] }),
-      v('J', "MUSEAU RELEVÉ, MENTON FUYANT", "Museau relevé vers le haut et menton fuyant. Air malicieux et un peu moqueur, mais la mâchoire blanche devient si petite qu'elle ne relie plus bien le ventre.",
-        { tete: ["...RGRGRGg......", "...GGGGGGg......", "..GGWWGWWGGg....", "..GGWEGWEGGg....", "..GGGGGGGGGg....", "..GlllllllGg....", "..GGlllllGGg....", "...GMMMMGg......", "...GGWWWGg......", "....GWWGg......."] })
+      v('A', "MUSEAU EN BOULE, BOUCHE LARGE", "Le museau en boule qui projette vers l'avant, ligne de bouche dessous, menton blanc. C'est la signature de Yoshi ; en revanche il occupe la moitié droite de la tête.",
+        { tete: ["....GGGGg.......", "..RGGWEGGg......", ".RRGGWEGllg.....", ".RRGGGGGllllg...", ".RRGGGGlllllg...", ".RRGGGglllllg...", ".rRGGGglllllg...", "..rGGGgMMMMMg...", "..GWWWWWWWWGg...", "...WWWWWWGg....."] }),
+      v('B', "MUSEAU DEMESUREMENT LONG", "Museau démesurément long, bouche étirée jusqu'au bout. Profil de dinosaure indiscutable, mais la tête devient plus large que tout le reste du corps.",
+        { tete: ["....GGGGg.......", "..RGGWElllllg...", ".RRGGWElllllg...", ".RRGGGGGllllg...", ".RRGGGGlllllg...", ".RRGGGglllllg...", ".rRgMMMMMMMMg...", "..rWWWWWWWWWg...", "..GWWWWWWWWWg...", "...WWWWWWWGg...."] }),
+      v('C', "MUSEAU COURT ET ROND", "Museau court et rond, bouche réduite. Tête compacte et facile à lire en petit, au prix de la projection qui fait justement reconnaître le personnage.",
+        { tete: ["....GGGGg.......", "..RGGWEGGg......", ".RRGGWEGlg......", ".RRGGGGGlllg....", ".RRGGGGllllg....", ".RRGGGgllllg....", ".rRGGGgllllg....", "..rGGGgMMMg.....", "..GWWWWWWGg.....", "...WWWWWGg......"] }),
+      v('D', "GUEULE GRANDE OUVERTE", "Gueule grande ouverte sur trois lignes. Parfait pour un perso qui gobe le disque, mais il a l'air de crier en permanence, même au repos.",
+        { tete: ["....GGGGg.......", "..RGGWEGGg......", ".RRGGWEGllg.....", ".RRGGGGGllllg...", ".RRGGGGlllllg...", ".RRGgMMMMMMMg...", ".rRGMMMMMMMMg...", "..rGWMMMMMMMg...", "..GWWWWWWWWWg...", "...WWWWWWWGg...."] }),
+      v('E', "MUSEAU LISSE ET BOMBE, SANS BOUCHE", "Museau lisse et bombé, aucune bouche. Visage calme et très graphique ; sans bouche, en revanche, le personnage perd beaucoup de sa sympathie.",
+        { tete: ["....GGllg.......", "..RGGWEllllg....", ".RRGGWElllllg...", ".RRGGGGGllllg...", ".RRGGGGlllllg...", ".RRGGGglllllg...", ".rRGGGglllllg...", "..rGWWWWWWWWg...", "..GWWWWWWWWWg...", "...WWWWWWWGg...."] }),
+      v('F', "MUSEAU RELEVÉ VERS LE HAUT", "Le museau se relève vers le haut. Air malicieux et joueur, très vivant, mais le menton blanc devient si petit qu'il relie mal le ventre.",
+        { tete: ["....GGGllg......", "..RGGWEllllg....", ".RRGGWElllllg...", ".RRGGGGGllllg...", ".RRGGGGlllllg...", ".RRGGGgllllg....", ".rRGGGgMMMMg....", "..rGGGWWWWWg....", "..GWWWWWWWGg....", "...WWWWWGg......"] }),
+      v('G', "MUSEAU TOMBANT VERS LE BAS", "Le museau tombe vers le bas et la bouche descend avec lui. Air placide et lourd, mais on se rapproche d'un museau de chien plus que de Yoshi.",
+        { tete: ["....GGGGg.......", "..RGGWEGGg......", ".RRGGWEGGg......", ".RRGGGGGlllg....", ".RRGGGGllllg....", ".RRGGGglllllg...", ".rRGGGglllllg...", "..rGGGglllllg...", "..GWWWMMMMMMg...", "...WWWWWWWGg...."] }),
+      v('H', "MÂCHOIRE BLANCHE REMONTÉE SUR LA JOUE", "La mâchoire blanche remonte sur la joue et encadre le museau. Le plus fidèle aux photos, mais ça mange le vert sur lequel jouent les skins de couleur.",
+        { tete: ["....GGGGg.......", "..RGGWEGGg......", ".RRGGWEGllg.....", ".RRGGGGGllllg...", ".RRGGWWlllllg...", ".RRGWWWgllllg...", ".rRGWWWgllllg...", "..rWWWgMMMMMg...", "..WWWWWWWWWWg...", "...WWWWWWGg....."] }),
+      v('I', "BOUCHE FENDUE JUSQU’À L’ŒIL", "La bouche est fendue jusque sous l'œil. Sourire euphorique qui se lit de très loin, mais le trait coupe la tête en deux à l'échelle du match.",
+        { tete: ["....GGGGg.......", "..RGGWEGGg......", ".RRGGWEGllg.....", ".RRGGGGGllllg...", ".RRGGGGlllllg...", ".RRGMMMMMMMMg...", ".rRGGWWWWWWWg...", "..rGGWWWWWWWg...", "..GWWWWWWWWGg...", "...WWWWWWGg....."] }),
+      v('J', "MUSEAU ÉTROIT ET POINTU", "Museau étroit et pointu, presque un bec. Silhouette fine cohérente avec un perso rapide, mais on quitte la rondeur qui fait tout le charme du modèle.",
+        { tete: ["....GGGGg.......", "..RGGWEGGg......", ".RRGGWEGGg......", ".RRGGGGGGllg....", ".RRGGGGGllllg...", ".RRGGGgGllllg...", ".rRGGGggllllg...", "..rGGGgMMMMg....", "..GWWWWWWWGg....", "...WWWWWGg......"] })
     ]
   },
   {
-    id: 'corps', titre: "3 · Le corps, la carapace et le ventre",
-    note: "Le torse entier : forme du ventre blanc, position des bras, présence de la carapace et de la queue. Le blanc doit rester continu du menton au ventre, il passe par le cou.",
+    id: 'corps', titre: "3 · Le corps, la carapace et la queue",
+    note: "Le torse de profil : carapace dans le dos a gauche, ventre blanc a l'avant a droite, queue et bras. Le blanc doit rester continu du menton au ventre, il passe par le cou.",
     variantes: [
-      v('A', "VENTRE OVALE, BRAS AUX CÔTÉS", "Ventre blanc en ovale, bras verts le long du corps. La lecture la plus neutre et la plus proche des visuels de face, mais aussi la moins caractérisée du lot.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
-      v('B', "CARAPACE ROUGE DANS LE DOS", "La carapace rouge occupe tout le dos et déborde à gauche. C'est le détail que tout le monde attend chez Yoshi, mais elle empiète sur la zone que les skins colorent.",
-        { corps: [".rRRGWWWWGGg....", "rRRRRGWWWWWGg...", "rRRRRGWWWWWGg...", "rRRRRGWWWWWGg...", ".rRRGGWWWWWGg...", "...GGGWWWGGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
-      v('C', "VENTRE ÉTROIT, BRAS ÉCARTÉS", "Ventre resserré et bras franchement écartés du torse. On voit enfin les membres, au prix d'une silhouette plus large qui se rapproche de celle de Chopper.",
-        { corps: ["...GGWWWWGGg....", ".GGGGWWWGGGGg...", ".G.GGWWWGGG.Gg..", ".G.GGWWWGGG.Gg..", "...GGWWWWWGg....", "...GGGWWWGGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
-      v('D', "VENTRE PLEINE LARGEUR", "Le blanc prend toute la largeur du torse. Contraste maximal, très lisible sur le terrain vert, mais les bras disparaissent complètement dans la masse.",
-        { corps: ["..GWWWWWWWWGg...", ".GWWWWWWWWWWg...", ".GWWWWWWWWWWg...", ".GWWWWWWWWWWg...", "..GWWWWWWWWGg...", "...GWWWWWWGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
-      v('E', "GROSSE QUEUE TRAÎNANTE", "Une grosse queue verte traîne derrière lui. Elle ancre le personnage au sol et rappelle le dinosaure, mais elle déséquilibre la silhouette vers la gauche.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGGg..", ".GGgGWWWWWGGGg..", ".GGGGGWWWWWGGg..", ".GGGGGWWWGGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
-      v('F', "BRAS LEVÉS AU-DESSUS DES ÉPAULES", "Bras levés au-dessus des épaules, comme après un but. Posture joyeuse et très lisible, mais figée dans une émotion, ce qui fatigue sur une pose de repos.",
-        { corps: ["GG.GGWWWWGGGG...", "GG.GGWWWWWGGG...", "GG.GGWWWWWGg....", ".GGGGWWWWWGg....", "...GGWWWWWGg....", "...GGGWWWGGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
-      v('G', "CARAPACE HAUTE À LISERÉ BLANC", "Carapace haute cerclée d'un liseré blanc, exactement comme sur les rendus. Le détail le plus fidèle, mais il ajoute une troisième couleur dans le dos.",
-        { corps: [".WrGGWWWWGGg....", ".WrRGGWWWWWGg...", ".WrRGGWWWWWGg...", "..WrGGWWWWWGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
-      v('H', "SILHOUETTE EN POIRE", "Silhouette en poire : épaules étroites, hanches larges. Très reconnaissable en ombre chinoise, mais il paraît plus lourd et moins vif que ce que ses stats promettent.",
-        { corps: ["....GWWWWGg.....", "...GGWWWWGGg....", "..GGGWWWWWGg....", ".GGGWWWWWWGGg...", ".GGWWWWWWWWGg...", "..GGWWWWWWGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
+      v('A', "CARAPACE DANS LE DOS, VENTRE OVALE", "Carapace rouge dans le dos, ventre blanc en ovale à l'avant. La lecture la plus neutre et la plus proche des visuels, mais la moins caractérisée du lot.",
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "..GGGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
+      v('B', "GROSSE CARAPACE BOMBÉE", "Grosse carapace bombée qui prend tout le dos. Le détail que tout le monde attend chez Yoshi, mais elle empiète sur la zone que les skins colorent.",
+        { corps: ["rRRGGWWWWWGg....", "rRRRGGWWWWWWg...", "rRRRRGWWWWWWg...", "rRRRRGWWWWWWg...", "rRRRGGWWWWWGg...", ".rRGGGWWWGGg....", "..GGGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
+      v('C', "AUCUNE CARAPACE, DOS ENTIEREMENT VERT", "Aucune carapace, dos entièrement vert. Silhouette épurée où le skin s'exprime pleinement, mais il perd son attribut le plus connu.",
+        { corps: ["..GGGGWWWWGg....", ".GGGGGGWWWWWg...", ".GGGGGGWWWWWg...", ".GGGGGGWWWWWg...", "..GGGGGWWWWGg...", "..GGGGGWWGGg....", "..GGGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
+      v('D', "CARAPACE HAUTE A LISERE BLANC", "Carapace haute cerclée d'un liseré blanc, comme sur les rendus. Le plus fidèle du lot, mais il ajoute une troisième couleur dans une zone déjà chargée.",
+        { corps: ["WWWrRGWWWWWGg...", "WWWrRRWWWWWWg...", "WWWrRRWWWWWWg...", "WWWrRRWWWWWWg...", "WWWrRGGWWWWWg...", ".WWGGGGWWWGGg...", "..GGGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
+      v('E', "GROSSE QUEUE QUI TRAINE AU SOL", "Une grosse queue traîne au sol derrière lui. Elle ancre le personnage et rappelle le dinosaure, mais elle déséquilibre franchement la silhouette vers l'arrière.",
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", "GGrRGGWWWWWWg...", "GGGrGGWWWWWWg...", "GGGGGGWWWWWGg...", "GGGGGGGWWGGg....", "..GGGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
+      v('F', "DEUX BRAS TENDUS LOIN DEVANT", "Les deux bras tendus loin devant. On comprend tout de suite que ce perso attrape, mais les bras occupent la largeur et gênent la lecture du disque.",
+        { corps: ["..rGGWWWGGGGg...", ".rRRGGWWGGGGg...", ".rRRGGWWGGGGg...", ".rRRGGWWGGGGg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "..GGGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
+      v('G', "VENTRE PLEINE LARGEUR", "Le blanc prend toute la largeur du torse. Contraste maximal, très lisible sur le terrain vert, mais la carapace et les bras disparaissent dans la masse.",
+        { corps: ["..rWWWWWWWWg....", ".rRWWWWWWWWWg...", ".rRWWWWWWWWWg...", ".rRWWWWWWWWWg...", "..rWWWWWWWWWg...", "..GWWWWWWWGg....", "..GGGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
+      v('H', "SILHOUETTE EN POIRE", "Silhouette en poire : épaules étroites, hanches larges. Très reconnaissable en ombre chinoise, mais il paraît plus lourd que ce que ses stats promettent.",
+        { corps: ["...rGWWWWGg.....", "..rRGGWWWWWGg...", ".rRRGGWWWWWWg...", "rRRRGWWWWWWWg...", "rRRGGWWWWWWWg...", ".rGGGGWWWWWGg...", "..GGGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
       v('I', "TORSE COMPACT ET TRAPU", "Torse compact et trapu, ventre réduit. Il gagne en densité et en solidité, mais perd le grand aplat blanc qui le rend repérable au milieu de l'action.",
-        { corps: ["..GGGWWWGGGg....", "..GGWWWWWGGg....", "..GGWWWWWGGg....", "..GGGWWWGGGg....", "...GGGWGGGg.....", "...GGGGGGGg.....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
-      v('J', "BRAS COLLÉS, ÉPAULES TOMBANTES", "Bras collés au corps et épaules tombantes. Silhouette étroite qui laisse toute la place au disque, mais le personnage paraît timide et un peu éteint.",
-        { corps: ["....GWWWWGg.....", "...GGWWWWWGg....", "..GGWWWWWWGg....", "..GgWWWWWWGg....", "..GgGWWWWGGg....", "...GGGWWGGGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] })
+        { corps: ["..rGGGWWWGGg....", ".rRRGGWWWWWGg...", ".rRRGGWWWWWGg...", "..rRGGWWWWGGg...", "..GGGGWWGGGg....", "..GGGGGGGGg.....", "..GGGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
+      v('J', "DOS TRES ROND, EPAULES EFFACEES", "Dos très rond, épaules effacées, buste ramassé. Silhouette douce qui laisse la place au disque, mais le personnage paraît timide et un peu éteint.",
+        { corps: ["....rGWWWGGg....", "...rRGGWWWWWg...", "..rRRGWWWWWWg...", "...rRGWWWWWWg...", "....rGGWWWWGg...", "....GGGWWGGg....", "..GGGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] })
     ]
   },
   {
     id: 'palette', titre: "4 · La palette",
-    note: "Même silhouette, teintes différentes — c'est la section qui décide des skins, un par couleur. À juger sur le terrain : une couleur qui se noie sur le sol rend le perso illisible en match.",
+    note: "Meme silhouette, teintes differentes — c'est la section qui decide des skins, un par couleur. A juger sur le terrain : une couleur qui se noie sur le sol rend le perso illisible en match.",
     variantes: [
       v('A', "VERT, LA COULEUR ORIGINE", "Le vert des visuels. Il se détache bien du sol du terrain, mais c'est aussi la couleur la plus proche de celle de Cyberleek.",
         { pal: { l: '#8fd95e', G: '#63c23c', g: '#3f9127', h: '#2a6a19' } }),
@@ -277,59 +281,59 @@ const SECTIONS = [
   },
   {
     id: 'pose', titre: "5 · La pose signature",
-    note: "La pose au repos, celle qu'on voit le plus longtemps à l'écran. Elle doit tenir des minutes entières sans lasser et rester lisible une fois retournée en miroir.",
+    note: "La pose au repos, celle qu'on voit le plus longtemps a l'ecran. Elle doit tenir des minutes entieres sans lasser et rester lisible une fois retournee au miroir, quand il vise a gauche.",
     variantes: [
-      v('A', "REPOS, BRAS AUX CÔTÉS", "Debout, bras le long du corps, poids réparti. Neutre et reposante à regarder longtemps, mais elle ne dit rien du tempérament du personnage.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
-      v('B', "PRÊT À ATTRAPER, BRAS TENDUS EN AVANT", "Bras tendus vers l'avant, prêt à recevoir. On comprend immédiatement que ce perso attrape, mais les bras occupent la largeur et gênent la lecture du disque.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", ".GGGGWWWWWGGGg..", ".GGGGWWWWWGGGg..", "..GGGWWWWWGGg...", "...GGGWWWGGg....", "..GGG....GGGg...", ".OOOO....OOOOg..", ".OOOO....OOOO...", ".YYYY....YYYY..."] }),
-      v('C', "APPUI ARRIÈRE, TOUT LE POIDS À GAUCHE", "Tout le poids sur la jambe arrière, buste décalé. Posture d'attente crédible et vivante, au prix d'une silhouette asymétrique qui se lit mal en miroir.",
-        { corps: ["..GGWWWWGGg.....", ".GGGWWWWWGg.....", ".GgGWWWWWGGg....", ".GgGWWWWWGGg....", "..GGWWWWWGGg....", "..GGGWWWGGGg....", "....GGG..GGGg...", "...OOOO..OOOOg..", "...OOOO..OOOO...", "...YYYY..YYYY..."] }),
+      v('A', "REPOS, DE PROFIL, AU CALME", "Debout de profil, au calme, poids réparti. Neutre et reposante à regarder longtemps, mais elle ne dit rien du tempérament du personnage.",
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "..GGGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
+      v('B', "LES DEUX BRAS TENDUS, PRÊT À ATTRAPER", "Les deux bras tendus vers l'avant, prêt à recevoir. On comprend immédiatement son rôle, mais les bras mangent la largeur devant lui.",
+        { corps: ["....rGWWGGGGg...", "...rRGGWGGGGg...", "...rRGGWGGGGg...", "...rRGGWGGGGg...", "....rGGWWWWGg...", "....GGGWWWGGg...", "..GGG....GGGg...", ".OOOO....OOOg...", ".OOOO....OOOO...", ".YYYY....YYYY..."] }),
+      v('C', "POIDS REJETÉ SUR L’ARRIÈRE", "Tout le poids rejeté sur l'arrière. Posture d'attente crédible et vivante, au prix d'une silhouette qui paraît reculer au lieu d'attaquer.",
+        { corps: [".rGGWWWWWGg.....", "rRRGGWWWWWWGg...", "rRRGGWWWWWWGg...", "rRRGGWWWWWWGg...", ".rRGGWWWWWGGg...", "..GGGGWWWGGGg...", "...GGGG..GGGg...", "...OOOO..OOOg...", "...OOOO..OOOO...", "...YYYY..YYYY..."] }),
       v('D', "PENCHÉ EN AVANT, GARDE BASSE", "Penché en avant, garde basse, prêt à bondir. Très dynamique même à l'arrêt, mais le buste incliné masque une partie du ventre blanc.",
-        { corps: [".....GWWWGGg....", "....GGWWWWGGg...", "...GGWWWWWGGGg..", "...GgWWWWWGGGg..", "..GGGGWWWWGGg...", ".GGGGGWWWGGg....", "....GGG..GGGg...", "...OOOO..OOOOg..", "...OOOO..OOOO...", "...YYYY..YYYY..."] }),
-      v('E', "BRAS LEVÉS AU-DESSUS DES ÉPAULES", "Les deux bras levés au ciel. Impossible à rater sur le terrain, mais c'est une pose de célébration : tenue en permanence, elle devient ridicule.",
-        { corps: [".G.GGWWWWGGGGg..", ".G.GGWWWWWGGGg..", ".G.GGWWWWWGg....", ".GGGGWWWWWGg....", "...GGWWWWWGg....", "...GGGWWWGGg....", "....GGGGGGg.....", "...OOOOOOOOg....", "...OOOOOOOO.....", "...YYYYYYYY....."] }),
-      v('F', "JAMBES TRÈS ÉCARTÉES, BRAS BAS", "Jambes très écartées, bras bas. Assise très stable qui donne une impression de force, mais elle élargit la base et rapproche la silhouette de celle de Chopper.",
-        { corps: ["....GWWWWGg.....", "...GGWWWWWGg....", "...GGWWWWWGg....", "..GgGWWWWWGGg...", ".GGGGWWWWWGGGg..", ".GGGGGWWWGGGGg..", "..GGG....GGGg...", ".OOOO....OOOOg..", ".OOOO....OOOO...", ".YYYY....YYYY..."] }),
-      v('G', "GENOU LEVÉ TRÈS HAUT, BUSTE EN ARRIÈRE", "Un genou levé très haut, buste rejeté en arrière. Pose de course figée, pleine d'énergie, mais elle ne tient pas debout comme posture de repos.",
-        { corps: ["..GGGWWWWGGg....", ".GGGGWWWWWGGg...", ".GGgGWWWWWGGGg..", ".GGgGWWWWWGGGg..", "..GGGGWWWWGGg...", "..GGGGGWWGGGg...", "...GGG..GGGGg...", "..OOOO..GGGGg...", "..OOOO..OOOOg...", "..YYYY..YYYYg..."] }),
-      v('H', "DOS ROND, TASSÉ SUR LUI-MÊME", "Dos rond, tassé sur lui-même, épaules montées. Air méfiant et concentré ; en contrepartie il paraît plus petit que le reste du roster.",
-        { corps: ["..GGGWWWWGGGg...", "..GGGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "....GWWWWGg.....", ".....GWWGg......", "....GGGGGGg.....", "...OOOOOOOOg....", "...OOOOOOOO.....", "...YYYYYYYY....."] }),
-      v('I', "BRAS CROISÉS, ÉPAULES REJETÉES EN ARRIÈRE", "Bras croisés sur le ventre, épaules rejetées en arrière. Attitude sûre d'elle et très caractérisée, mais les bras masquent le grand ovale blanc.",
-        { corps: ["..GGGGWWWGGGg...", ".GGGGGWWWWGGGg..", ".GGGGGGGGGGGGg..", ".GGgGGGGGGGGGg..", "..GGGWWWWWGGg...", "...GGGWWWGGg....", "....GGGGGGg.....", "...OOOOOOOOg....", "...OOOOOOOO.....", "...YYYYYYYY....."] }),
-      v('J', "ÉTIRÉ SUR LA POINTE DES PIEDS", "Étiré sur la pointe des pieds. Il gagne en hauteur et en légèreté, cohérent avec un perso rapide, mais l'appui paraît instable et peu crédible au repos.",
-        { corps: ["....GWWWGGg.....", "...GGWWWWGGg....", "...GGWWWWWGg....", "...GgWWWWWGg....", "....GWWWWGg.....", "....GGWWGGg.....", "...GGG..GGGg....", "...GGG..GGGg....", "..OOOO..OOOO....", "...YY....YY....."] })
+        { corps: ["....rGWWWWGg....", "...rRGGWWWWWg...", "..rRRGWWWWWWg...", "..rRRGWWWWWWg...", ".rRRGGGWWWWWg...", ".rGGGGGWWWGGg...", "...GGGG..GGGg...", "...OOOO..OOOg...", "...OOOO..OOOO...", "...YYYY..YYYY..."] }),
+      v('E', "BRAS LEVÉ AU CIEL", "Un bras levé au ciel. Impossible à rater sur le terrain, mais c'est une pose de célébration : tenue en permanence, elle devient ridicule.",
+        { corps: ["..rGGWWWWGGGG...", ".rRRGGWWWWWGG...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "....GGGGGGg.....", "...OOOOOOOOg....", "...OOOOOOOO.....", "...YYYYYYYY....."] }),
+      v('F', "JAMBES TRÈS ÉCARTÉES", "Jambes très écartées, buste bas. Assise très stable qui donne une impression de force, mais elle élargit la base et l'alourdit.",
+        { corps: ["...rGWWWWGg.....", "..rRGGWWWWWGg...", "..rRGGWWWWWWg...", ".rRRGGWWWWWWg...", "rRRGGGWWWWWWg...", "rRGGGGGWWWGGg...", "..GGG....GGGg...", ".OOOO....OOOg...", ".OOOO....OOOO...", ".YYYY....YYYY..."] }),
+      v('G', "GENOU LEVÉ TRÈS HAUT", "Genou levé très haut, buste cabré en arrière. Pose pleine d'énergie, mais elle ne tient pas debout comme posture de repos prolongé.",
+        { corps: [".rRGGWWWWWGg....", "rRRRGGWWWWWWg...", "rRRRGGWWWWWWg...", "rRRRGGWWWWWWg...", ".rRRGGWWWWGGg...", "..rGGGWWGGGg....", "..GGGG..GGGGg...", "..OOOO..GGGGg...", "..OOOO..OOOOg...", "..YYYY..YYYYg..."] }),
+      v('H', "DOS ROND, TASSÉ SUR LUI-MÊME", "Dos rond, tassé sur lui-même, pieds joints. Air méfiant et concentré ; en contrepartie il paraît plus petit que le reste du roster.",
+        { corps: ["..rRGGWWWWGGg...", ".rRRGGWWWWWGg...", ".rRRGGWWWWWGg...", "..rRGGWWWWGg....", "...rGGWWWGg.....", "....GGWWGg......", "....GGGGGGg.....", "...OOOOOOOOg....", "...OOOOOOOO.....", "...YYYYYYYY....."] }),
+      v('I', "BRAS RAMENES, EPAULES REJETEES EN ARRIERE", "Bras ramenés contre le corps, épaules rejetées en arrière. Attitude sûre d'elle et très caractérisée, mais elle masque le grand ovale blanc.",
+        { corps: ["rRRGGGWWWGGg....", "rRRRGGGGGGGGg...", "rRRRGGGGGGGGg...", "rRRRGGGGGGGGg...", "rRRGGGGWWWWGg...", ".rGGGGGWWGGg....", "....GGGGGGg.....", "...OOOOOOOOg....", "...OOOOOOOO.....", "...YYYYYYYY....."] }),
+      v('J', "ÉTIRÉ SUR LA POINTE DES PIEDS", "Étiré sur la pointe des pieds. Il gagne en hauteur et en légèreté, cohérent avec un perso rapide, mais l'appui paraît instable au repos.",
+        { corps: ["...rGGWWWWGg....", "..rRGGWWWWWGg...", "..rRGGWWWWWWg...", "..rRGGWWWWWGg...", "...rGGWWWWGg....", "...GGGWWGGg.....", "..GGGG..GGGGg...", "..GGGG..GGGGg...", "..OOOO..OOOO....", "...YY....YY....."] })
     ]
   },
   {
     id: 'anim', titre: "6 · L’animation",
-    note: "Course, lancer, dash, plongeon : les cartes montrent la pose la plus caractéristique de chaque jeu d'animations. On juge la lisibilité en mouvement, pas la beauté à l'arrêt.",
+    note: "Course, lancer, dash, plongeon : les cartes montrent la pose la plus caracteristique de chaque jeu d'animations. On juge la lisibilite en mouvement, pas la beaute a l'arret.",
     variantes: [
-      v('A', "COURSE, FOULÉE COURTE", "Course à petites foulées, pieds proches du sol. Lisible et économe, mais elle donne l'impression d'un personnage qui trottine plutôt qu'il ne sprinte.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO...OOO....", "..YYYY...YYY...."] }),
-      v('B', "COURSE, FOULÉE MAXIMALE", "Foulée maximale, jambes grandes ouvertes et bras lancés. La course la plus spectaculaire, mais le personnage occupe presque tout le gabarit à chaque pas.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", ".GGgGWWWWWGGGg..", ".GGgGWWWWWGGGg..", "..GGGWWWWWGGg...", ".GGGGGWWWGGGg...", "..GGG....GGGg...", ".OOO......OOOg..", ".OOO......OOOO..", ".YYY......YYYY.."] }),
-      v('C', "LANCER, BRAS ARMÉ LOIN EN ARRIÈRE", "Bras armé loin en arrière avant le tir. On sent la puissance qui se charge, mais la pose déporte toute la masse d'un côté et se lit mal en miroir.",
-        { corps: [".GGGGWWWWGGg....", ".GGgGWWWWWGg....", ".GGgGWWWWWGGg...", "...GgWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "....GGG..GGGg...", "...OOOO..OOOOg..", "...OOOO..OOOO...", "...YYYY..YYYY..."] }),
-      v('D', "LANCER, BRAS DÉTENDU LOIN EN AVANT", "Bras détendu loin en avant, juste après le lâcher. Le geste se comprend instantanément ; en revanche le bras tendu se confond avec le disque qui part.",
-        { corps: ["...GGWWWWGGGGg..", "..GGGWWWWWGGGg..", "..GgGWWWWWGGGg..", "..GgGWWWWWGg....", "...GGWWWWWGg....", "...GGGWWWGGg....", "..GGG....GGGg...", ".OOOO....OOOOg..", ".OOOO....OOOO...", ".YYYY....YYYY..."] }),
+      v('A', "COURSE, FOULÉE COURTE", "Course à petites foulées, pieds proches du sol. Lisible et économe, mais elle donne l'impression qu'il trottine plutôt qu'il ne sprinte.",
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "..GGGG..GGGGg...", "..OOOO..OOOOg...", "..OOOO...OOO....", "..YYYY...YYY...."] }),
+      v('B', "COURSE, FOULÉE MAXIMALE", "Foulée maximale, jambes grandes ouvertes. La course la plus spectaculaire du lot, mais le personnage occupe presque tout le gabarit à chaque pas.",
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", "rRRRGGWWWWWWg...", "rRRRGGWWWWWWg...", "..rRGGWWWWWGg...", ".rGGGGGWWWGGg...", "..GGG....GGGg...", ".OOO......OOg...", ".OOO......OOO...", ".YYY......YYY..."] }),
+      v('C', "LANCER, BRAS ARMÉ LOIN EN ARRIÈRE", "Bras armé loin en arrière avant le tir. On sent la puissance qui se charge, mais la pose déporte toute la masse vers l'arrière.",
+        { corps: ["GGrGGWWWWWGg....", "GGrRRGWWWWWWg...", "GGrRRGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "...GGGG..GGGg...", "...OOOO..OOOg...", "...OOOO..OOOO...", "...YYYY..YYYY..."] }),
+      v('D', "LANCER, BRAS DETENDU LOIN EN AVANT", "Bras détendu loin en avant, juste après le lâcher. Le geste se comprend instantanément ; en revanche le bras tendu se confond avec le disque qui part.",
+        { corps: ["....rGWWGGGGg...", "...rRGGWGGGGg...", "...rRGGWGGGGg...", "..rRRGGWWWWWg...", "..rRGGGWWWWGg...", "..GGGGGWWGGg....", "..GGG....GGGg...", ".OOOO....OOOg...", ".OOOO....OOOO...", ".YYYY....YYYY..."] }),
       v('E', "PLONGEON À L’HORIZONTALE", "Plongeon à l'horizontale, corps entièrement couché. Rattrapage désespéré très spectaculaire, mais il double la largeur occupée par le personnage.",
-        { corps: [".GGGGGWWWWWGGg..", ".GGGGWWWWWWWGg..", "..GGWWWWWWWGGg..", "...GGGWWWGGGg...", "....GGGGGGGg....", ".....GGGGGg.....", "...GGGGGGGGg....", "..OOOOOOOOOOg...", "..OOOOOOOOOO....", "..YYYYYYYYYY...."] }),
-      v('F', "DASH, CORPS INCLINÉ VERS L’AVANT", "Dash, corps incliné vers l'avant, appuis rejetés en arrière. Très parlant sur une accélération, mais proche de la pose de course à petite échelle.",
-        { corps: [".....GWWWWGg....", "....GGWWWWWGg...", "...GgGWWWWWGg...", "..GgGGWWWWWGg...", "..GGGWWWWWGg....", ".GGGGWWWGGg.....", "....GGG..GGGg...", "...OOOO..OOOOg..", "...OOOO..OOOO...", "...YYYY..YYYY..."] }),
-      v('G', "SAUT, JAMBES REPLIÉES SOUS LE CORPS", "Saut, jambes repliées sous le corps et bras levés. Silhouette compacte et facile à suivre en l'air, mais elle raccourcit fortement le personnage.",
-        { corps: [".G.GGWWWWGGGGg..", ".G.GGWWWWWGGGg..", "..GGGWWWWWGg....", "..GgGWWWWWGg....", "...GGWWWWWGg....", "...GGGWWWGGg....", "..GGGG..GGGGg...", "..OOOO..OOOOg...", "...GG....GG.....", "...GG....GG....."] }),
+        { corps: ["rRRGGWWWWWWWg...", "rRRGGWWWWWWWg...", ".rGGGWWWWWWGg...", "..GGGGGWWWGGg...", "...GGGGGGGGg....", "....GGGGGGg.....", "..GGGGGGGGGg....", "..OOOOOOOOOOg...", "..OOOOOOOOOO....", "..YYYYYYYYYY...."] }),
+      v('F', "DASH, CORPS INCLINÉ VERS L’AVANT", "Dash, corps incliné vers l'avant, appuis rejetés en arrière. Très parlant sur une accélération, mais proche de la course à petite échelle.",
+        { corps: ["....rGGWWWWGg...", "...rRGGWWWWWg...", "..rRRGWWWWWWg...", ".rRRGGWWWWWWg...", "rRRGGGGWWWWWg...", "rRGGGGGWWWGGg...", "...GGGG..GGGg...", "...OOOO..OOOg...", "...OOOO..OOOO...", "...YYYY..YYYY..."] }),
+      v('G', "SAUT, JAMBES REPLIÉES", "Saut, jambes repliées sous le corps. Silhouette compacte et facile à suivre en l'air, mais elle raccourcit fortement le personnage.",
+        { corps: ["..rGGWWWWGGGG...", ".rRRGGWWWWWGG...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..rGGGWWWWWGg...", "..GGGGWWWGGg....", "..GGGG..GGGGg...", "..OOOO..OOOOg...", "...GG....GG.....", "...GG....GG....."] }),
       v('H', "RÉCEPTION, GENOUX FLÉCHIS", "Réception, genoux fléchis et pieds bien écartés. Elle donne du poids à l'atterrissage, au prix d'une posture large qui empiète sur la zone de jeu.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GGGWWWWWGGg...", ".GGGGGWWWGGGGg..", ".GGGGGGGGGGGg...", "..GGGG..GGGGg...", ".OOOOO.OOOOOOg..", ".OOOOO.OOOOOO...", ".YYYYY.YYYYYY..."] }),
-      v('I', "PIÉTINEMENT SUR PLACE, ÉPAULES HAUTES", "Piétinement sur place, un genou qui monte, épaules hautes. Utile pour meubler l'attente, mais trop proche de la course pour s'en distinguer en match.",
-        { corps: ["..GGGGWWWGGGg...", ".GGGGGWWWWGGg...", ".GGgGGWWWWWGGg..", ".GGgGGWWWWWGGg..", "..GGGGWWWWGGg...", "..GGGGGWWGGGg...", "...GGG..GGGGg...", "..OOOO..GGGGg...", "..OOOO..OOOOg...", "..YYYY..YYYYg..."] }),
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "rRRRGGWWWWWWg...", "rRRGGGGWWWWGg...", "rRGGGGGGWWGGg...", "..GGGG..GGGGg...", ".OOOOO.OOOOOg...", ".OOOOO.OOOOOO...", ".YYYYY.YYYYYY..."] }),
+      v('I', "PIETINEMENT SUR PLACE, EPAULES HAUTES", "Piétinement sur place, genou qui monte, épaules hautes. Utile pour meubler l'attente, mais trop proche de la course pour s'en distinguer en match.",
+        { corps: ["rRRRGGGWWWGGg...", "rRRRRGGWWWWGg...", "rRRRRGGWWWWWg...", "rRRRRGGWWWWWg...", ".rRRGGGWWWWGg...", "..GGGGGWWGGg....", "..GGGG..GGGGg...", "..OOOO..GGGGg...", "..OOOO..OOOOg...", "..YYYY..YYYYg..."] }),
       v('J', "GLISSADE, UNE JAMBE TENDUE LOIN DEVANT", "Glissade, une jambe tendue loin devant. Freinage très lisible et satisfaisant, mais la jambe tendue sort de l'aplomb et complique les collisions.",
-        { corps: ["....GWWWWGGg....", "...GGWWWWWGGg...", "..GgGWWWWWGGGg..", "..GgGWWWWWGGGg..", "..GGGGWWWWGGg...", ".GGGGGGWWGGg....", "..GGGG...GGGg...", ".OOOOO...GGGGg..", ".OOOOO....OOOO..", ".YYYYY.....YYY.."] })
+        { corps: [".....rGWWWGg....", "....rRGGWWWWg...", "...rRRGWWWWWg...", "..rRRGGWWWWWg...", ".rRRGGGGWWWWg...", "rRGGGGGGGWWGg...", "..GGGG....GGg...", ".OOOOO.....Gg...", ".OOOOO......O...", ".YYYYY......Y..."] })
     ]
   },
   {
     id: 'profil', titre: "7 · Le profil de jeu",
-    note: "Les chiffres réels du personnage. speed en px/s, power en multiplicateur de puissance de tir, catchR le rayon d'attrapé, chargeT le temps de charge.",
+    note: "Les chiffres reels du personnage. speed en px/s, power en multiplicateur de puissance de tir, catchR le rayon d'attrape, chargeT le temps de charge.",
     variantes: [
       v('A', "EQUILIBRE", "Bon partout, excellent nulle part. Le réglage le plus sûr pour un nouveau perso, mais celui qui laisse le moins de place à un style de jeu propre.",
         { stats: { spd: 3, pow: 3, ctl: 3, speed: 330, power: 1.0, catchR: 30, chargeT: .8 } }),
@@ -355,28 +359,28 @@ const SECTIONS = [
   },
   {
     id: 'bottes', titre: "8 · Les bottes (sur mesure)",
-    note: "Les bottes orange à semelle jaune sont, après le museau, le détail que l'oeil cherche pour reconnaître Yoshi. Cette section juge leur forme, leur hauteur et leur semelle.",
+    note: "Les bottes orange a semelle jaune sont, apres le museau, le detail que l'oeil cherche pour reconnaitre Yoshi. Cette section juge leur forme, leur hauteur et leur semelle.",
     variantes: [
-      v('A', "BOTTES RONDES À SEMELLE", "Bottes rondes à semelle jaune, comme sur tous les visuels. C'est le détail le plus reconnaissable après le museau, mais elles alourdissent un peu le bas du corps.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
-      v('B', "BOTTES HAUTES SUR LE MOLLET", "Les bottes remontent sur tout le mollet. Elles ancrent lourdement le personnage au sol, mais elles mangent le vert des jambes que les skins doivent colorer.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "..OOOO..OOOOg...", "..OOOO..OOOOg...", "..oooo..oooo....", "..YYYY..YYYY...."] }),
+      v('A', "BOTTES RONDES À SEMELLE", "Bottes rondes à semelle jaune, comme sur tous les visuels. Le détail le plus reconnaissable après le museau, mais elles alourdissent le bas du corps.",
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "..GGGG..GGGg....", "..OOOO..OOOOg...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
+      v('B', "BOTTES HAUTES SUR LE MOLLET", "Les bottes remontent sur tout le mollet. Elles ancrent lourdement le personnage au sol, mais elles mangent le vert des jambes que les skins colorent.",
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "..OOOO..OOOOg...", "..OOOO..OOOOg...", "..oooo..oooo....", "..YYYY..YYYY...."] }),
       v('C', "BOTTES LARGES ET PLATES", "Bottes larges et plates qui débordent des jambes. Assise très stable et lisible de loin, au prix d'une allure pataude qui contredit sa vitesse.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "...GG....GGg....", ".OOOOO.OOOOOOg..", ".OOOOO.OOOOOO...", ".YYYYY.YYYYYY..."] }),
-      v('D', "PIEDS ÉCARTÉS", "Pieds nettement écartés, un vide au milieu. La silhouette respire et les jambes se distinguent, mais l'appui paraît moins solide.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "..GGG....GGGg...", ".OOOO....OOOOg..", ".OOOO....OOOO...", ".YYYY....YYYY..."] }),
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "...GG....GGg....", ".OOOOOO.OOOOO...", ".OOOOOO.OOOOO...", ".YYYYYY.YYYYY..."] }),
+      v('D', "PIEDS TRÈS ÉCARTÉS", "Pieds nettement écartés, un vide au milieu. La silhouette respire et les jambes se distinguent, mais l'appui paraît moins solide.",
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "..GGG....GGGg...", ".OOOO....OOOg...", ".OOOO....OOOO...", ".YYYY....YYYY..."] }),
       v('E', "SEMELLE ÉPAISSE À DEUX TONS", "Semelle épaisse en deux tons, comme une chaussure de sport. Le volume se lit mieux, mais on s'éloigne de la botte souple des visuels.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..YYYY..YYYY....", "..oYYo..oYYo...."] }),
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "..GGGG..GGGGg...", "..OOOO..OOOOg...", "..YYYY..YYYY....", "..oYYo..oYYo...."] }),
       v('F', "PIEDS JOINTS AU CENTRE", "Les deux pieds joints au centre, sans écart. Silhouette compacte et sage ; en contrepartie on ne distingue plus les deux jambes en mouvement.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "....GGGGGGg.....", "...OOOOOOOOg....", "...OOOOOOOO.....", "...YYYYYYYY....."] }),
-      v('G', "GROS REVERS REPLIÉ", "Un gros revers replié déborde de chaque côté de la botte. Détail cossu et très visible, mais il ajoute une quatrième valeur d'orange dans une zone minuscule.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", ".oooooo.oooooo..", ".oooooo.oooooo..", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "....GGGGGGg.....", "...OOOOOOOOg....", "...OOOOOOOO.....", "...YYYYYYYY....."] }),
+      v('G', "GROS REVERS REPLIÉ", "Un gros revers replié déborde de chaque côté. Détail cossu et très visible, mais il ajoute une quatrième valeur d'orange dans une zone minuscule.",
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", ".oooooo.ooooo...", ".oooooo.ooooo...", "..OOOO..OOOO....", "..YYYY..YYYY...."] }),
       v('H', "SEMELLE À CRAMPONS", "Semelle dentée à crampons. Cohérent avec un perso qui sprinte et freine sec, mais les crampons se brouillent complètement à l'échelle du match.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "...GGG..GGGg....", "..OOOO..OOOOg...", "..oooo..oooo....", ".YoYoYo.oYoYoY.."] }),
-      v('I', "PETITS CHAUSSONS, JAMBES LONGUES", "De simples chaussons sans semelle, jambes vertes plus longues. Il paraît plus léger et plus rapide, mais il perd la semelle jaune qui le signe.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "...GGG..GGGg....", "...GGG..GGGg....", "...GGG..GGGg....", "..OOYO..OYOO...."] }),
-      v('J', "CHAUSSONS SANS SEMELLE", "Chaussons souples cerclés d'un liseré sombre. Discret et élégant, mais sans le jaune la botte se fond dans le sol du terrain.",
-        { corps: ["...GGWWWWGGg....", "..GGGWWWWWGg....", "..GgGWWWWWGGg...", "..GgGWWWWWGGg...", "...GGWWWWWGg....", "...GGGWWWGGg....", "...GGG..GGGg....", "..oOOo..oOOo....", "..OOOO..OOOO....", "..oOOo..oOOo...."] })
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "..GGGG..GGGGg...", "..OOOO..OOOOg...", "..oooo..oooo....", ".YoYoYo.oYoYY..."] }),
+      v('I', "PETITS CHAUSSONS, JAMBES LONGUES", "De simples chaussons, jambes vertes plus longues. Il paraît plus léger et plus rapide, mais il perd la semelle jaune qui le signe.",
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "..GGGG..GGGGg...", "..GGGG..GGGGg...", "..GGGG..GGGGg...", "..OOYO..OYOO...."] }),
+      v('J', "CHAUSSONS SOUPLES CERCLÉS", "Chaussons souples cerclés d'un liseré sombre. Discret et élégant, mais sans le jaune la botte se fond dans le sol du terrain.",
+        { corps: ["..rGGWWWWWGg....", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", ".rRRGGWWWWWWg...", "..rRGGWWWWWGg...", "..GGGGWWWGGg....", "..GGGG..GGGGg...", "..oOOo..oOOo....", "..OOOO..OOOO....", "..oOOo..oOOo...."] })
     ]
   }
 ];
@@ -449,7 +453,8 @@ function ombre(g, x, y, r) {
 
 // L'état courant : une lettre retenue par section.
 const choix = {};
-SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+const RETENU = { crane:'A', museau:'E', corps:'A', palette:'A', pose:'D', anim:'A', profil:'F', bottes:'A' };
+SECTIONS.forEach(s => { choix[s.id] = RETENU[s.id] || s.variantes[0].id; });
 
 // Assemble le perso tel que les choix actuels le décrivent. Chaque section
 // n'apporte que la pièce qu'elle remplace, la dernière déclarée l'emporte.
