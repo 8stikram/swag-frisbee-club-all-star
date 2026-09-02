@@ -60,11 +60,15 @@
   <code>1A 2E 3A 4A 5D 6A 7F 8A</code>. Le personnage montré ici est exactement celui-là, et le
   module de contrôle vérifie qu'il n'a pas dérivé.
   <br><br>
-  <b>LA RUÉE DES YOSHI.</b> Une horde de Yoshi traverse le terrain. Reste à décider ce qu'elle
-  fait vraiment : d'où elle débarque, ce qu'elle inflige au <b>disque</b>, ce qu'elle inflige à
-  l'<b>adversaire</b>, et combien de temps elle dure. Ces quatre réponses ne sont pas
-  indépendantes — une ruée qui pousse le disque ET bloque l'adversaire pendant deux secondes
-  gagne le point toute seule.
+  <b>LA RUÉE DES YOSHI.</b> Ultime arrêté le 1er septembre 2026 :
+  <code>1A 2A 3A 4J 5B 6B 7E 8C</code>. Une horde débarque de derrière Yoshi, en grappe
+  désordonnée et multicolore, traverse en 1,2 s, <b>pousse le disque devant elle</b> et
+  <b>repousse l'adversaire</b>, annoncée par une secousse d'écran, en réglage agressif.
+  <br><br>
+  À surveiller en match : la ruée cumule les deux effets, elle pousse le disque ET bouscule
+  l'adversaire. C'est justement ce que la section 3 signalait comme le risque — sur ce réglage
+  elle peut gagner le point à elle seule. Le premier bouton à baisser, si c'est le cas, est la
+  poussée de la section 8.
   <br><br>
   Le terrain est le vrai terrain du jeu, vu de dessus, géométrie et zones de but importées de
   <code>maps.js</code>. Clique les cartes : l'aperçu du haut rejoue la séquence avec tes choix, et
@@ -128,7 +132,14 @@ const PAL = {
 };
 const TETE = ["....GGllg.......","..RGGWEllllg....",".RRGGWElllllg...",".RRGGGGGllllg...",".RRGGGGlllllg...",".RRGGGglllllg...",".rRGGGglllllg...","..rGWWWWWWWWg...","..GWWWWWWWWWg...","...WWWWWWWGg...."];
 const CORPS = ["....rGWWWWGg....","...rRGGWWWWWg...","..rRRGWWWWWWg...","..rRRGWWWWWWg...",".rRRGGGWWWWWg...",".rGGGGGWWWGGg...","...GGGG..GGGg...","...OOOO..OOOg...","...OOOO..OOOO...","...YYYY..YYYY..."];
-const CORPS_COURSE = ["....rGWWWWGg....","...rRGGWWWWWg...","..rRRGWWWWWWg...","..rRRGWWWWWWg...",".rRRGGGWWWWWg...",".rGGGGGWWWGGg...","..GGGG..GGGGg...","..OOOO..OOOOg...","..OOOO...OOO....","..YYYY...YYY...."];
+// Deux poses de jambes qui alternent : c'est ce qui fait qu'une horde COURT
+// au lieu de glisser. Le buste ne bouge pas d'une pose a l'autre, seuls les
+// appuis changent — a cette taille, une jambe qui passe devant l'autre suffit.
+const TORSE_COURSE = ["....rGWWWWGg....","...rRGGWWWWWg...","..rRRGWWWWWWg...","..rRRGWWWWWWg...",".rRRGGGWWWWWg...",".rGGGGGWWWGGg..."];
+const JAMBES_1 = ["..GGGG..GGGGg...","..OOOO..OOOOg...","..OOOO...OOO....","..YYYY...YYY...."];
+const JAMBES_2 = ["..GGGG..GGGGg...","..OOOO..OOOOg...","...OOO..OOOO....","...YYY..YYYY...."];
+const CORPS_COURSE = [...TORSE_COURSE, ...JAMBES_1];
+const CORPS_COURSE_2 = [...TORSE_COURSE, ...JAMBES_2];
 // Bras levé : la pose d'appel, c'est lui qui siffle la horde.
 const CORPS_APPEL = ["..rGGWWWWGGGG...",".rRRGGWWWWWGG...",".rRRGGWWWWWWg...",".rRRGGWWWWWWg...","..rRGGWWWWWGg...","..GGGGWWWGGg....","....GGGGGGg.....","...OOOOOOOOg....","...OOOOOOOO.....","...YYYYYYYY....."];
 
@@ -157,8 +168,16 @@ function bati(rows, pal, ech) {
 }
 const SPR = bati([...TETE, ...CORPS], PAL, 4);
 const SPR_APPEL = bati([...TETE, ...CORPS_APPEL], PAL, 4);
-// Un sprite de horde par teinte, en pose de course.
-const HORDE = TEINTES.map(t => bati([...TETE, ...CORPS_COURSE], { ...PAL, ...t }, 4));
+// Deux sprites de horde par teinte : les deux temps de la foulee.
+const HORDE = TEINTES.map(t => [
+  bati([...TETE, ...CORPS_COURSE], { ...PAL, ...t }, 4),
+  bati([...TETE, ...CORPS_COURSE_2], { ...PAL, ...t }, 4)
+]);
+
+// Tirage pseudo-aleatoire mais DETERMINISTE : le meme Yoshi garde sa place et
+// sa cadence d'une image a l'autre. Un vrai Math.random ferait scintiller
+// toute la horde a chaque frame.
+const alea = i => { const s = Math.sin(i * 12.9898) * 43758.5453; return s - Math.floor(s); };
 
 /* ===================== LE VRAI TERRAIN ===================== */
 // Reprise fidèle de drawCourtNu() : même géométrie, mêmes teintes, mêmes zones
@@ -385,7 +404,10 @@ afficher(verifier({ id:'yoshi', PERSO, SECTIONS }), document.getElementById('err
 
 /* ===================== L'ÉTAT ===================== */
 const choix = {};
-SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+// Les choix arretes : 1A 2A 3A 4J 5B 6B 7E 8C. Le mockup ouvre dessus.
+const RETENU = { arrivee:'A', disque:'A', adverse:'A', densite:'J',
+                 couleur:'B', duree:'B', annonce:'E', chiffres:'C' };
+SECTIONS.forEach(s => { choix[s.id] = RETENU[s.id] || s.variantes[0].id; });
 const actuel = id => SECTIONS.find(s => s.id === id).variantes.find(v => v.id === choix[id]);
 
 /* ===================== LA SCÈNE ===================== */
@@ -441,7 +463,14 @@ function jouer(g, t, W, H) {
   }
 
   perso(g, phase === 0 ? SPR_APPEL : SPR, yoshiX, yoshiY, vue, 1);
-  perso(g, CHARS.leon.frames.idle, advX, advY, vue, -1);
+
+  // L'adversaire est REELLEMENT repousse quand le front de la horde l'atteint :
+  // une fleche disait ce qui devait arriver, elle ne le montrait pas.
+  const front = CT.left - 60 + k * (CW + 130);
+  const adv = actuel('adverse').adv;
+  const pousseAdv = (phase >= 1 && adv !== 'rien' && front > advX)
+    ? Math.min(90, (front - advX) * .55) : 0;
+  perso(g, CHARS.leon.frames.idle, advX + pousseAdv, advY, vue, -1);
 
   // Le disque, déplacé selon ce que la ruée lui fait.
   const dsq = actuel('disque').dsq;
@@ -456,10 +485,15 @@ function jouer(g, t, W, H) {
     for (let i = 0; i < n; i++) {
       const f = i / Math.max(1, n - 1);
       let px, py, face = 1;
-      const avance = k - (dens.desordre ? (i % 5) * .05 : 0)
+      // Une horde, ce n'est pas un rang : chaque Yoshi a son propre retard et sa
+      // propre hauteur. Sans cet etalement les seize sprites se superposaient en
+      // une colonne compacte, illisible.
+      const retard = dens.desordre ? alea(i) * .42 : 0;
+      const avance = k - retard
                        - (dens.vagues ? Math.floor(i / (n / dens.vagues)) * .22 : 0)
                        - (dens.rangs ? (i % dens.rangs) * .12 : 0);
-      const bande = dens.pleine ? CH * .8 : CH * .52;
+      const bande = dens.pleine ? CH * .8 : dens.desordre ? CH * .82 : CH * .52;
+      const gigue = dens.desordre ? (alea(i + 91) - .5) * CH * .12 : 0;
       if (dep === 'haut') { px = CT.left + CW * (.2 + f * .6); py = CT.top - 40 + avance * (CH + 90); }
       else if (dep === 'bas') { px = CT.left + CW * (.2 + f * .6); py = CT.bottom + 40 - avance * (CH + 90); }
       else if (dep === 'droite') { px = CT.right + 60 - avance * (CW + 130); py = CYY - bande / 2 + f * bande; face = -1; }
@@ -474,10 +508,18 @@ function jouer(g, t, W, H) {
       } else if (dep === 'cercle') {
         const a = f * TAU, r = Math.max(6, (1 - avance) * 150);
         px = disqX + Math.cos(a) * r; py = disqY + Math.sin(a) * r * .6;
-      } else { px = CT.left - 60 + avance * (CW + 130); py = CYY - bande / 2 + f * bande; }
+      } else {
+        px = CT.left - 60 + avance * (CW + 130);
+        // La gigue peut sortir un Yoshi des lignes : on le ramene dedans.
+        // Une horde qui court hors du terrain ne veut rien dire.
+        py = Math.max(CT.top + 14, Math.min(CT.bottom - 8,
+                      CYY - bande / 2 + f * bande + gigue));
+      }
 
       if (avance < -.05 || avance > 1.3) continue;
-      const spr = teinteHorde(i, n);
+      // Cadence : environ huit foulees par seconde, decalee d'un Yoshi a l'autre.
+      const paire = teinteHorde(i, n);
+      const spr = paire[(Math.floor(t * 8 + alea(i + 17) * 4) % 2)];
       const c = actuel('couleur').coul;
       g.save();
       if (c === 'ombre') { g.globalAlpha = .85; g.filter = 'brightness(0.12)'; }
@@ -495,9 +537,9 @@ function jouer(g, t, W, H) {
     if (ann === 'poussiere' || phase === 2) poussiere(g, vue, CT.left + CW * k, CYY + 60, Math.min(1, k * 2));
   }
 
-  // Ce que la ruée inflige, montré par une flèche plutôt que deviné.
-  const adv = actuel('adverse').adv;
-  if (phase === 2 && adv !== 'rien') {
+  // La fleche ne reste que pour les effets qu'un deplacement ne montre pas :
+  // ralentissement, perte du disque, interdiction de tirer.
+  if (phase === 2 && ['lent','masque','lache','muet','tous'].includes(adv)) {
     const cible = { pousse:[advX + 70, advY], chute:[advX, advY + 40], lent:[advX + 30, advY],
                     masque:[advX, advY - 40], emporte:[CT.right, advY], lache:[advX + 40, advY + 20],
                     muet:[advX, advY - 30], recule:[CT.right - 20, advY], tous:[advX + 70, advY] }[adv];
