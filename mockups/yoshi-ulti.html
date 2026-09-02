@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Yoshi — l'ultime</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:34px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:980px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;
+        flex:1 1 0;min-width:190px;cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d5c8a}
+  .card.on{border-color:var(--or);transform:translateY(-2px)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:78px}
+  .lbl b{display:block;font-size:14px;color:var(--or);letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px;image-rendering:pixelated}
+  .reserve{display:none}
+  .reserve.ouverte{display:flex}
+  .plus{margin-top:9px;background:#132038;color:#9fb4dd;border:1px solid var(--edge);
+        border-radius:7px;padding:6px 13px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#1a2b48;color:var(--ink)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 560px}
+  .apercu canvas{background:#0a1220}
+  .choix{font-size:11.5px;color:#9fb4dd;margin-top:9px;font-family:Consolas,monospace;line-height:1.7}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#24395e}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .frise{display:flex;gap:3px;margin-top:10px}
+  .ph{flex:1 1 0;text-align:center;font-size:9.5px;font-family:Consolas,monospace;
+      padding:5px 2px;border-radius:5px;background:#101a2e;color:#6d82a6;
+      border:1px solid transparent;transition:background .1s,color .1s}
+  .ph.on{background:#24395e;color:var(--or);border-color:var(--or)}
+  .ph i{display:block;font-style:normal;font-size:8.5px;opacity:.75}
+  .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 280px}
+  .fiche h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .fiche table{width:100%;border-collapse:collapse;font-size:11.5px;font-family:Consolas,monospace}
+  .fiche td{padding:3px 0;color:#9fb4dd;vertical-align:top}
+  .fiche td:last-child{color:var(--or);text-align:right;white-space:nowrap;padding-left:8px}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>YOSHI — L'ULTIME</h1>
+<p class="note">
+  Mockup dédié, séparé du chara-design — celui-ci est déjà arrêté :
+  <code>1A 2E 3A 4A 5D 6A 7F 8A</code>. Le personnage montré ici est exactement celui-là, et le
+  module de contrôle vérifie qu'il n'a pas dérivé.
+  <br><br>
+  <b>LA RUÉE DES YOSHI.</b> Une horde de Yoshi traverse le terrain. Reste à décider ce qu'elle
+  fait vraiment : d'où elle débarque, ce qu'elle inflige au <b>disque</b>, ce qu'elle inflige à
+  l'<b>adversaire</b>, et combien de temps elle dure. Ces quatre réponses ne sont pas
+  indépendantes — une ruée qui pousse le disque ET bloque l'adversaire pendant deux secondes
+  gagne le point toute seule.
+  <br><br>
+  Le terrain est le vrai terrain du jeu, vu de dessus, géométrie et zones de but importées de
+  <code>maps.js</code>. Clique les cartes : l'aperçu du haut rejoue la séquence avec tes choix, et
+  la frise s'allume phase par phase.
+</p>
+
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvApercu" width="820" height="330"></canvas>
+    <div class="frise" id="frise"></div>
+    <div class="choix" id="choix"></div>
+    <div class="copier">
+      <input class="codeChoix" id="codeChoix" readonly>
+      <button class="btnCopier" id="btnCopier">copier mes choix</button>
+    </div>
+  </div>
+  <div class="fiche">
+    <h3>Les ultimes déjà en place</h3>
+    <table>
+      <tr><td>Mamie — rafale</td><td>tir dirigé, knockback</td></tr>
+      <tr><td>Chopper — grappin</td><td>reprend le disque</td></tr>
+      <tr><td>Yuki — chien</td><td>aveugle l'adversaire</td></tr>
+      <tr><td>Jingle — cloche</td><td>bloque le but</td></tr>
+      <tr><td>Leon — Matilda</td><td>faux disques</td></tr>
+    </table>
+    <p class="note" style="margin:9px 0 0;font-size:10.5px">
+      Trois familles existent déjà : reprendre le disque, gêner l'adversaire, bloquer le but.
+      La ruée a intérêt à ne pas être une quatrième version de la même chose — c'est le seul
+      critère qui compte vraiment dans les sections 3 et 4.
+    </p>
+  </div>
+</div>
+
+<div id="sections"></div>
+
+<script type="module">
+// Le terrain n'est pas inventé : on importe la géométrie et le thème réels du
+// jeu, et les sprites réels du roster pour l'adversaire.
+import { MAPS } from '../js/data/maps.js';
+import { CHARS } from '../js/data/characters.js';
+// Les contrôles partagés. On passe l'id 'yoshi' pour que les traits
+// obligatoires du personnage soient vérifiés ici aussi : si ce mockup se met à
+// montrer un Yoshi qui a dérivé du design arrêté, il devient rouge.
+import { verifier, afficher } from './_verif.js';
+
+const TAU = Math.PI * 2;
+const ARENE = MAPS[0];
+const CT = ARENE.court;
+const CW = CT.right - CT.left, CH = CT.bottom - CT.top;
+const CXX = (CT.left + CT.right) / 2, CYY = (CT.top + CT.bottom) / 2;
+const GOAL_H = ARENE.goal.height, GOAL_D = ARENE.goal.depth;
+const TH = ARENE.theme;
+
+/* ===================== YOSHI, BUILD ARRÊTÉ ===================== */
+const PAL = {
+  l:'#8fd95e', G:'#63c23c', g:'#3f9127', h:'#2a6a19',
+  W:'#ffffff', w:'#d5e2cc', E:'#231d55', M:'#7a2018',
+  R:'#e8544b', r:'#b8352e', O:'#d9743a', o:'#a8542a', Y:'#f2d35c'
+};
+const TETE = ["....GGllg.......","..RGGWEllllg....",".RRGGWElllllg...",".RRGGGGGllllg...",".RRGGGGlllllg...",".RRGGGglllllg...",".rRGGGglllllg...","..rGWWWWWWWWg...","..GWWWWWWWWWg...","...WWWWWWWGg...."];
+const CORPS = ["....rGWWWWGg....","...rRGGWWWWWg...","..rRRGWWWWWWg...","..rRRGWWWWWWg...",".rRRGGGWWWWWg...",".rGGGGGWWWGGg...","...GGGG..GGGg...","...OOOO..OOOg...","...OOOO..OOOO...","...YYYY..YYYY..."];
+const CORPS_COURSE = ["....rGWWWWGg....","...rRGGWWWWWg...","..rRRGWWWWWWg...","..rRRGWWWWWWg...",".rRRGGGWWWWWg...",".rGGGGGWWWGGg...","..GGGG..GGGGg...","..OOOO..OOOOg...","..OOOO...OOO....","..YYYY...YYY...."];
+// Bras levé : la pose d'appel, c'est lui qui siffle la horde.
+const CORPS_APPEL = ["..rGGWWWWGGGG...",".rRRGGWWWWWGG...",".rRRGGWWWWWWg...",".rRRGGWWWWWWg...","..rRGGWWWWWGg...","..GGGGWWWGGg....","....GGGGGGg.....","...OOOOOOOOg....","...OOOOOOOO.....","...YYYYYYYY....."];
+
+// Les teintes des skins servent ici à peupler la horde : une ruée de Yoshi
+// tous verts se lit comme une bouillie, alors que les couleurs déjà validées
+// donnent de la lisibilité à chaque silhouette.
+const TEINTES = [
+  { l:'#8fd95e', G:'#63c23c', g:'#3f9127', h:'#2a6a19' },
+  { l:'#f0716a', G:'#d63f36', g:'#a32a23', h:'#741a15', O:'#3d7fd6', o:'#2a5aa0', R:'#5e1410', r:'#3d0c08' },
+  { l:'#7ab4ee', G:'#3d7fd6', g:'#2a5aa0', h:'#1a3c73' },
+  { l:'#f7e06a', G:'#e8c72e', g:'#b89a18', h:'#8a7210', O:'#4aa832', o:'#2f7020' },
+  { l:'#c98ae8', G:'#a352d1', g:'#7a35a0', h:'#562473' },
+  { l:'#8fe8e0', G:'#46c9bd', g:'#2e9188', h:'#1e6660', O:'#a352d1', o:'#7a35a0' },
+  { l:'#f79ac9', G:'#e85fa5', g:'#b53f78', h:'#852a56' }
+];
+
+function bati(rows, pal, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x*ech, y*ech, ech, ech); }
+  }});
+  return c;
+}
+const SPR = bati([...TETE, ...CORPS], PAL, 4);
+const SPR_APPEL = bati([...TETE, ...CORPS_APPEL], PAL, 4);
+// Un sprite de horde par teinte, en pose de course.
+const HORDE = TEINTES.map(t => bati([...TETE, ...CORPS_COURSE], { ...PAL, ...t }, 4));
+
+/* ===================== LE VRAI TERRAIN ===================== */
+// Reprise fidèle de drawCourtNu() : même géométrie, mêmes teintes, mêmes zones
+// de but, mises à l'échelle du canvas — une vignette de 230 px montre le même
+// terrain qu'un aperçu de 820 px.
+function terrain(g, W, H) {
+  const e = Math.min(W / (CW + 2 * GOAL_D + 40), H / (CH + 40));
+  const ox = (W - CW * e) / 2, oy = (H - CH * e) / 2;
+  const X = x => ox + (x - CT.left) * e, Y = y => oy + (y - CT.top) * e;
+
+  g.fillStyle = TH.bgOuter; g.fillRect(0, 0, W, H);
+  g.fillStyle = TH.bgInner; g.fillRect(X(CT.left) - GOAL_D * e, Y(CT.top) - 8, CW * e + GOAL_D * 2 * e, CH * e + 16);
+  g.fillStyle = TH.floor;   g.fillRect(X(CT.left), Y(CT.top), CW * e, CH * e);
+
+  g.strokeStyle = TH.line; g.lineWidth = Math.max(1, 2 * e);
+  g.strokeRect(X(CT.left), Y(CT.top), CW * e, CH * e);
+  g.beginPath(); g.moveTo(X(CXX), Y(CT.top)); g.lineTo(X(CXX), Y(CT.bottom)); g.stroke();
+  g.beginPath(); g.arc(X(CXX), Y(CYY), 58 * e, 0, TAU); g.stroke();
+
+  for (const side of [1, 2]) {
+    const gx = side === 1 ? CT.left - GOAL_D : CT.right;
+    for (const z of ARENE.zones) {
+      g.globalAlpha = .5; g.fillStyle = z.color;
+      g.fillRect(X(gx), Y(CYY + z.from), GOAL_D * e, (z.to - z.from) * e);
+      g.globalAlpha = 1;
+      g.strokeStyle = TH.goalStroke; g.lineWidth = 1;
+      g.strokeRect(X(gx), Y(CYY + z.from), GOAL_D * e, (z.to - z.from) * e);
+    }
+    g.strokeStyle = TH.goalStroke; g.lineWidth = Math.max(1, 2 * e);
+    g.strokeRect(X(gx), Y(CYY - GOAL_H / 2), GOAL_D * e, GOAL_H * e);
+  }
+  return { e, X, Y };
+}
+
+// Échelle du match : SCALE 1,6, sprite 16x20 rendu en 48x60 unités de terrain.
+function perso(g, sprite, x, y, vue, face, alpha = 1) {
+  const { e, X, Y } = vue;
+  const w = 48 * 1.6 * e, h = 60 * 1.6 * e;
+  g.save(); g.imageSmoothingEnabled = false; g.globalAlpha = alpha;
+  g.translate(X(x), Y(y));
+  if (face < 0) g.scale(-1, 1);
+  g.drawImage(sprite, -w / 2, -h + 10 * e, w, h);
+  g.restore();
+}
+function disque(g, x, y, vue, r = 11) {
+  const { e, X, Y } = vue;
+  g.save(); g.translate(X(x), Y(y));
+  g.fillStyle = '#35e0ff'; g.beginPath(); g.ellipse(0, 0, r * e, r * e * .42, 0, 0, TAU); g.fill();
+  g.strokeStyle = '#bff2ff'; g.lineWidth = 1.4; g.stroke(); g.restore();
+}
+function fleche(g, vue, x1, y1, x2, y2, coul = '#ffd23e') {
+  const { X, Y } = vue;
+  g.save(); g.strokeStyle = coul; g.fillStyle = coul; g.lineWidth = 2; g.setLineDash([6, 4]);
+  g.beginPath(); g.moveTo(X(x1), Y(y1)); g.lineTo(X(x2), Y(y2)); g.stroke();
+  g.setLineDash([]);
+  const a = Math.atan2(Y(y2) - Y(y1), X(x2) - X(x1));
+  g.translate(X(x2), Y(y2)); g.rotate(a);
+  g.beginPath(); g.moveTo(0, 0); g.lineTo(-9, -5); g.lineTo(-9, 5); g.fill();
+  g.restore();
+}
+function poussiere(g, vue, x, y, k) {
+  const { e, X, Y } = vue;
+  g.save(); g.globalAlpha = .35 * k;
+  for (let i = 0; i < 5; i++) {
+    const r = (4 + i * 3) * e;
+    g.fillStyle = '#cbb58a';
+    g.beginPath(); g.arc(X(x) - i * 7 * e, Y(y) + Math.sin(i * 1.7) * 4 * e, r * .5, 0, TAU); g.fill();
+  }
+  g.restore();
+}
+
+/* ===================== LES PHASES ===================== */
+const PHASES = [
+  { id:'appel',   nom:'APPEL',    detail:'il siffle'   },
+  { id:'arrivee', nom:'ARRIVÉE',  detail:'la horde entre' },
+  { id:'ruee',    nom:'RUÉE',     detail:'la traversée' },
+  { id:'sortie',  nom:'SORTIE',   detail:'elle s\'échappe' }
+];
+const D_APPEL = .45, D_ARRIVEE = .35, D_SORTIE = .4;
+
+/* ===========================================================================
+   LES SECTIONS. Chaque variante ne porte que le paramètre qu'elle décide ;
+   le moteur de l'aperçu compose le reste. Les descriptions disent l'effet ET
+   ce qu'il coûte — le module de contrôle passe au rouge sans elles.
+   =========================================================================== */
+const v = (id, nom, desc, p) => ({ id, nom, desc, ...p });
+
+const SECTIONS = [
+  {
+    id: 'arrivee', titre: '1 · D\'où débarque la horde',
+    note: 'Le point d\'entrée décide de tout le reste : une horde qui vient de derrière Yoshi le protège, une horde qui vient d\'en face le met en danger autant que l\'adversaire.',
+    variantes: [
+      v('A','DE DERRIÈRE YOSHI','La horde entre par la ligne de fond de Yoshi et fonce vers le but adverse. Lecture évidente, elle va dans le sens de l\'attaque, mais elle ne défend jamais son propre but.',{ dep:'gauche' }),
+      v('B','DU BUT ADVERSE','Elle surgit du but d\'en face et remonte vers Yoshi. Elle ramène le disque vers lui, mais elle traverse d\'abord sa propre moitié, donc elle le gêne lui aussi.',{ dep:'droite' }),
+      v('C','PAR LE HAUT DU TERRAIN','La horde descend du bord supérieur et balaie verticalement. Elle coupe le terrain en deux dans l\'autre sens, ce qui surprend, mais elle ne pousse rien vers un but.',{ dep:'haut' }),
+      v('D','DES DEUX CÔTÉS À LA FOIS','Deux vagues entrent par la gauche et la droite et se croisent au centre. Spectaculaire et impossible à esquiver, mais elle enferme Yoshi autant que l\'adversaire.',{ dep:'double' }),
+      v('E','DEPUIS YOSHI LUI-MÊME','Les Yoshi jaillissent de sa position et s\'écartent en éventail. Très lisible sur qui l\'a lancée, mais elle laisse son dos complètement découvert.',{ dep:'perso' }),
+      v('F','DU BORD LE PLUS PROCHE DU DISQUE','Le point d\'entrée dépend de là où est le disque au moment du déclenchement. Toujours utile, mais imprévisible : on ne peut pas la préparer.',{ dep:'disque' }),
+      v('G','DU BAS DU TERRAIN','Elle remonte depuis le bord inférieur. Même principe que par le haut, mais elle passe sous le regard du joueur, donc elle se voit arriver plus tard.',{ dep:'bas' }),
+      v('H','EN DIAGONALE','La horde traverse d\'un coin à l\'autre. Elle couvre les deux axes d\'un coup, mais sa trajectoire est la plus dure à anticiper pour les deux joueurs.',{ dep:'diag' }),
+      v('I','DE LA CAGE DE YOSHI, EN DÉFENSE','Elle sort de son propre but et le protège en s\'éloignant. Excellente en défense de dernière seconde, inutile quand il attaque.',{ dep:'gauche', defensif:true }),
+      v('J','AUTOUR DU DISQUE','Les Yoshi apparaissent en cercle autour du disque et convergent dessus. Très ciblé et net, mais ça ressemble beaucoup au grappin de Chopper.',{ dep:'cercle' })
+    ]
+  },
+  {
+    id: 'disque', titre: '2 · Ce que la ruée fait au disque',
+    note: 'La question centrale. Trois familles d\'ultimes existent déjà — reprendre le disque, gêner l\'adversaire, bloquer le but — et la ruée a intérêt à ne pas être une redite.',
+    variantes: [
+      v('A','ELLE LE POUSSE DEVANT ELLE','Le disque est emporté par la horde vers le but adverse. Lisible et satisfaisant, mais c\'est un but quasi gratuit si personne ne peut l\'intercepter.',{ dsq:'pousse' }),
+      v('B','ELLE L\'ACCÉLÈRE SANS LE DÉVIER','Le disque garde sa direction mais double de vitesse au passage. Ça récompense un bon placement préalable, mais l\'effet est peu spectaculaire à l\'écran.',{ dsq:'accelere' }),
+      v('C','ELLE NE LE TOUCHE PAS','Le disque traverse la horde sans être affecté. L\'ultime devient purement un outil de gêne, ce qui le rapproche beaucoup du chien de Yuki.',{ dsq:'rien' }),
+      v('D','UN YOSHI LE GOBE ET LE RECRACHE','Un Yoshi avale le disque, le garde une demi-seconde, puis le recrache vers le but adverse. C\'est le geste le plus fidèle au personnage, mais il fige le jeu un instant.',{ dsq:'gobe' }),
+      v('E','ELLE LE RENVOIE À YOSHI','Le disque est ramené dans les mains de Yoshi, prêt à relancer. Ça enchaîne bien, mais c\'est exactement ce que fait déjà le grappin de Chopper.',{ dsq:'rend' }),
+      v('F','ELLE LE FIGE SUR PLACE','Le disque s\'arrête net et reste immobile pendant la traversée. Ça crée un moment de suspens, mais un disque immobile n\'est un cadeau que pour celui qui est le mieux placé.',{ dsq:'fige' }),
+      v('G','ELLE LE FAIT REBONDIR AU HASARD','Chaque Yoshi touché renvoie le disque dans une direction aléatoire. Chaotique et drôle, mais le hasard dans un jeu de duel se paie très cher.',{ dsq:'hasard' }),
+      v('H','ELLE LE DÉDOUBLE','Le disque se scinde en trois le temps de la ruée, un seul étant le vrai. Idée forte, mais c\'est le principe des faux disques de Leon.',{ dsq:'triple' }),
+      v('I','ELLE L\'ALOURDIT','Le disque devient lent et lourd pendant quelques secondes après la ruée. Effet durable et original, mais difficile à lire : on ne comprend pas tout de suite ce qui a changé.',{ dsq:'lourd' }),
+      v('J','ELLE LE POUSSE VERS LA ZONE LA PLUS CHÈRE','Le disque est dévié vers la zone de but qui rapporte le plus de points. Très gratifiant, mais ça transforme l\'ultime en machine à marquer.',{ dsq:'zone' })
+    ]
+  },
+  {
+    id: 'adverse', titre: '3 · Ce qu\'elle fait à l\'adversaire',
+    note: 'À doser avec la section 2 : une ruée qui pousse le disque ET immobilise l\'adversaire gagne le point toute seule. Il faut choisir laquelle des deux fait le travail.',
+    variantes: [
+      v('A','ELLE LE REPOUSSE','L\'adversaire est bousculé et perd sa position. Effet net et compréhensible, mais il reprend la main tout de suite après.',{ adv:'pousse' }),
+      v('B','ELLE LE RENVERSE','Il tombe et reste au sol un instant. Beaucoup plus fort, mais une immobilisation dans un jeu aussi rapide est très frustrante à subir.',{ adv:'chute' }),
+      v('C','ELLE LE RALENTIT','Sa vitesse est réduite pendant quelques secondes après le passage. Effet durable et discret, mais très peu spectaculaire à l\'écran.',{ adv:'lent' }),
+      v('D','ELLE NE LE TOUCHE PAS','La horde le traverse sans effet. Tout repose alors sur ce qu\'elle fait au disque, ce qui rend l\'ultime plus honnête mais moins impressionnant.',{ adv:'rien' }),
+      v('E','ELLE LUI MASQUE LA VUE','Les Yoshi passent devant lui et cachent le terrain une seconde. Gêne réelle sans rien lui retirer, mais c\'est le principe du chien de Yuki.',{ adv:'masque' }),
+      v('F','ELLE L\'EMPORTE AVEC ELLE','Il est charrié par la horde jusqu\'au bord du terrain. Très drôle à regarder, mais il perd le contrôle pendant toute la traversée.',{ adv:'emporte' }),
+      v('G','ELLE LUI FAIT LÂCHER LE DISQUE','S\'il tient le disque, il le lâche sur place. Ciblé et juste — ça ne punit que celui qui a le disque — mais sans effet s\'il ne l\'a pas.',{ adv:'lache' }),
+      v('H','ELLE L\'EMPÊCHE DE TIRER','Il peut bouger mais pas lancer pendant la ruée. Contrainte fine et lisible, mais difficile à comprendre sans un retour visuel clair.',{ adv:'muet' }),
+      v('I','ELLE LE POUSSE VERS SON PROPRE BUT','Il est repoussé derrière sa ligne, dos au mur. Excellent pour ouvrir un angle de tir, mais très punitif quand il défendait bien.',{ adv:'recule' }),
+      v('J','ELLE LE POUSSE, ET YOSHI AUSSI','Tout le monde est bousculé, y compris Yoshi. Le plus équitable et le plus lisible, mais un ultime qui gêne son lanceur demande un vrai talent d\'exécution.',{ adv:'tous' })
+    ]
+  },
+  {
+    id: 'densite', titre: '4 · Combien de Yoshi, et de quelle taille',
+    note: 'La densité décide de la lisibilité. Trop peu et ce n\'est plus une ruée ; trop et le terrain disparaît sous les sprites, disque compris.',
+    variantes: [
+      v('A','UNE DIZAINE, TAILLE NORMALE','Dix Yoshi à la taille du joueur, en rangs serrés. Ça se lit comme une foule sans effacer le terrain, mais ça reste sage.',{ n:10, taille:1 }),
+      v('B','UNE VINGTAINE, PLUS PETITS','Vingt Yoshi à deux tiers de la taille. La foule est bien plus impressionnante, mais chaque silhouette devient dure à distinguer.',{ n:20, taille:.66 }),
+      v('C','CINQ, PLUS GROS','Cinq Yoshi une fois et demie plus grands. Chaque passage pèse lourd et reste lisible, mais on perd complètement l\'idée de horde.',{ n:5, taille:1.5 }),
+      v('D','UN SEUL, ÉNORME','Un unique Yoshi géant qui traverse. Impact maximal et zéro confusion, mais ce n\'est plus LA RUÉE, c\'est une charge.',{ n:1, taille:3 }),
+      v('E','TRENTE, MINUSCULES','Trente petits Yoshi qui grouillent. Effet de nuée très réussi, mais à cette taille ils ressemblent à des projectiles plus qu\'à des personnages.',{ n:30, taille:.45 }),
+      v('F','TAILLES MÉLANGÉES','De gros et de petits Yoshi ensemble, comme une vraie foule. C\'est le plus vivant, mais l\'irrégularité rend la hitbox difficile à annoncer honnêtement.',{ n:14, taille:1, melange:true }),
+      v('G','DEUX RANGS SERRÉS','Deux lignes bien alignées qui passent l\'une derrière l\'autre. Très lisible et facile à esquiver entre les deux, ce qui laisse une porte de sortie.',{ n:12, taille:1, rangs:2 }),
+      v('H','TROIS VAGUES ESPACÉES','Trois petits groupes qui se suivent avec un intervalle. Le rythme est meilleur, mais l\'ultime dure forcément plus longtemps.',{ n:12, taille:1, vagues:3 }),
+      v('I','UNE LIGNE UNIQUE, PLEINE LARGEUR','Un seul rang qui occupe toute la hauteur du terrain. Impossible à esquiver, ce qui est net — mais peut-être trop.',{ n:8, taille:1, pleine:true }),
+      v('J','UNE GRAPPE DÉSORDONNÉE','Les Yoshi arrivent en désordre, à des hauteurs aléatoires. C\'est le plus naturel à l\'œil, mais on ne peut plus lire un trou pour passer.',{ n:16, taille:1, desordre:true })
+    ]
+  },
+  {
+    id: 'couleur', titre: '5 · De quelle couleur sont les Yoshi de la horde',
+    note: 'Les dix skins de couleur sont déjà validés : la horde peut s\'en servir. Attention au disque, qui est cyan, et aux zones de but, qui sont colorées elles aussi.',
+    variantes: [
+      v('A','TOUS VERTS','La horde reprend la couleur d\'origine. Cohérent et sobre, mais un bloc vert sur un terrain vert se lit mal, et les silhouettes se confondent entre elles.',{ coul:'vert' }),
+      v('B','TOUTES LES COULEURS','Chaque Yoshi prend une des teintes de skin. Chaque silhouette se détache de sa voisine, mais l\'arc-en-ciel jure avec le reste du jeu.',{ coul:'arc' }),
+      v('C','LA COULEUR DU SKIN PORTÉ','Toute la horde prend la teinte du skin équipé par le joueur. Le lien avec son personnage est immédiat, mais le problème du vert sur vert revient sur le skin d\'origine.',{ coul:'skin' }),
+      v('D','EN OMBRES CHINOISES','Des silhouettes sombres sans détail. Très lisible et élégant, mais on perd le côté joyeux qui fait tout le sel de la référence.',{ coul:'ombre' }),
+      v('E','DÉGRADÉ D\'UNE SEULE TEINTE','Toute la horde dans la couleur du skin, mais chaque Yoshi un peu plus clair ou plus foncé. Lisible ET cohérent, au prix d\'un effet moins marquant.',{ coul:'degrade' }),
+      v('F','BLANCS, COMME DES FANTÔMES','Une horde blanche translucide. Ça dit clairement « ce ne sont pas de vrais joueurs », mais le blanc est déjà celui du ventre et des lignes du terrain.',{ coul:'fantome' }),
+      v('G','LA COULEUR DE L\'ADVERSAIRE','La horde prend la couleur du joueur d\'en face, comme une moquerie. Idée forte, mais on croira que c\'est lui qui a lancé l\'ultime.',{ coul:'adverse' }),
+      v('H','DEUX COULEURS EN ALTERNANCE','Un Yoshi sur deux dans une teinte différente. Le rang se lit très bien, et c\'est le compromis le plus sobre entre le monochrome et l\'arc-en-ciel.',{ coul:'alterne' }),
+      v('I','TOUS DORÉS','Une horde entièrement dorée. Ça dit « ultime » sans ambiguïté, mais l\'or est déjà la couleur de la jauge et des éléments d\'interface.',{ coul:'or' }),
+      v('J','DE PLUS EN PLUS COLORÉS','Les premiers sont verts, les derniers multicolores. Le crescendo est joli, mais il demande une horde longue pour se voir.',{ coul:'crescendo' })
+    ]
+  },
+  {
+    id: 'duree', titre: '6 · Combien de temps ça dure',
+    note: 'La durée est le vrai bouton d\'équilibrage. Le chien de Yuki dure 3 secondes et c\'est déjà jugé beaucoup ; la ruée agit sur tout le terrain, pas sur un seul joueur.',
+    variantes: [
+      v('A','TRÈS COURT — 0,8 s','La horde traverse en un éclair. Impossible à contrer, mais il faut l\'avoir déclenchée au bon moment, ce qui en fait un ultime de précision.',{ dur:.8 }),
+      v('B','COURT — 1,2 s','Un passage franc. C\'est la durée qui laisse juste le temps de réagir sans laisser le temps de replacer, sans doute le meilleur compromis.',{ dur:1.2 }),
+      v('C','MOYEN — 2 s','La horde prend son temps. On voit venir et on peut se placer, mais deux secondes sans contrôle du centre, c\'est long.',{ dur:2 }),
+      v('D','LONG — 3 s','Une traversée qui s\'installe. Très impressionnant, mais c\'est la durée du chien de Yuki, déjà signalée comme probablement trop forte.',{ dur:3 }),
+      v('E','TRÈS LONG — 4,5 s','La horde occupe le terrain longtemps. Ça change complètement le point, mais l\'adversaire n\'a plus qu\'à attendre que ça passe.',{ dur:4.5 }),
+      v('F','COURT MAIS DEUX FOIS','Deux passages de 0,8 s séparés d\'une seconde. Le second surprend celui qui s\'est replacé, mais ça complique la lecture.',{ dur:.8, fois:2 }),
+      v('G','ACCÉLÉRÉ EN FIN DE COURSE','Elle démarre lentement puis accélère. Le rythme est bien plus vivant, mais la vitesse variable rend l\'esquive injuste.',{ dur:1.6, accel:true }),
+      v('H','JUSQU\'À CE QU\'ELLE TOUCHE LE DISQUE','La horde traverse jusqu\'à atteindre le disque, puis s\'arrête. La durée dépend du placement, ce qui est élégant, mais elle devient imprévisible.',{ dur:2, jusqua:true }),
+      v('I','TANT QUE LA TOUCHE EST TENUE','Le joueur décide de la longueur, dans la limite de 3 secondes. Contrôle total, mais c\'est déjà le principe de la rafale de Mamie.',{ dur:3, tenue:true }),
+      v('J','UN PASSAGE PAR POINT MARQUÉ','La ruée dure d\'autant plus longtemps que Yoshi est mené au score. Rattrapage intéressant, mais une mécanique qui punit celui qui gagne est mal vécue.',{ dur:2, rattrapage:true })
+    ]
+  },
+  {
+    id: 'annonce', titre: '7 · Ce qui prévient que la ruée part',
+    note: 'Un ultime qui agit sur tout le terrain doit s\'annoncer, sinon l\'adversaire subit sans comprendre. Reste à savoir combien de temps à l\'avance, et à quel prix pour Yoshi.',
+    variantes: [
+      v('A','YOSHI LÈVE LE BRAS','Il siffle, bras en l\'air, avant que la horde entre. Simple et lisible, mais il faut regarder Yoshi pour le voir.',{ ann:'bras' }),
+      v('B','UNE LIGNE AU SOL','Une bande lumineuse marque le couloir de la ruée avant qu\'elle passe. Parfaitement clair, mais ça retire toute surprise.',{ ann:'couloir' }),
+      v('C','UN NUAGE DE POUSSIÈRE','Le sol tremble et la poussière se lève au point d\'entrée. Très naturel, mais moins précis qu\'une ligne.',{ ann:'poussiere' }),
+      v('D','AUCUNE ANNONCE','La horde débarque sans prévenir. Effet de surprise maximal, mais l\'adversaire subit sans pouvoir rien faire, ce qui se vit très mal.',{ ann:'rien' }),
+      v('E','LE TERRAIN TREMBLE','Tout l\'écran vibre une demi-seconde avant. Ça se sent sans regarder, mais le tremblement gêne aussi la visée de Yoshi.',{ ann:'secousse' }),
+      v('F','UN SEUL YOSHI PASSE D\'ABORD','Un éclaireur traverse, puis la horde. Excellente annonce diégétique, mais elle allonge l\'ultime d\'une demi-seconde.',{ ann:'eclaireur' }),
+      v('G','LE CRI','Un cri de Yoshi couvre le terrain. Impossible à rater même en ne regardant pas, mais inutile si le son est coupé.',{ ann:'cri' }),
+      v('H','LES BORDS DU TERRAIN S\'ALLUMENT','Le bord d\'où viendra la horde se met à briller. Discret, précis, et ça n\'encombre pas le centre du terrain.',{ ann:'bord' }),
+      v('I','LE DISQUE CLIGNOTE','Le disque signale qu\'il va être touché. Ça prévient uniquement quand c\'est pertinent, mais ça n\'aide pas à esquiver la horde elle-même.',{ ann:'disque' }),
+      v('J','LA JAUGE SUFFIT','Rien de plus que la jauge d\'ultime pleine, visible par les deux joueurs. Le plus honnête et le moins encombrant, mais il faut penser à la surveiller.',{ ann:'jauge' })
+    ]
+  },
+  {
+    id: 'chiffres', titre: '8 · Les chiffres',
+    note: 'Les valeurs concrètes, à comparer aux ultimes déjà en place : le chien de Yuki dure 3 s, la rafale de Mamie repousse coup par coup, le grappin de Chopper gèle le disque pendant son vol.',
+    variantes: [
+      v('A','PRUDENT','Poussée faible, aucun contrôle retiré, recharge longue. Le réglage qui ne casse rien, mais qui risque de rendre l\'ultime décevant à jouer.',{ ch:{ poussee:'faible', ctrl:'aucun', recharge:'12 s', portee:'couloir' } }),
+      v('B','ÉQUILIBRÉ','Poussée moyenne, un demi-seconde de perte de contrôle, recharge standard. Le point de départ raisonnable pour un premier test en match.',{ ch:{ poussee:'moyenne', ctrl:'0,5 s', recharge:'9 s', portee:'couloir' } }),
+      v('C','AGRESSIF','Forte poussée, une seconde de perte de contrôle, recharge courte. Très satisfaisant à lancer, probablement trop fort à subir.',{ ch:{ poussee:'forte', ctrl:'1 s', recharge:'7 s', portee:'large' } }),
+      v('D','TOUT OU RIEN','Poussée énorme mais recharge très longue. L\'ultime devient un moment de match, ce qui est mémorable, mais il ne sort qu\'une fois ou deux par partie.',{ ch:{ poussee:'énorme', ctrl:'1,2 s', recharge:'20 s', portee:'plein terrain' } }),
+      v('E','HARCÈLEMENT','Poussée faible mais recharge très courte. La ruée revient sans arrêt, ce qui use l\'adversaire, mais elle perd tout son caractère d\'ultime.',{ ch:{ poussee:'faible', ctrl:'aucun', recharge:'5 s', portee:'couloir' } }),
+      v('F','DÉFENSIF','Poussée moyenne, recharge standard, mais la portée ne couvre que la moitié de terrain de Yoshi. Excellent en défense, sans valeur en attaque.',{ ch:{ poussee:'moyenne', ctrl:'0,5 s', recharge:'9 s', portee:'sa moitié' } }),
+      v('G','OFFENSIF','Même chose, mais la portée ne couvre que la moitié adverse. Il faut être en position d\'attaque pour en profiter, ce qui récompense la prise d\'initiative.',{ ch:{ poussee:'moyenne', ctrl:'0,5 s', recharge:'9 s', portee:'moitié adverse' } }),
+      v('H','PROGRESSIF','La poussée augmente avec la durée de charge de la jauge. Récompense la patience, mais ajoute une règle de plus à expliquer au joueur.',{ ch:{ poussee:'variable', ctrl:'0,5 s', recharge:'10 s', portee:'couloir' } }),
+      v('I','SANS RECHARGE, SUR JAUGE SEULE','Pas de recharge : l\'ultime revient quand la jauge se remplit, comme pour les autres personnages. Cohérent avec le reste du roster, mais moins réglable finement.',{ ch:{ poussee:'moyenne', ctrl:'0,5 s', recharge:'jauge', portee:'couloir' } }),
+      v('J','SYMÉTRIQUE','Poussée moyenne appliquée aux deux joueurs, recharge courte. Le plus équitable et le plus facile à équilibrer, mais un ultime qui gêne son lanceur déçoit.',{ ch:{ poussee:'moyenne', ctrl:'0,5 s', recharge:'7 s', portee:'couloir' } })
+    ]
+  }
+];
+
+/* ===================== CONTRÔLES ===================== */
+// PERSO sert au module de contrôle : il vérifie que le Yoshi montré ici est
+// toujours celui du design arrêté, traits obligatoires compris.
+const PERSO = { nom:'YOSHI', dominante:'lGgh', pal:PAL, tete:TETE, corps:CORPS };
+afficher(verifier({ id:'yoshi', PERSO, SECTIONS }), document.getElementById('errs'));
+
+/* ===================== L'ÉTAT ===================== */
+const choix = {};
+SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+const actuel = id => SECTIONS.find(s => s.id === id).variantes.find(v => v.id === choix[id]);
+
+/* ===================== LA SCÈNE ===================== */
+// Positions en coordonnées de TERRAIN : les mêmes valeurs donnent la même
+// scène quelle que soit la taille du canvas.
+const yoshiX = CT.left + CW * .24, yoshiY = CYY + 46;
+const advX   = CT.left + CW * .74, advY   = CYY - 44;
+const disqX  = CXX + 30, disqY = CYY - 14;
+
+function teinteHorde(i, n) {
+  const c = actuel('couleur').coul;
+  if (c === 'vert') return HORDE[0];
+  if (c === 'arc' || c === 'crescendo') return HORDE[i % HORDE.length];
+  if (c === 'alterne') return HORDE[i % 2 ? 1 : 0];
+  if (c === 'skin' || c === 'degrade') return HORDE[0];
+  if (c === 'or') return HORDE[3];
+  if (c === 'adverse') return HORDE[2];
+  return HORDE[0];
+}
+
+function jouer(g, t, W, H) {
+  const vue = terrain(g, W, H);
+  const { X, Y, e } = vue;
+  const dur = actuel('duree').dur;
+  const total = D_APPEL + D_ARRIVEE + dur + D_SORTIE + .5;
+  const tt = t % total;
+  const b = [D_APPEL, D_APPEL + D_ARRIVEE, D_APPEL + D_ARRIVEE + dur,
+             D_APPEL + D_ARRIVEE + dur + D_SORTIE];
+
+  let phase = -1, k = 0;
+  if (tt < b[0]) phase = 0;
+  else if (tt < b[1]) { phase = 1; k = (tt - b[0]) / D_ARRIVEE * .18; }
+  else if (tt < b[2]) { phase = 2; k = .18 + (tt - b[1]) / dur * .74; }
+  else if (tt < b[3]) { phase = 3; k = .92 + (tt - b[2]) / D_SORTIE * .3; }
+  else k = 1.25;
+
+  const dep = actuel('arrivee').dep;
+  const dens = actuel('densite');
+  const ann = actuel('annonce').ann;
+
+  // Le couloir annoncé, dessiné sous les personnages.
+  if (ann === 'couloir' && phase >= 0) {
+    g.save(); g.globalAlpha = phase === 0 ? .35 : .18; g.fillStyle = '#ffd23e';
+    if (dep === 'haut' || dep === 'bas') g.fillRect(X(CXX - 70), Y(CT.top), 140 * e, CH * e);
+    else g.fillRect(X(CT.left), Y(CYY - 60), CW * e, 120 * e);
+    g.restore();
+  }
+  if (ann === 'bord' && phase >= 0) {
+    g.save(); g.globalAlpha = .5; g.fillStyle = '#ffd23e';
+    if (dep === 'droite') g.fillRect(X(CT.right) - 6, Y(CT.top), 6, CH * e);
+    else g.fillRect(X(CT.left), Y(CT.top), 6, CH * e);
+    g.restore();
+  }
+
+  perso(g, phase === 0 ? SPR_APPEL : SPR, yoshiX, yoshiY, vue, 1);
+  perso(g, CHARS.leon.frames.idle, advX, advY, vue, -1);
+
+  // Le disque, déplacé selon ce que la ruée lui fait.
+  const dsq = actuel('disque').dsq;
+  let dx = disqX, dy = disqY;
+  if (phase >= 2 && (dsq === 'pousse' || dsq === 'zone')) dx = disqX + (k - .18) * 260;
+  if (phase >= 2 && dsq === 'rend') dx = disqX - (k - .18) * 200;
+  disque(g, dx, dy, vue);
+
+  // La horde.
+  if (phase >= 1) {
+    const n = dens.n, taille = dens.taille;
+    for (let i = 0; i < n; i++) {
+      const f = i / Math.max(1, n - 1);
+      let px, py, face = 1;
+      const avance = k - (dens.desordre ? (i % 5) * .05 : 0)
+                       - (dens.vagues ? Math.floor(i / (n / dens.vagues)) * .22 : 0)
+                       - (dens.rangs ? (i % dens.rangs) * .12 : 0);
+      const bande = dens.pleine ? CH * .8 : CH * .52;
+      if (dep === 'haut') { px = CT.left + CW * (.2 + f * .6); py = CT.top - 40 + avance * (CH + 90); }
+      else if (dep === 'bas') { px = CT.left + CW * (.2 + f * .6); py = CT.bottom + 40 - avance * (CH + 90); }
+      else if (dep === 'droite') { px = CT.right + 60 - avance * (CW + 130); py = CYY - bande / 2 + f * bande; face = -1; }
+      else if (dep === 'diag') { px = CT.left - 60 + avance * (CW + 130); py = CT.top - 20 + f * .3 * CH + avance * CH * .55; }
+      else if (dep === 'double') {
+        const droite = i % 2 === 1;
+        px = droite ? CT.right + 60 - avance * (CW + 130) : CT.left - 60 + avance * (CW + 130);
+        py = CYY - bande / 2 + f * bande; face = droite ? -1 : 1;
+      } else if (dep === 'perso') {
+        const a = (f - .5) * 1.5;
+        px = yoshiX + Math.cos(a) * avance * 320; py = yoshiY + Math.sin(a) * avance * 190;
+      } else if (dep === 'cercle') {
+        const a = f * TAU, r = Math.max(6, (1 - avance) * 150);
+        px = disqX + Math.cos(a) * r; py = disqY + Math.sin(a) * r * .6;
+      } else { px = CT.left - 60 + avance * (CW + 130); py = CYY - bande / 2 + f * bande; }
+
+      if (avance < -.05 || avance > 1.3) continue;
+      const spr = teinteHorde(i, n);
+      const c = actuel('couleur').coul;
+      g.save();
+      if (c === 'ombre') { g.globalAlpha = .85; g.filter = 'brightness(0.12)'; }
+      if (c === 'fantome') { g.globalAlpha = .55; g.filter = 'brightness(2.4) saturate(0.2)'; }
+      if (c === 'or') g.filter = 'sepia(1) saturate(3) hue-rotate(-15deg) brightness(1.15)';
+      if (c === 'degrade') g.filter = 'brightness(' + (.75 + f * .6).toFixed(2) + ')';
+      const mult = dens.melange ? (i % 3 === 0 ? 1.45 : i % 3 === 1 ? .7 : 1) : 1;
+      const w = 48 * 1.6 * e * taille * mult, h = 60 * 1.6 * e * taille * mult;
+      g.imageSmoothingEnabled = false;
+      g.translate(X(px), Y(py));
+      if (face < 0) g.scale(-1, 1);
+      g.drawImage(spr, -w / 2, -h + 10 * e, w, h);
+      g.restore();
+    }
+    if (ann === 'poussiere' || phase === 2) poussiere(g, vue, CT.left + CW * k, CYY + 60, Math.min(1, k * 2));
+  }
+
+  // Ce que la ruée inflige, montré par une flèche plutôt que deviné.
+  const adv = actuel('adverse').adv;
+  if (phase === 2 && adv !== 'rien') {
+    const cible = { pousse:[advX + 70, advY], chute:[advX, advY + 40], lent:[advX + 30, advY],
+                    masque:[advX, advY - 40], emporte:[CT.right, advY], lache:[advX + 40, advY + 20],
+                    muet:[advX, advY - 30], recule:[CT.right - 20, advY], tous:[advX + 70, advY] }[adv];
+    if (cible) fleche(g, vue, advX, advY, cible[0], cible[1], '#ff6a5a');
+    if (adv === 'tous') fleche(g, vue, yoshiX, yoshiY, yoshiX + 70, yoshiY, '#ff6a5a');
+  }
+  return phase;
+}
+
+/* ===================== L'APERÇU ===================== */
+const cvA = document.getElementById('cvApercu');
+const gA = cvA.getContext('2d');
+const friseEl = document.getElementById('frise');
+friseEl.innerHTML = PHASES.map(p =>
+  '<div class="ph" data-id="' + p.id + '"><b>' + p.nom + '</b><i>' + p.detail + '</i></div>').join('');
+
+let t0 = performance.now();
+function boucle(now) {
+  const t = (now - t0) / 1000;
+  const ph = jouer(gA, t, cvA.width, cvA.height);
+  [...friseEl.children].forEach((el, i) => el.classList.toggle('on', i === ph));
+  requestAnimationFrame(boucle);
+}
+requestAnimationFrame(boucle);
+
+/* ===================== LES CARTES ===================== */
+// Les cartes sont FIGÉES : seul l'aperçu du haut bouge. Une grille de vignettes
+// animées est illisible, on ne sait plus laquelle regarder.
+function dessinerCarte(cv, sec, va) {
+  const g = cv.getContext('2d');
+  const sauve = { ...choix };
+  choix[sec.id] = va.id;
+  // On fige le temps au milieu de la ruée : c'est l'instant où la variante
+  // se voit le mieux.
+  jouer(g, D_APPEL + D_ARRIVEE + actuel('duree').dur * .5, cv.width, cv.height);
+  Object.assign(choix, sauve);
+}
+
+const boite = document.getElementById('sections');
+const cartes = [];
+SECTIONS.forEach((sec, iSec) => {
+  const h2 = document.createElement('h2');
+  h2.textContent = sec.titre;
+  const note = document.createElement('p');
+  note.className = 'note';
+  note.textContent = sec.note;
+  boite.append(h2, note);
+
+  const faireRangee = (liste, reserve) => {
+    const row = document.createElement('div');
+    row.className = 'row' + (reserve ? ' reserve' : '');
+    liste.forEach(va => {
+      const card = document.createElement('div');
+      card.className = 'card' + (choix[sec.id] === va.id ? ' on' : '');
+      card.dataset.sec = sec.id; card.dataset.va = va.id;
+      const lbl = document.createElement('div');
+      lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + va.desc;
+      const cv = document.createElement('canvas');
+      cv.width = 300; cv.height = 150;
+      card.append(lbl, cv);
+      card.onclick = () => {
+        choix[sec.id] = va.id;
+        document.querySelectorAll('.card[data-sec="' + sec.id + '"]')
+          .forEach(c => c.classList.toggle('on', c.dataset.va === va.id));
+        rafraichirCartes();
+        majChoix();
+      };
+      row.append(card);
+      cartes.push({ cv, sec, va });
+    });
+    return row;
+  };
+  boite.append(faireRangee(sec.variantes.slice(0, 5), false));
+  const res = faireRangee(sec.variantes.slice(5), true);
+  const btn = document.createElement('button');
+  btn.className = 'plus';
+  btn.textContent = '+ 5 autres choix';
+  btn.onclick = () => { res.classList.toggle('ouverte'); rafraichirCartes(); };
+  boite.append(btn, res);
+});
+
+function rafraichirCartes() {
+  cartes.forEach(({ cv, sec, va }) => {
+    if (!cv.offsetParent) return;      // dans une réserve fermée : inutile
+    dessinerCarte(cv, sec, va);
+  });
+}
+
+function majChoix() {
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value =
+    SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+}
+document.getElementById('btnCopier').onclick = async () => {
+  const b = document.getElementById('btnCopier');
+  try { await navigator.clipboard.writeText(document.getElementById('codeChoix').value);
+        b.textContent = 'copié !'; b.classList.add('ok');
+        setTimeout(() => { b.textContent = 'copier mes choix'; b.classList.remove('ok'); }, 1400); }
+  catch (e) { document.getElementById('codeChoix').select(); }
+};
+rafraichirCartes();
+majChoix();
+</script>
+</body>
+</html>
