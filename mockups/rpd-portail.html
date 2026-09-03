@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Le portail R.P.D. — banc d'essai</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#07090b; --panel:#111719; --edge:#253336; --ink:#e6edee;
+         --accent:#4fb3a8; --ambre:#ff9a3c; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:'Segoe UI',system-ui,sans-serif;padding:18px 20px 70px}
+  h1{font-size:21px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:13px;margin:30px 0 9px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.5px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#849698;line-height:1.7;margin:0 0 14px;max-width:940px}
+  .note b{color:var(--ink)}
+
+  .refs{background:linear-gradient(180deg,#141c1e,#0f1517);border:1px solid var(--edge);
+        border-left:3px solid var(--ambre);border-radius:8px;padding:13px 16px;
+        margin:0 0 18px;max-width:940px}
+  .refs h3{margin:0 0 8px;font-size:11.5px;letter-spacing:1.2px;color:var(--ambre);
+           text-transform:uppercase;font-family:'Archivo Black',sans-serif}
+  .refs ul{margin:0;padding-left:18px;font-size:12.5px;color:#9aabad;line-height:1.75}
+  .refs li b{color:var(--ink)}
+  .nuancier{display:flex;flex-wrap:wrap;gap:5px;margin-top:11px}
+  .mat{font-size:9.5px;font-family:ui-monospace,Consolas,monospace;color:#b6c4c6;
+       border:1px solid var(--edge);border-radius:4px;padding:2px 6px 2px 3px;
+       display:flex;align-items:center;gap:5px;background:#0d1214}
+  .mat i{width:11px;height:11px;border-radius:2px;display:block;
+         box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+
+  .verdict{background:#161010;border:1px solid #4a2a2a;border-left:3px solid #e0554c;
+           border-radius:8px;padding:12px 15px;margin:0 0 16px;max-width:940px;
+           font-size:12.5px;color:#d9b4b0;line-height:1.7}
+  .verdict b{color:#ffd9d4}
+
+  canvas{display:block;border-radius:6px;background:#07090b;border:1px solid var(--edge)}
+  .bloc{margin-bottom:14px}
+  .cap{font-size:11px;color:#7f9294;margin:6px 2px 0;line-height:1.5}
+  .cap b{color:var(--ambre);display:block;font-size:12px;margin-bottom:2px}
+  .rangee{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+  .outils{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 4px}
+  button{font:inherit;font-size:11.5px;cursor:pointer;background:#182225;color:var(--ink);
+         border:1px solid var(--edge);border-radius:5px;padding:6px 11px}
+  button:hover{background:#213033;border-color:#3d5457}
+  button.on{background:var(--ambre);color:#111;border-color:var(--ambre);font-weight:700}
+</style>
+</head>
+<body>
+
+<h1>Le portail R.P.D. — banc d'essai</h1>
+<p class="note">Un seul élément, travaillé jusqu'au bout avant d'assembler quoi que ce soit.
+Dessiné d'après de vraies captures de <b>Resident Evil 2 remake</b>, pas de mémoire.</p>
+
+<div class="refs">
+  <h3>Ce que les références montrent</h3>
+  <ul>
+    <li>L'image canonique n'est pas une façade mais un <b>portail monumental</b> : deux gros piliers de
+      pierre, un linteau horizontal, et <b>« R.P.D. » en grandes lettres blanches éclairées</b> dessus.</li>
+    <li>Sous l'arche, une <b>grille en fer forgé au sommet arrondi</b>, et une <b>lumière chaude</b>
+      qui filtre derrière — c'est la seule chose vraiment lumineuse de l'image.</li>
+    <li>Pierre <b>néoclassique massive</b>, à chapiteaux, pas d'ogive gothique.</li>
+    <li>Un <b>drapeau américain</b> sur son mât : le seul rouge franc d'une scène monochrome.</li>
+    <li>Étalonnage <b>teal désaturé</b> pour l'ambiance, <b>ambre et orange saturés</b> pour les sources.
+      Les gyrophares bleus ne sont qu'un point de couleur, jamais la lumière principale.</li>
+  </ul>
+  <div class="nuancier" id="nuancier"></div>
+</div>
+
+<div class="verdict" id="verdict">Mesure en cours…</div>
+
+<h2>1 · Le test décisif — à sa taille réelle dans le jeu</h2>
+<p class="note">Au-dessus du terrain, il n'y a que <b>82 pixels</b> de hauteur (le terrain commence à
+y = 84). Toute la question est là : <b>est-ce que « R.P.D. » se lit à cette taille ?</b>
+Si non, il faut changer de plan. Ci-dessous, la bande du haut du terrain, à l'échelle 1:1.</p>
+<div class="bloc">
+  <canvas id="cvReel" width="960" height="230"></canvas>
+  <div class="cap"><b>Grandeur nature</b>La bande de décor telle qu'elle sera en jeu, avec le haut du terrain sous elle.</div>
+</div>
+
+<h2>2 · Le même portail, agrandi</h2>
+<div class="rangee" id="echelles"></div>
+
+<h2>3 · Les quatre traitements</h2>
+<p class="note">Quatre partis pris sur le même portail. Clique pour l'envoyer dans le test du haut.</p>
+<div class="rangee" id="variantes"></div>
+
+<script>
+const TAU = Math.PI * 2;
+const W = 960, H = 600;
+const COURT = { left: 70, right: 890, top: 84, bottom: 560 };
+const CX = (COURT.left + COURT.right) / 2;
+
+/* ===========================================================================
+   LES MATIÈRES, relevées sur les captures : teal désaturé pour tout ce qui
+   n'est pas éclairé, ambre saturé pour tout ce qui l'est. C'est cet écart de
+   saturation, plus que les teintes elles-mêmes, qui fait la série.
+   ======================================================================== */
+const M = {
+  nuit:'#080e10',        nuitTeal:'#0e1c1f',     teal:'#14282b',
+  tealClair:'#1f3d41',   brume:'#2d5a5e',        brumeClaire:'#3f7a7d',
+  pierre:'#39423f',      pierreClair:'#5a6560',  pierreOmbre:'#212724',
+  pierreChaude:'#6b6355',
+  fer:'#171f21',         ferArete:'#65787a',     ferOmbre:'#0c1113',
+  rouille:'#5e3a24',
+  ambre:'#ff9a3c',       ambreClair:'#ffc478',   ambrePale:'#ffe0b0',
+  feu:'#ff6a1a',
+  lettre:'#e8eef0',      lettreAllumee:'#ffffff',
+  drapRouge:'#c8202e',   drapBlanc:'#eef0f2',    drapBleu:'#1e2f6b',
+  gyroBleu:'#2f8cff',
+  bitume:'#10181a',      bitumeReflet:'#2a4a4e', bitumeOmbre:'#070c0d'
+};
+document.getElementById('nuancier').innerHTML = Object.entries(M)
+  .map(([k,v]) => '<span class="mat"><i style="background:'+v+'"></i>'+k+'</span>').join('');
+
+function graine(i){ const x = Math.sin(i*127.1)*43758.5453; return x - Math.floor(x); }
+function alea(i,a,b){ return a + graine(i)*(b-a); }
+function mel(a,b,k){
+  const lire = h => [1,3,5].map(i => parseInt(h.slice(i,i+2),16));
+  const A = lire(a), B = lire(b);
+  return '#' + A.map((v,i) => Math.max(0,Math.min(255,Math.round(v+(B[i]-v)*k)))
+    .toString(16).padStart(2,'0')).join('');
+}
+function tt(col,a){
+  const [r,g,b] = [1,3,5].map(i => parseInt(col.slice(i,i+2),16));
+  return 'rgba('+r+','+g+','+b+','+Math.max(0,Math.min(1,a))+')';
+}
+
+/* Bloc de pierre : jamais un aplat. Une face, une arête claire en haut, une
+   ombre en bas, et un grain qui ne se répète pas d'un bloc à l'autre. */
+function pierre(c, x, y, l, h, i, chaude){
+  const g = graine(i);
+  const base = chaude ? mel(M.pierre, M.pierreChaude, .35) : M.pierre;
+  c.fillStyle = mel(base, M.pierreOmbre, .15 + g*.35);
+  c.fillRect(x, y, l, h);
+  c.fillStyle = tt(M.pierreClair, .25 + g*.2);
+  c.fillRect(x, y, l, Math.max(1, h*.14));
+  c.fillStyle = tt(M.pierreOmbre, .55);
+  c.fillRect(x, y + h - Math.max(1, h*.16), l, Math.max(1, h*.16));
+  c.fillRect(x + l - Math.max(1, l*.05), y, Math.max(1, l*.05), h);
+}
+
+/* ===========================================================================
+   LE PORTAIL. Tout est dérivé de sa hauteur totale `ht` : ça permet de le
+   dessiner à n'importe quelle taille sans réécrire une ligne, et donc de
+   vérifier à 1:1 ce qu'on a jugé à 4:1.
+   ======================================================================== */
+function portail(c, cx, sol, ht, t, opt){
+  opt = opt || {};
+  const l = ht * 2.55;                 // largeur totale, relevée sur la référence
+  const lp = ht * .26;                 // largeur d'un pilier — passe 3 : à .19 ils
+                                       // faisaient des poteaux, pas de la maçonnerie
+  const hLint = ht * .2;               // linteau épaissi d'autant, sinon il flotte
+  const yLint = sol - ht * .82;        // haut de l'ouverture
+  const x0 = cx - l/2, x1 = cx + l/2;
+  const ouv = l - lp*2;                // largeur de l'ouverture
+
+  // 1. La lumière chaude derrière la grille : posée AVANT tout le reste, c'est
+  // elle qu'on voit à travers les barreaux.
+  const v = (opt.lueur === 0) ? 0 : (.72 + Math.sin(t*1.7)*.1) * (opt.lueur || 1);
+  if (v > 0){
+    c.save(); c.globalCompositeOperation = 'screen';
+    const g = c.createRadialGradient(cx, sol - ht*.3, ht*.05, cx, sol - ht*.3, ht*1.1);
+    g.addColorStop(0, tt(M.ambre, .5*v)); g.addColorStop(.5, tt(M.ambre, .16*v));
+    g.addColorStop(1, tt(M.ambre, 0));
+    c.fillStyle = g; c.fillRect(x0 - ht, sol - ht*1.4, l + ht*2, ht*1.6);
+    c.restore();
+    c.fillStyle = tt(M.ambreClair, .3*v);
+    c.fillRect(cx - ouv/2, yLint, ouv, ht*.82);
+  }
+
+  // 2. Les deux piliers, en assises de pierre.
+  for (const px of [x0, x1 - lp]){
+    const n = 7;
+    for (let k = 0; k < n; k++){
+      const hb = ht*.82/n;
+      pierre(c, px, sol - hb*(k+1), lp, hb, px*3+k, opt.chaude);
+    }
+    // Chapiteau : la pierre déborde, c'est ce qui fait « colonne » et non « mur ».
+    pierre(c, px - ht*.03, yLint - ht*.06, lp + ht*.06, ht*.07, px, opt.chaude);
+    // Base élargie, en deux ressauts : un pilier qui touche le sol sans
+    // socle a l'air posé dessus au lieu d'y être scellé.
+    pierre(c, px - ht*.02, sol - ht*.085, lp + ht*.04, ht*.045, px+9, opt.chaude);
+    pierre(c, px - ht*.045, sol - ht*.045, lp + ht*.09, ht*.05, px+17, opt.chaude);
+    // Les joints verticaux, décalés d'une assise à l'autre : sans eux on lit
+    // un aplat rayé au lieu d'un appareillage.
+    for (let k = 0; k < 7; k++){
+      const hb = ht*.82/7, y = sol - hb*(k+1);
+      c.fillStyle = tt(M.pierreOmbre, .65);
+      c.fillRect(px + (k % 2 ? lp*.38 : lp*.63), y, Math.max(1, ht*.011), hb);
+    }
+  }
+
+  // 2b. LA LUMIÈRE SUR LA PIERRE. C'est ce qui manquait le plus : la lueur est
+  // derrière la grille, donc les faces intérieures des piliers la reçoivent en
+  // rasant. Sans cette arête chaude, la pierre reste un aplat mort et le
+  // portail n'a aucun relief — c'est ce qui le distinguait le plus de la
+  // référence, où la lumière silhouette tout.
+  if (v > 0){
+    c.save(); c.globalCompositeOperation = 'screen';
+    for (const [px, vers] of [[x0 + lp, -1], [x1 - lp, 1]]){
+      const g = c.createLinearGradient(px, 0, px + vers * lp * .75, 0);
+      g.addColorStop(0, tt(M.ambre, .34*v)); g.addColorStop(1, tt(M.ambre, 0));
+      c.fillStyle = g;
+      c.fillRect(Math.min(px, px + vers*lp*.75), yLint - ht*.07, lp*.75, ht*.9);
+    }
+    // Le dessous du linteau reçoit la lumière de plein fouet.
+    const gl = c.createLinearGradient(0, yLint, 0, yLint - hLint*.75);
+    gl.addColorStop(0, tt(M.ambre, .26*v)); gl.addColorStop(1, tt(M.ambre, 0));
+    c.fillStyle = gl; c.fillRect(x0, yLint - hLint*.75, l, hLint*.75);
+    c.restore();
+  }
+
+  // 3. La grille, dans l'ouverture. Sommet arrondi, comme sur la référence.
+  const yArc = sol - ht*.62;
+  c.save();
+  c.beginPath();
+  c.moveTo(cx - ouv/2, sol);
+  c.lineTo(cx - ouv/2, yArc);
+  c.quadraticCurveTo(cx, sol - ht*.9, cx + ouv/2, yArc);
+  c.lineTo(cx + ouv/2, sol);
+  c.closePath();
+  c.clip();
+  // Passe 4 : moins de barreaux et plus épais. À un barreau tous les 7 px on
+  // lisait une barrière de jardin ; du fer forgé, c'est massif et espacé.
+  const nb = Math.max(5, Math.round(ouv / (ht*.115)));
+  const ep = Math.max(1.8, ht*.038);
+  for (let k = 0; k <= nb; k++){
+    const bx = cx - ouv/2 + k*(ouv/nb);
+    c.fillStyle = M.fer; c.fillRect(bx - ep/2, sol - ht, ep, ht);
+    // L'arête qui capte la lueur de derrière : c'est elle qui fait le cylindre
+    // plutôt que le trait. Elle s'allume avec la source.
+    c.fillStyle = tt(M.ferArete, .3 + .32*v);
+    c.fillRect(bx - ep/2, sol - ht, Math.max(.8, ep*.3), ht);
+    c.fillStyle = tt(M.ferOmbre, .6);
+    c.fillRect(bx + ep/2 - Math.max(.8, ep*.26), sol - ht, Math.max(.8, ep*.26), ht);
+  }
+  // Deux traverses.
+  for (const yy of [sol - ht*.14, sol - ht*.46]){
+    const ep = Math.max(1.6, ht*.032);
+    c.fillStyle = M.fer; c.fillRect(cx - ouv/2, yy, ouv, ep);
+    c.fillStyle = tt(M.ferArete, .45); c.fillRect(cx - ouv/2, yy, ouv, Math.max(.8, ep*.3));
+  }
+  c.restore();
+  // L'arc de la grille lui-même.
+  c.strokeStyle = M.fer; c.lineWidth = Math.max(1.6, ht*.035);
+  c.beginPath();
+  c.moveTo(cx - ouv/2, yArc);
+  c.quadraticCurveTo(cx, sol - ht*.9, cx + ouv/2, yArc);
+  c.stroke();
+  c.strokeStyle = tt(M.ferArete, .3 + .3*v); c.lineWidth = Math.max(.8, ht*.012);
+  c.beginPath();
+  c.moveTo(cx - ouv/2, yArc - ht*.01);
+  c.quadraticCurveTo(cx, sol - ht*.91, cx + ouv/2, yArc - ht*.01);
+  c.stroke();
+
+  // Les volutes sous l'arc, une par écoinçon. C'est le seul détail qui sépare
+  // une grille FORGÉE d'un grillage, et il tient en six lignes.
+  c.save();
+  c.strokeStyle = M.fer; c.lineWidth = Math.max(1.2, ht*.024); c.lineCap = 'round';
+  for (const s of [-1, 1]){
+    c.beginPath();
+    c.moveTo(cx + s*ouv*.46, yArc + ht*.03);
+    c.quadraticCurveTo(cx + s*ouv*.34, sol - ht*.8, cx + s*ouv*.13, yArc - ht*.045);
+    c.stroke();
+    c.lineWidth = Math.max(1, ht*.018);
+    c.beginPath();
+    c.arc(cx + s*ouv*.33, sol - ht*.715, ht*.05, s > 0 ? -1.2 : 2, s > 0 ? 3.6 : 6.4);
+    c.stroke();
+  }
+  c.restore();
+
+  // 4. Le linteau, puis les lettres. C'est LE marqueur : tout le reste peut
+  // rater, si « R.P.D. » se lit le joueur sait où il est.
+  const nBl = 9;
+  for (let k = 0; k < nBl; k++)
+    pierre(c, x0 + k*(l/nBl), yLint - hLint, l/nBl, hLint, k*13+7, opt.chaude);
+  c.fillStyle = tt(M.pierreClair, .3);
+  c.fillRect(x0, yLint - hLint, l, Math.max(1, ht*.012));
+  c.fillStyle = tt(M.pierreOmbre, .5);
+  c.fillRect(x0, yLint - Math.max(1, ht*.018), l, Math.max(1, ht*.018));
+
+  const hL = ht * (opt.grandesLettres ? .13 : .105);
+  c.save();
+  c.font = '700 ' + hL.toFixed(1) + 'px "Archivo Black", sans-serif';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  const yL = yLint - hLint/2;
+  if (opt.lettresAllumees !== 0){
+    c.shadowColor = tt(M.ambrePale, .9); c.shadowBlur = Math.max(3, ht*.09);
+  }
+  c.fillStyle = opt.lettresAllumees === 0 ? tt(M.lettre, .55) : M.lettreAllumee;
+  c.fillText('R.P.D.', cx, yL);
+  c.restore();
+
+  // 5. Le fronton et les pointes, au-dessus du linteau.
+  if (opt.fronton !== 0){
+    const hf = ht*.1;
+    c.fillStyle = mel(M.pierre, M.pierreOmbre, .2);
+    c.beginPath();
+    c.moveTo(cx - l*.22, yLint - hLint);
+    c.lineTo(cx, yLint - hLint - hf);
+    c.lineTo(cx + l*.22, yLint - hLint);
+    c.closePath(); c.fill();
+    c.fillStyle = tt(M.pierreClair, .22);
+    c.beginPath();
+    c.moveTo(cx - l*.22, yLint - hLint);
+    c.lineTo(cx, yLint - hLint - hf);
+    c.lineTo(cx, yLint - hLint);
+    c.closePath(); c.fill();
+    for (const px of [x0 + lp/2, x1 - lp/2]){
+      pierre(c, px - ht*.045, yLint - hLint - ht*.07, ht*.09, ht*.07, px+31, opt.chaude);
+      c.fillStyle = mel(M.pierre, M.pierreClair, .3);
+      c.beginPath();
+      c.moveTo(px - ht*.035, yLint - hLint - ht*.07);
+      c.lineTo(px, yLint - hLint - ht*.13);
+      c.lineTo(px + ht*.035, yLint - hLint - ht*.07);
+      c.closePath(); c.fill();
+    }
+  }
+
+  // 6. Le contact au sol. Sans lui le portail flotte au-dessus de la rue :
+  // un trottoir sous les piliers, et l'ombre qu'ils portent devant eux.
+  const go = c.createLinearGradient(0, sol, 0, sol + ht*.16);
+  go.addColorStop(0, tt(M.bitumeOmbre, .8)); go.addColorStop(1, tt(M.bitumeOmbre, 0));
+  c.fillStyle = go;
+  c.fillRect(x0 - ht*.14, sol, l + ht*.28, ht*.16);
+  pierre(c, x0 - ht*.1, sol - ht*.014, l + ht*.2, ht*.032, 77, opt.chaude);
+
+  // 7. Le drapeau, planté devant le pilier gauche.
+  if (opt.drapeau !== 0) drapeau(c, x0 - ht*.26, sol, ht*.88, t);
+}
+
+/* Le drapeau : le seul rouge franc de la scène. Il ondule en trois plis, et sa
+   face au vent est plus claire que celle qui s'en détourne. */
+function drapeau(c, x, sol, ht, t){
+  const hm = ht;                        // hauteur du mât
+  c.fillStyle = mel(M.fer, M.ferArete, .25);
+  c.fillRect(x - ht*.012, sol - hm, ht*.024, hm);
+  c.fillStyle = tt(M.ferArete, .5);
+  c.fillRect(x - ht*.012, sol - hm, ht*.009, hm);
+  c.fillStyle = tt(M.ambreClair, .8);
+  c.beginPath(); c.arc(x, sol - hm - ht*.02, Math.max(1, ht*.022), 0, TAU); c.fill();
+
+  const l = ht*.42, h = ht*.24, y0 = sol - hm + ht*.03;
+  const pli = k => Math.sin(t*2.2 + k*2.6) * h*.1;
+  for (let b = 0; b < 13; b++){
+    const yb = y0 + b*(h/13);
+    c.beginPath();
+    c.moveTo(x, yb);
+    for (let s = 0; s <= 6; s++){
+      const px = x + s*(l/6);
+      c.lineTo(px, yb + Math.sin(t*2.2 + s*.9)*h*.07*(s/6));
+    }
+    c.lineTo(x + l, yb + h/13 + Math.sin(t*2.2 + 6*.9)*h*.07);
+    for (let s = 6; s >= 0; s--){
+      const px = x + s*(l/6);
+      c.lineTo(px, yb + h/13 + Math.sin(t*2.2 + s*.9)*h*.07*(s/6));
+    }
+    c.closePath();
+    const ombre = (Math.sin(t*2.2 + b*.15 + 1) + 1) / 2;
+    c.fillStyle = b % 2 ? mel(M.drapBlanc, M.teal, .25 + ombre*.3)
+                        : mel(M.drapRouge, M.pierreOmbre, .1 + ombre*.35);
+    c.fill();
+  }
+  c.fillStyle = mel(M.drapBleu, M.pierreOmbre, .2);
+  c.fillRect(x, y0, l*.42, h*.54);
+  c.fillStyle = tt(M.drapBlanc, .75);
+  for (let k = 0; k < 9; k++)
+    c.fillRect(x + l*.05 + (k%3)*(l*.12), y0 + h*.1 + ((k/3)|0)*(h*.15),
+               Math.max(.8, ht*.014), Math.max(.8, ht*.014));
+}
+
+/* Le fond : la nuit teal, la rue mouillée, et ce que le portail y reflète.
+   Il n'est pas décoratif — sans lui on juge le portail sur du noir, et on se
+   trompe sur son contraste. */
+function fond(c, larg, haut, sol, t, ht){
+  const g = c.createLinearGradient(0, 0, 0, sol);
+  g.addColorStop(0, M.nuit); g.addColorStop(1, M.nuitTeal);
+  c.fillStyle = g; c.fillRect(0, 0, larg, sol);
+  // Brume teal derrière le portail : elle détache la pierre du ciel.
+  c.save(); c.globalCompositeOperation = 'screen';
+  for (let i = 0; i < 5; i++){
+    const x = ((t*9 + i*260) % (larg + 400)) - 200, y = sol - ht*.4;
+    const gg = c.createRadialGradient(x, y, 4, x, y, ht*.9);
+    gg.addColorStop(0, tt(M.brume, .16)); gg.addColorStop(1, tt(M.brume, 0));
+    c.fillStyle = gg; c.beginPath(); c.ellipse(x, y, ht*.9, ht*.35, 0, 0, TAU); c.fill();
+  }
+  c.restore();
+  // La rue.
+  const gs = c.createLinearGradient(0, sol, 0, haut);
+  gs.addColorStop(0, M.bitume); gs.addColorStop(1, M.bitumeOmbre);
+  c.fillStyle = gs; c.fillRect(0, sol, larg, haut - sol);
+  c.globalAlpha = .35;
+  for (let i = 0; i < 120; i++){
+    c.fillStyle = graine(i) > .55 ? tt(M.bitumeReflet, .5) : tt(M.bitumeOmbre, .8);
+    c.fillRect(alea(i, 0, larg), sol + alea(i+7, 0, haut - sol), 2, 2);
+  }
+  c.globalAlpha = 1;
+  // Le reflet vertical du portail sur l'asphalte trempé.
+  c.save(); c.globalCompositeOperation = 'screen';
+  for (let k = 0; k < 6; k++){
+    c.globalAlpha = .1 * (1 - k/6);
+    c.fillStyle = M.ambre;
+    c.beginPath();
+    c.ellipse(larg/2 + Math.sin(t*2 + k)*5, sol + k*(ht*.14), ht*.5*(1-k/9), ht*.06, 0, 0, TAU);
+    c.fill();
+  }
+  c.restore();
+}
+
+/* ===========================================================================
+   LES QUATRE TRAITEMENTS
+   ======================================================================== */
+const TRAITEMENTS = [
+  { id:'A', nom:'FIDÈLE À LA RÉFÉRENCE',
+    desc:'Tel qu\'il est sur les captures : lueur ambre derrière la grille, lettres allumées, fronton et pointes, drapeau devant le pilier gauche. Le plus reconnaissable des quatre.',
+    opt:{} },
+  { id:'B', nom:'LETTRES EN GRAND',
+    desc:'On échange le fronton contre des lettres 25 % plus hautes. À 82 px de bande, chaque pixel de lettre compte davantage qu\'une corniche que personne ne verra.',
+    opt:{ grandesLettres:1, fronton:0 } },
+  { id:'C', nom:'LE COURANT EST COUPÉ',
+    desc:'Plus de lueur derrière la grille, lettres éteintes qui ne captent que la lumière de la rue. Beaucoup plus inquiétant — et le portail perd sa seule source, donc son relief.',
+    opt:{ lueur:0, lettresAllumees:0 } },
+  { id:'D', nom:'L\'INCENDIE EST PROCHE',
+    desc:'La pierre vire au chaud, la lueur double d\'intensité, tout le portail est pris dans l\'orange du feu voisin. Le plus spectaculaire ; il écrase le teal qui fait la série.',
+    opt:{ chaude:1, lueur:1.8, grandesLettres:1 } }
+];
+
+let choix = 0;
+
+/* Le haut du terrain, à l'échelle 1:1 : c'est le seul test qui compte. Le
+   portail tient dans les 82 px au-dessus de la ligne, et on montre le terrain
+   dessous pour juger le contraste réel, pas sur du noir. */
+function dessinerReel(c, t){
+  const sol = 82;
+  c.clearRect(0, 0, 960, 230);
+  fond(c, 960, 230, sol, t, 82);
+  portail(c, CX, sol, 82, t, TRAITEMENTS[choix].opt);
+  // Le haut du terrain, pour le contraste. Sobre : c'est près du jeu.
+  c.fillStyle = '#161f22';
+  c.fillRect(COURT.left, COURT.top, COURT.right - COURT.left, 230 - COURT.top);
+  c.globalAlpha = .3;
+  for (let i = 0; i < 200; i++){
+    c.fillStyle = graine(i) > .5 ? 'rgba(120,150,155,.3)' : 'rgba(6,10,12,.7)';
+    c.fillRect(COURT.left + alea(i, 0, COURT.right - COURT.left),
+               COURT.top + alea(i + 7, 0, 230 - COURT.top), 2, 2);
+  }
+  c.globalAlpha = 1;
+  c.strokeStyle = 'rgba(198,206,218,.5)'; c.lineWidth = 5;
+  c.strokeRect(COURT.left + 6, COURT.top + 6, COURT.right - COURT.left - 12, 400);
+  // Le disque, à sa taille réelle : si on ne le voit pas ici, rien ne va.
+  const dx = CX + Math.cos(t * .9) * 300, dy = COURT.top + 60;
+  c.fillStyle = 'rgba(0,0,0,.4)';
+  c.beginPath(); c.ellipse(dx, dy + 12, 13, 4, 0, 0, TAU); c.fill();
+  c.save(); c.translate(dx, dy); c.rotate(t * 6);
+  c.fillStyle = '#f2f6ff'; c.beginPath(); c.ellipse(0, 0, 14, 12, 0, 0, TAU); c.fill();
+  c.strokeStyle = '#9fb6d6'; c.lineWidth = 2; c.stroke();
+  c.fillStyle = '#35e0ff'; c.beginPath(); c.ellipse(0, 0, 7, 6, 0, 0, TAU); c.fill();
+  c.restore();
+  // Le repère des 82 px, pour qu'on voie de quoi on parle.
+  c.strokeStyle = 'rgba(255,154,60,.5)'; c.lineWidth = 1;
+  c.setLineDash([5, 5]);
+  c.beginPath(); c.moveTo(0, sol); c.lineTo(960, sol); c.stroke();
+  c.setLineDash([]);
+  c.fillStyle = 'rgba(255,154,60,.75)';
+  c.font = '600 10px system-ui, sans-serif'; c.textAlign = 'left'; c.textBaseline = 'bottom';
+  c.fillText('82 px — toute la hauteur disponible au-dessus du terrain', 8, sol - 3);
+}
+
+/* Le portail seul, à trois grossissements. On juge le dessin en grand, on
+   valide la lisibilité en petit — les deux, jamais l'un sans l'autre. */
+const ECHELLES = [
+  [82,  'Taille réelle (×1)', 'Ce que le joueur verra. C\'est cette vignette qui décide.'],
+  [164, 'Double (×2)',        'Pour vérifier les proportions et l\'assise des piliers.'],
+  [246, 'Triple (×3)',        'Pour le détail : chapiteaux, traverses, plis du drapeau.']
+];
+const rendus = [];
+const hoteE = document.getElementById('echelles');
+for (const [ht, titre, sous] of ECHELLES){
+  const bloc = document.createElement('div'); bloc.className = 'bloc';
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(ht * 3.4); cv.height = Math.round(ht * 1.5);
+  const cap = document.createElement('div'); cap.className = 'cap';
+  cap.innerHTML = '<b>' + titre + '</b>' + sous;
+  bloc.appendChild(cv); bloc.appendChild(cap); hoteE.appendChild(bloc);
+  rendus.push({ ctx: cv.getContext('2d'), ht, l: cv.width, h: cv.height });
+}
+
+const cartes = [];
+const hoteV = document.getElementById('variantes');
+TRAITEMENTS.forEach((tr, i) => {
+  const bloc = document.createElement('div');
+  bloc.className = 'bloc'; bloc.style.cursor = 'pointer'; bloc.style.maxWidth = '430px';
+  const cv = document.createElement('canvas');
+  cv.width = 420; cv.height = 190;
+  const cap = document.createElement('div'); cap.className = 'cap';
+  cap.innerHTML = '<b>' + tr.id + ' · ' + tr.nom + '</b>' + tr.desc;
+  bloc.appendChild(cv); bloc.appendChild(cap);
+  bloc.addEventListener('click', () => {
+    choix = i;
+    cartes.forEach((k, j) => k.cv.style.outline = j === i ? '2px solid var(--ambre)' : 'none');
+  });
+  hoteV.appendChild(bloc);
+  cartes.push({ ctx: cv.getContext('2d'), cv, opt: tr.opt });
+});
+cartes[0].cv.style.outline = '2px solid var(--ambre)';
+
+/* ===========================================================================
+   LE VERDICT — mesuré, pas estimé. Deux chiffres : la hauteur réelle des
+   lettres en pixels, et leur contraste sur le linteau. En dessous de 6 px de
+   haut ou de 60 de contraste, « R.P.D. » ne se lit pas et il faut un plan B.
+   ======================================================================== */
+function mesurerLisibilite(){
+  const cv = document.createElement('canvas');
+  cv.width = 960; cv.height = 200;
+  const c = cv.getContext('2d', { willReadFrequently: true });
+  const res = [];
+  for (const tr of TRAITEMENTS){
+    c.clearRect(0, 0, 960, 200);
+    fond(c, 960, 200, 82, 0, 82);
+    portail(c, CX, 82, 82, 0, tr.opt);
+    // La bande du linteau : lettres au centre, pierre nue de part et d'autre.
+    const yL = Math.round(82 - 82 * .82 - 82 * .16), hL = Math.round(82 * .16);
+    const lettres = c.getImageData(CX - 40, yL, 80, hL).data;
+    const pierre = c.getImageData(CX - 150, yL, 60, hL).data;
+    const moy = d => { let s = 0; for (let i = 0; i < d.length; i += 4) s += (d[i]+d[i+1]+d[i+2])/3; return s/(d.length/4); };
+    // On compare les PIXELS DE LETTRE à la pierre, pas la moyenne de la boîte :
+    // entre les jambages il y a du linteau, et le moyenner dilue le contraste
+    // jusqu'à faire échouer un tracé parfaitement lisible à l'œil. On prend
+    // donc le dixième le plus clair de la zone — c'est l'encre elle-même.
+    const encre = d => { const l = [];
+      for (let i = 0; i < d.length; i += 4) l.push((d[i]+d[i+1]+d[i+2])/3);
+      l.sort((a, b) => b - a);
+      const n = Math.max(1, Math.round(l.length * .1));
+      return l.slice(0, n).reduce((a, b) => a + b, 0) / n; };
+    // Hauteur réelle : on compte les lignes qui contiennent du quasi-blanc.
+    let lignes = 0;
+    for (let y = 0; y < hL; y++){
+      let clair = 0;
+      for (let x = 0; x < 80; x++){
+        const i = (y * 80 + x) * 4;
+        if (lettres[i] > 200 && lettres[i+1] > 200) clair++;
+      }
+      if (clair >= 2) lignes++;
+    }
+    res.push({ id: tr.id, nom: tr.nom, hauteur: lignes,
+               contraste: Math.round(encre(lettres) - moy(pierre)) });
+  }
+  return res;
+}
+
+const m = mesurerLisibilite();
+const ok = m.filter(r => r.hauteur >= 6 && r.contraste >= 60);
+document.getElementById('verdict').innerHTML =
+  '<b>Lisibilité de « R.P.D. » à la taille réelle, mesurée sur l\'image :</b><br>' +
+  m.map(r => r.id + ' · ' + r.nom + ' — <b>' + r.hauteur + ' px</b> de haut, contraste <b>' +
+    r.contraste + '</b>' + (r.hauteur >= 6 && r.contraste >= 60 ? ' ✔' : ' ✘')).join('<br>') +
+  '<br><br>' + (ok.length
+    ? 'Seuil retenu : 6 px de haut et 60 de contraste. <b>' + ok.length + ' traitement' +
+      (ok.length > 1 ? 's tiennent' : ' tient') + ' la lecture</b> — ' +
+      ok.map(r => r.id).join(', ') + '.'
+    : '<b>Aucun ne passe le seuil.</b> À 82 px de bande, les lettres sont trop petites : il faudra ' +
+      'soit un portail qui déborde sur les côtés du terrain, soit renoncer aux lettres.');
+
+/* Une seule boucle. */
+requestAnimationFrame(function boucle(ms){
+  const t = ms / 1000;
+  dessinerReel(document.getElementById('cvReel').getContext('2d'), t);
+  for (const r of rendus){
+    r.ctx.clearRect(0, 0, r.l, r.h);
+    fond(r.ctx, r.l, r.h, r.h - r.ht * .28, t, r.ht);
+    portail(r.ctx, r.l / 2, r.h - r.ht * .28, r.ht, t, TRAITEMENTS[choix].opt);
+  }
+  for (const k of cartes){
+    k.ctx.clearRect(0, 0, 420, 190);
+    fond(k.ctx, 420, 190, 150, t, 108);
+    portail(k.ctx, 210, 150, 108, t, k.opt);
+  }
+  requestAnimationFrame(boucle);
+});
+</script>
+</body>
+</html>

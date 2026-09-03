@@ -1,0 +1,1419 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Raccoon City — terrain</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#07090d; --panel:#131820; --edge:#2a3340; --ink:#e8ecf2;
+         --accent:#e5384f; --or:#f5c542; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:'Segoe UI',system-ui,sans-serif;padding:16px 18px 70px}
+  h1{font-size:21px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:13.5px;margin:26px 0 8px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px;
+     display:flex;align-items:center;gap:9px}
+  h2 .tag{font-size:9.5px;letter-spacing:.5px;color:#8794a6;border:1px solid #333f4f;
+          border-radius:3px;padding:2px 6px;text-transform:none}
+  h2 .tag.regle{color:#ffb0ba;border-color:#5a2a33}
+  .note{font-size:12.5px;color:#8794a6;line-height:1.65;margin:0 0 14px;max-width:900px}
+  .note b{color:var(--ink)}
+
+  /* Le modèle de lumière est écrit AVANT le premier dessin et affiché ici :
+     c'est lui qui tient les 24 variantes ensemble, et il doit pouvoir être
+     contesté tout de suite. */
+  .lumiere{background:linear-gradient(180deg,#171d26,#111620);
+           border:1px solid var(--edge);border-left:3px solid var(--or);
+           border-radius:8px;padding:12px 15px;margin:0 0 16px;max-width:900px}
+  .lumiere h3{margin:0 0 7px;font-size:11.5px;letter-spacing:1.2px;color:var(--or);
+              text-transform:uppercase;font-family:'Archivo Black',sans-serif}
+  .lumiere ol{margin:0 0 9px;padding-left:19px;font-size:12.5px;color:#a4b0c0;line-height:1.7}
+  .lumiere li b{color:var(--ink)}
+  .lumiere p{margin:0;font-size:12.5px;color:#8794a6;line-height:1.7}
+  .lumiere p b{color:#ffd9a0}
+  .nuancier{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+  .mat{font-size:9.5px;font-family:ui-monospace,Consolas,monospace;color:#c2cbd8;
+       border:1px solid var(--edge);border-radius:4px;padding:2px 6px 2px 3px;
+       display:flex;align-items:center;gap:5px;background:#0e131a}
+  .mat i{width:11px;height:11px;border-radius:2px;display:block;
+         box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+
+  .page{display:grid;grid-template-columns:1fr minmax(330px,42%);gap:20px;align-items:start}
+  @media (max-width:1100px){ .page{grid-template-columns:1fr} }
+  .scene{position:sticky;top:14px}
+  .scene canvas{display:block;width:100%;height:auto;border-radius:8px;
+                border:1px solid var(--edge);background:#07090d}
+  .outils{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+  .recette{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:#9aa7b8;
+           background:var(--panel);border:1px solid var(--edge);border-radius:7px;
+           padding:9px 11px;line-height:1.8;margin-top:9px}
+  .recette b{color:var(--or)}
+
+  button{font:inherit;font-size:11.5px;letter-spacing:.4px;cursor:pointer;
+         background:#1b2430;color:var(--ink);border:1px solid var(--edge);
+         border-radius:5px;padding:6px 11px}
+  button:hover{background:#243040;border-color:#41526a}
+  button.on{background:var(--or);color:#111;border-color:var(--or);font-weight:700}
+
+  .row{display:flex;gap:11px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:9px;
+        padding:9px;flex:1 1 300px;max-width:430px;cursor:pointer;
+        transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#41526a;transform:translateY(-2px)}
+  .card.on{border-color:var(--or);box-shadow:0 0 0 1px var(--or) inset}
+  .card canvas{display:block;width:100%;height:auto;border-radius:5px;background:#07090d}
+  .lbl{font-size:11px;color:#8794a6;margin:7px 2px 0;line-height:1.55;min-height:58px}
+  .lbl b{display:block;font-size:13px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  .card.on .lbl b{color:#fff}
+</style>
+</head>
+<body>
+
+<h1>Raccoon City — la rue devant le R.P.D.</h1>
+<p class="note">Terrain de <b>Leon S. Kennedy</b>, <b>la nuit de l'épidémie, septembre 1998</b>.
+<b>Six sections, quatre variantes chacune</b> — vingt-quatre propositions au lieu de quatre-vingts,
+mais chacune dessinée quatre à sept fois plus loin. Les anciennes sections « bâti », « public » et
+« débris » sont fondues en une seule, <b>la rue</b>, dessinée d'un bloc : c'étaient elles qui juraient
+entre elles quand chacune choisissait ses gris dans son coin.<br>
+<b>La brume est une règle de jeu</b> : le bouton « Brume à fond » la pousse au maximum pour juger
+le pire cas.</p>
+
+<div class="lumiere">
+  <h3>Le modèle de lumière — tout le reste en découle</h3>
+  <ol>
+    <li><b>Les gyrophares du R.P.D.</b>, posés au sol de part et d'autre du terrain. Rouge et bleu,
+      en lumière <b>rasante</b> : ils balaient à l'horizontale, ils éclairent les flancs, jamais les dessus.</li>
+    <li><b>Les fenêtres et les enseignes</b>, en haut de l'image. Ambre chaud, à <b>contre-jour</b> :
+      tout ce qui passe devant est en silhouette.</li>
+    <li><b>L'incendie hors champ</b>, à gauche. Une lueur orange qui bat lentement et ne montre jamais sa source.</li>
+  </ol>
+  <p>Conséquences appliquées à chacune des vingt-quatre variantes :
+  <b>le bitume est mouillé, c'est la seule surface qui réfléchit</b> — il renvoie le rouge, le bleu
+  et l'ambre en traînées verticales, et c'est lui qui porte toute la couleur de la scène.
+  <b>Tout ce qui est vertical est une silhouette</b> éclairée sur un seul flanc, celui qui fait face
+  à la source la plus proche. <b>Rien n'est éclairé par le dessus</b> : les hauts restent bleu-noir.
+  Et <b>la brume prend la couleur de ce qu'elle traverse</b> — rouge près des gyrophares, ambre sous
+  les fenêtres, bleu-gris partout ailleurs.</p>
+  <div class="nuancier" id="nuancier"></div>
+</div>
+
+<div class="page">
+  <div class="colonne">
+    <h2>1 · Le sol <span class="tag">socle</span></h2><div class="row" id="sec-sol"></div>
+    <h2>2 · Le marquage <span class="tag">socle</span></h2><div class="row" id="sec-marquage"></div>
+    <h2>3 · Les cages <span class="tag">socle</span></h2><div class="row" id="sec-cages"></div>
+    <h2>4 · La brume <span class="tag regle">règle de jeu</span></h2><div class="row" id="sec-brume"></div>
+    <h2>5 · La lumière</h2><div class="row" id="sec-lumiere"></div>
+    <h2>6 · La rue <span class="tag">bâti + public + débris</span></h2><div class="row" id="sec-rue"></div>
+  </div>
+
+  <div class="scene">
+    <canvas id="grand" width="960" height="600"></canvas>
+    <div class="outils">
+      <button id="btAction">Voir l'action</button>
+      <button id="btBrume">Brume à fond</button>
+      <button id="btHasard">Au hasard</button>
+      <button id="btCopie">Copier la recette</button>
+    </div>
+    <div class="recette" id="recette"></div>
+  </div>
+</div>
+
+<script>
+/* ===========================================================================
+   Géométrie du jeu (core/dom.js + data/maps.js), à l'identique.
+   ======================================================================== */
+const W = 960, H = 600;
+const COURT = { left: 70, right: 890, top: 84, bottom: 560 };
+const CW = COURT.right - COURT.left, CH = COURT.bottom - COURT.top;
+const CX = (COURT.left + COURT.right) / 2, CY = (COURT.top + COURT.bottom) / 2;
+const GOAL_D = 48, GH = 100;
+const GOAL_TOP = CY - GH, GOAL_BOTTOM = CY + GH;
+const HORIZON = COURT.top - 2;
+const TAU = Math.PI * 2;
+
+/* ===========================================================================
+   LES MATIÈRES. Chacune est déclinée selon le modèle de lumière ci-dessus :
+   une teinte de base, sa face éclairée, sa face d'ombre. Aucune variante ne
+   doit écrire une couleur en dur — c'est ce qui faisait que chaque morceau
+   avait l'air de venir d'un jeu différent.
+   ======================================================================== */
+const M = {
+  bitume:       '#1a1e24',   bitumeMouille:'#22282f',
+  bitumeReflet: '#3e4c5e',   bitumeOmbre:  '#0d1014',
+  pierre:       '#3a3f4a',   pierreClair:  '#565c68',   pierreOmbre:'#21252c',
+  fer:          '#454e5c',   ferClair:     '#7b8798',   ferOmbre:   '#22272f',
+  rouille:      '#6b4530',
+  bois:         '#6b5236',   boisOmbre:    '#3a2c1e',
+  chair:        '#8a7a6a',   chairOmbre:   '#4a4038',   chairMorte: '#6b7264',
+  tissu:        '#2b3440',   tissuOmbre:   '#161c24',
+  gyroRouge:    '#ff2f4a',   gyroBleu:     '#2f8cff',
+  fenetre:      '#ffb457',   neon:         '#ff5a2a',   feu:        '#ff8c1f',
+  brumeFroide:  '#8794a6',   brumeChaude:  '#b8a894',   brumeRouge: '#a86a72',
+  sang:         '#7a1520',   sangSec:      '#3d0d14',
+  papier:       '#c6c2b6',   plastique:    '#c9ccd2'
+};
+document.getElementById('nuancier').innerHTML = Object.entries(M)
+  .map(([k, v]) => '<span class="mat"><i style="background:' + v + '"></i>' + k + '</span>').join('');
+
+function graine(i){ const x = Math.sin(i * 127.1) * 43758.5453; return x - Math.floor(x); }
+function alea(i, a, b){ return a + graine(i) * (b - a); }
+function surLeTerrain(c, fn){
+  c.save(); c.beginPath(); c.rect(COURT.left, COURT.top, CW, CH); c.clip(); fn(); c.restore(); }
+function horsTerrain(c, fn){
+  c.save(); c.beginPath(); c.rect(0, 0, W, H);
+  c.rect(COURT.left, COURT.top, CW, CH);
+  c.clip('evenodd'); fn(); c.restore(); }
+
+/* ===========================================================================
+   LES SOURCES. Elles sont déclarées ici une fois : les variantes de sol y
+   lisent où poser leurs reflets, celles de brume d'où vient leur teinte, et
+   celles de lumière ce qu'elles doivent allumer. C'est ce qui fait qu'une
+   flaque reflète le gyrophare qui est réellement en face d'elle.
+   ======================================================================== */
+function sources(t){
+  const s = [];
+  // Les quatre gyrophares, au sol, de part et d'autre. Leur intensité tourne.
+  const postes = [[COURT.left - 30, CY - 150], [COURT.left - 30, CY + 150],
+                  [COURT.right + 30, CY - 150], [COURT.right + 30, CY + 150]];
+  postes.forEach(([x, y], i) => {
+    const a = t * 2.2 + i * 1.6;
+    s.push({ x, y, col: M.gyroRouge, i: Math.max(0, Math.cos(a)), type: 'gyro' });
+    s.push({ x, y, col: M.gyroBleu, i: Math.max(0, -Math.cos(a)), type: 'gyro' });
+  });
+  // Les fenêtres, en contre-jour tout en haut.
+  for (let k = 0; k < 4; k++)
+    s.push({ x: 140 + k * 230, y: 20, col: M.fenetre, i: .55 + Math.sin(t * 1.3 + k) * .12, type: 'fenetre' });
+  // L'incendie, hors champ à gauche.
+  s.push({ x: -60, y: H * .4, col: M.feu, i: .7 + Math.sin(t * 5.4) * .18, type: 'feu' });
+  // Le projecteur de l'hélico, qui se promène sur le terrain.
+  s.push({ x: CX + Math.cos(t * .42) * 300, y: CY + Math.sin(t * .63) * 160,
+           col: '#e8f2ff', i: .9, type: 'helico' });
+  // Seules les sources que la variante de lumière allume comptent : sans ce
+  // filtre, le bitume renverrait un gyrophare éteint et la brume prendrait la
+  // couleur d'un incendie qu'on ne voit pas.
+  const ok = TYPES_ACTIFS[eclairageActif] || ['gyro', 'fenetre'];
+  return s.filter(x => ok.indexOf(x.type) >= 0);
+}
+
+/* Mélange de deux couleurs hexadécimales. Il rend de l'hexadécimal parce qu'on
+   l'imbrique — matière puis lumière puis distance sur la même teinte. */
+function mel(a, b, k){
+  const lire = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const A = lire(a), B = lire(b);
+  return '#' + A.map((v, i) => Math.max(0, Math.min(255, Math.round(v + (B[i] - v) * k)))
+    .toString(16).padStart(2, '0')).join('');
+}
+/* La couleur d'une source vue à une distance donnée, en rgba. */
+function teinte(col, alpha){
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(col.slice(i, i + 2), 16));
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + Math.max(0, Math.min(1, alpha)) + ')';
+}
+
+/* ===========================================================================
+   ANATOMIE DU SOL. Ces quatre fonctions sont la raison pour laquelle le bitume
+   ne ressemble plus à un aplat gris : le grain, les traînées de reflet, les
+   flaques qui renvoient vraiment la source d'en face, et les plaques d'égout.
+   ======================================================================== */
+
+/* Le granulat. Trois tailles, pas une : à une seule taille on obtient du bruit
+   télé, pas de l'asphalte. */
+function grainBitume(c, dens){
+  for (let i = 0; i < 260 * dens; i++){
+    const g = graine(i);
+    c.fillStyle = g > .62 ? 'rgba(126,142,166,.20)'
+               : g > .3  ? 'rgba(90,104,124,.14)' : 'rgba(8,10,14,.5)';
+    const s = g > .62 ? 1.4 : g > .3 ? 2.2 : 3;
+    c.fillRect(COURT.left + alea(i, 0, CW), COURT.top + alea(i + 7, 0, CH), s, s);
+  }
+}
+
+/* Les traînées de reflet. Sur un sol mouillé une source ne fait pas une tache
+   ronde : elle s'étire VERTICALEMENT vers l'observateur, en tremblant. C'est
+   ce seul détail qui fait la différence entre « gris » et « mouillé ». */
+function refletsSources(c, t, force){
+  const S = sources(t);
+  c.save();
+  c.globalCompositeOperation = 'screen';
+  for (const s of S){
+    if (s.i < .04) continue;
+    // Les fenêtres sont loin : leur reflet est long et pâle. Les gyrophares
+    // sont au bord du terrain : court, vif, et il balaie.
+    const long = s.type === 'fenetre' ? 200 : s.type === 'feu' ? 260 : 120;
+    const larg = s.type === 'fenetre' ? 26 : 40;
+    const x = Math.max(COURT.left - 20, Math.min(COURT.right + 20, s.x));
+    const y0 = Math.max(COURT.top, Math.min(COURT.bottom, s.y));
+    for (let k = 0; k < 5; k++){
+      const dy = k / 5 * long;
+      const trembl = Math.sin(t * 2.4 + k * 1.7 + s.x) * 7;
+      c.globalAlpha = s.i * force * .17 * (1 - k / 5);
+      c.fillStyle = s.col;
+      c.beginPath();
+      c.ellipse(x + trembl, y0 + dy, larg * (1 - k / 8), 11, 0, 0, TAU);
+      c.fill();
+    }
+  }
+  c.restore();
+}
+
+/* Une flaque : un bord net, un fond plus sombre que le bitume, et le ciel —
+   c'est-à-dire les sources — retourné dedans. */
+function flaque(c, x, y, rx, ry, i, t){
+  c.save();
+  c.beginPath(); c.ellipse(x, y, rx, ry, graine(i) * 3, 0, TAU); c.clip();
+  c.fillStyle = M.bitumeOmbre; c.fillRect(x - rx, y - ry, rx * 2, ry * 2);
+  c.globalCompositeOperation = 'screen';
+  for (const s of sources(t)){
+    if (s.i < .06) continue;
+    const d = Math.hypot(s.x - x, s.y - y);
+    c.globalAlpha = s.i * Math.max(0, 1 - d / 620) * .5;
+    c.fillStyle = s.col;
+    c.beginPath();
+    c.ellipse(x + (s.x - x) * .06, y + (s.y - y) * .04 + Math.sin(t * 3 + i) * 1.6,
+              rx * .7, ry * .45, 0, 0, TAU);
+    c.fill();
+  }
+  c.restore();
+  c.strokeStyle = 'rgba(150,170,200,.22)'; c.lineWidth = 1.2;
+  c.beginPath(); c.ellipse(x, y, rx, ry, graine(i) * 3, 0, TAU); c.stroke();
+}
+
+function plaqueEgout(c, x, y){
+  c.fillStyle = M.bitumeOmbre;
+  c.beginPath(); c.arc(x, y, 19, 0, TAU); c.fill();
+  c.fillStyle = M.fer;
+  c.beginPath(); c.arc(x, y, 17, 0, TAU); c.fill();
+  c.fillStyle = M.ferOmbre;
+  for (let k = -2; k <= 2; k++) c.fillRect(x - 14, y + k * 6 - 1.4, 28, 2.8);
+  c.strokeStyle = M.ferClair; c.lineWidth = 1.2;
+  c.beginPath(); c.arc(x, y - 1, 17, Math.PI * 1.1, Math.PI * 1.9); c.stroke();
+}
+
+/* ===========================================================================
+   1 · LE SOL
+   ======================================================================== */
+const SOL = [
+  { id:'A', nom:'BITUME MOUILLÉ', desc:'La chaussée trempée : granulat à trois grosseurs, traces de pneus creusées par le passage, flaques qui renvoient vraiment le gyrophare d\'en face, et deux plaques d\'égout. C\'est le sol le plus sombre — donc celui sur lequel le disque ressort le mieux — et le seul qui porte toute la couleur des sources.',
+    f(c,t){ const g=c.createLinearGradient(0,COURT.top,0,COURT.bottom);
+      g.addColorStop(0,M.bitumeMouille); g.addColorStop(.5,M.bitume); g.addColorStop(1,M.bitumeMouille);
+      c.fillStyle=g; c.fillRect(COURT.left,COURT.top,CW,CH);
+      surLeTerrain(c,()=>{
+        grainBitume(c,1);
+        // Les deux bandes de roulement, polies par les pneus : plus lisses,
+        // donc plus réfléchissantes que le reste.
+        for(const y of [CY-96,CY+96]){
+          c.fillStyle='rgba(52,64,80,.35)';
+          c.fillRect(COURT.left,y-19,CW,38);
+          c.fillStyle='rgba(12,15,20,.4)';
+          c.fillRect(COURT.left,y-21,CW,3); c.fillRect(COURT.left,y+18,CW,3); }
+        // Taches d'huile : elles ne réfléchissent pas, elles absorbent.
+        for(let i=0;i<7;i++){ const x=COURT.left+alea(i+30,60,CW-60),y=COURT.top+alea(i+40,40,CH-40);
+          c.fillStyle='rgba(6,7,10,.55)';
+          c.beginPath(); c.ellipse(x,y,alea(i+50,20,52),alea(i+60,9,22),graine(i)*3,0,TAU); c.fill(); }
+        refletsSources(c,t,1);
+        for(let i=0;i<9;i++){ const x=COURT.left+alea(i+70,50,CW-50),y=COURT.top+alea(i+80,40,CH-40);
+          flaque(c,x,y,alea(i+90,28,62),alea(i+95,11,24),i,t); }
+        plaqueEgout(c,COURT.left+180,CY+120);
+        plaqueEgout(c,COURT.right-210,CY-130); }); } },
+
+  { id:'B', nom:'PAVÉS LUISANTS', desc:'Le vieux centre : chaque pavé porte sa propre facette éclairée, tournée vers la source la plus proche, et les joints retiennent l\'eau — ce sont eux qui brillent, en réseau. Le motif le plus régulier du lot ; il donne une texture riche mais il tire l\'œil vers le sol.',
+    f(c,t){ c.fillStyle=M.bitumeOmbre; c.fillRect(COURT.left,COURT.top,CW,CH);
+      surLeTerrain(c,()=>{
+        for(let y=COURT.top,r=0;y<COURT.bottom;y+=16,r++){
+          for(let x=COURT.left-(r%2?12:0);x<COURT.right;x+=25){
+            const g=graine(r*77+x);
+            // La facette éclairée regarde le bord le plus proche : à gauche du
+            // terrain elle regarde à gauche, à droite elle regarde à droite.
+            const vers = x < CX ? -1 : 1;
+            c.fillStyle=mel(M.pierre,M.pierreOmbre,.35+g*.4);
+            c.fillRect(x+1,y+1,23,14);
+            c.fillStyle=mel(M.pierre,M.pierreClair,.5+g*.3);
+            c.beginPath();
+            c.moveTo(x+1+(vers<0?0:23),y+1);
+            c.lineTo(x+1+(vers<0?0:23)-vers*5,y+1);
+            c.lineTo(x+1+(vers<0?0:23)-vers*5,y+15);
+            c.lineTo(x+1+(vers<0?0:23),y+15);
+            c.closePath(); c.fill();
+            c.fillStyle='rgba(0,0,0,.3)'; c.fillRect(x+1,y+12,23,3); } }
+        // L'eau dans les joints : un quadrillage humide qui accroche la lumière.
+        c.save(); c.globalCompositeOperation='screen'; c.globalAlpha=.14;
+        for(const s of sources(t)){ if(s.i<.1) continue;
+          c.fillStyle=s.col;
+          const cx=Math.max(COURT.left,Math.min(COURT.right,s.x));
+          const gr=c.createRadialGradient(cx,s.y,10,cx,s.y,300);
+          gr.addColorStop(0,teinte(s.col,s.i*.6)); gr.addColorStop(1,teinte(s.col,0));
+          c.fillStyle=gr;
+          for(let y=COURT.top;y<COURT.bottom;y+=16) c.fillRect(COURT.left,y,CW,2);
+          for(let x=COURT.left;x<COURT.right;x+=25) c.fillRect(x,COURT.top,2,CH); }
+        c.restore();
+        for(let i=0;i<5;i++){ const x=COURT.left+alea(i+70,60,CW-60),y=COURT.top+alea(i+80,40,CH-40);
+          flaque(c,x,y,alea(i+90,26,48),alea(i+95,10,18),i,t); } }); } },
+
+  { id:'C', nom:'PASSAGE PIÉTON DÉLAVÉ', desc:'Le terrain tombe sur un passage clouté à moitié effacé. La peinture est la seule chose vraiment réfléchissante de la rue : les bandes s\'allument quand un gyrophare passe dessus, puis s\'éteignent. Très lisible, mais ces bandes traversent l\'aire de jeu de part en part.',
+    f(c,t){ c.fillStyle=M.bitume; c.fillRect(COURT.left,COURT.top,CW,CH);
+      surLeTerrain(c,()=>{
+        grainBitume(c,.7);
+        for(let i=0;i<9;i++){ const x=COURT.left+34+i*74;
+          // La bande : thermoplastique épais, écaillé par le milieu là où les
+          // roues passent, et sali sur les bords.
+          c.fillStyle='rgba(206,212,222,.5)'; c.fillRect(x,COURT.top+30,40,CH-60);
+          c.fillStyle='rgba(226,232,240,.34)'; c.fillRect(x,COURT.top+30,40,4);
+          c.fillStyle='rgba(26,30,36,.75)';
+          for(const y of [CY-96,CY+96]) c.fillRect(x,y-17,40,34);
+          for(let k=0;k<9;k++){ c.fillStyle='rgba(26,30,36,.5)';
+            c.fillRect(x+alea(i*13+k,0,32),COURT.top+30+alea(i*13+k+4,0,CH-70),
+                       alea(i*13+k+8,3,11),alea(i*13+k+12,3,9)); } }
+        // Ce que la peinture renvoie : bien plus que le bitume autour.
+        c.save(); c.globalCompositeOperation='screen';
+        for(const s of sources(t)){ if(s.i<.08) continue;
+          const cx=Math.max(COURT.left,Math.min(COURT.right,s.x));
+          for(let i=0;i<9;i++){ const x=COURT.left+34+i*74;
+            const d=Math.abs(x+20-cx);
+            c.globalAlpha=s.i*Math.max(0,1-d/420)*.42;
+            c.fillStyle=s.col; c.fillRect(x,COURT.top+30,40,CH-60); } }
+        c.restore();
+        refletsSources(c,t,.5);
+        for(let i=0;i<4;i++) flaque(c,COURT.left+alea(i+70,80,CW-80),
+          COURT.top+alea(i+80,50,CH-50),alea(i+90,24,44),alea(i+95,9,17),i,t); }); } },
+
+  { id:'D', nom:'LE PARVIS DU R.P.D.', desc:'Les grandes dalles de pierre devant l\'entrée du poste, fendues, avec la rigole d\'évacuation qui court au milieu. Le sol le plus clair des quatre : c\'est lui qui détache le mieux l\'aire de jeu de la rue autour, au prix de l\'ambiance de fin du monde.',
+    f(c,t){ c.fillStyle=M.pierreOmbre; c.fillRect(COURT.left,COURT.top,CW,CH);
+      surLeTerrain(c,()=>{
+        for(let y=COURT.top;y<COURT.bottom;y+=68){
+          for(let x=COURT.left;x<COURT.right;x+=94){
+            const g=graine(y*13+x);
+            c.fillStyle=mel(M.pierre,M.pierreClair,.25+g*.55);
+            c.fillRect(x+2,y+2,90,64);
+            // Chaque dalle est bombée : arête claire en haut, ombre en bas.
+            c.fillStyle='rgba(255,255,255,.06)'; c.fillRect(x+2,y+2,90,4);
+            c.fillStyle='rgba(0,0,0,.28)'; c.fillRect(x+2,y+62,90,4);
+            c.fillStyle='rgba(0,0,0,.22)'; c.fillRect(x+88,y+2,4,64); } }
+        // Fissures : elles traversent plusieurs dalles, sinon elles ont l'air
+        // dessinées dalle par dalle.
+        c.strokeStyle='rgba(10,12,16,.7)'; c.lineCap='round';
+        for(let i=0;i<6;i++){ const x=COURT.left+alea(i+40,0,CW),y=COURT.top+alea(i+50,0,CH);
+          c.lineWidth=1+graine(i)*2; c.beginPath(); c.moveTo(x,y);
+          for(let k=1;k<6;k++) c.lineTo(x+alea(i*9+k,-70,70),y+alea(i*9+k+4,-46,46)); c.stroke(); }
+        // La rigole, dans l'axe de la rue.
+        c.fillStyle=M.pierreOmbre; c.fillRect(COURT.left,CY-7,CW,14);
+        c.fillStyle='rgba(8,10,14,.6)'; c.fillRect(COURT.left,CY-4,CW,8);
+        c.save(); c.globalCompositeOperation='screen'; c.globalAlpha=.2;
+        for(const s of sources(t)){ if(s.i<.1) continue;
+          c.fillStyle=teinte(s.col,s.i*.4); c.fillRect(COURT.left,CY-3,CW,6); }
+        c.restore();
+        refletsSources(c,t,.42);
+        for(let i=0;i<3;i++) flaque(c,COURT.left+alea(i+70,100,CW-100),
+          COURT.top+alea(i+80,60,CH-60),alea(i+90,22,40),alea(i+95,8,15),i,t); }); } }
+];
+
+/* Le tracé standard : touche, médiane, rond central. Chaque variante décide
+   ensuite avec quoi on le matérialise. */
+function tracerMarquage(c){
+  c.beginPath(); c.rect(COURT.left + 6, COURT.top + 6, CW - 12, CH - 12);
+  c.moveTo(CX, COURT.top + 6); c.lineTo(CX, COURT.bottom - 6);
+  c.moveTo(CX + 58, CY); c.arc(CX, CY, 58, 0, TAU);
+  c.moveTo(CX + 13, CY); c.arc(CX, CY, 13, 0, TAU);
+}
+function pointsLignes(pas){
+  const p = [], x0 = COURT.left + 6, x1 = COURT.right - 6, y0 = COURT.top + 6, y1 = COURT.bottom - 6;
+  for (let x = x0; x <= x1; x += pas){ p.push({ x, y: y0 }); p.push({ x, y: y1 }); }
+  for (let y = y0; y <= y1; y += pas){ p.push({ x: x0, y }); p.push({ x: x1, y }); }
+  for (let y = COURT.top + 8; y <= COURT.bottom - 8; y += pas) p.push({ x: CX, y });
+  const n = Math.max(8, (TAU * 58 / pas) | 0);
+  for (let i = 0; i < n; i++) p.push({ x: CX + Math.cos(i / n * TAU) * 58, y: CY + Math.sin(i / n * TAU) * 58 });
+  return p;
+}
+
+/* ===========================================================================
+   2 · LE MARQUAGE
+   ======================================================================== */
+const MARQUAGE = [
+  { id:'A', nom:'PEINTURE ROUTIÈRE', desc:'Du thermoplastique blanc épais, écaillé par endroits et noirci sous les bandes de roulement. C\'est la seule peinture de la rue, donc la seule chose qui s\'allume quand un gyrophare balaie : le tracé clignote au rythme des sources. Le plus lisible des quatre.',
+    f(c,t){ surLeTerrain(c,()=>{
+      c.lineWidth=6; c.strokeStyle='rgba(198,206,218,.72)'; tracerMarquage(c); c.stroke();
+      c.lineWidth=6.6; c.strokeStyle=teinte(M.bitume,.55);
+      c.setLineDash([5,21]); c.lineDashOffset=9; tracerMarquage(c); c.stroke(); c.setLineDash([]);
+      c.lineWidth=2; c.strokeStyle='rgba(226,232,240,.3)';
+      c.save(); c.translate(0,-1.6); tracerMarquage(c); c.stroke(); c.restore();
+      // Ce que la peinture renvoie des sources, source par source.
+      c.save(); c.globalCompositeOperation='screen';
+      for(const s of sources(t)){ if(s.i<.08) continue;
+        c.globalAlpha=s.i*.3; c.strokeStyle=s.col; c.lineWidth=6;
+        tracerMarquage(c); c.stroke(); }
+      c.restore(); }); } },
+
+  { id:'B', nom:'RUBAN DE POLICE', desc:'Le tracé est fait de rubans jaunes tendus entre des piquets, qui pendent en courbe et ondulent. Chaque ruban a son envers dans l\'ombre, et le vent le fait tourner sur lui-même. Immédiatement « scène de crime », et le seul marquage qui bouge tout seul.',
+    f(c,t){ surLeTerrain(c,()=>{
+      const pts=pointsLignes(9);
+      c.strokeStyle=teinte(M.bitumeOmbre,.45); c.lineWidth=9; tracerMarquage(c); c.stroke();
+      pts.forEach((p,i)=>{
+        // La torsion : quand le ruban se met de profil, on voit sa tranche
+        // sombre au lieu de sa face jaune. C'est ça qui le rend souple.
+        const tors=Math.sin(t*1.9+i*.5)*.5+.5;
+        const ep=2+tors*5.5, pend=Math.sin(t*1.6+i*.4)*2.2;
+        c.fillStyle=(i%3)?mel('#e8c220','#8a6f10',1-tors):M.tissuOmbre;
+        c.fillRect(p.x-5.5,p.y-ep/2+pend,11,ep);
+        if(tors>.6){ c.fillStyle='rgba(255,255,255,.22)';
+          c.fillRect(p.x-5.5,p.y-ep/2+pend,11,1.4); } });
+      // Les piquets qui tiennent tout ça.
+      pointsLignes(96).forEach((p,i)=>{
+        c.fillStyle=M.ferOmbre; c.fillRect(p.x-2,p.y-13,4,15);
+        c.fillStyle=M.ferClair; c.fillRect(p.x-2,p.y-13,1.4,15);
+        c.fillStyle=teinte(M.bitumeOmbre,.5);
+        c.beginPath(); c.ellipse(p.x,p.y+3,7,3,0,0,TAU); c.fill(); }); }); } },
+
+  { id:'C', nom:'FEUX DE DÉTRESSE', desc:'Des torches routières plantées le long du tracé : chacune brûle avec sa propre flamme, pose sa flaque de lumière rouge sur le bitume mouillé et laisse filer un filet de fumée. La plus belle lumière du lot — et beaucoup de rouge, qui se dispute avec les gyrophares.',
+    f(c,t){ surLeTerrain(c,()=>{
+      c.strokeStyle='rgba(198,206,218,.16)'; c.lineWidth=2.4; tracerMarquage(c); c.stroke();
+      const P2=pointsLignes(46);
+      // 1. Les flaques de lumière, d'abord, pour qu'elles passent sous les torches.
+      c.save(); c.globalCompositeOperation='screen';
+      P2.forEach((p,i)=>{ const v=.62+Math.sin(t*9+i*1.9)*.38;
+        c.globalAlpha=.3*v;
+        const g=c.createRadialGradient(p.x,p.y,2,p.x,p.y,52);
+        g.addColorStop(0,teinte(M.gyroRouge,.9)); g.addColorStop(1,teinte(M.gyroRouge,0));
+        c.fillStyle=g; c.beginPath(); c.ellipse(p.x,p.y,52,30,0,0,TAU); c.fill();
+        // La traînée verticale, parce que le sol est mouillé.
+        c.globalAlpha=.16*v;
+        c.fillStyle=teinte(M.gyroRouge,.8);
+        c.beginPath(); c.ellipse(p.x,p.y+34,11,40,0,0,TAU); c.fill(); });
+      c.restore();
+      // 2. La fumée.
+      P2.forEach((p,i)=>{ for(let k=0;k<3;k++){ const q=((t*.5+k*.33+graine(i))%1);
+        c.globalAlpha=(1-q)*.18; c.fillStyle=M.brumeChaude;
+        c.beginPath(); c.ellipse(p.x+Math.sin(t*2+k+i)*9,p.y-14-q*44,6+q*15,4+q*10,0,0,TAU); c.fill(); } });
+      c.globalAlpha=1;
+      // 3. Les torches elles-mêmes.
+      P2.forEach((p,i)=>{ const v=.62+Math.sin(t*9+i*1.9)*.38;
+        c.fillStyle=M.ferOmbre; c.fillRect(p.x-2.6,p.y-3,5.2,12);
+        c.fillStyle=M.rouille; c.fillRect(p.x-2.6,p.y-3,5.2,4);
+        c.fillStyle=v>.8?'#fff0e2':M.gyroRouge;
+        c.beginPath(); c.ellipse(p.x,p.y-7,2.6*v,4.4*v,0,0,TAU); c.fill(); }); }); } },
+
+  { id:'D', nom:'CRAIE ET BOMBE ORANGE', desc:'Tracé à la main en quinze minutes : de la craie blanche pour l\'essentiel, de la bombe de chantier orange par-dessus là où il fallait que ce soit visible, et des silhouettes à la craie qui traînent au sol. Bancal exprès — et le moins lisible dans la brume.',
+    f(c,t){ surLeTerrain(c,()=>{
+      c.strokeStyle='rgba(226,230,238,.5)'; c.lineWidth=3.2;
+      c.setLineDash([30,6,17,5]); tracerMarquage(c); c.stroke(); c.setLineDash([]);
+      c.save(); c.translate(2,1.4);
+      c.strokeStyle='rgba(255,120,20,.82)'; c.lineWidth=6.5; c.lineCap='round';
+      c.setLineDash([64,40]); c.lineDashOffset=18; tracerMarquage(c); c.stroke();
+      c.setLineDash([]); c.restore();
+      // Les projections de bombe autour du trait : c'est ce qui fait « bombe »
+      // plutôt que « pinceau ».
+      pointsLignes(15).forEach((p,i)=>{ if(graine(i*3)<.55) return;
+        c.fillStyle=teinte('#ff7814',.14+graine(i)*.3);
+        c.beginPath(); c.arc(p.x+alea(i,-9,9),p.y+alea(i+4,-9,9),alea(i+8,.8,2.8),0,TAU); c.fill(); });
+      // Trois silhouettes tracées à la craie.
+      for(let i=0;i<3;i++){ const x=COURT.left+alea(i+70,150,CW-150),y=COURT.top+alea(i+80,90,CH-90);
+        c.save(); c.translate(x,y); c.rotate(graine(i)*TAU);
+        c.strokeStyle='rgba(226,230,238,.4)'; c.lineWidth=2.6; c.lineCap='round';
+        c.beginPath(); c.arc(0,-19,9,0,TAU); c.stroke();
+        c.beginPath();
+        c.moveTo(-10,-8); c.lineTo(-18,19); c.moveTo(10,-8); c.lineTo(18,19);
+        c.moveTo(-10,-8); c.lineTo(10,-8);
+        c.moveTo(-15,1); c.lineTo(-27,-8); c.moveTo(15,1); c.lineTo(27,-8);
+        c.stroke(); c.restore(); } }); } }
+];
+
+/* ===========================================================================
+   ANATOMIE DES CAGES. `barreau` est la brique : un cylindre vu de face, donc
+   une face sombre, un corps, et une arête vive du côté du terrain — c'est là
+   que passent les gyrophares. Sans cette arête, un barreau n'est qu'un trait.
+   ======================================================================== */
+function barreau(c, x, y, l, ep, mat){
+  const base = mat || M.fer;
+  c.fillStyle = mel(base, M.ferOmbre, .6);
+  c.fillRect(x, y, l, ep);
+  c.fillStyle = base;
+  c.fillRect(x, y + ep * .22, l, ep * .5);
+  c.fillStyle = mel(base, M.ferClair, .75);
+  c.fillRect(x, y + ep * .22, l, ep * .2);
+  c.fillStyle = 'rgba(0,0,0,.35)';
+  c.fillRect(x, y + ep * .82, l, ep * .18);
+}
+function boulon(c, x, y, r){
+  c.fillStyle = M.ferOmbre; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
+  c.fillStyle = M.ferClair; c.beginPath(); c.arc(x - r * .25, y - r * .25, r * .5, 0, TAU); c.fill();
+}
+function pourChaqueCage(c, fn){
+  for (const side of [1, 2]){
+    c.save();
+    c.translate(side === 1 ? COURT.left : COURT.right, CY);
+    c.scale(side === 1 ? 1 : -1, 1);
+    fn(c, side);
+    c.restore();
+  }
+}
+/* Les volets de points, hors miroir pour que les chiffres restent lisibles.
+   Ils sont posés par le compositeur quelle que soit la cage choisie : c'est la
+   seule chose que le joueur DOIT voir. */
+const ZONES = [{ from:-100, to:-26, pts:3, col:M.gyroBleu },
+               { from:-26, to:26, pts:5, col:'#f5c542' },
+               { from:26, to:100, pts:3, col:M.gyroBleu }];
+function voletsCage(c){
+  for (const side of [1, 2]){
+    const gx = side === 1 ? COURT.left - GOAL_D : COURT.right;
+    for (const z of ZONES){
+      c.globalAlpha = .26; c.fillStyle = z.col;
+      c.fillRect(gx, CY + z.from, GOAL_D, z.to - z.from);
+      c.globalAlpha = 1;
+      c.fillStyle = 'rgba(255,255,255,.8)';
+      c.font = '700 16px "Archivo Black",sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(z.pts, gx + GOAL_D / 2, CY + (z.from + z.to) / 2);
+    }
+  }
+}
+
+/* ===========================================================================
+   3 · LES CAGES — des barreaux dans les quatre cas.
+   ======================================================================== */
+const CAGES = [
+  { id:'A', nom:'LA GRILLE DU R.P.D.', desc:'La vraie grille en fer forgé du poste : pointes de lance, deux traverses, le médaillon du R.P.D. soudé au centre, les gonds et leurs coulures de rouille. Un vantail est resté entrouvert. C\'est l\'image la plus connue de la série, et elle est déjà faite de barreaux.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle=teinte(M.bitumeOmbre,.6); c.fillRect(-GOAL_D,-GH,GOAL_D,GH*2);
+      // Les montants, en premier plan.
+      c.fillStyle=M.ferOmbre; c.fillRect(-6,-GH-16,7,GH*2+32);
+      c.fillRect(-GOAL_D-9,-GH-16,7,GH*2+32);
+      c.fillStyle=M.ferClair; c.fillRect(-6,-GH-16,2,GH*2+32);
+      // Les barreaux et leurs pointes.
+      for(let y=-GH+7;y<GH;y+=15){
+        barreau(c,-GOAL_D-6,y,GOAL_D+3,7);
+        c.fillStyle=mel(M.fer,M.ferClair,.4);
+        c.beginPath(); c.moveTo(0,y-1); c.lineTo(6,y+3.5); c.lineTo(0,y+8); c.closePath(); c.fill(); }
+      // Les deux traverses, plus épaisses.
+      for(const y of [-GH+30,GH-38]) barreau(c,-GOAL_D-9,y,GOAL_D+10,11);
+      // Le médaillon.
+      c.fillStyle=M.ferOmbre; c.beginPath(); c.arc(-GOAL_D/2-3,0,19,0,TAU); c.fill();
+      c.strokeStyle=M.ferClair; c.lineWidth=2.6;
+      c.beginPath(); c.arc(-GOAL_D/2-3,0,19,0,TAU); c.stroke();
+      c.beginPath(); c.arc(-GOAL_D/2-3,0,11,0,TAU); c.stroke();
+      c.fillStyle=mel(M.fer,M.ferClair,.5);
+      c.beginPath(); c.moveTo(-GOAL_D/2-3,-9); c.lineTo(-GOAL_D/2+4,4); c.lineTo(-GOAL_D/2-10,4);
+      c.closePath(); c.fill();
+      // Gonds et rouille qui coule.
+      for(const y of [-GH+18,GH-24]){
+        c.fillStyle=M.ferOmbre; c.fillRect(-9,y-5,10,11);
+        boulon(c,-4,y,2.4);
+        c.fillStyle=teinte(M.rouille,.4); c.fillRect(-7,y+6,4,22); } }); } },
+
+  { id:'B', nom:'BARREAUX DE CELLULE', desc:'Les barreaux du sous-sol du poste : gros cylindres scellés dans un cadre, deux traverses boulonnées, la peinture qui s\'écaille et la rouille qui gagne par le bas. Le plus simple et le plus lisible des quatre — on voit exactement où est l\'ouverture.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle=teinte(M.bitumeOmbre,.78); c.fillRect(-GOAL_D,-GH,GOAL_D,GH*2);
+      // Le cadre scellé.
+      c.fillStyle=mel(M.fer,M.ferOmbre,.5);
+      c.fillRect(-GOAL_D-12,-GH-12,GOAL_D+14,12);
+      c.fillRect(-GOAL_D-12,GH,GOAL_D+14,12);
+      c.fillRect(-GOAL_D-12,-GH-12,10,GH*2+24);
+      c.fillStyle=M.ferClair;
+      c.fillRect(-GOAL_D-12,-GH-12,GOAL_D+14,2.4);
+      for(let y=-GH+5;y<GH;y+=14) barreau(c,-GOAL_D-10,y,GOAL_D+10,9);
+      // Traverses boulonnées, devant les barreaux.
+      for(const y of [-GH+34,GH-42]){
+        barreau(c,-GOAL_D-12,y,GOAL_D+14,13,mel(M.fer,M.ferClair,.15));
+        for(let x=-GOAL_D-6;x<0;x+=17) boulon(c,x,y+6.5,2.8); }
+      // La rouille monte du sol : une cage n'est jamais uniforme.
+      c.save(); c.globalAlpha=.32;
+      const g=c.createLinearGradient(0,GH,0,GH-70);
+      g.addColorStop(0,M.rouille); g.addColorStop(1,teinte(M.rouille,0));
+      c.fillStyle=g; c.fillRect(-GOAL_D-12,GH-70,GOAL_D+14,70); c.restore();
+      // L'écaillage.
+      for(let i=0;i<22;i++){ c.fillStyle=teinte(M.rouille,.4+graine(i)*.4);
+        c.fillRect(-GOAL_D-8+alea(i,0,GOAL_D+4),alea(i+7,-GH,GH),alea(i+13,2,6),alea(i+19,2,5)); } }); } },
+
+  { id:'C', nom:'BARRIÈRE ANTI-ÉMEUTE', desc:'Les panneaux grillagés sur roulettes que la police pousse devant les foules, posés en travers de la cage et légèrement inclinés. Grillage à mailles fines : on voit parfaitement le disque au travers, et la plaque d\'avertissement accroche la lumière des gyrophares.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle=teinte(M.bitumeOmbre,.4); c.fillRect(-GOAL_D,-GH,GOAL_D,GH*2);
+      for(const [y0,h,pen] of [[-GH-6,98,-.045],[GH-92,98,.035]]){
+        c.save(); c.translate(-GOAL_D/2-4,y0+h/2); c.rotate(pen); c.translate(0,-h/2);
+        // Le grillage : deux familles de fils, pas une grille carrée.
+        c.strokeStyle=teinte(M.ferClair,.42); c.lineWidth=1.1;
+        for(let k=-9;k<12;k++){
+          c.beginPath(); c.moveTo(-GOAL_D/2-6,k*11); c.lineTo(GOAL_D/2+6,k*11+h*.5); c.stroke();
+          c.beginPath(); c.moveTo(-GOAL_D/2-6,k*11+h*.5); c.lineTo(GOAL_D/2+6,k*11); c.stroke(); }
+        // Le cadre tubulaire.
+        c.fillStyle=mel(M.fer,M.ferOmbre,.35);
+        c.fillRect(-GOAL_D/2-8,0,GOAL_D+16,6); c.fillRect(-GOAL_D/2-8,h-6,GOAL_D+16,6);
+        c.fillRect(-GOAL_D/2-8,0,6,h); c.fillRect(GOAL_D/2+2,0,6,h);
+        c.fillStyle=M.ferClair; c.fillRect(-GOAL_D/2-8,0,GOAL_D+16,1.6);
+        // La plaque d'avertissement.
+        c.fillStyle='#d8b23a'; c.fillRect(-15,h*.42,30,13);
+        c.fillStyle=M.ferOmbre;
+        for(let k=0;k<3;k++) c.fillRect(-15+k*11,h*.42,5,13);
+        // Les roulettes.
+        for(const rx of [-GOAL_D/2-4,GOAL_D/2-2]){
+          c.fillStyle=M.ferOmbre; c.beginPath(); c.arc(rx,h+4,5,0,TAU); c.fill();
+          c.fillStyle=M.ferClair; c.beginPath(); c.arc(rx-1,h+3,2,0,TAU); c.fill(); }
+        c.restore(); } }); } },
+
+  { id:'D', nom:'BARREAUX ARRACHÉS', desc:'Quelque chose est sorti par là. Les barreaux ont été tordus vers l\'extérieur depuis l\'intérieur, le métal est déchiré à la pliure, il reste du sang sur les arêtes et une empreinte de main au sol. L\'ouverture élargie au centre guide l\'œil pile vers les cinq points.',
+    f(c,t){ pourChaqueCage(c,(c)=>{
+      c.fillStyle=teinte(M.bitumeOmbre,.72); c.fillRect(-GOAL_D,-GH,GOAL_D,GH*2);
+      c.fillStyle=mel(M.fer,M.ferOmbre,.5);
+      c.fillRect(-GOAL_D-12,-GH-12,GOAL_D+14,12); c.fillRect(-GOAL_D-12,GH,GOAL_D+14,12);
+      for(let y=-GH+5;y<GH;y+=14){
+        // Plus on est près du centre, plus le barreau est tordu vers dehors.
+        const k=Math.max(0,1-Math.abs(y)/72), d=k*k*34*(y<0?-1:1);
+        c.save(); c.translate(0,y);
+        c.fillStyle=mel(M.fer,M.ferOmbre,.55);
+        c.beginPath(); c.moveTo(-GOAL_D-10,0); c.lineTo(-2,d);
+        c.lineTo(-2,d+9); c.lineTo(-GOAL_D-10,9); c.closePath(); c.fill();
+        c.fillStyle=mel(M.fer,M.ferClair,.55);
+        c.beginPath(); c.moveTo(-GOAL_D-10,0); c.lineTo(-2,d); c.lineTo(-2,d+2.4); c.lineTo(-GOAL_D-10,2.4);
+        c.closePath(); c.fill();
+        // Le métal déchiré, là où ça a cédé.
+        if(k>.45){ c.fillStyle=mel(M.ferClair,'#ffffff',.3);
+          for(let s=0;s<3;s++) c.fillRect(-4+s,d+alea(y*7+s,0,8),1.6,alea(y*7+s+3,2,5)); }
+        c.restore(); }
+      // Le sang sur les arêtes, et la main au sol.
+      for(let i=0;i<8;i++){ c.fillStyle=teinte(M.sang,.35+graine(i)*.35);
+        c.beginPath(); c.ellipse(-GOAL_D+alea(i+20,0,GOAL_D),alea(i+30,-58,58),
+          alea(i+40,3,9),alea(i+45,2,5),graine(i)*3,0,TAU); c.fill(); }
+      c.save(); c.translate(-GOAL_D-22,44); c.rotate(-.5);
+      c.fillStyle=teinte(M.sangSec,.6);
+      c.beginPath(); c.ellipse(0,0,7,9,0,0,TAU); c.fill();
+      for(let f=0;f<4;f++){ c.beginPath();
+        c.ellipse(-5+f*3.4,-11,1.6,4.4,(f-1.5)*.28,0,TAU); c.fill(); }
+      c.restore(); }); } }
+];
+
+/* Quelles sources sont réellement allumées, selon la variante de lumière
+   choisie. C'est ce qui fait que les reflets du bitume et la teinte de la
+   brume suivent l'éclairage : sans ça, le sol renverrait un gyrophare qu'on
+   n'a pas allumé. */
+let eclairageActif = 1;
+const TYPES_ACTIFS = [
+  ['gyro'],                 // A · gyrophares seuls
+  ['gyro', 'fenetre'],      // B · gyrophares et fenêtres
+  ['feu', 'fenetre'],       // C · l'incendie
+  ['helico', 'gyro']        // D · le projecteur de l'hélico
+];
+
+/* La couleur que prend la brume à un endroit donné : celle de la source la
+   plus proche et la plus forte, sinon le bleu-gris de la nuit. C'est ce seul
+   calcul qui la fait appartenir à la scène au lieu de flotter dessus. */
+function teinteBrume(x, y, t){
+  let best = null, poids = 0;
+  for (const s of sources(t)){
+    const d = Math.hypot(s.x - x, s.y - y);
+    const p = s.i * Math.max(0, 1 - d / 560);
+    if (p > poids){ poids = p; best = s; }
+  }
+  if (!best || poids < .12) return M.brumeFroide;
+  const cible = best.type === 'gyro' ? (best.col === M.gyroRouge ? M.brumeRouge : '#7f96b8')
+              : M.brumeChaude;
+  return mel(M.brumeFroide, cible, Math.min(1, poids * 1.6));
+}
+
+/* ===========================================================================
+   4 · LA BRUME — une RÈGLE, pas un décor : elle masque réellement.
+   ======================================================================== */
+/* Trois états plutôt qu'une cinquième variante « sans brume » : normal, à fond
+   pour juger le pire cas, et éteinte pour avoir la référence — c'est elle qui
+   dit ce que la règle coûte réellement en lisibilité. */
+let modeBrume = 0;   // 0 = normal · 1 = à fond · 2 = éteinte
+function densiteBrume(t){
+  if (modeBrume === 1) return 1;
+  if (modeBrume === 2) return 0;
+  return Math.max(0, Math.min(1, (Math.sin(t * .34) + .35) * 1.25));
+}
+
+const BRUME = [
+  { id:'A', nom:'NAPPE RASANTE', desc:'Un voile qui rampe au ras du bitume et traverse la rue. Chaque banc prend la couleur de ce qu\'il traverse — rouge en passant devant un gyrophare, ambre sous les fenêtres. Il brouille le sol mais laisse les joueurs et le disque au-dessus : la plus jouable des quatre.',
+    f(c,t){ const d=densiteBrume(t); if(d<=0) return;
+      c.save();
+      for(let i=0;i<8;i++){ const x=((t*26+i*160)%(W+400))-200, y=COURT.top+alea(i,30,CH-30);
+        const col=teinteBrume(x,y,t);
+        c.globalAlpha=d*.44;
+        const g=c.createRadialGradient(x,y,0,x,y,200);
+        g.addColorStop(0,teinte(col,.62)); g.addColorStop(.55,teinte(col,.3));
+        g.addColorStop(1,teinte(col,0));
+        c.fillStyle=g; c.beginPath(); c.ellipse(x,y,200,42,0,0,TAU); c.fill();
+        // Le bord d'attaque, plus dense : une nappe a un devant et un derrière.
+        c.globalAlpha=d*.2;
+        c.fillStyle=teinte(col,.5);
+        c.beginPath(); c.ellipse(x+120,y,70,26,0,0,TAU); c.fill(); }
+      c.restore(); } },
+
+  { id:'B', nom:'BOUFFÉES', desc:'Des bancs bien séparés qui passent l\'un après l\'autre, avec de vraies trouées entre eux. Chacun s\'enroule sur lui-même en avançant et se teinte des sources qu\'il croise. On perd le terrain par moments, puis tout revient — le rythme est lisible et on peut jouer avec.',
+    f(c,t){ const d=densiteBrume(t); if(d<=0) return;
+      c.save();
+      for(let i=0;i<4;i++){ const per=12+i*3.4, k=((t/per)+graine(i))%1;
+        const x=-280+k*(W+560), y=COURT.top+alea(i+5,10,CH-10);
+        const col=teinteBrume(x,y,t);
+        c.globalAlpha=Math.sin(k*Math.PI)*d*.7;
+        const g=c.createRadialGradient(x,y,10,x,y,270);
+        g.addColorStop(0,teinte(col,.85)); g.addColorStop(.55,teinte(col,.42));
+        g.addColorStop(1,teinte(col,0));
+        c.fillStyle=g; c.beginPath(); c.ellipse(x,y,270,132,0,0,TAU); c.fill();
+        // Les volutes internes, qui tournent : sans elles un banc est un flou.
+        for(let v=0;v<4;v++){ const a=t*.7+v*1.6+i;
+          c.globalAlpha=Math.sin(k*Math.PI)*d*.2;
+          c.fillStyle=teinte(col,.5);
+          c.beginPath();
+          c.ellipse(x+Math.cos(a)*110,y+Math.sin(a)*44,74,34,a*.3,0,TAU); c.fill(); } }
+      c.restore(); } },
+
+  { id:'C', nom:'LE RIDEAU', desc:'Un mur de brume franc qui balaie la rue d\'un bout à l\'autre, avec un bord net devant et une traîne derrière. La règle la plus lisible de toutes : on voit d\'où il vient, on sait quand il sera passé, et on peut décider d\'attendre ou de tirer avant.',
+    f(c,t){ const d=densiteBrume(t); if(d<=0) return;
+      const k=((t*.055)%1), x=-340+k*(W+680);
+      const col=teinteBrume(x,CY,t);
+      c.save(); c.globalAlpha=d;
+      const g=c.createLinearGradient(x-320,0,x+320,0);
+      g.addColorStop(0,teinte(col,0)); g.addColorStop(.3,teinte(col,.28));
+      g.addColorStop(.55,teinte(col,.66)); g.addColorStop(.75,teinte(col,.6));
+      g.addColorStop(1,teinte(col,0));
+      c.fillStyle=g; c.fillRect(x-320,0,640,H);
+      // Le bord d'attaque, déchiqueté : un mur de brume n'a pas un bord droit.
+      c.globalAlpha=d*.5;
+      for(let i=0;i<22;i++){ const py=alea(i,0,H);
+        c.fillStyle=teinte(col,.55);
+        c.beginPath(); c.ellipse(x+150+Math.sin(t*1.6+i)*26,py,alea(i+20,28,74),
+          alea(i+30,16,40),0,0,TAU); c.fill(); }
+      c.restore(); } },
+
+  { id:'D', nom:'BROUILLARD PLEIN', desc:'Ni forme ni bord : toute l\'image blanchit d\'un coup, puis redescend. La plus brutale et la plus équitable — les deux camps sont aveuglés exactement de la même façon, au même instant. C\'est aussi celle qui coûte le plus de lisibilité : à fond, on perd 60 % du contraste du disque.',
+    f(c,t){ const d=densiteBrume(t); if(d<=0) return;
+      c.save();
+      // Le fond est teinté par la moyenne des sources : le brouillard prend la
+      // couleur générale de la rue, il ne pose pas un gris par-dessus.
+      const col=teinteBrume(CX,CY,t);
+      c.globalAlpha=d*.62; c.fillStyle=col; c.fillRect(0,0,W,H);
+      c.globalAlpha=d*.26;
+      for(let i=0;i<18;i++){ const x=((t*16+i*110)%(W+300))-150, y=alea(i,0,H);
+        c.fillStyle=teinte(teinteBrume(x,y,t),.6);
+        c.beginPath(); c.ellipse(x,y,alea(i+9,60,160),alea(i+18,28,64),0,0,TAU); c.fill(); }
+      c.restore(); } }
+];
+
+/* ===========================================================================
+   5 · LA LUMIÈRE — les sources elles-mêmes. Ce qui est allumé ici est ce que
+   le sol reflète et ce dont la brume prend la couleur.
+   ======================================================================== */
+const LUMIERE = [
+  { id:'A', nom:'LES GYROPHARES SEULS', desc:'Rien d\'autre que le rouge et le bleu du R.P.D. qui tournent, au ras du sol, de part et d\'autre du terrain. Tout ce qu\'ils ne touchent pas reste noir. Le parti pris le plus dur et le plus fort : la rue n\'existe que par intermittence.',
+    f(c,t){ c.fillStyle='rgba(3,5,9,.5)'; c.fillRect(0,0,W,H);
+      const postes=[[COURT.left-30,CY-150],[COURT.left-30,CY+150],
+                    [COURT.right+30,CY-150],[COURT.right+30,CY+150]];
+      c.save(); c.globalCompositeOperation='screen';
+      postes.forEach(([x,y],i)=>{ const a=t*2.2+i*1.6;
+        for(const [col,dec] of [[M.gyroRouge,0],[M.gyroBleu,Math.PI]]){
+          const aa=a+dec, v=Math.max(0,Math.cos(aa));
+          if(v<=.02) continue;
+          c.globalAlpha=.26*v;
+          const g=c.createLinearGradient(x,y,x+Math.cos(aa)*440,y+Math.sin(aa)*440);
+          g.addColorStop(0,teinte(col,.95)); g.addColorStop(.5,teinte(col,.3));
+          g.addColorStop(1,teinte(col,0));
+          c.fillStyle=g; c.beginPath(); c.moveTo(x,y);
+          c.lineTo(x+Math.cos(aa-.3)*480,y+Math.sin(aa-.3)*480);
+          c.lineTo(x+Math.cos(aa+.3)*480,y+Math.sin(aa+.3)*480);
+          c.closePath(); c.fill();
+          // Le halo serré autour de l'ampoule, toujours visible.
+          c.globalAlpha=.4*v;
+          const h=c.createRadialGradient(x,y,1,x,y,44);
+          h.addColorStop(0,teinte(col,.9)); h.addColorStop(1,teinte(col,0));
+          c.fillStyle=h; c.beginPath(); c.arc(x,y,44,0,TAU); c.fill(); } });
+      c.restore();
+      // Les boîtiers eux-mêmes, posés sur le bitume.
+      postes.forEach(([x,y],i)=>{ const a=t*2.2+i*1.6;
+        c.fillStyle=teinte(M.bitumeOmbre,.6);
+        c.beginPath(); c.ellipse(x,y+8,20,7,0,0,TAU); c.fill();
+        c.fillStyle=M.ferOmbre; c.fillRect(x-13,y-8,26,16);
+        c.fillStyle=M.fer; c.fillRect(x-13,y-8,26,3);
+        c.fillStyle=Math.cos(a)>0?M.gyroRouge:mel(M.gyroRouge,'#000000',.72);
+        c.fillRect(x-10,y-5,10,11);
+        c.fillStyle=Math.cos(a)<0?M.gyroBleu:mel(M.gyroBleu,'#000000',.72);
+        c.fillRect(x+1,y-5,10,11); }); } },
+
+  { id:'B', nom:'GYROPHARES ET FENÊTRES', desc:'Le modèle complet : les gyrophares au sol, et les fenêtres allumées du bâti en contre-jour tout en haut. Les deux températures se répondent — froid et saturé en bas, chaud et diffus en haut — et le bitume mouillé renvoie les deux. C\'est l\'éclairage de référence.',
+    f(c,t){ c.fillStyle='rgba(4,6,11,.34)'; c.fillRect(0,0,W,H);
+      // Le contre-jour des fenêtres : une nappe chaude qui descend du haut.
+      c.save(); c.globalCompositeOperation='screen';
+      const g=c.createLinearGradient(0,0,0,COURT.top+180);
+      g.addColorStop(0,teinte(M.fenetre,.3)); g.addColorStop(1,teinte(M.fenetre,0));
+      c.fillStyle=g; c.fillRect(0,0,W,COURT.top+180);
+      for(let k=0;k<4;k++){ const x=140+k*230, v=.55+Math.sin(t*1.3+k)*.12;
+        c.globalAlpha=.24*v;
+        const h=c.createRadialGradient(x,20,6,x,20,240);
+        h.addColorStop(0,teinte(M.fenetre,.8)); h.addColorStop(1,teinte(M.fenetre,0));
+        c.fillStyle=h; c.beginPath(); c.arc(x,20,240,0,TAU); c.fill(); }
+      c.restore();
+      LUMIERE[0].f(c,t); } },
+
+  { id:'C', nom:'L\'INCENDIE', desc:'Le quartier brûle hors champ, à gauche. Une seule grande lueur orange qui bat lentement, des braises qui montent en travers de la rue, et les fenêtres du fond qui restent allumées. La lumière la plus vivante, la plus chaude, et celle qui laisse le décor le plus lisible.',
+    f(c,t){ const v=.72+Math.sin(t*5.4)*.16+Math.sin(t*11.3)*.08;
+      c.fillStyle='rgba(5,4,8,.4)'; c.fillRect(0,0,W,H);
+      c.save(); c.globalCompositeOperation='screen';
+      const g=c.createLinearGradient(0,0,W*.72,H);
+      g.addColorStop(0,teinte(M.feu,.3*v)); g.addColorStop(.45,teinte(M.feu,.11*v));
+      g.addColorStop(1,teinte(M.feu,0));
+      c.fillStyle=g; c.fillRect(0,0,W,H);
+      const g2=c.createRadialGradient(-50,H*.4,10,-50,H*.4,470);
+      g2.addColorStop(0,teinte('#ffbe5a',.46*v)); g2.addColorStop(1,teinte(M.feu,0));
+      c.fillStyle=g2; c.beginPath(); c.arc(-50,H*.4,470,0,TAU); c.fill();
+      // Les fenêtres tiennent encore, mais faibles.
+      for(let k=0;k<4;k++){ const x=140+k*230;
+        c.globalAlpha=.13;
+        const h=c.createRadialGradient(x,20,6,x,20,190);
+        h.addColorStop(0,teinte(M.fenetre,.7)); h.addColorStop(1,teinte(M.fenetre,0));
+        c.fillStyle=h; c.beginPath(); c.arc(x,20,190,0,TAU); c.fill(); }
+      c.restore();
+      // Les braises : elles montent ET dérivent, sinon ce sont des étincelles.
+      for(let i=0;i<40;i++){ const k=((t*.28+graine(i))%1);
+        c.globalAlpha=(1-k)*.75*v;
+        c.fillStyle=graine(i+3)>.45?M.feu:'#ffd98a';
+        const x=alea(i,-20,W*.55)+k*200+Math.sin(t*2+i)*18;
+        c.fillRect(x,H-k*H*.95,2.4,2.4); }
+      c.globalAlpha=1; } },
+
+  { id:'D', nom:'LE PROJECTEUR DE L\'HÉLICO', desc:'Un unique cône blanc qui cherche sur la rue en cercles lents, l\'appareil visible en haut avec son rotor et son feu rouge, les gyrophares en soutien. Très cinématographique — mais tout ce qui est hors du cône reste dans le noir, y compris parfois le disque.',
+    f(c,t){ c.fillStyle='rgba(3,5,9,.55)'; c.fillRect(0,0,W,H);
+      const px=CX+Math.cos(t*.42)*300, py=CY+Math.sin(t*.63)*160;
+      c.save(); c.globalCompositeOperation='screen';
+      const g=c.createRadialGradient(px,py,10,px,py,200);
+      g.addColorStop(0,'rgba(248,252,255,.55)'); g.addColorStop(.5,'rgba(224,238,255,.18)');
+      g.addColorStop(1,'rgba(224,238,255,0)');
+      c.fillStyle=g; c.beginPath(); c.arc(px,py,200,0,TAU); c.fill();
+      c.restore();
+      c.save(); c.globalAlpha=.4; c.strokeStyle='rgba(255,255,255,.3)'; c.lineWidth=2;
+      c.beginPath(); c.arc(px,py,196,0,TAU); c.stroke(); c.restore();
+      // L'appareil.
+      const hx=CX+Math.cos(t*.42+.55)*300, hy=24;
+      c.fillStyle=teinte('#000000',.35);
+      c.beginPath(); c.ellipse(hx,hy+30,40,8,0,0,TAU); c.fill();
+      c.fillStyle=mel(M.tissu,M.tissuOmbre,.4);
+      c.beginPath(); c.ellipse(hx,hy,24,9,0,0,TAU); c.fill();
+      c.fillStyle=M.tissuOmbre; c.fillRect(hx+20,hy-2.4,20,5);
+      c.fillStyle=mel(M.tissu,M.ferClair,.4); c.fillRect(hx+38,hy-8,4,16);
+      c.fillStyle='rgba(150,190,230,.45)';
+      c.beginPath(); c.ellipse(hx-12,hy-1,9,5,0,0,TAU); c.fill();
+      c.save(); c.translate(hx,hy-11); c.rotate(t*24);
+      c.fillStyle='rgba(180,196,220,.45)'; c.fillRect(-40,-1.6,80,3.2);
+      c.fillStyle='rgba(180,196,220,.25)'; c.fillRect(-1.6,-40,3.2,80); c.restore();
+      c.fillStyle=Math.sin(t*7)>0?M.gyroRouge:mel(M.gyroRouge,'#000',.7);
+      c.fillRect(hx-26,hy-2,4,4);
+      LUMIERE[0].f(c,t); } }
+];
+
+/* ===========================================================================
+   ANATOMIE DE LA RUE. Tout ce qui est vertical suit la même règle : silhouette
+   sombre, et une seule arête éclairée, du côté de la source la plus proche.
+   `flanc` renvoie ce côté ; toutes les fonctions ci-dessous s'en servent.
+   ======================================================================== */
+function flanc(x){ return x < CX ? -1 : 1; }
+
+/* Un zombie. Ce qui le distingue d'un passant : la tête penchée, une épaule
+   tombante, les bras devant, et les jambes décalées — il ne marche pas, il
+   traîne. Sans ces quatre choses, c'est une silhouette quelconque. */
+function zombie(c, x, y, h, t, i){
+  const f = flanc(x), osc = Math.sin(t * 1.4 + i) * .1;
+  c.save(); c.translate(x, y); c.rotate(osc);
+  const corps = mel(M.chairMorte, M.tissuOmbre, .55);
+  // Jambes décalées, une traîne.
+  c.fillStyle = mel(corps, '#000000', .3);
+  c.fillRect(-h * .16, -h * .3, h * .13, h * .3);
+  c.fillRect(h * .04, -h * .3, h * .13, h * .32 + Math.sin(t * 1.4 + i) * h * .03);
+  // Buste, épaule droite tombante.
+  c.fillStyle = corps;
+  c.beginPath();
+  c.moveTo(-h * .2, -h * .3); c.lineTo(-h * .22, -h * .62);
+  c.lineTo(h * .18, -h * .58); c.lineTo(h * .2, -h * .3);
+  c.closePath(); c.fill();
+  // Bras tendus vers le terrain.
+  c.fillStyle = mel(corps, M.chairOmbre, .4);
+  c.save(); c.rotate(-f * .5);
+  c.fillRect(-h * .1, -h * .56, h * .38, h * .1); c.restore();
+  c.fillRect(-h * .3, -h * .5 + Math.sin(t * 2 + i) * h * .03, h * .3, h * .09);
+  // Tête penchée.
+  c.save(); c.translate(0, -h * .68); c.rotate(f * .35);
+  c.fillStyle = mel(M.chairMorte, M.chairOmbre, .3);
+  c.beginPath(); c.arc(0, -h * .06, h * .15, 0, TAU); c.fill();
+  c.fillStyle = teinte(M.sang, .5);
+  c.fillRect(-h * .05, -h * .04, h * .1, h * .1);
+  c.restore();
+  // L'arête éclairée, du côté de la source.
+  c.fillStyle = teinte(M.ferClair, .28);
+  c.fillRect(f * h * .19, -h * .62, h * .035, h * .32);
+  c.restore();
+}
+
+/* Un policier anti-émeute : casque à visière, bouclier tenu de biais, matraque.
+   Il est massif là où le zombie est mou — c'est la silhouette qui les sépare. */
+function policier(c, x, y, h, t, i){
+  const f = flanc(x);
+  c.save(); c.translate(x + Math.sin(t * 1.1 + i) * .8, y);
+  c.fillStyle = M.tissuOmbre;
+  c.fillRect(-h * .13, -h * .32, h * .11, h * .32);
+  c.fillRect(h * .03, -h * .32, h * .11, h * .32);
+  c.fillStyle = mel(M.tissu, M.tissuOmbre, .3);
+  c.fillRect(-h * .21, -h * .66, h * .42, h * .36);
+  c.fillStyle = M.tissuOmbre;
+  c.beginPath(); c.arc(0, -h * .78, h * .18, 0, TAU); c.fill();
+  c.fillStyle = teinte('#8fb4dc', .3);
+  c.fillRect(-h * .14, -h * .82, h * .28, h * .11);
+  c.fillStyle = teinte(M.ferClair, .35);
+  c.fillRect(f * h * .2, -h * .78, h * .035, h * .46);
+  // Le bouclier, translucide, tenu devant.
+  c.fillStyle = 'rgba(150,178,210,.22)';
+  c.fillRect(-h * .3, -h * .6, h * .6, h * .5);
+  c.strokeStyle = 'rgba(190,214,240,.4)'; c.lineWidth = 1.2;
+  c.strokeRect(-h * .3, -h * .6, h * .6, h * .5);
+  c.fillStyle = M.gyroBleu; c.fillRect(-h * .06, -h * .48, h * .12, h * .12);
+  c.restore();
+}
+
+/* Un survivant : plus petit, plus voûté, avec sa lampe qui balaie. */
+function survivant(c, x, y, h, t, i){
+  const a = Math.sin(t * .7 + i * 1.3) * .9 + (x < CX ? 0 : Math.PI);
+  c.save(); c.globalCompositeOperation = 'screen'; c.globalAlpha = .17;
+  const g = c.createLinearGradient(x, y - h * .6, x + Math.cos(a) * 150, y - h * .6 + Math.sin(a) * 150);
+  g.addColorStop(0, 'rgba(246,250,255,.8)'); g.addColorStop(1, 'rgba(246,250,255,0)');
+  c.fillStyle = g; c.beginPath(); c.moveTo(x, y - h * .6);
+  c.lineTo(x + Math.cos(a - .13) * 160, y - h * .6 + Math.sin(a - .13) * 160);
+  c.lineTo(x + Math.cos(a + .13) * 160, y - h * .6 + Math.sin(a + .13) * 160);
+  c.closePath(); c.fill(); c.restore();
+  c.save(); c.translate(x, y);
+  c.fillStyle = M.tissuOmbre;
+  c.fillRect(-h * .12, -h * .3, h * .1, h * .3); c.fillRect(h * .03, -h * .3, h * .1, h * .3);
+  c.fillStyle = mel(M.tissu, '#3a2f26', .5);
+  c.beginPath();
+  c.moveTo(-h * .18, -h * .3); c.lineTo(-h * .15, -h * .58);
+  c.lineTo(h * .17, -h * .56); c.lineTo(h * .18, -h * .3);
+  c.closePath(); c.fill();
+  c.fillStyle = mel(M.chair, M.chairOmbre, .35);
+  c.beginPath(); c.arc(0, -h * .7, h * .14, 0, TAU); c.fill();
+  c.fillStyle = M.tissuOmbre;
+  c.fillRect(h * .1, -h * .56, h * .26, h * .08);
+  c.fillStyle = teinte(M.ferClair, .3);
+  c.fillRect(flanc(x) * h * .17, -h * .58, h * .03, h * .28);
+  c.restore();
+}
+
+/* Une voiture vue de dessus, avec son flanc éclairé, ses vitres, une portière
+   ouverte pour les abandonnées, et sa flaque d'ombre au sol. */
+function voitureRue(c, x, y, ang, col, brulee, porteOuverte){
+  const f = flanc(x);
+  c.save(); c.translate(x, y); c.rotate(ang);
+  c.fillStyle = teinte(M.bitumeOmbre, .65);
+  c.beginPath(); c.ellipse(0, 4, 32, 20, 0, 0, TAU); c.fill();
+  const corps = brulee ? '#221c19' : col;
+  c.fillStyle = mel(corps, '#000000', .45);
+  c.fillRect(-27, -17, 54, 34);
+  c.fillStyle = corps; c.fillRect(-27, -14, 54, 25);
+  c.fillStyle = mel(corps, M.ferClair, .3);
+  c.fillRect(-27, f > 0 ? 8 : -17, 54, 4);
+  c.fillStyle = brulee ? '#0e0c0a' : 'rgba(18,26,38,.9)';
+  c.fillRect(-15, -12, 24, 24);
+  if (!brulee){
+    c.fillStyle = 'rgba(140,175,215,.4)';
+    c.fillRect(-21, -11, 5, 22); c.fillRect(13, -11, 6, 22);
+    c.fillStyle = 'rgba(140,175,215,.2)'; c.fillRect(-14, -11, 22, 5);
+  } else {
+    c.fillStyle = teinte('#5a4a3a', .5);
+    for (let k = 0; k < 6; k++) c.fillRect(-24 + k * 8, -13 + (k % 3) * 9, 6, 5);
+  }
+  c.fillStyle = '#0f1216';
+  for (const [dx, dy] of [[-20, -20], [13, -20], [-20, 15], [13, 15]]) c.fillRect(dx, dy, 8, 5);
+  if (porteOuverte){
+    c.fillStyle = mel(corps, '#000000', .3);
+    c.save(); c.translate(-4, 17); c.rotate(.9);
+    c.fillRect(0, 0, 22, 6);
+    c.fillStyle = 'rgba(140,175,215,.25)'; c.fillRect(3, 1, 14, 3); c.restore();
+    c.fillStyle = 'rgba(180,205,235,.18)';
+    for (let k = 0; k < 9; k++) c.fillRect(alea(k + x, -14, 30), alea(k + y, 16, 34), 2, 2);
+  }
+  c.restore();
+}
+
+function barrierePolice(c, x, y, a){
+  c.save(); c.translate(x, y); c.rotate(a);
+  c.fillStyle = teinte(M.bitumeOmbre, .5); c.fillRect(-2, 16, 76, 4);
+  c.fillStyle = '#d8b23a'; c.fillRect(0, 0, 72, 8);
+  c.fillStyle = M.ferOmbre;
+  for (let k = 0; k < 4; k++) c.fillRect(k * 18, 0, 8, 8);
+  c.fillStyle = 'rgba(255,255,255,.2)'; c.fillRect(0, 0, 72, 2);
+  c.fillStyle = mel(M.fer, M.ferOmbre, .4);
+  c.fillRect(3, 8, 5, 12); c.fillRect(64, 8, 5, 12);
+  c.restore();
+}
+function sacSable(c, x, y, i){
+  const g = graine(i);
+  c.save(); c.translate(x, y); c.rotate((g - .5) * .35);
+  c.fillStyle = teinte(M.bitumeOmbre, .45);
+  c.beginPath(); c.roundRect(-12, -4, 24, 12, 5); c.fill();
+  c.fillStyle = mel('#6e6448', '#3a3428', g * .5);
+  c.beginPath(); c.roundRect(-12, -6, 24, 12, 5); c.fill();
+  c.fillStyle = 'rgba(255,255,255,.08)'; c.fillRect(-11, -5, 22, 3);
+  c.restore();
+}
+function corpsSousBache(c, x, y, i){
+  c.save(); c.translate(x, y); c.rotate(alea(i, -.25, .25));
+  c.fillStyle = teinte(M.bitumeOmbre, .5); c.fillRect(-21, -6, 44, 15);
+  c.fillStyle = teinte(M.plastique, .72);
+  c.beginPath(); c.roundRect(-22, -8, 44, 15, 6); c.fill();
+  c.fillStyle = 'rgba(255,255,255,.14)'; c.fillRect(-20, -7, 40, 3);
+  c.fillStyle = teinte(M.sang, .3);
+  c.beginPath(); c.ellipse(-12, 1, 7, 4, 0, 0, TAU); c.fill();
+  c.restore();
+}
+
+/* La façade du R.P.D. : néogothique, et surtout c'était un musée d'art avant
+   1969 — d'où le fronton, les colonnes et les baies en ogive. */
+function facadeRPD(c, t){
+  const x0 = CX - 260, l = 520;
+  c.fillStyle = M.pierreOmbre; c.fillRect(0, 0, W, HORIZON);
+  c.fillStyle = mel(M.pierreOmbre, '#000000', .4); c.fillRect(0, 12, W, HORIZON - 12);
+  c.fillStyle = M.pierre; c.fillRect(x0, 6, l, HORIZON - 6);
+  c.fillStyle = M.pierreClair;
+  for (const cx of [x0 + 40, x0 + 132, x0 + 388, x0 + 480]){
+    c.fillRect(cx, 26, 21, HORIZON - 26);
+    c.fillStyle = M.pierreOmbre; c.fillRect(cx + 15, 26, 6, HORIZON - 26);
+    c.fillStyle = M.pierreClair;
+  }
+  c.fillStyle = M.pierre;
+  c.beginPath(); c.moveTo(x0 + 158, 26); c.lineTo(CX, -6); c.lineTo(x0 + 362, 26); c.closePath(); c.fill();
+  c.fillStyle = M.pierreClair; c.fillRect(x0 + 158, 26, 204, 6);
+  // Les baies en ogive, éclairées de l'intérieur.
+  for (const [fx, larg] of [[CX - 34, 68], [x0 + 62, 30], [x0 + 202, 30], [x0 + 288, 30], [x0 + 428, 30]]){
+    c.fillStyle = '#0b0e13';
+    c.beginPath(); c.moveTo(fx, HORIZON); c.lineTo(fx, 48);
+    c.quadraticCurveTo(fx + larg / 2, 22, fx + larg, 48);
+    c.lineTo(fx + larg, HORIZON); c.closePath(); c.fill();
+    const v = .2 + graine(fx) * .45 + Math.sin(t * 1.2 + fx) * .08;
+    c.fillStyle = teinte(M.fenetre, v);
+    c.beginPath(); c.moveTo(fx + 4, HORIZON); c.lineTo(fx + 4, 52);
+    c.quadraticCurveTo(fx + larg / 2, 28, fx + larg - 4, 52);
+    c.lineTo(fx + larg - 4, HORIZON); c.closePath(); c.fill();
+    c.fillStyle = M.pierreOmbre;
+    c.fillRect(fx + larg / 2 - 1.5, 30, 3, HORIZON - 30);
+  }
+  c.fillStyle = teinte(M.pierreOmbre, .8); c.fillRect(0, HORIZON - 5, W, 5);
+}
+
+/* Une devanture de Downtown, avec son store, sa vitrine et son néon. */
+function devanture(c, x, l, nom, col, t, i){
+  c.fillStyle = mel(M.pierreOmbre, '#000000', .25); c.fillRect(x, 6, l, HORIZON - 6);
+  c.fillStyle = '#0a0d12'; c.fillRect(x + 7, 36, l - 14, HORIZON - 36);
+  const v = .16 + graine(i) * .3;
+  c.fillStyle = teinte(M.fenetre, v); c.fillRect(x + 10, 39, l - 20, HORIZON - 39);
+  // Les planches clouées sur la vitrine : la ville se barricade.
+  c.fillStyle = M.bois;
+  for (let k = 0; k < 3; k++){
+    c.save(); c.translate(x + l / 2, 48 + k * 14); c.rotate(alea(i * 7 + k, -.06, .06));
+    c.fillRect(-l / 2 + 6, 0, l - 12, 8);
+    c.fillStyle = M.boisOmbre; c.fillRect(-l / 2 + 6, 6, l - 12, 2);
+    c.fillStyle = M.bois; c.restore();
+  }
+  c.fillStyle = mel(M.tissu, M.tissuOmbre, .3); c.fillRect(x, 27, l, 11);
+  c.fillStyle = teinte(col, .25);
+  for (let k = 0; k < l; k += 14) c.fillRect(x + k, 27, 7, 11);
+  const on = Math.sin(t * 6 + i * 2.3) > -.72;
+  c.save(); c.globalAlpha = on ? 1 : .22;
+  c.shadowColor = col; c.shadowBlur = 13; c.fillStyle = col;
+  c.font = '700 11px "Archivo Black",sans-serif';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(nom, x + l / 2, 17);
+  c.restore();
+}
+
+/* Les emplacements du public, semés une fois. */
+const FOULE = (()=>{ const a = [];
+  for (let x = 12; x < W; x += 21) a.push({ x, y: COURT.top - 5, h: 19 });
+  for (let x = 8; x < W; x += 25) a.push({ x, y: H - 6, h: 26 });
+  for (let y = COURT.top + 26; y < COURT.bottom; y += 31){
+    a.push({ x: 26 + graine(y) * 20, y, h: 20 });
+    a.push({ x: W - 26 - graine(y + 3) * 20, y, h: 20 });
+  }
+  return a; })();
+
+/* ===========================================================================
+   6 · LA RUE — bâti, public et débris dessinés d'un seul bloc. Séparés, chacun
+   choisissait ses gris dans son coin et l'ensemble jurait ; ici les trois
+   obéissent au même modèle de lumière et à la même palette.
+   ======================================================================== */
+const RUE = [
+  { id:'A', nom:'DEVANT LE R.P.D.', desc:'La façade néogothique de plein fouet, ses baies en ogive encore allumées, et la foule des infectés pressée contre les barrières que la police a laissées là. Sacs de sable au pied des murs. C\'est l\'image canonique de Raccoon City : le bâtiment que tout le monde reconnaît, et ce qui attend dehors.',
+    f(c,t){ facadeRPD(c,t);
+      FOULE.forEach((p,i)=>{ if(graine(i*5)<.12) return; zombie(c,p.x,p.y,p.h,t,i); });
+      horsTerrain(c,()=>{
+        for(let i=0;i<9;i++){ const haut=i%2;
+          barrierePolice(c,alea(i,20,W-90),haut?COURT.top-19:H-26,alea(i+7,-.1,.1)); }
+        for(let r=0;r<3;r++) for(let k=0;k<4-r;k++){
+          sacSable(c,44+(k-(3-r)/2)*24+(r%2?10:0),COURT.top-16-r*11,r*7+k);
+          sacSable(c,W-44+(k-(3-r)/2)*24+(r%2?10:0),H-22-r*11,r*9+k+40); }
+        for(let i=0;i<14;i++){ c.fillStyle=teinte(M.sang,.22);
+          c.save(); c.translate(alea(i+40,20,W-20),alea(i+50,COURT.top-20,H-8));
+          c.rotate(graine(i)*3);
+          c.beginPath(); c.ellipse(0,0,alea(i+60,8,26),alea(i+65,4,9),0,0,TAU); c.fill();
+          c.restore(); } }); } },
+
+  { id:'B', nom:'DOWNTOWN', desc:'Le carrefour commerçant : devantures barricadées à la hâte, néons de Kendo et du bar qui grésillent encore, voitures en travers portières ouvertes, papiers qui volent. Quelques survivants balaient les alentours à la lampe. La rue la plus riche et la plus colorée des quatre.',
+    f(c,t){ c.fillStyle=mel(M.pierreOmbre,'#000000',.45); c.fillRect(0,0,W,HORIZON);
+      const bts=[['KENDO',M.feu],['DRUG',M.gyroBleu],['J\'S BAR',M.gyroRouge],
+                 ['TOY UNCLE','#f5c542'],['DINER',M.neon]];
+      bts.forEach(([nom,col],i)=>devanture(c,i*(W/5),W/5-7,nom,col,t,i));
+      horsTerrain(c,()=>{
+        voitureRue(c,120,COURT.top-30,.28,'#2f4a6b',false,true);
+        voitureRue(c,430,COURT.top-27,-.14,'#6b2f2f',true,false);
+        voitureRue(c,760,COURT.top-32,.12,'#3a3a3a',false,true);
+        voitureRue(c,250,H-32,-.2,'#5a5a6b',false,false);
+        voitureRue(c,620,H-30,.24,'#6b5a2f',true,true);
+        for(let i=0;i<50;i++){ c.save();
+          c.translate(alea(i,0,W),alea(i+7,COURT.top-26,H)); c.rotate(graine(i+3)*3);
+          c.fillStyle=teinte(M.papier,.35+graine(i+9)*.3);
+          c.fillRect(-6,-4,12,8); c.restore(); } });
+      FOULE.forEach((p,i)=>{ const q=graine(i*3);
+        if(q>.9) survivant(c,p.x,p.y,p.h,t,i);
+        else if(q>.55) zombie(c,p.x,p.y,p.h,t,i); });
+      // Les papiers qui traversent réellement le champ, portés par le vent.
+      for(let i=0;i<14;i++){ const k=((t*.2+graine(i))%1);
+        const x=-40+k*(W+80), y=alea(i,COURT.top,COURT.bottom)+Math.sin(t*3+i)*30;
+        c.save(); c.translate(x,y); c.rotate(t*2.2+i); c.globalAlpha=.65;
+        c.fillStyle=teinte(M.papier,.8); c.fillRect(-8,-6,16,12);
+        c.fillStyle='rgba(70,70,70,.5)';
+        for(let k2=0;k2<3;k2++) c.fillRect(-6,-4+k2*4,12,1.4);
+        c.restore(); }
+      c.globalAlpha=1; } },
+
+  { id:'C', nom:'LE BARRAGE', desc:'L\'armée boucle le quartier : camions bâchés, herses, projecteurs braqués sur la rue et une ligne d\'anti-émeute derrière ses boucliers. Personne d\'infecté à l\'image — la tension vient de ce qu\'ils retiennent. Le seul décor qui éclaire lui-même le terrain.',
+    f(c,t){ c.fillStyle=mel(M.pierreOmbre,'#000000',.5); c.fillRect(0,0,W,HORIZON);
+      for(let i=0;i<10;i++){ const x=i*100, h=22+graine(i*9)*32;
+        c.fillStyle=mel(M.pierre,M.pierreOmbre,.72); c.fillRect(x,HORIZON-h-28,94,h); }
+      // Les deux camions.
+      for(const cx of [W*.18,W*.66]){
+        c.fillStyle=teinte(M.bitumeOmbre,.6); c.fillRect(cx-70,HORIZON-12,140,12);
+        c.fillStyle='#2b3026'; c.fillRect(cx-64,HORIZON-50,128,50);
+        c.fillStyle='#353c2e'; c.fillRect(cx-64,HORIZON-50,128,9);
+        c.fillStyle='#1a1d16';
+        for(let k=0;k<5;k++) c.fillRect(cx-58+k*26,HORIZON-42,18,34);
+        c.fillStyle='#12140f'; c.fillRect(cx-52,HORIZON-8,26,8); c.fillRect(cx+26,HORIZON-8,26,8); }
+      // Les projecteurs, qui éclairent vraiment vers le bas.
+      for(const x of [W*.36,W*.82]){ const v=.76+Math.sin(t*1.3+x)*.14;
+        c.save(); c.globalCompositeOperation='screen'; c.globalAlpha=.26*v;
+        const g=c.createLinearGradient(x,HORIZON-34,x,H*.75);
+        g.addColorStop(0,'rgba(234,244,255,.6)'); g.addColorStop(1,'rgba(234,244,255,0)');
+        c.fillStyle=g; c.beginPath();
+        c.moveTo(x-15,HORIZON-34); c.lineTo(x+15,HORIZON-34);
+        c.lineTo(x+165,H*.75); c.lineTo(x-165,H*.75); c.closePath(); c.fill(); c.restore();
+        c.fillStyle=M.ferOmbre; c.fillRect(x-13,HORIZON-42,26,13);
+        c.fillStyle=teinte('#eaf4ff',.9); c.fillRect(x-10,HORIZON-39,20,8);
+        c.strokeStyle=M.fer; c.lineWidth=2.4;
+        c.beginPath(); c.moveTo(x-9,HORIZON-14); c.lineTo(x,HORIZON-29);
+        c.lineTo(x+9,HORIZON-14); c.stroke(); }
+      FOULE.forEach((p,i)=>{ if(graine(i*7)<.5) return; policier(c,p.x,p.y,p.h,t,i); });
+      horsTerrain(c,()=>{
+        for(let i=0;i<11;i++) barrierePolice(c,20+i*88,i%2?COURT.top-20:H-27,alea(i,-.06,.06));
+        for(let r=0;r<3;r++) for(let k=0;k<4-r;k++){
+          sacSable(c,CX-190+(k-(3-r)/2)*24,H-20-r*11,r*7+k);
+          sacSable(c,CX+190+(k-(3-r)/2)*24,COURT.top-15-r*11,r*9+k+30); } }); } },
+
+  { id:'D', nom:'LA RUE MORTE', desc:'Le pâté d\'immeubles s\'est effondré et fume encore, une rame du Kite Bros est restée en travers, portes ouvertes. Aucun public : seulement des corps alignés sous des bâches le long des barrières. Le décor le plus vide, le plus silencieux — et de très loin le plus lisible.',
+    f(c,t){ c.fillStyle=mel(M.pierreOmbre,'#000000',.55); c.fillRect(0,0,W,HORIZON);
+      // Les ruines : une ligne d'horizon brisée, pas des immeubles alignés.
+      c.fillStyle=mel(M.pierre,M.pierreOmbre,.62);
+      c.beginPath(); c.moveTo(0,HORIZON);
+      for(let x=0;x<=W;x+=22) c.lineTo(x,HORIZON-16-Math.abs(Math.sin(x*.019))*44-graine(x)*14);
+      c.lineTo(W,HORIZON); c.closePath(); c.fill();
+      c.strokeStyle=mel(M.fer,M.ferOmbre,.3); c.lineWidth=3;
+      for(let i=0;i<16;i++){ const x=alea(i,10,W-10), y=HORIZON-alea(i+7,12,54);
+        c.beginPath(); c.moveTo(x,HORIZON); c.lineTo(x+alea(i+13,-24,24),y); c.stroke(); }
+      // La fumée qui monte encore des gravats.
+      c.save();
+      for(let i=0;i<7;i++){ const x=alea(i+30,40,W-40), q=((t*.19+graine(i))%1);
+        c.globalAlpha=(1-q)*.26;
+        const g=c.createRadialGradient(x,HORIZON-q*80,4,x,HORIZON-q*80,38+q*46);
+        g.addColorStop(0,teinte('#6b6660',.75)); g.addColorStop(1,teinte('#6b6660',0));
+        c.fillStyle=g; c.beginPath(); c.arc(x,HORIZON-q*80,38+q*46,0,TAU); c.fill(); }
+      c.restore();
+      for(let i=0;i<6;i++){ const x=alea(i+50,30,W-30), v=.6+Math.sin(t*7+i)*.4;
+        c.fillStyle=teinte(M.feu,v*.55);
+        c.beginPath(); c.ellipse(x,HORIZON-5,11,5,0,0,TAU); c.fill(); }
+      // La rame arrêtée.
+      c.fillStyle=teinte(M.bitumeOmbre,.6); c.fillRect(W*.08,HORIZON-8,W*.86,8);
+      c.fillStyle=mel(M.tissu,M.pierre,.4); c.fillRect(W*.08,HORIZON-44,W*.86,40);
+      c.fillStyle=M.ferClair; c.fillRect(W*.08,HORIZON-44,W*.86,4);
+      c.fillStyle=mel(M.sang,'#000000',.3); c.fillRect(W*.08,HORIZON-14,W*.86,6);
+      for(let i=0;i<9;i++){ const x=W*.11+i*88, on=Math.sin(t*8+i*1.7)>-.55;
+        c.fillStyle=on?'rgba(216,234,255,.5)':'rgba(40,54,70,.6)';
+        c.fillRect(x,HORIZON-36,60,17); }
+      c.fillStyle='#080b10'; c.fillRect(W*.45,HORIZON-40,26,36);
+      c.fillStyle='rgba(216,234,255,.22)'; c.fillRect(W*.45+3,HORIZON-37,20,33);
+      horsTerrain(c,()=>{
+        for(let i=0;i<18;i++) corpsSousBache(c,alea(i,30,W-30),i%2?COURT.top-16:H-20,i);
+        for(let i=0;i<7;i++) barrierePolice(c,alea(i+40,20,W-90),i%2?COURT.top-26:H-30,alea(i+50,-.2,.2)); }); } }
+];
+
+/* ===========================================================================
+   COMPOSITION
+   ======================================================================== */
+
+/* La chaussée AUTOUR du terrain : le même bitume, mais privé de la lumière
+   qui tombe sur l'aire de jeu. C'est ce contraste qui dit où l'on joue. */
+function rueExterieure(c, t){
+  const g = c.createLinearGradient(0, HORIZON, 0, H);
+  g.addColorStop(0, mel(M.bitume, M.bitumeOmbre, .35));
+  g.addColorStop(1, M.bitumeOmbre);
+  c.fillStyle = g; c.fillRect(0, HORIZON, W, H - HORIZON);
+  c.globalAlpha = .35;
+  for (let i = 0; i < 170; i++){
+    c.fillStyle = graine(i + 600) > .55 ? 'rgba(110,128,155,.3)' : 'rgba(6,8,12,.7)';
+    c.fillRect(alea(i + 400, 0, W), HORIZON + alea(i + 500, 0, H - HORIZON), 2, 2);
+  }
+  c.globalAlpha = 1;
+  // Le caniveau qui longe le terrain, et ce qu'il retient de la lumière.
+  c.fillStyle = teinte(M.bitumeOmbre, .8);
+  c.fillRect(0, COURT.top - 10, W, 6); c.fillRect(0, COURT.bottom + 4, W, 6);
+  c.save(); c.globalCompositeOperation = 'screen'; c.globalAlpha = .18;
+  for (const s of sources(t)){
+    if (s.i < .12) continue;
+    c.fillStyle = teinte(s.col, s.i * .4);
+    c.fillRect(0, COURT.top - 9, W, 3); c.fillRect(0, COURT.bottom + 6, W, 3);
+  }
+  c.restore();
+}
+
+/* Le calque lisibilité : deux joueurs et le disque à l'échelle réelle du jeu
+   (16×20 × SCALE 1.6). Il sert à une seule chose — vérifier qu'on voit encore
+   jouer, surtout brume à fond. */
+function action(c, t){
+  const d = { x: CX + Math.cos(t * .9) * 300, y: CY + Math.sin(t * 1.7) * 150 };
+  for (const [px, py, corps] of [
+      [CX - 250 + Math.sin(t * .8) * 40, CY + Math.cos(t * .6) * 90, '#1b2436'],
+      [CX + 250 + Math.cos(t * .7) * 40, CY + Math.sin(t * .9) * 90, '#5a2230']]){
+    c.fillStyle = teinte(M.bitumeOmbre, .55);
+    c.beginPath(); c.ellipse(px, py + 15, 15, 5, 0, 0, TAU); c.fill();
+    c.fillStyle = corps; c.fillRect(px - 13, py - 8, 26, 24);
+    c.fillStyle = M.chair; c.fillRect(px - 10, py - 24, 20, 16);
+    c.fillStyle = '#2a2118'; c.fillRect(px - 11, py - 27, 22, 6);
+    c.fillStyle = '#f2f4f8'; c.fillRect(px - 12, py - 10, 24, 3);
+    c.fillStyle = '#12161d'; c.fillRect(px - 6, py - 19, 4, 4); c.fillRect(px + 2, py - 19, 4, 4);
+    c.fillStyle = teinte(M.ferClair, .3);
+    c.fillRect(px + flanc(px) * 13, py - 24, 2.4, 40);
+  }
+  c.fillStyle = teinte(M.bitumeOmbre, .5);
+  c.beginPath(); c.ellipse(d.x, d.y + 12, 13, 4, 0, 0, TAU); c.fill();
+  c.save(); c.translate(d.x, d.y); c.rotate(t * 6);
+  c.fillStyle = '#f2f6ff'; c.beginPath(); c.ellipse(0, 0, 14, 12, 0, 0, TAU); c.fill();
+  c.strokeStyle = '#9fb6d6'; c.lineWidth = 2; c.stroke();
+  c.fillStyle = '#35e0ff'; c.beginPath(); c.ellipse(0, 0, 7, 6, 0, 0, TAU); c.fill();
+  c.restore();
+}
+
+const SECTIONS = [
+  { cle:'sol',      titre:'sol',      liste:SOL },
+  { cle:'marquage', titre:'marquage', liste:MARQUAGE },
+  { cle:'cages',    titre:'cages',    liste:CAGES },
+  { cle:'brume',    titre:'brume',    liste:BRUME },
+  { cle:'lumiere',  titre:'lumière',  liste:LUMIERE },
+  { cle:'rue',      titre:'rue',      liste:RUE }
+];
+const CHOIX = { sol:0, marquage:0, cages:0, brume:0, lumiere:1, rue:0 };
+let montrerAction = false;
+
+function peindre(c, t, ch){
+  // La lumière choisie décide quelles sources existent : le sol ne peut pas
+  // refléter un gyrophare qu'on n'a pas allumé.
+  eclairageActif = ch.lumiere;
+  c.clearRect(0, 0, W, H);
+  c.fillStyle = M.bitumeOmbre; c.fillRect(0, 0, W, H);
+  rueExterieure(c, t);
+  SOL[ch.sol].f(c, t);
+  MARQUAGE[ch.marquage].f(c, t);
+  CAGES[ch.cages].f(c, t);
+  voletsCage(c);
+  // Le bâti est au-dessus de l'horizon, la foule et les débris tout autour :
+  // rien de tout ça ne recouvre l'aire de jeu, sauf ce qui doit la traverser.
+  RUE[ch.rue].f(c, t);
+  LUMIERE[ch.lumiere].f(c, t);
+  if (montrerAction) action(c, t);
+  BRUME[ch.brume].f(c, t);
+}
+
+/* ===========================================================================
+   MONTAGE DE LA PAGE
+   ======================================================================== */
+const CARTES = [];
+const LARG_CARTE = 400, HAUT_CARTE = 250, ECH = LARG_CARTE / W;
+
+const observateur = new IntersectionObserver(entries => {
+  for (const e of entries){
+    const c = CARTES.find(c => c.el === e.target);
+    if (c){ c.visible = e.isIntersecting; if (e.isIntersecting) dessinerCarte(c, horloge); }
+  }
+}, { rootMargin: '180px' });
+
+function dessinerCarte(carte, t){
+  const c = carte.ctx;
+  c.save(); c.scale(ECH, ECH);
+  peindre(c, t, Object.assign({}, CHOIX, { [carte.cle]: carte.idx }));
+  c.restore();
+  eclairageActif = CHOIX.lumiere;
+}
+
+function fabriquerCarte(sec, v, i){
+  const el = document.createElement('div');
+  el.className = 'card' + (CHOIX[sec.cle] === i ? ' on' : '');
+  const cv = document.createElement('canvas');
+  cv.width = LARG_CARTE; cv.height = HAUT_CARTE;
+  const lbl = document.createElement('div');
+  lbl.className = 'lbl';
+  lbl.innerHTML = '<b>' + v.id + ' · ' + v.nom + '</b>' + v.desc;
+  el.appendChild(cv); el.appendChild(lbl);
+  el.addEventListener('click', () => { CHOIX[sec.cle] = i; rafraichir(); });
+  const carte = { el, ctx: cv.getContext('2d'), cle: sec.cle, idx: i, visible: false };
+  CARTES.push(carte);
+  observateur.observe(el);
+  return el;
+}
+
+for (const sec of SECTIONS){
+  const row = document.getElementById('sec-' + sec.cle);
+  sec.liste.forEach((v, i) => row.appendChild(fabriquerCarte(sec, v, i)));
+}
+
+const elRecette = document.getElementById('recette');
+function rafraichir(){
+  elRecette.innerHTML = SECTIONS.map(s =>
+    s.titre + ' <b>' + s.liste[CHOIX[s.cle]].id + '</b>').join(' · ');
+  for (const c of CARTES){
+    c.el.classList.toggle('on', CHOIX[c.cle] === c.idx);
+    if (c.visible) dessinerCarte(c, horloge);
+  }
+}
+
+document.getElementById('btAction').addEventListener('click', e => {
+  montrerAction = !montrerAction;
+  e.currentTarget.classList.toggle('on', montrerAction);
+});
+document.getElementById('btBrume').addEventListener('click', e => {
+  modeBrume = (modeBrume + 1) % 3;
+  e.currentTarget.classList.toggle('on', modeBrume !== 0);
+  e.currentTarget.textContent = ['Brume à fond', 'Brume : au max', 'Brume : éteinte'][modeBrume];
+});
+document.getElementById('btHasard').addEventListener('click', () => {
+  for (const s of SECTIONS) CHOIX[s.cle] = (Math.random() * s.liste.length) | 0;
+  rafraichir();
+});
+document.getElementById('btCopie').addEventListener('click', e => {
+  const txt = SECTIONS.map(s => s.titre + ' ' + s.liste[CHOIX[s.cle]].id).join(', ');
+  try { navigator.clipboard.writeText(txt); e.currentTarget.textContent = 'copié !';
+        setTimeout(() => e.currentTarget.textContent = 'Copier la recette', 1200); }
+  catch (err){ prompt('Recette :', txt); }
+});
+
+const grand = document.getElementById('grand').getContext('2d');
+let horloge = 0, dernierTick = 0;
+rafraichir();
+requestAnimationFrame(function boucle(ms){
+  horloge = ms / 1000;
+  peindre(grand, horloge, CHOIX);
+  if (ms - dernierTick > 140){
+    dernierTick = ms;
+    for (const c of CARTES) if (c.visible) dessinerCarte(c, horloge);
+  }
+  requestAnimationFrame(boucle);
+});
+</script>
+</body>
+</html>
