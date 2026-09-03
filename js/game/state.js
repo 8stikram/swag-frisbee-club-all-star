@@ -72,7 +72,12 @@ export const G = {
   zoom: null, flash: 0,
   // Image du dernier attrapé : sert de point de départ au replay, dont la durée
   // s'adapte ainsi à l'action plutôt que d'être fixe.
-  lastCatchIdx: -1
+  lastCatchIdx: -1,
+  // Chronomètre de possession : depuis combien de temps le porteur ACTUEL
+  // tient le disque, et qui c'est — pour détecter le changement de main.
+  // possessionCdN retient le dernier chiffre affiché, pour ne pas rejouer le
+  // même bip à chaque image tant qu'on est sur la même seconde.
+  possessionT: 0, possessionDe: null, possessionCdN: 0
 };
 
 (function initBackground() {
@@ -127,7 +132,8 @@ export function makePlayer(ck, side, human, diffIdx) {
     // cancelCatchT : la hitbox élargie survit un instant au freinage.
     cancelCatchT: 0,
     // Feinte de tir : feintT anime le geste, feintCd empêche d'enchaîner.
-    feintT: 0, feintCd: 0, feintDir: { x: 1, y: 0 },
+    // feintBoostT : fenêtre pendant laquelle la charge qui suit va ×4.
+    feintT: 0, feintCd: 0, feintDir: { x: 1, y: 0 }, feintBoostT: 0,
     // --- Plongeon : diveT pendant l'action, diveDown le temps au sol après un
     // plongeon dans le vide (whiff), pendant lequel le joueur est vulnérable.
     diveT: 0, diveDown: 0, diveDir: { x: 1, y: 0 }, diveHit: false,
@@ -183,6 +189,7 @@ export function initMatch(demo, ck, cpu, diffIdx, j2j) {
   G.shake = 0; G.rally = 0; G.maxRally = 0; G.comment = null; G.idleT = 0;
   G.mem = { t: 0, m: 0, b: 0 }; G.startCom = false; G.lungeBonus = false; G.lungeBonusTimer = 0;
   G.zoom = null; G.flash = 0; G.lastCatchIdx = -1;
+  G.possessionT = 0; G.possessionDe = null; G.possessionCdN = 0;
   G.ondesBut.length = 0; G.filantes.length = 0; G.tempete = null; G.brume = null;
   G.cercles.length = 0; G.prochainCercle = 0;
   // Repères pour les conditions de déblocage des skins : depuis quand le match

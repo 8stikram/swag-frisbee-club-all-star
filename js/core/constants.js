@@ -57,6 +57,18 @@ export const CANCEL_GAP = .35, CANCEL_CATCH = .2;
 // était trop bref pour tromper qui que ce soit. Le délai avant de pouvoir retirer
 // est allongé d'autant, pour que la feinte se paie.
 export const FEINT_TIME = .26, FEINT_FREE = .14, FEINT_CD = .35, FEINT_REACH = 44;
+// Après une feinte, la charge suivante va beaucoup plus vite (×4) pendant une
+// brève fenêtre : sans ça, feinter coûtait autant de temps qu'il en fait
+// gagner — l'adversaire mordait à l'hameçon, mais le tir qui suivait n'allait
+// pas plus vite qu'un tir normal, donc la feinte ne servait qu'à une prise
+// isolée plutôt qu'à enchaîner sur une vraie occasion. À ×4, même le
+// personnage le plus lent (chargeT 1,05 s) charge à fond en 0,26 s.
+export const FEINT_CHARGE_BOOST = 4, FEINT_CHARGE_BOOST_DUR = 1.2;
+
+// --- Chronomètre de possession : personne ne garde le disque indéfiniment.
+// 15 s, avec un décompte visible sur les 3 dernières — au-delà, le disque
+// part à l'adversaire et coûte un point, comme n'importe quelle faute.
+export const POSSESSION_MAX = 15, POSSESSION_COMPTE_A_REBOURS = 3;
 
 // --- Perfect Dive : plonger dans la fenêtre exacte où le disque arrive.
 // 60 ms (était 45) : élargi dans la même proportion que DIVE_RANGE, pour

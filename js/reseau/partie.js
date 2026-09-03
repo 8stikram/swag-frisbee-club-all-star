@@ -588,7 +588,12 @@ function noterTick(n) {
     dashDirX: p.dashDir.x, dashDirY: p.dashDir.y,
     dashEnding: p.dashEnding, dashTenu: p.dashTenu,
     charging: p.charging, charge: p.charge,
-    fullFlash: p.fullFlash, wasCharging: p.wasCharging, face: p.face
+    fullFlash: p.fullFlash, wasCharging: p.wasCharging, face: p.face,
+    // Fenêtre de charge accélérée après une feinte : posée par un geste
+    // (jamais rejoué, voir plus haut) et décrémentée par integratePlayer.
+    // Sans elle dans le journal, un rembobinage qui traverse une feinte
+    // récente oublierait qu'elle a eu lieu.
+    feintBoostT: p.feintBoostT
   });
   if (journalP2.length > JOURNAL_MAX) journalP2.shift();
 }
@@ -605,6 +610,7 @@ function poserEtat(e) {
   p.dashEnding = e.dashEnding; p.dashTenu = e.dashTenu;
   p.charging = e.charging; p.charge = e.charge;
   p.fullFlash = e.fullFlash; p.wasCharging = e.wasCharging; p.face = e.face;
+  p.feintBoostT = e.feintBoostT;
 }
 
 function rembobiner(na, a) {
@@ -658,7 +664,8 @@ function rembobiner(na, a) {
       dashDirX: G.p2.dashDir.x, dashDirY: G.p2.dashDir.y,
       dashEnding: G.p2.dashEnding, dashTenu: G.p2.dashTenu,
       charging: G.p2.charging, charge: G.p2.charge,
-      fullFlash: G.p2.fullFlash, wasCharging: G.p2.wasCharging, face: G.p2.face
+      fullFlash: G.p2.fullFlash, wasCharging: G.p2.wasCharging, face: G.p2.face,
+      feintBoostT: G.p2.feintBoostT
     };
   }
   Partie.rejeuEnCours = false;

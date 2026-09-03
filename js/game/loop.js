@@ -1,6 +1,6 @@
 import { G, comment } from './state.js';
 import { W, curScreen } from '../core/dom.js';
-import { CX, METER_GAIN } from '../core/constants.js';
+import { CX, METER_GAIN, POSSESSION_MAX, POSSESSION_COMPTE_A_REBOURS } from '../core/constants.js';
 import { lerp, gauss, rand, pick, clamp } from '../core/utils.js';
 import { getMap } from '../data/maps.js';
 import { updatePlayerHuman, updatePlayer2, integratePlayer } from './input.js';
@@ -14,7 +14,8 @@ import { updateBrume } from './brume.js';
 import { SIX_ORBES } from '../data/specials.js';
 import { updateFX } from './fx.js';
 import { capture, applySnap } from './replay.js';
-import { setupServe, afterGoal, startReplay, endReplay, finishReplay, gameOver } from './actions.js';
+import { setupServe, afterGoal, startReplay, endReplay, finishReplay, gameOver, ownFoul } from './actions.js';
+import { addPopup } from './fx.js';
 import { sfx, setDemoMuted } from '../audio/audio.js';
 import { render } from '../render/render.js';
 import { updateTraining, pilotageDummy } from '../ui/training.js';
@@ -176,6 +177,33 @@ export function update(dt) {
       // Les fiches d'intentions se remplissent d'abord, une fois pour toutes :
       // ensuite le jeu ne consulte plus qu'elles.
       majCommandes(wdt);
+      // ---------------------------------------------------------------------
+      // Chronomètre de possession : personne ne garde le disque indéfiniment.
+      // Recalculé des deux côtés à partir de qui le tient — déjà synchronisé,
+      // rien de plus à transmettre. Seule la sanction change vraiment quelque
+      // chose au match, et ownFoul() se neutralise déjà tout seul chez
+      // l'invité (comme n'importe quelle décision d'arbitre).
+      // ---------------------------------------------------------------------
+      // Hors match compétitif : l'entraînement et le tutoriel servent à
+      // expérimenter sans pression, un décompte qui interrompt n'y a pas sa
+      // place.
+      if (!G.training && !enTutoriel()) {
+        const porteur = G.disc.heldBy;
+        if (porteur !== G.possessionDe) { G.possessionDe = porteur; G.possessionT = 0; G.possessionCdN = 0; }
+        if (porteur) {
+          G.possessionT += wdt;
+          const restant = Math.ceil(POSSESSION_MAX - G.possessionT);
+          if (restant <= POSSESSION_COMPTE_A_REBOURS && restant >= 1 && restant !== G.possessionCdN) {
+            G.possessionCdN = restant;
+            addPopup(String(restant), '#ff5340', 24, .5, porteur.y - 70);
+            sfx('count');
+          }
+          if (G.possessionT >= POSSESSION_MAX) {
+            G.possessionT = 0; G.possessionCdN = 0;
+            ownFoul(porteur);
+          }
+        }
+      }
       // L'invité ne simule rien du tout : c'est l'hôte qui fait foi. Il remplit
       // quand même sa fiche — c'est la seule chose qu'il envoie — puis s'arrête
       // là et se contente d'afficher ce qu'on lui renvoie. Le laisser calculer

@@ -4,7 +4,8 @@ import { G, Mouse } from './state.js';
 import { $, cv, W, H, curScreen, showScreen, moveMenu, activateMenu, setSelIdx, menuButtons } from '../core/dom.js';
 import {
   COURT, CX, DASH_SPEED, DASH_DECAY, DASH_CD, DASH_DIST, DASH_TIME, DASH_GAP,
-  CANCEL_GAP, CANCEL_CATCH, FEINT_TIME, FEINT_CD, DASH_SLIDE, throwSpeed
+  CANCEL_GAP, CANCEL_CATCH, FEINT_TIME, FEINT_CD, DASH_SLIDE, throwSpeed,
+  FEINT_CHARGE_BOOST, FEINT_CHARGE_BOOST_DUR
 } from '../core/constants.js';
 import { clamp, norm, approach, gauss } from '../core/utils.js';
 import { gaussJeu } from '../core/alea.js';
@@ -271,6 +272,10 @@ export function doFeint(p, dirVoulue) {
   p.face = dir.x >= 0 ? 1 : -1;
   p.charging = false; p.wasCharging = false; p.charge = 0; p.fullFlash = false;
   p.throwPoseT = FEINT_TIME;
+  // La feinte remet la charge à zéro : sans compensation, elle coûtait plus
+  // de temps qu'elle n'en faisait gagner. La charge qui suit va donc ×4
+  // pendant une brève fenêtre — voir updatePlayerHuman/updatePlayer2.
+  p.feintBoostT = FEINT_CHARGE_BOOST_DUR;
 }
 
 // Dash : propulsion sur une distance fixe, sans invincibilité. La vitesse est
@@ -329,7 +334,10 @@ export function updatePlayerHuman(p, dt) {
   if (p.holding && c.tir) {
     p.charging = true;
     const prev = p.charge;
-    p.charge = clamp(p.charge + dt / p.char.chargeT, 0, 1);
+    // ×4 juste après une feinte : sans ça, feinter coûtait plus de temps
+    // qu'elle n'en faisait gagner sur l'échange qui suit.
+    const vitesse = p.feintBoostT > 0 ? FEINT_CHARGE_BOOST : 1;
+    p.charge = clamp(p.charge + dt * vitesse / p.char.chargeT, 0, 1);
     // Mêmes sons rejoués sans cette garde : un rembobinage qui retraverse une
     // charge en cours ferait bipper chaque palier une seconde fois.
     if (!Partie.rejeuEnCours) {
@@ -361,7 +369,8 @@ export function updatePlayer2(dt) {
   if (p.holding && c.tir) {
     p.charging = true;
     const prev = p.charge;
-    p.charge = clamp(p.charge + dt / p.char.chargeT, 0, 1);
+    const vitesse = p.feintBoostT > 0 ? FEINT_CHARGE_BOOST : 1;
+    p.charge = clamp(p.charge + dt * vitesse / p.char.chargeT, 0, 1);
     if (Math.floor(prev * 4) !== Math.floor(p.charge * 4) && p.charge < 1) sfx('charge');
     if (p.charge >= 1 && !p.fullFlash) {
       p.fullFlash = true; sfx('full');
@@ -409,7 +418,7 @@ export function integratePlayer(p, dt) {
   // « feintT: -115 », ce qui ne cassait rien mais rendait toute inspection de
   // l'état d'un joueur illisible.
   for (const k of ['throwCd', 'throwPoseT', 'lunge', 'lungeCd', 'dashCd', 'dashT',
-    'dashGap', 'dashThrowT', 'diveT', 'diveDown', 'cancelCatchT', 'feintT', 'feintCd', 'dizzy']) {
+    'dashGap', 'dashThrowT', 'diveT', 'diveDown', 'cancelCatchT', 'feintT', 'feintCd', 'dizzy', 'feintBoostT']) {
     if (p[k] > 0) p[k] = Math.max(0, p[k] - dt);
   }
   // La cloche fait vaciller sa course sans jamais le bloquer.
