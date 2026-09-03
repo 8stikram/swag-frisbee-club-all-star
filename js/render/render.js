@@ -2162,14 +2162,29 @@ function drawCommentator() {
   ctx.globalAlpha = 1;
 }
 
+// Contour noir fin derrière le texte, comme partout ailleurs dans le jeu
+// (menus, noms, HUD : Archivo Black + contour noir). Sans lui, les popups
+// d'action (ATTRAPÉ, BUT!, LE CHIEN S'EN VA...), le bandeau et le décompte
+// étaient les seuls textes du jeu dessinés à plat — d'où le décalage
+// visuel avec le reste. L'épaisseur suit la taille du texte : fin sur les
+// petits popups, jamais épais/mou au point de brouiller la lettre.
+function strokeFillText(text, x, y, size) {
+  ctx.lineWidth = Math.max(1.5, size * .12);
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#111318';
+  ctx.strokeText(text, x, y);
+  ctx.fillText(text, x, y);
+}
+
 function drawTexts() {
   ctx.textAlign = 'center';
   for (const p of G.popups) {
     const k = p.t / p.dur, a = k > .7 ? 1 - (k - .7) / .3 : 1;
+    const size = p.size * lerp(1.4, 1, Math.min(1, k / .15));
     ctx.globalAlpha = a;
     ctx.fillStyle = p.color;
-    ctx.font = `${p.size * lerp(1.4, 1, Math.min(1, k / .15))}px "Archivo Black", system-ui, sans-serif`;
-    ctx.fillText(p.text, CX, p.y);
+    ctx.font = `${size}px "Archivo Black", system-ui, sans-serif`;
+    strokeFillText(p.text, CX, p.y, size);
     ctx.globalAlpha = 1;
   }
   if (G.banner) {
@@ -2180,19 +2195,20 @@ function drawTexts() {
     ctx.globalAlpha = a;
     ctx.fillStyle = b.color;
     ctx.font = '32px "Archivo Black", system-ui, sans-serif';
-    ctx.fillText(b.text, CX, CY + 4);
+    strokeFillText(b.text, CX, CY + 4, 32);
     ctx.globalAlpha = 1;
   }
   if (G.state === 'countdown' && G.cdN >= 0) {
     const n = Math.max(0, Math.ceil(G.cdT / .9));
     const txt = n > 0 ? String(n) : 'GO !';
+    const size = n > 0 ? 74 : 54;
     ctx.fillStyle = n > 0 ? '#ffd23e' : '#7bd66a';
-    ctx.font = `${n > 0 ? 74 : 54}px "Archivo Black", system-ui, sans-serif`;
+    ctx.font = `${size}px "Archivo Black", system-ui, sans-serif`;
     const frac = (G.cdT / .9) % 1;
     ctx.save();
     ctx.translate(CX, CY + 30);
     ctx.scale(1 + frac * .25, 1 + frac * .25);
-    ctx.fillText(txt, 0, 0);
+    strokeFillText(txt, 0, 0, size);
     ctx.restore();
   }
 }
