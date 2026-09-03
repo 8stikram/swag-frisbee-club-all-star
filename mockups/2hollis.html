@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>2hollis — chara-design</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:34px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:960px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;
+        flex:1 1 0;min-width:186px;cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d5c8a}
+  .card.on{border-color:var(--or);transform:translateY(-2px)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:56px}
+  .lbl b{display:block;font-size:14px;color:var(--or);letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px;image-rendering:pixelated}
+  .reserve{display:none}
+  .reserve.ouverte{display:flex}
+  .plus{margin-top:9px;background:#132038;color:#9fb4dd;border:1px solid var(--edge);
+        border-radius:7px;padding:6px 13px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#1a2b48;color:var(--ink)}
+
+  /* --- Bandeau du haut : aperçu assemblé + comparaison au roster --- */
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 420px}
+  .apercu canvas{background:#0a1220}
+  .choix{font-size:11.5px;color:#9fb4dd;margin-top:9px;font-family:Consolas,monospace;line-height:1.7}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;
+             letter-spacing:1.2px}
+  .btnCopier{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#24395e}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .roster{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 320px}
+  .roster h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .rosterRow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .rosterOne{text-align:center}
+  .rosterOne canvas{background:#0a1220;border-radius:5px}
+  .rosterOne span{display:block;font-size:9.5px;color:#7f93b3;margin-top:3px;max-width:78px;
+                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rosterOne.neuf span{color:var(--or)}
+
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+  .stats{font-family:Consolas,monospace;font-size:11px;color:#9fb4dd;line-height:1.6;margin-top:7px}
+  .stats i{color:var(--or);font-style:normal}
+</style>
+</head>
+<body>
+
+<h1>2HOLLIS — CHARA-DESIGN</h1>
+<p class="note">
+  <b>Fiche de référence du chara-design de 2hollis.</b> Bâti sur le squelette maison des humains
+  du casting — Naruto et Leon — et non sur une construction inventée : visage large de 10 px
+  colonnes 2 à 11, œil = <b>un seul pixel sombre</b> sans blanc, yeux bas sur la tête, cheveux sur
+  les lignes du haut, bras colonnes 1 et 12, jambes 3-4 et 9-10.
+  <br><br>
+  Recherche faite sur le personnage réel : extensions platine jusqu'au torse, <b>marque noire
+  peinte en travers du nez</b>, eyeliner charbonneux, 1,93 m, esthétique mall goth croisée opium.
+  Sa taille ne peut pas se rendre en hauteur puisque tout le monde fait 20 lignes : elle se rend
+  en <b>étroitesse</b> — épaules serrées, taille fine, jambes longues.
+  <br><br>
+  Chaque carte montre le <b>perso entier</b> sur un bout du vrai terrain et à l'échelle du match.
+  Clique une carte pour la monter dans l'aperçu du haut. Le mockup de l'<b>ultime</b> — il chante,
+  stun musical à la Seraphine, son déjà en place — viendra séparément, une fois ce chara-design
+  validé.
+</p>
+
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvApercu" width="620" height="300"></canvas>
+    <div class="choix" id="choix"></div>
+    <div class="copier">
+      <input class="codeChoix" id="codeChoix" readonly>
+      <button class="btnCopier" id="btnCopier">copier mes choix</button>
+    </div>
+  </div>
+  <div class="roster">
+    <h3>À côté du roster en place</h3>
+    <div class="rosterRow" id="rosterRow"></div>
+    <p class="note" style="margin:9px 0 0;font-size:11px">
+      Le nouveau perso est en or. C'est ici qu'on voit s'il détonne : Isaac avait dû être refait
+      entièrement parce qu'il paraissait chétif à côté des autres.
+    </p>
+  </div>
+</div>
+
+<div id="sections"></div>
+
+<script type="module">
+// ---------------------------------------------------------------------------
+// Le roster réel est importé du jeu : la bande de comparaison montre donc
+// toujours les personnages tels qu'ils sont aujourd'hui, sans copie à
+// maintenir ici. C'est le seul lien avec le code du jeu — tout le reste du
+// mockup est autonome.
+// ---------------------------------------------------------------------------
+import { CHARS, ROSTER } from '../js/data/characters.js';
+// Tous les contrôles vivent dans un module commun. Chaque erreur commise sur
+// un perso y devient un contrôle, qui s'applique ensuite à TOUS — y compris
+// aux mockups déjà écrits. C'est la seule chose qu'on mutualise : le moteur
+// d'affichage, lui, reste propre à chaque fichier, parce qu'un mockup est une
+// trace de décision et que son rendu ne doit pas changer dans le dos.
+//
+// Pour un NOUVEAU perso : déclarer ses traits obligatoires dans _verif.js dès
+// que le design est validé. C'est ce qui attrape les régressions — sur Yoshi,
+// les épines rouges avaient disparu au détour d'une refonte sans que rien ne
+// le signale.
+import { verifier, afficher } from './_verif.js';
+
+const TAU = Math.PI * 2;
+// Échelle du match : SCALE 1,6 dans render.js, sprite dessiné en 48×60 unités
+// pour 16×20 pixels, soit 4,8 px d'écran par pixel de sprite. Les cartes
+// utilisent cette valeur pour qu'on juge la lisibilité réelle, pas un
+// agrandissement flatteur.
+const ECH_JEU = 4.8;
+const ECH_CARTE = 5;      // arrondi, à un dixième près du jeu
+const ECH_APERCU = 9;     // l'aperçu du haut a le droit d'être plus gros
+
+/* ===========================================================================
+   1. LE PERSONNAGE — c'est ici qu'on écrit.
+
+   `pal` : la palette de base. Une lettre absente ne lève AUCUNE erreur, le
+   pixel est simplement ignoré — d'où la vérification automatique plus bas.
+   `tete` / `corps` : 10 lignes de 16 caractères chacune. Gabarit commun à
+   tout le roster : largeur max 12 px (colonnes 1 à 12), jambes aux colonnes
+   3-4 et 9-10, yeux décalés d'un pixel à DROITE du centre (sans quoi le
+   miroir horizontal p.face est illisible quand le perso vise à la souris),
+   pas de contour noir.
+   =========================================================================== */
+const PERSO = {
+  nom: '2HOLLIS',
+  // Ses deux grandes surfaces sont les cheveux et le cuir : ce sont elles que
+  // les skins colorent. Le platine porte quatre valeurs, sans quoi la masse de
+  // cheveux devient un aplat blanc ou le volume ne se lit pas.
+  dominante: 'Cck',
+  univers: 'STAR',
+  pal: {
+    C: '#fbf7ec',
+    c: '#e0d8c2',
+    k: '#a89e86',
+    S: '#f0c8a4',
+    s: '#cf9660',
+    N: '#15151a',
+    W: '#f4f6fa',
+    E: '#2c2a26',
+    A: '#e8edf6',
+    P: '#2b2b33',
+    p: '#15151a',
+    O: '#1c1c22',
+    K: '#0d0d11',
+    R: '#c4485a'
+  },
+  tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."],
+  corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."]
+};
+
+/* ===========================================================================
+   2. LES SECTIONS.
+
+   Colonne vertébrale commune à tous les persos : tête, tenue, palette, pose
+   signature, ultime, animation, profil de jeu. On y ajoute autant de sections
+   SUR MESURE que le perso en demande (une arme, un familier, une monture…) —
+   elles se déclarent exactement pareil.
+
+   Chaque section porte 10 variantes : les 5 premières s'affichent, les 5
+   suivantes attendent derrière « plus de choix ». Une variante décrit ce
+   qu'elle REMPLACE, et rien d'autre :
+     tete   : 10 lignes           → change la tête
+     corps  : 10 lignes           → change le corps
+     pal    : objet partiel       → repeint (fusionné à la palette de base)
+     fx     : (g,cx,cy,t,cible)   → dessine par-dessus (ultime, arme, effet)
+     stats  : {spd,pow,ctl,charge}→ profil de jeu
+     anim   : {idle,run1,run2,…}  → jeux de poses
+   =========================================================================== */
+const SECTIONS = [
+  {
+    id: 'trait', titre: "1 · La marque peinte du visage (sur mesure)",
+    note: "La marque peinte, sa signature. Sur les photos elle barre le nez à hauteur des yeux, donc elle ressemble vraiment à un masque : ce n'est pas un raté de dessin, c'est le sujet de la section.",
+    variantes: [
+      v('A', "MARQUE RESSERREE SUR LE NEZ", "La marque resserrée sur le nez, yeux sombres dégagés au-dessus. C'est celle qui se lit comme de la peinture et non comme un masque, mais c'est aussi la plus discrète du lot.",
+        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+      v('B', "BANDE LARGE SUR TROIS LIGNES", "Une bande large sur trois lignes, yeux pâles au milieu. Impossible à rater et très proche de la première photo, mais elle mange presque tout le visage.",
+        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cNNNNNNNNNNc...", ".cNNNNNNNNNNc...", ".cNNNWNNNNWNc...", "..NNNNNNNNNN....", "..kSSSSSSSSk...."] }),
+      v('C', "AUCUNE MARQUE, MACHOIRE PLUS FINE", "Aucune marque, mâchoire plus fine. Le visage respire et on voit enfin ses traits, mais il perd le seul détail qui le rend reconnaissable de loin.",
+        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", "..cSSSSSSSSc....", "...kSSSSSSk....."] }),
+      v('D', "TRAIT QUI DEBORDE SUR LES CHEVEUX", "La marque déborde sur les cheveux de chaque côté. Effet de peinture jetée, très brut, mais elle salit la masse platine qui fait sa silhouette.",
+        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", "NNNNNNNNNNNNN...", "NNNNWNNNNWNNN...", "..SSSSSSSSSS....", "..kSSSSSSSSk...."] }),
+      v('E', "MARQUE BASSE, EN TRAVERS DE LA MACHOIRE", "La marque descend en travers de la mâchoire. Placement inhabituel qui surprend, mais à cette hauteur elle se lit comme une bouche cousue.",
+        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSESSSSESc...", ".cSSSSSSSSSSc...", "..SSSSSSSSSS....", "..NNNNNNNNNN...."] }),
+      v('F', "TRAIT EN DIAGONALE SUR TOUT LE VISAGE", "Une diagonale qui traverse tout le visage. La plus graphique et la plus violente, mais elle déséquilibre la tête et se lit mal en miroir.",
+        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cNNSSSSSSSCc...", ".cNNNWSSSSSSc...", ".cSSNNNNWSSSc...", "..SSSSNNNNNN....", "..kSSSSSSNNk...."] }),
+      v('G', "UNE SEULE MOITIE DU VISAGE PEINTE", "Une seule moitié du visage peinte. Très fort en ombre chinoise et unique dans le roster, mais l'asymétrie s'inverse au miroir et surprend.",
+        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cNNNNNSSSSCc...", ".cNNNNNSSSSSc...", ".cNNNWNSSSWSc...", "..NNNNNSSSSS....", "..kNNNSSSSSk...."] }),
+      v('H', "MASQUE : TOUT LE HAUT DU VISAGE", "Tout le haut du visage en noir, yeux pâles au milieu. Le plus proche de la deuxième photo, mais il devient un personnage masqué plus qu'un chanteur maquillé.",
+        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cNNNNNNNNNNc...", "NNNNNNNNNNNNN...", "NNNNWNNNNWNNN...", "..NNNNNNNNNN....", "..kNNNNNNNNk...."] }),
+      v('I', "TRAIT HAUT AVEC DE LONGUES COULURES", "La marque haute avec de longues coulures qui descendent. Effet de maquillage qui a coulé, très expressif, mais ça ajoute beaucoup de noir sur un visage clair.",
+        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cNNNNNNNNNNc...", ".cSSSWSSSSWSc...", "..SNNSSSSNNS....", "..kNNSSSSNNk...."] }),
+      v('J', "EYELINER ETALE, PAS DE TRAIT NET", "Pas de trait net, seulement de l'eyeliner étalé. Le plus réaliste et le plus doux, mais à l'échelle du match ça devient un visage sale plutôt que maquillé.",
+        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSssSSSSssSc...", ".cSsWsSSsWsSc...", "..SssSSSSssS....", "..kSSSSSSSSk...."] })
+    ]
+  },
+  {
+    id: 'cheveux', titre: "2 · Les cheveux (sur mesure)",
+    note: "Les extensions platine, chest-length sur les vrais visuels. C'est sa silhouette : avec un cheveu court il ne reste rien de reconnaissable.",
+    variantes: [
+      v('A', "RAIE AU MILIEU, MASSE LARGE", "Raie au milieu, masse large qui encadre le visage et tombe sur le torse. La lecture la plus fidèle aux visuels, et la plus sage.",
+        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+      v('B', "FRANGE DROITE QUI DESCEND SUR LES YEUX", "Une frange droite qui descend jusqu'aux yeux. Silhouette compacte et mystérieuse, mais elle mange le front et écrase le visage.",
+        { tete: ["..CCCCCCCCCC....", ".CCCCCCCCCCCC...", "CCCCCCCCCCCCC...", "CCCCCCCCCCCCC...", "CCCCCCCCCCCCC...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+      v('C', "TIRES EN ARRIERE, FRONT DEGAGE", "Tirés en arrière, front entièrement dégagé. On voit enfin ses traits et la marque ressort, mais il perd le côté mèches mouillées des photos.",
+        { tete: [".....CCCC.......", "...cCCCCCCc.....", "..cCCCCCCCCc....", "..cSSSSSSSSc....", "..SSSSSSSSSS....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+      v('D', "COURT DESSUS, TRES LONG DERRIERE", "Court sur le dessus, très long derrière. Silhouette de mulet moderne, cohérente avec l'esthétique mall goth, mais elle s'éloigne des visuels.",
+        { tete: [".....CCCC.......", "....CCCCCC......", "ccCCCCCCCCcc....", "ckCCCCCCCCkc....", "ckCSSSSSSCkc....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+      v('E', "MECHES SEPAREES, FRONT VISIBLE ENTRE", "Deux paquets de mèches séparés, front visible entre les deux. Très vivant et un peu négligé, mais l'écart au milieu se lit mal en petit.",
+        { tete: ["...CC..CC.......", "..CCC..CCC......", ".cCCC..CCCc.....", ".cCCCSSCCCc.....", ".cCCSSSSSSCc....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+      v('F', "VOLUME ENORME QUI DEBORDE EN HAUT", "Un volume énorme qui déborde en haut du gabarit. Impossible à confondre avec un autre perso, mais il paraît porter une perruque plutôt que des cheveux.",
+        { tete: ["CCCCCCCCCCCCC...", "CCCCCCCCCCCCC...", "CCCCCCCCCCCCC...", "CcCCCCCCCCCCc...", "CcCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+      v('G', "PLAQUE ET MOUILLE, PRES DU CRANE", "Plaqué et mouillé, très près du crâne. C'est exactement la deuxième photo, et le plus élégant du lot ; en contrepartie il perd toute sa masse.",
+        { tete: [".....CCCC.......", "....ckCkc.......", "...ckCCCCkc.....", "...ckCCCCkc.....", "...kSSSSSSk.....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+      v('H', "DEUX MECHES SEULEMENT, CRANE NU", "Deux mèches seulement, crâne dégagé. Silhouette légère qui laisse voir tout le visage, mais on ne comprend plus qu'il a les cheveux longs.",
+        { tete: ["....SSSSSS......", "..CSSSSSSSSC....", ".cCSSSSSSSSCc...", ".cCSSSSSSSSCc...", ".cCSSSSSSSSCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+      v('I', "RACINES SOMBRES SUR TOUT LE DESSUS", "Racines sombres sur tout le dessus. Détail très juste — ce sont des extensions décolorées — mais ça casse le blanc qui fait sa signature.",
+        { tete: ["....kkkkkk......", "..kkkkkkkkkk....", ".ckkCCCCCCkkc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+      v('J', "CHIGNON HAUT, NUQUE DEGAGEE", "Chignon haut, nuque dégagée. Le plus net et le plus original, mais c'est le seul du lot où on ne voit plus du tout ses cheveux longs.",
+        { tete: [".....CCCC.......", "......CC........", ".....CCCC.......", "...CCCCCCCC.....", "..CCSSSSSSCC....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] })
+    ]
+  },
+  {
+    id: 'torse', titre: "3 · Le torse et les chaînes",
+    note: "Torse nu, chaînes argentées, carrure. Il est très mince et très grand, et sa taille ne peut se rendre qu'en étroitesse — un perso large ne paraîtra jamais grand sur 20 lignes.",
+    variantes: [
+      v('A', "CHAINE EN TRAVERS, UN PENDENTIF", "Une chaîne en travers du haut du torse, un pendentif qui pend. Lisible et sobre, mais c'est aussi la version la moins caractérisée.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('B', "AUCUNE CHAINE, EPAULES NUES", "Aucune chaîne, épaules entièrement nues. Le plus épuré, et le torse se lit parfaitement ; en revanche il perd le seul éclat argenté du personnage.",
+        { corps: ["...SSSSSSSS.....", ".SSSSSSSSSSS....", ".SSSSSSSSSSS....", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('C', "TROIS CHAINES SUPERPOSEES", "Trois chaînes superposées sur le haut du torse. Très riche et très opium, mais l'argent finit par faire un plastron qui cache la peau.",
+        { corps: ["..cAAAAAAAAc....", ".ScAAAAAAAAcS...", ".ScAAAAAAAAcS...", ".SkSSSASSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('D', "PENDENTIF ENORME SUR TOUT LE TORSE", "Un pendentif énorme qui couvre tout le sternum. Impossible à rater même en petit, mais il ressemble alors à un plastron plutôt qu'à un bijou.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScAAAAAAAAcS...", ".SkAAAAAAAkS....", "..SAAAAAAAS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('E', "CHEVEUX QUI COUVRENT TOUT LE TORSE", "Les cheveux couvrent tout le torse. Le plus fidèle aux photos où les mèches tombent devant, mais le torse nu disparaît complètement.",
+        { corps: ["..cccccccccc....", ".SccAAAAAAccS...", ".SccSSASSccS....", ".SkcSSSSSckS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('F', "EPAULES PLUS LARGES ET CARREES", "Épaules plus larges et carrées. Il gagne en présence sur le terrain, mais il perd la minceur qui fait qu'on le croit grand.",
+        { corps: [".cSSSSSSSSSSc...", "ScAAAAAAAAAAc...", "ScSSSSASSSSSc...", "SkSSSSSSSSSkS...", ".SSSSSSSSSSS....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('G', "TRES MINCE, EPAULES TOMBANTES", "Très mince, épaules tombantes. C'est la silhouette la plus juste par rapport à sa vraie carrure, mais il paraît frêle à côté de Chopper.",
+        { corps: ["...cSSSSSSc.....", "..cAAAAAAAAc....", "..cSSSASSSc.....", ".SkSSSSSSkS.....", "...SSSSSSS......", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('H', "BRAS ECARTES DU CORPS", "Bras franchement écartés du corps. On voit enfin ses membres et la pose respire, mais il occupe plus de largeur sur le terrain.",
+        { corps: ["..cSSSSSSSSc....", "ScSSAAAAAASSc...", "S.cSSSASSSc.S...", "S.kSSSSSSSk.S...", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('I', "TATOUAGES SOMBRES SUR LES DEUX FLANCS", "Tatouages sombres sur les deux flancs. Détail qui accroche l'œil et casse l'aplat de peau, mais rien sur les photos ne les montre.",
+        { corps: ["..cSSSSSSSSc....", ".SNAAAAAAAANS...", ".SNNSSASSNNS....", ".SNNSSSSSNNS....", "..NNSSSSSNN.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('J', "HARNAIS DE CUIR EN CROIX", "Un harnais de cuir en croix sur le torse. Très Rick Owens, cohérent avec son style, mais on quitte le torse nu qui est sa signature.",
+        { corps: ["..cSSSSSSSSc....", ".ScPSSAASSPcS...", ".ScSPSAASPScS...", ".SkSSPAAPSkS....", "..SSSPPPPSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] })
+    ]
+  },
+  {
+    id: 'palette', titre: "4 · La palette",
+    note: "Ses deux grandes surfaces sont les cheveux et le cuir : ce sont elles que les skins colorent. Le platine sur un terrain sombre est déjà très lisible, chaque écart s'en éloigne.",
+    variantes: [
+      v('A', "PLATINE ET CUIR NOIR", "Le platine et le cuir noir des photos. Contraste maximal entre le haut clair et le bas sombre, et déjà très lisible sur un terrain sombre.",
+        { pal: { C: '#fbf7ec' } }),
+      v('B', "NOIR CORBEAU", "Cheveux noir corbeau. Silhouette entièrement sombre, très élégante, mais il se fond dans le fond spatial du terrain — le défaut connu de Leon.",
+        { pal: { C: '#4a4650', c: '#33303a', k: '#1e1c24' } }),
+      v('C', "ROUGE SANG", "Rouge sang, cheveux et cuir. Immédiatement identifiable, mais le rouge est déjà celui du disque de Leon et des zones de but.",
+        { pal: { C: '#f0a0a0', c: '#c4485a', k: '#8a2436', P: '#3a1e24', p: '#1e0f12' } }),
+      v('D', "BLEU GLACE", "Bleu glace. Froid et cohérent avec son univers, mais proche du bleu clair déjà pris par Yuki dans la barre de charge.",
+        { pal: { C: '#dcecfa', c: '#a8c8e8', k: '#6f92b8', P: '#1e2634', p: '#0f1520' } }),
+      v('E', "ROSE PALE", "Rose pâle. Doux et inattendu sur un perso goth, mais le rose se noie sur les zones de but claires.",
+        { pal: { C: '#fadce8', c: '#e8a8c4', k: '#b8748f' } }),
+      v('F', "VERT ACIDE", "Vert acide. Le plus agressif du lot, impossible à rater, mais il entre en concurrence avec le vert de Yoshi.",
+        { pal: { C: '#eaf8bc', c: '#c2e05a', k: '#8aa62e' } }),
+      v('G', "VIOLET", "Violet. Aucune autre couleur du roster ne s'en approche, et ça reste dans sa gamme nocturne.",
+        { pal: { C: '#e8d4fa', c: '#b78ce0', k: '#7e57a8' } }),
+      v('H', "ORANGE", "Orange. Très chaud et très lisible, mais c'est la couleur de Naruto et des bottes de Yoshi.",
+        { pal: { C: '#fae0bc', c: '#e8a34a', k: '#b06f18' } }),
+      v('I', "BLANC TOTAL, CUIR BLANC", "Blanc total, cuir compris. Silhouette fantomatique très marquante, mais il perd la moitié sombre qui l'ancre au sol.",
+        { pal: { P: '#e4e6ec', p: '#b8bcc6', O: '#d8dae2', K: '#a8acb6' } }),
+      v('J', "CUIR ROUGE, CHEVEUX PLATINE", "Cuir rouge, cheveux platine. Un seul écart par rapport à l'original, et c'est le plus élégant du lot.",
+        { pal: { P: '#8a2436', p: '#4e1420', O: '#6e1c2a', K: '#3a0e16' } })
+    ]
+  },
+  {
+    id: 'pose', titre: "5 · La pose signature",
+    note: "La pose au repos, celle qu'on voit le plus longtemps. Elle doit tenir sans lasser et rester lisible une fois retournée au miroir, quand il vise à gauche.",
+    variantes: [
+      v('A', "DEBOUT, BRAS LE LONG DU CORPS", "Debout, bras le long du corps. Neutre et reposante à regarder longtemps, mais elle ne dit rien de son tempérament.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('B', "BRAS TENDUS LOIN VERS L AVANT", "Les bras tendus loin devant, prêt à recevoir. On comprend son rôle tout de suite, mais les bras mangent la largeur devant lui.",
+        { corps: ["SSScSSSSSSc.....", "SSScAAAAAAc.....", "SSS.SSSASSc.....", "....kSSSSSk.....", "....SSSSSSS.....", "..PPPPPPPPPP....", "..PP......PP....", "..PP......PP....", ".OOO......OOO...", ".KKK......KKK..."] }),
+      v('C', "UNE MAIN LEVEE, COMME UN MICRO", "Une main levée, comme s'il tenait un micro. C'est le geste qui dit qu'il chante, donc celui qui annonce son ultime, mais tenu en permanence il fatigue.",
+        { corps: ["S..cSSSSSSSSc...", "S..cAAAAAAAAc...", "S..cSSSASSSSc...", "S.kSSSSSSSkS....", "...SSSSSSSSS....", "..PPPPPPPPPP....", "....PPPP........", "....PPPP........", "...OOOOOO.......", "...KKKKKK......."] }),
+      v('D', "PENCHE EN AVANT, TRES BAS", "Penché très en avant, épaules basses. Très dynamique même à l'arrêt, mais le buste incliné masque une partie du torse.",
+        { corps: [".....cSSSSc.....", "....cAAAAAAc....", "..ScSSSASSSSc...", "SSkSSSSSSSSkS...", "SSSSSSSSSSSS....", "..PPPPPPPPPP....", "..PP......PP....", "..PP......PP....", ".OOO......OOO...", ".KKK......KKK..."] }),
+      v('E', "LES DEUX BRAS LEVES", "Les deux bras levés au ciel. Impossible à rater, mais c'est une pose de fin de concert : en permanence elle devient ridicule.",
+        { corps: ["S.cSSSSSSSScS...", "S.cAAAAAAAAcS...", "S.cSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "....PPPP........", "....PPPP........", "...OOOOOO.......", "...KKKKKK......."] }),
+      v('F', "JAMBES ECARTEES, MAINS SUR LES HANCHES", "Jambes écartées, mains sur les hanches. Assise stable et attitude sûre d'elle, mais elle élargit la base d'un perso censé être fin.",
+        { corps: ["..cSSSSSSSSc....", "SScAAAAAAAAcS...", "SScSSSASSSScS...", "SSkSSSSSSSkSS...", "S.SSSSSSSSS.S...", "..PPPPPPPPPP....", "..PP......PP....", "..PP......PP....", ".OOO......OOO...", ".KKK......KKK..."] }),
+      v('G', "GENOU LEVE TRES HAUT, BUSTE CABRE", "Genou levé très haut, buste cabré. Pleine d'énergie, mais elle ne tient pas comme posture de repos prolongé.",
+        { corps: [".cSSSSSSSSc.....", "ScAAAAAAAAcS....", "ScSSSASSSScS....", "SkSSSSSSSSkS....", ".SSSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PPP....", "..OOO....PPP....", "..KKK....OOO...."] }),
+      v('H', "DOS ROND, TASSE SUR LUI-MEME", "Dos rond, tassé sur lui-même. Air renfermé et concentré ; en contrepartie il paraît bien plus petit qu'il ne l'est.",
+        { corps: ["....cSSSSc......", "...cAAAAAAc.....", "...cSSASSc......", "..SkSSSSkS......", "....SSSSSS......", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('I', "BRAS CROISES, EPAULES REJETEES EN ARRIERE", "Bras croisés, épaules rejetées en arrière. Très caractérisée et un peu hautaine, mais elle masque les chaînes et le torse.",
+        { corps: ["...cSSSSSSc.....", "..cAAAAAAAAc....", "SSSSSSSSSSSSS...", "SSSSSSSSSSSSS...", "...SSSSSSS......", "..PPPPPPPPPP....", "....PPPP........", "....PPPP........", "...OOOOOO.......", "...KKKKKK......."] }),
+      v('J', "ETIRE SUR LA POINTE DES PIEDS", "Étiré sur la pointe des pieds. C'est la pose qui rend le mieux sa très grande taille, mais l'appui paraît instable au repos.",
+        { corps: ["...cSSSSSSc.....", "..ScAAAAAAcS....", "..ScSSSASScS....", "...kSSSSSSk.....", "....SSSSSS......", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "...PP....PP.....", "..OKO....OKO...."] })
+    ]
+  },
+  {
+    id: 'anim', titre: "6 · L’animation",
+    note: "Course, lancer, dash, plongeon : les cartes montrent la pose la plus caractéristique de chaque jeu d'animations. On juge la lisibilité en mouvement.",
+    variantes: [
+      v('A', "COURSE, FOULEE COURTE", "Course à petites foulées. Lisible et économe, mais elle donne l'impression qu'il trottine plutôt qu'il ne sprinte.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP.....P.....", "..OOO.....O.....", "..KKK.....K....."] }),
+      v('B', "COURSE, FOULEE MAXIMALE", "Foulée maximale, jambes grandes ouvertes. La course la plus spectaculaire, mais il occupe presque tout le gabarit à chaque pas.",
+        { corps: ["..cSSSSSSSSc....", "ScAAAAAAAAcS....", "ScSSSASSSScS....", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "..PP......PP....", ".PP........PP...", "OOO........OO...", "KKK........KK..."] }),
+      v('C', "LANCER, BRAS ARME LOIN EN ARRIERE", "Bras armé loin en arrière avant le tir. On sent la puissance qui se charge, mais la pose déporte toute sa masse d'un côté.",
+        { corps: ["SSScSSSSSSSc....", "SSScAAAAAAAc....", "SS.cSSSASSSc....", "S..kSSSSSSSk....", "...SSSSSSSSS....", "..PPPPPPPPPP....", "..PP......PP....", "..PP......PP....", ".OOO......OOO...", ".KKK......KKK..."] }),
+      v('D', "LANCER, BRAS DETENDU LOIN EN AVANT", "Bras détendu loin en avant, juste après le lâcher. Le geste se comprend instantanément ; en revanche le bras tendu se confond avec le disque.",
+        { corps: ["..cSSSSSSSSSS...", "..cAAAAAASSSS...", "..cSSSASSSSSS...", ".SkSSSSSSSk.....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "..PP......PP....", "..PP......PP....", ".OOO......OOO...", ".KKK......KKK..."] }),
+      v('E', "PLONGEON A L HORIZONTALE", "Plongeon à l'horizontale, corps entièrement couché. Rattrapage désespéré très spectaculaire, mais il double la largeur occupée.",
+        { corps: ["SSSSSSSSSSSSS...", "SSScAAAAAAAAS...", ".SSSSSASSSSSS...", "..SSSSSSSSSS....", "...SSSSSSSS.....", "..PPPPPPPPPPP...", ".PPPPPPPPPPPP...", "..OOOOOOOOOO....", "..KKKKKKKKKK....", "..KKKKKKKKKK...."] }),
+      v('F', "DASH, CORPS INCLINE", "Dash, corps incliné vers l'avant. Très parlant sur une accélération, mais proche de la course à petite échelle.",
+        { corps: ["....cSSSSSSc....", "...ScAAAAAAcS...", "..ScSSSASSSSc...", ".SkSSSSSSSSkS...", "SSSSSSSSSSSS....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('G', "SAUT, JAMBES REPLIEES", "Saut, jambes repliées sous le corps. Silhouette compacte et facile à suivre en l'air, mais elle le raccourcit fortement.",
+        { corps: ["S.cSSSSSSSScS...", "S.cAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "..PPPP..PPPP....", "..OOOO..OOOO....", "...PP....PP.....", "...PP....PP....."] }),
+      v('H', "RECEPTION, GENOUX FLECHIS", "Réception, genoux fléchis et pieds écartés. Elle donne du poids à l'atterrissage, au prix d'une posture large.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", "SkSSSSSSSSSkS...", "SSSSSSSSSSSSS...", "..PPPPPPPPPP....", "..PP......PP....", "..PP......PP....", ".OOO......OOO...", ".KKK......KKK..."] }),
+      v('I', "PIETINEMENT, EPAULES TRES HAUTES", "Piétinement sur place, épaules très hautes. Utile pour meubler l'attente, mais trop proche de la course pour s'en distinguer en match.",
+        { corps: ["ScSSSSSSSSSc....", "ScAAAAAAAAAc....", "ScSSSSASSSSc....", "SSkSSSSSSSkS....", ".SSSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PPP....", "..OOO....PPP....", "..KKK....OOO...."] }),
+      v('J', "GLISSADE, UNE JAMBE TENDUE", "Glissade, une jambe tendue loin devant. Freinage très lisible, mais la jambe tendue sort de l'aplomb et complique les collisions.",
+        { corps: ["...cSSSSSSSSc...", "..ScAAAAAAAAc...", "..ScSSSASSSSc...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "..PP.....PPPP...", "..PP......OOO...", ".OOO......KKK...", ".KKK............"] })
+    ]
+  },
+  {
+    id: 'profil', titre: "7 · Le profil de jeu",
+    note: "Les chiffres réels. speed en px/s, power en multiplicateur de puissance de tir, catchR le rayon d'attrapé, chargeT le temps de charge.",
+    variantes: [
+      v('A', "EQUILIBRE", "Bon partout, excellent nulle part. Le réglage le plus sûr, mais celui qui laisse le moins de place à un style de jeu propre.",
+        { stats: { spd: 3, pow: 3, ctl: 3, speed: 330, power: 1.0, catchR: 30, chargeT: .8 } }),
+      v('B', "SPRINTEUR", "Rapide et technique, le bras faible. Il gagne les courses au disque et conclut rarement en force.",
+        { stats: { spd: 5, pow: 2, ctl: 4, speed: 358, power: .86, catchR: 29, chargeT: .7 } }),
+      v('C', "COGNEUR", "Frappe fort, se déplace lentement. Redoutable en défense de but, dépassé dès qu'il faut courir.",
+        { stats: { spd: 2, pow: 5, ctl: 3, speed: 300, power: 1.18, catchR: 28, chargeT: 1.0 } }),
+      v('D', "GARDIEN", "Grande zone d'attrapé, très lent. Très pardonnant sur les réceptions, mais incapable d'aller chercher loin.",
+        { stats: { spd: 2, pow: 4, ctl: 5, speed: 296, power: 1.08, catchR: 33, chargeT: .95 } }),
+      v('E', "ARTILLEUR", "Charge son ultime plus vite que tout le monde. Cohérent avec un perso dont l'ultime est le cœur, quelconque le reste du temps.",
+        { stats: { spd: 3, pow: 4, ctl: 3, speed: 312, power: 1.02, catchR: 29, chargeT: .6 } }),
+      v('F', "TECHNIQUE", "Rapide et précis, puissance basse. Il vit du placement et de la relance, jamais du duel de force.",
+        { stats: { spd: 4, pow: 2, ctl: 5, speed: 342, power: .9, catchR: 32, chargeT: .76 } }),
+      v('G', "GRAND ET LENT", "Le plus lent et le plus puissant, grande allonge. Ça rend sa taille en chiffres, mais il subit toutes les contre-attaques.",
+        { stats: { spd: 1, pow: 5, ctl: 4, speed: 278, power: 1.25, catchR: 34, chargeT: 1.05 } }),
+      v('H', "NERVEUX", "Très rapide, contrôle faible. Nerveux et imprévisible, agréable à jouer mais dur à maîtriser.",
+        { stats: { spd: 5, pow: 3, ctl: 2, speed: 352, power: .98, catchR: 27, chargeT: .68 } }),
+      v('I', "POLYVALENT", "Aucune statistique remarquable, aucune faiblesse non plus. Le plus facile à prendre en main du roster.",
+        { stats: { spd: 4, pow: 3, ctl: 4, speed: 336, power: .96, catchR: 31, chargeT: .78 } }),
+      v('J', "FRAGILE MAIS RAPIDE", "Le plus rapide du jeu, le bras le plus faible. Style de jeu très marqué, mais il ne peut jamais finir un point en force.",
+        { stats: { spd: 5, pow: 1, ctl: 5, speed: 366, power: .76, catchR: 30, chargeT: .72 } })
+    ]
+  },
+  {
+    id: 'bas', titre: "8 · Le pantalon et les bottes (sur mesure)",
+    note: "Pantalon skinny en cuir et bottes noires. C'est la moitié sombre du personnage, celle qui l'ancre au sol face à un haut entièrement clair.",
+    variantes: [
+      v('A', "SKINNY CUIR, BOTTES COURTES", "Skinny en cuir et bottes courtes. La lecture la plus fidèle et la plus sobre, mais aussi la moins marquante des dix.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('B', "CUISSARDES JUSQU AU GENOU", "Des cuissardes qui montent jusqu'au genou. Très fort et très raccord avec son style, mais le noir prend alors toute la moitié basse.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "..OOO....OOO....", "..OOO....OOO....", "..OOO....OOO....", ".KKKK....KKKK..."] }),
+      v('C', "PANTALON LARGE EN BAS", "Pantalon qui s'évase largement en bas. Silhouette années 2000 assumée, mais elle alourdit un personnage dont tout l'intérêt est la finesse.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "..PPPP..PPPP....", ".PPPPP..PPPPP...", ".KKKKK..KKKKK..."] }),
+      v('D', "TAILLE TRES BASSE, HANCHES NUES", "Taille très basse, hanches découvertes. C'est ce que montrent les photos, et ça allonge le torse ; en contrepartie le pantalon paraît tomber.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..SSSSSSSSSS....", "..PPPPPPPPPP....", "..PPP....PPP....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('E', "CEINTURE CLAIRE MARQUEE", "Une ceinture claire bien marquée. Elle coupe la silhouette et sépare le haut clair du bas sombre, mais elle attire l'œil au milieu du corps.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..AAAAAAAAAA....", "..PPPPPPPPPP....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('F', "JAMBES ENCORE PLUS LONGUES", "Des jambes encore plus longues. C'est le meilleur moyen de rendre son mètre quatre-vingt-treize, mais les proportions s'éloignent du reste du roster.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "...PPPPPPPP.....", "...PP....PP.....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO...."] }),
+      v('G', "DECHIRE PARTOUT, PRESQUE EN LAMBEAUX", "Déchiré partout, presque en lambeaux. Très mall goth et plein de caractère, mais à l'échelle du match ça devient du bruit.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PSPSPPSPSP....", "...SP....PS.....", "..SPS....SPS....", "..OSO....OSO....", "..KKK....KKK...."] }),
+      v('H', "GROSSE SEMELLE DE PLATEFORME", "Grosse semelle de plateforme. Elle le grandit vraiment et ancre ses appuis, mais elle alourdit énormément le bas.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "..OOO....OOO....", ".KKKKK..KKKKK...", ".KKKKK..KKKKK..."] }),
+      v('I', "PIEDS ECARTES", "Pieds nettement écartés. La silhouette respire et les jambes se distinguent, mais l'appui paraît moins net.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "..PP......PP....", "..PP......PP....", ".OOO......OOO...", ".KKK......KKK..."] }),
+      v('J', "LACETS CLAIRS QUI PENDENT DES DEUX COTES", "Des lacets clairs qui pendent des deux côtés. Détail vivant qui bouge avec lui, mais deux traits pâles sur du noir se lisent mal en petit.",
+        { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPAAPPPP....", "..APPAAPPA......", "..APP....PPA....", "..AOO....OOA....", "..KKK....KKK...."] })
+    ]
+  }
+];
+
+// Fabrique une variante. `pieces` ne porte que ce que la variante remplace.
+function v(id, nom, desc, pieces) { return { id, nom, desc, ...pieces }; }
+
+// Effet d'ultime d'exemple : à remplacer. La cible est fournie pour qu'on
+// dessine aussi ce que l'ulti lui inflige.
+function fxExemple(g, cx, cy, t, cible) {
+  for (let i = 0; i < 3; i++) {
+    const ph = ((t * .9 + i / 3) % 1);
+    g.strokeStyle = `rgba(255,226,140,${(1 - ph) * .8})`;
+    g.lineWidth = 4 * (1 - ph) + 1;
+    g.beginPath(); g.arc(cx, cy, ph * 70, 0, TAU); g.stroke();
+  }
+  if (cible) {
+    g.fillStyle = '#9aa0a6';
+    g.fillRect(cible.x - 13 + Math.sin(t * 9) * 3, cible.y - 22, 26, 44);
+  }
+}
+
+/* ===========================================================================
+   3. LE MOTEUR — ne pas toucher en copiant.
+   =========================================================================== */
+
+function bati(rows, pal, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const ch = row[x];
+      if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+    }
+  });
+  return c;
+}
+
+// Repeint des pixels déjà remplis sans toucher à la silhouette.
+export function teinter(rows, corresp) {
+  return rows.map(r => [...r].map(ch => corresp[ch] || ch).join(''));
+}
+// Repeint des pixels précis, repérés « ligne,colonne ».
+export function reshade(rows, map) {
+  return rows.map((row, r) => {
+    let out = '';
+    for (let c = 0; c < row.length; c++) out += (map[r + ',' + c] !== undefined) ? map[r + ',' + c] : row[c];
+    return out;
+  });
+}
+
+// Un bout du vrai terrain — mêmes teintes que le thème `arena` de maps.js,
+// pour que la lisibilité jugée ici soit celle du match.
+function terrain(g, w, h) {
+  g.fillStyle = '#0a1220'; g.fillRect(0, 0, w, h);
+  const solY = h * .58;
+  g.fillStyle = '#0c1424'; g.fillRect(0, solY, w, h - solY);
+  g.fillStyle = 'rgba(15,26,46,0.7)'; g.fillRect(0, solY, w, h - solY);
+  g.strokeStyle = 'rgba(255,255,255,.16)'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, solY + .5); g.lineTo(w, solY + .5); g.stroke();
+  g.strokeStyle = 'rgba(53,224,255,.13)';
+  for (let x = 22; x < w; x += 46) { g.beginPath(); g.moveTo(x, solY); g.lineTo(x - 14, h); g.stroke(); }
+}
+
+function ombre(g, x, y, r) {
+  g.save(); g.globalAlpha = .34; g.fillStyle = '#000';
+  g.beginPath(); g.ellipse(x, y, r, r * .32, 0, 0, TAU); g.fill(); g.restore();
+}
+
+// L'état courant : une lettre retenue par section.
+const choix = {};
+SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+
+// Assemble le perso tel que les choix actuels le décrivent. Chaque section
+// n'apporte que la pièce qu'elle remplace, la dernière déclarée l'emporte.
+function assembler() {
+  let tete = PERSO.tete, corps = PERSO.corps, pal = { ...PERSO.pal }, fx = null, stats = null;
+  for (const s of SECTIONS) {
+    const va = s.variantes.find(x => x.id === choix[s.id]);
+    if (!va) continue;
+    if (va.tete) tete = va.tete;
+    if (va.corps) corps = va.corps;
+    if (va.pal) pal = { ...pal, ...va.pal };
+    if (va.fx) fx = va.fx;
+    if (va.stats) stats = va.stats;
+  }
+  return { rows: [...tete, ...corps], pal, fx, stats };
+}
+
+/* --- Vérification du gabarit -------------------------------------------
+   Une lettre absente de la palette ne lève aucune erreur : le pixel est
+   simplement ignoré et le trou passe inaperçu. On vérifie donc les deux :
+   la géométrie (16 colonnes, 20 lignes) ET l'existence de chaque lettre. */
+// `id` sert à retrouver les traits obligatoires du perso dans _verif.js.
+const bad = verifier({ id: '2hollis', PERSO, SECTIONS });
+const boite = document.getElementById('errs');
+afficher(bad, boite);
+
+/* --- Bande de comparaison au roster --- */
+(function bandeRoster() {
+  const hote = document.getElementById('rosterRow');
+  for (const ck of ROSTER) {
+    const c = CHARS[ck];
+    const d = document.createElement('div'); d.className = 'rosterOne';
+    const cv = document.createElement('canvas');
+    cv.width = 16 * ECH_CARTE; cv.height = 20 * ECH_CARTE;
+    const g = cv.getContext('2d');
+    terrain(g, cv.width, cv.height);
+    g.imageSmoothingEnabled = false;
+    g.drawImage(c.frames.idle, 0, 0, cv.width, cv.height);
+    const s = document.createElement('span'); s.textContent = c.short || ck;
+    d.appendChild(cv); d.appendChild(s); hote.appendChild(d);
+  }
+  // Le nouveau, en dernier et en or : c'est lui qu'on compare.
+  const d = document.createElement('div'); d.className = 'rosterOne neuf';
+  const cv = document.createElement('canvas');
+  cv.id = 'cvRosterNeuf';
+  cv.width = 16 * ECH_CARTE; cv.height = 20 * ECH_CARTE;
+  const s = document.createElement('span'); s.textContent = PERSO.nom;
+  d.appendChild(cv); d.appendChild(s); hote.appendChild(d);
+})();
+
+function peindreRosterNeuf() {
+  const cv = document.getElementById('cvRosterNeuf');
+  const g = cv.getContext('2d');
+  const { rows, pal } = assembler();
+  terrain(g, cv.width, cv.height);
+  g.imageSmoothingEnabled = false;
+  g.drawImage(bati(rows, pal, 8), 0, 0, cv.width, cv.height);
+}
+
+/* --- Les sections et leurs cartes (statiques) --- */
+const cartes = [];
+(function poserSections() {
+  const hote = document.getElementById('sections');
+  for (const s of SECTIONS) {
+    const h2 = document.createElement('h2'); h2.textContent = s.titre;
+    hote.appendChild(h2);
+    if (s.note) { const p = document.createElement('p'); p.className = 'note'; p.textContent = s.note; hote.appendChild(p); }
+
+    const rangee = document.createElement('div'); rangee.className = 'row';
+    const reserve = document.createElement('div'); reserve.className = 'row reserve';
+    hote.appendChild(rangee);
+
+    s.variantes.forEach((va, i) => {
+      const card = document.createElement('div');
+      card.className = 'card' + (i === 0 ? ' on' : '');
+      const lbl = document.createElement('div'); lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + (va.desc || '');
+      const cv = document.createElement('canvas');
+      // Hauteur calculée, pas choisie au hasard : le sprite fait 20 rangées à
+      // ECH_CARTE et ses pieds se posent sur la ligne de sol, à 58 % de la
+      // hauteur. À 132 px la ligne de sol tombait à 77 px alors que le sprite
+      // en fait 100 — le haut du crâne était coupé hors du canvas, et deux
+      // variantes qui ne différaient que par là rendaient la même image.
+      cv.width = 190; cv.height = Math.ceil((20 * ECH_CARTE + 10) / 0.58);
+      card.appendChild(lbl); card.appendChild(cv);
+      if (va.stats) card.appendChild(barres(va.stats));
+      (i < 5 ? rangee : reserve).appendChild(card);
+      cartes.push({ cv, s, va, card });
+      card.addEventListener('click', () => {
+        choix[s.id] = va.id;
+        cartes.filter(c => c.s === s).forEach(c => c.card.classList.toggle('on', c.va === va));
+        rafraichir();
+      });
+    });
+
+    const bouton = document.createElement('button');
+    bouton.className = 'plus'; bouton.textContent = '+ 5 autres choix';
+    bouton.addEventListener('click', () => {
+      reserve.classList.toggle('ouverte');
+      bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
+    });
+    hote.appendChild(bouton);
+    hote.appendChild(reserve);
+  }
+})();
+
+function barres(st) {
+  const d = document.createElement('div'); d.className = 'stats';
+  const b = n => '<i>' + '■'.repeat(n) + '</i>' + '□'.repeat(5 - n);
+  d.innerHTML = 'VIT ' + b(st.spd) + '  ·  ' + st.speed + ' px/s<br>' +
+                'PUI ' + b(st.pow) + '  ·  ×' + st.power + '<br>' +
+                'CTL ' + b(st.ctl) + '  ·  r' + st.catchR + '<br>' +
+                'CHARGE ' + st.chargeT + ' s';
+  return d;
+}
+
+// Les cartes ne bougent pas : on compare des silhouettes au calme, et 70
+// canvas animés en même temps rameraient pour rien.
+function peindreCartes() {
+  for (const { cv, s, va } of cartes) {
+    const g = cv.getContext('2d');
+    terrain(g, cv.width, cv.height);
+    g.imageSmoothingEnabled = false;
+    // La carte montre le perso ENTIER avec cette variante appliquée, le reste
+    // dans l'état courant : on juge une allure complète, jamais une pièce qui
+    // flotte sur fond noir.
+    const base = assembler();
+    const tete = va.tete || base.rows.slice(0, 10);
+    const corps = va.corps || base.rows.slice(10);
+    const pal = { ...base.pal, ...(va.pal || {}) };
+    const sp = bati([...tete, ...corps], pal, ECH_CARTE);
+    const x = (cv.width - sp.width) / 2, y = cv.height * .58 - sp.height + 6;
+    ombre(g, cv.width / 2, cv.height * .58 + 2, sp.width * .34);
+    g.drawImage(sp, x, y);
+    // Un effet (ultime, arme) se dessine par-dessus, figé à un instant choisi
+    // pour que la carte reste lisible.
+    if (va.fx) va.fx(g, cv.width / 2, y + sp.height * .5, .42,
+                     { x: cv.width - 26, y: y + sp.height * .5 });
+  }
+}
+
+/* --- Aperçu assemblé : animé, il rejoue l'ultime en boucle --- */
+const cvA = document.getElementById('cvApercu');
+const gA = cvA.getContext('2d');
+
+// Le code compact à renvoyer : « 1A 2C 3B … », une entrée par section dans
+// l'ordre de la page. Posé dans un champ en lecture seule plutôt que dans une
+// simple ligne de texte, pour rester sélectionnable à la main si l'accès au
+// presse-papiers est refusé par le navigateur.
+function codeChoix() {
+  return SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+}
+
+function rafraichir() {
+  peindreCartes();
+  peindreRosterNeuf();
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value = codeChoix();
+}
+
+(function brancherCopie() {
+  const btn = document.getElementById('btnCopier');
+  const champ = document.getElementById('codeChoix');
+  btn.addEventListener('click', async () => {
+    const texte = codeChoix();
+    let ok = false;
+    try { await navigator.clipboard.writeText(texte); ok = true; }
+    catch (e) {
+      champ.select(); champ.setSelectionRange(0, 999);
+      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    }
+    btn.textContent = ok ? '✓ copié' : 'Ctrl+C pour copier';
+    btn.classList.toggle('ok', ok);
+    setTimeout(() => { btn.textContent = 'copier mes choix'; btn.classList.remove('ok'); }, 1800);
+  });
+})();
+
+(function boucle(ms) {
+  const t = ms / 1000;
+  const { rows, pal, fx } = assembler();
+  terrain(gA, cvA.width, cvA.height);
+  gA.imageSmoothingEnabled = false;
+  const sp = bati(rows, pal, ECH_APERCU);
+  // Il respire : deux pixels de haut en bas, comme au repos dans le jeu.
+  const flot = Math.round(Math.sin(t * 2.4) * 2);
+  const solY = cvA.height * .58;
+  const x = cvA.width * .3 - sp.width / 2, y = solY - sp.height + flot;
+  ombre(gA, cvA.width * .3, solY + 2, sp.width * .34);
+  gA.drawImage(sp, x, y);
+  // La cible encaisse l'ultime, à droite : on voit l'effet ET ce qu'il inflige.
+  if (fx) fx(gA, x + sp.width * .5, y + sp.height * .5, t,
+             { x: cvA.width * .78, y: solY - 22 });
+  requestAnimationFrame(boucle);
+})(0);
+
+rafraichir();
+</script>
+</body>
+</html>

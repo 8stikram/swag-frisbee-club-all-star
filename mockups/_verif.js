@@ -97,6 +97,20 @@ export const TRAITS = {
       pourquoi: 'le museau retenu n\u2019a pas de bouche : c\u2019est le blanc qui l\u2019arrete, sinon la tete n\u2019a plus de bas',
       test: r => r.slice(6, 10).some(l => l.includes('W')) }
   ],
+  '2hollis': [
+    { nom: 'la marque peinte du visage',
+      pourquoi: 'c’est sa signature : sans elle il ne reste qu’un blond torse nu',
+      test: r => contient(r, 'N', 10) },
+    { nom: 'la masse de cheveux platine',
+      pourquoi: 'des extensions jusqu’au torse, c’est toute sa silhouette',
+      test: r => contient(r, 'C') && contient(r, 'c') },
+    { nom: 'le torse nu',
+      pourquoi: 'il n’a pas de haut : de la peau entre le cou et la ceinture',
+      test: r => r.slice(10, 15).some(l => l.includes('S')) },
+    { nom: 'le bas entierement sombre',
+      pourquoi: 'pantalon de cuir et bottes : c’est ce qui l’ancre au sol face a un haut clair',
+      test: r => contient(r, 'P') && contient(r, 'O') }
+  ],
   yuki: [
     { nom: 'les bras visibles aux épaules',
       pourquoi: 'la première doudoune les avalait et le perso n\'avait plus de membres',
