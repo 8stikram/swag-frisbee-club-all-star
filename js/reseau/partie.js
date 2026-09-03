@@ -233,9 +233,9 @@ function commentaireNeuf() {
 }
 
 function scenesPourLeReseau() {
-  const c = G.cine, b = G.bell, h = G.hack, l = G.leg, t = G.tempete;
+  const c = G.cine, b = G.bell, h = G.hack, l = G.leg, t = G.tempete, br = G.brume;
   const ba = G.banner, zo = G.zoom, ra = G.rafale, gr = G.grappin, ci = G.chien, ru = G.ruee;
-  if (!c && !b && !h && !l && !t && !ba && !zo && !ra && !gr && !ci) return 0;
+  if (!c && !b && !h && !l && !t && !br && !ba && !zo && !ra && !gr && !ci) return 0;
   const q = p => (p === G.p1 ? 1 : (p === G.p2 ? 2 : 0));
   return {
     // Le bandeau qui annonce l'ultime, et le zoom du Perfect Dive. Ils vivent
@@ -248,6 +248,10 @@ function scenesPourLeReseau() {
     h: h ? [+h.t.toFixed(2), h.dur, q(h.source), q(h.cible)] : 0,
     l: l ? [Math.round(l.x), Math.round(l.yTarget), l.phase, +l.t.toFixed(2), q(l.caster), l.side] : 0,
     t: t ? [+t.t.toFixed(2), +t.dur.toFixed(2)] : 0,
+    // La brume de Raccoon City, comme la tempête : seul son minuteur voyage.
+    // Les traînées, elles, naissent des deux côtés au même rythme puisque leur
+    // course ne dépend que de l'horloge et du hasard semé.
+    br: br ? [+br.t.toFixed(2), +br.dur.toFixed(2)] : 0,
     // La rafale ne relaie que son minuteur : les balles, elles, naissent des
     // deux côtés au même rythme puisque la cadence est fixe et la dispersion
     // semée. Les transmettre une par une aurait gonflé chaque paquet d'une
@@ -277,7 +281,7 @@ function scenesPourLeReseau() {
 // resonnerait à chaque fois.
 function appliquerScenes(sc) {
   const j = n => (n === 1 ? G.p1 : (n === 2 ? G.p2 : null));
-  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.banner = null; G.zoom = null; G.rafale = null; G.grappin = null; G.chien = null; G.ruee = null; return; }
+  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.brume = null; G.banner = null; G.zoom = null; G.rafale = null; G.grappin = null; G.chien = null; G.ruee = null; return; }
   const ba = sc.ba;
   if (ba) { if (!G.banner || G.banner.text !== ba[0]) G.banner = { text: ba[0], color: ba[1], t: ba[2], dur: ba[3] };
     else G.banner.t = ba[2]; }
@@ -305,6 +309,9 @@ function appliquerScenes(sc) {
   const t = sc.t;
   if (t) { if (!G.tempete) G.tempete = { t: 0, dur: t[1] }; G.tempete.t = t[0]; G.tempete.dur = t[1]; }
   else G.tempete = null;
+  const br = sc.br;
+  if (br) { if (!G.brume) G.brume = { t: 0, dur: br[1] }; G.brume.t = br[0]; G.brume.dur = br[1]; }
+  else G.brume = null;
   const ra = sc.ra;
   if (ra) { if (!G.rafale) G.rafale = { owner: j(ra[0]), t: 0, dur: ra[2], prochainTir: 0 };
     G.rafale.owner = j(ra[0]); G.rafale.t = ra[1]; G.rafale.dur = ra[2]; }

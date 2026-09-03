@@ -10,6 +10,7 @@ import { updateAI } from './ai.js';
 import { updateDisc, updateDecoys } from './disc.js';
 import { updateLeg, updateBell, updateHack, updateRafale, updateGrappin, updateChien, updateRuee, launchCine } from './specials.js';
 import { updateDesert } from './desert.js';
+import { updateBrume } from './brume.js';
 import { SIX_ORBES } from '../data/specials.js';
 import { updateFX } from './fx.js';
 import { capture, applySnap } from './replay.js';
@@ -149,6 +150,7 @@ export function update(dt) {
   updateChien(wdt);
   updateRuee(wdt);
   updateDesert(wdt);
+  updateBrume(wdt);
   for (const p of [G.p1, G.p2]) p.meter = clamp(p.meter + (G.state === 'play' ? 1.5 * METER_GAIN : 0) * wdt, 0, 100);
   switch (G.state) {
     case 'countdown': {

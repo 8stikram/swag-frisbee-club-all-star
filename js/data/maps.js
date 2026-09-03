@@ -194,6 +194,45 @@ MAPS.push({
   }
 });
 
+// Raccoon City, la rue devant le R.P.D., la nuit de l'épidémie — septembre
+// 1998. Le terrain de Leon, dont ce fichier disait déjà l'univers.
+//
+// Il porte une règle, la brume : elle traverse la rue par bouffées et masse
+// réellement le terrain, joueurs et disque compris. Comme la tempête de Dune
+// de Râ elle est strictement symétrique et décidée par l'hôte seul — voir
+// js/game/brume.js. Le décor, lui, vit dans js/render/terrains/raccoon.js.
+MAPS.push({
+  id: 'raccoon',
+  name: 'RACCOON CITY',
+  // Pas d'OST : il n'y a aucune piste qui lui aille dans data/music.js, et lui
+  // en imposer une autre écraserait le choix du joueur pour rien.
+  court: { left: 70, right: 890, top: 84, bottom: 560 },
+  goal: { height: 200, depth: 48 },
+  // Bleu et or : les deux seules couleurs saturées qu'on s'autorise sur ce
+  // terrain, précisément pour que les cages restent la cible la plus lisible.
+  zones: [
+    { from: -100, to: -26, points: 3, color: '#2f8cff' },
+    { from: -26, to: 26, points: 5, color: '#f5c542' },
+    { from: 26, to: 100, points: 3, color: '#2f8cff' }
+  ],
+  style: 'raccoon',
+  brume: true,
+  theme: {
+    // Ces sept-là sont celles que lit l'écran de choix pour son fond et son
+    // liseré. Le nuancier complet des matières — pierre, fer, chair, tôle,
+    // ambre — vit avec le dessin, dans render/terrains/raccoon.js : c'est là
+    // qu'il sert, et il y en a trente.
+    bgInner: '#14282b',
+    bgOuter: '#050b0d',
+    floor: '#1a1e24',          // le macadam mouillé
+    line: 'rgba(216,222,232,.55)',
+    goalFill: 'rgba(47,140,255,.16)',
+    goalStroke: '#65787a',
+    crowdColors: ['#7d9bb8', '#4a4438', '#cfd4d0'],   // flic, civil, blouse
+    starColor: 'rgba(0,0,0,0)'
+  }
+});
+
 // Vrai quand le terrain est jouable. Même principe que pour les skins.
 export function mapDebloquee(m) {
   if (!m || !m.verrou) return true;
