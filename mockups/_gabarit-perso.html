@@ -459,7 +459,11 @@ const cartes = [];
 
     s.variantes.forEach((va, i) => {
       const card = document.createElement('div');
-      card.className = 'card' + (i === 0 ? ' on' : '');
+      // La carte active suit le CHOIX, pas l'index. Avec `i === 0` la
+      // premiere carte etait toujours surlignee, meme quand la fiche ouvrait
+      // sur un choix arrete : le code affiche disait une chose et le surlignage
+      // une autre.
+      card.className = 'card' + (choix[s.id] === va.id ? ' on' : '');
       const lbl = document.createElement('div'); lbl.className = 'lbl';
       lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + (va.desc || '');
       const cv = document.createElement('canvas');

@@ -64,13 +64,13 @@
   colonnes 2 à 11, œil = <b>un seul pixel sombre</b> sans blanc, yeux bas sur la tête, cheveux sur
   les lignes du haut, bras colonnes 1 et 12, jambes 3-4 et 9-10.
   <br><br>
-  Recherche faite sur le personnage réel : extensions platine jusqu'au torse, <b>marque noire
+  Recherche faite sur le personnage réel : extensions blondes jusqu&#8217;au torse, <b>marque noire
   peinte en travers du nez</b>, eyeliner charbonneux, 1,93 m, esthétique mall goth croisée opium.
   Sa taille ne peut pas se rendre en hauteur puisque tout le monde fait 20 lignes : elle se rend
   en <b>étroitesse</b> — épaules serrées, taille fine, jambes longues.
   <br><br>
-  Chaque carte montre le <b>perso entier</b> sur un bout du vrai terrain et à l'échelle du match.
-  Clique une carte pour la monter dans l'aperçu du haut. Le mockup de l'<b>ultime</b> — il chante,
+  Chaque carte montre le <b>perso entier</b> sur un bout du vrai terrain et à l&#8217;échelle du match.
+  Clique une carte pour la monter dans l&#8217;aperçu du haut. Le mockup de l&#8217;<b>ultime</b> — il chante,
   stun musical à la Seraphine, son déjà en place — viendra séparément, une fois ce chara-design
   validé.
 </p>
@@ -146,9 +146,9 @@ const PERSO = {
   dominante: 'Cck',
   univers: 'STAR',
   pal: {
-    C: '#fbf7ec',
-    c: '#e0d8c2',
-    k: '#a89e86',
+    C: '#f8e9a8',
+    c: '#e2c96e',
+    k: '#c2a44e',
     S: '#f0c8a4',
     s: '#cf9660',
     N: '#15151a',
@@ -161,7 +161,7 @@ const PERSO = {
     K: '#0d0d11',
     R: '#c4485a'
   },
-  tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."],
+  tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNNNc...", "..kSSSSSSSSk...."],
   corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."]
 };
 
@@ -188,8 +188,8 @@ const SECTIONS = [
     id: 'trait', titre: "1 · La marque peinte du visage (sur mesure)",
     note: "La marque peinte, sa signature. Sur les photos elle barre le nez à hauteur des yeux, donc elle ressemble vraiment à un masque : ce n'est pas un raté de dessin, c'est le sujet de la section.",
     variantes: [
-      v('A', "MARQUE RESSERREE SUR LE NEZ", "La marque resserrée sur le nez, yeux sombres dégagés au-dessus. C'est celle qui se lit comme de la peinture et non comme un masque, mais c'est aussi la plus discrète du lot.",
-        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+      v('A', "MARQUE DU NEZ JUSQU AU BORD DROIT", "La marque part du nez et file jusqu'au bord droit du visage, yeux sombres dégagés au-dessus. Elle barre vraiment la figure au lieu de flotter au milieu, tout en restant de la peinture et non un masque.",
+        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNNNc...", "..kSSSSSSSSk...."] }),
       v('B', "BANDE LARGE SUR TROIS LIGNES", "Une bande large sur trois lignes, yeux pâles au milieu. Impossible à rater et très proche de la première photo, mais elle mange presque tout le visage.",
         { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cNNNNNNNNNNc...", ".cNNNNNNNNNNc...", ".cNNNWNNNNWNc...", "..NNNNNNNNNN....", "..kSSSSSSSSk...."] }),
       v('C', "AUCUNE MARQUE, MACHOIRE PLUS FINE", "Aucune marque, mâchoire plus fine. Le visage respire et on voit enfin ses traits, mais il perd le seul détail qui le rend reconnaissable de loin.",
@@ -215,25 +215,25 @@ const SECTIONS = [
     note: "Les extensions platine, chest-length sur les vrais visuels. C'est sa silhouette : avec un cheveu court il ne reste rien de reconnaissable.",
     variantes: [
       v('A', "RAIE AU MILIEU, MASSE LARGE", "Raie au milieu, masse large qui encadre le visage et tombe sur le torse. La lecture la plus fidèle aux visuels, et la plus sage.",
-        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+        { tete: ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNNNc...", "..kSSSSSSSSk...."] }),
       v('B', "FRANGE DROITE QUI DESCEND SUR LES YEUX", "Une frange droite qui descend jusqu'aux yeux. Silhouette compacte et mystérieuse, mais elle mange le front et écrase le visage.",
-        { tete: ["..CCCCCCCCCC....", ".CCCCCCCCCCCC...", "CCCCCCCCCCCCC...", "CCCCCCCCCCCCC...", "CCCCCCCCCCCCC...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+        { tete: ["..CCCCCCCCCC....", ".CCCCCCCCCCCC...", "CCCCCCCCCCCCC...", "CCCCCCCCCCCCC...", "CCCCCCCCCCCCC...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNNNc...", "..kSSSSSSSSk...."] }),
       v('C', "TIRES EN ARRIERE, FRONT DEGAGE", "Tirés en arrière, front entièrement dégagé. On voit enfin ses traits et la marque ressort, mais il perd le côté mèches mouillées des photos.",
-        { tete: [".....CCCC.......", "...cCCCCCCc.....", "..cCCCCCCCCc....", "..cSSSSSSSSc....", "..SSSSSSSSSS....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+        { tete: [".....CCCC.......", "...cCCCCCCc.....", "..cCCCCCCCCc....", "..cSSSSSSSSc....", "..SSSSSSSSSS....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNNNc...", "..kSSSSSSSSk...."] }),
       v('D', "COURT DESSUS, TRES LONG DERRIERE", "Court sur le dessus, très long derrière. Silhouette de mulet moderne, cohérente avec l'esthétique mall goth, mais elle s'éloigne des visuels.",
-        { tete: [".....CCCC.......", "....CCCCCC......", "ccCCCCCCCCcc....", "ckCCCCCCCCkc....", "ckCSSSSSSCkc....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+        { tete: [".....CCCC.......", "....CCCCCC......", "ccCCCCCCCCcc....", "ckCCCCCCCCkc....", "ckCSSSSSSCkc....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNNNc...", "..kSSSSSSSSk...."] }),
       v('E', "MECHES SEPAREES, FRONT VISIBLE ENTRE", "Deux paquets de mèches séparés, front visible entre les deux. Très vivant et un peu négligé, mais l'écart au milieu se lit mal en petit.",
-        { tete: ["...CC..CC.......", "..CCC..CCC......", ".cCCC..CCCc.....", ".cCCCSSCCCc.....", ".cCCSSSSSSCc....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+        { tete: ["...CC..CC.......", "..CCC..CCC......", ".cCCC..CCCc.....", ".cCCCSSCCCc.....", ".cCCSSSSSSCc....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNNNc...", "..kSSSSSSSSk...."] }),
       v('F', "VOLUME ENORME QUI DEBORDE EN HAUT", "Un volume énorme qui déborde en haut du gabarit. Impossible à confondre avec un autre perso, mais il paraît porter une perruque plutôt que des cheveux.",
-        { tete: ["CCCCCCCCCCCCC...", "CCCCCCCCCCCCC...", "CCCCCCCCCCCCC...", "CcCCCCCCCCCCc...", "CcCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+        { tete: ["CCCCCCCCCCCCC...", "CCCCCCCCCCCCC...", "CCCCCCCCCCCCC...", "CcCCCCCCCCCCc...", "CcCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNNNc...", "..kSSSSSSSSk...."] }),
       v('G', "PLAQUE ET MOUILLE, PRES DU CRANE", "Plaqué et mouillé, très près du crâne. C'est exactement la deuxième photo, et le plus élégant du lot ; en contrepartie il perd toute sa masse.",
-        { tete: [".....CCCC.......", "....ckCkc.......", "...ckCCCCkc.....", "...ckCCCCkc.....", "...kSSSSSSk.....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+        { tete: [".....CCCC.......", "....ckCkc.......", "...ckCCCCkc.....", "...ckCCCCkc.....", "...kSSSSSSk.....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNNNc...", "..kSSSSSSSSk...."] }),
       v('H', "DEUX MECHES SEULEMENT, CRANE NU", "Deux mèches seulement, crâne dégagé. Silhouette légère qui laisse voir tout le visage, mais on ne comprend plus qu'il a les cheveux longs.",
-        { tete: ["....SSSSSS......", "..CSSSSSSSSC....", ".cCSSSSSSSSCc...", ".cCSSSSSSSSCc...", ".cCSSSSSSSSCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+        { tete: ["....SSSSSS......", "..CSSSSSSSSC....", ".cCSSSSSSSSCc...", ".cCSSSSSSSSCc...", ".cCSSSSSSSSCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNNNc...", "..kSSSSSSSSk...."] }),
       v('I', "RACINES SOMBRES SUR TOUT LE DESSUS", "Racines sombres sur tout le dessus. Détail très juste — ce sont des extensions décolorées — mais ça casse le blanc qui fait sa signature.",
-        { tete: ["....kkkkkk......", "..kkkkkkkkkk....", ".ckkCCCCCCkkc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] }),
+        { tete: ["....kkkkkk......", "..kkkkkkkkkk....", ".ckkCCCCCCkkc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNNNc...", "..kSSSSSSSSk...."] }),
       v('J', "CHIGNON HAUT, NUQUE DEGAGEE", "Chignon haut, nuque dégagée. Le plus net et le plus original, mais c'est le seul du lot où on ne voit plus du tout ses cheveux longs.",
-        { tete: [".....CCCC.......", "......CC........", ".....CCCC.......", "...CCCCCCCC.....", "..CCSSSSSSCC....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNSSc...", "..kSSSSSSSSk...."] })
+        { tete: [".....CCCC.......", "......CC........", ".....CCCC.......", "...CCCCCCCC.....", "..CCSSSSSSCC....", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNNNc...", "..kSSSSSSSSk...."] })
     ]
   },
   {
@@ -242,8 +242,8 @@ const SECTIONS = [
     variantes: [
       v('A', "CHAINE EN TRAVERS, UN PENDENTIF", "Une chaîne en travers du haut du torse, un pendentif qui pend. Lisible et sobre, mais c'est aussi la version la moins caractérisée.",
         { corps: ["..cSSSSSSSSc....", ".ScAAAAAAAAcS...", ".ScSSSASSSScS...", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
-      v('B', "AUCUNE CHAINE, EPAULES NUES", "Aucune chaîne, épaules entièrement nues. Le plus épuré, et le torse se lit parfaitement ; en revanche il perd le seul éclat argenté du personnage.",
-        { corps: ["...SSSSSSSS.....", ".SSSSSSSSSSS....", ".SSSSSSSSSSS....", ".SkSSSSSSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
+      v('B', "SANS CHAINE, CHEVEUX LONGS SUR LE TORSE", "Aucune chaîne, les cheveux tombent sur le torse jusqu'à la poitrine, et un trait d'ombre marque le dessous des pectoraux et le sternum. C'est la version la plus fidèle aux photos ; en revanche il perd le seul éclat argenté du personnage, et les mèches mangent une partie du torse nu.",
+        { corps: ["..cSSSSSSSSc....", ".ccSSSSSSSScc...", ".ccSsSSSSsScc...", ".ckSSSsSSSkc....", "..SSSSsSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
       v('C', "TROIS CHAINES SUPERPOSEES", "Trois chaînes superposées sur le haut du torse. Très riche et très opium, mais l'argent finit par faire un plastron qui cache la peau.",
         { corps: ["..cAAAAAAAAc....", ".ScAAAAAAAAcS...", ".ScAAAAAAAAcS...", ".SkSSSASSSkS....", "..SSSSSSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."] }),
       v('D', "PENDENTIF ENORME SUR TOUT LE TORSE", "Un pendentif énorme qui couvre tout le sternum. Impossible à rater même en petit, mais il ressemble alors à un plastron plutôt qu'à un bijou.",
@@ -267,7 +267,7 @@ const SECTIONS = [
     note: "Ses deux grandes surfaces sont les cheveux et le cuir : ce sont elles que les skins colorent. Le platine sur un terrain sombre est déjà très lisible, chaque écart s'en éloigne.",
     variantes: [
       v('A', "PLATINE ET CUIR NOIR", "Le platine et le cuir noir des photos. Contraste maximal entre le haut clair et le bas sombre, et déjà très lisible sur un terrain sombre.",
-        { pal: { C: '#fbf7ec' } }),
+        { pal: { C: '#f8e9a8' } }),
       v('B', "NOIR CORBEAU", "Cheveux noir corbeau. Silhouette entièrement sombre, très élégante, mais il se fond dans le fond spatial du terrain — le défaut connu de Leon.",
         { pal: { C: '#4a4650', c: '#33303a', k: '#1e1c24' } }),
       v('C', "ROUGE SANG", "Rouge sang, cheveux et cuir. Immédiatement identifiable, mais le rouge est déjà celui du disque de Leon et des zones de but.",
@@ -462,7 +462,8 @@ function ombre(g, x, y, r) {
 
 // L'état courant : une lettre retenue par section.
 const choix = {};
-SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+const RETENU = { trait: 'A', cheveux: 'B', torse: 'B' };
+SECTIONS.forEach(s => { choix[s.id] = RETENU[s.id] || s.variantes[0].id; });
 
 // Assemble le perso tel que les choix actuels le décrivent. Chaque section
 // n'apporte que la pièce qu'elle remplace, la dernière déclarée l'emporte.
@@ -537,7 +538,11 @@ const cartes = [];
 
     s.variantes.forEach((va, i) => {
       const card = document.createElement('div');
-      card.className = 'card' + (i === 0 ? ' on' : '');
+      // La carte active suit le CHOIX, pas l'index. Avec `i === 0` la
+      // premiere carte etait toujours surlignee, meme quand la fiche ouvrait
+      // sur un choix arrete : le code affiche disait une chose et le surlignage
+      // une autre.
+      card.className = 'card' + (choix[s.id] === va.id ? ' on' : '');
       const lbl = document.createElement('div'); lbl.className = 'lbl';
       lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + (va.desc || '');
       const cv = document.createElement('canvas');
