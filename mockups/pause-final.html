@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — écran Pause retenu : fond B (léger) + titre E (lueur) + boutons C (pastel)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#111318; --pastel:#7ea8ff; --pastel-green:#7bea9e; --pastel-red:#ff8f9a; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;background:#070a12;color:#fff;font-family:'Barlow',sans-serif;
+    display:flex;flex-direction:column;align-items:center;gap:16px;padding:26px 16px 60px;
+  }
+  h1{font-family:'Archivo Black',sans-serif;font-size:18px}
+  .note{color:#8fa3cc;font-size:13.5px;max-width:920px;line-height:1.7;text-align:center}
+  .note b{color:#eaf2ff}
+
+  .stage{
+    position:relative;width:min(94vw,1120px);aspect-ratio:16/10;border-radius:8px;overflow:hidden;
+    container-type:size;border:2px solid #1b2a52;background:#040609;
+  }
+  /* ---- 1B (allégé) : match figé, léger flou + assombri, pas le gros blur du mockup ---- */
+  canvas.court{position:absolute;inset:0;width:100%;height:100%;display:block;filter:blur(1.3px) brightness(.82)}
+  .scrim{position:absolute;inset:0;background:rgba(6,8,14,.5)}
+
+  .card{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;
+    width:44cqh;display:flex;flex-direction:column;align-items:center;gap:3.4cqh}
+
+  /* ---- 2E + lueur externe légère : texte nu à contour, pas de cadre ---- */
+  .pauseTitle{
+    font-family:'Archivo Black',sans-serif;font-size:clamp(38px,11cqh,84px);color:#fff;
+    -webkit-text-stroke:6px var(--ink);paint-order:stroke fill;letter-spacing:.06em;
+    filter:drop-shadow(0 0 10px rgba(0,0,0,.65)) drop-shadow(0 0 22px rgba(0,0,0,.4));
+  }
+
+  .menu{display:flex;flex-direction:column;gap:1.3cqh;width:100%}
+  .mbtn{
+    font-family:'Archivo Black',sans-serif;font-size:clamp(13px,2.2cqh,18px);color:var(--ink);
+    padding:1.3cqh 1.6cqw;border:4px solid var(--ink);border-radius:8px;
+    box-shadow:5px 5px 0 var(--ink);cursor:pointer;text-align:center;
+    filter:drop-shadow(0 0 6px rgba(0,0,0,.4));
+    transition:background .1s,color .1s,transform .1s,box-shadow .1s;
+    /* Apparition en cascade : chaque bouton part un peu plus bas et transparent,
+       puis se pose à sa place — simple, pas de rebond ni de fioriture. */
+    opacity:0;animation:btnIn .3s ease-out forwards;
+  }
+  .mbtn:nth-child(1){animation-delay:.05s}
+  .mbtn:nth-child(2){animation-delay:.12s}
+  .mbtn:nth-child(3){animation-delay:.19s}
+  .mbtn:nth-child(4){animation-delay:.26s}
+  @keyframes btnIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  /* ---- 3C (pastel) : couleur = intention, mais en teintes douces ---- */
+  .mbtn.resume{background:var(--pastel-green)}
+  .mbtn.neutral{background:var(--pastel)}
+  .mbtn.danger{background:var(--pastel-red)}
+  /* Placé APRÈS les couleurs d'intention : à spécificité égale (deux classes
+     chacun), c'est l'ordre dans la feuille qui tranche. Avant, .mbtn.resume
+     etc. gagnaient et le survol ne changeait jamais vraiment le fond — on ne
+     sentait que l'ombre bouger. Le grossissement est aussi beaucoup plus net. */
+  .mbtn:hover{background:var(--ink);color:#fff;transform:translate(-3px,-3px) scale(1.09);box-shadow:8px 8px 0 var(--ink)}
+
+  .legend{max-width:920px;width:94vw;background:#0e1626;border:1px solid #22344f;border-radius:10px;padding:14px 18px;margin-top:6px}
+  .legend h2{font-family:'Archivo Black',sans-serif;font-size:13px;color:#ffd23e;margin-bottom:8px}
+  .legend p{color:#c8d4ec;font-size:13px;line-height:1.8}
+</style>
+</head>
+<body>
+
+  <h1>Écran Pause retenu — fond B allégé + titre E avec lueur + boutons C pastel</h1>
+  <p class="note">
+    Fond légèrement flouté (1,3px, pas les 3px du mockup) + assombri à 50%. Titre "PAUSE" nu à contour
+    noir, avec une lueur externe noire légère pour le détacher du fond sans cadre autour. Boutons colorés
+    par intention (vert = reprendre, bleu = neutre, rouge = danger) mais en teintes pastel plutôt que vives.
+  </p>
+
+  <div class="stage">
+    <canvas class="court" id="court" width="1120" height="700"></canvas>
+    <div class="scrim"></div>
+
+    <div class="card">
+      <div class="pauseTitle">PAUSE</div>
+      <div class="menu">
+        <button class="mbtn resume">Reprendre</button>
+        <button class="mbtn neutral">Recommencer</button>
+        <button class="mbtn neutral">Menu</button>
+        <button class="mbtn danger">Abandonner</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <h2>C'est bon pour toi ?</h2>
+    <p>Si oui, je passe ça dans <code>index.html</code> (markup de <code>#scr-pause</code>) et
+    <code>style.css</code> (<code>.titleRibbon</code> → texte nu, <code>.pauseCard .mbtn</code> → couleurs
+    pastel par intention). Sinon dis-moi ce qui coince.</p>
+  </div>
+
+<script>
+function buildSprite(rows, pal, target) {
+  target.width = 16; target.height = rows.length;
+  const g = target.getContext('2d');
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const ch = row[x];
+      if (ch !== '.') { g.fillStyle = pal[ch]; g.fillRect(x, y, 1, 1); }
+    }
+  });
+}
+const PAL_N = { H:'#ffd23e', h:'#e2a71c', M:'#d9dfe8', S:'#f8c890', s:'#d99a63', w:'#c08050', E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#f2f2f5', K:'#1e1e24', P:'#e5730f' };
+const N_HEAD = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....","..SSSSSSSSSS....","..SSSESSSSES....","..swSSSSSSws....","...SSSSSSSS....."];
+const N_IDLE_B = ["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...","..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."];
+const PAL_L = { L:'#7a4f2c', l:'#4e2f18', S:'#f0c090', s:'#cf9660', E:'#2c2a26', J:'#42537d', j:'#26314d', V:'#b3bac6', B:'#e8b83a', W:'#eef1f6', D:'#2f3b59', K:'#1b1f2a' };
+const L_HEAD = ["....lLLLLl......","...LLLLLLLL.....","..LLLLLLLLLL....","..LLLLllLLLL....","..LLSSSSSSLL....","..LSSSSSSSSL....","..SSSESSSSES....","..SSSSSSSSSS....","...SSSSSSSS.....","....JJJJJJ......"];
+const L_IDLE_B = ["..KKKKKKKKKB....",".VKKKKKKKKKKV...",".VKKWKWKWKKKV...",".SKKKKKKKKKKS...","..JJJJJJJJJJ....","..KKKKVKKKKK....","...DD....DD.....","...KK....KK.....","...DD....DD.....","..KKK....KKK...."];
+
+function drawCourt(cv) {
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const grd = ctx.createRadialGradient(W/2, H/2, H*0.1, W/2, H/2, H*0.85);
+  grd.addColorStop(0, '#16233f'); grd.addColorStop(1, '#020408');
+  ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+  const m = Math.min(W, H) * 0.1;
+  const L = m, R = W - m, T = m * 0.7, B = H - m * 0.7;
+  ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2;
+  ctx.strokeRect(L, T, R - L, B - T);
+  ctx.beginPath(); ctx.moveTo((L+R)/2, T); ctx.lineTo((L+R)/2, B); ctx.stroke();
+  ctx.beginPath(); ctx.arc((L+R)/2, (T+B)/2, (B-T)*0.16, 0, Math.PI*2); ctx.stroke();
+  const n = document.createElement('canvas'); buildSprite([...N_HEAD, ...N_IDLE_B], PAL_N, n);
+  const l = document.createElement('canvas'); buildSprite([...L_HEAD, ...L_IDLE_B], PAL_L, l);
+  ctx.imageSmoothingEnabled = false;
+  const s = (B - T) * 0.4;
+  ctx.drawImage(n, L + (R-L)*0.28 - s*0.4, (T+B)/2 - s*0.5, s*0.8, s);
+  ctx.drawImage(l, L + (R-L)*0.72 - s*0.4, (T+B)/2 - s*0.5, s*0.8, s);
+}
+drawCourt(document.getElementById('court'));
+</script>
+</body>
+</html>

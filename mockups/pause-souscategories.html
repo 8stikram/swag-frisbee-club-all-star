@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — écran Pause, par sous-catégorie (5 choix chacune)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#111318; --yellow:#f5e63d; --green:#5df08a; --blue:#2f6bff; --red:#e5384f; --pastel:#aecbff; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{margin:0;background:#f4f1ea;color:var(--ink);font-family:'Barlow',sans-serif;padding:22px 18px 70px}
+  h1{font-family:'Archivo Black',sans-serif;font-size:20px;margin:0 0 4px}
+  h2{font-family:'Archivo Black',sans-serif;font-size:14px;margin:34px 0 6px;color:#b3400a;
+     text-transform:uppercase;letter-spacing:1.2px;border-bottom:1px solid #d8d0bf;padding-bottom:6px}
+  .note{font-size:13px;color:#5a5648;max-width:960px;line-height:1.7;margin:0 0 14px}
+  .note code{background:#e6e0d2;padding:1px 5px;border-radius:4px;color:#8a3d00}
+  .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+  .card{background:#fff;border:1px solid #ded5c0;border-radius:10px;padding:14px 12px 10px;
+    display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .card .letter{font-family:'Archivo Black',sans-serif;font-size:13px;color:#b3400a}
+  .card .desc{font-size:11px;color:#6b6656;text-align:center;line-height:1.5;min-height:56px}
+
+  /* Swatch : reproduit le vrai fond de match (terrain + les 2 persos figés),
+     pas une image bidon — c'est littéralement ce sur quoi on met pause. */
+  .swatch{width:100%;aspect-ratio:16/10;border-radius:8px;overflow:hidden;position:relative;background:#040609}
+  .swatch canvas.court{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .swatch .overlay{position:absolute;inset:0}
+
+  .legend{max-width:960px;background:#fff;border:1px solid #ded5c0;border-radius:10px;padding:14px 18px;margin-top:26px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .legend h2{margin-top:0}
+  .legend p{color:#4a4638;font-size:13px;line-height:1.8}
+
+  /* ============================================================
+     1. TRAITEMENT DU FOND DE MATCH (ce qu'on voit derrière la pause)
+     ============================================================ */
+  .f-court{filter:var(--f, none)}
+  .f-scrim{position:absolute;inset:0;background:var(--scrimBg, rgba(6,8,14,.6))}
+  .f-vignette{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 45%,transparent 40%,rgba(0,0,0,.75) 100%)}
+  .f-grain{position:absolute;inset:0;opacity:.15;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .f-scan{position:absolute;inset:0;opacity:.25;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.5) 0 1px,transparent 1px 3px)}
+  .f-badge{position:absolute;bottom:6px;right:8px;font-family:'Archivo Black',sans-serif;font-size:9px;
+    color:#fff;background:rgba(0,0,0,.5);padding:2px 6px;border-radius:4px;letter-spacing:.05em}
+
+  /* ============================================================
+     2. CARTE + RUBAN "PAUSE"
+     ============================================================ */
+  .p-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .p2-a{background:var(--yellow);border:3px solid var(--ink);border-radius:6px;
+    padding:.35em 1.4em;box-shadow:4px 4px 0 var(--ink);clip-path:polygon(4% 0,96% 0,100% 100%,0 100%)}
+  .p2-a span{font-family:'Archivo Black',sans-serif;font-size:15px;color:var(--ink);letter-spacing:.06em}
+
+  .p2-b{background:#12182a;border:3px solid var(--ink);border-radius:10px;box-shadow:5px 5px 0 var(--ink);
+    padding:.6em 1.6em;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .p2-b .t{font-family:'Archivo Black',sans-serif;font-size:16px;color:var(--yellow);letter-spacing:.06em}
+  .p2-b .s{font-family:'Barlow',sans-serif;font-weight:700;font-size:9px;color:#9fb0d0}
+
+  .p2-c{position:relative}
+  .p2-c .band{background:var(--ink);padding:.3em 0;transform:skewY(-3deg)}
+  .p2-c .band span{display:block;transform:skewY(3deg);font-family:'Archivo Black',sans-serif;font-size:16px;
+    color:#fff;text-align:center;letter-spacing:.1em;padding:0 1.2em}
+  .p2-c .band2{background:var(--yellow);height:4px;transform:skewY(-3deg);margin-top:-2px}
+
+  .p2-d{width:38%;aspect-ratio:1;flex-shrink:0;background:#fff;border:3px solid var(--ink);border-radius:10px;
+    box-shadow:4px 4px 0 var(--ink);display:flex;align-items:center;justify-content:center;
+    clip-path:polygon(15% 0,85% 0,100% 15%,100% 85%,85% 100%,15% 100%,0 85%,0 15%)}
+  .p2-d span{font-family:'Archivo Black',sans-serif;font-size:14px;color:var(--ink);letter-spacing:.04em}
+
+  .p2-e span{font-family:'Archivo Black',sans-serif;font-size:28px;color:#fff;
+    -webkit-text-stroke:4px var(--ink);paint-order:stroke fill;letter-spacing:.06em}
+
+  /* ============================================================
+     3. BOUTONS : hiérarchie et punch
+     ============================================================ */
+  .p3-wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:0 14%}
+  .p3-btn{width:100%;font-family:'Archivo Black',sans-serif;border:2.5px solid var(--ink);border-radius:6px;
+    box-shadow:2.5px 2.5px 0 var(--ink);text-align:center;color:var(--ink)}
+
+  /* A — actuel : tout pareil, pastel uniforme */
+  .p3a-btn{background:var(--pastel);font-size:10px;padding:5px}
+
+  /* B — le principal ressort, les secondaires sont en retrait */
+  .p3b-main{background:var(--green);font-size:12px;padding:6px}
+  .p3b-sub{background:#e4e6f5;font-size:8px;padding:4px;box-shadow:1.5px 1.5px 0 var(--ink)}
+
+  /* C — couleur par intention (vert=reprendre, bleu=neutre, rouge=danger) */
+  .p3c-resume{background:var(--green);font-size:10px;padding:5px}
+  .p3c-neutral{background:var(--pastel);font-size:9px;padding:4px}
+  .p3c-danger{background:var(--red);color:#fff;font-size:9px;padding:4px}
+
+  /* D — actions secondaires en ligne, reprendre seul au-dessus */
+  .p3d-main{background:var(--green);font-size:11px;padding:6px;margin-bottom:2px}
+  .p3d-row{display:flex;gap:4px;width:100%}
+  .p3d-sub{flex:1;background:var(--pastel);font-size:7px;padding:4px}
+
+  /* E — icône + libellé */
+  .p3e-btn{display:flex;align-items:center;gap:6px;background:var(--pastel);font-size:9px;padding:4px 8px;justify-content:flex-start}
+  .p3e-btn i{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;background:#fff}
+</style>
+</head>
+<body>
+
+<h1>Écran Pause — décomposé en 3 sous-catégories, 5 choix chacune</h1>
+<p class="note">
+  Retour : le fond est trop plat, le ruban « PAUSE » et les boutons font « pas droit, pas au centre »,
+  et les boutons manquent de punch. On isole les trois décisions comme pour les lueurs du HUD, testées sur
+  le vrai fond de match (terrain + les deux persos), pas une carte blanche.
+</p>
+
+<h2>1 · Traitement du fond de match derrière la pause</h2>
+<div class="row" id="fond"></div>
+
+<h2>2 · Carte / ruban "PAUSE"</h2>
+<div class="row" id="carte"></div>
+
+<h2>3 · Hiérarchie et punch des boutons</h2>
+<div class="row" id="boutons"></div>
+
+<div class="legend">
+  <h2>Pour choisir</h2>
+  <p>Une lettre par ligne (ex. "B pour le fond, C pour la carte, D pour les boutons") — je les combine
+  dans un mockup complet avant de passer à <code>index.html</code>/<code>style.css</code>.</p>
+</div>
+
+<script>
+function buildSprite(rows, pal, target) {
+  target.width = 16; target.height = rows.length;
+  const g = target.getContext('2d');
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const ch = row[x];
+      if (ch !== '.') { g.fillStyle = pal[ch]; g.fillRect(x, y, 1, 1); }
+    }
+  });
+}
+const PAL_N = { H:'#ffd23e', h:'#e2a71c', M:'#d9dfe8', S:'#f8c890', s:'#d99a63', w:'#c08050', E:'#173e8f', O:'#ff8c1a', o:'#d96b08', W:'#f2f2f5', K:'#1e1e24', P:'#e5730f' };
+const N_HEAD = ["...hH.HH.Hh.....","..HHHHHHHHHH....",".hHHHHHHHHHHh...","..hHHHHHHHHh....","..KKKKKKKKKK....","..KKMMMMMMKK....","..SSSSSSSSSS....","..SSSESSSSES....","..swSSSSSSws....","...SSSSSSSS....."];
+const N_IDLE_B = ["....KKKKKK......","..KKKKKKKKKK....",".SKKKKKKKKKKS...",".SOOOOKKOOOOS...","..OOOOKKOOOO....","..KKKKKKKKKK....","...PP....PP.....","...WW....PP.....","..PPP....PPP....","..KKK....KKK...."];
+const PAL_L = { L:'#7a4f2c', l:'#4e2f18', S:'#f0c090', s:'#cf9660', E:'#2c2a26', J:'#42537d', j:'#26314d', V:'#b3bac6', B:'#e8b83a', W:'#eef1f6', D:'#2f3b59', K:'#1b1f2a' };
+const L_HEAD = ["....lLLLLl......","...LLLLLLLL.....","..LLLLLLLLLL....","..LLLLllLLLL....","..LLSSSSSSLL....","..LSSSSSSSSL....","..SSSESSSSES....","..SSSSSSSSSS....","...SSSSSSSS.....","....JJJJJJ......"];
+const L_IDLE_B = ["..KKKKKKKKKB....",".VKKKKKKKKKKV...",".VKKWKWKWKKKV...",".SKKKKKKKKKKS...","..JJJJJJJJJJ....","..KKKKVKKKKK....","...DD....DD.....","...KK....KK.....","...DD....DD.....","..KKK....KKK...."];
+
+function drawCourt(cv) {
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const grd = ctx.createRadialGradient(W/2, H/2, H*0.1, W/2, H/2, H*0.85);
+  grd.addColorStop(0, '#16233f'); grd.addColorStop(1, '#020408');
+  ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+  const m = Math.min(W, H) * 0.12;
+  const L = m, R = W - m, T = m * 0.7, B = H - m * 0.7;
+  ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2;
+  ctx.strokeRect(L, T, R - L, B - T);
+  ctx.beginPath(); ctx.moveTo((L+R)/2, T); ctx.lineTo((L+R)/2, B); ctx.stroke();
+  ctx.beginPath(); ctx.arc((L+R)/2, (T+B)/2, (B-T)*0.16, 0, Math.PI*2); ctx.stroke();
+  // Deux persos figés, comme au vrai instant de la pause.
+  const n = document.createElement('canvas'); buildSprite([...N_HEAD, ...N_IDLE_B], PAL_N, n);
+  const l = document.createElement('canvas'); buildSprite([...L_HEAD, ...L_IDLE_B], PAL_L, l);
+  ctx.imageSmoothingEnabled = false;
+  const s = (B - T) * 0.4;
+  ctx.drawImage(n, L + (R-L)*0.28 - s*0.4, (T+B)/2 - s*0.5, s*0.8, s);
+  ctx.drawImage(l, L + (R-L)*0.72 - s*0.4, (T+B)/2 - s*0.5, s*0.8, s);
+}
+
+function swatch(container, letter, desc, overlayHtml, courtStyle) {
+  const c = document.createElement('div'); c.className = 'card';
+  const l = document.createElement('div'); l.className = 'letter'; l.textContent = letter;
+  const sw = document.createElement('div'); sw.className = 'swatch';
+  const cv = document.createElement('canvas'); cv.className = 'court'; cv.width = 320; cv.height = 200;
+  if (courtStyle) cv.style.cssText = courtStyle;
+  sw.appendChild(cv);
+  const ov = document.createElement('div'); ov.className = 'overlay'; ov.innerHTML = overlayHtml;
+  sw.appendChild(ov);
+  const d = document.createElement('div'); d.className = 'desc'; d.textContent = desc;
+  c.appendChild(l); c.appendChild(sw); c.appendChild(d);
+  container.appendChild(c);
+  drawCourt(cv);
+}
+
+// ---------- 1. Fond de match ----------
+const fondRow = document.getElementById('fond');
+[
+  ['A', 'Assombri simple (l\'actuel)', '<div class="overlay" style="background:rgba(6,8,14,.6)"></div>', ''],
+  ['B', 'Flouté + assombri', '<div class="overlay" style="background:rgba(6,8,14,.45)"></div>', 'filter:blur(3px) brightness(.85)'],
+  ['C', 'Désaturé + assombri', '<div class="overlay" style="background:rgba(6,8,14,.5)"></div>', 'filter:grayscale(.8) brightness(.7)'],
+  ['D', 'Assombri + vignette', '<div class="overlay" style="background:rgba(6,8,14,.4)"></div><div class="f-vignette"></div>', ''],
+  ['E', 'Freeze-frame + grain/scanlines', '<div class="overlay" style="background:rgba(6,8,14,.55)"></div><div class="f-grain"></div><div class="f-scan"></div><div class="f-badge">PAUSE</div>', 'filter:brightness(.8)'],
+].forEach(([l, d, html, cs]) => swatch(fondRow, l, d, html, cs));
+
+// ---------- 2. Carte / ruban PAUSE ----------
+const carteRow = document.getElementById('carte');
+const dim = '<div class="overlay" style="background:rgba(6,8,14,.6)"></div>';
+[
+  ['A', 'Ruban jaune actuel, agrandi et recentré', dim + '<div class="p-wrap"><div class="p2-a"><span>PAUSE</span></div></div>'],
+  ['B', 'Plaque sombre unique', dim + '<div class="p-wrap"><div class="p2-b"><div class="t">PAUSE</div><div class="s">NARUTO VS LEON · 18-11</div></div></div>'],
+  ['C', 'Double bandeau diagonal (esprit bannière titre)', dim + '<div class="p-wrap"><div class="p2-c"><div class="band"><span>PAUSE</span></div><div class="band2"></div></div></div>'],
+  ['D', 'Écusson à pans coupés', dim + '<div class="p-wrap"><div class="p2-d"><span>PAUSE</span></div></div>'],
+  ['E', 'Texte nu à contour, sans cadre', dim + '<div class="p-wrap"><div class="p2-e"><span>PAUSE</span></div></div>'],
+].forEach(([l, d, html]) => swatch(carteRow, l, d, html));
+
+// ---------- 3. Boutons ----------
+const boutonsRow = document.getElementById('boutons');
+[
+  ['A', 'Actuel : pastel uniforme, aucune hiérarchie', dim + `<div class="p3-wrap">
+      <div class="p3-btn p3a-btn">Reprendre</div><div class="p3-btn p3a-btn">Recommencer</div>
+      <div class="p3-btn p3a-btn">Abandonner</div><div class="p3-btn p3a-btn">Menu</div></div>`],
+  ['B', 'Le principal ressort, le reste en retrait', dim + `<div class="p3-wrap">
+      <div class="p3-btn p3b-main">Reprendre</div><div class="p3-btn p3b-sub">Recommencer</div>
+      <div class="p3-btn p3b-sub">Abandonner</div><div class="p3-btn p3b-sub">Menu</div></div>`],
+  ['C', 'Couleur = intention (vert/neutre/rouge)', dim + `<div class="p3-wrap">
+      <div class="p3-btn p3c-resume">Reprendre</div><div class="p3-btn p3c-neutral">Recommencer</div>
+      <div class="p3-btn p3c-neutral">Menu</div><div class="p3-btn p3c-danger">Abandonner</div></div>`],
+  ['D', 'Reprendre seul, secondaires en ligne', dim + `<div class="p3-wrap">
+      <div class="p3-btn p3d-main">Reprendre</div>
+      <div class="p3d-row"><div class="p3-btn p3d-sub">Recommencer</div><div class="p3-btn p3d-sub">Abandonner</div><div class="p3-btn p3d-sub">Menu</div></div></div>`],
+  ['E', 'Icône + libellé', dim + `<div class="p3-wrap">
+      <div class="p3-btn p3e-btn"><i>▶</i>Reprendre</div><div class="p3-btn p3e-btn"><i>↺</i>Recommencer</div>
+      <div class="p3-btn p3e-btn"><i>✕</i>Abandonner</div><div class="p3-btn p3e-btn"><i>☰</i>Menu</div></div>`],
+].forEach(([l, d, html]) => swatch(boutonsRow, l, d, html));
+</script>
+</body>
+</html>
