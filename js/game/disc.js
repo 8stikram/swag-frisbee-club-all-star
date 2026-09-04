@@ -1,6 +1,6 @@
 import { G } from './state.js';
 import {
-  COURT, GOAL_TOP, GOAL_BOTTOM, DISC_RADIUS, DISC_BIG_RADIUS, DASH_CATCH_MULT,
+  COURT, CX, GOAL_TOP, GOAL_BOTTOM, DISC_RADIUS, DISC_BIG_RADIUS, DASH_CATCH_MULT,
   FEINT_TIME, FEINT_FREE, FEINT_CD, FEINT_REACH, METER_GAIN, CATCH_RADIUS
 } from '../core/constants.js';
 import { norm, gauss, clamp, rand } from '../core/utils.js';
@@ -8,7 +8,7 @@ import { gaussJeu } from '../core/alea.js';
 import { sfx } from '../audio/audio.js';
 import { disqueImmobile, testerPanier } from './zones.js';
 import { burst, dust, addPopup } from './fx.js';
-import { onCatch, scoreGoal, ownFoul, setupServe } from './actions.js';
+import { onCatch, scoreGoal, setupServe } from './actions.js';
 import { disqueVuPar, skinDuDisque } from '../reseau/partie.js';
 import { RASENGAN } from '../data/specials.js';
 import { couleurTrainee, semerEnVol, eclatDeRebond } from '../data/disc-fx.js';
@@ -97,20 +97,17 @@ export function updateDisc(dt) {
   if (d.x < COURT.left + r) {
     if (inGoalY && clocheBloque(1)) { repousseParLaCloche(d, 1); return; }
     if (inGoalY) { if (d.x < COURT.left - r) { scoreGoal(G.p2, d.y); return; } }
-    else {
-      const pre = sp;
-      d.x = COURT.left + r; d.vx = Math.abs(d.vx) * rest; onBounce(d);
-      if (G.state === 'play' && d.thrower === G.p1 && pre > 180) { ownFoul(G.p1); return; }
-    }
+    // Rebondir fort sur son propre mur payait une faute (−1 point) : puni
+    // deux fois pour le même geste, une fois ici et une fois par la jauge
+    // qui ne monte plus au rattrapage (voir onCatch, onBounce). La faute
+    // coupait le rythme sur des tirs par la bande tout à fait normaux, sans
+    // rien retirer de plus à l'exploit que la jauge ne retirait déjà.
+    else { d.x = COURT.left + r; d.vx = Math.abs(d.vx) * rest; onBounce(d); }
   }
   if (d.x > COURT.right + r) {
     if (inGoalY && clocheBloque(2)) { repousseParLaCloche(d, -1); return; }
     if (inGoalY) { if (d.x > COURT.right + r) { scoreGoal(G.p1, d.y); return; } }
-    else {
-      const pre = sp;
-      d.x = COURT.right + r; d.vx = -Math.abs(d.vx) * rest; onBounce(d);
-      if (G.state === 'play' && d.thrower === G.p2 && pre > 180) { ownFoul(G.p2); return; }
-    }
+    else { d.x = COURT.right + r; d.vx = -Math.abs(d.vx) * rest; onBounce(d); }
   }
   testerPanier(d);
   if (sp < 70 && !d.big) {
@@ -180,6 +177,15 @@ export function onBounce(d) {
   if (d.thrower) {
     const ownSideWall = (d.x <= COURT.left + DISC_R() && d.thrower.side === 1) || (d.x >= COURT.right - DISC_R() && d.thrower.side === 2);
     if (!ownSideWall) { d.thrower.meter = clamp(d.thrower.meter + 5 * METER_GAIN, 0, 100); }
+    // Marque le disque dès que ce rebond atterrit dans la moitié du LANCEUR —
+    // toute la moitié, pas seulement le mur au ras du corps comme ownSideWall
+    // ci-dessus (qui sert une autre règle : les cinq points de jauge du rebond
+    // lui-même, exclus seulement tout près du mur). Un tir presque vertical
+    // qui tape le plafond au milieu de son propre camp ne touchait jamais
+    // cette zone-là, donc rien n'empêchait de se le relancer à soi-même en
+    // boucle un peu plus loin du mur. Voir onCatch, qui lit ce drapeau.
+    const proprCote = d.thrower.side === 1 ? d.x < CX : d.x > CX;
+    if (proprCote) d.rebondPropreCamp = true;
   }
 }
 

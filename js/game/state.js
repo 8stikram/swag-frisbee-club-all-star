@@ -168,7 +168,16 @@ export function makePlayer(ck, side, human, diffIdx) {
 }
 
 export function resetDisc() {
-  return { x: CX, y: CY, vx: 0, vy: 0, heldBy: null, kind: 'normal', spin: 0, age: 0, thrower: null, thrownAt: -9, bounced: false, stall: 0, free: false, big: false, kSpeed: 0, super: false, wobble: 0 };
+  return {
+    x: CX, y: CY, vx: 0, vy: 0, heldBy: null, kind: 'normal', spin: 0, age: 0,
+    thrower: null, thrownAt: -9, bounced: false, stall: 0, free: false, big: false,
+    kSpeed: 0, super: false, wobble: 0,
+    // A ricoché sur le mur ou le plafond de SON PROPRE lanceur pendant ce vol.
+    // Voir onCatch (actions.js) : ça retire la jauge d'un rattrapage, sinon
+    // se renvoyer le disque dans son propre camp en boucle la faisait monter
+    // gratuitement, sans le moindre risque ni le moindre adversaire impliqué.
+    rebondPropreCamp: false
+  };
 }
 
 export function initMatch(demo, ck, cpu, diffIdx, j2j) {

@@ -67,6 +67,7 @@ export function throwDisc(p, dir, speed, kind = 'normal') {
   d.x = p.x + dir.x * 22; d.y = p.y + dir.y * 22;
   d.vx = dir.x * finalSpeed; d.vy = dir.y * finalSpeed;
   d.heldBy = null; d.free = true; d.thrower = p; d.thrownAt = G.now; d.bounced = false;
+  d.rebondPropreCamp = false;    // remis à neuf à chaque nouveau vol, voir onBounce
   d.panierMarque = false;        // un panier par lancer, pas un par image
   d.kind = kind; d.stall = 0;
   d.big = (kind === 'kurama'); d.kSpeed = (kind === 'kurama') ? finalSpeed : 0;
@@ -272,7 +273,14 @@ export function onCatch(p, sp, dirx, diry) {
   G.trail.length = 0;
   p.holding = true; p.charge = 0; p.stats.catches++;
   if (enDash) p.stats.dashCatches++;
-  p.meter = clamp(p.meter + 12 * METER_GAIN, 0, 100);
+  // Se relancer le disque dans son propre camp — un rebond sur son propre
+  // mur ou plafond, jamais dans un vrai échange — ne rapporte rien à la
+  // reprise. Sans cette garde, la jauge d'ultime se remplissait tout seul,
+  // en boucle, sans le moindre adversaire impliqué. La récupération reste
+  // sinon inchangée : on la reprend en main normalement, seule la jauge
+  // est concernée.
+  const soiMeme = p === d.thrower && d.rebondPropreCamp;
+  if (!soiMeme) p.meter = clamp(p.meter + 12 * METER_GAIN, 0, 100);
   p.holdTimer = 0;
   G.rally++; G.maxRally = Math.max(G.maxRally, G.rally); G.idleT = 0;
   G.lastCatchIdx = G.rec.length;   // point de départ du prochain replay
@@ -287,7 +295,7 @@ export function onCatch(p, sp, dirx, diry) {
   // le terrain pour sa main — c'est lui qu'on regarde à cet instant.
   if (skinDuJoueur(p) === 'captain') p.bouclierT = .45;
   if (sp > 780) {
-    p.meter = clamp(p.meter + 20 * METER_GAIN, 0, 100);
+    if (!soiMeme) p.meter = clamp(p.meter + 20 * METER_GAIN, 0, 100);
     addPopup('PERFECT CATCH !', '#ffffff', 14, .9, p.y - 56);
     G.timescale = .3; G.tsTimer = .18; sfx('perfect');
     G.shake = Math.max(G.shake, 7);
