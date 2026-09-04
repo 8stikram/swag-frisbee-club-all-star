@@ -193,6 +193,11 @@ let ed = null;
 // course, la carapace et la tête ne bougent pas, les jambes alternent, et les
 // deux bras balancent À CONTRETEMPS l'un de l'autre — c'est ce contretemps qui
 // fait courir plutôt que glisser.
+//
+// La queue, elle, ne bouge PAS en course : elle se tend au dash et fouette au
+// tir. C'est le réglage qui coûte le moins cher — deux poses de course
+// suffisent, comme pour le reste du roster — tout en mettant le mouvement là
+// où on le regarde.
 const ANATOMIE = [
   ['la crête', '#e8392f', 0, 4, 0, 15, 'fixe — elle ne se couche qu\'au dash'],
   ['la monture et les deux verres', '#35e0ff', 5, 7, 0, 15, 'fixe'],
@@ -202,7 +207,8 @@ const ANATOMIE = [
   ['LE BRAS PROCHE, avec ses bracelets', '#5df08a', 11, 16, 8, 9, 'il balance'],
   ['le ventre, relié à la queue', '#ffd23e', 10, 17, 10, 12, 'fixe — il se penche au dash et au plongeon'],
   ['LE BRAS LOIN', '#ff6fb5', 11, 16, 13, 14, 'il balance à contretemps de l\'autre'],
-  ['les jambes et les griffes', '#ff8c1a', 17, 19, 0, 15, 'elles alternent']
+  ['LA QUEUE', '#7ef0c8', 17, 19, 0, 4, 'fixe en course ; elle se tend au dash et fouette au tir'],
+  ['les DEUX jambes et leurs griffes', '#ff8c1a', 17, 19, 5, 15, 'elles alternent']
 ];
 
 (function anatomie() {
