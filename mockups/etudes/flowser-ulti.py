@@ -191,6 +191,54 @@ const disqX = CXX - 40, disqY = CYY + 40;
 // donnent des cercles très différents.
 const rayonZone = () => Math.sqrt(actuel('chiffres').ch2.ray * (CW / 2) * CH / Math.PI);
 
+/* ===================== LES OUTILS EN PLUS ===================== */
+// Une TRAINEE : le segment entre l'ancienne et la nouvelle position, avec un
+// degrade qui s'eteint vers l'arriere. C'est ce qui separe un point qui se
+// teleporte d'un eclat qui file — sans elle, dix-huit particules rapides ne
+// font qu'un scintillement.
+function trainee(g, x0, y0, x1, y1, alpha, coul, ep) {
+  if (alpha <= 0) return;
+  const d = g.createLinearGradient(x0, y0, x1, y1);
+  d.addColorStop(0, 'rgba(0,0,0,0)'); d.addColorStop(1, coul);
+  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha;
+  g.strokeStyle = d; g.lineWidth = ep; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.restore();
+}
+
+// Une ETOILE a quatre branches, avec un coeur. Elle s'allume UNE fois et
+// s'eteint : une etincelle qui clignote en boucle se lit comme un defaut
+// d'affichage, une etoile qui naît et meurt se lit comme de la magie.
+function etoile(g, x, y, t, alpha, coul) {
+  if (alpha <= 0) return;
+  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha;
+  g.fillStyle = coul;
+  g.beginPath();
+  g.moveTo(x, y - t); g.quadraticCurveTo(x, y, x + t, y);
+  g.quadraticCurveTo(x, y, x, y + t); g.quadraticCurveTo(x, y, x - t, y);
+  g.quadraticCurveTo(x, y, x, y - t); g.fill();
+  g.globalAlpha = alpha * .8; g.fillStyle = '#ffffff';
+  g.beginPath(); g.arc(x, y, t * .18, 0, TAU); g.fill();
+  g.restore();
+}
+
+// Les POUSSIERES qui montent : des points qui s'elevent lentement en ondulant.
+// C'est ce qui fait qu'une zone RESPIRE au lieu d'etre un decalque pose au sol,
+// et c'est la difference entre un effet et une texture.
+function poussieres(g, cx, cy, rx, ry, t, n, alpha, coul, graine) {
+  for (let i = 0; i < n; i++) {
+    const q = (t * .34 + alea(i + graine)) % 1;
+    const a = alea(i + graine + 50) * TAU;
+    const d = .25 + alea(i + graine + 90) * .75;
+    const x = cx + Math.cos(a) * rx * d + Math.sin(t * 1.7 + i) * 4;
+    const y = cy + Math.sin(a) * ry * d - q * ry * 1.5;
+    const f = Math.sin(q * Math.PI);
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = f * alpha;
+    g.fillStyle = coul;
+    g.beginPath(); g.arc(x, y, 1.1 + alea(i + graine + 7) * 1.4, 0, TAU); g.fill();
+    g.restore();
+  }
+}
+
 /* ===================== LES FORMES ===================== */
 // La carapace : une coque à pics, TRANSLUCIDE. Le roster est entièrement
 // opaque — du tigre à la cloche — donc c'est ce qui la distingue au premier
@@ -283,7 +331,7 @@ function flaque(g, vue, cx, cy, r, t, k, style) {
   g.beginPath(); g.ellipse(px, py, pr, prY, 0, 0, TAU); g.stroke();
   g.restore();
 
-  const rot = style === 'tourne' ? t * .35 : 0;
+  const rot = style === 'tourne' ? t * .35 : t * .06;   // toujours un souffle de rotation
   g.save(); g.translate(px, py); g.rotate(rot); g.translate(-px, -py);
   if (style === 'runes' || style === 'tourne' || style === 'fin' || style === 'retrecit') {
     runes(g, px, py, pr * .82, prY * .82, 1, a * .8, style);
@@ -378,13 +426,48 @@ function jouer(g, t, W, H) {
     runes(g, X(zoneX), Y(zoneY), rz * e * .92, rz * e * .53, kEcrit, .8, fl);
   }
   if (phase === 0) {
-    // il lévite et tend la main : la posture de cast
-    lueur(g, X(floX), Y(floY - 26), 40 * e, VIOLET, .18 + Math.sin(t * 7) * .06);
-    for (let i = 0; i < 7; i++) {
-      const q = (kp * 1.3 + alea(i + 5)) % 1;
+    // LUI : il lévite, une aura qui bat, et des poussières aspirées du SOL vers
+    // sa main. Aspirées et non projetées : il PREND l'énergie avant de la
+    // poser ailleurs, et c'est ce sens de circulation qui raconte un sort.
+    lueur(g, X(floX), Y(floY - 26), (46 + Math.sin(t * 7) * 8) * e, VIOLET, .22);
+    lueur(g, X(floX), Y(floY - 26), 18 * e, LILAS, .3 + Math.sin(t * 7) * .12);
+    for (let i = 0; i < 12; i++) {
+      const q = (t * .9 + alea(i + 5)) % 1;
       const a = alea(i) * TAU;
-      etincelle(g, X(floX + Math.cos(a) * (14 + q * 26)), Y(floY - 22 - q * 52),
-                (2 + alea(i + 2) * 3) * e * 3, (1 - q) * .9, i % 3 ? LILAS : CYAN);
+      const d = (1 - q) * 54;
+      const px = X(floX + Math.cos(a) * d), py = Y(floY - 20 + Math.sin(a) * d * .5);
+      trainee(g, px + Math.cos(a) * 10 * e, py + Math.sin(a) * 5 * e, px, py,
+              Math.sin(q * Math.PI) * .5, LILAS, 1.4);
+      etoile(g, px, py, (1.6 + alea(i + 2) * 2) * e * 3, Math.sin(q * Math.PI) * .9,
+             i % 3 ? LILAS : CYAN);
+    }
+    // LE TRAIT DE VISÉE, de sa main jusqu'au cercle : c'est lui qui dit que ce
+    // qui se dessine là-bas vient de lui. Des perles y glissent, sinon c'est un
+    // trait mort.
+    if (visible) {
+      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .22 + kEcrit * .2;
+      g.strokeStyle = VIOLET; g.lineWidth = 1.4; g.setLineDash([5, 7]);
+      g.lineDashOffset = -t * 30;
+      g.beginPath(); g.moveTo(X(floX + 14), Y(floY - 26));
+      g.quadraticCurveTo(X((floX + zoneX) / 2), Y(zoneY - 130), X(zoneX), Y(zoneY));
+      g.stroke(); g.setLineDash([]); g.restore();
+    }
+  }
+  // LA TÊTE D'ÉCRITURE : une étoile vive au bout du trait qui se dessine. C'est
+  // elle qui fait lire une ligne qui S'ÉCRIT plutôt qu'un cercle qui apparaît —
+  // sans un point de lumière au bout, on ne voit pas le geste, juste le
+  // résultat qui grandit.
+  if (phase <= 1 && visible && kEcrit > .01 && kEcrit < .995) {
+    const a = -Math.PI / 2 + TAU * kEcrit;
+    const hx = X(zoneX) + Math.cos(a) * rz * e * .92;
+    const hy = Y(zoneY) + Math.sin(a) * rz * e * .53;
+    lueur(g, hx, hy, 26 * e, LILAS, .55);
+    etoile(g, hx, hy, 9 * e, 1, LILAS);
+    for (let i = 0; i < 5; i++) {
+      const q = alea(i + 12);
+      const aa = a - q * .5;
+      etoile(g, X(zoneX) + Math.cos(aa) * rz * e * .92,
+             Y(zoneY) + Math.sin(aa) * rz * e * .53, 4 * e, (1 - q) * .5, CYAN);
     }
   }
 
@@ -394,13 +477,27 @@ function jouer(g, t, W, H) {
     const k = easeIn(kp);
     // Les ÉCLATS arrivent des bords et convergent. Ils sont largement espacés :
     // serrés, une rémanence fait une masse collée au lieu de dire la vitesse.
-    for (let i = 0; i < 18; i++) {
-      const a = alea(i + 30) * TAU, d0 = 300 + alea(i + 60) * 260;
+    for (let i = 0; i < 22; i++) {
       const q = Math.min(1, k * (1 + alea(i + 90) * .5));
+      // Ils SPIRALENT au lieu de foncer droit : l'angle tourne pendant qu'ils
+      // approchent. Une convergence droite se lit comme une explosion à
+      // l'envers ; une spirale se lit comme quelque chose qu'on rassemble.
+      const a = alea(i + 30) * TAU + (1 - q) * 1.5;
+      const d0 = 300 + alea(i + 60) * 260;
+      const cy = Y(zoneY - hautDepart * (1 - k));
       const px = X(zoneX) + Math.cos(a) * d0 * (1 - q) * e * .5;
-      const py = Y(zoneY - hautDepart * (1 - k)) + Math.sin(a) * d0 * (1 - q) * e * .3;
-      etincelle(g, px, py, (3 + alea(i) * 4) * e * 3, q * .9, i % 4 ? LILAS : CYAN);
+      const py = cy + Math.sin(a) * d0 * (1 - q) * e * .3;
+      // sa position une fraction avant, pour la traînée
+      const qa = Math.max(0, q - .09);
+      const aa = alea(i + 30) * TAU + (1 - qa) * 1.5;
+      const qx = X(zoneX) + Math.cos(aa) * d0 * (1 - qa) * e * .5;
+      const qy = Y(zoneY - hautDepart * (1 - Math.max(0, k - .09))) + Math.sin(aa) * d0 * (1 - qa) * e * .3;
+      trainee(g, qx, qy, px, py, q * .75, i % 4 ? LILAS : CYAN, 1.6 + alea(i) * 1.4);
+      etoile(g, px, py, (2.5 + alea(i) * 3.5) * e * 3, q * .95, i % 4 ? LILAS : CYAN);
     }
+    // Le halo qui se forme au point de rendez-vous, de plus en plus dense
+    lueur(g, X(zoneX), Y(zoneY - hautDepart * (1 - k)), rz * e * .8 * k, VIOLET, k * .45);
+    lueur(g, X(zoneX), Y(zoneY - hautDepart * (1 - k)), rz * e * .3 * k, LILAS, k * .5);
     const r = rz * e * .58 * (ch === 'place' ? 1 : easeOut(k));
     const cy = ch === 'place' ? Y(zoneY) : Y(zoneY - hautDepart * (1 - k));
     const cx = ch === 'diago' ? X(zoneX) - (1 - k) * 200 * e : X(zoneX);
@@ -449,21 +546,54 @@ function jouer(g, t, W, H) {
       }
       g.restore();
     }
-    // les éclats projetés, toujours : c'est ce qui donne de la matière
-    for (let i = 0; i < 16; i++) {
-      const a = alea(i + 200) * TAU, d2 = kp * (.6 + alea(i + 12) * .7);
-      etincelle(g, X(zoneX) + Math.cos(a) * rz * e * d2,
-                Y(zoneY) + Math.sin(a) * rz * e * .58 * d2,
-                (2 + alea(i) * 3) * e * 3, f * .9, i % 3 ? CYAN : LILAS);
+    // LES ECLATS PROJETES retombent : ils partent vite, ralentissent, et le
+    // dernier tiers de leur course descend. Une gerbe qui file tout droit se
+    // lit comme un decor ; une gerbe qui RETOMBE se lit comme de la matiere.
+    for (let i = 0; i < 26; i++) {
+      const a = alea(i + 200) * TAU;
+      const port = .5 + alea(i + 12) * .9;
+      const d2 = easeOut(kp) * port;
+      const px = X(zoneX) + Math.cos(a) * rz * e * d2;
+      const py = Y(zoneY) + Math.sin(a) * rz * e * .58 * d2
+                 - Math.sin(Math.min(1, kp * 1.2) * Math.PI) * 26 * e * alea(i + 33);
+      const qa = easeOut(Math.max(0, kp - .12)) * port;
+      trainee(g, X(zoneX) + Math.cos(a) * rz * e * qa,
+              Y(zoneY) + Math.sin(a) * rz * e * .58 * qa, px, py,
+              f * .7, i % 3 ? CYAN : LILAS, 1.6);
+      etoile(g, px, py, (2 + alea(i) * 3) * e * 3, f * .95, i % 3 ? CYAN : LILAS);
     }
-    lueur(g, X(zoneX), Y(zoneY), rz * e * (.5 + kp), LILAS, f * .5);
-    carapace(g, X(zoneX), Y(zoneY), rz * e * .58 * (1 + kp * .3), f * .7, .6);
+    // LE DOUBLE ANNEAU violet et cyan, decales : c'est le seul endroit du jeu
+    // qui evoque une aberration chromatique, et ca ne coute que deux traits.
+    anneau(g, X(zoneX), Y(zoneY), rz * e * kp * 1.05, rz * e * .55 * kp, f * .5, VIOLET, 4);
+    anneau(g, X(zoneX) + 3, Y(zoneY), rz * e * kp * 1.10, rz * e * .58 * kp, f * .4, CYAN, 2);
+    lueur(g, X(zoneX), Y(zoneY), rz * e * (.5 + kp * 1.2), LILAS, f * f * .6);
+    // le coeur blanc, tres bref : c'est lui qui fait « claquer » l'impact
+    lueur(g, X(zoneX), Y(zoneY), rz * e * .35 * (1 - kp * .5), '#ffffff', Math.pow(f, 3) * .8);
+    carapace(g, X(zoneX), Y(zoneY), rz * e * .58 * (1 + kp * .35), f * .7, .6);
   }
 
   // --- 4. LA ZONE ---------------------------------------------------------
   let rzz = rz;
   if (phase === 3) {
     rzz = flaque(g, vue, zoneX, zoneY, rz, t, kp, fl);
+    const pr = rzz * e;
+    // LES ONDES LENTES qui repartent du centre toutes les 1,3 s. Une zone qui
+    // ne fait que pulser sur place s'oublie ; une zone qui EMET rappelle
+    // regulierement qu'elle est vivante, sans jamais clignoter.
+    for (let j = 0; j < 2; j++) {
+      const q = ((t / 1.3) + j * .5) % 1;
+      anneau(g, X(zoneX), Y(zoneY), pr * q, pr * .58 * q, (1 - q) * .3, LILAS, 1.6);
+    }
+    // LES POUSSIERES qui montent de la flaque : c'est ce qui la fait RESPIRER
+    // au lieu d'etre un decalque pose au sol.
+    poussieres(g, X(zoneX), Y(zoneY), pr * .9, pr * .52, t, 26, .55, LILAS, 300);
+    // et le second cercle de runes, qui tourne a CONTRESENS du premier. Deux
+    // rotations opposees se lisent comme un mecanisme ; une seule se lit comme
+    // une image qu'on fait tourner.
+    g.save(); g.translate(X(zoneX), Y(zoneY)); g.rotate(-t * .22);
+    g.translate(-X(zoneX), -Y(zoneY));
+    runes(g, X(zoneX), Y(zoneY), pr * .55, pr * .32, 1, .3, fl);
+    g.restore();
     // le vignettage : c'est lui qui dit que le terrain n'est plus normal
     g.save();
     const vg = g.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, W * .62);
