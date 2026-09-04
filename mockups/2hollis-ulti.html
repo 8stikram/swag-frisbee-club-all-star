@@ -139,26 +139,15 @@ const CORPS_CHANT = ["S.cSSSSSSSSc.S..","S.cSSSSSSccS.S..","S.cSsSSsSccS.S..","S
 const TETE_CHANT = ["....CCCCCC......","..CCCCCCCCCC....",".cCCCCCCCCCCc...",".cCCCCCCCCCCc...",".cCCSSSSSSCCc...",".cCSSSSSSSSCc...",".cSSSSSSSSSSc...",".cSSEEESSEEEc...",".cSSNNNNNNNNc...","..kSSSSSSSSk...."];
 
 /* ===================== LE TIGRE BLANC ===================== */
-// Une TETE de tigre, de face, gueule ouverte — pas un felin de profil. C'est
-// la forme de Hirudora, et c'est la seule qui se lise vu de dessus : un
-// quadrupede vu d'en haut n'a aucune silhouette, il se lisait comme une
-// belette. Les rayures sont des barres franches ; en points isoles elles
-// faisaient une vache.
-const PAL_T = { W:'#ffffff', w:'#cfe4f5', k:'#1b2330', E:'#7ad4f0', r:'#e8a0b4', K:'#2a1220', F:'#ffffff' };
-const TIGRES = {
- A: ["......................ww..","....................wWWWw.","...........wwww....wWWWWWw",".......wwwWWWWWWww.wWWWWWW","w....wwWWWWWWWWWWWwWWWEWWr","ww..wWWWWWWWWWWWWWWWWWWWKw",".wwwWWkWWkWWkWWkWWWWWWww..",".wWWWWkWWkWWkWWkWWWWWw....",".wWWWWkWWkWWkWWkWWWWw.....","..wWWw........wWWw........","..wWWw........wWWw........","..wwww........wwww........"],
- B: ["......................ww..","....................wWWWw.","...........wwww....wWWWWWw",".......wwwWWWWWWww.wWWWWWW","w....wwWWWWWWWWWWWwWWWEWWr","ww..wWWWWWWWWWWWWWWWWWWWKw",".wwwWWkWWkWWkWWkWWWWWWww..",".wWWWWkWWkWWkWWkWWWWWw....","wWWWWWkWWkWWkWWkWWWWw.....","wWWw..............wWWw....","Www..................wWWw.","ww.....................www"],
- C: ["......................ww..","....................wWWWw.","........wwwwwww....wWWWWWw","....wwwWWWWWWWWWWw.wWWWWWW","w..wwWWWWWWWWWWWWWwWWWEWWr","wwwWWWWWWWWWWWWWWWWWWWWWKw","wWWWWWkWWkWWkWWkWWWWWWWww.","wWWWWWkWWkWWkWWkWWWWWWw...",".wWWWWkWWkWWkWWkWWWWWw....",".wWWWw........wWWWw.......",".wWWWw........wWWWw.......",".wwwww........wwwww......."],
- D: ["......................ww..","....................wWWWw.","..........wwww.....wWWWWWw","......wwwWWWWWWwww.wWWWWWW","w...wwWWWWWWWWWWWWwWWWEWWr","ww.wWWWWWWWWWWWWWWWWWWWWKw",".wwWWkWWkWWkWWkWWkWWWWWww.",".wWWWkWWkWWkWWkWWkWWWWw...","..wWWWWWWWWWWWWWWWWWWw....","..wWw..........wWw........","..wWw..........wWw........","..www..........www........"],
- E: ["......................ww..","....................wWkWw.","...........wwkw....wWkWWWw",".......wwwWkWWWkww.wWkWWWW","w....wwWkWWkWWkWWWwWWWEWWr","ww..wWkWWkWWkWWkWWWWWWWWKw",".wwwWkWkWkWkWkWkWkWWWWww..",".wWkWWkWWkWWkWWkWkWWWWw...",".wWWkWkWkWkWkWkWkWWWWw....","..wWkw........wWkw........","..wWWw........wWWw........","..wwww........wwww........"],
- F: ["......................ww..","....................wWWWw.","...........wwww....wWWWWWw",".......wwwWWWWWWww.wWWWWWW","w....wwWWWWWWWWWWWwWWWEWWr","ww..wWWWWWWWWWWWWWWWWWWWKw",".wwwWWWWWWWWWWWWWWWWWWww..",".wWWWWWWWWWWWWWWWWWWWw....","..wWWWWWWWWWWWWWWWWw......","...wWw........wWw.........","...wWw........wWw.........","...www........www........."],
- G: ["w....w..w.....w.......ww.w","ww..ww.ww....ww....wwWWWww","w..w.wwwwwwww.w..w.wWWWWWw",".w.wwwWWWWWWWWww.w.wWWWWWW","w..wwWWWWWWWWWWWWWwWWWEWWr","www.wWWWWWWWWWWWWWWWWWWWKw","wwwwWWkWWkWWkWWkWWWWWWww.w",".wWWWWkWWkWWkWWkWWWWWw...w","wwWWWWkWWkWWkWWkWWWWw..w..",".wwWWw........wWWw..w.....","w.wWWw........wWWw........","..wwww........wwww........"],
- H: ["..........................","...........wwww...........",".......wwwWWWWWWww....ww..","w....wwWWWWWWWWWWWww.wWWWw","ww..wWWWWWWWWWWWWWWWwWWWWW",".wwwWWkWWkWWkWWkWWWWWWEWWr",".wWWWWkWWkWWkWWkWWWWWWWWKw",".wWWWWkWWkWWkWWkWWWWWWWww.","..wWWWWWWWWWWWWWWWWWWWw...","..wWWw........wWWw........","..wWWw........wWWw........","..wwww........wwww........"],
- I: ["ww....................ww..","wWw.................wWWWw.","wWw........wwww....wWWWWWw",".Ww....wwwWWWWWWww.wWWWWWW",".ww..wwWWWWWWWWWWWwWWWEWWr","..w.wWWWWWWWWWWWWWWWWWWWKw",".wwwWWkWWkWWkWWkWWWWWWww..",".wWWWWkWWkWWkWWkWWWWWw....",".wWWWWkWWkWWkWWkWWWWw.....","..wWWw........wWWw........","..wWWw........wWWw........","..wwww........wwww........"],
- J: ["......................ww..","....................wWWWw.",".........wwwwww....wWWWWWw",".....wwwWWWWWWWWww.wWWWWWW","w...wwWWWWWWWWWWWWwWWWEWWr","ww.wWWWWWWWWWWWWWWWWWWWWKw",".wwWWWkWWkWWkWWkWWWWWWWww.",".wWWWWkWWkWWkWWkWWWWWWw...",".wWWWWWWWWWWWWWWWWWWWWw...","..wWWWw......wWWWw........","..wwwww......wwwww........",".........................."]
-};
-
-
+// L'image fournie remplace le sprite que je dessinais. Elle porte deja son
+// canal alpha, donc aucun detourage : elle se charge comme la cloche de
+// Jingle. J'avais commence par ecrire un remplissage depuis les bords pour
+// enlever un fond blanc qui n'existait pas — c'etait mon afficheur qui la
+// compositait sur blanc.
+const TIGRE_IMG = new Image();
+TIGRE_IMG.onload = () => rafraichirCartes();
+TIGRE_IMG.src = '../assets/img/2hollis-tigre.webp';
+const tigrePret = () => TIGRE_IMG.complete && TIGRE_IMG.naturalWidth > 0;
 
 function bati(rows, pal, ech, larg) {
   const c = document.createElement('canvas');
@@ -172,8 +161,7 @@ function bati(rows, pal, ech, larg) {
 }
 const SPR = bati([...TETE, ...CORPS], PAL, 4, 16);
 const SPR_CHANT = bati([...TETE_CHANT, ...CORPS_CHANT], PAL, 4, 16);
-const TIGRE_SPR = {};
-for (const [id, rows] of Object.entries(TIGRES)) TIGRE_SPR[id] = bati(rows, PAL_T, 4, 26);
+
 
 /* ===================== LE VRAI TERRAIN ===================== */
 function terrain(g, W, H) {
@@ -403,24 +391,7 @@ const SECTIONS = [
     ]
   },
   {
-    id: 'tigre', titre: '5 · Le tigre (jugé en grand)',
-    note: 'Dix corps de profil, montrés à la taille où on peut vraiment les juger. Ce qui les distingue : la masse, la longueur, la densité des rayures et le port de la tête. Les rayures sont des barres fines et hautes — en points isolés elles font une vache, en carrés des hublots.',
-    grand: true,
-    variantes: [
-      v('A','COURSE, FOULÉE RAMASSÉE','Les quatre pattes sous le corps, en pleine foulée. La lecture la plus sobre et la plus lisible, mais aussi la moins spectaculaire.',{ t:'A' }),
-      v('B','BOND, PATTES TENDUES','Il est en l\'air, les pattes étirées avant et arrière. Beaucoup plus dynamique, mais la silhouette devient longue et fine.',{ t:'B' }),
-      v('C','CORPS MASSIF ET ÉPAIS','Une bête lourde, épaules hautes. Impact maximal et vraie présence de fauve, mais il cache une partie du terrain.',{ t:'C' }),
-      v('D','CORPS LONG ET FIN','Un félin élancé, presque un guépard. Élégant et rapide à l\'œil, mais il perd le poids d\'un tigre.',{ t:'D' }),
-      v('E','RAYURES TRÈS DENSES','Des barres partout, jusque sur la tête et les pattes. On le reconnaît sans hésiter, mais ça devient bruyant en mouvement.',{ t:'E' }),
-      v('F','AUCUNE RAYURE, FANTÔME','De l\'énergie blanche sans motif. Le plus spectral et le plus cohérent avec une invocation, mais ce n\'est plus vraiment un tigre.',{ t:'F' }),
-      v('G','FOURRURE HÉRISSÉE','Le poil éclate tout autour de la silhouette. C\'est l\'aura de la huitième porte transposée dans le corps, mais le contour devient irrégulier.',{ t:'G' }),
-      v('H','TÊTE BAISSÉE, EN CHARGE','Il fonce tête en avant, épaules relevées. Le plus menaçant du lot, mais on perd son regard.',{ t:'H' }),
-      v('I','QUEUE RELEVÉE EN PANACHE','La queue dressée derrière lui. Détail vivant qui allonge la silhouette, mais il paraît plus joueur que féroce.',{ t:'I' }),
-      v('J','TRAPU, PATTES COURTES','Un corps ramassé sur des pattes courtes. Très stable et très dense, mais il court moins qu\'il ne roule.',{ t:'J' })
-    ]
-  },
-  {
-    id: 'visuel', titre: '6 · Le rendu de l\'énergie (jugé en grand)',
+    id: 'visuel', titre: '5 · Le rendu de l\'énergie (jugé en grand)',
     note: 'Le tigre est fait d\'énergie, pas de fourrure. Ce traitement décide du ton de tout l\'ultime — et l\'aura crépitante autour de lui est reprise de l\'ouverture de la huitième porte, en blanc argenté.',
     grand: true,
     variantes: [
@@ -437,7 +408,7 @@ const SECTIONS = [
     ]
   },
   {
-    id: 'duree', titre: '7 · Combien de temps ça dure',
+    id: 'duree', titre: '6 · Combien de temps ça dure',
     note: 'Chez Seraphine l\'immobilisation va de 1,25 à 1,75 s. Le chien de Yuki dure 3 s et c\'est déjà jugé beaucoup. Ici la durée du stun et celle de la course sont deux boutons distincts.',
     variantes: [
       v('A','COURSE RAPIDE, STUN 0,8 s','Le tigre traverse vite et cloue brièvement. Le plus doux du lot, sans doute trop peu pour un ultime.',{ dur:.8, stun:.8 }),
@@ -453,7 +424,7 @@ const SECTIONS = [
     ]
   },
   {
-    id: 'annonce', titre: '8 · Ce qui prévient que l\'ultime part',
+    id: 'annonce', titre: '7 · Ce qui prévient que l\'ultime part',
     note: 'Un ultime qui immobilise doit s\'annoncer, sinon l\'adversaire subit sans comprendre. Le son est déjà en place : reste à savoir ce que l\'écran raconte en même temps.',
     variantes: [
       v('A','IL LÈVE LE BRAS ET CHANTE','La pose de chant, bras levé, avant que le tigre parte. Simple et lisible, mais il faut regarder 2hollis pour la voir.',{ ann:'bras' }),
@@ -469,7 +440,7 @@ const SECTIONS = [
     ]
   },
   {
-    id: 'chiffres', titre: '9 · Les chiffres',
+    id: 'chiffres', titre: '8 · Les chiffres',
     note: 'Les valeurs concrètes, à comparer aux ultimes en place : le chien de Yuki dure 3 s, la ruée de Yoshi pousse fort sur 1,2 s, le grappin de Chopper gèle le disque pendant son vol.',
     variantes: [
       v('A','PRUDENT','Stun court, pas d\'attraction, recharge longue. Le réglage qui ne casse rien, mais qui risque de rendre l\'ultime décevant.',{ ch:{ stun:'0,8 s', attire:'non', recharge:'12 s', largeur:'étroite' } }),
@@ -530,7 +501,6 @@ function jouer(g, t, W, H) {
   // est fixee a la valeur retenue, 1,5 fois la largeur d'un joueur.
   const al = { taille: 1 };
   const vis = actuel('visuel') || { v: 'halo' };
-  const tete = (actuel('tigre') || { t: 'A' }).t;
   const portee = traj === 'moitie' ? .55 : 1.12;
 
   const depart = hollisX + 34;
@@ -623,14 +593,15 @@ function jouer(g, t, W, H) {
   }
 
   /* ---------- LE TIGRE ---------- */
-  if (phase >= 1 && phase <= 3) {
+  if (phase >= 1 && phase <= 3 && tigrePret()) {
     const naiss = phase === 1 ? easeBack(kp) : 1;
     const ech = al.taille * naiss;
-    // Un joueur fait 48 * 1,6 unites de large. Le tigre en fait 1,8 fois
-    // plus : c'etait le seul reproche fait au corps de profil, il etait
-    // dessine a la moitie d'un joueur et se lisait comme un chat.
-    const w = 26 * 4 * ech * e * 1.35, h = 12 * 4 * ech * e * 1.35;
-    const spr = TIGRE_SPR[tete] || TIGRE_SPR.A;
+    // Exactement la taille prevue pour le tigre dessine : 26 colonnes de 4,
+    // fois 1,35, soit 1,8 fois la largeur d'un joueur. L'image ne porte
+    // presque pas de marge transparente (95 % du cadre est occupe), donc sa
+    // largeur de cadre EST sa largeur de bete : on la prend telle quelle.
+    const spr = TIGRE_IMG;
+    const w = 26 * 4 * ech * e * 1.35, h = w * (spr.naturalHeight / spr.naturalWidth);
 
     // la traînee : large, en energie blanche, avec de GROSSES notes qui
     // flottent derriere et s'effacent doucement
@@ -793,11 +764,12 @@ function dessinerCarte(cv, sec, va) {
 // une tete de vingt pixels perdue dans une vignette de terrain ne se juge pas.
 function carteTigre(g, W, H) {
   g.fillStyle = '#0a1220'; g.fillRect(0, 0, W, H);
-  const vis = actuel('visuel'), tete = actuel('tigre');
-  const spr = TIGRE_SPR[tete.t] || TIGRE_SPR.A;
+  const vis = actuel('visuel');
+  if (!tigrePret()) return;
+  const spr = TIGRE_IMG;
   // Le corps est bien plus large que haut : on l'ajuste sur la LARGEUR de
   // la carte, sinon il deborde.
-  const w = W * .82, h = w * (12 / 26);
+  const w = W * .88, h = w * (spr.naturalHeight / spr.naturalWidth);
   const cx = W / 2, cy = H / 2;
   lueur(g, cx, cy, w * .62, vis.v === 'or' ? OR : vis.v === 'rose' ? '#ff6fb5' : CYAN, .42);
   lueur(g, cx, cy, w * .26, BLANC, .55);
