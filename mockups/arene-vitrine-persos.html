@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Vitrine de persos — Arène en ligne</title>
+<style>
+  @font-face{
+    font-family:'Archivo Black'; font-weight:900;
+  }
+  :root{
+    --ink:#111318;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#0b0d12;color:#fff;font-family:'Barlow',Arial,sans-serif}
+  body{padding:32px 20px 80px;display:flex;flex-direction:column;align-items:center;gap:36px}
+  h1{font-family:'Archivo Black',Arial,sans-serif;font-size:22px;margin:0 0 4px;text-align:center}
+  .intro{max-width:640px;text-align:center;color:#aab0bd;font-size:14px;line-height:1.5;margin-bottom:8px}
+  .carte{width:min(94vw,520px)}
+  .carte h2{font-family:'Archivo Black',Arial,sans-serif;font-size:16px;color:#ffd23e;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+  .lettre{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;
+    border-radius:50%;background:#ffd23e;color:var(--ink);font-size:13px}
+  .desc{color:#aab0bd;font-size:12.5px;line-height:1.5;margin:0 0 12px}
+
+  /* --- Cadre qui reproduit le fond de l'écran ONLINE du vrai jeu --- */
+  .frame{
+    position:relative; width:100%; aspect-ratio:16/10; border-radius:14px;
+    overflow:hidden; border:2px solid #06222f; container-type:size;
+    box-shadow:0 10px 0 rgba(0,0,0,.35);
+  }
+  .bg{ position:absolute; inset:0;
+    background:radial-gradient(120% 90% at 50% 42%, rgba(20,112,143,.93) 0%, rgba(13,90,118,.95) 55%, rgba(7,59,82,.97) 100%) }
+  .etoiles{ position:absolute; inset:-10%;
+    background-image:
+      radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 78% 9%, #bff3ff 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 34% 62%, #9df0c0 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 62% 78%, #fff 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 88% 54%, #bff3ff 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 22% 88%, #fff 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 41% 26%, #9df0c0 50%, transparent 50%);
+    background-size:24cqh 24cqh; opacity:.7 }
+  .bande{ position:absolute; left:0; width:100%; height:9cqh; background:#f2698c }
+  .bande.haut{ top:12cqh }
+  .bande.bas{ top:23cqh }
+  .titre{ position:absolute; top:17.5cqh; left:50%; transform:translate(-50%,-50%);
+    font-family:'Archivo Black',Arial,sans-serif; font-size:9cqh; line-height:1; color:#fff;
+    letter-spacing:.02em; white-space:nowrap; text-shadow:0 0 6px rgba(255,255,255,.35) }
+
+  .onLigne{ font-family:'Archivo Black',Arial,sans-serif; letter-spacing:.05em;
+    color:#ffd23e; text-shadow:0 4px 0 var(--ink), 0 0 16px rgba(255,210,62,.4);
+    text-align:center; font-size:7.5cqh; line-height:1 }
+
+  .zone{ position:absolute; left:0; right:0; bottom:6cqh; display:flex; flex-direction:column;
+    align-items:center; z-index:3 }
+
+  canvas{ image-rendering:pixelated }
+
+  /* === A : bande défilante actuelle === */
+  .a-wrap{ position:absolute; left:36cqh; right:0; bottom:0; top:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:2cqh }
+  .a-strip{ display:flex; align-items:flex-end; gap:3cqw; overflow:hidden; width:64cqw; height:16cqh;
+    mask-image:linear-gradient(90deg,transparent 0,#000 10%,#000 90%,transparent 100%);
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 10%,#000 90%,transparent 100%) }
+  .a-strip .courseur{ display:flex; align-items:flex-end; gap:3cqw; animation:aScroll 14s linear infinite }
+  .a-strip canvas{ height:11cqh; width:auto }
+  @keyframes aScroll{ from{transform:translateX(0)} to{transform:translateX(-33.33%)} }
+
+  /* === B : rangée fixe (photo d'équipe) === */
+  .b-row{ display:flex; align-items:flex-end; justify-content:center; gap:2.4cqw; width:88cqw }
+  .b-row canvas{ height:9cqh; width:auto; animation:bBob 2.6s ease-in-out infinite }
+  .b-row .who:nth-child(odd) canvas{ animation-delay:.3s }
+  .b-row .who:nth-child(3n) canvas{ animation-delay:.6s }
+  @keyframes bBob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
+
+  /* === C : vedette rotative === */
+  .c-stage{ position:relative; width:22cqh; height:22cqh; display:flex; align-items:center; justify-content:center }
+  .c-glow{ position:absolute; inset:0; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,210,62,.35) 0%, rgba(255,210,62,0) 70%) }
+  .c-stage canvas{ position:relative; height:19cqh; width:auto; filter:drop-shadow(0 3px 0 rgba(0,0,0,.5));
+    animation:cFade 3.2s ease-in-out infinite }
+  @keyframes cFade{ 0%,10%{opacity:0;transform:translateY(6px) scale(.94)} 20%,80%{opacity:1;transform:none}
+    92%,100%{opacity:0;transform:translateY(-6px) scale(.94)} }
+
+  /* === D : duo en coulisses === */
+  .d-left,.d-right{ position:absolute; bottom:1cqh; z-index:2; opacity:.9 }
+  .d-left{ left:2cqw }
+  .d-right{ right:2cqw }
+  .d-left canvas,.d-right canvas{ height:14cqh; width:auto; animation:dBob 2.8s ease-in-out infinite }
+  .d-right canvas{ animation-delay:.5s; transform:scaleX(-1) }
+  @keyframes dBob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+  .d-right canvas{ animation-name:dBobR }
+  @keyframes dBobR{ 0%,100%{transform:translateY(0) scaleX(-1)} 50%{transform:translateY(-3px) scaleX(-1)} }
+
+  /* === E : silhouettes en fond, pas de bande === */
+  .e-ghost{ position:absolute; bottom:0; opacity:.16; filter:blur(.4px) grayscale(1); z-index:1 }
+  .e-ghost canvas{ height:20cqh; width:auto }
+
+  /* === F : deux vedettes rotatives, une par côté === */
+  .f-stage{ position:absolute; bottom:1cqh; z-index:2; width:17cqh; height:17cqh;
+    display:flex; align-items:center; justify-content:center }
+  .f-stage.gauche{ left:1cqw }
+  .f-stage.droite{ right:1cqw }
+  .f-glow{ position:absolute; inset:0; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,210,62,.3) 0%, rgba(255,210,62,0) 70%) }
+  .f-stage canvas{ position:relative; height:14cqh; width:auto; filter:drop-shadow(0 3px 0 rgba(0,0,0,.5));
+    animation:fFade 3.6s ease-in-out infinite }
+  .f-stage.droite canvas{ transform:scaleX(-1) }
+  @keyframes fFade{ 0%,8%{opacity:0;transform:translateY(6px) scale(.92)} 18%,82%{opacity:1;transform:none}
+    94%,100%{opacity:0;transform:translateY(-6px) scale(.92)} }
+  .f-stage.droite canvas{ animation-name:fFadeR }
+  @keyframes fFadeR{ 0%,8%{opacity:0;transform:translateY(6px) scale(.92) scaleX(-1)} 18%,82%{opacity:1;transform:scaleX(-1)}
+    94%,100%{opacity:0;transform:translateY(-6px) scale(.92) scaleX(-1)} }
+</style>
+</head>
+<body>
+
+<h1>Vitrine de persos — écran Arène (Héberger / Rejoindre)</h1>
+<p class="intro">5 traitements différents pour la même idée : montrer le roster sans jamais laisser croire
+qu'on choisit son perso ici (ça se passe après, une fois l'adversaire trouvé). Chaque cadre reproduit
+le fond réel de l'écran ONLINE à l'échelle.</p>
+
+<!-- A -->
+<div class="carte">
+  <h2><span class="lettre">A</span> Bande défilante (la version actuelle, affinée)</h2>
+  <p class="desc">Ce qu'on a déjà : une bande qui défile en boucle entre les deux boutons, chacun marche sur
+  place. Ici resserrée et sur 3 copies pour ne plus jamais couper.</p>
+  <div class="frame" id="frameA">
+    <div class="bg"></div><div class="etoiles"></div>
+    <div class="bande haut"></div><div class="bande bas"></div>
+    <div class="titre">ONLINE</div>
+    <div class="zone">
+      <div class="onLigne" style="color:#f2698c">HÉBERGER</div>
+      <div class="a-strip"><div class="courseur" id="stripA"></div></div>
+      <div class="onLigne">REJOINDRE</div>
+    </div>
+  </div>
+</div>
+
+<!-- B -->
+<div class="carte">
+  <h2><span class="lettre">B</span> Rangée fixe, « photo d'équipe »</h2>
+  <p class="desc">Plus aucun défilement ni saut d'échelle : tout le roster tient sur une seule ligne fixe,
+  chacun respire un peu tout seul (léger bob désynchronisé, pas de marche). Zéro risque de coupure
+  puisqu'il n'y a rien à boucler.</p>
+  <div class="frame" id="frameB">
+    <div class="bg"></div><div class="etoiles"></div>
+    <div class="bande haut"></div><div class="bande bas"></div>
+    <div class="titre">ONLINE</div>
+    <div class="zone">
+      <div class="onLigne" style="color:#f2698c">HÉBERGER</div>
+      <div class="b-row" id="rowB"></div>
+      <div class="onLigne">REJOINDRE</div>
+    </div>
+  </div>
+</div>
+
+<!-- C -->
+<div class="carte">
+  <h2><span class="lettre">C</span> Vedette rotative</h2>
+  <p class="desc">Un seul perso à la fois, en grand, sur un halo doré — il change par fondu toutes les
+  3 secondes. Beaucoup moins de bruit visuel que toute une rangée, plus « premium ».</p>
+  <div class="frame" id="frameC">
+    <div class="bg"></div><div class="etoiles"></div>
+    <div class="bande haut"></div><div class="bande bas"></div>
+    <div class="titre">ONLINE</div>
+    <div class="zone">
+      <div class="onLigne" style="color:#f2698c">HÉBERGER</div>
+      <div class="c-stage"><div class="c-glow"></div><div id="stageC"></div></div>
+      <div class="onLigne">REJOINDRE</div>
+    </div>
+  </div>
+</div>
+
+<!-- D -->
+<div class="carte">
+  <h2><span class="lettre">D</span> Duo en coulisses</h2>
+  <p class="desc">Deux persos seulement, plantés dans les coins gauche/droite comme des « gardes » qui
+  encadrent l'écran, tournés vers le centre. Le milieu reste entièrement dégagé pour les boutons.</p>
+  <div class="frame" id="frameD">
+    <div class="bg"></div><div class="etoiles"></div>
+    <div class="bande haut"></div><div class="bande bas"></div>
+    <div class="titre">ONLINE</div>
+    <div class="d-left" id="leftD"></div>
+    <div class="d-right" id="rightD"></div>
+    <div class="zone">
+      <div class="onLigne" style="color:#f2698c">HÉBERGER</div>
+      <div style="height:10cqh"></div>
+      <div class="onLigne">REJOINDRE</div>
+    </div>
+  </div>
+</div>
+
+<!-- E -->
+<div class="carte">
+  <h2><span class="lettre">E</span> Silhouettes en fond (pas de bande)</h2>
+  <p class="desc">On enlève complètement la vitrine « au premier plan » : quelques silhouettes très
+  discrètes (16% d'opacité, désaturées) dispersées dans le décor, juste pour dire « il y a un roster »
+  sans jamais concurrencer les boutons.</p>
+  <div class="frame" id="frameE">
+    <div class="bg"></div><div class="etoiles"></div>
+    <div id="ghostsE"></div>
+    <div class="bande haut"></div><div class="bande bas"></div>
+    <div class="titre">ONLINE</div>
+    <div class="zone">
+      <div class="onLigne" style="color:#f2698c">HÉBERGER</div>
+      <div style="height:10cqh"></div>
+      <div class="onLigne">REJOINDRE</div>
+    </div>
+  </div>
+</div>
+
+<!-- F -->
+<div class="carte">
+  <h2><span class="lettre">F</span> Deux vedettes rotatives, une par côté</h2>
+  <p class="desc">Mélange de C et D : plus de duo figé dans les coins, chaque côté a sa propre vedette qui
+  change par fondu — indépendamment l'un de l'autre pour ne pas avoir l'air synchronisé. Le centre reste
+  libre pour les boutons, et il y a quand même du mouvement des deux côtés.</p>
+  <div class="frame" id="frameF">
+    <div class="bg"></div><div class="etoiles"></div>
+    <div class="bande haut"></div><div class="bande bas"></div>
+    <div class="titre">ONLINE</div>
+    <div class="f-stage gauche"><div class="f-glow"></div><div id="stageFL"></div></div>
+    <div class="f-stage droite"><div class="f-glow"></div><div id="stageFR"></div></div>
+    <div class="zone">
+      <div class="onLigne" style="color:#f2698c">HÉBERGER</div>
+      <div style="height:10cqh"></div>
+      <div class="onLigne">REJOINDRE</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { CHARS, ROSTER } from '../js/data/characters.js';
+
+  function cv(ck, frame = 'idle') {
+    const c = document.createElement('canvas');
+    c.width = 16; c.height = 20;
+    c.getContext('2d').drawImage(CHARS[ck].frames[frame], 0, 0);
+    return c;
+  }
+
+  // --- A : bande défilante, 3 copies, marche animée ---
+  (function () {
+    const host = document.getElementById('stripA');
+    const marcheurs = [];
+    for (let rep = 0; rep < 3; rep++) {
+      for (const ck of ROSTER) {
+        const c = cv(ck);
+        c.style.animationDelay = (Math.random() * 2) + 's';
+        host.appendChild(c);
+        marcheurs.push({ ck, c, decale: Math.random() * 2.4 });
+      }
+    }
+    let t = 0;
+    setInterval(() => {
+      t += .09;
+      for (const m of marcheurs) {
+        const paire = Math.floor((t + m.decale) / .28) % 2 === 0 ? 'run1' : 'run2';
+        const g = m.c.getContext('2d');
+        g.clearRect(0, 0, 16, 20);
+        g.drawImage(CHARS[m.ck].frames[paire], 0, 0);
+      }
+    }, 90);
+  })();
+
+  // --- B : rangée fixe ---
+  (function () {
+    const host = document.getElementById('rowB');
+    for (const ck of ROSTER) {
+      const wrap = document.createElement('div');
+      wrap.className = 'who';
+      wrap.appendChild(cv(ck));
+      host.appendChild(wrap);
+    }
+  })();
+
+  // --- C : vedette rotative ---
+  (function () {
+    const host = document.getElementById('stageC');
+    let i = 0;
+    const montre = () => {
+      host.innerHTML = '';
+      host.appendChild(cv(ROSTER[i % ROSTER.length]));
+      i++;
+    };
+    montre();
+    setInterval(montre, 3200);
+  })();
+
+  // --- D : duo en coulisses ---
+  (function () {
+    document.getElementById('leftD').appendChild(cv(ROSTER[0]));
+    document.getElementById('rightD').appendChild(cv(ROSTER[1]));
+  })();
+
+  // --- E : silhouettes en fond ---
+  (function () {
+    const host = document.getElementById('ghostsE');
+    const spots = [[6, 4], [78, 8], [16, 60], [86, 55]];
+    spots.forEach(([x, y], k) => {
+      const g = document.createElement('div');
+      g.className = 'e-ghost';
+      g.style.left = x + '%';
+      g.style.bottom = y + '%';
+      g.appendChild(cv(ROSTER[(k * 3) % ROSTER.length]));
+      host.appendChild(g);
+    });
+  })();
+
+  // --- F : deux vedettes rotatives, cycles independants ---
+  (function () {
+    const rotateStage = (hostId, decale) => {
+      const host = document.getElementById(hostId);
+      let i = decale;
+      const montre = () => {
+        host.innerHTML = '';
+        host.appendChild(cv(ROSTER[i % ROSTER.length]));
+        i++;
+      };
+      montre();
+      setInterval(montre, 3600);
+    };
+    rotateStage('stageFL', 0);
+    setTimeout(() => rotateStage('stageFR', 5), 1400);
+  })();
+</script>
+</body>
+</html>

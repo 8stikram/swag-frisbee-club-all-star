@@ -96,6 +96,8 @@
   </div>
 </div>
 
+<div class="apercu" id="editeur" style="margin-top:14px"></div>
+
 <div id="sections"></div>
 
 <script type="module">
@@ -117,6 +119,7 @@ import { CHARS, ROSTER } from '../js/data/characters.js';
 // les épines rouges avaient disparu au détour d'une refonte sans que rien ne
 // le signale.
 import { verifier, afficher } from './_verif.js';
+import { editeur, styleEditeur } from './_pixel.js';
 
 const TAU = Math.PI * 2;
 // Échelle du match : SCALE 1,6 dans render.js, sprite dessiné en 48×60 unités
@@ -467,6 +470,10 @@ SECTIONS.forEach(s => { choix[s.id] = RETENU[s.id] || s.variantes[0].id; });
 
 // Assemble le perso tel que les choix actuels le décrivent. Chaque section
 // n'apporte que la pièce qu'elle remplace, la dernière déclarée l'emporte.
+// Declare avant assembler() : il le lit, et une variable `let` lue avant sa
+// declaration jette au lieu de valoir undefined.
+let ed = null;
+
 function assembler() {
   let tete = PERSO.tete, corps = PERSO.corps, pal = { ...PERSO.pal }, fx = null, stats = null;
   for (const s of SECTIONS) {
@@ -478,8 +485,22 @@ function assembler() {
     if (va.fx) fx = va.fx;
     if (va.stats) stats = va.stats;
   }
-  return { rows: [...tete, ...corps], pal, fx, stats };
+  // La retouche de l'editeur remplace les vingt lignes assemblees. Une carte
+  // de variante repose par-dessus SA piece, donc elle continue de montrer son
+  // propre choix : c'est le reste du perso qui porte la retouche.
+  let rows = [...tete, ...corps];
+  if (ed && ed.actif()) rows = ed.rows();
+  return { rows, pal, fx, stats };
 }
+
+styleEditeur();
+ed = editeur({
+  hote: document.getElementById('editeur'),
+  cle: '2hollis',
+  rows: () => { const t = assembler(); return t.rows; },
+  pal: () => assembler().pal,
+  change: () => rafraichir()
+});
 
 /* --- Vérification du gabarit -------------------------------------------
    Une lettre absente de la palette ne lève aucune erreur : le pixel est
@@ -622,6 +643,7 @@ function codeChoix() {
 }
 
 function rafraichir() {
+  if (ed) ed.maj();
   peindreCartes();
   peindreRosterNeuf();
   document.getElementById('choix').innerHTML =
