@@ -38,11 +38,18 @@
   .btnCopier:hover{background:#24395e}
   .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
   .frise{display:flex;gap:3px;margin-top:10px}
-  .ph{flex:1 1 0;text-align:center;font-size:9.5px;font-family:Consolas,monospace;
+  .ph{flex:1 1 0;text-align:center;cursor:pointer;font-size:9.5px;font-family:Consolas,monospace;
       padding:5px 2px;border-radius:5px;background:#101a2e;color:#6d82a6;
       border:1px solid transparent;transition:background .1s,color .1s}
   .ph.on{background:#24395e;color:var(--or);border-color:var(--or)}
   .ph i{display:block;font-style:normal;font-size:8.5px;opacity:.75}
+  .lect{display:flex;gap:6px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .bt{background:#132038;color:#9fb4dd;border:1px solid var(--edge);border-radius:6px;
+      padding:5px 10px;font-size:11px;cursor:pointer;font-family:Consolas,monospace;letter-spacing:.4px}
+  .bt:hover{background:#1a2b48;color:var(--ink)}
+  .bt.on{background:#24395e;color:var(--or);border-color:var(--or)}
+  #scrub{flex:1 1 150px;accent-color:var(--or);height:4px;min-width:110px}
+  .tps{font-family:Consolas,monospace;font-size:11px;color:var(--or);white-space:nowrap}
   .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 280px}
   .fiche h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
   .fiche table{width:100%;border-collapse:collapse;font-size:11.5px;font-family:Consolas,monospace}
@@ -69,8 +76,17 @@
   cumulés ils gagnent le point tout seuls.
   <br><br>
   Le terrain est le vrai terrain du jeu, vu de dessus, importé de <code>maps.js</code>. Clique les
-  cartes : l'aperçu du haut rejoue la séquence avec tes choix, et la frise s'allume phase par
-  phase.
+  cartes : l'aperçu du haut rejoue la séquence depuis le début avec tes choix, et la frise
+  s'allume phase par phase.
+  <br><br>
+  <b>IL PART MÊME DISQUE EN MAIN.</b> Aucune condition de possession : la jauge pleine
+  suffit. C'est ce qui le sépare du grappin de Chopper, qui n'a de sens que sans le disque.
+  <br><br>
+  <b>POUR VOIR AU RALENTI.</b> La barre sous la frise commande la lecture : jusqu'à vingt fois
+  plus lent, arrêt sur image, pas à pas d'une image avec <code>&#9664;</code> et
+  <code>&#9654;</code>, et le curseur pour se placer où on veut. Cliquer une case de la frise
+  saute au début de cette phase et s'y arrête. Au clavier : <code>espace</code> pour arrêter,
+  les flèches pour avancer image par image.
 </p>
 
 <div id="errs"></div>
@@ -79,6 +95,17 @@
   <div class="apercu">
     <canvas id="cvApercu" width="820" height="330"></canvas>
     <div class="frise" id="frise"></div>
+    <div class="lect">
+      <button class="bt" id="btPlay">&#9208; pause</button>
+      <button class="bt" id="btPrec" title="image precedente">&#9664;</button>
+      <button class="bt" id="btSuiv" title="image suivante">&#9654;</button>
+      <input type="range" id="scrub" min="0" max="1000" value="0">
+      <span class="tps" id="tps">0.00 s</span>
+      <button class="bt vit on" data-v="1">&#215;1</button>
+      <button class="bt vit" data-v="0.4">&#215;1/2</button>
+      <button class="bt vit" data-v="0.2">&#215;1/5</button>
+      <button class="bt vit" data-v="0.05">&#215;1/20</button>
+    </div>
     <div class="choix" id="choix"></div>
     <div class="copier">
       <input class="codeChoix" id="codeChoix" readonly>
@@ -322,6 +349,7 @@ const PHASES = [
   { id:'prise',  nom:'LA PRISE',  detail:'stun et attraction' }
 ];
 const D_CHANT = .5, D_BOND = .25, D_PRISE = .5;
+const D_FIN = .8;                       // la dissipation et la sortie de transe
 
 const v = (id, nom, desc, p) => ({ id, nom, desc, ...p });
 
@@ -392,7 +420,7 @@ const SECTIONS = [
   },
   {
     id: 'visuel', titre: '5 · Le rendu de l\'énergie (jugé en grand)',
-    note: 'Le tigre est fait d\'énergie, pas de fourrure. Ce traitement décide du ton de tout l\'ultime — et l\'aura crépitante autour de lui est reprise de l\'ouverture de la huitième porte, en blanc argenté.',
+    note: 'Le tigre est fait d\'énergie, pas de fourrure. Ce traitement décide du ton de tout l\'ultime. Autour de lui, des étoiles qui s\'allument une fois chacune — les traits crépitants qu\'il y avait avant se lisaient comme des rayures posées sur l\'image.',
     grand: true,
     variantes: [
       v('A','BLANC AVEC HALO CYAN','L\'énergie blanche, un halo cyan et l\'aura crépitante. Cohérent avec la palette du jeu et très lumineux sur un terrain sombre.',{ v:'halo' }),
@@ -463,7 +491,11 @@ afficher(verifier({ id: '2hollis', PERSO, SECTIONS }), document.getElementById('
 
 /* ===================== L'ÉTAT ===================== */
 const choix = {};
-SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+// Les choix arretes : 1A 2A 3A 4A 5B 6B 7A 8A. Le mockup s'ouvre dessus,
+// les autres variantes restent la pour pouvoir revenir en arriere.
+const RETENU = { invocation:'A', trajet:'A', adverse:'A', disque:'A',
+                 visuel:'B', duree:'B', annonce:'A', chiffres:'A' };
+SECTIONS.forEach(s => { choix[s.id] = RETENU[s.id] || s.variantes[0].id; });
 const actuel = id => SECTIONS.find(s => s.id === id).variantes.find(x => x.id === choix[id]);
 
 const hollisX = CT.left + CW * .22, hollisY = CYY + 30;
@@ -474,7 +506,6 @@ function jouer(g, t, W, H) {
   const vue = terrain(g, W, H);
   const { X, Y, e } = vue;
   const d = actuel('duree');
-  const D_FIN = .8;                       // la dissipation et la sortie de transe
   const total = D_CHANT + D_BOND + d.dur + D_PRISE + D_FIN;
   let tt = t % total;
 
@@ -501,7 +532,15 @@ function jouer(g, t, W, H) {
   // est fixee a la valeur retenue, 1,5 fois la largeur d'un joueur.
   const al = { taille: 1 };
   const vis = actuel('visuel') || { v: 'halo' };
-  const portee = traj === 'moitie' ? .55 : 1.12;
+  // Quand l'adversaire est touche, la course se termine SUR lui : le tigre ne
+  // le depasse plus, il s'arrete dessus et disparait dans l'impact. Sans ca il
+  // y avait un temps mort entre le contact et la prise, et un tigre qui
+  // continuait sa route derriere une cible deja clouee.
+  const envoute = adv === 'stun_attire' || adv === 'stun' || adv === 'attire'
+                  || adv === 'contact' || adv === 'tous';
+  const cible = advX0 - 16;
+  const portee = envoute ? (cible - (hollisX + 34)) / CW
+               : traj === 'moitie' ? .55 : 1.12;
 
   const depart = hollisX + 34;
   const ligneY = y0 => {
@@ -514,6 +553,9 @@ function jouer(g, t, W, H) {
   // Le tigre TRAVERSE l'adversaire au lieu de s'arreter devant : c'est plus
   // fluide, et ca laisse l'envoutement se jouer seul derriere lui.
   const avance = phase < 2 ? 0 : easeIn(Math.min(1, kp * 1.1));
+  // La position du tigre pour une avance donnee. La trainee s'en sert aussi :
+  // sans ca elle part en ligne droite pendant que la bete, elle, s'incurve.
+  const pos = a => ({ x: depart + a * CW * portee, y: ligneY(hollisY) });
   const tx = depart + avance * CW * portee;
   const ty = ligneY(hollisY);
 
@@ -593,7 +635,8 @@ function jouer(g, t, W, H) {
   }
 
   /* ---------- LE TIGRE ---------- */
-  if (phase >= 1 && phase <= 3 && tigrePret()) {
+  // Phases 1 et 2 seulement : a la phase 3 il a touche, il n'est plus la.
+  if (phase >= 1 && phase <= 2 && tigrePret()) {
     const naiss = phase === 1 ? easeBack(kp) : 1;
     const ech = al.taille * naiss;
     // Exactement la taille prevue pour le tigre dessine : 26 colonnes de 4,
@@ -606,29 +649,32 @@ function jouer(g, t, W, H) {
     // la traînee : large, en energie blanche, avec de GROSSES notes qui
     // flottent derriere et s'effacent doucement
     if (phase === 2) {
-      const gr = g.createLinearGradient(X(depart), 0, X(tx), 0);
-      gr.addColorStop(0, 'rgba(255,255,255,0)');
-      gr.addColorStop(.7, 'rgba(160,230,255,0.16)');
-      gr.addColorStop(1, 'rgba(255,255,255,0.34)');
-      g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = gr;
-      g.fillRect(X(depart), Y(ty - 34), (tx - depart) * e, 68 * e); g.restore();
-
-      for (let i = 6; i >= 1; i--) {
-        const kr = Math.max(0, avance - i * .05);
-        if (kr <= 0) continue;
-        g.save(); g.imageSmoothingEnabled = false;
-        g.globalAlpha = .09 * (7 - i);
-        const wr = w * (1 - i * .06), hr = h * (1 - i * .06);
-        g.drawImage(spr, X(depart + kr * CW * portee) - wr / 2, Y(ligneY(hollisY)) - hr * .62, wr, hr);
-        g.restore();
+      // Une suite de halos, pas un rectangle : un fillRect avec un degrade
+      // horizontal garde ses bords haut et bas parfaitement nets, et la
+      // trainee se lisait comme une bande grise posee sur le terrain.
+      for (let i = 0; i <= 18; i++) {
+        const q = i / 18;
+        const pp = pos(avance * q);
+        lueur(g, X(pp.x), Y(pp.y), (20 + q * 22) * e, q > .8 ? BLANC : '#a0e6ff',
+              .04 + q * q * .13);
       }
-      // grosses notes stylisees laissees dans le sillage
-      for (let i = 0; i < 9; i++) {
-        const k = ((kp * 1.15 + alea(i + 3)) % 1);
-        const px = tx - 30 - k * 150;
-        if (px < depart - 20) continue;
-        note(g, X(px), Y(ty + (alea(i + 30) - .5) * 60 - k * 16),
-             (12 + alea(i + 9) * 8) * e * 4, (1 - k) * .85, pop(i + 4));
+
+      // Les CLONES FANTOMES ont ete retires. Espaces de cinq centiemes
+      // d'avance, ils se recouvraient : au lieu d'une trainee de vitesse on
+      // lisait une seule masse collee au tigre. La trainee de lumiere
+      // ci-dessus fait le travail toute seule.
+
+      // Les notes ACCOMPAGNENT le tigre : elles tournent autour de lui
+      // pendant la course. Lachees sur place derriere, elles se lisaient
+      // comme un decor qu'on depasse, pas comme le chant qui le porte.
+      // Elles tournent LARGE : a quarante unites elles se posaient en plein
+      // milieu du tigre, qui en fait cent quarante de large. Une note doit
+      // border la bete, pas la couvrir.
+      for (let i = 0; i < 6; i++) {
+        const a = t * 2.6 + i * TAU / 6 + alea(i) * TAU;
+        note(g, X(tx + Math.cos(a) * (96 + alea(i + 3) * 34)),
+             Y(ty - 12 + Math.sin(a) * (40 + alea(i + 8) * 16)),
+             (8 + alea(i + 9) * 4) * e * 4, .8, pop(i + 4));
       }
       // une onde au sol a chaque foulee
       for (let n = 0; n < 4; n++) {
@@ -641,12 +687,24 @@ function jouer(g, t, W, H) {
     }
 
     // lueur SOUS la tete, puis la tete par-dessus
-    lueur(g, X(tx), Y(ty), w * .58, vis.v === 'or' ? OR : CYAN, phase === 2 ? .45 : .32);
-    lueur(g, X(tx), Y(ty), w * .24, BLANC, .55);
-    // l'aura crepitante, facon ouverture de porte
+    // Le halo BLANC serre a ete retire : avec la silhouette blanche retenue, un
+    // blanc pose sous un blanc ne fait pas ressortir la bete, il la dissout.
+    // Il reste le halo colore, plus large, qui la detache du terrain sombre.
+    lueur(g, X(tx), Y(ty), w * .62, vis.v === 'or' ? OR : CYAN, phase === 2 ? .5 : .34);
+    if (vis.v !== 'silhouette') lueur(g, X(tx), Y(ty), w * .24, BLANC, .5);
+    // Des ETOILES qui s'allument une fois chacune, au lieu des traits
+    // crepitants d'avant : un trait pose sur l'image se lit comme une rayure
+    // sur le tigre, pas comme de l'energie autour de lui. Chacune a son
+    // propre depart, monte et s'eteint — elle ne clignote pas en boucle.
     if (vis.v !== 'net') {
-      for (let i = 0; i < 5; i++) {
-        arc(g, X(tx), Y(ty - h * .1), w * .62, i + Math.floor(t * 22), .55, BLANC);
+      const cxT = X(tx), cyT = Y(ty);
+      for (let i = 0; i < 16; i++) {
+        const k = (phase === 2 ? kp : kp * .5) * 1.7 - alea(i + 40);
+        if (k < 0 || k > 1) continue;
+        const a = alea(i + 55) * TAU, r = .35 + alea(i + 70) * .7;
+        etincelle(g, cxT + Math.cos(a) * w * .5 * r, cyT + Math.sin(a) * h * .46 * r,
+                  (2 + alea(i) * 3) * e * 4, Math.sin(k * Math.PI) * .95,
+                  i % 3 ? BLANC : pop(i));
       }
     }
     g.save(); g.imageSmoothingEnabled = false;
@@ -661,8 +719,6 @@ function jouer(g, t, W, H) {
 
   /* ---------- 4. L'ENVOUTEMENT ---------- */
   const touche = phase >= 3;
-  const envoute = adv === 'stun_attire' || adv === 'stun' || adv === 'attire'
-                  || adv === 'contact' || adv === 'tous';
   let ax = advX0;
   if (touche && (adv === 'stun_attire' || adv === 'attire' || adv === 'contact')) {
     const force = adv === 'contact' ? 1 : .45;
@@ -691,12 +747,16 @@ function jouer(g, t, W, H) {
   perso(g, sprAdv, ax + secousse, advY, vue, -1);
 
   if (touche && envoute && !sortie) {
-    // coeurs et notes qui tourbillonnent autour de sa tete
-    for (let i = 0; i < 6; i++) {
-      const a = t * 2.6 + i * TAU / 6;
-      const px = X(ax + Math.cos(a) * 26), py = Y(advY - 40 + Math.sin(a) * 11);
-      if (i % 2) coeur(g, px, py, 7 * e * 4, .9, '#ff6fb5');
-      else note(g, px, py, 8 * e * 4, .9, pop(i + 12));
+    // Coeurs et notes qui LEVITENT au-dessus de sa tete : ils montent et
+    // s'effacent, chacun a son rythme. Ils tournaient autour avant, ce qui se
+    // lisait comme un assomme de dessin anime — la, il est envoute.
+    for (let i = 0; i < 7; i++) {
+      const k = (t * .5 + alea(i + 12)) % 1;
+      const px = X(ax) + Math.sin(t * 1.5 + i * 1.9) * 15 + (alea(i + 33) - .5) * 26;
+      const py = Y(advY - 52 - k * 40);
+      const al = Math.sin(k * Math.PI) * .95;
+      if (i % 2) coeur(g, px, py, 8 * e * 4, al, '#ff6fb5');
+      else note(g, px, py, 9 * e * 4, al, pop(i + 12));
     }
     // les yeux vides : deux points pales par-dessus les siens
     g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .9;
@@ -714,14 +774,22 @@ function jouer(g, t, W, H) {
     anneau(g, X(advX0), Y(advY - 10), (10 + ki * 96) * e, (4 + ki * 38) * e, (1 - ki) * .6, OR, 2);
   }
 
-  /* ---------- la dissipation : une pluie de notes de lumiere ---------- */
-  if (phase === 4) {
-    for (let i = 0; i < 16; i++) {
-      const k = Math.min(1, kp * 1.4 + alea(i + 50) * .35);
-      const px = CT.left + CW * (.3 + alea(i) * .6);
-      note(g, X(px), Y(hollisY - 70 + k * 90), (8 + alea(i + 6) * 6) * e * 4,
-           (1 - k) * .8, pop(i + 20));
+  /* ---------- la dissipation ---------- */
+  // La pluie de notes a ete retiree : elles tombaient du haut de l'ecran sans
+  // que rien ne les ait envoyees, et on ne comprenait pas d'ou elles venaient.
+  // Il reste la FLAQUE au sol, sur la ligne que le tigre a prise : c'est elle
+  // qui raconte d'ou le coup est parti et jusqu'ou il est alle.
+  if (phase >= 3) {
+    const f = phase === 3 ? 1 : Math.max(0, 1 - kp);
+    // Une suite de halos le long de la ligne, pas un rectangle : un fillRect
+    // avec un degrade horizontal garde ses deux bords haut et bas parfaitement
+    // nets, et ca se lit comme une bande de peinture posee sur le terrain.
+    for (let i = 0; i <= 16; i++) {
+      const q = i / 16;
+      lueur(g, X(hollisX + (cible - hollisX) * q), Y(hollisY + (advY - hollisY) * q),
+            (22 + q * 16) * e, CYAN, f * (.03 + q * .05));
     }
+    lueur(g, X(ax), Y(advY), 48 * e, CYAN, f * .26);
   }
 
   if (phase >= 3 && (adv === 'stun_attire' || adv === 'attire' || adv === 'contact') && !sortie) {
@@ -733,18 +801,76 @@ function jouer(g, t, W, H) {
 }
 
 /* ===================== L'APERÇU ===================== */
+// C'est une VISIONNEUSE, pas une boucle qu'on subit. Une action de deux
+// secondes et demie qui tourne en rond ne se juge pas : on ne voit ni le
+// hitstop, ni la naissance du tigre, ni ce qui change quand on clique une
+// carte — le choix s'applique bien, mais son effet passe en un quart de
+// seconde pendant qu'on lit la description d'a cote.
 const cvA = document.getElementById('cvApercu');
 const gA = cvA.getContext('2d');
 const friseEl = document.getElementById('frise');
 friseEl.innerHTML = PHASES.map(p =>
   '<div class="ph"><b>' + p.nom + '</b><i>' + p.detail + '</i></div>').join('');
 
-let t0 = performance.now();
+const PAS = 1 / 60;                     // une image, a soixante par seconde
+// La duree totale depend du choix « combien de temps ca dure » : elle se
+// recalcule a chaque image plutot que de se figer au chargement.
+const totalSeq = () => D_CHANT + D_BOND + actuel('duree').dur + D_PRISE + D_FIN;
+const departPhase = () => [0, D_CHANT, D_CHANT + D_BOND,
+                           D_CHANT + D_BOND + actuel('duree').dur];
+
+let tv = 0, vitesse = 1, enLecture = true, dernier = performance.now();
+const elPlay = document.getElementById('btPlay');
+const elScrub = document.getElementById('scrub');
+const elTps = document.getElementById('tps');
+
+const majPlay = () => { elPlay.innerHTML = enLecture ? '\u23F8 pause' : '\u25B6 lire'; };
+// Se placer a un instant precis, et s'y ARRETER : on ne se place pas dans une
+// animation qui continue de defiler, on n'aurait rien vu.
+function poser(t) {
+  const T = totalSeq();
+  tv = ((t % T) + T) % T;
+  enLecture = false; majPlay();
+}
+elPlay.onclick = () => { enLecture = !enLecture; majPlay(); };
+document.getElementById('btPrec').onclick = () => poser(tv - PAS);
+document.getElementById('btSuiv').onclick = () => poser(tv + PAS);
+elScrub.oninput = () => poser(elScrub.value / 1000 * totalSeq());
+document.querySelectorAll('.vit').forEach(b => {
+  b.onclick = () => {
+    vitesse = parseFloat(b.dataset.v);
+    document.querySelectorAll('.vit').forEach(x => x.classList.toggle('on', x === b));
+    enLecture = true; majPlay();
+  };
+});
+// La frise sert de chapitrage : une case cliquee, on tombe au debut de la
+// phase. Le millieme de seconde ajoute evite de retomber sur la frontiere.
+[...friseEl.children].forEach((el, i) => {
+  el.onclick = () => poser(departPhase()[i] + .001);
+});
+addEventListener('keydown', ev => {
+  if (ev.target.tagName === 'INPUT') return;
+  if (ev.code === 'Space') { ev.preventDefault(); enLecture = !enLecture; majPlay(); }
+  else if (ev.code === 'ArrowLeft') { ev.preventDefault(); poser(tv - PAS); }
+  else if (ev.code === 'ArrowRight') { ev.preventDefault(); poser(tv + PAS); }
+});
+// Changer de choix relance depuis le debut — sinon on rate l'effet du clic.
+// Sauf si on avait mis en pause : la, on compare deux rendus au MEME instant,
+// et repartir de zero detruirait justement la comparaison.
+function relancer() { if (enLecture) tv = 0; }
+
 function boucle(now) {
-  const ph = jouer(gA, (now - t0) / 1000, cvA.width, cvA.height);
+  const dt = Math.min((now - dernier) / 1000, .1);
+  dernier = now;
+  const T = totalSeq();
+  if (enLecture) tv = (tv + dt * vitesse) % T;
+  const ph = jouer(gA, tv, cvA.width, cvA.height);
   [...friseEl.children].forEach((el, i) => el.classList.toggle('on', i === ph));
+  elScrub.value = Math.round(tv / T * 1000);
+  elTps.textContent = tv.toFixed(2) + ' s / ' + T.toFixed(2) + ' s';
   requestAnimationFrame(boucle);
 }
+majPlay();
 requestAnimationFrame(boucle);
 
 /* ===================== LES CARTES ===================== */
@@ -774,8 +900,12 @@ function carteTigre(g, W, H) {
   lueur(g, cx, cy, w * .62, vis.v === 'or' ? OR : vis.v === 'rose' ? '#ff6fb5' : CYAN, .42);
   lueur(g, cx, cy, w * .26, BLANC, .55);
   if (vis.v !== 'net') {
-    const n = vis.v === 'aura' ? 10 : 5;
-    for (let i = 0; i < n; i++) arc(g, cx, cy, w * .6, i * 3 + 1, .5, BLANC);
+    const n = vis.v === 'aura' ? 22 : 14;
+    for (let i = 0; i < n; i++) {
+      const a = alea(i + 55) * TAU, r = .35 + alea(i + 70) * .7;
+      etincelle(g, cx + Math.cos(a) * w * .5 * r, cy + Math.sin(a) * h * .46 * r,
+                (3 + alea(i) * 4) * 4, .5 + alea(i + 11) * .45, i % 3 ? BLANC : pop(i));
+    }
   }
   if (vis.v === 'double') {
     anneau(g, cx, cy, w * .5, h * .45, .4, CYAN, 2);
@@ -823,7 +953,7 @@ SECTIONS.forEach(sec => {
         choix[sec.id] = va.id;
         document.querySelectorAll('.card[data-sec="' + sec.id + '"]')
           .forEach(c => c.classList.toggle('on', c.dataset.va === va.id));
-        rafraichirCartes(); majChoix();
+        rafraichirCartes(); majChoix(); relancer();
       };
       row.append(card);
       cartes.push({ cv, sec, va });
