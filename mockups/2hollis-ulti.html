@@ -136,21 +136,19 @@ const CORPS = ["..cSSSSSSSSc....",".SccSSSSSSccS...",".SccSsSSsSccS...",".SckSSs
 const CORPS_CHANT = ["S..cSSSSSSSSc...","S..cSSSSSSccS...","S..cSsSSsSccS...","S.ckSSsSSSkcS...","..SSSSsSSSS.....","..PPPPPPPPPP....","...PP....PP.....","...PP....PP.....","..OOO....OOO....","..KKK....KKK...."];
 
 /* ===================== LE TIGRE BLANC ===================== */
-// De profil, tourne vers la droite. Les rayures sont des BARRES fines et
-// hautes : en carres de deux pixels elles se lisaient comme des hublots, et en
-// points isoles comme une vache. Deux temps de foulee, sinon il glisse.
-const PAL_T = { W:'#f8fafe', w:'#cdd5e4', k:'#23252e', E:'#7ad4f0', r:'#e8a0b4', K:'#15161c' };
-const TIGRE = [[
- "......................ww..","....................wWWWw.","...........wwww....wWWWWWw",
- ".......wwwWWWWWWww.wWWWWWW","w....wwWWWWWWWWWWWwWWWEWWr","ww..wWWWWWWWWWWWWWWWWWWWKw",
- ".wwwWWkWWkWWkWWkWWWWWWww..",".wWWWWkWWkWWkWWkWWWWWw....",".wWWWWkWWkWWkWWkWWWWw.....",
- "..wWWw........wWWw........","..wWWw........wWWw........","..wwww........wwww........"
-], [
- "......................ww..","....................wWWWw.","...........wwww....wWWWWWw",
- ".......wwwWWWWWWww.wWWWWWW","w....wwWWWWWWWWWWWwWWWEWWr","ww..wWWWWWWWWWWWWWWWWWWWKw",
- ".wwwWWkWWkWWkWWkWWWWWWww..",".wWWWWkWWkWWkWWkWWWWWw....",".wWWWWkWWkWWkWWkWWWWw.....",
- ".wWWw..........wWWw.......","wWWw............wWWw......","www..............www......"
-]];
+// Une TETE de tigre, de face, gueule ouverte — pas un felin de profil. C'est
+// la forme de Hirudora, et c'est la seule qui se lise vu de dessus : un
+// quadrupede vu d'en haut n'a aucune silhouette, il se lisait comme une
+// belette. Les rayures sont des barres franches ; en points isoles elles
+// faisaient une vache.
+const PAL_T = { W:'#ffffff', w:'#cfe4f5', k:'#1b2330', E:'#7ad4f0', r:'#e8a0b4', K:'#2a1220', F:'#ffffff' };
+const TIGRE_ROWS = [
+ "..ww..........ww....", ".wWWw........wWWw...", ".wWkWw......wWkWw...",
+ "..wWWWwwwwwwWWWw....", ".wWWWWWWWWWWWWWWw...", "wWkWWWWWWWWWWWWkWw..",
+ "wWkWWEEWWWWEEWWkWw..", "wWWWWEEWWWWEEWWWWw..", "wWkWWWWWrrWWWWWkWw..",
+ ".wWWWWWKKKKWWWWWw...", ".wWWWKFKKKKFKWWWw...", "..wWKFKKKKKKFKWw....",
+ "..wWKKKKKKKKKKWw....", "...wWKFKKKKFKWw.....", "....wwWWWWWWww......"
+];
 
 function bati(rows, pal, ech, larg) {
   const c = document.createElement('canvas');
@@ -164,7 +162,7 @@ function bati(rows, pal, ech, larg) {
 }
 const SPR = bati([...TETE, ...CORPS], PAL, 4, 16);
 const SPR_CHANT = bati([...TETE, ...CORPS_CHANT], PAL, 4, 16);
-const TIGRE_SPR = TIGRE.map(r => bati(r, PAL_T, 4, 26));
+const TIGRE_SPR = bati(TIGRE_ROWS, PAL_T, 4, 20);
 
 /* ===================== LE VRAI TERRAIN ===================== */
 function terrain(g, W, H) {
@@ -220,6 +218,48 @@ function fleche(g, vue, x1, y1, x2, y2, coul) {
   g.beginPath(); g.moveTo(0, 0); g.lineTo(-9, -5); g.lineTo(-9, 5); g.fill();
   g.restore();
 }
+/* ===================== LES OUTILS DE L'ANIMATION ===================== */
+// Tout ce qui suit se dessine en mode `lighter` : les lumieres s'additionnent
+// au lieu de se recouvrir, ce qui donne un coeur blanc chaud la ou les
+// elements se superposent. C'est ce qui fait la difference entre un effet
+// « pose sur » l'image et un effet qui l'eclaire.
+const easeOut = k => 1 - Math.pow(1 - k, 3);
+const easeIn = k => k * k * k;
+const easeInOut = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+// Depassement leger a l'arrivee : la tete grossit un peu trop puis se cale.
+const easeBack = k => { const c = 1.9; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+// Hasard DETERMINISTE : la meme particule garde sa place d'une image a l'autre,
+// et une carte figee rend exactement ce que l'apercu montre au meme instant.
+const alea = i => { const v = Math.sin(i * 12.9898) * 43758.5453; return v - Math.floor(v); };
+
+const CYAN = '#35e0ff', OR = '#ffd23e', BLANC = '#ffffff';
+
+function lueur(g, x, y, r, coul, alpha) {
+  if (alpha <= 0 || r <= 0) return;
+  const d = g.createRadialGradient(x, y, 0, x, y, r);
+  d.addColorStop(0, coul); d.addColorStop(1, 'rgba(0,0,0,0)');
+  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha;
+  g.fillStyle = d; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); g.restore();
+}
+function anneau(g, x, y, rx, ry, alpha, coul, ep) {
+  if (alpha <= 0 || rx <= 0) return;
+  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha;
+  g.strokeStyle = coul; g.lineWidth = ep;
+  g.beginPath(); g.ellipse(x, y, rx, Math.max(1, ry), 0, 0, TAU); g.stroke(); g.restore();
+}
+// Une note de musique : la tete, la hampe, le drapeau. C'est le lien visuel
+// avec le chant — sans elles l'ultime serait juste une boule de lumiere.
+function note(g, x, y, t, alpha, coul) {
+  if (alpha <= 0) return;
+  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha;
+  g.fillStyle = coul; g.strokeStyle = coul; g.lineWidth = Math.max(1, t * .18);
+  g.beginPath(); g.ellipse(x, y, t * .34, t * .26, -.4, 0, TAU); g.fill();
+  g.beginPath(); g.moveTo(x + t * .3, y - t * .06); g.lineTo(x + t * .3, y - t * .95); g.stroke();
+  g.beginPath(); g.moveTo(x + t * .3, y - t * .95);
+  g.quadraticCurveTo(x + t * .8, y - t * .8, x + t * .58, y - t * .4); g.stroke();
+  g.restore();
+}
+// L'onde de chant : des arcs concentriques qui partent de lui.
 // L'onde de chant : des arcs concentriques qui partent de lui.
 function onde(g, vue, x, y, k, largeur) {
   const { e, X, Y } = vue;
@@ -394,91 +434,191 @@ function jouer(g, t, W, H) {
   const vue = terrain(g, W, H);
   const { X, Y, e } = vue;
   const d = actuel('duree');
-  const total = D_CHANT + D_BOND + d.dur + D_PRISE + .6;
+  const total = D_CHANT + D_BOND + d.dur + D_PRISE + .7;
   const tt = t % total;
   const b = [D_CHANT, D_CHANT + D_BOND, D_CHANT + D_BOND + d.dur,
              D_CHANT + D_BOND + d.dur + D_PRISE];
 
-  let phase = -1, k = 0;
-  if (tt < b[0]) phase = 0;
-  else if (tt < b[1]) { phase = 1; k = (tt - b[0]) / D_BOND * .1; }
-  else if (tt < b[2]) { phase = 2; k = .1 + (tt - b[1]) / d.dur * .85; }
-  else if (tt < b[3]) { phase = 3; k = .95; }
-  else k = 1.1;
+  // kp : l'avancement DANS la phase courante, toujours de 0 a 1. C'est lui qui
+  // porte les courbes d'acceleration, et non le temps brut : une charge a
+  // vitesse constante n'a aucun poids.
+  let phase = -1, kp = 0;
+  if (tt < b[0]) { phase = 0; kp = tt / D_CHANT; }
+  else if (tt < b[1]) { phase = 1; kp = (tt - b[0]) / D_BOND; }
+  else if (tt < b[2]) { phase = 2; kp = (tt - b[1]) / d.dur; }
+  else if (tt < b[3]) { phase = 3; kp = (tt - b[2]) / D_PRISE; }
+  else { phase = 4; kp = (tt - b[3]) / .7; }
 
   const ann = actuel('annonce').ann;
   const traj = actuel('trajet').traj;
   const adv = actuel('adverse').adv;
   const al = actuel('allure');
+  const portee = traj === 'moitie' ? .55 : 1.08;
 
-  // Le couloir annoncé, sous les personnages.
-  if (ann === 'couloir' && phase >= 0) {
-    g.save(); g.globalAlpha = phase === 0 ? .32 : .15; g.fillStyle = '#bff2ff';
-    g.fillRect(X(CT.left), Y(hollisY - 46), CW * e, 92 * e); g.restore();
+  // Position de la tete le long de sa course, et la ligne qu'elle suit.
+  const depart = hollisX + 30;
+  const ligneY = y0 => {
+    if (traj === 'courbe') return y0 - Math.sin(kp * Math.PI) * 55;
+    if (traj === 'zigzag') return y0 + Math.sin(kp * 9) * 44;
+    if (traj === 'traque') return y0 + (advY - y0) * easeInOut(kp);
+    if (traj === 'visee') return y0 + (advY - y0) * kp * .7;
+    return y0;
+  };
+  // La tete ACCELERE : elle part lentement et arrive lancee. C'est ce qui
+  // donne le sentiment de masse — a vitesse constante elle glisse.
+  const avance = phase < 2 ? 0 : easeIn(Math.min(1, kp * 1.15));
+  const tx = depart + avance * CW * portee;
+  const ty = ligneY(hollisY);
+
+  /* ---------- le decor annonce ---------- */
+  if (ann === 'couloir' && phase >= 0 && phase <= 2) {
+    const gr = g.createLinearGradient(X(CT.left), 0, X(CT.right), 0);
+    gr.addColorStop(0, 'rgba(53,224,255,0.00)');
+    gr.addColorStop(.5, 'rgba(53,224,255,0.16)');
+    gr.addColorStop(1, 'rgba(53,224,255,0.00)');
+    g.save(); g.globalAlpha = phase === 0 ? .9 : .5; g.fillStyle = gr;
+    g.fillRect(X(CT.left), Y(hollisY - 44), CW * e, 88 * e); g.restore();
   }
-  if (ann === 'bord' && phase >= 0) {
-    g.save(); g.globalAlpha = .5; g.fillStyle = '#bff2ff';
-    g.fillRect(X(CT.left), Y(CT.top), 6, CH * e); g.restore();
+  if (ann === 'bord' && phase >= 0 && phase <= 2) {
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .55;
+    g.fillStyle = CYAN; g.fillRect(X(CT.left), Y(CT.top), 5, CH * e); g.restore();
+  }
+  // Le sol s'allume sous le passage : une bande qui suit la tete et s'efface
+  // derriere elle. C'est ce qui ancre l'effet au terrain au lieu de le laisser
+  // flotter au-dessus.
+  if (phase === 2) {
+    const gr = g.createLinearGradient(X(depart), 0, X(tx), 0);
+    gr.addColorStop(0, 'rgba(53,224,255,0.00)');
+    gr.addColorStop(1, 'rgba(53,224,255,0.22)');
+    g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = gr;
+    g.fillRect(X(depart), Y(ty - 26), (tx - depart) * e, 52 * e); g.restore();
   }
 
-  perso(g, phase === 0 ? SPR_CHANT : SPR, hollisX, hollisY, vue, 1);
+  /* ---------- 2hollis ---------- */
+  perso(g, phase <= 1 ? SPR_CHANT : SPR, hollisX, hollisY, vue, 1);
 
-  // L'onde de chant part de lui pendant la première phase.
-  if ((ann === 'ondes' || phase === 0) && phase <= 1) onde(g, vue, hollisX, hollisY, tt / D_CHANT, 120);
-
-  // L'adversaire : immobilisé puis tiré vers 2hollis selon la variante.
-  const touche = phase >= 2 && k > .5;
-  let ax = advX0;
-  if (touche && (adv === 'stun_attire' || adv === 'attire' || adv === 'contact')) {
-    const force = adv === 'contact' ? 1 : .45;
-    ax = advX0 - (k - .5) / .45 * (advX0 - hollisX) * force;
+  /* ---------- 1. LE CHANT : les ondes et les notes qui montent ---------- */
+  if (phase === 0) {
+    for (let i = 0; i < 3; i++) {
+      const k = (kp * 1.6 + i * .33) % 1;
+      anneau(g, X(hollisX), Y(hollisY - 8), (14 + k * 90) * e, (6 + k * 34) * e,
+             (1 - k) * .55, CYAN, 2);
+    }
+    lueur(g, X(hollisX), Y(hollisY - 20), 34 * e * (.6 + kp * .6), CYAN, .35 + kp * .3);
+    // Six notes qui s'elevent et tournent : elles disent que c'est un CHANT,
+    // et pas une explosion.
+    for (let i = 0; i < 6; i++) {
+      const k = (kp + alea(i) ) % 1;
+      const a = alea(i + 40) * TAU;
+      note(g, X(hollisX + Math.cos(a) * 18 * k) , Y(hollisY - 14 - k * 46),
+           9 * e * 4, (1 - k) * .85, i % 2 ? OR : BLANC);
+    }
   }
-  if (touche && adv === 'pousse') ax = advX0 + (k - .5) / .45 * 120;
-  perso(g, CHARS.leon.frames.idle, ax, advY, vue, -1);
-  // Le stun se voit : un anneau autour de celui qui est cloué.
-  if (touche && (adv === 'stun_attire' || adv === 'stun' || adv === 'tous')) {
-    g.save(); g.strokeStyle = '#ffd23e'; g.lineWidth = 2; g.globalAlpha = .8;
-    g.beginPath(); g.ellipse(X(ax), Y(advY), 26 * e, 10 * e, 0, 0, TAU); g.stroke(); g.restore();
+
+  /* ---------- 2. LA FORMATION : les notes convergent, la tete nait ------- */
+  if (phase === 1) {
+    for (let i = 0; i < 10; i++) {
+      const k = easeOut(kp);
+      const a = alea(i + 7) * TAU, r = (1 - k) * 78;
+      note(g, X(depart + Math.cos(a) * r), Y(ty + Math.sin(a) * r * .55),
+           8 * e * 4, k * .9, i % 3 ? CYAN : OR);
+    }
+    lueur(g, X(depart), Y(ty), 70 * e * easeOut(kp), BLANC, .5 * kp);
   }
 
-  disque(g, disqX, disqY, vue);
+  /* ---------- la tete elle-meme ---------- */
+  if (phase >= 1 && phase <= 3) {
+    // Un joueur fait 48 * 1,6 unites de large. La tete a taille 1 en fait 1,5
+    // fois plus : c'est un fauve, pas un chat.
+    const naiss = phase === 1 ? easeBack(kp) : 1;
+    const ech = al.taille * naiss * (phase === 3 ? 1 + kp * .35 : 1);
+    const w = 20 * 4 * ech * e * 1.5, h = 15 * 4 * ech * e * 1.5;
 
-  // Le tigre.
-  if (phase >= 1) {
-    let tx = hollisX + k * (CW * (traj === 'moitie' ? .5 : 1.05));
-    let ty = hollisY;
-    if (traj === 'courbe') ty = hollisY - Math.sin(k * Math.PI) * 60;
-    if (traj === 'zigzag') ty = hollisY + Math.sin(k * 9) * 46;
-    if (traj === 'traque') ty = hollisY + (advY - hollisY) * k;
-    if (traj === 'visee') ty = hollisY + (advY - hollisY) * k * .7;
-
-    const spr = TIGRE_SPR[Math.floor(t * 9) % 2];
-    // Un joueur fait 48 * 1,6 unites de large. A .38 le tigre en faisait la
-    // moitie : ce n'est pas un fauve, c'est un chat. A 1,05 il est un peu
-    // plus large qu'un joueur, ce qui est la bonne echelle pour un tigre.
-    const w = 26 * 4 * al.taille * e * 1.05, h = 12 * 4 * al.taille * e * 1.05;
     g.save(); g.imageSmoothingEnabled = false;
-    if (al.rendu === 'esprit') g.globalAlpha = .55;
-    if (al.rendu === 'silhouette') g.filter = 'brightness(3) saturate(0)';
-    if (al.rendu === 'contraste') g.filter = 'contrast(1.7)';
-    if (al.rendu === 'glace') g.filter = 'sepia(1) hue-rotate(160deg) saturate(2.4)';
-    if (al.rendu === 'trainee') {
-      for (let i = 1; i <= 3; i++) {
-        g.globalAlpha = .16 * (4 - i);
-        g.drawImage(spr, X(tx - i * 34) - w / 2, Y(ty) - h, w, h);
+    // La traînee : des copies figees du trajet, de plus en plus pales et
+    // petites. Un simple trait ne rend pas la vitesse, des copies si.
+    if (phase === 2 && al.rendu !== 'esprit') {
+      for (let i = 6; i >= 1; i--) {
+        const kr = Math.max(0, avance - i * .045);
+        const px = depart + kr * CW * portee;
+        if (px <= depart) continue;
+        g.globalAlpha = .1 * (7 - i) * .5;
+        const wr = w * (1 - i * .07), hr = h * (1 - i * .07);
+        g.drawImage(TIGRE_SPR, X(px) - wr / 2, Y(ligneY(hollisY)) - hr * .62, wr, hr);
       }
       g.globalAlpha = 1;
     }
-    g.drawImage(spr, X(tx) - w / 2, Y(ty) - h, w, h);
+    if (al.rendu === 'esprit') g.globalAlpha = .6;
+    if (al.rendu === 'silhouette') g.filter = 'brightness(2.6) saturate(0)';
+    if (al.rendu === 'contraste') g.filter = 'contrast(1.8)';
+    if (al.rendu === 'glace') g.filter = 'sepia(1) hue-rotate(150deg) saturate(3)';
     g.restore();
-    if (al.rendu === 'aura') onde(g, vue, tx - 30, ty, .3, 70);
+
+    // La lueur passe SOUS la tete : dessinee par-dessus elle la delavait en
+    // simple tache cyan, et on perdait la gueule et les crocs.
+    lueur(g, X(tx), Y(ty), w * .55, CYAN, phase === 2 ? .42 : .3);
+    lueur(g, X(tx), Y(ty), w * .22, BLANC, .5);
+
+    g.save(); g.imageSmoothingEnabled = false;
+    if (al.rendu === 'esprit') g.globalAlpha = .6;
+    if (al.rendu === 'silhouette') g.filter = 'brightness(2.6) saturate(0)';
+    if (al.rendu === 'contraste') g.filter = 'contrast(1.8)';
+    if (al.rendu === 'glace') g.filter = 'sepia(1) hue-rotate(150deg) saturate(3)';
+    g.drawImage(TIGRE_SPR, X(tx) - w / 2, Y(ty) - h * .62, w, h);
+    g.restore();
+
+    if (phase === 2) {
+      anneau(g, X(tx + w * .3), Y(ty), w * .35, h * .3, .45, BLANC, 2.5);
+      // Les notes ejectees par le passage, qui derivent et s'effacent.
+      for (let i = 0; i < 12; i++) {
+        const na = alea(i + 11) * TAU;
+        const k = ((kp * 1.4 + alea(i + 3)) % 1);
+        const dist = k * 70;
+        note(g, X(tx - 30 - k * 90 + Math.cos(na) * 10), Y(ty + Math.sin(na) * dist * .8),
+             7 * e * 4, (1 - k) * .8, i % 3 ? OR : CYAN);
+      }
+    }
   }
 
-  // La flèche d'attraction : elle dit ce que le déplacement ne montre pas.
-  if (phase === 3 && (adv === 'stun_attire' || adv === 'attire' || adv === 'contact')) {
-    fleche(g, vue, ax, advY, hollisX + 40, hollisY, '#ffd23e');
+  /* ---------- l'adversaire : stun, puis attraction ---------- */
+  const touche = phase >= 3;
+  let ax = advX0;
+  if (touche && (adv === 'stun_attire' || adv === 'attire' || adv === 'contact')) {
+    const force = adv === 'contact' ? 1 : .45;
+    const k = phase === 3 ? easeOut(kp) : 1;
+    ax = advX0 - k * (advX0 - hollisX) * force;
   }
-  return phase;
+  if (touche && adv === 'pousse') ax = advX0 + easeOut(phase === 3 ? kp : 1) * 130;
+  perso(g, CHARS.leon.frames.idle, ax, advY, vue, -1);
+
+  /* ---------- 4. L'IMPACT ---------- */
+  if (phase === 3) {
+    // L'eclat du choc, puis l'anneau qui s'ouvre.
+    lueur(g, X(advX0), Y(advY - 20), (30 + kp * 130) * e, BLANC, (1 - kp) * .8);
+    anneau(g, X(advX0), Y(advY - 10), (10 + kp * 150) * e, (4 + kp * 60) * e,
+           (1 - kp) * .8, CYAN, 3);
+    anneau(g, X(advX0), Y(advY - 10), (10 + kp * 96) * e, (4 + kp * 38) * e,
+           (1 - kp) * .6, OR, 2);
+  }
+  // Le charme : des notes qui tournent autour de celui qui est cloue. C'est le
+  // retour visuel du stun — sans lui, « immobilise » ne se voit pas.
+  if (touche && (adv === 'stun_attire' || adv === 'stun' || adv === 'tous')) {
+    for (let i = 0; i < 5; i++) {
+      const a = t * 2.4 + i * TAU / 5;
+      note(g, X(ax + Math.cos(a) * 22), Y(advY - 34 + Math.sin(a) * 9),
+           7 * e * 4, .85, OR);
+    }
+    anneau(g, X(ax), Y(advY), 26 * e, 10 * e, .55, OR, 2);
+  }
+  if (touche && adv === 'tous') anneau(g, X(hollisX), Y(hollisY), 26 * e, 10 * e, .55, OR, 2);
+
+  /* ---------- la traction, montree et pas devinee ---------- */
+  if (phase >= 3 && (adv === 'stun_attire' || adv === 'attire' || adv === 'contact')) {
+    fleche(g, vue, ax, advY, hollisX + 44, hollisY, OR);
+  }
+
+  disque(g, disqX, disqY, vue);
+  return Math.min(phase, 3);
 }
 
 /* ===================== L'APERÇU ===================== */
