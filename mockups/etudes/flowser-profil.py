@@ -42,25 +42,26 @@ def L(*ls):
 
 SPR = L(
     # ---- TETE, tournee vers la DROITE -------------------------------------
-    # 0  L'OREILLE DE MEWTWO, en pointe vers l'arriere, et LA CRETE. Ce sont
-    #    deux choses distinctes et elles ne doivent pas se toucher : l'oreille
-    #    est mauve et part en arriere, la crete est rouge et monte.
-    "L....R.RR.R.....",
-    # 1  l'oreille s'epaissit, la crete prend sa masse
-    "LLL.rRRRRRRr....",
-    # 2  l'oreille rejoint le crane, et LE MUSEAU commence deja en clair
-    "mLLLmMMMMLLm....",
-    # 3  LE MUSEAU EST D'UN AUTRE TON QUE LE CRANE. C'est le trait obligatoire
-    #    de Yoshi, et pour la meme raison : sans lui la tete est un aplat.
-    ".mMMMMMMLLLm....",
-    # 4  LE VERRE, monture haute
-    ".mMNNNMLLLLm....",
-    # 5  l'oeil orange dans le verre, et LA BRANCHE qui part vers l'oreille
-    "mNNNENMLLLLLm...",
-    # 6  monture basse, le museau au plus long
+    # 0  LA CRETE prend TROIS lignes. A deux, elle etait plus large que haute :
+    #    quoi qu'on fasse de sa ligne du haut, une barre entaillee reste une
+    #    barre entaillee. Avec une ligne de plus les epis sont enfin plus hauts
+    #    que larges, et c'est ca qui fait lire des epis. Le crane descend d'un
+    #    cran pour la payer, et le museau et la machoire fusionnent.
+    "....R..R..R.....",
+    # 1  ils s'epaississent sans se rejoindre
+    "...rRRRRRRr.....",
+    # 2  la base de la crete, et L'OREILLE DE MEWTWO qui pointe vers l'arriere
+    "L..rRRRRRRr.....",
+    # 3  l'oreille s'epaissit, le crane apparait sous la crete
+    "LLLmMMMMMLLm....",
+    # 4  le crane, et LE MUSEAU qui commence deja en clair
+    "mLLmMMMMMLLLm...",
+    # 5  LE VERRE, monture haute
+    ".mMNNNMLLLLLm...",
+    # 6  l'oeil orange dans le verre, et LA BRANCHE qui rejoint l'oreille
+    "mNNNENMLLLLLLm..",
+    # 7  monture basse, le museau au plus long
     ".mMNNNMLLLLLLm..",
-    # 7  le museau plein
-    "..mMMMLLLLLLLm..",
     # 8  la machoire, plus courte que le museau
     "..mMMMLLLLLLm...",
     # 9  LE COLLIER cloute, au cou

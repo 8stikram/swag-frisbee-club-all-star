@@ -35,6 +35,12 @@
 // même » de l'utilisateur, et l'ancienne règle ne pouvait pas le voir.
 export const PART_ZONE = 0.20;     // 20 % de ce que la section commande vraiment
 export const ECART_PLANCHER = 12;  // et jamais moins de 12 px, en dessous rien ne se distingue sur la carte
+// ... mais le plancher ne peut pas depasser la moitie de ce que la section
+// commande. Avec dix variantes reparties sur une zone de Z pixels, deux d'entre
+// elles se ressemblent forcement a mieux que Z/2 : c'est un tiroir, pas un
+// jugement. Exiger 12 px sur une section qui n'en deplace que 20 rendait la
+// consigne impossible a tenir et le rouge permanent — donc ignore.
+export const PART_MAX = 0.45;
 
 // Une section dont toutes les variantes réunies ne déplacent presque rien ne
 // propose pas de partis pris. Le seuil relatif seul ne l'attraperait pas :
@@ -234,7 +240,8 @@ export function verifier({ id, PERSO, SECTIONS, options = {} }) {
 
     // Surface réellement commandée par la section, puis écart exigé de chacune.
     const zone = zoneSection(s.variantes, spriteDe, spriteRef);
-    const exige = Math.max(ECART_PLANCHER, Math.round(zone * PART_ZONE));
+    const exige = Math.max(Math.min(ECART_PLANCHER, Math.round(zone * PART_MAX)),
+                           Math.round(zone * PART_ZONE));
     if (zone > 0 && zone < ZONE_MIN) {
       bad.push(s.id + ' : toutes les variantes réunies ne déplacent que ' + zone
                + ' px — la section ne propose aucun vrai parti pris');

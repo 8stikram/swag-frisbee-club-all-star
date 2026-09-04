@@ -5,703 +5,315 @@
 <title>Flowser-Two — chara-design</title>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  :root{ --bg:#0a0713; --panel:#150e24; --edge:#33244d; --ink:#eee6fb; --accent:#c98ae8; --or:#f0e0bc; }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
-  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
-  h2{font-size:14px;margin:34px 0 6px;color:var(--accent);text-transform:uppercase;
+  h1{font-size:23px;margin:0 0 4px;font-family:'Archivo Black',sans-serif;letter-spacing:.5px}
+  h2{font-size:14px;margin:36px 0 6px;color:var(--accent);text-transform:uppercase;
      letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
-  .note{font-size:12.5px;color:#8fa4c4;max-width:960px;line-height:1.7;margin:0 0 14px}
+  .note{font-size:12.5px;color:#a595c4;max-width:1000px;line-height:1.75;margin:0 0 14px}
   .row{display:flex;gap:12px;flex-wrap:wrap}
-  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;
-        flex:1 1 0;min-width:186px;cursor:pointer;transition:border-color .12s,transform .12s}
-  .card:hover{border-color:#3d5c8a}
-  .card.on{border-color:var(--or);transform:translateY(-2px)}
-  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:56px}
-  .lbl b{display:block;font-size:14px;color:var(--or);letter-spacing:.6px;margin-bottom:2px}
-  canvas{display:block;width:100%;height:auto;border-radius:6px;image-rendering:pixelated}
+  /* max-width : sans lui, une carte seule sur sa ligne prend toute la largeur
+     et ses deux canvas s'etirent en enormes rectangles flous. */
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px;
+        flex:1 1 206px;min-width:206px;max-width:268px;cursor:pointer;
+        transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#5b3f85}
+  .card.on{border-color:var(--or);transform:translateY(-2px);box-shadow:0 0 0 1px var(--or) inset}
+  .lbl{font-size:11px;color:#a595c4;margin-bottom:8px;line-height:1.5;min-height:84px}
+  .lbl b{display:block;font-size:13px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  .duo{display:flex;gap:8px;align-items:flex-end}
+  /* Les deux canvas gardent leur taille propre : en flex-grow ils s'etiraient
+     et le gros plan devenait un aplat de couleurs. */
+  .duo canvas{background:#120b1f;border-radius:8px;display:block;image-rendering:pixelated;flex:0 0 auto}
+  .duo .zoom{border:1px solid var(--edge)}
   .reserve{display:none}
   .reserve.ouverte{display:flex}
-  .plus{margin-top:9px;background:#132038;color:#9fb4dd;border:1px solid var(--edge);
-        border-radius:7px;padding:6px 13px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
-  .plus:hover{background:#1a2b48;color:var(--ink)}
-
-  /* --- Bandeau du haut : aperçu assemblé + comparaison au roster --- */
+  .plus{margin-top:10px;background:#20143a;color:#b8a3d8;border:1px solid var(--edge);
+        border-radius:8px;padding:6px 14px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#2c1b4f;color:var(--ink)}
   .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
-  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 420px}
-  .apercu canvas{background:#0a1220}
-  .choix{font-size:11.5px;color:#9fb4dd;margin-top:9px;font-family:Consolas,monospace;line-height:1.7}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 420px;
+          display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+  .apercu canvas{background:#120b1f;border-radius:10px;image-rendering:pixelated;display:block}
+  .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 280px}
+  .fiche h3{margin:0 0 10px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .fiche table{width:100%;border-collapse:collapse;font-size:11.5px;font-family:Consolas,monospace}
+  .fiche td{padding:3px 0;color:#a595c4;vertical-align:top}
+  .fiche td:last-child{color:var(--or);text-align:right;white-space:nowrap;padding-left:8px}
+  .bar{height:7px;background:#241738;border-radius:4px;overflow:hidden;margin-top:2px}
+  .bar i{display:block;height:100%}
+  .choix{font-size:11.5px;color:#b8a3d8;margin-top:10px;font-family:Consolas,monospace;line-height:1.8}
   .choix b{color:var(--or)}
   .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
-  .codeChoix{flex:1 1 190px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
-             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;
-             letter-spacing:1.2px}
-  .btnCopier{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+  .codeChoix{flex:1 1 190px;background:#120b1f;border:1px solid var(--edge);border-radius:8px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#2c1b4f;color:var(--ink);border:1px solid var(--edge);border-radius:8px;
              padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
-  .btnCopier:hover{background:#24395e}
+  .btnCopier:hover{background:#3b2568}
   .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
-  .roster{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 320px}
-  .roster h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
-  .rosterRow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
-  .rosterOne{text-align:center}
-  .rosterOne canvas{background:#0a1220;border-radius:5px}
-  .rosterOne span{display:block;font-size:9.5px;color:#7f93b3;margin-top:3px;max-width:78px;
-                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .rosterOne.neuf span{color:var(--or)}
-
+  .rosterRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .rosterOne{text-align:center;font-size:9px;color:#8d7fa8;font-family:Consolas,monospace}
+  .rosterOne canvas{display:block;border-radius:6px;image-rendering:pixelated;border:1px solid var(--edge)}
   #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
   #errs.bad{color:#ff5340}
-  .stats{font-family:Consolas,monospace;font-size:11px;color:#9fb4dd;line-height:1.6;margin-top:7px}
-  .stats i{color:var(--or);font-style:normal}
 </style>
 </head>
 <body>
 
 <h1>FLOWSER-TWO — CHARA-DESIGN</h1>
 <p class="note">
-  <b>Bowser × Mewtwo.</b> Le corps, le museau et la queue viennent de Mewtwo ; la crête, les
-  pointes de carapace et le cuir clouté viennent de Bowser. Les lunettes rondes sont à lui.
+  <b>Bowser × Mewtwo.</b> Le corps, le museau, l'oreille et la queue viennent de Mewtwo ; la crête,
+  la carapace et le cuir clouté viennent de Bowser. Les lunettes rondes sont à lui.
   <br><br>
-  <b>Il est de face</b>, comme tout le roster sauf Yoshi. Sur les cinq éléments déclarés
-  intouchables — la crête, les lunettes, le collier, les bracelets, les pointes — <b>quatre sont
-  des éléments de face</b>, et les lunettes rondes ne se lisent que s'il y a <b>deux verres</b> :
-  de profil il n'en reste qu'un, et un cercle sombre sur le côté d'un crâne se lit comme un œil.
-  La carapace, elle, n'a pas besoin du profil — la référence de face se lit Bowser sans hésiter
-  grâce aux pointes qui dépassent aux épaules.
+  <b>Il est de profil, dans la position de Yoshi.</b> Sa carapace et sa queue sont des éléments de
+  DOS : de face on n'en voyait que deux pointes aux épaules, et le reste était un aplat mauve. Et
+  les lunettes n'y perdent rien — de profil on voit le <b>verre</b> ET la <b>branche</b> qui part
+  vers l'oreille, ce qui est la lecture la plus claire des deux.
   <br><br>
-  Chaque carte montre le <b>perso entier</b> avec la variante appliquée, posé sur un bout du vrai
-  terrain et à l'échelle du match. Clique une carte pour la monter dans l'aperçu du haut.
+  <b>Mockup dédié au design.</b> Le gabarit commun montre le perso dans une vignette de terrain à
+  l'échelle du match : c'est bien pour trancher une silhouette, c'est inutile pour trancher une
+  monture de trois pixels. Ici chaque carte porte le <b>perso entier en grand</b> et un
+  <b>gros plan</b> sur la pièce que la section commande. La bande du bas le remet à l'échelle du
+  match, à côté du roster — c'est là qu'on vérifie qu'il tient vraiment.
 </p>
 
 <div id="errs"></div>
 
 <div class="haut">
   <div class="apercu">
-    <canvas id="cvApercu" width="620" height="300"></canvas>
-    <div class="choix" id="choix"></div>
-    <div class="copier">
-      <input class="codeChoix" id="codeChoix" readonly>
-      <button class="btnCopier" id="btnCopier">copier mes choix</button>
+    <canvas id="cvGrand" width="304" height="380"></canvas>
+    <div>
+      <canvas id="cvPetit" width="230" height="120"></canvas>
+      <div class="choix" id="choix"></div>
+      <div class="copier">
+        <input class="codeChoix" id="codeChoix" readonly>
+        <button class="btnCopier" id="btnCopier">copier mes choix</button>
+      </div>
     </div>
   </div>
-  <div class="roster">
-    <h3>À côté du roster en place</h3>
+  <div class="fiche">
+    <h3>Le personnage</h3>
+    <table id="fiche"></table>
+    <h3 style="margin-top:14px">À côté du roster, à l'échelle du match</h3>
     <div class="rosterRow" id="rosterRow"></div>
-    <p class="note" style="margin:9px 0 0;font-size:11px">
-      Le nouveau perso est en or. C'est ici qu'on voit s'il détonne : Isaac avait dû être refait
-      entièrement parce qu'il paraissait chétif à côté des autres.
-    </p>
   </div>
 </div>
 
 <div id="sections"></div>
 
 <script type="module">
-// ---------------------------------------------------------------------------
-// Le roster réel est importé du jeu : la bande de comparaison montre donc
-// toujours les personnages tels qu'ils sont aujourd'hui, sans copie à
-// maintenir ici. C'est le seul lien avec le code du jeu — tout le reste du
-// mockup est autonome.
-// ---------------------------------------------------------------------------
+import { MAPS } from '../js/data/maps.js';
 import { CHARS, ROSTER } from '../js/data/characters.js';
-// Tous les contrôles vivent dans un module commun. Chaque erreur commise sur
-// un perso y devient un contrôle, qui s'applique ensuite à TOUS — y compris
-// aux mockups déjà écrits. C'est la seule chose qu'on mutualise : le moteur
-// d'affichage, lui, reste propre à chaque fichier, parce qu'un mockup est une
-// trace de décision et que son rendu ne doit pas changer dans le dos.
-//
-// Pour un NOUVEAU perso : déclarer ses traits obligatoires dans _verif.js dès
-// que le design est validé. C'est ce qui attrape les régressions — sur Yoshi,
-// les épines rouges avaient disparu au détour d'une refonte sans que rien ne
-// le signale.
 import { verifier, afficher } from './_verif.js';
 
-const TAU = Math.PI * 2;
-// Échelle du match : SCALE 1,6 dans render.js, sprite dessiné en 48×60 unités
-// pour 16×20 pixels, soit 4,8 px d'écran par pixel de sprite. Les cartes
-// utilisent cette valeur pour qu'on juge la lisibilité réelle, pas un
-// agrandissement flatteur.
-const ECH_JEU = 4.8;
-const ECH_CARTE = 5;      // arrondi, à un dixième près du jeu
-const ECH_APERCU = 9;     // l'aperçu du haut a le droit d'être plus gros
-
-/* ===========================================================================
-   1. LE PERSONNAGE — c'est ici qu'on écrit.
-
-   `pal` : la palette de base. Une lettre absente ne lève AUCUNE erreur, le
-   pixel est simplement ignoré — d'où la vérification automatique plus bas.
-   `tete` / `corps` : 10 lignes de 16 caractères chacune. Gabarit commun à
-   tout le roster : largeur max 12 px (colonnes 1 à 12), jambes aux colonnes
-   3-4 et 9-10, yeux décalés d'un pixel à DROITE du centre (sans quoi le
-   miroir horizontal p.face est illisible quand le perso vise à la souris),
-   pas de contour noir.
-   =========================================================================== */
 const PERSO = {
   nom: 'FLOWSER-TWO',
-  // Le mauve porte QUATRE valeurs, comme le vert de Yoshi. En dessous de trois
-  // le personnage devient un aplat ou le volume ne se lit plus — constate sur
-  // Yuki (blanc sur 2 tons) puis sur Yoshi.
   dominante: 'LMmo',
-  univers: 'CHÂTEAU GÉNÉTIQUE',
-  pal: {L:'#d9c2ee', M:'#b795d8', m:'#8f6bb0', o:'#6b4a87', V:'#a05a9c', v:'#7d3f78', R:'#e8392f', r:'#a81f18', O:'#f07a1e', C:'#f0e0bc', c:'#c9b283', A:'#dfe6ee', N:'#1a1620', E:'#f2a03c', W:'#ffffff'},
-  // Releve de la construction maison, fait sur Naruto et Leon pixel par pixel :
-  // le visage fait DIX de large, colonnes 2 a 11 ; les yeux sont BAS, rang 6 ou
-  // 7 sur les dix de la tete ; l'ombre LONGE LE CONTOUR et l'interieur reste un
-  // aplat ; la chevelure est faite d'epis separes sur la PREMIERE ligne
-  // seulement ; le col est plus etroit que la tete.
-  tete: ['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....'],
-  corps: ['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']
+  univers: 'LABORATOIRE DU CHÂTEAU',
+  pal: {L:'#d9c2ee',M:'#b795d8',m:'#8f6bb0',o:'#6b4a87',V:'#a05a9c',v:'#7d3f78',R:'#e8392f',r:'#a81f18',O:'#f07a1e',C:'#f0e0bc',c:'#c9b283',A:'#dfe6ee',N:'#1a1620',E:'#f2a03c',W:'#ffffff'},
+  tete: ['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],
+  corps: ['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']
 };
 
-/* ===========================================================================
-   2. LES SECTIONS.
+const SECTIONS = [{id:'crete',titre:'1 · La crête',note:'Trois lignes de haut, pas deux : à deux elle est plus large que haute, et quoi qu\'on fasse de sa ligne du sommet, une barre entaillée reste une barre entaillée. C\'est la seule couleur chaude du personnage et ce qui se voit de plus loin sur un terrain sombre.',zoom:[0,0,13,5],variantes:[{id:'A',nom:'TROIS ÉPIS, HAUTS ET SÉPARÉS',desc:'Trois épis plus hauts que larges, séparés jusqu\'à la troisième ligne. La lecture la plus fidèle aux références et la seule qui donne vraiment des épis plutôt qu\'une barre.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'B',nom:'UNE SEULE CORNE, TRÈS HAUTE',desc:'Une pointe unique qui monte de deux lignes au-dessus du crâne. Silhouette la plus reconnaissable du roster de loin, mais il perd le côté hérissé de Bowser.',tete:['.......RR.......','......rRRr......','L.....rRRr......','LLLmMMRRRLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'C',nom:'UNE MASSE PLEINE, SANS TROU',desc:'La crête est un bloc rouge continu qui couvre tout le dessus du crâne. Impossible à rater même à l\'échelle du match, mais elle se lit comme un casque plutôt que comme des cheveux.',tete:['...RRRRRRRR.....','..rRRRRRRRRr....','L.rRRRRRRRRr....','LLLrRRRRRRRm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'D',nom:'ELLE PART EN ARRIÈRE',desc:'Les épis sont couchés vers la nuque, comme pris par la course. Elle donne du mouvement même à l\'arrêt et allonge la silhouette, mais elle déséquilibre la tête vers l\'arrière.',tete:['RR.R..R.........','rRRRRRRr........','LrRRRRRRr.......','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'E',nom:'CINQ ÉPIS COURTS, EN BROSSE',desc:'Cinq pointes courtes et serrées sur toute la longueur du crâne. Très punk et raccord avec le cuir clouté, mais à l\'échelle du match les trous se referment.',tete:['R.R.R.R.R.R.R...','rRRRRRRRRRRRr...','LRRRRRRRRRRr....','LLLrRRRRRRRm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'F',nom:'ELLE DESCEND JUSQU\'À LA NUQUE',desc:'La crête part du sommet et descend le long du cou. Masse maximale, vraie crinière de dragon, mais elle mange la carapace et l\'oreille.',tete:['....R..R..R.....','...rRRRRRRr.....','R..rRRRRRRr.....','RRRmMMMMMLLm....','rRRmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'G',nom:'EN ORANGE VIF',desc:'La même crête, en orange plutôt qu\'en rouge. Beaucoup plus proche de la référence en 3D et elle ressort mieux sur un terrain bleu, mais elle se rapproche de l\'orange de l\'œil.',tete:['O.O..O..O.O.....','OOOOOOOOOOr.....','LOOOOOOOOOr.....','LLLmOOOOOLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'H',nom:'DEUX GRANDES POINTES SEULEMENT',desc:'Deux épis larges et hauts, rien entre les deux. Le plus lisible en petit de tout le lot, mais on lit deux cornes plutôt qu\'une crête.',tete:['...RR...RR......','..rRRr.rRRr.....','L.rRRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'I',nom:'ELLE RETOMBE SUR LE FRONT',desc:'Une mèche déborde vers l\'avant, au-dessus du verre. Effet décoiffé très vivant et unique dans le roster, mais elle vient toucher les lunettes.',tete:['....R..R..R.....','...rRRRRRRRr....','L..rRRRRRRRRr...','LLLmMMMRRRRRr...','mLLmMMMMRRRRr...','.mMNNNMRRRRr....','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'J',nom:'UNE CRÊTE D\'IROQUOIS, TRÈS FINE',desc:'Une bande de trois pixels de large qui monte très haut du milieu du crâne. La plus punk et la plus verticale, mais elle laisse le reste du crâne complètement nu.',tete:['.......R........','.......R........','L......R........','LLLmMMMRMLLm....','mLLmMMMRMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']}]},{id:'oreille',titre:'2 · L\'oreille de Mewtwo',note:'Dans l\'anime, Mewtwo porte deux pointes qui partent vers l\'arrière du crâne, et un tube qui relie sa nuque à son dos. De profil on n\'en voit qu\'un côté, et il doit rester une pièce DISTINCTE de la crête : l\'oreille est mauve et va en arrière, la crête est rouge et monte.',zoom:[0,0,8,9],variantes:[{id:'A',nom:'COURTE, EN POINTE VERS L\'ARRIÈRE',desc:'Une pointe mauve nette qui part vers la nuque, sous la crête. Discrète, elle ne gêne ni la crête ni la carapace, mais c\'est la plus timide du lot.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'B',nom:'LONGUE, ELLE DESCEND JUSQU\'AU COLLIER',desc:'L\'oreille file vers l\'arrière et descend le long du cou jusqu\'au cuir. C\'est la lecture la plus fidèle à l\'anime et la plus reconnaissable, mais elle vient toucher la carapace.',tete:['....R..R..R.....','...rRRRRRRr.....','LL.rRRRRRRr.....','LLLmMMMMMLLm....','LLLmMMMMMLLLm...','LLMNNNMLLLLLm...','LLNNENMLLLLLLm..','LLMNNNMLLLLLLm..','LLmMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'C',nom:'DEUX POINTES SUPERPOSÉES',desc:'Deux oreilles l\'une au-dessus de l\'autre, comme sur les visuels vus de trois quarts. Très caractérisé et unique dans le roster, mais on croit à une deuxième crête.',tete:['LL..R..R..R.....','LL.rRRRRRRr.....','...rRRRRRRr.....','..LmMMMMMLLm....','LLLmMMMMMLLLm...','LLMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'D',nom:'LE TUBE DE NUQUE',desc:'Pas une oreille : le tube qui relie le crâne au dos, comme dans le film. C\'est le détail le plus juste de tout le personnage, mais il faut connaître Mewtwo pour le comprendre.',tete:['....R..R..R.....','...rRRRRRRr.....','...rRRRRRRr.....','..LmMMMMMLLm....','LLLmMMMMMLLLm...','mLMNNNMLLLLLm...','mLNNENMLLLLLLm..','mLMNNNMLLLLLLm..','mLmMMMLLLLLLm...','mLNNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'E',nom:'TRÈS LONGUE, EN CORNE RELEVÉE',desc:'Une corne mauve qui part loin en arrière, au-dessus de la carapace, presque à la hauteur de la crête. La silhouette la plus large et la plus impressionnante, mais elle sort du gabarit à l\'arrière.',tete:['LL..R..R..R.....','LLLrRRRRRRr.....','LLLrRRRRRRr.....','LLLmMMMMMLLm....','.LLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'F',nom:'PAS D\'OREILLE, CRÂNE ALLONGÉ',desc:'Le crâne file en arrière sans rien qui dépasse, comme un museau à l\'envers. La silhouette la plus propre et la crête ressort mieux, mais on perd la moitié de ce qui dit Mewtwo.',tete:['....R..R..R.....','...rRRRRRRr.....','...rRRRRRRr.....','MMMmMMMMMLLm....','MMMmMMMMMLLLm...','MMMNNNMLLLLLm...','MMNNENMLLLLLLm..','MMMNNNMLLLLLLm..','MMmMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'G',nom:'ELLE MONTE, COMME UNE OREILLE DE CHAT',desc:'L\'oreille part vers le haut au lieu de partir en arrière. Très féline et très lisible en petit, mais elle entre en collision avec la crête et on ne sait plus laquelle est laquelle.',tete:['LL..R..R..R.....','LLLrRRRRRRr.....','LLLrRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'H',nom:'ÉPAISSE, PRESQUE UNE NAGEOIRE',desc:'Une pièce large et arrondie plutôt qu\'une pointe, qui couvre tout l\'arrière du crâne. Elle donne beaucoup de volume à la nuque, mais elle se lit comme un capuchon.',tete:['....R..R..R.....','...rRRRRRRr.....','LLLrRRRRRRr.....','LLLmMMMMMLLm....','LLLmMMMMMLLLm...','LLLNNNMLLLLLm...','LLNNENMLLLLLLm..','LLMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'I',nom:'EN CRÈME, ASSORTIE AUX POINTES',desc:'L\'oreille est en os plutôt qu\'en mauve, et plus longue. Elle relie la tête à la carapace par la couleur, mais on croit à une troisième corne de Bowser.',tete:['....R..R..R.....','C..rRRRRRRr.....','CC.rRRRRRRr.....','CCcmMMMMMLLm....','cCCmMMMMMLLLm...','cCMNNNMLLLLLm...','.CNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'J',nom:'DEUX POINTES TRÈS ÉCARTÉES',desc:'Une pointe tout en haut, une au niveau de la mâchoire. Silhouette identifiable même en ombre chinoise, mais elle encombre tout l\'arrière du personnage.',tete:['LL..R..R..R.....','LLLrRRRRRRr.....','...rRRRRRRr.....','..LmMMMMMLLm....','..LmMMMMMLLLm...','.LMNNNMLLLLLm...','LLNNENMLLLLLLm..','LLMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']}]},{id:'lun',titre:'3 · Les lunettes',note:'Sa signature, et l\'élément le plus cher du sprite. De profil elles sont bien plus lisibles que de face : on voit le VERRE et la BRANCHE qui part vers l\'oreille, et c\'est la branche qui les sépare d\'un simple gros œil sombre.',zoom:[0,3,10,9],variantes:[{id:'A',nom:'VERRE CERCLÉ, ŒIL ORANGE',desc:'Une monture noire qui fait le tour du verre, l\'œil orange au centre, et la branche qui file vers l\'oreille. La lecture la plus claire, et la plus fidèle.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'B',nom:'VERRE OPAQUE, AUCUN REGARD',desc:'Le verre est entièrement noir. Le plus menaçant et le plus lisible de loin, mais le visage devient un masque et il perd toute émotion.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLNNNNNLLLm....','.mNNNNNNLLLLm...','mNNNNNNNLLLLLm..','.mNNNNNNLLLLLm..','..mNNNNLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'C',nom:'VERRE BLANC, LUNETTES DE SAVANT',desc:'Le verre reflète, l\'œil disparaît derrière. Effet très drôle sur un monstre de laboratoire, mais on perd son regard.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmNNNmLLLm....','.mMNWWNMLLLLm...','mNNNWWNMLLLLLm..','.mMmNNNmLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'D',nom:'UN VERRE ROND, PLUS PETIT',desc:'Une monture ronde et fine, deux fois plus petite. Beaucoup plus proche des lunettes des références, mais à l\'échelle du match elle disparaît presque.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMMMMMLLLLLm...','mNNNENMLLLLLLm..','.mMMNMMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'E',nom:'MONTURE ÉNORME, ELLE MANGE LE CRÂNE',desc:'Un verre qui couvre la moitié de la tête. Impossible à rater et très cartoon, mais il ne reste plus de joue ni de front.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLNNNNNNLLm....','.mNNNNNNNLLLm...','mNNNEENNLLLLLm..','.mNNNNNNNLLLLm..','..mNNNNNLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'F',nom:'RELEVÉES SUR LE FRONT',desc:'Les lunettes sont remontées sur le crâne, l\'œil nu en dessous. On voit enfin son regard et le détail reste là, mais il faut deux éléments là où il n\'y a la place que d\'un.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLNNNNNNLLm....','mLLmMMMMMLLLm...','.mMMEMMLLLLLm...','mMMMMMMLLLLLLm..','.mMMMMMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'G',nom:'MONTURE CRÈME, ASSORTIE AUX POINTES',desc:'Le cerclage est en os plutôt qu\'en noir. L\'ensemble gagne en cohérence de couleur, mais sur un crâne clair la monture claire s\'efface.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMCCCMLLLLLm...','mCCCECMLLLLLLm..','.mMCCCMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'H',nom:'UN BANDEAU, PAS DES LUNETTES',desc:'Une visière qui traverse tout le visage, façon cyclope. Le plus lisible de tous et très science-fiction, mais on quitte complètement les lunettes rondes.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMMMMMLLLLLm...','mNNNNNNNNNNNNm..','.mMMMMMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'I',nom:'VERRE DOUBLE, DEUX CERCLES',desc:'Deux verres l\'un derrière l\'autre, comme une loupe de bijoutier. Détail très savant et unique dans le roster, mais il alourdit l\'avant du crâne.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mNNNNNNLLLLm...','mNNENNENLLLLLm..','.mNNNNNNLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'J',nom:'BRANCHE LARGE, VERRE SANS CERCLE BAS',desc:'Le verre n\'est cerclé que sur trois côtés, et la branche est épaisse. C\'est la construction de vraies lunettes vue de côté, mais le verre paraît ouvert.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mNNNNNNNLLLm....','NNMNNNMLLLLLm...','NNNNENMLLLLLLm..','NNMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']}]},{id:'cara',titre:'4 · La carapace',note:'Elle est SÉPARÉE DU CORPS PAR UN LISERÉ OS. Sans lui le prune et le mauve se touchent et l\'ensemble se lit comme une seule masse un peu plus sombre d\'un côté : c\'est le liseré qui en fait un objet POSÉ sur le dos, et c\'est ce que montrent les références.',zoom:[0,9,10,19],variantes:[{id:'A',nom:'LISERÉ OS, TROIS POINTES ESPACÉES',desc:'Une carapace prune bordée d\'os, avec trois pointes crème réparties le long du dos. La lecture la plus fidèle et celle qui détache le mieux la carapace du corps.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'B',nom:'SANS LISERÉ, PRUNE À VIF',desc:'La carapace touche directement le corps. La silhouette est plus simple, mais elle redevient une tache sombre sur le dos plutôt qu\'une carapace.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvvMMMMMm...','CcvvvvvMMMVVMm..','.cvvvvMMMMVVMm..','CcvvvvMMNNVVMm..','.cvvvvvMMMMVVC..','CcvvvvMMMMVVMm..','.cvvvMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'C',nom:'SIX POINTES, SERRÉES',desc:'Deux fois plus de pointes, sur toute la hauteur du dos. Présence maximale et vraie carapace de Bowser, mais le crème finit par former une frange continue.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['CC.cvvCMMMMMm...','CCcvvvCMMMVVMm..','CC.cvvCMMMVVMm..','CCcvvvCMNNVVMm..','CC.cvvCMMMVVC...','CCcvvCMMMMVVMm..','C.cvCMMMMMMMm...','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'D',nom:'UNE SEULE POINTE, ÉNORME',desc:'Une pointe unique et large au milieu du dos. Silhouette nette et très lisible en petit, mais on croit à une aile plutôt qu\'à une carapace.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','.cvvvvCMMMVVMm..','CCvvvCMMMMVVMm..','CCvvvCMMNNVVMm..','CCvvvvCMMMMVVC..','.cvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'E',nom:'ELLE REMONTE EN COL DERRIÈRE LA TÊTE',desc:'Le haut de la carapace dépasse au-dessus des épaules et encadre la nuque. C\'est le plus reconnaissable du lot, mais ça encombre l\'oreille et le collier.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['CcvvvCMMMMMm....','CcvvvvCMMMVVMm..','CcvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'F',nom:'PLATE, PRESQUE UN SAC À DOS',desc:'Une carapace fine et haute, collée au dos. Elle libère beaucoup de place et il paraît plus vif, mais elle perd le volume d\'une vraie carapace.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['...cvCMMMMMMm...','C.cvvCMMMMVVMm..','.cvvvCMMMMVVMm..','C.cvCMMNNMVVMm..','.cvvvCMMMMMVVC..','C.cvvCMMMMVVMm..','..cvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'G',nom:'ÉNORME, ELLE DOUBLE SA LARGEUR',desc:'Une carapace qui déborde loin derrière lui. Impressionnante et vraiment Bowser, mais il occupe presque deux fois la largeur des autres persos.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['CcvvvvvCMMMMm...','CcvvvvvCMMVVMm..','CcvvvvCMMMVVMm..','CcvvvvCMNNVVMm..','CcvvvvvCMMMVVC..','CcvvvvCMMMVVMm..','.cvvvvCMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'H',nom:'POINTES NOIRES, PAS CRÈME',desc:'Les pointes prennent le noir du cuir clouté. L\'ensemble devient très cohérent et très punk, mais elles se confondent avec le bracelet et le collier.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['N.cvvvCMMMMMm...','NNcvvvCMMMVVMm..','N.cvvCMMMVVMm...','NNcvvCMMNNVVMm..','N.cvvCMMMVVC....','NNcvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'I',nom:'À ÉCAILLES, SANS POINTE',desc:'Un dos couvert d\'écailles prune et os, sans piques. Très reptilien et très propre, mais plus rien ne pique et Bowser s\'efface.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvCvCMMMMMm...','.cvCvCCMMMVVMm..','.cCvCvCMMMVVMm..','.cvCvCMMNNVVMm..','.cCvCvCMMMMVVC..','.cvCvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'J',nom:'BASSE, ELLE NE COUVRE QUE LES REINS',desc:'La carapace démarre à mi-dos et laisse les épaules nues. Il paraît beaucoup plus élancé, mais on la prend pour une selle.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['...mMMMMMMMMm...','..mMMMMMMMVVMm..','CcvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']}]},{id:'cuir',titre:'5 · Le cuir clouté',note:'Le collier au cou et le bracelet sur le bras. C\'est du Bowser pur, et le collier a un deuxième rôle : il sépare nettement la tête du corps, comme le col de Leon. Sur un perso de profil on ne voit qu\'un seul bras, donc un seul bracelet.',zoom:[0,8,14,15],variantes:[{id:'A',nom:'COLLIER ET BRACELET, CLOUS CRÈME',desc:'Un collier noir à deux clous et un bracelet sur l\'avant-bras. La lecture complète, et la plus fidèle aux références.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'B',nom:'COLLIER À POINTES',desc:'Des pointes crème qui dépassent du collier au lieu de clous plats. Beaucoup plus agressif et raccord avec la carapace, mais le crème est alors partout.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..CmMMCLLCLLm...','..NCNNCNNCm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'C',nom:'COLLIER LARGE, SUR DEUX RANGÉES',desc:'Un collier de deux pixels de haut, couvrant tout le cou. Très fort et très lisible en petit, mais il mange la mâchoire et il paraît sans cou.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..NNCNNCNNm.....','..NNNNNNNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'D',nom:'DEUX BRACELETS SUPERPOSÉS',desc:'Deux bandes noires sur l\'avant-bras. Le plus riche et le plus punk du lot, mais le noir prend alors tout le bras.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMNNVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'E',nom:'UNE CEINTURE EN PLUS',desc:'Une ceinture cloutée à la taille, sous la plaque de ventre. Elle coupe la silhouette et donne une vraie tenue, mais elle traverse le ventre.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCNNNNNNMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'F',nom:'CLOUS ARGENTÉS',desc:'Les clous passent du crème à l\'argent. Ils ressortent bien mieux sur le noir, mais ils ajoutent une cinquième famille de couleur.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..AmMMAMMAMm....','..NANANANANm....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMNAVVMm..','CcvvvCMMANVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'G',nom:'COLLIER FIN, RAS DU COU',desc:'Une simple bande noire sans clou, très serrée. Le plus élégant et celui qui laisse le plus de peau, mais il ne sépare plus vraiment la tête du corps.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','...NNNNNm.......'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'H',nom:'DES CHAÎNES PLUTÔT QUE DES CLOUS',desc:'Le collier pend en chaîne sur le poitrail. Très opium et très lisible, mais l\'argent traverse la plaque de ventre.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMAMMMm...','CcvvvvCMMAVVMm..','.cvvvvCMMMAVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'I',nom:'BRACELETS AUX DEUX POIGNETS ET AUX CHEVILLES',desc:'Du cuir partout : bras et pattes. Le plus complet et le plus punk, mais quatre bandes noires découpent la silhouette en morceaux.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCNNNo.oNNm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'J',nom:'CUIR ENTIÈREMENT NOIR, SANS CLOU',desc:'Ni clous ni pointes, juste la bande de cuir. Le plus sobre et le plus net à l\'échelle du match, mais on perd la moitié punk du personnage.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..NNNNNNNNm.....','..NNNNNNNNNm....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMNNVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']}]},{id:'queue',titre:'6 · La queue',note:'La queue de Mewtwo. De profil elle sort DERRIÈRE lui, donc à gauche quand il regarde à droite. Elle porte le mauve rose du ventre et non l\'ombre du corps : en ombre de corps elle se confond avec le contour, et en pixels isolés posés en diagonale elle se lit comme des débris tombés à côté.',zoom:[0,14,13,19],variantes:[{id:'A',nom:'COURTE, ELLE S\'ENROULE AU SOL',desc:'Une queue épaisse qui part du bas de la carapace et s\'enroule derrière lui. Discrète, elle ne déborde presque pas.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','VVcvCMMMo.oMMm..','vVV.mMMo.oMMMm..','vv..CCC...CCC...']},{id:'B',nom:'LONGUE, ELLE REMONTE EN S',desc:'Une queue qui part loin en arrière puis remonte, comme sur les références. La plus reconnaissable et la plus élégante, mais elle déborde beaucoup à l\'arrière.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','V.vvvvCMMMMVVC..','VVvvvCMMMMVVMm..','Vv.vCMMMMMMMMm..','VV.vCMMMo.oMMm..','vV..mMMo.oMMMm..','vv..CCC...CCC...']},{id:'C',nom:'PAS DE QUEUE',desc:'Elle disparaît complètement. La silhouette est la plus compacte et se retourne sans rien faire sauter, mais il perd la moitié de ce qui dit Mewtwo.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','..cvCMMMo.oMMm..','....mMMo.oMMMm..','....CCC...CCC...']},{id:'D',nom:'RELEVÉE EN PANACHE',desc:'La queue monte au lieu de descendre, au-dessus de la carapace. Très vivante et elle allonge la silhouette vers le haut, mais elle touche l\'oreille.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['V.cvvvCMMMMMm...','VVcvvvCMMMVVMm..','vVcvvvCMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','..cvCMMMo.oMMm..','....mMMo.oMMMm..','....CCC...CCC...']},{id:'E',nom:'TRÈS ÉPAISSE, PRESQUE UNE MASSUE',desc:'Une queue large qui s\'élargit au bout. Impossible à confondre avec du décor, mais on croit à une troisième patte.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','VvvvCMMMMMMMMm..','VVvvCMMMo.oMMm..','VVV.mMMo.oMMMm..','vvv.CCC...CCC...']},{id:'F',nom:'FINE ET TRÈS LONGUE',desc:'Un trait de deux pixels qui traverse tout l\'arrière. La plus fidèle à Mewtwo et la plus élégante, mais un trait fin se lit comme un défaut d\'affichage.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','VcvvvCMMMMVVMm..','V.vvCMMMMMMMMm..','V.cvCMMMo.oMMm..','V...mMMo.oMMMm..','V...CCC...CCC...']},{id:'G',nom:'BOUT CRÈME',desc:'La queue se termine en pointe couleur os, assortie à la carapace. Le détail accroche l\'œil et relie la queue au reste, mais rien dans les références ne le montre.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','CVcvCMMMo.oMMm..','CVV.mMMo.oMMMm..','Cv..CCC...CCC...']},{id:'H',nom:'ELLE PASSE ENTRE LES JAMBES',desc:'La queue revient vers l\'avant, sous le corps. Placement inhabituel qui supprime tout débordement, mais à cette échelle elle se lit très mal.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','..cvCMMMo.oMMm..','....mMMoVoMMMm..','....CCCVV.CCC...']},{id:'I',nom:'DEUX SEGMENTS, COMME UNE ANTENNE',desc:'Une queue en deux morceaux séparés par une articulation claire. Très mécanique et unique dans le roster, mais on croit à un bug de dessin.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','V.cvCMMMo.oMMm..','vV..mMMo.oMMMm..','Vv..CCC...CCC...']},{id:'J',nom:'ELLE TRAÎNE AU SOL, VERS L\'AVANT',desc:'La queue passe sous les pattes et ressort devant lui. Silhouette la plus large au sol et très lisible, mais elle croise les pieds.',tete:['....R..R..R.....','...rRRRRRRr.....','L..rRRRRRRr.....','LLLmMMMMMLLm....','mLLmMMMMMLLLm...','.mMNNNMLLLLLm...','mNNNENMLLLLLLm..','.mMNNNMLLLLLLm..','..mMMMLLLLLLm...','..NNCNNCNNm.....'],corps:['..cvvvCMMMMMm...','CcvvvvCMMMVVMm..','.cvvvCMMMMVVMm..','CcvvvCMMNNVVMm..','.cvvvvCMMMMVVC..','CcvvvCMMMMVVMm..','.cvvCMMMMMMMMm..','..cvCMMMo.oMMm..','v...mMMo.oMMMm..','vVVCCC...CCCVV..']}]},{id:'pal',titre:'7 · La palette',note:'Ses trois grandes surfaces sont le mauve du corps, le prune de la carapace et le rose de la queue. Le mauve porte QUATRE valeurs, comme le vert de Yoshi : en dessous de trois le personnage devient un aplat où le volume ne se lit plus. Constaté sur Yuki, puis sur Yoshi.',zoom:null,variantes:[{id:'A',nom:'MAUVE CLAIR DES RÉFÉRENCES',desc:'Le mauve clair des références, sur quatre valeurs, carapace prune. La lecture la plus fidèle et la plus lumineuse sur un terrain sombre.',pal:{}},{id:'B',nom:'MAUVE SATURÉ',desc:'Un mauve nettement plus saturé. Il ressort beaucoup mieux au milieu de l\'action, mais il s\'éloigne du lilas pâle des visuels.',pal:{L:'#c9a2e8',M:'#a06fd0',m:'#7a4aa8',o:'#55307a'}},{id:'C',nom:'LILAS TRÈS PÂLE',desc:'Un lilas presque blanc, comme la référence en 3D. Le plus élégant du lot, mais il se rapproche dangereusement du blanc de Yuki.',pal:{L:'#efe4fa',M:'#d6c4ea',m:'#ab97c4',o:'#7d6a96'}},{id:'D',nom:'MAUVE FROID, BLEUTÉ',desc:'Un mauve froid tirant sur le bleu. Très spectral et très Mewtwo, mais il se confond avec le fond de la station orbitale.',pal:{L:'#c2cdf0',M:'#8f9ed8',m:'#6a76aa',o:'#464e78'}},{id:'E',nom:'ROSE ET GRENAT',desc:'Rose franc et carapace grenat. Impossible à confondre avec un autre perso, mais on quitte Mewtwo.',pal:{L:'#f7c2e0',M:'#e88ac0',m:'#b85a90',o:'#853f68',V:'#c4485a',v:'#8f2c3c'}},{id:'F',nom:'GRIS-VIOLET',desc:'Gris-violet désaturé. Le plus sobre et le plus adulte, mais il perd toute la fantaisie du personnage.',pal:{L:'#cdc6d6',M:'#9b93a8',m:'#736c80',o:'#4e4857',V:'#6e6678',v:'#4a4452'}},{id:'G',nom:'VERT PÂLE',desc:'Vert pâle, un Bowser albinos. Très surprenant et très drôle, mais il entre en collision avec Yoshi.',pal:{L:'#cdeeb4',M:'#98d47a',m:'#6ca352',o:'#4a7336',V:'#4a8f3a',v:'#2f6624'}},{id:'H',nom:'BLEU NUIT ET CYAN',desc:'Bleu nuit avec une carapace cyan. Le plus lisible sur les terrains clairs, mais il devient un autre personnage.',pal:{L:'#7d94d8',M:'#4a5ea8',m:'#32407a',o:'#1f294f',V:'#35e0ff',v:'#1e8fa8'}},{id:'I',nom:'NOIR ET ROUGE',desc:'Noir et rouge. Cohérent avec le cuir clouté et très fort, mais un perso sombre se perd sur un terrain sombre.',pal:{L:'#5a5460',M:'#3a353f',m:'#262229',o:'#151318',V:'#c4485a',v:'#8f2c3c'}},{id:'J',nom:'DORÉ',desc:'Doré, pointes blanches. Parfait comme skin de récompense, illisible en couleur de base.',pal:{L:'#f7e2a8',M:'#e0c060',m:'#ab8f34',o:'#786220',V:'#c49a2a',v:'#8a6a12',C:'#ffffff',c:'#d6d6de'}}]},{id:'profil',titre:'8 · Le profil de jeu',note:'Les chiffres réels. speed en px/s, power en multiplicateur de puissance de tir, catchR le rayon d\'attrapé, chargeT le temps de charge.',zoom:null,variantes:[{id:'A',nom:'ÉQUILIBRÉ',desc:'Bon partout, excellent nulle part. Le plus facile à équilibrer, le moins mémorable.',stats:{spd:3,pow:3,ctl:3,speed:330,power:1.0,catchR:30,chargeT:0.8}},{id:'B',nom:'COGNEUR',desc:'Frappe le plus fort du roster, se déplace le plus lentement. Cohérent avec Bowser, mais il subit les persos rapides.',stats:{spd:2,pow:5,ctl:3,speed:296,power:1.22,catchR:28,chargeT:1.0}},{id:'C',nom:'GARDIEN',desc:'La deuxième zone d\'attrapé du jeu après Yoshi, très lent. Il tient son but mais ne conclut jamais.',stats:{spd:2,pow:4,ctl:5,speed:292,power:1.1,catchR:34,chargeT:0.95}},{id:'D',nom:'TÉLÉKINÉSISTE',desc:'Charge son ultime le plus vite du roster, bras faible. Cohérent avec Mewtwo, mais il gagne sur sa spéciale et pas sur son jeu.',stats:{spd:3,pow:2,ctl:4,speed:326,power:0.88,catchR:30,chargeT:0.6}},{id:'E',nom:'SPRINTEUR LOURD',desc:'Rapide ET puissant, mais la plus petite zone d\'attrapé du jeu. Spectaculaire, probablement trop fort.',stats:{spd:5,pow:5,ctl:1,speed:364,power:1.2,catchR:24,chargeT:0.85}},{id:'F',nom:'TECHNICIEN',desc:'Charge courte et grande zone d\'attrapé, puissance faible. Le plus agréable à jouer, le moins impressionnant.',stats:{spd:3,pow:2,ctl:5,speed:328,power:0.9,catchR:33,chargeT:0.66}},{id:'G',nom:'TANK',desc:'Lent, puissant, immense zone d\'attrapé. Il ne rate rien mais ne rattrape jamais un contre.',stats:{spd:1,pow:4,ctl:5,speed:282,power:1.12,catchR:35,chargeT:1.05}},{id:'H',nom:'FRAGILE',desc:'Très rapide, très puissant, tout le reste au plancher. À haut risque et difficile à équilibrer.',stats:{spd:5,pow:5,ctl:1,speed:372,power:1.25,catchR:23,chargeT:1.1}},{id:'I',nom:'BOWSER PUR',desc:'Lent, très puissant, charge très lente. Le plus fidèle à cette moitié-là, le plus punitif à jouer.',stats:{spd:2,pow:5,ctl:2,speed:290,power:1.28,catchR:26,chargeT:1.15}},{id:'J',nom:'MEWTWO PUR',desc:'Rapide, technique, charge rapide, puissance faible. Fidèle à l\'autre moitié, mais il ressemble alors à Yuki.',stats:{spd:4,pow:2,ctl:4,speed:352,power:0.87,catchR:31,chargeT:0.62}}]}];
 
-   Colonne vertébrale commune à tous les persos : tête, tenue, palette, pose
-   signature, ultime, animation, profil de jeu. On y ajoute autant de sections
-   SUR MESURE que le perso en demande (une arme, un familier, une monture…) —
-   elles se déclarent exactement pareil.
 
-   Chaque section porte 10 variantes : les 5 premières s'affichent, les 5
-   suivantes attendent derrière « plus de choix ». Une variante décrit ce
-   qu'elle REMPLACE, et rien d'autre :
-     tete   : 10 lignes           → change la tête
-     corps  : 10 lignes           → change le corps
-     pal    : objet partiel       → repeint (fusionné à la palette de base)
-     fx     : (g,cx,cy,t,cible)   → dessine par-dessus (ultime, arme, effet)
-     stats  : {spd,pow,ctl,charge}→ profil de jeu
-     anim   : {idle,run1,run2,…}  → jeux de poses
-   =========================================================================== */
-const SECTIONS = [
-  {
-    id: 'crete', titre: '1 · La crête',
-    note: 'La crête rouge. C\'est la seule couleur chaude du personnage et ce qui se voit de plus loin sur un terrain sombre — mais large et plate elle fait un bloc à créneaux posé sur le crâne, comme un château. Une crête est une touffe qui monte du MILIEU du crâne.',
-    variantes: [
-      v('A', 'TROIS ÉPIS ÉTROITS', 'Trois épis étroits qui montent du milieu du crâne, le crâne visible de chaque côté. La lecture la plus fidèle aux références et la plus lisible en petit, mais la plus sage du lot.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('B', 'ELLE COUVRE TOUT LE CRÂNE', 'La crête couvre tout le dessus du crâne. Impossible à rater même à l\'échelle du match, mais elle se lit comme un bonnet rouge plutôt que comme des cheveux.',
-        {tete:['...RRRRRRRR.....','..rRRRRRRRRr....','..mRRRRRRRRm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('C', 'UNE SEULE POINTE, TRÈS HAUTE', 'Une seule pointe centrale, très haute. Silhouette unique dans le roster et très reconnaissable de dos, mais il perd le côté hérissé de Bowser.',
-        {tete:['......RR........','.....rRRr.......','..mLLrRRrLLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('D', 'CINQ ÉPIS EN BROSSE', 'Cinq épis courts, en brosse. Très punk et cohérent avec le cuir clouté, mais à cette échelle les trous se referment et ça redevient une bande.',
-        {tete:['...R.R.R.R.R....','..rRRRRRRRRr....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('E', 'ELLE PART EN ARRIÈRE', 'La crête part en arrière, comme prise par le vent. Elle donne du mouvement même à l\'arrêt, mais elle déséquilibre la tête et s\'inverse au miroir.',
-        {tete:['......R.R.Rr....','.....RRRRRRr....','..mLLLRRRRRm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('F', 'CHAQUE ÉPI OMBRÉ', 'Chaque épi porte sa propre ombre. C\'est le plus sculpté du lot et le seul où l\'on compte vraiment les mèches, mais le rouge sombre grignote le rouge vif qui fait la couleur du perso.',
-        {tete:['.....R.R.R......','....RrRrRr......','..mLLrRrRrLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('G', 'ELLE DESCEND AUX TEMPES', 'Elle descend jusqu\'aux tempes et couvre le haut du crâne. Masse maximale et vraie tignasse, mais le crâne mauve disparaît et la tête paraît plus petite.',
-        {tete:['.....R.R.R......','..rRRRRRRRRr....','..RRRRRRRRRR....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('H', 'EN ORANGE', 'En orange plutôt qu\'en rouge. Beaucoup plus proche de la référence 3D, et l\'orange ressort mieux sur un terrain bleu ; en revanche il se rapproche du orange de l\'œil.',
-        {tete:['....O.O.O.O.....','...oOOOOOOo.....','..mLLOOOOOLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('I', 'ELLE RETOMBE EN FRANGE', 'Elle retombe en frange devant le crâne. Effet décoiffé très vivant, mais elle vient toucher le haut des lunettes et les deux éléments se mangent.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLRRRRRRRm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('J', 'DEUX POINTES FINES', 'Deux pointes seulement, très fines. Le plus discret et celui qui laisse le plus de place au visage, mais on ne lit plus une crête, juste deux mèches.',
-        {tete:['......R.R.......','......RRR.......','..mLLLRRRLLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....']})
-    ]
-  },
-  {
-    id: 'lun', titre: '2 · Les lunettes',
-    note: 'Les lunettes rondes, sa signature et l\'élément le plus cher du sprite. Un verre fait trois pixels de large, et posé sur l\'œil il le mange. Ce qui les sépare de deux gros yeux sombres, c\'est la BRANCHE : un pixel noir qui part vers la tempe.',
-    variantes: [
-      v('A', 'VERRES CERCLÉS, ŒIL ORANGE', 'Deux verres cerclés de noir, l\'œil orange au milieu, et les branches qui partent aux tempes. La version qui se lit le mieux comme des lunettes, et la plus fidèle.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('B', 'VERRES BLANCS, ŒIL CACHÉ', 'Les verres sont blancs, l\'œil ne se voit plus. Effet lunettes de savant très fort et très drôle, mais on perd son regard, donc son émotion.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNWNMMNWNMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('C', 'UN SEUL VERRE', 'Un seul verre, façon monocle. Détail marquant et unique dans le roster, mais l\'asymétrie s\'inverse au miroir et surprend à chaque changement de sens.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MMMMMMNNNM....','.mMMEMMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('D', 'VERRES OPAQUES', 'Verres entièrement noirs, opaques. Le plus menaçant et le plus lisible de loin, mais le visage devient un masque sans regard.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNNNMMNNNMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('E', 'RELEVÉES SUR LE FRONT', 'Les lunettes sont relevées sur le front, les yeux nus en dessous. On voit enfin son regard et le détail reste là, mais il faut deux éléments là où il n\'y a la place que d\'un.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mNNNMMNNNMm...','..mNENMMNENMm...','..mMMMMMMMMm....','...mMMEMMEMm....','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('F', 'MONTURE ÉPAISSE CARRÉE', 'Monture épaisse et carrée, avec un pont clair. La plus solide et la plus lisible en petit, mais on quitte le rond des références.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mNNNNNNNNm....','..MNCNMMNCNM....','.NMNNNMMNNNMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('G', 'UN REFLET DANS CHAQUE VERRE', 'Un reflet blanc dans chaque verre. C\'est ce reflet qui dit VERRE plutôt qu\'œil, et c\'est le détail le plus juste du lot ; en contrepartie il ajoute du blanc pur sur un perso qui n\'en a nulle part ailleurs.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMWENMMNEWMN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('H', 'EN DEMI-LUNES', 'Les lunettes descendent bas sur le museau, en demi-lunes. Le front est dégagé et la crête ressort, et c\'est la version la plus savante du lot ; en revanche elles empiètent sur la bouche.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NmNENMMNENMm...','...NNCNNCNN.....']}),
-      v('I', 'VERRES ÉNORMES', 'Des verres énormes qui débordent du visage. Impossible à rater et très cartoon, mais ils mangent le crâne et il ne reste plus de joues.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','.NNNNNMMNNNNN...','.NNNENMMNENNN...','...mMMMMMMm.....','...NNCNNCNN.....']}),
-      v('J', 'MONTURE CRÈME', 'Monture crème plutôt que noire, assortie aux pointes. L\'ensemble est plus cohérent en couleur, mais sur un visage clair la monture claire disparaît.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MCCCMMCCCM....','.cMCECMMCECMc...','...mMMMMMMm.....','...NNCNNCNN.....']})
-    ]
-  },
-  {
-    id: 'cara', titre: '3 · La carapace',
-    note: 'La carapace. De face on n\'en voit rien, sauf les pointes qui dépassent aux épaules — et c\'est suffisant : la référence de face se lit Bowser sans hésiter grâce à elles. Posées à un pixel d\'écart du corps elles flottent à côté et se lisent comme des mains tendues.',
-    variantes: [
-      v('A', 'DEUX POINTES PAR ÉPAULE', 'Deux pointes crème collées à chaque épaule. Le minimum qui fait lire Bowser, sans encombrer la silhouette.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('B', 'TROIS POINTES, ELLES DÉBORDENT', 'Trois pointes par épaule, elles débordent largement. Présence maximale et vraie carapace devinée derrière, mais il occupe beaucoup plus de largeur sur le terrain.',
-        {corps:['CCCLMMMMMMLCCC..','.ccMLMMMMLMcc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('C', 'POINTES SOMBRES, FONDUES', 'Les pointes sont en crème sombre, presque fondues dans le corps. Silhouette la plus propre du lot, mais on ne voit plus rien de Bowser de loin.',
-        {corps:['.ccLMMMMMMLcc...','.mMLMMMMMMLMm...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('D', 'POINTES ÉMOUSSÉES, JUSQU\'AUX BRAS', 'Des pointes émoussées en crème sombre, qui descendent jusqu\'aux bracelets. La carapace se devine sur toute la hauteur du buste et non seulement aux épaules ; en revanche elle se confond avec le cuir.',
-        {corps:['.ccLMMMMMMLcc...','.cMLMMMMMMLMc...','cNNMMVVVVMMNNc..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('E', 'UN LISERÉ OS AUX ÉPAULES', 'Un liseré os fait le tour des épaules. C\'est le bord de carapace des références, et le détail le plus juste ; mais un liseré fin se perd complètement à l\'échelle du match.',
-        {corps:['CccCMMMMMMCccC..','.cCMLMMMMLMCc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('F', 'POINTES NOIRES', 'Des pointes noires plutôt que crème. Elles s\'accordent au cuir clouté et l\'ensemble devient très cohérent, mais elles se confondent avec les bracelets.',
-        {corps:['.NNLMMMMMMLNN...','.oMLMMMMMMLMo...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('G', 'UNE GROSSE POINTE PAR ÉPAULE', 'Une seule pointe par épaule, plus grosse. Silhouette nette et lisible, mais on croit à des épaulettes plutôt qu\'à une carapace.',
-        {corps:['..CLMMMMMMLC....','..MLMMMMMMLM....','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('H', 'ELLE REMONTE EN COL', 'La carapace remonte en col derrière la tête. C\'est le plus reconnaissable de tous et ça règle le problème du dos invisible, mais ça encombre la nuque et la crête.',
-        {corps:['.CCcMMMMMMcCC...','.cccMMMMMMccc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('I', 'QUATRE POINTES TRÈS LONGUES', 'Quatre pointes par épaule, très longues. Le plus impressionnant du roster, mais il devient plus large que haut et le miroir devient très visible.',
-        {corps:['CCCCMMMMMMCCCC..','CccMLMMMMLMccC..','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('J', 'UNE POINTE MINUSCULE', 'Une pointe minuscule par épaule, un seul pixel. La silhouette la plus fine et la plus Mewtwo, mais à l\'échelle du match on ne les voit plus du tout.',
-        {corps:['..CLMMMMMMLC....','..cLMMMMMMLc....','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']})
-    ]
-  },
-  {
-    id: 'cuir', titre: '4 · Le cuir clouté',
-    note: 'Le cuir clouté : le collier sous le menton et les bracelets sur les avant-bras. C\'est du Bowser pur, et le collier a un deuxième rôle — il sépare nettement la tête du corps, comme le col de Leon.',
-    variantes: [
-      v('A', 'COLLIER ET BRACELETS', 'Collier clouté sous le menton et bracelets aux deux avant-bras, clous crème. La lecture complète et la plus fidèle.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....'], corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('B', 'COLLIER ET BRACELETS À POINTES', 'Un collier à POINTES plutôt qu\'à clous, et des pointes aux bracelets. Beaucoup plus agressif et raccord avec la carapace, mais le crème est alors partout et plus rien ne ressort.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...CmMMMMCm.....','...NCNNNNCN.....'], corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','cNCMMVVVVMMCNc..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('C', 'COLLIER HAUT, SOUS LE MUSEAU', 'Le collier remonte d\'un cran, juste sous le museau. La tête est mieux séparée du corps, mais le menton disparaît et il paraît sans cou.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...NNCNNCNN.....','...NNNNNNNN.....'], corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('D', 'CLOUS ARGENTÉS', 'Les clous sont argentés et non crème. Ils ressortent beaucoup mieux sur le noir, mais ils introduisent une cinquième couleur dans un perso qui en a déjà quatre familles.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNANNANN.....'], corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','ANNMMVVVVMMNNA..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('E', 'COLLIER LARGE, DEUX RANGÉES', 'Un collier large, sur deux rangées. Très fort et très Bowser, mais il mange le menton et la tête paraît enfoncée dans les épaules.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','..NNCNNNNCNN....','..NNNNNNNNNN....'], corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('F', 'DEUX BRACELETS PAR BRAS', 'Deux bracelets superposés par bras. Le plus riche et le plus punk, mais le noir prend alors tout l\'avant-bras.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....'], corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','CNNMMVVVVMMNNC..','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('G', 'COLLIER FIN, RAS DU COU', 'Un collier fin, ras du cou. Le plus élégant et celui qui laisse le plus de peau visible, mais il ne sépare plus vraiment la tête du corps.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','....NCNNCN......'], corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','.NNMMVVVVMMNN...','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('H', 'UNE CEINTURE EN PLUS', 'Une ceinture cloutée en plus du reste. Elle coupe la silhouette à la taille et donne une vraie tenue, mais elle traverse la plaque de ventre.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNCNNCNN.....'], corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.NNNNNCNNNNNN...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('I', 'CLOUS SOMBRES', 'Des clous sombres, en simple relief. Très sobre et très propre, mais sur du noir un clou sombre ne se voit pas et le collier redevient une bande.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNoNNoNN.....'], corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','oNNMMVVVVMMNNo..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('J', 'CUIR NOIR, SANS CLOUS', 'Cuir entièrement noir, sans aucun clou. Le plus sobre et le plus net à l\'échelle du match, mais on perd le côté punk qui fait la moitié du personnage.',
-        {tete:['.....R.R.R......','....rRRRRRr.....','..mLLRRRRRLm....','..mLLLLLLLLm....','..mLLMMMMLLm....','..mMMMMMMMMm....','..MNNNMMNNNM....','.NMNENMMNENMN...','...mMMMMMMm.....','...NNNNNNNN.....'], corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','.NNMMVVVVMMNN...','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']})
-    ]
-  },
-  {
-    id: 'queue', titre: '5 · La queue',
-    note: 'La queue de Mewtwo. Sur un perso vu de face elle ne peut sortir que sur un côté, et les colonnes 14-15 doivent rester vides : il lui reste deux colonnes. Elle porte le mauve ROSE du ventre et non l\'ombre du corps, sinon elle se confond avec le contour.',
-    variantes: [
-      v('A', 'COURTE, À DROITE', 'Une queue courte qui part de la hanche droite et descend. Discrète et lisible, sans déséquilibrer la silhouette.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('B', 'LONGUE ET ENROULÉE', 'Une queue longue qui s\'enroule jusqu\'au sol. C\'est celle des références et la plus reconnaissable, mais elle déborde beaucoup d\'un côté et le miroir la fait sauter.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMmvV..','..mMMo..oMMmVv..','..CCCC..CCCCV...']}),
-      v('C', 'PAS DE QUEUE', 'Pas de queue. La silhouette est parfaitement symétrique et se retourne sans qu\'on voie rien bouger, mais il perd la moitié de ce qui fait Mewtwo.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMm....','..mMVo..oVMm....','..mMMo..oMMm....','..CCCC..CCCC....']}),
-      v('D', 'ÉPAISSE', 'Une queue épaisse, presque aussi large qu\'une jambe. Impossible à confondre avec un bout de décor, mais on croit à une troisième jambe.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMVV...','..mMVo..oVMVVv..','..mMMo..oMMmvv..','..CCCC..CCCC....']}),
-      v('E', 'ELLE PASSE ENTRE LES JAMBES', 'La queue passe DEVANT, entre les jambes. Placement inhabituel qui règle le débordement latéral, mais à cette échelle elle se lit très mal.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVoVVoVMm.V..','..mMMoVvoMMm.V..','..CCCC..CCCC....']}),
-      v('F', 'BOUT CRÈME', 'Le bout de la queue est crème, comme les pointes. Le détail accroche l\'œil et relie la queue au reste de la palette, mais rien dans les références ne le montre.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.C..','..CCCC..CCCCc...']}),
-      v('G', 'RELEVÉE EN PANACHE', 'Une queue relevée, en panache. Très vivante et elle allonge la silhouette vers le haut, mais elle vient toucher les bracelets.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMV...','..mMMVVVVMMmV...','..mMVo..oVMmV...','..mMMo..oMMm....','..CCCC..CCCC....']}),
-      v('H', 'TRÈS FINE', 'Une queue très fine, presque un trait. La plus discrète et celle qui gêne le moins, mais un trait de deux pixels se lit comme un défaut d\'affichage.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmv...','..mMVo..oVMm.v..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('I', 'COURTE ET EN POINTE', 'Une queue courte et large qui se termine en pointe. Compromis entre la lisibilité et l\'encombrement, mais elle ne s\'enroule plus.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMmVV..','..mMMo..oMMmvC..','..CCCC..CCCC....']}),
-      v('J', 'À GAUCHE', 'La queue passe à GAUCHE. Rien ne change sur le fond, mais tous les autres éléments du perso penchent à droite : de ce côté la silhouette s\'équilibre.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','V..mMVVVVMMm....','V..mVo..oVMm....','v..mMo..oMMm....','..CCCC..CCCC....']})
-    ]
-  },
-  {
-    id: 'ventre', titre: '6 · La carrure et le ventre',
-    note: 'La plaque de ventre et la carrure. La plaque est ce qui distingue un corps de Mewtwo d\'un aplat mauve — mais carrée elle fait une fenêtre, et il faut qu\'elle s\'arrondisse : étroite en haut, large au milieu, étroite en bas.',
-    variantes: [
-      v('A', 'PLAQUE OVALE NETTE', 'Une plaque ovale nette, étroite en haut, large au milieu, étroite en bas. La lecture la plus propre et celle qui donne le plus de volume.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('B', 'PAS DE PLAQUE', 'Pas de plaque, le corps est d\'un seul mauve. La silhouette est la plus pure, mais le torse devient un aplat où plus rien ne se lit.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMMMMMMMMm...','CmMMMMMMMMMMmC..','.mMMMMMMMMMMm...','..mMMMMMMMMm....','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('C', 'CARRURE LARGE', 'Une carrure large, épaules et torse épaissis. Vraie présence de cogneur sur le terrain, mais il perd la finesse de Mewtwo.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','mMMMMMVVVVMMMMm.','CMMMMVVVVVVMMMC.','mMMMMMVVVVMMMMm.','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('D', 'SILHOUETTE FINE', 'Une silhouette fine, presque frêle. C\'est la vraie carrure de Mewtwo et la plus élégante, mais il paraît chétif à côté de Chopper.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','..mMMVVVVMMm....','.CmMVVVVVVMmC...','..mMMVVVVMMm....','...mMVVVVMm.V...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('E', 'ELLE DESCEND AUX CUISSES', 'La plaque descend jusqu\'aux cuisses. Elle relie le ventre aux taches des jambes, comme sur les références ; en revanche le rose prend la moitié du corps.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMVVVVVVMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('F', 'PECTORAUX MARQUÉS', 'Deux pectoraux marqués au-dessus de la plaque. Il gagne une vraie anatomie, mais deux ombres isolées se lisent comme des taches — seule une ligne se lit comme un muscle.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMVVMMMMVVMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('G', 'PLAQUE TRÈS FONCÉE', 'La plaque est très foncée, presque prune. Le contraste est maximal et se voit de loin, mais elle fait un trou dans le corps.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMvvvvMMMm...','CmMMvvvvvvMMmC..','.mMMMvvvvMMMm...','..mMMvvvvMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('H', 'PLAQUE PLUS CLAIRE', 'La plaque est plus CLAIRE que le corps. Effet de ventre pâle, plus juste anatomiquement, mais elle se confond avec le mauve éclairé des épaules.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMLLLLMMMm...','CmMMLLLLLLMMmC..','.mMMMLLLLMMMm...','..mMMLLLLMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('I', 'UN NOMBRIL', 'Un nombril marqué au centre de la plaque. Détail qui donne l\'échelle du corps, mais un pixel isolé au milieu d\'un aplat se lit comme une salissure.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVvvVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('J', 'UNE LIGNE MÉDIANE', 'Une ligne médiane sombre qui descend le long du torse. C\'est le seul trait qui se lise vraiment comme de l\'anatomie, mais elle coupe la plaque en deux.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVvvVMMMm...','CmMMMVvvVMMMmC..','.mMMMVvvVMMMm...','..mMMVvvVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']})
-    ]
-  },
-  {
-    id: 'pal', titre: '7 · La palette',
-    note: 'Ses deux grandes surfaces sont le mauve du corps et le rose de la plaque. Le mauve porte QUATRE valeurs, comme le vert de Yoshi : en dessous de trois le personnage devient un aplat où le volume ne se lit plus.',
-    variantes: [
-      v('A', 'MAUVE CLAIR DES RÉFÉRENCES', 'Le mauve clair des références, quatre valeurs, plaque rose. La lecture la plus fidèle et la plus lumineuse sur un terrain sombre.',
-        {pal:{}}),
-      v('B', 'MAUVE SATURÉ', 'Un mauve nettement plus saturé. Il ressort beaucoup mieux au milieu de l\'action, mais il s\'éloigne du lilas pâle des visuels.',
-        {pal:{L:'#c9a2e8', M:'#a06fd0', m:'#7a4aa8', o:'#55307a'}}),
-      v('C', 'LILAS TRÈS PÂLE', 'Un lilas très pâle, presque blanc. C\'est la teinte de la référence 3D et la plus élégante, mais elle se rapproche dangereusement du blanc de Yuki.',
-        {pal:{L:'#efe4fa', M:'#d6c4ea', m:'#ab97c4', o:'#7d6a96'}}),
-      v('D', 'MAUVE FROID, BLEUTÉ', 'Un mauve froid, tirant sur le bleu. Très spectral et très Mewtwo, mais il se confond avec le fond bleu de la station orbitale.',
-        {pal:{L:'#c2cdf0', M:'#8f9ed8', m:'#6a76aa', o:'#464e78'}}),
-      v('E', 'ROSE FRANC', 'Rose franc. Impossible à confondre avec un autre perso du roster, mais on quitte complètement Mewtwo.',
-        {pal:{L:'#f7c2e0', M:'#e88ac0', m:'#b85a90', o:'#853f68'}}),
-      v('F', 'GRIS-VIOLET', 'Gris-violet désaturé. Le plus sobre et le plus adulte du lot, mais il perd toute la fantaisie du personnage.',
-        {pal:{L:'#cdc6d6', M:'#9b93a8', m:'#736c80', o:'#4e4857'}}),
-      v('G', 'VERT PÂLE', 'Vert pâle, comme un Bowser albinos. Très surprenant et très drôle, mais il entre en collision avec Yoshi.',
-        {pal:{L:'#cdeeb4', M:'#98d47a', m:'#6ca352', o:'#4a7336'}}),
-      v('H', 'BLEU NUIT', 'Bleu nuit avec une plaque cyan. Le plus lisible sur les terrains clairs, mais il devient un tout autre personnage.',
-        {pal:{L:'#7d94d8', M:'#4a5ea8', m:'#32407a', o:'#1f294f', V:'#35e0ff', v:'#1e8fa8'}}),
-      v('I', 'NOIR ET ROUGE', 'Noir et rouge. Cohérent avec le cuir clouté et très fort visuellement, mais un perso sombre se perd sur un terrain sombre.',
-        {pal:{L:'#5a5460', M:'#3a353f', m:'#262229', o:'#151318', V:'#c4485a', v:'#8f2c3c'}}),
-      v('J', 'DORÉ', 'Doré, avec des pointes blanches. Le plus rare et le plus flatteur comme skin de récompense, mais illisible en couleur de base.',
-        {pal:{L:'#f7e2a8', M:'#e0c060', m:'#ab8f34', o:'#786220', C:'#ffffff', c:'#d6d6de'}})
-    ]
-  },
-  {
-    id: 'pose', titre: '8 · La pose signature',
-    note: 'La pose au repos, celle qu\'on voit le plus longtemps. Elle doit tenir sans lasser et rester lisible une fois retournée au miroir, quand il vise à gauche.',
-    variantes: [
-      v('A', 'DEBOUT, BRAS LE LONG DU CORPS', 'Debout, bras le long du corps, appuis larges. Neutre et reposante à regarder longtemps, mais elle ne dit rien de son tempérament.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('B', 'BRAS ÉCARTÉS, GRIFFES EN AVANT', 'Les bras écartés, griffes en avant. On comprend tout de suite qu\'il attrape, mais il occupe beaucoup de largeur.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.CmMMVVVVMMmC...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('C', 'BUSTE PENCHÉ', 'Le buste penché en avant, prêt à charger. Menaçant et plein d\'intention, mais fatigant à regarder pendant tout un match.',
-        {corps:['..CCLMMMMMMLCC..','..cMLMMMMMMLMc..','CNNMMVVVVMMNNC..','CNNMMVVVVMMNNC..','.mMMVVVVVVMMm...','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('D', 'BRAS CROISÉS', 'Les bras croisés. Très caractérisé et très drôle sur un perso à lunettes, mais il ne paraît plus prêt à jouer.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','.mMCCVVVVCCMm...','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('E', 'IL REMONTE SES LUNETTES', 'Une main relevée qui remonte ses lunettes. La pose la plus parlante du lot, mais elle immobilise un bras.',
-        {corps:['.CCLMMMMMMLCC.C.','.cMLMMMMMMLMcC..','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('F', 'APPUIS SERRÉS', 'Appuis très serrés, silhouette étroite. Elle laisse la place à la queue et aux pointes, mais il paraît instable.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','...mMVooVMm..V..','...mMMooMMm..V..','...CCCCCCC......']}),
-      v('G', 'DE TROIS QUARTS', 'Légèrement de trois quarts, une épaule en avant. Plus vivant que la symétrie parfaite, mais le miroir devient très visible.',
-        {corps:['..CLMMMMMMLCC...','..MLMMMMMMLMc...','.NNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('H', 'ACCROUPI', 'Accroupi, prêt à bondir. Silhouette basse et compacte, très lisible, mais il perd sa taille.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMMVVVVMMm.V..','..oMMo..oMMo.v..','.CCCCC..CCCCC...']}),
-      v('I', 'UNE GRIFFE LEVÉE', 'Une griffe levée vers le ciel. Théâtral et très Bowser, mais le bras sort du gabarit.',
-        {corps:['CCCLMMMMMMLCC...','CcMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('J', 'LE POIDS SUR UNE JAMBE', 'Le poids sur une jambe, l\'autre fléchie. La plus naturelle des dix, mais l\'asymétrie s\'inverse au miroir.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo...oMMV...','..CCCC....CCC...']})
-    ]
-  },
-  {
-    id: 'anim', titre: '9 · L\'animation',
-    note: 'Course, lancer, dash, plongeon : les cartes montrent la pose la plus caractéristique de chaque jeu d\'animations. On juge la lisibilité en mouvement.',
-    variantes: [
-      v('A', 'COURSE LARGE PUIS RAMASSÉE', 'Course en appuis larges puis ramassés, comme le reste du roster. C\'est l\'écart entre les deux poses qui fait courir : deux poses proches donnent une marche glissée.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo...oVMmV..','.mMMo.....oMMV..','.CCCC.....CCCC..']}),
-      v('B', 'COURSE LOURDE À PETITS PAS', 'Une course lourde, à petits pas. Elle rend son poids, mais elle contredit sa vitesse réelle.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.V..','..CCC....CCC....']}),
-      v('C', 'COURSE BONDISSANTE', 'Une course bondissante, les deux pieds décollent. Très vivante, mais elle le fait paraître léger.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','.mMVo....oVMV...','.mMo......oMV...','.CCC......CCC...']}),
-      v('D', 'LA QUEUE FOUETTE', 'La queue fouette pendant la course. Détail qui donne beaucoup de vie, mais il double le nombre de poses à dessiner.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMVVV..','..mMMo..oMMmvv..','..CCCC..CCCC....']}),
-      v('E', 'LANCER EN REVERS', 'Le lancer part de très bas, en revers. Original et bien lisible, mais il ne ressemble à aucun autre lancer du jeu.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','.mMMVVVVVVMMmC..','CcMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('F', 'LANCER À DEUX MAINS', 'Le lancer part au-dessus de l\'épaule, à deux mains. Puissant et cohérent avec sa carrure, mais lent à lire.',
-        {corps:['CCCLMMMMMMLCCC..','CccMLMMMMLMccC..','.NNMMVVVVMMNN...','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('G', 'DASH À L\'HORIZONTALE', 'Le dash le penche presque à l\'horizontale. Impact maximal, mais il sort du gabarit en hauteur.',
-        {corps:['..CLMMMMMMLCC...','.cMLMMMMMMLMc...','NNMMMVVVVMMMNC..','mMMMMVVVVMMMMm..','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('H', 'PLONGEON À PLAT', 'Le plongeon le met à plat, griffes en avant. Très lisible et très félin, mais il devient très large.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMo..oMMm.V..','.CCCCC..CCCCC...']}),
-      v('I', 'LES LUNETTES GLISSENT', 'Les lunettes glissent sur le museau pendant le dash. Le détail le plus drôle du lot, mais il ne se voit qu\'une image sur deux.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']}),
-      v('J', 'CRÊTE QUI S\'APLATIT', 'La crête s\'aplatit à la course et se redresse à l\'arrêt. Beaucoup de caractère pour deux pixels, mais elle bouge en permanence.',
-        {corps:['.CCLMMMMMMLCC...','.cMLMMMMMMLMc...','CNNMMVVVVMMNNC..','.mMMMVVVVMMMm...','CmMMVVVVVVMMmC..','.mMMMVVVVMMMm...','..mMMVVVVMMmV...','..mMVo..oVMm.V..','..mMMo..oMMm.v..','..CCCC..CCCC....']})
-    ]
-  },
-  {
-    id: 'profil', titre: '10 · Le profil de jeu',
-    note: 'Les chiffres réels. speed en px/s, power en multiplicateur de puissance de tir, catchR le rayon d\'attrapé, chargeT le temps de charge.',
-    variantes: [
-      v('A', 'ÉQUILIBRÉ', 'Équilibré. Bon partout, excellent nulle part — le profil le plus facile à équilibrer, et le moins mémorable.',
-        {stats:{spd:3, pow:3, ctl:3, speed:330, power:1.0, catchR:30, chargeT:0.8}}),
-      v('B', 'COGNEUR', 'Cogneur. Frappe le plus fort du roster, se déplace le plus lentement. Cohérent avec Bowser, mais il subit les persos rapides.',
-        {stats:{spd:2, pow:5, ctl:3, speed:296, power:1.22, catchR:28, chargeT:1.0}}),
-      v('C', 'GARDIEN', 'Gardien. La plus grande zone d\'attrapé après Yoshi, très lent. Il tient son but, mais ne conclut jamais.',
-        {stats:{spd:2, pow:4, ctl:5, speed:292, power:1.1, catchR:34, chargeT:0.95}}),
-      v('D', 'TÉLÉKINÉSISTE', 'Télékinésiste. Charge son ultime le plus vite du roster, bras faible. Cohérent avec Mewtwo, mais il gagne sur sa spéciale et pas sur son jeu.',
-        {stats:{spd:3, pow:2, ctl:4, speed:326, power:0.88, catchR:30, chargeT:0.6}}),
-      v('E', 'SPRINTEUR LOURD', 'Sprinteur lourd. Rapide ET puissant, mais la plus petite zone d\'attrapé du jeu. Spectaculaire, probablement trop fort.',
-        {stats:{spd:5, pow:5, ctl:1, speed:364, power:1.2, catchR:24, chargeT:0.85}}),
-      v('F', 'TECHNICIEN', 'Technicien. Charge courte et grande zone d\'attrapé, puissance faible. Le plus agréable à jouer, le moins impressionnant.',
-        {stats:{spd:3, pow:2, ctl:5, speed:328, power:0.9, catchR:33, chargeT:0.66}}),
-      v('G', 'TANK', 'Tank. Lent, puissant, immense zone d\'attrapé. Il ne rate rien, mais ne rattrape jamais un contre.',
-        {stats:{spd:1, pow:4, ctl:5, speed:282, power:1.12, catchR:35, chargeT:1.05}}),
-      v('H', 'FRAGILE', 'Fragile. Très rapide, très puissant, tout le reste au plancher. Un profil à haut risque, difficile à équilibrer.',
-        {stats:{spd:5, pow:5, ctl:1, speed:372, power:1.25, catchR:23, chargeT:1.1}}),
-      v('I', 'BOWSER PUR', 'Bowser pur. Lent et très puissant, charge très lente. Le plus fidèle à la référence, le plus punitif à jouer.',
-        {stats:{spd:2, pow:5, ctl:2, speed:290, power:1.28, catchR:26, chargeT:1.15}}),
-      v('J', 'MEWTWO PUR', 'Mewtwo pur. Rapide, technique, charge rapide, puissance faible. Le plus fidèle à l\'autre moitié, mais il ressemble alors à Yuki.',
-        {stats:{spd:4, pow:2, ctl:4, speed:352, power:0.87, catchR:31, chargeT:0.62}})
-    ]
-  }
-];
-
-// Fabrique une variante. `pieces` ne porte que ce que la variante remplace.
-function v(id, nom, desc, pieces) { return { id, nom, desc, ...pieces }; }
-
-// Effet d'ultime d'exemple : à remplacer. La cible est fournie pour qu'on
-// dessine aussi ce que l'ulti lui inflige.
-function fxExemple(g, cx, cy, t, cible) {
-  for (let i = 0; i < 3; i++) {
-    const ph = ((t * .9 + i / 3) % 1);
-    g.strokeStyle = `rgba(255,226,140,${(1 - ph) * .8})`;
-    g.lineWidth = 4 * (1 - ph) + 1;
-    g.beginPath(); g.arc(cx, cy, ph * 70, 0, TAU); g.stroke();
-  }
-  if (cible) {
-    g.fillStyle = '#9aa0a6';
-    g.fillRect(cible.x - 13 + Math.sin(t * 9) * 3, cible.y - 22, 26, 44);
-  }
-}
-
-/* ===========================================================================
-   3. LE MOTEUR — ne pas toucher en copiant.
-   =========================================================================== */
-
-function bati(rows, pal, ech) {
-  const c = document.createElement('canvas');
-  c.width = 16 * ech; c.height = rows.length * ech;
-  const g = c.getContext('2d');
-  rows.forEach((row, y) => {
-    for (let x = 0; x < row.length; x++) {
-      const ch = row[x];
-      if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x * ech, y * ech, ech, ech); }
+/* ===================== LE DESSIN ===================== */
+// Un sprite se dessine a la main plutot que par buildSprite : on veut pouvoir
+// le poser a n'importe quelle echelle, et surtout n'en dessiner qu'un MORCEAU
+// pour le gros plan.
+function peindre(g, rows, pal, ech, ox, oy, zone) {
+  const [x0, y0, x1, y1] = zone || [0, 0, 15, 19];
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const ch = rows[y][x];
+      if (ch === '.' || !pal[ch]) continue;
+      g.fillStyle = pal[ch];
+      g.fillRect(ox + (x - x0) * ech, oy + (y - y0) * ech, ech, ech);
     }
-  });
-  return c;
+  }
 }
 
-// Repeint des pixels déjà remplis sans toucher à la silhouette.
-export function teinter(rows, corresp) {
-  return rows.map(r => [...r].map(ch => corresp[ch] || ch).join(''));
-}
-// Repeint des pixels précis, repérés « ligne,colonne ».
-export function reshade(rows, map) {
-  return rows.map((row, r) => {
-    let out = '';
-    for (let c = 0; c < row.length; c++) out += (map[r + ',' + c] !== undefined) ? map[r + ',' + c] : row[c];
-    return out;
-  });
+// Le fond : un degrade neutre, pas le terrain. Sur un terrain bleu nuit un
+// perso mauve se juge mal, et la question ici n'est pas « est-ce qu'il ressort
+// sur le terrain » mais « est-ce que la piece se lit ». Le terrain revient
+// dans la bande du bas, ou la question redevient celle-la.
+function fond(g, W, H) {
+  const d = g.createLinearGradient(0, 0, 0, H);
+  d.addColorStop(0, '#1d1430'); d.addColorStop(1, '#100a1c');
+  g.fillStyle = d; g.fillRect(0, 0, W, H);
 }
 
-// Un bout du vrai terrain — mêmes teintes que le thème `arena` de maps.js,
-// pour que la lisibilité jugée ici soit celle du match.
-function terrain(g, w, h) {
-  g.fillStyle = '#0a1220'; g.fillRect(0, 0, w, h);
-  const solY = h * .58;
-  g.fillStyle = '#0c1424'; g.fillRect(0, solY, w, h - solY);
-  g.fillStyle = 'rgba(15,26,46,0.7)'; g.fillRect(0, solY, w, h - solY);
-  g.strokeStyle = 'rgba(255,255,255,.16)'; g.lineWidth = 1;
-  g.beginPath(); g.moveTo(0, solY + .5); g.lineTo(w, solY + .5); g.stroke();
-  g.strokeStyle = 'rgba(53,224,255,.13)';
-  for (let x = 22; x < w; x += 46) { g.beginPath(); g.moveTo(x, solY); g.lineTo(x - 14, h); g.stroke(); }
-}
-
-function ombre(g, x, y, r) {
-  g.save(); g.globalAlpha = .34; g.fillStyle = '#000';
-  g.beginPath(); g.ellipse(x, y, r, r * .32, 0, 0, TAU); g.fill(); g.restore();
-}
-
-// L'état courant : une lettre retenue par section.
+/* ===================== L'ÉTAT ===================== */
 const choix = {};
 SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+const actuel = id => SECTIONS.find(s => s.id === id).variantes.find(x => x.id === choix[id]);
 
-// Assemble le perso tel que les choix actuels le décrivent. Chaque section
-// n'apporte que la pièce qu'elle remplace, la dernière déclarée l'emporte.
-function assembler() {
-  let tete = PERSO.tete, corps = PERSO.corps, pal = { ...PERSO.pal }, fx = null, stats = null;
+// Assemble le perso tel que les choix le decrivent. Chaque section n'apporte
+// que la piece qu'elle remplace, la derniere declaree l'emporte.
+function batir(remplace) {
+  let tete = PERSO.tete, corps = PERSO.corps;
+  let pal = { ...PERSO.pal }, stats = null;
   for (const s of SECTIONS) {
-    const va = s.variantes.find(x => x.id === choix[s.id]);
-    if (!va) continue;
+    const va = (remplace && remplace.sec === s.id) ? remplace.va : actuel(s.id);
     if (va.tete) tete = va.tete;
     if (va.corps) corps = va.corps;
     if (va.pal) pal = { ...pal, ...va.pal };
-    if (va.fx) fx = va.fx;
     if (va.stats) stats = va.stats;
   }
-  return { rows: [...tete, ...corps], pal, fx, stats };
+  return { rows: [...tete, ...corps], pal, stats };
 }
 
-/* --- Vérification du gabarit -------------------------------------------
-   Une lettre absente de la palette ne lève aucune erreur : le pixel est
-   simplement ignoré et le trou passe inaperçu. On vérifie donc les deux :
-   la géométrie (16 colonnes, 20 lignes) ET l'existence de chaque lettre. */
-// `id` sert à retrouver les traits obligatoires du perso dans _verif.js.
-const bad = verifier({ id: 'flowser', PERSO, SECTIONS });
-const boite = document.getElementById('errs');
-afficher(bad, boite);
+/* ===================== L'APERÇU ===================== */
+const gG = document.getElementById('cvGrand').getContext('2d');
+const gP = document.getElementById('cvPetit').getContext('2d');
+const ARENE = MAPS[0], TH = ARENE.theme;
 
-/* --- Bande de comparaison au roster --- */
-(function bandeRoster() {
-  const hote = document.getElementById('rosterRow');
-  for (const ck of ROSTER) {
-    const c = CHARS[ck];
-    const d = document.createElement('div'); d.className = 'rosterOne';
-    const cv = document.createElement('canvas');
-    cv.width = 16 * ECH_CARTE; cv.height = 20 * ECH_CARTE;
-    const g = cv.getContext('2d');
-    terrain(g, cv.width, cv.height);
-    g.imageSmoothingEnabled = false;
-    g.drawImage(c.frames.idle, 0, 0, cv.width, cv.height);
-    const s = document.createElement('span'); s.textContent = c.short || ck;
-    d.appendChild(cv); d.appendChild(s); hote.appendChild(d);
+function majApercu() {
+  const { rows, pal } = batir();
+  const cv = gG.canvas;
+  fond(gG, cv.width, cv.height);
+  const ech = 19;
+  peindre(gG, rows, pal, ech, (cv.width - 16 * ech) / 2, (cv.height - 20 * ech) / 2);
+
+  // Et a l'echelle du match, sur le vrai sol du terrain : quatre fois, parce
+  // qu'un perso seul ne dit pas s'il tient au milieu des autres.
+  const c2 = gP.canvas;
+  gP.fillStyle = TH.floor; gP.fillRect(0, 0, c2.width, c2.height);
+  gP.strokeStyle = TH.line; gP.lineWidth = 1;
+  gP.beginPath(); gP.moveTo(0, c2.height - 14); gP.lineTo(c2.width, c2.height - 14); gP.stroke();
+  for (let i = 0; i < 3; i++) {
+    peindre(gP, rows, pal, 4.8, 14 + i * 74, c2.height - 14 - 20 * 4.8);
   }
-  // Le nouveau, en dernier et en or : c'est lui qu'on compare.
-  const d = document.createElement('div'); d.className = 'rosterOne neuf';
-  const cv = document.createElement('canvas');
-  cv.id = 'cvRosterNeuf';
-  cv.width = 16 * ECH_CARTE; cv.height = 20 * ECH_CARTE;
-  const s = document.createElement('span'); s.textContent = PERSO.nom;
-  d.appendChild(cv); d.appendChild(s); hote.appendChild(d);
-})();
-
-function peindreRosterNeuf() {
-  const cv = document.getElementById('cvRosterNeuf');
-  const g = cv.getContext('2d');
-  const { rows, pal } = assembler();
-  terrain(g, cv.width, cv.height);
-  g.imageSmoothingEnabled = false;
-  g.drawImage(bati(rows, pal, 8), 0, 0, cv.width, cv.height);
+  majFiche(); majChoix();
 }
 
-/* --- Les sections et leurs cartes (statiques) --- */
-const cartes = [];
-(function poserSections() {
-  const hote = document.getElementById('sections');
-  for (const s of SECTIONS) {
-    const h2 = document.createElement('h2'); h2.textContent = s.titre;
-    hote.appendChild(h2);
-    if (s.note) { const p = document.createElement('p'); p.className = 'note'; p.textContent = s.note; hote.appendChild(p); }
-
-    const rangee = document.createElement('div'); rangee.className = 'row';
-    const reserve = document.createElement('div'); reserve.className = 'row reserve';
-    hote.appendChild(rangee);
-
-    s.variantes.forEach((va, i) => {
-      const card = document.createElement('div');
-      // La carte active suit le CHOIX, pas l'index. Avec `i === 0` la
-      // premiere carte etait toujours surlignee, meme quand la fiche ouvrait
-      // sur un choix arrete : le code affiche disait une chose et le surlignage
-      // une autre.
-      card.className = 'card' + (choix[s.id] === va.id ? ' on' : '');
-      const lbl = document.createElement('div'); lbl.className = 'lbl';
-      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + (va.desc || '');
-      const cv = document.createElement('canvas');
-      // Hauteur calculée, pas choisie au hasard : le sprite fait 20 rangées à
-      // ECH_CARTE et ses pieds se posent sur la ligne de sol, à 58 % de la
-      // hauteur. À 132 px la ligne de sol tombait à 77 px alors que le sprite
-      // en fait 100 — le haut du crâne était coupé hors du canvas, et deux
-      // variantes qui ne différaient que par là rendaient la même image.
-      cv.width = 190; cv.height = Math.ceil((20 * ECH_CARTE + 10) / 0.58);
-      card.appendChild(lbl); card.appendChild(cv);
-      if (va.stats) card.appendChild(barres(va.stats));
-      (i < 5 ? rangee : reserve).appendChild(card);
-      cartes.push({ cv, s, va, card });
-      card.addEventListener('click', () => {
-        choix[s.id] = va.id;
-        cartes.filter(c => c.s === s).forEach(c => c.card.classList.toggle('on', c.va === va));
-        rafraichir();
-      });
-    });
-
-    const bouton = document.createElement('button');
-    bouton.className = 'plus'; bouton.textContent = '+ 5 autres choix';
-    bouton.addEventListener('click', () => {
-      reserve.classList.toggle('ouverte');
-      bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
-    });
-    hote.appendChild(bouton);
-    hote.appendChild(reserve);
-  }
-})();
-
-function barres(st) {
-  const d = document.createElement('div'); d.className = 'stats';
-  const b = n => '<i>' + '■'.repeat(n) + '</i>' + '□'.repeat(5 - n);
-  d.innerHTML = 'VIT ' + b(st.spd) + '  ·  ' + st.speed + ' px/s<br>' +
-                'PUI ' + b(st.pow) + '  ·  ×' + st.power + '<br>' +
-                'CTL ' + b(st.ctl) + '  ·  r' + st.catchR + '<br>' +
-                'CHARGE ' + st.chargeT + ' s';
-  return d;
+function majFiche() {
+  const { stats } = batir();
+  const st = stats || { spd: 3, pow: 3, ctl: 3, speed: 330, power: 1, catchR: 30, chargeT: .8 };
+  const barre = (n, c) => '<div class="bar"><i style="width:' + (n / 5 * 100) + '%;background:' + c + '"></i></div>';
+  document.getElementById('fiche').innerHTML =
+    '<tr><td>Univers</td><td>' + PERSO.univers + '</td></tr>' +
+    '<tr><td>Vitesse' + barre(st.spd, '#5df08a') + '</td><td>' + st.speed + ' px/s</td></tr>' +
+    '<tr><td>Puissance' + barre(st.pow, '#ff6a7a') + '</td><td>×' + st.power + '</td></tr>' +
+    '<tr><td>Contrôle' + barre(st.ctl, '#35e0ff') + '</td><td>' + st.catchR + ' px</td></tr>' +
+    '<tr><td>Temps de charge</td><td>' + st.chargeT + ' s</td></tr>';
 }
 
-// Les cartes ne bougent pas : on compare des silhouettes au calme, et 70
-// canvas animés en même temps rameraient pour rien.
-function peindreCartes() {
-  for (const { cv, s, va } of cartes) {
-    const g = cv.getContext('2d');
-    terrain(g, cv.width, cv.height);
-    g.imageSmoothingEnabled = false;
-    // La carte montre le perso ENTIER avec cette variante appliquée, le reste
-    // dans l'état courant : on juge une allure complète, jamais une pièce qui
-    // flotte sur fond noir.
-    const base = assembler();
-    const tete = va.tete || base.rows.slice(0, 10);
-    const corps = va.corps || base.rows.slice(10);
-    const pal = { ...base.pal, ...(va.pal || {}) };
-    const sp = bati([...tete, ...corps], pal, ECH_CARTE);
-    const x = (cv.width - sp.width) / 2, y = cv.height * .58 - sp.height + 6;
-    ombre(g, cv.width / 2, cv.height * .58 + 2, sp.width * .34);
-    g.drawImage(sp, x, y);
-    // Un effet (ultime, arme) se dessine par-dessus, figé à un instant choisi
-    // pour que la carte reste lisible.
-    if (va.fx) va.fx(g, cv.width / 2, y + sp.height * .5, .42,
-                     { x: cv.width - 26, y: y + sp.height * .5 });
-  }
-}
-
-/* --- Aperçu assemblé : animé, il rejoue l'ultime en boucle --- */
-const cvA = document.getElementById('cvApercu');
-const gA = cvA.getContext('2d');
-
-// Le code compact à renvoyer : « 1A 2C 3B … », une entrée par section dans
-// l'ordre de la page. Posé dans un champ en lecture seule plutôt que dans une
-// simple ligne de texte, pour rester sélectionnable à la main si l'accès au
-// presse-papiers est refusé par le navigateur.
-function codeChoix() {
-  return SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' ');
-}
-
-function rafraichir() {
-  peindreCartes();
-  peindreRosterNeuf();
+function majChoix() {
   document.getElementById('choix').innerHTML =
     SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
-  document.getElementById('codeChoix').value = codeChoix();
+  document.getElementById('codeChoix').value =
+    SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' ');
 }
 
-(function brancherCopie() {
-  const btn = document.getElementById('btnCopier');
-  const champ = document.getElementById('codeChoix');
-  btn.addEventListener('click', async () => {
-    const texte = codeChoix();
-    let ok = false;
-    try { await navigator.clipboard.writeText(texte); ok = true; }
-    catch (e) {
-      champ.select(); champ.setSelectionRange(0, 999);
-      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
-    }
-    btn.textContent = ok ? '✓ copié' : 'Ctrl+C pour copier';
-    btn.classList.toggle('ok', ok);
-    setTimeout(() => { btn.textContent = 'copier mes choix'; btn.classList.remove('ok'); }, 1800);
-  });
+/* ===================== LES CARTES ===================== */
+// Chaque carte porte DEUX dessins : le perso entier, et un gros plan sur la
+// piece que la section commande. C'est le gros plan qui permet de trancher —
+// une monture de trois pixels ne se juge pas dans une vignette de terrain.
+const cartes = [];
+function dessinerCarte(o) {
+  const { rows, pal } = batir({ sec: o.sec.id, va: o.va });
+  const gc = o.plein.getContext('2d');
+  fond(gc, o.plein.width, o.plein.height);
+  const e1 = 7;
+  peindre(gc, rows, pal, e1, (o.plein.width - 16 * e1) / 2, (o.plein.height - 20 * e1) / 2);
+  if (!o.zoom) return;
+  const gz = o.zoom.getContext('2d');
+  fond(gz, o.zoom.width, o.zoom.height);
+  const z = o.sec.zoom;
+  const ez = Math.min(o.zoom.width / (z[2] - z[0] + 1), o.zoom.height / (z[3] - z[1] + 1));
+  peindre(gz, rows, pal, ez,
+          (o.zoom.width - (z[2] - z[0] + 1) * ez) / 2,
+          (o.zoom.height - (z[3] - z[1] + 1) * ez) / 2, z);
+}
+
+const boite = document.getElementById('sections');
+SECTIONS.forEach(sec => {
+  const h2 = document.createElement('h2');
+  h2.textContent = sec.titre;
+  const note = document.createElement('p');
+  note.className = 'note'; note.textContent = sec.note;
+  boite.append(h2, note);
+
+  const rangee = (liste, reserve) => {
+    const row = document.createElement('div');
+    row.className = 'row' + (reserve ? ' reserve' : '');
+    liste.forEach(va => {
+      const card = document.createElement('div');
+      card.className = 'card' + (choix[sec.id] === va.id ? ' on' : '');
+      card.dataset.sec = sec.id; card.dataset.va = va.id;
+      const lbl = document.createElement('div');
+      lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + va.desc;
+      const duo = document.createElement('div'); duo.className = 'duo';
+      const plein = document.createElement('canvas');
+      plein.className = 'plein'; plein.width = 116; plein.height = 144;
+      duo.append(plein);
+      let zoom = null;
+      if (sec.zoom) {
+        zoom = document.createElement('canvas');
+        zoom.className = 'zoom'; zoom.width = 84; zoom.height = 144;
+        duo.append(zoom);
+      }
+      card.append(lbl, duo);
+      card.onclick = () => {
+        choix[sec.id] = va.id;
+        document.querySelectorAll('.card[data-sec="' + sec.id + '"]')
+          .forEach(c => c.classList.toggle('on', c.dataset.va === va.id));
+        rafraichir();
+      };
+      row.append(card);
+      cartes.push({ plein, zoom, sec, va });
+    });
+    return row;
+  };
+  boite.append(rangee(sec.variantes.slice(0, 5), false));
+  const res = rangee(sec.variantes.slice(5), true);
+  const btn = document.createElement('button');
+  btn.className = 'plus'; btn.textContent = '+ 5 autres choix';
+  btn.onclick = () => { res.classList.toggle('ouverte'); rafraichir(); };
+  boite.append(btn, res);
+});
+
+function rafraichir() {
+  majApercu();
+  cartes.forEach(o => { if (o.plein.offsetParent) dessinerCarte(o); });
+}
+
+document.getElementById('btnCopier').onclick = async () => {
+  const b = document.getElementById('btnCopier');
+  try { await navigator.clipboard.writeText(document.getElementById('codeChoix').value);
+        b.textContent = 'copié !'; b.classList.add('ok');
+        setTimeout(() => { b.textContent = 'copier mes choix'; b.classList.remove('ok'); }, 1400); }
+  catch (e) { document.getElementById('codeChoix').select(); }
+};
+
+/* --- La bande du roster, a l'echelle du match --- */
+(function bande() {
+  const hote = document.getElementById('rosterRow');
+  const ajoute = (dessine, nom) => {
+    const d = document.createElement('div'); d.className = 'rosterOne';
+    const cv = document.createElement('canvas');
+    cv.width = 16 * 4.2; cv.height = 20 * 4.2;
+    const g = cv.getContext('2d');
+    g.fillStyle = TH.floor; g.fillRect(0, 0, cv.width, cv.height);
+    dessine(g, cv);
+    const e = document.createElement('em'); e.style.fontStyle = 'normal'; e.textContent = nom;
+    d.append(cv, e); hote.append(d);
+  };
+  const moi = batir();
+  ajoute((g, cv) => peindre(g, moi.rows, moi.pal, 4.2, 0, 0), 'FLOWSER');
+  for (const ck of ROSTER) {
+    const c = CHARS[ck];
+    ajoute((g, cv) => { g.imageSmoothingEnabled = false; g.drawImage(c.frames.idle, 0, 0, cv.width, cv.height); },
+           c.short || c.name);
+  }
 })();
 
-(function boucle(ms) {
-  const t = ms / 1000;
-  const { rows, pal, fx } = assembler();
-  terrain(gA, cvA.width, cvA.height);
-  gA.imageSmoothingEnabled = false;
-  const sp = bati(rows, pal, ECH_APERCU);
-  // Il respire : deux pixels de haut en bas, comme au repos dans le jeu.
-  const flot = Math.round(Math.sin(t * 2.4) * 2);
-  const solY = cvA.height * .58;
-  const x = cvA.width * .3 - sp.width / 2, y = solY - sp.height + flot;
-  ombre(gA, cvA.width * .3, solY + 2, sp.width * .34);
-  gA.drawImage(sp, x, y);
-  // La cible encaisse l'ultime, à droite : on voit l'effet ET ce qu'il inflige.
-  if (fx) fx(gA, x + sp.width * .5, y + sp.height * .5, t,
-             { x: cvA.width * .78, y: solY - 22 });
-  requestAnimationFrame(boucle);
-})(0);
+/* --- Le module de controle --- */
+afficher(verifier({ id: 'flowser', PERSO, SECTIONS }), document.getElementById('errs'));
 
 rafraichir();
 </script>
