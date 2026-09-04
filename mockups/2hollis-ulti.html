@@ -539,7 +539,7 @@ function jouer(g, t, W, H) {
   // ou l'image precedente restait visible.
   g.fillStyle = TH.bgOuter; g.fillRect(0, 0, W, H);
   g.save();
-  if (sec) g.translate(Math.sin(tBrut * 118) * 9 * sec, Math.cos(tBrut * 95) * 6 * sec);
+  if (sec) g.translate(Math.sin(tBrut * 118) * 5 * sec, Math.cos(tBrut * 95) * 3.4 * sec);
 
   const vue = terrain(g, W, H);
   const { X, Y, e } = vue;

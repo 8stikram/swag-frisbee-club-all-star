@@ -8,7 +8,7 @@ import { doThrowHuman } from './actions.js';
 import { majCommandes, appliquerActions } from './commandes.js';
 import { updateAI } from './ai.js';
 import { updateDisc, updateDecoys } from './disc.js';
-import { updateLeg, updateBell, updateHack, updateRafale, updateGrappin, updateChien, updateRuee, launchCine } from './specials.js';
+import { updateLeg, updateBell, updateHack, updateRafale, updateGrappin, updateChien, updateRuee, updateTigre, launchCine } from './specials.js';
 import { updateDesert } from './desert.js';
 import { updateBrume } from './brume.js';
 import { SIX_ORBES } from '../data/specials.js';
@@ -150,6 +150,7 @@ export function update(dt) {
   updateGrappin(wdt);
   updateChien(wdt);
   updateRuee(wdt);
+  updateTigre(wdt);
   updateDesert(wdt);
   updateBrume(wdt);
   for (const p of [G.p1, G.p2]) p.meter = clamp(p.meter + (G.state === 'play' ? 1.5 * METER_GAIN : 0) * wdt, 0, 100);
@@ -162,7 +163,10 @@ export function update(dt) {
         if (n > 0 && n <= 3) sfx('count');
         if (n <= 0) {
           sfx('go');
-          if (!G.startCom && !G.demo) { G.startCom = true; comment('PREMIER À 35 — BON MATCH !', undefined, 'standard'); }
+          if (!G.startCom && !G.demo) {
+            G.startCom = true;
+            comment(pick(['PREMIER À 35 — BON MATCH !', 'QUE LE MEILLEUR GAGNE !', 'C\'EST PARTI POUR LA BAGARRE !']), undefined, 'standard');
+          }
         }
       }
       if (G.cdT <= -.4) setupServe(1);

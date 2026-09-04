@@ -8,7 +8,7 @@ import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap, getMapId, setMapId } from '../data/maps.js';
 import { drawCourtRaccoon, drawBrumeRaccoon } from './terrains/raccoon.js';
 import { getSkinId, drawSkinDisc, deformationDisque, tracerContour, teinteDeCharge, chaufferCouleur, avecAlpha } from '../data/skins.js';
-import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE, CHIEN_VIDEO, CHIEN_DUREE, RUEE_N } from '../data/specials.js';
+import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE, CHIEN_VIDEO, CHIEN_DUREE, RUEE_N, TIGRE_SPRITE, WT_CHANT, WT_SORTIE, WT_STUN } from '../data/specials.js';
 import { CHARS } from '../data/characters.js';
 import { Reglages } from '../data/disc-fx.js';
 import { rayonSables, centreSables, densiteTempete } from '../game/desert.js';
@@ -2455,6 +2455,183 @@ const chienToile = document.createElement('canvas');
 const chienCtx = chienToile.getContext('2d', { willReadFrequently: true });
 const CHIEN_LARGEUR = 400;
 
+/* WHITE TIGER. Le tigre lui-meme est une image — la seule avec la cloche de
+   Jingle. Tout le reste est peint ici : la trainee, la remanence du dash, les
+   notes qui filent derriere, les etoiles, et l'envoutement de la cible.
+
+   Deux regles apprises sur le mockup et qui tiennent tout le rendu :
+     - une trainee ne se fait PAS au fillRect a degrade horizontal. Ses bords
+       haut et bas restent parfaitement nets et ca se lit comme une bande de
+       peinture posee sur le terrain. C'est une suite de halos.
+     - la remanence se lit par son ESPACEMENT. Serrees, les images se
+       recouvrent et font une seule masse collee ; ecartees, on lit des
+       positions successives, donc de la vitesse. */
+const WT_CYAN = '#35e0ff', WT_BLANC = '#ffffff';
+const wtAlea = i => { const v = Math.sin(i * 12.9898) * 43758.5453; return v - Math.floor(v); };
+
+function drawTigre() {
+  const w = G.tigre;
+  if (!w) return;
+  const spr = TIGRE_SPRITE;
+  const pret = spr.complete && spr.naturalWidth > 0;
+
+  // 1. LE CHANT : la colonne de lumiere et les notes qui montent de lui.
+  if (w.t < WT_CHANT) {
+    const k = w.t / WT_CHANT;
+    const g = ctx.createLinearGradient(0, w.y, 0, w.y - 150 * SCALE);
+    g.addColorStop(0, 'rgba(53,224,255,0.24)');
+    g.addColorStop(1, 'rgba(53,224,255,0)');
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g;
+    ctx.fillRect(w.x - 22 * SCALE, w.y - 150 * SCALE, 44 * SCALE, 150 * SCALE);
+    ctx.restore();
+    for (let i = 0; i < 6; i++) {
+      const q = (k * 1.4 + wtAlea(i + 5)) % 1;
+      const a = wtAlea(i) * Math.PI * 2 + q * 2.4;
+      wtNote(w.x + Math.cos(a) * (14 + q * 30) * SCALE, w.y - 26 * SCALE - q * 70 * SCALE,
+             10 * SCALE, (1 - q) * .9, i % 2 ? '#ff6fb5' : WT_CYAN);
+    }
+    return;
+  }
+
+  const dep = w.owner.x + w.dir * 30;
+
+  // 2. LA COURSE.
+  if (!w.touche && pret) {
+    const larg = 26 * 4 * SCALE * 1.35;
+    const haut = larg * (spr.naturalHeight / spr.naturalWidth);
+
+    // la trainee, en halos le long de la ligne parcourue
+    for (let i = 0; i <= 16; i++) {
+      const q = i / 16;
+      wtLueur(dep + (w.x - dep) * q, w.y, (18 + q * 22) * SCALE,
+              q > .8 ? WT_BLANC : '#a0e6ff', .04 + q * q * .12);
+    }
+    // la remanence : quatre images largement ecartees
+    ctx.save(); ctx.imageSmoothingEnabled = false;
+    for (let i = 4; i >= 1; i--) {
+      const rx = w.x - w.dir * i * 62 * SCALE;
+      if ((w.dir > 0 && rx < dep) || (w.dir < 0 && rx > dep)) continue;
+      const f = 1 - i / 5;
+      const rw = larg * (.52 + f * .48), rh = haut * (.52 + f * .48);
+      ctx.globalAlpha = f * f * .4;
+      wtImage(rx, w.y, rw, rh, w.dir);
+    }
+    ctx.restore();
+    // les notes, posees sur le trajet avec un retard fixe : elles FILENT
+    // derriere lui au lieu de tourner autour, ou elles le cacheraient
+    for (let i = 0; i < 9; i++) {
+      const ret = (.08 + (i / 9) * .62 + wtAlea(i) * .05) * (w.x - dep);
+      const nx = w.x - ret;
+      if ((w.dir > 0 && nx < dep) || (w.dir < 0 && nx > dep)) continue;
+      const f = 1 - Math.abs(ret / (w.x - dep || 1)) / .78;
+      if (f <= 0) continue;
+      wtNote(nx, w.y - 14 * SCALE + (wtAlea(i + 30) - .5) * 60 * SCALE * (1 - f),
+             (8 + wtAlea(i + 9) * 5) * SCALE * 1.6, f * f * .9,
+             i % 3 === 0 ? '#ff6fb5' : (i % 3 === 1 ? WT_CYAN : '#ffd23e'));
+    }
+    // les etoiles : chacune s'allume UNE fois, elles ne clignotent pas en
+    // boucle. Un trait crepitant se lisait comme une rayure sur la bete.
+    const kc = Math.min(1, (w.x - dep) / ((COURT.right - COURT.left) * .6));
+    for (let i = 0; i < 14; i++) {
+      const k = kc * 1.7 - wtAlea(i + 40);
+      if (k < 0 || k > 1) continue;
+      const a = wtAlea(i + 55) * Math.PI * 2, r = .35 + wtAlea(i + 70) * .7;
+      wtEtincelle(w.x + Math.cos(a) * larg * .5 * r, w.y + Math.sin(a) * haut * .46 * r,
+                  (2 + wtAlea(i) * 3) * SCALE * 1.6, Math.sin(k * Math.PI) * .95,
+                  i % 3 ? WT_BLANC : WT_CYAN);
+    }
+    // le halo colore SOUS la bete, jamais un halo blanc : la silhouette est
+    // blanche elle aussi, et un blanc sous un blanc la dissout
+    wtLueur(w.x, w.y, larg * .6, WT_CYAN, .46);
+    ctx.save(); ctx.imageSmoothingEnabled = false;
+    wtImage(w.x, w.y, larg, haut, w.dir);
+    ctx.restore();
+    return;
+  }
+
+  // 3. LA PRISE. Le tigre a disparu ; il reste le choc, puis la flaque qui dit
+  // d'ou le coup est parti et jusqu'ou il est alle.
+  const foe = w.owner.foe;
+  if (w.prise < WT_SORTIE) {
+    const f = 1 - w.prise / WT_SORTIE;
+    for (let i = 0; i < 14; i++) {
+      const a = wtAlea(i + 200) * Math.PI * 2;
+      const r0 = (14 + (1 - f) * 90) * SCALE, r1 = r0 + (10 + f * 44) * SCALE;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = f * f * .8;
+      ctx.strokeStyle = i % 3 ? WT_BLANC : WT_CYAN; ctx.lineWidth = (1 + f * 2) * SCALE * .5;
+      ctx.beginPath();
+      ctx.moveTo(w.x + Math.cos(a) * r0, w.y + Math.sin(a) * r0 * .55);
+      ctx.lineTo(w.x + Math.cos(a) * r1, w.y + Math.sin(a) * r1 * .55);
+      ctx.stroke(); ctx.restore();
+    }
+    wtLueur(w.x, w.y, (60 + (1 - f) * 140) * SCALE, WT_BLANC, f * f * .6);
+  }
+  const fl = Math.max(0, 1 - w.prise / WT_STUN);
+  for (let i = 0; i <= 14; i++) {
+    const q = i / 14;
+    wtLueur(w.owner.x + (w.x - w.owner.x) * q, w.owner.y + (w.y - w.owner.y) * q,
+            (18 + q * 14) * SCALE, WT_CYAN, fl * (.02 + q * .04));
+  }
+  // L'ENVOUTEMENT : coeurs et notes qui LEVITENT au-dessus de sa tete. Ils
+  // montent et s'effacent — en orbite autour de lui ils se lisaient comme un
+  // assomme de dessin anime, pas comme quelqu'un d'envoute.
+  if (foe) {
+    for (let i = 0; i < 7; i++) {
+      const k = (G.now * .5 + wtAlea(i + 12)) % 1;
+      const px = foe.x + Math.sin(G.now * 1.5 + i * 1.9) * 15 * SCALE
+                 + (wtAlea(i + 33) - .5) * 26 * SCALE;
+      const py = foe.y - (52 + k * 40) * SCALE;
+      const al = Math.sin(k * Math.PI) * .95 * fl;
+      if (i % 2) wtCoeur(px, py, 9 * SCALE, al, '#ff6fb5');
+      else wtNote(px, py, 10 * SCALE, al, i % 3 ? WT_CYAN : '#ffd23e');
+    }
+  }
+}
+
+// L'image, posee sur les pieds et retournee selon le sens de la course.
+function wtImage(x, y, w, h, dir) {
+  ctx.save(); ctx.translate(x, y);
+  if (dir < 0) ctx.scale(-1, 1);
+  ctx.drawImage(TIGRE_SPRITE, -w / 2, -h * .62, w, h);
+  ctx.restore();
+}
+function wtLueur(x, y, r, coul, a) {
+  if (a <= 0 || r <= 0) return;
+  const d = ctx.createRadialGradient(x, y, 0, x, y, r);
+  d.addColorStop(0, coul); d.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+  ctx.fillStyle = d; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+// Une note de musique : la tete, la hampe, le drapeau. C'est le lien visuel
+// avec le chant — sans elles l'ultime serait juste une boule de lumiere.
+function wtNote(x, y, t, a, coul) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+  ctx.fillStyle = coul; ctx.strokeStyle = coul; ctx.lineWidth = Math.max(1, t * .18);
+  ctx.beginPath(); ctx.ellipse(x, y, t * .34, t * .26, -.4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x + t * .3, y - t * .06); ctx.lineTo(x + t * .3, y - t * .95); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x + t * .3, y - t * .95);
+  ctx.quadraticCurveTo(x + t * .8, y - t * .8, x + t * .58, y - t * .4); ctx.stroke();
+  ctx.restore();
+}
+function wtCoeur(x, y, t, a, coul) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+  ctx.fillStyle = coul; ctx.beginPath();
+  ctx.moveTo(x, y + t * .5);
+  ctx.bezierCurveTo(x - t, y - t * .2, x - t * .45, y - t * .8, x, y - t * .28);
+  ctx.bezierCurveTo(x + t * .45, y - t * .8, x + t, y - t * .2, x, y + t * .5);
+  ctx.fill(); ctx.restore();
+}
+function wtEtincelle(x, y, t, a, coul) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+  ctx.strokeStyle = coul; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(x - t, y); ctx.lineTo(x + t, y);
+  ctx.moveTo(x, y - t); ctx.lineTo(x, y + t); ctx.stroke(); ctx.restore();
+}
+
 function drawChien() {
   const c = G.chien;
   if (!c) return;
@@ -2794,6 +2971,7 @@ export function render() {
   // transformation camera. Placee apres le ctx.restore() comme le chien,
   // elle etait dessinee en espace ecran et partait hors du cadre.
   if (G.ruee) drawRuee();
+  if (G.tigre) drawTigre();
   if (G.grappin) drawGrappin();
   if (G.ondesBut.length) drawOndesBut();
   drawParticles();

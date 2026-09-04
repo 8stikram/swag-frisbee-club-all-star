@@ -6,9 +6,10 @@ import { getMap } from '../data/maps.js';
 // les deux machines n'en voyaient pas les mêmes — la seule fuite qu'ait laissée
 // le partage jeu/cosmétique du chantier 3.
 import { randJeu } from '../core/alea.js';
-import { jeSimule } from '../reseau/partie.js';
+import { jeSimule, Partie, etiquetteJoueur } from '../reseau/partie.js';
 import { sfx } from '../audio/audio.js';
 import { addPopup, burst, ring } from './fx.js';
+import { pick } from '../core/utils.js';
 
 // ---------------------------------------------------------------------------
 // Zones de score au sol, propres au Swag Frisbee Stadium. Elles offrent une
@@ -114,7 +115,11 @@ function marquer(p, pts, texte, couleur, x, y) {
   burst(x, y, couleur, 18);
   ring(x, y, couleur);
   sfx('perfect');
-  comment(pts >= POINTS_DUNK ? 'DANS LA ZONE !' : 'JOLI PLACEMENT !', undefined, 'but');
+  const dunk = pts >= POINTS_DUNK;
+  const nom = Partie.active ? etiquetteJoueur(p) : null;
+  comment(nom
+    ? pick(dunk ? [`${nom} DANS LA ZONE !`, `${nom} TROUVE LA FAILLE !`] : [`JOLI PLACEMENT DE ${nom} !`, `${nom} VISE JUSTE !`])
+    : pick(dunk ? ['DANS LA ZONE !', 'EN PLEIN DEDANS !'] : ['JOLI PLACEMENT !', 'BIEN VU !']), undefined, 'but');
 }
 
 export const ZONES = { RAYON, DUREE, DUNK_RAYON, RAYON_PANIER, POINTS_PANIER };

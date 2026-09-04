@@ -418,9 +418,14 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 @keyframes statShine{from{background-position:180% 0}to{background-position:-80% 0}}
 
 .gridwrap{display:flex;flex-direction:column;align-items:center;gap:1.2cqh}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.8cqh}
+/* Trois colonnes depuis l'arrivee de 2hollis. A deux, onze cases — dix
+   personnages plus l'aleatoire — faisaient six rangees : la grille
+   descendait par-dessus le bouton COMBATTRE et le selecteur de disque. A
+   trois elle tient en quatre rangees, et les cases retrecissent juste assez
+   pour que la colonne de plus rentre entre les deux portraits. */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.7cqh}
 .grid .cell{
-  position:relative;width:11cqh;height:11cqh;min-width:52px;min-height:52px;
+  position:relative;width:9.4cqh;height:9.4cqh;min-width:46px;min-height:46px;
   background:#fff;border:4px solid var(--ink);border-radius:8px;box-shadow:4px 4px 0 var(--ink);
   cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;
   transition:transform .1s,box-shadow .1s;

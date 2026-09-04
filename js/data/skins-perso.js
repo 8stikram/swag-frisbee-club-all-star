@@ -67,6 +67,17 @@ export const SKINS = {
   // Yoshi est le seul a en avoir dix : ce sont ses couleurs, pas des tenues.
   // Les conditions vont donc du plus courant au plus rare, pour que la
   // collection se remplisse progressivement plutot que d'un coup.
+  hollis: [
+    { id: 'platine', nom: 'PLATINE', defaut: true },
+    { id: 'corbeau', nom: 'CORBEAU', cond: 'victoires', seuil: 3,
+      texte: 'Gagner 3 matchs avec 2hollis' },
+    { id: 'cerise', nom: 'CERISE', cond: 'victoires', seuil: 10,
+      texte: 'Gagner 10 matchs avec 2hollis' },
+    { id: 'argent', nom: 'ARGENT', cond: 'butsMatch', seuil: 5,
+      texte: 'Marquer 5 buts en un seul match' },
+    { id: 'glacier', nom: 'GLACIER', cond: 'victoiresDifficile', seuil: 3,
+      texte: 'Gagner 3 matchs en difficulte Difficile' }
+  ],
   yoshi: [
     { id: 'vert', nom: 'VERT', defaut: true },
     { id: 'rouge', nom: 'ROUGE', cond: 'victoires', seuil: 3,

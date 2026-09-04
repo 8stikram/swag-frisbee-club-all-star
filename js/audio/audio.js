@@ -114,7 +114,8 @@ export function initAudio() {
 // certains sons ne s'imitent pas correctement à l'oscillateur. Ils passent par
 // le même gain que le reste, donc le réglage de volume, le mode solo et le
 // filtre feutré du replay s'y appliquent aussi.
-const SAMPLES = { bell: 'assets/audio/bell.wav', mamieUlti: 'assets/audio/mamie-ulti.mp3' };
+const SAMPLES = { bell: 'assets/audio/bell.wav', mamieUlti: 'assets/audio/mamie-ulti.mp3',
+                   whiteTiger: 'assets/audio/2hollis-ulti.ogg' };
 const bufs = {};
 
 function loadSamples() {
@@ -224,6 +225,12 @@ export function sfx(n, venuDuReseau) {
     // que la cloche : c'est une voix, elle doit passer par-dessus la rafale.
     case 'mamie-ulti':
       if (!sample('mamieUlti', .9)) { beep(420, 300, .3, 'sawtooth', .14); beep(300, 220, .3, 'square', .1, .2); }
+      break;
+    // Le chant de 2hollis. C'est l'annonce de l'ultime a lui tout seul :
+    // aucun synthese ne l'imite, donc pas de repli credible — a defaut on
+    // pose un accord tenu, juste pour que quelque chose parte.
+    case 'whiteTiger':
+      if (!sample('whiteTiger', .95)) { beep(660, 990, .5, 'sine', .16); beep(880, 1320, .45, 'sine', .1, .12); }
       break;
     // Piratage : une poignée de main de modem. Deux porteuses qui se cherchent,
     // puis un souffle de données. C'est le seul son du jeu qui évoque une

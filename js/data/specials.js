@@ -1,7 +1,11 @@
 import { G, Mouse, comment } from '../game/state.js';
 import { COURT, CY, GOAL_TOP, GOAL_BOTTOM } from '../core/constants.js';
-import { norm, gauss, clamp } from '../core/utils.js';
+import { norm, gauss, clamp, pick } from '../core/utils.js';
 import { gaussJeu, aleaJeu, pickJeu } from '../core/alea.js';
+// `pick` (pas `pickJeu`) : ce choix ne décide de rien pour la simulation,
+// seulement du texte affiché — comme pour les commentaires de but dans
+// actions.js, pas besoin qu'il soit synchronisé entre l'hôte et l'invité.
+import { Partie, etiquetteJoueur } from '../reseau/partie.js';
 import { sfx } from '../audio/audio.js';
 import { burst } from '../game/fx.js';
 import { throwDisc, viseVersAvant } from '../game/actions.js';
@@ -10,6 +14,16 @@ import { buildSprite } from './characters.js';
 // réseau doit pouvoir en fabriquer un chez l'invité, et l'importer d'ici
 // aurait fermé un cycle (specials -> actions -> partie -> specials).
 import { construireTerminal } from './hack-terminal.js';
+
+// Commentaire de déclenchement d'un ultime : varié, et cite le pseudo en
+// ligne plutôt qu'un texte générique — en multi les deux joueurs sont de
+// vraies personnes, pas un « P1 »/« CPU ». `nommes` reçoit ce pseudo et
+// renvoie ses propres variantes (accord/place du nom changent selon la
+// phrase, un simple gabarit commun n'aurait pas suffi).
+function commentUlti(p, generiques, nommes) {
+  const nom = Partie.active ? etiquetteJoueur(p) : null;
+  comment(nom ? pick(nommes(nom)) : pick(generiques), undefined, 'ultimate');
+}
 
 // Sprite pixel-art de la Jambe de Maman (référence Binding of Isaac : chair
 // pâle et grumeleuse/malsaine, pas une jambe humaine propre, qui se termine
@@ -42,6 +56,26 @@ export const LEG_SPRITE_SCALE = 4;
 // chargement.
 export const BELL_SPRITE = new Image();
 BELL_SPRITE.src = 'assets/img/cloche-ulti.png';
+
+// ---------------------------------------------------------------------------
+// WHITE TIGER, l'ultime de 2hollis. Modele : l'ultime de Seraphine dans League
+// of Legends — une onde qui file en ligne droite, immobilise ce qu'elle touche
+// et ATTIRE la cible vers le lanceur. Reglages arretes dans
+// mockups/2hollis-ulti.html : 1A 2A 3A 4A 5B 6B 7A 8A.
+export const WT_CHANT = .55;      // le chant AVANT que le tigre parte : c'est
+                                  // l'annonce, et c'est elle qui le rend
+                                  // esquivable. Sans elle l'adversaire subit
+                                  // sans comprendre, ce qui se vit tres mal.
+export const WT_VITESSE = 980;    // px/s, la traversee
+export const WT_RAYON = 52;       // demi-largeur du contact
+export const WT_BANDE = 62;       // demi-hauteur de la bande touchee
+export const WT_STUN = 1.2;       // choix 6B, la valeur de Seraphine
+export const WT_ATTIRE = 210;     // px/s, la vitesse a laquelle il est traine
+export const WT_SORTIE = .22;     // le tigre s'efface au contact, en ce temps
+// L'image du tigre, la seule que je ne peins pas pixel par pixel — comme la
+// cloche de Jingle. Elle porte deja son canal alpha, aucun detourage.
+export const TIGRE_SPRITE = new Image();
+TIGRE_SPRITE.src = 'assets/img/2hollis-tigre.webp';
 
 // Registre des attaques spéciales. Pour ajouter une spéciale : une entrée ici,
 // puis `ult:'<clé>'` sur le personnage dans data/characters.js.
@@ -138,7 +172,9 @@ export const SPECIALS = {
       G.flash = 1.3;
       // Tenue dorée et six orbes, le temps que l'échange se joue.
       p.sixT = SIX_DUREE; p.sixA = 0;
-      sfx('sixpaths'); comment('LES SIX CHEMINS !!', undefined, 'ultimate');
+      sfx('sixpaths'); commentUlti(p,
+        ['LES SIX CHEMINS !!', 'LE MODE SIX CHEMINS !!', 'NARUTO LIBÈRE LE CHAKRA !'],
+        n => [`${n} PASSE EN SIX CHEMINS !!`, `${n} LIBÈRE TOUT SON CHAKRA !`, `LE MODE SIX CHEMINS DE ${n} !!`]);
     },
     launch(p) {
       let dir;
@@ -172,7 +208,9 @@ export const SPECIALS = {
       // Bras tendu, canon à l'horizontale : la lecture la plus directe, on voit
       // qu'il vise avant même que les disques partent.
       p.viseT = MATILDA_VISEE;
-      sfx('special'); comment('RAFALE TRIPLE !', undefined, 'ultimate');
+      sfx('special'); commentUlti(p,
+        ['RAFALE TRIPLE !', 'TIR MATILDA !', 'TROIS DISQUES D\'UN COUP !'],
+        n => [`RAFALE TRIPLE DE ${n} !`, `${n} DÉGAINE LE TIR MATILDA !`, `${n} ENVOIE TROIS DISQUES D'UN COUP !`]);
       let dir;
       if (p.human) { dir = norm(Mouse.x - p.x, Mouse.y - p.y); }
       else {
@@ -213,7 +251,29 @@ export const SPECIALS = {
       };
       G.banner = { text: 'CLOCHE DE MINUIT !!', color: '#f5c542', t: 0, dur: 1.3 };
       G.shake = 12;
-      sfx('roar'); comment('LA CLOCHE SONNE MINUIT !', undefined, 'ultimate');
+      sfx('roar'); commentUlti(p,
+        ['LA CLOCHE SONNE MINUIT !', 'MINUIT SONNE !', 'LA CLOCHE DE MINUIT !!'],
+        n => [`${n} FAIT SONNER MINUIT !`, `LA CLOCHE DE ${n} RETENTIT !`, `${n} DÉCLENCHE LA CLOCHE DE MINUIT !`]);
+    }
+  },
+
+  whitetiger: {
+    name: 'WHITE TIGER',
+    desc: 'Il chante, un tigre blanc file droit devant, immobilise l\'adversaire et l\'attire vers lui.',
+    // Il part MEME DISQUE EN MAIN : aucune condition de possession, la jauge
+    // pleine suffit. C'est ce qui le separe du grappin de Chopper, qui n'a de
+    // sens que sans le disque.
+    needsDisc: false,
+    cast(p) {
+      p.meter = 0; p.stats.specials++;
+      const dir = p.side === 1 ? 1 : -1;
+      G.tigre = { owner: p, t: 0, dir, x: p.x + dir * 30, y: p.y,
+                  touche: 0, prise: 0 };
+      G.banner = { text: 'WHITE TIGER !!', color: '#35e0ff', t: 0, dur: 1.3 };
+      // Pas de secousse au cast : l'annonce retenue est la pose de chant
+      // (section 7, variante A), pas un tremblement. La secousse est reservee
+      // au CONTACT, ou elle veut dire quelque chose.
+      sfx('whiteTiger'); comment('IL CHANTE !!', undefined, 'ultimate');
     }
   },
 
@@ -235,7 +295,9 @@ export const SPECIALS = {
       // La secousse EST l'annonce : c'est la variante retenue en section 7.
       // Sans elle l'adversaire subirait une horde sortie de nulle part.
       G.shake = 18;
-      sfx('roar'); comment('LA HORDE DÉBOULE !!', undefined, 'ultimate');
+      sfx('roar'); commentUlti(p,
+        ['LA HORDE DÉBOULE !!', 'LA RUÉE DES YOSHI !!', 'ÇA CHARGE DE PARTOUT !'],
+        n => [`${n} LÂCHE LA HORDE !!`, `LA RUÉE DES YOSHI DE ${n} !!`, `${n} FAIT DÉBOULER LA HORDE !`]);
     }
   },
 
@@ -298,7 +360,9 @@ export const SPECIALS = {
       };
       G.banner = { text: 'CROCHET DE CHOPPER !!', color: '#e8c23a', t: 0, dur: 1.3 };
       G.shake = 8;
-      sfx('throw'); comment('IL VA CHERCHER LE DISQUE !', undefined, 'ultimate');
+      sfx('throw'); commentUlti(p,
+        ['IL VA CHERCHER LE DISQUE !', 'LE CROCHET DE CHOPPER !', 'ACCROCHE-LE !'],
+        n => [`${n} VA CHERCHER LE DISQUE !`, `LE CROCHET DE ${n} PART !`, `${n} DÉGAINE LE CROCHET !`]);
     }
   },
 
@@ -317,7 +381,9 @@ export const SPECIALS = {
       G.rafale = { owner: p, t: 0, dur: 2.6, prochainTir: 0 };
       G.banner = { text: 'RAFALE DE MAMIE !!', color: '#c9b380', t: 0, dur: 1.3 };
       G.shake = 10;
-      sfx('mamie-ulti'); comment('C\'EST L\'HEURE DE LA RAFALE !', undefined, 'ultimate');
+      sfx('mamie-ulti'); commentUlti(p,
+        ['C\'EST L\'HEURE DE LA RAFALE !', 'MAMIE SORT LA MITRAILLETTE !', 'ATTENTION, RAFALE !'],
+        n => [`${n} SORT LA MITRAILLETTE !`, `C'EST L'HEURE DE LA RAFALE DE ${n} !`, `${n} OUVRE LE FEU !`]);
     }
   },
 
@@ -338,7 +404,9 @@ export const SPECIALS = {
       G.hack = { t: 0, dur: PIRATAGE_INTRO, source: p, cible: foe, lignes: construireTerminal() };
       G.timescale = .3; G.tsTimer = .55; G.shake = 9;
       G.banner = { text: 'PIRATAGE !!', color: '#4fe8ff', t: 0, dur: 1.3 };
-      sfx('hack'); comment('IL PREND LA MAIN !', undefined, 'ultimate');
+      sfx('hack'); commentUlti(p,
+        ['IL PREND LA MAIN !', 'PIRATAGE EN COURS !', 'LES COMMANDES PARTENT À L\'ENVERS !'],
+        n => [`${n} PREND LA MAIN !`, `${n} LANCE LE PIRATAGE !`, `${n} INVERSE LES COMMANDES !`]);
     }
   },
 

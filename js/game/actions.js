@@ -19,6 +19,14 @@ import { ajouterStat, verifierDeblocages } from '../data/skins-perso.js';
 import { getSkinId, teinteDeCharge, chaufferCouleur } from '../data/skins.js';
 import { annoncerSkins } from '../ui/skins-ui.js';
 
+// Commentaire personnalisé : varié, et cite le pseudo en ligne plutôt qu'un
+// texte générique — en multi les deux joueurs sont de vraies personnes, pas
+// un « P1 »/« CPU ». Même patron que commentUlti() dans data/specials.js.
+function commentNom(p, cat, generiques, nommes) {
+  const nom = Partie.active ? etiquetteJoueur(p) : null;
+  comment(nom ? pick(nommes(nom)) : pick(generiques), undefined, cat);
+}
+
 export function setupServe(side) {
   // L'invité prédit le vol du disque, pas l'arbitrage. Le laisser remettre en
   // jeu lui ferait replacer les deux joueurs au centre avant que l'hôte n'ait
@@ -93,7 +101,9 @@ export function throwDisc(p, dir, speed, kind = 'normal') {
       });
     }
     G.shake = Math.max(G.shake, 4);
-    comment('QUELLE PUISSANCE !', undefined, 'standard');
+    commentNom(p, 'standard',
+      ['QUELLE PUISSANCE !', 'IL Y VA À FOND !', 'CHARGE MAXIMALE !'],
+      n => [`QUELLE PUISSANCE DE ${n} !`, `${n} CHARGE À BLOC !`, `${n} Y VA À FOND !`]);
   }
   if (p.human) {
     if (Mouse.y < GOAL_MID1) G.mem.t++;
@@ -240,7 +250,9 @@ function perfectDive(p) {
   G.banner = { text: 'PERFECT DIVE !', color: '#35e0ff', t: 0, dur: 1.1 };
   burst(p.x, p.y, '#ffffff', 26); burst(p.x, p.y, '#35e0ff', 22);
   starBurst(p.x, p.y); ring(p.x, p.y, '#35e0ff');
-  sfx('perfect'); comment('QUEL RENVOI !', undefined, 'defense');
+  sfx('perfect'); commentNom(p, 'defense',
+    ['QUEL RENVOI !', 'QUEL RÉFLEXE !', 'PERFECT DIVE !'],
+    n => [`QUEL RENVOI DE ${n} !`, `${n} SORT LE GRAND JEU !`, `${n} AVEC LE PERFECT DIVE !`]);
 }
 
 export function onThrowEvent(thrower) {
@@ -311,9 +323,13 @@ export function onCatch(p, sp, dirx, diry) {
     addPopup('PERFECT CATCH !', '#ffffff', 14, .9, p.y - 56);
     G.timescale = .3; G.tsTimer = .18; sfx('perfect');
     G.shake = Math.max(G.shake, 7);
-    comment('INCROYABLE ARRÊT !', undefined, 'defense');
+    commentNom(p, 'defense',
+      ['INCROYABLE ARRÊT !', 'QUELLE RÉCEPTION !', 'IL NE LÂCHE RIEN !'],
+      n => [`INCROYABLE ARRÊT DE ${n} !`, `${n} NE LAISSE RIEN PASSER !`, `QUELLE RÉCEPTION DE ${n} !`]);
   } else if (sp > 420) { G.shake = Math.max(G.shake, 3); }
-  if (G.rally === 6) comment('QUEL ÉCHANGE !', undefined, 'standard');
+  // Pas de pseudo ici : l'échange oppose les deux joueurs, il n'y a pas un
+  // seul nom à mettre en avant.
+  if (G.rally === 6) comment(pick(['QUEL ÉCHANGE !', 'ÇA SE BAT DUR !', 'PERSONNE NE CÈDE !']), undefined, 'standard');
   if (p.ai) p.ai.plan = null;
 }
 
@@ -335,7 +351,9 @@ export function ownFoul(p) {
   p.score = Math.max(0, p.score - 1);
   G.shake = 10; sfx('whistle');
   addPopup('FAUTE ! −1 POINT', '#ff5340', 20, 1.5);
-  comment('OH LA FAUTE !', undefined, 'standard');
+  commentNom(p, 'standard',
+    ['OH LA FAUTE !', 'ARBITRE, SIFFLET !', 'ÇA NE VA PAS SE PASSER COMME ÇA !'],
+    n => [`FAUTE DE ${n} !`, `${n} PERD LE CONTRÔLE !`, `AÏE, FAUTE POUR ${n} !`]);
   burst(p.side === 1 ? COURT.left : COURT.right, p.y, '#ff5340', 18);
   setupServe(p.foe.side);
 }
@@ -380,12 +398,23 @@ export function scoreGoal(scorer, y) {
   const remontada = deficitAvant <= -5 && scorer.score - scorer.foe.score >= 0;
   const finClutch = scorer.score >= TARGET && scorer.foe.score >= TARGET - 3;
   if (remontada || finClutch) {
-    comment(pick(remontada
-      ? ['QUELLE REMONTADA !', 'IL REVIENT DE NULLE PART !', 'RETOURNEMENT TOTAL !']
-      : ['FINISH DE LÉGENDE !', 'IL CLUTCH LE MATCH !', 'VICTOIRE ARRACHÉE !']), undefined, 'legendary');
+    commentNom(scorer, 'legendary',
+      remontada
+        ? ['QUELLE REMONTADA !', 'IL REVIENT DE NULLE PART !', 'RETOURNEMENT TOTAL !']
+        : ['FINISH DE LÉGENDE !', 'IL CLUTCH LE MATCH !', 'VICTOIRE ARRACHÉE !'],
+      n => remontada
+        ? [`QUELLE REMONTADA DE ${n} !`, `${n} REVIENT DE NULLE PART !`, `${n} RENVERSE TOUT !`]
+        : [`${n} SIGNE UN FINISH DE LÉGENDE !`, `${n} CLUTCH LE MATCH !`, `${n} ARRACHE LA VICTOIRE !`]);
   } else if (scorer.ai) { comment(pick(["L'IA EST EN FEU !", "L'IA FRAPPE FORT !", "LE CPU PUNIT !"]), undefined, 'but'); }
-  else if (pts === 5) { comment(pick(['ZONE 5 ! QUEL SNIPER !', 'EN PLEINE LUCARNE !', 'MAGNIFIQUE !']), undefined, 'but'); }
-  else { comment(pick(['QUEL TIR !', 'BEAU LANCER !', 'DIRECT AU BUT !']), undefined, 'but'); }
+  else if (pts === 5) {
+    commentNom(scorer, 'but',
+      ['ZONE 5 ! QUEL SNIPER !', 'EN PLEINE LUCARNE !', 'MAGNIFIQUE !'],
+      n => [`ZONE 5 POUR ${n} ! QUEL SNIPER !`, `${n} EN PLEINE LUCARNE !`, `${n}, MAGNIFIQUE !`]);
+  } else {
+    commentNom(scorer, 'but',
+      ['QUEL TIR !', 'BEAU LANCER !', 'DIRECT AU BUT !'],
+      n => [`QUEL TIR DE ${n} !`, `BEAU LANCER DE ${n} !`, `${n}, DIRECT AU BUT !`]);
+  }
   if (scorer.foe.ai) { scorer.foe.ai.aggro = 9; }
   if (scorer.score >= TARGET) G.winner = scorer;
   G.pendingServe = scorer.foe.side;

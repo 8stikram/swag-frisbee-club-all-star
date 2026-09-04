@@ -1,13 +1,14 @@
 import { G, comment } from './state.js';
-import { SPECIALS, RUEE_DISQUE, RUEE_POUSSEE, RUEE_CTRL, RUEE_LARGEUR }
+import { SPECIALS, RUEE_DISQUE, RUEE_POUSSEE, RUEE_CTRL, RUEE_LARGEUR,
+         WT_CHANT, WT_VITESSE, WT_RAYON, WT_BANDE, WT_STUN, WT_ATTIRE, WT_SORTIE }
   from '../data/specials.js';
 import { COURT } from '../core/constants.js';
 import { sfx } from '../audio/audio.js';
 import { addPopup, burst, dust } from './fx.js';
 import { dropDisc, onCatch } from './actions.js';
-import { gauss, rand } from '../core/utils.js';
+import { gauss, rand, pick } from '../core/utils.js';
 import { gaussJeu, randJeu } from '../core/alea.js';
-import { jeSimule } from '../reseau/partie.js';
+import { jeSimule, Partie, etiquetteJoueur } from '../reseau/partie.js';
 
 export function trySpecial(p) {
   if (!p || G.demo || p.stun > 0 || G.cine) return;
@@ -246,6 +247,77 @@ export function updateRuee(dt) {
 }
 
 // ---------------------------------------------------------------------------
+// WHITE TIGER. Trois temps qui se suivent sans jamais se chevaucher :
+//   le CHANT, ou le tigre n'est pas encore la et 2hollis s'annonce ;
+//   la COURSE, en ligne droite jusqu'au bord ou jusqu'a la cible ;
+//   la PRISE, ou l'adversaire est cloue et traine vers le lanceur.
+//
+// Le tigre DISPARAIT au contact au lieu de traverser : il frappe, il n'est
+// plus la. C'est aussi ce que fait l'onde de Seraphine — elle ne se promene
+// pas derriere la cible une fois qu'elle l'a touchee.
+export function updateTigre(dt) {
+  const w = G.tigre;
+  if (!w) return;
+  w.t += dt;
+
+  // 1. LE CHANT. Le tigre reste colle a son lanceur, qui peut encore bouger :
+  // on recalcule donc sa position au lieu de la figer au cast.
+  if (w.t < WT_CHANT) { w.x = w.owner.x + w.dir * 30; w.y = w.owner.y; return; }
+
+  // 3. LA PRISE. Elle se joue apres le contact, et c'est elle qui tire.
+  if (w.touche) {
+    w.prise += dt;
+    if (w.prise >= WT_STUN) { G.tigre = null; return; }
+    if (!jeSimule()) return;
+    const foe = w.owner.foe;
+    if (!foe) return;
+    // On deplace la POSITION et non la vitesse : un joueur etourdi voit sa
+    // vitesse ramenee a zero par sa propre mise a jour, l'attraction aurait
+    // ete effacee une image sur deux.
+    const dx = w.owner.x - foe.x, dy = w.owner.y - foe.y;
+    const d = Math.hypot(dx, dy) || 1;
+    // On s'arrete a soixante pixels : traine jusqu'a se superposer au lanceur,
+    // il se retrouverait dans son dos, du mauvais cote du terrain.
+    if (d > 60) {
+      foe.x += dx / d * WT_ATTIRE * dt;
+      foe.y += dy / d * WT_ATTIRE * dt;
+      if (Math.random() < .35) dust(foe.x, foe.y + 18, 1);
+    }
+    return;
+  }
+
+  // 2. LA COURSE.
+  w.x += w.dir * WT_VITESSE * dt;
+  w.y = w.owner.y;
+  const bout = w.dir > 0 ? COURT.right + 90 : COURT.left - 90;
+  if ((w.dir > 0 && w.x > bout) || (w.dir < 0 && w.x < bout)) {
+    G.tigre = null;
+    addPopup('LE TIGRE S\'EFFACE', '#35e0ff', 13, .9);
+    return;
+  }
+
+  // Ce que le tigre cloue est de l'arbitrage : l'invite le voit courir, mais
+  // c'est l'hote qui decide de ce qu'il touche et le lui envoie par l'etat.
+  if (!jeSimule()) return;
+  const foe = w.owner.foe;
+  if (foe && Math.abs(foe.x - w.x) < WT_RAYON && Math.abs(foe.y - w.y) < WT_BANDE) {
+    w.touche = 1; w.prise = 0;
+    foe.stun = Math.max(foe.stun, WT_STUN);
+    foe.charging = false; foe.wasCharging = false; foe.charge = 0;
+    // L'IA n'a pas d'ecran : sans ce handicap l'envoutement ne lui ferait
+    // rien du tout et l'ultime n'aurait aucun effet en solo.
+    if (foe.ai) foe.ai.hesT = Math.max(foe.ai.hesT || 0, WT_STUN + .3);
+    // La secousse tombe ICI et nulle part ailleurs : c'est le seul instant de
+    // l'ultime ou quelque chose frappe.
+    G.shake = Math.max(G.shake, 11);
+    burst(w.x, w.y, '#ffffff', 20);
+    burst(w.x, w.y, '#35e0ff', 14);
+    addPopup('ENVOUTE !', '#35e0ff', 16, 1.1);
+    sfx('stun'); comment('LE TIGRE LE CLOUE !', undefined, 'ultimate');
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Le chien de Yuki. Il ne bouge pas et n'a pas de position : il occupe tout
 // l'écran de l'adversaire. Tout ce qui se passe ici, c'est le minuteur — et le
 // handicap infligé à celui qui le subit.
@@ -375,7 +447,13 @@ function legImpact(L) {
     if (foe.holding) dropDisc(foe);
     foe.charging = false; foe.wasCharging = false; foe.charge = 0;
     addPopup('ÉTOURDI !', '#ffd23e', 15, 1.1);
-    sfx('stun'); comment('ÉCRASÉ !', undefined, 'ultimate');
+    sfx('stun');
+    {
+      const nom = Partie.active ? etiquetteJoueur(L.caster) : null;
+      comment(nom
+        ? pick([`${nom} L'ÉCRASE !`, `${nom} FAIT TREMBLER LE SOL !`, `LA JAMBE DE ${nom} S'ABAT !`])
+        : pick(['ÉCRASÉ !', 'ÇA TREMBLE !', 'LA JAMBE S\'ABAT !']), undefined, 'ultimate');
+    }
   }
   if (G.disc.free && Math.hypot(G.disc.x - L.x, G.disc.y - L.yTarget) < 95) {
     G.disc.vx = gaussJeu() * 380;           // semé : trajectoire du disque

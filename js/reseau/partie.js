@@ -234,7 +234,7 @@ function commentaireNeuf() {
 
 function scenesPourLeReseau() {
   const c = G.cine, b = G.bell, h = G.hack, l = G.leg, t = G.tempete, br = G.brume;
-  const ba = G.banner, zo = G.zoom, ra = G.rafale, gr = G.grappin, ci = G.chien, ru = G.ruee;
+  const ba = G.banner, zo = G.zoom, ra = G.rafale, gr = G.grappin, ci = G.chien, ru = G.ruee, ti = G.tigre;
   if (!c && !b && !h && !l && !t && !br && !ba && !zo && !ra && !gr && !ci) return 0;
   const q = p => (p === G.p1 ? 1 : (p === G.p2 ? 2 : 0));
   return {
@@ -271,7 +271,12 @@ function scenesPourLeReseau() {
     // l'aurait fait diverger de celui que l'hote arbitre. La horde, elle,
     // ne voyage pas : son etalement est deterministe, chaque machine la
     // redessine identique a partir de ces cinq valeurs.
-    ru: ru ? [q(ru.owner), +ru.t.toFixed(2), ru.dur, ru.dir, Math.round(ru.x)] : 0
+    ru: ru ? [q(ru.owner), +ru.t.toFixed(2), ru.dur, ru.dir, Math.round(ru.x)] : 0,
+    // Le tigre relaie sa position ET son contact : c'est l'hote qui decide
+    // du moment ou il touche, et le recalculer chez l'invite l'aurait fait
+    // disparaitre a un autre instant que celui qui est arbitre.
+    ti: ti ? [q(ti.owner), +ti.t.toFixed(2), ti.dir, Math.round(ti.x),
+              Math.round(ti.y), ti.touche, +ti.prise.toFixed(2)] : 0
   };
 }
 
@@ -281,7 +286,7 @@ function scenesPourLeReseau() {
 // resonnerait à chaque fois.
 function appliquerScenes(sc) {
   const j = n => (n === 1 ? G.p1 : (n === 2 ? G.p2 : null));
-  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.brume = null; G.banner = null; G.zoom = null; G.rafale = null; G.grappin = null; G.chien = null; G.ruee = null; return; }
+  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.brume = null; G.banner = null; G.zoom = null; G.rafale = null; G.grappin = null; G.chien = null; G.ruee = null; G.tigre = null; return; }
   const ba = sc.ba;
   if (ba) { if (!G.banner || G.banner.text !== ba[0]) G.banner = { text: ba[0], color: ba[1], t: ba[2], dur: ba[3] };
     else G.banner.t = ba[2]; }
@@ -333,6 +338,15 @@ function appliquerScenes(sc) {
     G.ruee.owner = j(ru[0]); G.ruee.t = ru[1]; G.ruee.dur = ru[2];
     G.ruee.dir = ru[3]; G.ruee.x = ru[4]; }
   else G.ruee = null;
+  // Le tigre : proprietaire, minuteur, sens, position, contact et duree de la
+  // prise. Sa position voyage comme celle du crochet et du front de la ruee —
+  // c'est elle qui decide de ce qui est touche, la recalculer chez l'invite
+  // l'aurait fait disparaitre a un autre instant que celui qui est arbitre.
+  const ti = sc.ti;
+  if (ti) { if (!G.tigre) G.tigre = { owner: j(ti[0]), t: 0, dir: ti[2], x: ti[3], y: ti[4], touche: 0, prise: 0 };
+    G.tigre.owner = j(ti[0]); G.tigre.t = ti[1]; G.tigre.dir = ti[2];
+    G.tigre.x = ti[3]; G.tigre.y = ti[4]; G.tigre.touche = ti[5]; G.tigre.prise = ti[6]; }
+  else G.tigre = null;
 }
 
 // ---------------------------------------------------------------------------

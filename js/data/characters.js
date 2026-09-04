@@ -525,7 +525,65 @@ function construireSkinYo(teinte) {
   return out;
 }
 
-export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper', 'yuki', 'yoshi'];
+// ---------------------------------------------------------------------------
+// 2HOLLIS. Chara-design arrete dans mockups/2hollis.html : 1A (la marque
+// peinte qui barre le nez jusqu'au bord droit du visage), 2A (la raie au
+// milieu, masse platine qui tombe sur le torse), 3B (torse nu sans chaine,
+// une ligne d'ombre sous les pectoraux et une au sternum).
+//
+// Les cinq autres sections du mockup n'ont pas ete tranchees : palette, pose,
+// animations, profil de jeu et bas sont donc sur leur variante A. Ce sont les
+// seuls endroits ou j'ai choisi seul, et ils se changent sans rien casser.
+const PAL_2H = {
+  C: '#f8e9a8', c: '#e2c96e', k: '#c2a44e',   // platine : clair, base, ombre
+  S: '#f0c8a4', s: '#cf9660',                 // peau et son ombre
+  N: '#15151a',                               // LA marque peinte en travers du nez
+  E: '#2c2a26',                               // l'oeil : un seul pixel sombre
+  P: '#2b2b33', O: '#1c1c22', K: '#0d0d11'    // cuir, bottes, semelles
+};
+
+const H2_TETE = ["....CCCCCC......", "..CCCCCCCCCC....", ".cCCCCCCCCCCc...", ".cCCCCCCCCCCc...", ".cCCSSSSSSCCc...", ".cCSSSSSSSSCc...", ".cSSSSSSSSSSc...", ".cSSSESSSSESc...", ".cSSNNNNNNNNc...", "..kSSSSSSSSk...."];
+// Les cheveux tombent sur le torse (les deux `cc` du rang 1) sans occuper les
+// colonnes 1 et 12 : ce sont celles des bras, et la masse platine les cachait.
+const H2_IDLE_B  = ["..cSSSSSSSSc....", ".SccSSSSSSccS...", ".SccSsSSsSccS...", ".SckSSsSSSkcS...", "..SSSSsSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."];
+// Course : appuis LARGES puis appuis RAMASSES. C'est l'ecart entre les deux
+// qui fait courir — deux poses proches donnent une marche glissee.
+const H2_RUN1_B  = ["..cSSSSSSSSc....", ".SccSSSSSSccS...", ".SccSsSSsSccS...", ".SckSSsSSSkcS...", "..SSSSsSSSS.....", "..PPPPPPPPPP....", "..PP......PP....", ".PP........PP...", ".OOO.......OO...", ".KKK.......KK..."];
+const H2_RUN2_B  = ["..cSSSSSSSSc....", ".SccSSSSSSccS...", ".SccSsSSsSccS...", ".SckSSsSSSkcS...", "..SSSSsSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "...OOO..OOO.....", "...KKK..KKK....."];
+// Tir : le bras droit part devant, hors de la masse de cheveux.
+const H2_THROW_B = ["..cSSSSSSSSc....", ".SccSSSSSSccSSS.", ".SccSsSSsSccS...", ".SckSSsSSSkcS...", "..SSSSsSSSS.....", "..PPPPPPPPPP....", "...PP....PP.....", "...PP....PP.....", "..OOO....OOO....", "..KKK....KKK...."];
+// Dash : le buste penche, les bras en arriere, les appuis ecartes.
+const H2_DASH_B  = ["..cSSSSSSSSc....", "SccSSSSSSSccSS..", "SccSsSSsSccS....", ".ckSSsSSSkcS....", "..SSSSsSSSS.....", "..PPPPPPPPPP....", "..PP......PP....", ".PP........PP...", ".OOO.......OO...", ".KKK.......KK..."];
+// Plongeon : le corps s'allonge a l'horizontale, bottes en avant.
+const H2_DIVE_B  = ["SScSSSSSSSScSS..", ".cSSSSSSSSSSc...", ".cSSsSSSSsSSc...", "..SSSSsSSSSS....", "...SSSSSSSS.....", "....PPPPPP......", "..PPPPPPPPPP....", "..OOOOOOOOOO....", "..OOOOOOOOOO....", "..KKKKKKKKKK...."];
+
+// Ses deux grandes surfaces sont les CHEVEUX et le CUIR : ce sont elles que
+// les skins recolorent. Le reste — peau, marque, oeil — ne bouge jamais, sinon
+// ce n'est plus le meme personnage.
+const TEINTES_2H = {
+  platine: { C: '#f8e9a8', c: '#e2c96e', k: '#c2a44e' },
+  corbeau: { C: '#4a4658', c: '#2e2b3a', k: '#1b1926' },
+  cerise:  { C: '#f0708a', c: '#c4485a', k: '#8f2c3c' },
+  // Cuir clair sur cheveux argent : en tout-clair il n'y avait plus de bas de
+  // silhouette, exactement le defaut rencontre sur le Yoshi blanc.
+  argent:  { C: '#f4f6fa', c: '#c8d0dc', k: '#98a2b2',
+             P: '#4e5260', O: '#33363f', K: '#1f2128' },
+  glacier: { C: '#a8e4f8', c: '#5fb4d8', k: '#3a7d9c' }
+};
+
+const H2_POSES = { idle: H2_IDLE_B, run1: H2_RUN1_B, run2: H2_RUN2_B,
+                   throw: H2_THROW_B, dive: H2_DIVE_B, dash: H2_DASH_B };
+
+function construireSkin2H(teinte) {
+  const pal = { ...PAL_2H, ...TEINTES_2H[teinte] };
+  const out = {};
+  for (const [nom, corps] of Object.entries(H2_POSES)) {
+    out[nom] = buildSprite([...H2_TETE, ...corps], pal);
+  }
+  return out;
+}
+
+export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper', 'yuki', 'yoshi', 'hollis'];
 
 export const CHARS = {
   naruto: {
@@ -725,6 +783,34 @@ export const CHARS = {
       noir: construireSkinYo('noir'),
       blanc: construireSkinYo('blanc')
     }
+  },
+
+  hollis: {
+    name: '2HOLLIS', short: '2HOLLIS', icon: '\u{1F3A4}', universe: 'BOY SOFT',
+    // Profil « lanceur » : le plus rapide a charger du roster et le plus
+    // puissant au tir, paye par la plus petite zone d'attrape. Il touche de
+    // loin et rate de pres — c'est le premier endroit a regarder s'il parait
+    // fort ou faible en match. Ces chiffres sont la variante A du mockup, ils
+    // n'ont pas ete tranches.
+    speed: 340, power: 1.12, catchR: 25, chargeT: .72,
+    color: '#e2c96e', accent: '#35e0ff',
+    stats: { spd: 4, pow: 5, ctl: 2 },
+    ult: 'whitetiger',
+    frames: {
+      idle: buildSprite([...H2_TETE, ...H2_IDLE_B], PAL_2H),
+      run1: buildSprite([...H2_TETE, ...H2_RUN1_B], PAL_2H),
+      run2: buildSprite([...H2_TETE, ...H2_RUN2_B], PAL_2H),
+      throw: buildSprite([...H2_TETE, ...H2_THROW_B], PAL_2H),
+      dive: buildSprite([...H2_TETE, ...H2_DIVE_B], PAL_2H),
+      dash: buildSprite([...H2_TETE, ...H2_DASH_B], PAL_2H)
+    },
+    skins: {
+      platine: null,            // rempli plus bas : c'est `frames` lui-meme
+      corbeau: construireSkin2H('corbeau'),
+      cerise: construireSkin2H('cerise'),
+      argent: construireSkin2H('argent'),
+      glacier: construireSkin2H('glacier')
+    }
   }
 };
 
@@ -743,3 +829,4 @@ export function portraitURL(ck) {
 CHARS.naruto.skins.shippuden = CHARS.naruto.frames;
 CHARS.leon.skins.rpd = CHARS.leon.frames;
 CHARS.yoshi.skins.vert = CHARS.yoshi.frames;
+CHARS.hollis.skins.platine = CHARS.hollis.frames;
