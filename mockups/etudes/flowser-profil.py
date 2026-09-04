@@ -42,19 +42,17 @@ def L(*ls):
 
 SPR = L(
     # ---- TETE, tournee vers la DROITE -------------------------------------
-    # 0  LA CRETE. Chez Naruto la premiere ligne est `...hH.HH.Hh.....` : les
-    #    pixels des BORDS sont de l'ombre. Trois blocs pleins et deux trous se
-    #    lisaient comme les creneaux d'un chateau.
-    "..rR.RR.Rr......",
-    # 1  la masse de la crete
-    "..rRRRRRRr......",
-    # 2  le sommet du crane, et LE MUSEAU qui commence deja en clair
-    "..mMMMMLLm......",
+    # 0  L'OREILLE DE MEWTWO, en pointe vers l'arriere, et LA CRETE. Ce sont
+    #    deux choses distinctes et elles ne doivent pas se toucher : l'oreille
+    #    est mauve et part en arriere, la crete est rouge et monte.
+    "L....R.RR.R.....",
+    # 1  l'oreille s'epaissit, la crete prend sa masse
+    "LLL.rRRRRRRr....",
+    # 2  l'oreille rejoint le crane, et LE MUSEAU commence deja en clair
+    "mLLLmMMMMLLm....",
     # 3  LE MUSEAU EST D'UN AUTRE TON QUE LE CRANE. C'est le trait obligatoire
-    #    de Yoshi : sans lui la tete redevient un aplat et le perso n'est plus
-    #    reconnaissable. Le crane est en mauve de base, le museau en mauve
-    #    eclaire, et la cassure tombe juste derriere le verre.
-    ".mMMMMMLLLm.....",
+    #    de Yoshi, et pour la meme raison : sans lui la tete est un aplat.
+    ".mMMMMMMLLLm....",
     # 4  LE VERRE, monture haute
     ".mMNNNMLLLLm....",
     # 5  l'oeil orange dans le verre, et LA BRANCHE qui part vers l'oreille
@@ -68,26 +66,31 @@ SPR = L(
     # 9  LE COLLIER cloute, au cou
     "..NNCNNCNNm.....",
     # ---- CORPS ------------------------------------------------------------
-    # 10 le haut de la CARAPACE apparait sur le dos, en prune
-    "..cvvmMMMMMMm...",
+    # 10 LA CARAPACE commence. Elle est SEPAREE du corps par un LISERE OS :
+    #    sans lui le prune et le mauve se touchent et l'ensemble se lit comme
+    #    une seule masse un peu plus sombre d'un cote. C'est le liseré qui en
+    #    fait un objet POSE sur le dos.
+    "..cvvvCMMMMMm...",
     # 11 elle s'elargit, une POINTE creme en depasse, le ventre devant
-    "CcvvvvMMMMMVVMm.",
+    "CcvvvvCMMMVVMm..",
     # 12 la carapace pleine
-    ".cvvvvMMMMMVVMm.",
+    ".cvvvvCMMMMVVMm.",
     # 13 deuxieme POINTE, et LE BRACELET cloute sur le bras, devant
-    "CcvvvvMMMNNVVMm.",
+    "CcvvvvCMMNNVVMm.",
     # 14 la main a griffes tendue devant lui
-    ".cvvvvMMMMMVVC..",
+    ".cvvvvCMMMMVVC..",
     # 15 troisieme POINTE, le bas de la carapace
-    "CcvvvMMMMMMVVMm.",
-    # 16 la carapace se referme, LA QUEUE part du bas du dos
-    ".cvvMMMMMMMMMm..",
-    # 17 la queue descend derriere lui, les cuisses se separent
-    "V..mMMMo.oMMMm..",
-    # 18 les jambes, la queue au sol
-    "VV..mMMo.oMMMm..",
+    "CcvvvCMMMMMVVMm.",
+    # 16 la carapace se referme
+    ".cvvCMMMMMMMMm..",
+    # 17 LA QUEUE part du bas du dos et descend derriere lui, epaisse et
+    #    ATTACHEE : en pixels isoles en diagonale elle se lisait comme des
+    #    debris tombes a cote de la jambe.
+    "VVcvCMMMo.oMMm..",
+    # 18 elle s'enroule vers l'arriere
+    "vVV.mMMo.oMMMm..",
     # 19 les griffes cremes devant chaque pied
-    "v...CCC...CCC...",
+    "vv..CCC...CCC...",
 )
 
 E = 26
