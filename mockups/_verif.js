@@ -77,6 +77,26 @@ const contient = (rows, lettre, jusqua) =>
   rows.slice(0, jusqua === undefined ? rows.length : jusqua).some(l => l.includes(lettre));
 
 export const TRAITS = {
+  flowser: [
+    { nom: 'la crete rouge',
+      pourquoi: 'c’est la seule couleur chaude du perso et ce qui se voit de plus loin',
+      test: r => r.slice(0, 3).some(l => l.includes('R') || l.includes('O')) },
+    { nom: 'les lunettes rondes, avec leur monture',
+      pourquoi: 'sa signature : sans monture il ne reste que deux gros yeux sombres',
+      test: r => r.slice(4, 9).some(l => l.includes('N') || l.includes('C')) },
+    { nom: 'le collier cloute',
+      pourquoi: 'c’est du Bowser pur, et c’est lui qui separe la tete du corps',
+      test: r => r.slice(8, 10).some(l => l.includes('N')) },
+    { nom: 'les bracelets cloutes',
+      pourquoi: 'sans eux les avant-bras redeviennent deux traits mauves sans detail',
+      test: r => r.slice(11, 14).some(l => l.includes('N')) },
+    { nom: 'les pointes de carapace aux epaules',
+      pourquoi: 'de face c’est la SEULE chose qui dit Bowser dans la silhouette',
+      test: r => r.slice(10, 12).some(l => l.includes('C') || l.includes('c') || l.includes('N')) },
+    { nom: 'le mauve sur au moins trois valeurs',
+      pourquoi: 'en dessous le corps devient un aplat ou le volume ne se lit plus, comme Yuki puis Yoshi',
+      test: r => ['L', 'M', 'm', 'o'].filter(c => r.some(l => l.includes(c))).length >= 3 }
+  ],
   yoshi: [
     { nom: 'les épines rouges du crâne',
       pourquoi: 'elles ont déjà disparu une fois au détour d’une refonte du visage',
