@@ -175,17 +175,20 @@ export function onBounce(d) {
     eclatDeRebond(skinDuDisque(), d, G.particles);
   }
   if (d.thrower) {
-    const ownSideWall = (d.x <= COURT.left + DISC_R() && d.thrower.side === 1) || (d.x >= COURT.right - DISC_R() && d.thrower.side === 2);
-    if (!ownSideWall) { d.thrower.meter = clamp(d.thrower.meter + 5 * METER_GAIN, 0, 100); }
-    // Marque le disque dès que ce rebond atterrit dans la moitié du LANCEUR —
-    // toute la moitié, pas seulement le mur au ras du corps comme ownSideWall
-    // ci-dessus (qui sert une autre règle : les cinq points de jauge du rebond
-    // lui-même, exclus seulement tout près du mur). Un tir presque vertical
-    // qui tape le plafond au milieu de son propre camp ne touchait jamais
-    // cette zone-là, donc rien n'empêchait de se le relancer à soi-même en
-    // boucle un peu plus loin du mur. Voir onCatch, qui lit ce drapeau.
+    // Une seule règle pour « ce rebond a atterri dans le camp du lanceur » :
+    // toute sa moitié de terrain, comparée à CX comme le reste du jeu. Il y en
+    // avait deux avant, mesurées différemment — celle-ci et une version
+    // resserrée aux 14 px autour du mur exact, gardée pour les cinq points de
+    // jauge du rebond mais oubliée pour la marque du disque. Un tir presque
+    // vertical tapait le plafond au milieu du camp, hors de cette bande
+    // étroite, et rapportait donc les cinq points À CHAQUE rebond : coincé à
+    // ricocher plafond-sol dans son coin, il payait sept fois en moins de
+    // trois secondes sans même être rattrapé. La même mesure sert maintenant
+    // aux deux : ni le rebond, ni le rattrapage qui suit (voir onCatch) ne
+    // rapportent quoi que ce soit tant que le disque reste chez son lanceur.
     const proprCote = d.thrower.side === 1 ? d.x < CX : d.x > CX;
-    if (proprCote) d.rebondPropreCamp = true;
+    if (!proprCote) { d.thrower.meter = clamp(d.thrower.meter + 5 * METER_GAIN, 0, 100); }
+    else d.rebondPropreCamp = true;
   }
 }
 

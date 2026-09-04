@@ -295,7 +295,10 @@ export function onCatch(p, sp, dirx, diry) {
   // le terrain pour sa main — c'est lui qu'on regarde à cet instant.
   if (skinDuJoueur(p) === 'captain') p.bouclierT = .45;
   if (sp > 780) {
-    if (!soiMeme) p.meter = clamp(p.meter + 20 * METER_GAIN, 0, 100);
+    // 14 (était 20) : une réception à 780+ px/s reste la plus généreuse du
+    // jeu, mais 32 au total (12 + 20) sur un seul geste rapprochait trop vite
+    // de l'ultime suivant pour ce qui reste une réception, pas un but.
+    if (!soiMeme) p.meter = clamp(p.meter + 14 * METER_GAIN, 0, 100);
     addPopup('PERFECT CATCH !', '#ffffff', 14, .9, p.y - 56);
     G.timescale = .3; G.tsTimer = .18; sfx('perfect');
     G.shake = Math.max(G.shake, 7);
