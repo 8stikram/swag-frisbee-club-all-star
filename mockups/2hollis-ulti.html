@@ -132,8 +132,11 @@ const PAL = {
 };
 const TETE = ["....CCCCCC......","..CCCCCCCCCC....",".cCCCCCCCCCCc...",".cCCCCCCCCCCc...",".cCCSSSSSSCCc...",".cCSSSSSSSSCc...",".cSSSSSSSSSSc...",".cSSSESSSSESc...",".cSSNNNNNNNNc...","..kSSSSSSSSk...."];
 const CORPS = ["..cSSSSSSSSc....",".SccSSSSSSccS...",".SccSsSSsSccS...",".SckSSsSSSkcS...","..SSSSsSSSS.....","..PPPPPPPPPP....","...PP....PP.....","...PP....PP.....","..OOO....OOO....","..KKK....KKK...."];
-// Bras leve : la pose de chant, celle qui declenche.
-const CORPS_CHANT = ["S..cSSSSSSSSc...","S..cSSSSSSccS...","S..cSsSSsSccS...","S.ckSSsSSSkcS...","..SSSSsSSSS.....","..PPPPPPPPPP....","...PP....PP.....","...PP....PP.....","..OOO....OOO....","..KKK....KKK...."];
+// Bras LEVES tous les deux, yeux fermes : la posture de chant lyrique. Un seul
+// bras leve se lisait comme un salut ; les deux disent qu'il chante.
+const CORPS_CHANT = ["S.cSSSSSSSSc.S..","S.cSSSSSSccS.S..","S.cSsSSsSccS.S..","S.ckSSsSSSkcS...","..SSSSsSSSS.....","..PPPPPPPPPP....","...PP....PP.....","...PP....PP.....","..OOO....OOO....","..KKK....KKK...."];
+// La tete du chant : les yeux fermes, un trait au lieu des deux pupilles.
+const TETE_CHANT = ["....CCCCCC......","..CCCCCCCCCC....",".cCCCCCCCCCCc...",".cCCCCCCCCCCc...",".cCCSSSSSSCCc...",".cCSSSSSSSSCc...",".cSSSSSSSSSSc...",".cSSEEESSEEEc...",".cSSNNNNNNNNc...","..kSSSSSSSSk...."];
 
 /* ===================== LE TIGRE BLANC ===================== */
 // Une TETE de tigre, de face, gueule ouverte — pas un felin de profil. C'est
@@ -142,13 +145,20 @@ const CORPS_CHANT = ["S..cSSSSSSSSc...","S..cSSSSSSccS...","S..cSsSSsSccS...","S
 // belette. Les rayures sont des barres franches ; en points isoles elles
 // faisaient une vache.
 const PAL_T = { W:'#ffffff', w:'#cfe4f5', k:'#1b2330', E:'#7ad4f0', r:'#e8a0b4', K:'#2a1220', F:'#ffffff' };
-const TIGRE_ROWS = [
- "..ww..........ww....", ".wWWw........wWWw...", ".wWkWw......wWkWw...",
- "..wWWWwwwwwwWWWw....", ".wWWWWWWWWWWWWWWw...", "wWkWWWWWWWWWWWWkWw..",
- "wWkWWEEWWWWEEWWkWw..", "wWWWWEEWWWWEEWWWWw..", "wWkWWWWWrrWWWWWkWw..",
- ".wWWWWWKKKKWWWWWw...", ".wWWWKFKKKKFKWWWw...", "..wWKFKKKKKKFKWw....",
- "..wWKKKKKKKKKKWw....", "...wWKFKKKKFKWw.....", "....wwWWWWWWww......"
-];
+const TIGRES = {
+ A: ["......................ww..","....................wWWWw.","...........wwww....wWWWWWw",".......wwwWWWWWWww.wWWWWWW","w....wwWWWWWWWWWWWwWWWEWWr","ww..wWWWWWWWWWWWWWWWWWWWKw",".wwwWWkWWkWWkWWkWWWWWWww..",".wWWWWkWWkWWkWWkWWWWWw....",".wWWWWkWWkWWkWWkWWWWw.....","..wWWw........wWWw........","..wWWw........wWWw........","..wwww........wwww........"],
+ B: ["......................ww..","....................wWWWw.","...........wwww....wWWWWWw",".......wwwWWWWWWww.wWWWWWW","w....wwWWWWWWWWWWWwWWWEWWr","ww..wWWWWWWWWWWWWWWWWWWWKw",".wwwWWkWWkWWkWWkWWWWWWww..",".wWWWWkWWkWWkWWkWWWWWw....","wWWWWWkWWkWWkWWkWWWWw.....","wWWw..............wWWw....","Www..................wWWw.","ww.....................www"],
+ C: ["......................ww..","....................wWWWw.","........wwwwwww....wWWWWWw","....wwwWWWWWWWWWWw.wWWWWWW","w..wwWWWWWWWWWWWWWwWWWEWWr","wwwWWWWWWWWWWWWWWWWWWWWWKw","wWWWWWkWWkWWkWWkWWWWWWWww.","wWWWWWkWWkWWkWWkWWWWWWw...",".wWWWWkWWkWWkWWkWWWWWw....",".wWWWw........wWWWw.......",".wWWWw........wWWWw.......",".wwwww........wwwww......."],
+ D: ["......................ww..","....................wWWWw.","..........wwww.....wWWWWWw","......wwwWWWWWWwww.wWWWWWW","w...wwWWWWWWWWWWWWwWWWEWWr","ww.wWWWWWWWWWWWWWWWWWWWWKw",".wwWWkWWkWWkWWkWWkWWWWWww.",".wWWWkWWkWWkWWkWWkWWWWw...","..wWWWWWWWWWWWWWWWWWWw....","..wWw..........wWw........","..wWw..........wWw........","..www..........www........"],
+ E: ["......................ww..","....................wWkWw.","...........wwkw....wWkWWWw",".......wwwWkWWWkww.wWkWWWW","w....wwWkWWkWWkWWWwWWWEWWr","ww..wWkWWkWWkWWkWWWWWWWWKw",".wwwWkWkWkWkWkWkWkWWWWww..",".wWkWWkWWkWWkWWkWkWWWWw...",".wWWkWkWkWkWkWkWkWWWWw....","..wWkw........wWkw........","..wWWw........wWWw........","..wwww........wwww........"],
+ F: ["......................ww..","....................wWWWw.","...........wwww....wWWWWWw",".......wwwWWWWWWww.wWWWWWW","w....wwWWWWWWWWWWWwWWWEWWr","ww..wWWWWWWWWWWWWWWWWWWWKw",".wwwWWWWWWWWWWWWWWWWWWww..",".wWWWWWWWWWWWWWWWWWWWw....","..wWWWWWWWWWWWWWWWWw......","...wWw........wWw.........","...wWw........wWw.........","...www........www........."],
+ G: ["w....w..w.....w.......ww.w","ww..ww.ww....ww....wwWWWww","w..w.wwwwwwww.w..w.wWWWWWw",".w.wwwWWWWWWWWww.w.wWWWWWW","w..wwWWWWWWWWWWWWWwWWWEWWr","www.wWWWWWWWWWWWWWWWWWWWKw","wwwwWWkWWkWWkWWkWWWWWWww.w",".wWWWWkWWkWWkWWkWWWWWw...w","wwWWWWkWWkWWkWWkWWWWw..w..",".wwWWw........wWWw..w.....","w.wWWw........wWWw........","..wwww........wwww........"],
+ H: ["..........................","...........wwww...........",".......wwwWWWWWWww....ww..","w....wwWWWWWWWWWWWww.wWWWw","ww..wWWWWWWWWWWWWWWWwWWWWW",".wwwWWkWWkWWkWWkWWWWWWEWWr",".wWWWWkWWkWWkWWkWWWWWWWWKw",".wWWWWkWWkWWkWWkWWWWWWWww.","..wWWWWWWWWWWWWWWWWWWWw...","..wWWw........wWWw........","..wWWw........wWWw........","..wwww........wwww........"],
+ I: ["ww....................ww..","wWw.................wWWWw.","wWw........wwww....wWWWWWw",".Ww....wwwWWWWWWww.wWWWWWW",".ww..wwWWWWWWWWWWWwWWWEWWr","..w.wWWWWWWWWWWWWWWWWWWWKw",".wwwWWkWWkWWkWWkWWWWWWww..",".wWWWWkWWkWWkWWkWWWWWw....",".wWWWWkWWkWWkWWkWWWWw.....","..wWWw........wWWw........","..wWWw........wWWw........","..wwww........wwww........"],
+ J: ["......................ww..","....................wWWWw.",".........wwwwww....wWWWWWw",".....wwwWWWWWWWWww.wWWWWWW","w...wwWWWWWWWWWWWWwWWWEWWr","ww.wWWWWWWWWWWWWWWWWWWWWKw",".wwWWWkWWkWWkWWkWWWWWWWww.",".wWWWWkWWkWWkWWkWWWWWWw...",".wWWWWWWWWWWWWWWWWWWWWw...","..wWWWw......wWWWw........","..wwwww......wwwww........",".........................."]
+};
+
+
 
 function bati(rows, pal, ech, larg) {
   const c = document.createElement('canvas');
@@ -161,8 +171,9 @@ function bati(rows, pal, ech, larg) {
   return c;
 }
 const SPR = bati([...TETE, ...CORPS], PAL, 4, 16);
-const SPR_CHANT = bati([...TETE, ...CORPS_CHANT], PAL, 4, 16);
-const TIGRE_SPR = bati(TIGRE_ROWS, PAL_T, 4, 20);
+const SPR_CHANT = bati([...TETE_CHANT, ...CORPS_CHANT], PAL, 4, 16);
+const TIGRE_SPR = {};
+for (const [id, rows] of Object.entries(TIGRES)) TIGRE_SPR[id] = bati(rows, PAL_T, 4, 26);
 
 /* ===================== LE VRAI TERRAIN ===================== */
 function terrain(g, W, H) {
@@ -233,6 +244,46 @@ const easeBack = k => { const c = 1.9; return 1 + (c + 1) * Math.pow(k - 1, 3) +
 const alea = i => { const v = Math.sin(i * 12.9898) * 43758.5453; return v - Math.floor(v); };
 
 const CYAN = '#35e0ff', OR = '#ffd23e', BLANC = '#ffffff';
+// Les notes sont POP et colorees, pas monochromes : c'est ce qui separe une
+// invocation de chanteur d'une simple boule d'energie.
+const POP = ['#ff6fb5', '#35e0ff', '#ffd23e', '#b78ce0', '#7ef0c8', '#ffffff'];
+const pop = i => POP[Math.floor(alea(i * 3.7) * POP.length) % POP.length];
+
+// Un coeur, pour l'envoutement. Deux bosses et une pointe.
+function coeur(g, x, y, t, alpha, coul) {
+  if (alpha <= 0) return;
+  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha;
+  g.fillStyle = coul; g.beginPath();
+  g.moveTo(x, y + t * .5);
+  g.bezierCurveTo(x - t, y - t * .2, x - t * .45, y - t * .8, x, y - t * .28);
+  g.bezierCurveTo(x + t * .45, y - t * .8, x + t, y - t * .2, x, y + t * .5);
+  g.fill(); g.restore();
+}
+// Une decharge crepitante, facon ouverture de porte : une ligne brisee dont
+// les cassures sont deterministes, sinon elle scintille sans repos.
+function arc(g, x, y, r, graine, alpha, coul) {
+  if (alpha <= 0) return;
+  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha;
+  g.strokeStyle = coul; g.lineWidth = 1.6; g.beginPath();
+  const a0 = alea(graine) * TAU;
+  let px = x + Math.cos(a0) * r, py = y + Math.sin(a0) * r * .6;
+  g.moveTo(px, py);
+  for (let i = 1; i <= 4; i++) {
+    const a = a0 + (alea(graine + i) - .5) * 1.6;
+    const rr = r * (1 - i * .18) * (.6 + alea(graine + i + 20) * .8);
+    px = x + Math.cos(a) * rr; py = y + Math.sin(a) * rr * .6;
+    g.lineTo(px, py);
+  }
+  g.stroke(); g.restore();
+}
+// Une etincelle : le scintillement pop, une croix de lumiere.
+function etincelle(g, x, y, t, alpha, coul) {
+  if (alpha <= 0) return;
+  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha;
+  g.strokeStyle = coul; g.lineWidth = 1.4;
+  g.beginPath(); g.moveTo(x - t, y); g.lineTo(x + t, y);
+  g.moveTo(x, y - t); g.lineTo(x, y + t); g.stroke(); g.restore();
+}
 
 function lueur(g, x, y, r, coul, alpha) {
   if (alpha <= 0 || r <= 0) return;
@@ -352,23 +403,41 @@ const SECTIONS = [
     ]
   },
   {
-    id: 'allure', titre: '5 · L\'allure du tigre',
-    note: 'Il est blanc sur un terrain sombre : c\'est son seul avantage de lisibilité, et il est énorme. Reste à décider de sa taille et de son rendu, qui changent complètement le ton de l\'ultime.',
+    id: 'tigre', titre: '5 · Le tigre (jugé en grand)',
+    note: 'Dix corps de profil, montrés à la taille où on peut vraiment les juger. Ce qui les distingue : la masse, la longueur, la densité des rayures et le port de la tête. Les rayures sont des barres fines et hautes — en points isolés elles font une vache, en carrés des hublots.',
+    grand: true,
     variantes: [
-      v('A','TAILLE D\'UN JOUEUR','Un tigre à l\'échelle des personnages. Crédible et lisible sans écraser le terrain, mais moins impressionnant qu\'un fauve géant.',{ taille:1 }),
-      v('B','DEUX FOIS PLUS GRAND','Un fauve massif qui domine le terrain. Impact maximal, mais il cache une partie de l\'action pendant sa course.',{ taille:2 }),
-      v('C','TROIS FOIS PLUS GRAND','Une bête énorme, presque toute la hauteur du terrain. Inoubliable, mais on ne voit plus rien pendant qu\'il passe.',{ taille:3 }),
-      v('D','PLUS PETIT, TRÈS RAPIDE','Un tigre agile et nerveux. Il laisse voir le terrain et colle au personnage, mais il perd sa présence.',{ taille:.7 }),
-      v('E','EN SILHOUETTE BLANCHE PURE','Aucun détail, juste une forme blanche. Très graphique et parfaitement lisible, mais on perd les rayures qui font le tigre.',{ taille:1, rendu:'silhouette' }),
-      v('F','TRANSLUCIDE, COMME UN ESPRIT','On voit le terrain à travers lui. Cohérent avec une invocation et ça ne cache rien, mais il perd de son poids.',{ taille:1.4, rendu:'esprit' }),
-      v('G','AVEC UNE TRAÎNÉE DERRIÈRE LUI','Des copies fantômes marquent sa course. La vitesse se lit instantanément, mais ça encombre la trajectoire.',{ taille:1, rendu:'trainee' }),
-      v('H','ENTOURÉ D\'UNE AURA SONORE','Des ondes le suivent pendant toute sa course. Le lien avec le chant reste visible du début à la fin, au prix de plus de bruit à l\'écran.',{ taille:1, rendu:'aura' }),
-      v('I','RAYURES NOIRES TRÈS MARQUÉES','Le contraste est poussé au maximum. On le reconnaît comme un tigre sans hésiter, mais il devient dur et agressif.',{ taille:1, rendu:'contraste' }),
-      v('J','BLANC ET BLEU GLACE','Ses rayures prennent la couleur du disque. Il s\'intègre à la palette du jeu, mais il ressemble moins à un vrai tigre.',{ taille:1, rendu:'glace' })
+      v('A','COURSE, FOULÉE RAMASSÉE','Les quatre pattes sous le corps, en pleine foulée. La lecture la plus sobre et la plus lisible, mais aussi la moins spectaculaire.',{ t:'A' }),
+      v('B','BOND, PATTES TENDUES','Il est en l\'air, les pattes étirées avant et arrière. Beaucoup plus dynamique, mais la silhouette devient longue et fine.',{ t:'B' }),
+      v('C','CORPS MASSIF ET ÉPAIS','Une bête lourde, épaules hautes. Impact maximal et vraie présence de fauve, mais il cache une partie du terrain.',{ t:'C' }),
+      v('D','CORPS LONG ET FIN','Un félin élancé, presque un guépard. Élégant et rapide à l\'œil, mais il perd le poids d\'un tigre.',{ t:'D' }),
+      v('E','RAYURES TRÈS DENSES','Des barres partout, jusque sur la tête et les pattes. On le reconnaît sans hésiter, mais ça devient bruyant en mouvement.',{ t:'E' }),
+      v('F','AUCUNE RAYURE, FANTÔME','De l\'énergie blanche sans motif. Le plus spectral et le plus cohérent avec une invocation, mais ce n\'est plus vraiment un tigre.',{ t:'F' }),
+      v('G','FOURRURE HÉRISSÉE','Le poil éclate tout autour de la silhouette. C\'est l\'aura de la huitième porte transposée dans le corps, mais le contour devient irrégulier.',{ t:'G' }),
+      v('H','TÊTE BAISSÉE, EN CHARGE','Il fonce tête en avant, épaules relevées. Le plus menaçant du lot, mais on perd son regard.',{ t:'H' }),
+      v('I','QUEUE RELEVÉE EN PANACHE','La queue dressée derrière lui. Détail vivant qui allonge la silhouette, mais il paraît plus joueur que féroce.',{ t:'I' }),
+      v('J','TRAPU, PATTES COURTES','Un corps ramassé sur des pattes courtes. Très stable et très dense, mais il court moins qu\'il ne roule.',{ t:'J' })
     ]
   },
   {
-    id: 'duree', titre: '6 · Combien de temps ça dure',
+    id: 'visuel', titre: '6 · Le rendu de l\'énergie (jugé en grand)',
+    note: 'Le tigre est fait d\'énergie, pas de fourrure. Ce traitement décide du ton de tout l\'ultime — et l\'aura crépitante autour de lui est reprise de l\'ouverture de la huitième porte, en blanc argenté.',
+    grand: true,
+    variantes: [
+      v('A','BLANC AVEC HALO CYAN','L\'énergie blanche, un halo cyan et l\'aura crépitante. Cohérent avec la palette du jeu et très lumineux sur un terrain sombre.',{ v:'halo' }),
+      v('B','SILHOUETTE BLANCHE PURE','Aucun détail, juste une forme. Parfaitement lisible même à pleine vitesse, mais on perd les rayures et les crocs.',{ v:'silhouette' }),
+      v('C','TRANSLUCIDE, ON VOIT AU TRAVERS','Un spectre qui laisse voir le terrain. Il ne cache rien de l\'action, mais il perd tout son poids.',{ v:'esprit' }),
+      v('D','CONTRASTE POUSSÉ','Les rayures deviennent noires et dures. On le reconnaît instantanément, mais il perd le côté apparition.',{ v:'contraste' }),
+      v('E','BLEU GLACE','L\'énergie prend la couleur du disque. Il s\'intègre parfaitement à la palette, mais il ressemble moins à un tigre.',{ v:'glace' }),
+      v('F','DORÉ','De l\'or au lieu du blanc. Ça dit « ultime » sans ambiguïté, mais l\'or est déjà la couleur de la jauge et de l\'interface.',{ v:'or' }),
+      v('G','SANS AURA, NET','Pas de crépitement, pas de halo : juste la tête. Très propre et très lisible, mais ce n\'est plus une invocation d\'énergie.',{ v:'net' }),
+      v('H','AURA TRÈS DENSE','Le crépitement double d\'intensité. C\'est le plus proche de l\'ouverture de la huitième porte, mais ça mange la silhouette.',{ v:'aura' }),
+      v('I','DOUBLE CONTOUR CYAN ET OR','Deux halos superposés, un froid et un chaud. Très riche, mais deux couleurs d\'accent en même temps se contredisent.',{ v:'double' }),
+      v('J','ROSE POP','L\'énergie prend la couleur des notes. C\'est le plus raccord avec l\'univers pop du personnage, mais le moins raccord avec un tigre.',{ v:'rose' })
+    ]
+  },
+  {
+    id: 'duree', titre: '7 · Combien de temps ça dure',
     note: 'Chez Seraphine l\'immobilisation va de 1,25 à 1,75 s. Le chien de Yuki dure 3 s et c\'est déjà jugé beaucoup. Ici la durée du stun et celle de la course sont deux boutons distincts.',
     variantes: [
       v('A','COURSE RAPIDE, STUN 0,8 s','Le tigre traverse vite et cloue brièvement. Le plus doux du lot, sans doute trop peu pour un ultime.',{ dur:.8, stun:.8 }),
@@ -384,7 +453,7 @@ const SECTIONS = [
     ]
   },
   {
-    id: 'annonce', titre: '7 · Ce qui prévient que l\'ultime part',
+    id: 'annonce', titre: '8 · Ce qui prévient que l\'ultime part',
     note: 'Un ultime qui immobilise doit s\'annoncer, sinon l\'adversaire subit sans comprendre. Le son est déjà en place : reste à savoir ce que l\'écran raconte en même temps.',
     variantes: [
       v('A','IL LÈVE LE BRAS ET CHANTE','La pose de chant, bras levé, avant que le tigre parte. Simple et lisible, mais il faut regarder 2hollis pour la voir.',{ ann:'bras' }),
@@ -400,7 +469,7 @@ const SECTIONS = [
     ]
   },
   {
-    id: 'chiffres', titre: '8 · Les chiffres',
+    id: 'chiffres', titre: '9 · Les chiffres',
     note: 'Les valeurs concrètes, à comparer aux ultimes en place : le chien de Yuki dure 3 s, la ruée de Yoshi pousse fort sur 1,2 s, le grappin de Chopper gèle le disque pendant son vol.',
     variantes: [
       v('A','PRUDENT','Stun court, pas d\'attraction, recharge longue. Le réglage qui ne casse rien, mais qui risque de rendre l\'ultime décevant.',{ ch:{ stun:'0,8 s', attire:'non', recharge:'12 s', largeur:'étroite' } }),
@@ -434,29 +503,37 @@ function jouer(g, t, W, H) {
   const vue = terrain(g, W, H);
   const { X, Y, e } = vue;
   const d = actuel('duree');
-  const total = D_CHANT + D_BOND + d.dur + D_PRISE + .7;
-  const tt = t % total;
+  const D_FIN = .8;                       // la dissipation et la sortie de transe
+  const total = D_CHANT + D_BOND + d.dur + D_PRISE + D_FIN;
+  let tt = t % total;
+
+  // ARRET SUR IMAGE au declenchement : un dixieme de seconde ou rien ne bouge.
+  // C'est ce qui donne du poids au depart — sans lui l'ultime commence sans
+  // qu'on ait le temps de comprendre qu'il a commence.
+  const HITSTOP = .1;
+  if (tt > D_CHANT * .55 && tt < D_CHANT * .55 + HITSTOP) tt = D_CHANT * .55;
+
   const b = [D_CHANT, D_CHANT + D_BOND, D_CHANT + D_BOND + d.dur,
              D_CHANT + D_BOND + d.dur + D_PRISE];
-
-  // kp : l'avancement DANS la phase courante, toujours de 0 a 1. C'est lui qui
-  // porte les courbes d'acceleration, et non le temps brut : une charge a
-  // vitesse constante n'a aucun poids.
   let phase = -1, kp = 0;
   if (tt < b[0]) { phase = 0; kp = tt / D_CHANT; }
   else if (tt < b[1]) { phase = 1; kp = (tt - b[0]) / D_BOND; }
   else if (tt < b[2]) { phase = 2; kp = (tt - b[1]) / d.dur; }
   else if (tt < b[3]) { phase = 3; kp = (tt - b[2]) / D_PRISE; }
-  else { phase = 4; kp = (tt - b[3]) / .7; }
+  else { phase = 4; kp = (tt - b[3]) / D_FIN; }
 
   const ann = actuel('annonce').ann;
   const traj = actuel('trajet').traj;
   const adv = actuel('adverse').adv;
-  const al = actuel('allure');
-  const portee = traj === 'moitie' ? .55 : 1.08;
+  // La taille du tigre n'est plus une variante : la section « allure » a
+  // ete remplacee par « tigre » (le dessin) et « visuel » (le rendu). Elle
+  // est fixee a la valeur retenue, 1,5 fois la largeur d'un joueur.
+  const al = { taille: 1 };
+  const vis = actuel('visuel') || { v: 'halo' };
+  const tete = (actuel('tigre') || { t: 'A' }).t;
+  const portee = traj === 'moitie' ? .55 : 1.12;
 
-  // Position de la tete le long de sa course, et la ligne qu'elle suit.
-  const depart = hollisX + 30;
+  const depart = hollisX + 34;
   const ligneY = y0 => {
     if (traj === 'courbe') return y0 - Math.sin(kp * Math.PI) * 55;
     if (traj === 'zigzag') return y0 + Math.sin(kp * 9) * 44;
@@ -464,18 +541,18 @@ function jouer(g, t, W, H) {
     if (traj === 'visee') return y0 + (advY - y0) * kp * .7;
     return y0;
   };
-  // La tete ACCELERE : elle part lentement et arrive lancee. C'est ce qui
-  // donne le sentiment de masse — a vitesse constante elle glisse.
-  const avance = phase < 2 ? 0 : easeIn(Math.min(1, kp * 1.15));
+  // Le tigre TRAVERSE l'adversaire au lieu de s'arreter devant : c'est plus
+  // fluide, et ca laisse l'envoutement se jouer seul derriere lui.
+  const avance = phase < 2 ? 0 : easeIn(Math.min(1, kp * 1.1));
   const tx = depart + avance * CW * portee;
   const ty = ligneY(hollisY);
 
   /* ---------- le decor annonce ---------- */
   if (ann === 'couloir' && phase >= 0 && phase <= 2) {
     const gr = g.createLinearGradient(X(CT.left), 0, X(CT.right), 0);
-    gr.addColorStop(0, 'rgba(53,224,255,0.00)');
+    gr.addColorStop(0, 'rgba(53,224,255,0)');
     gr.addColorStop(.5, 'rgba(53,224,255,0.16)');
-    gr.addColorStop(1, 'rgba(53,224,255,0.00)');
+    gr.addColorStop(1, 'rgba(53,224,255,0)');
     g.save(); g.globalAlpha = phase === 0 ? .9 : .5; g.fillStyle = gr;
     g.fillRect(X(CT.left), Y(hollisY - 44), CW * e, 88 * e); g.restore();
   }
@@ -483,105 +560,138 @@ function jouer(g, t, W, H) {
     g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .55;
     g.fillStyle = CYAN; g.fillRect(X(CT.left), Y(CT.top), 5, CH * e); g.restore();
   }
-  // Le sol s'allume sous le passage : une bande qui suit la tete et s'efface
-  // derriere elle. C'est ce qui ancre l'effet au terrain au lieu de le laisser
-  // flotter au-dessus.
-  if (phase === 2) {
-    const gr = g.createLinearGradient(X(depart), 0, X(tx), 0);
-    gr.addColorStop(0, 'rgba(53,224,255,0.00)');
-    gr.addColorStop(1, 'rgba(53,224,255,0.22)');
-    g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = gr;
-    g.fillRect(X(depart), Y(ty - 26), (tx - depart) * e, 52 * e); g.restore();
+
+  /* ---------- 2HOLLIS : il flotte legerement pendant le chant ---------- */
+  // Les pieds decollent de quelques pixels : c'est ce petit decalage qui dit
+  // que la scene n'est plus tout a fait reelle.
+  const vol = (phase === 0 || phase === 1) ? (4 + Math.sin(t * 5) * 2) : 0;
+  perso(g, phase <= 1 ? SPR_CHANT : SPR, hollisX, hollisY - vol, vue, 1);
+  if (vol) {
+    // l'ombre portee se resserre quand il monte, sinon il ne decolle pas
+    g.save(); g.globalAlpha = .3; g.fillStyle = '#000';
+    g.beginPath(); g.ellipse(X(hollisX), Y(hollisY), 16 * e, 5 * e, 0, 0, TAU);
+    g.fill(); g.restore();
   }
 
-  /* ---------- 2hollis ---------- */
-  perso(g, phase <= 1 ? SPR_CHANT : SPR, hollisX, hollisY, vue, 1);
-
-  /* ---------- 1. LE CHANT : les ondes et les notes qui montent ---------- */
+  /* ---------- 1. LE CHANT ---------- */
   if (phase === 0) {
-    for (let i = 0; i < 3; i++) {
-      const k = (kp * 1.6 + i * .33) % 1;
-      anneau(g, X(hollisX), Y(hollisY - 8), (14 + k * 90) * e, (6 + k * 34) * e,
-             (1 - k) * .55, CYAN, 2);
-    }
-    lueur(g, X(hollisX), Y(hollisY - 20), 34 * e * (.6 + kp * .6), CYAN, .35 + kp * .3);
-    // Six notes qui s'elevent et tournent : elles disent que c'est un CHANT,
-    // et pas une explosion.
-    for (let i = 0; i < 6; i++) {
-      const k = (kp + alea(i) ) % 1;
-      const a = alea(i + 40) * TAU;
-      note(g, X(hollisX + Math.cos(a) * 18 * k) , Y(hollisY - 14 - k * 46),
-           9 * e * 4, (1 - k) * .85, i % 2 ? OR : BLANC);
-    }
-  }
+    const NB = 3;                                   // trois temps
+    const frappe = f => Math.pow(Math.max(0, 1 - f), 2.4);
+    // la colonne de lumiere qui monte de lui
+    const gr = g.createLinearGradient(0, Y(hollisY), 0, Y(hollisY - 150));
+    gr.addColorStop(0, 'rgba(53,224,255,0.26)');
+    gr.addColorStop(1, 'rgba(53,224,255,0)');
+    g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = gr;
+    g.fillRect(X(hollisX) - 22 * e, Y(hollisY - 150), 44 * e, 150 * e); g.restore();
 
-  /* ---------- 2. LA FORMATION : les notes convergent, la tete nait ------- */
-  if (phase === 1) {
+    for (let n = 0; n < NB; n++) {
+      const dep = n / NB;
+      if (kp < dep) continue;
+      const f = Math.min(1, (kp - dep) * NB * 1.2);
+      // l'anneau qui claque au sol a chaque temps
+      anneau(g, X(hollisX), Y(hollisY), (16 + f * 108) * e, (6 + f * 40) * e,
+             frappe(f) * .7, n % 2 ? OR : CYAN, 2.5);
+      // deux notes colorees par temps, qui montent en tournant
+      for (let i = 0; i < 2; i++) {
+        const id = n * 2 + i;
+        const a = alea(id) * TAU + f * 2.4;
+        note(g, X(hollisX + Math.cos(a) * (12 + f * 28)), Y(hollisY - 22 - f * 64),
+             (7 + alea(id + 5) * 4) * e * 4, (1 - f) * .95, pop(id));
+      }
+    }
+    // le coeur qui bat, et le scintillement pop autour de lui
+    const pouls = frappe((kp * NB) % 1);
+    lueur(g, X(hollisX), Y(hollisY - 30), (24 + pouls * 26) * e, BLANC, .28 + pouls * .45);
+    lueur(g, X(hollisX), Y(hollisY - 30), (44 + pouls * 44) * e, CYAN, .18 + pouls * .24);
     for (let i = 0; i < 10; i++) {
-      const k = easeOut(kp);
-      const a = alea(i + 7) * TAU, r = (1 - k) * 78;
+      const k = (kp * 1.5 + alea(i + 60)) % 1;
+      const a = alea(i + 90) * TAU;
+      etincelle(g, X(hollisX + Math.cos(a) * (16 + k * 40)), Y(hollisY - 24 + Math.sin(a) * (10 + k * 26)),
+                (2 + alea(i) * 2.5) * e * 4, (1 - k) * .8, pop(i + 2));
+    }
+  }
+
+  /* ---------- 2. L'INVOCATION : les notes convergent, le tigre nait ------- */
+  if (phase === 1) {
+    const k = easeOut(kp);
+    for (let i = 0; i < 14; i++) {
+      const a = alea(i + 7) * TAU, r = (1 - k) * 86;
       note(g, X(depart + Math.cos(a) * r), Y(ty + Math.sin(a) * r * .55),
-           8 * e * 4, k * .9, i % 3 ? CYAN : OR);
+           (7 + alea(i + 2) * 4) * e * 4, Math.min(1, k * 1.4) * .9, pop(i));
     }
-    lueur(g, X(depart), Y(ty), 70 * e * easeOut(kp), BLANC, .5 * kp);
+    lueur(g, X(depart), Y(ty), 84 * e * k, BLANC, .55 * k);
   }
 
-  /* ---------- la tete elle-meme ---------- */
+  /* ---------- LE TIGRE ---------- */
   if (phase >= 1 && phase <= 3) {
-    // Un joueur fait 48 * 1,6 unites de large. La tete a taille 1 en fait 1,5
-    // fois plus : c'est un fauve, pas un chat.
     const naiss = phase === 1 ? easeBack(kp) : 1;
-    const ech = al.taille * naiss * (phase === 3 ? 1 + kp * .35 : 1);
-    const w = 20 * 4 * ech * e * 1.5, h = 15 * 4 * ech * e * 1.5;
+    const ech = al.taille * naiss;
+    // Un joueur fait 48 * 1,6 unites de large. Le tigre en fait 1,8 fois
+    // plus : c'etait le seul reproche fait au corps de profil, il etait
+    // dessine a la moitie d'un joueur et se lisait comme un chat.
+    const w = 26 * 4 * ech * e * 1.35, h = 12 * 4 * ech * e * 1.35;
+    const spr = TIGRE_SPR[tete] || TIGRE_SPR.A;
 
-    g.save(); g.imageSmoothingEnabled = false;
-    // La traînee : des copies figees du trajet, de plus en plus pales et
-    // petites. Un simple trait ne rend pas la vitesse, des copies si.
-    if (phase === 2 && al.rendu !== 'esprit') {
-      for (let i = 6; i >= 1; i--) {
-        const kr = Math.max(0, avance - i * .045);
-        const px = depart + kr * CW * portee;
-        if (px <= depart) continue;
-        g.globalAlpha = .1 * (7 - i) * .5;
-        const wr = w * (1 - i * .07), hr = h * (1 - i * .07);
-        g.drawImage(TIGRE_SPR, X(px) - wr / 2, Y(ligneY(hollisY)) - hr * .62, wr, hr);
-      }
-      g.globalAlpha = 1;
-    }
-    if (al.rendu === 'esprit') g.globalAlpha = .6;
-    if (al.rendu === 'silhouette') g.filter = 'brightness(2.6) saturate(0)';
-    if (al.rendu === 'contraste') g.filter = 'contrast(1.8)';
-    if (al.rendu === 'glace') g.filter = 'sepia(1) hue-rotate(150deg) saturate(3)';
-    g.restore();
-
-    // La lueur passe SOUS la tete : dessinee par-dessus elle la delavait en
-    // simple tache cyan, et on perdait la gueule et les crocs.
-    lueur(g, X(tx), Y(ty), w * .55, CYAN, phase === 2 ? .42 : .3);
-    lueur(g, X(tx), Y(ty), w * .22, BLANC, .5);
-
-    g.save(); g.imageSmoothingEnabled = false;
-    if (al.rendu === 'esprit') g.globalAlpha = .6;
-    if (al.rendu === 'silhouette') g.filter = 'brightness(2.6) saturate(0)';
-    if (al.rendu === 'contraste') g.filter = 'contrast(1.8)';
-    if (al.rendu === 'glace') g.filter = 'sepia(1) hue-rotate(150deg) saturate(3)';
-    g.drawImage(TIGRE_SPR, X(tx) - w / 2, Y(ty) - h * .62, w, h);
-    g.restore();
-
+    // la traînee : large, en energie blanche, avec de GROSSES notes qui
+    // flottent derriere et s'effacent doucement
     if (phase === 2) {
-      anneau(g, X(tx + w * .3), Y(ty), w * .35, h * .3, .45, BLANC, 2.5);
-      // Les notes ejectees par le passage, qui derivent et s'effacent.
-      for (let i = 0; i < 12; i++) {
-        const na = alea(i + 11) * TAU;
-        const k = ((kp * 1.4 + alea(i + 3)) % 1);
-        const dist = k * 70;
-        note(g, X(tx - 30 - k * 90 + Math.cos(na) * 10), Y(ty + Math.sin(na) * dist * .8),
-             7 * e * 4, (1 - k) * .8, i % 3 ? OR : CYAN);
+      const gr = g.createLinearGradient(X(depart), 0, X(tx), 0);
+      gr.addColorStop(0, 'rgba(255,255,255,0)');
+      gr.addColorStop(.7, 'rgba(160,230,255,0.16)');
+      gr.addColorStop(1, 'rgba(255,255,255,0.34)');
+      g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = gr;
+      g.fillRect(X(depart), Y(ty - 34), (tx - depart) * e, 68 * e); g.restore();
+
+      for (let i = 6; i >= 1; i--) {
+        const kr = Math.max(0, avance - i * .05);
+        if (kr <= 0) continue;
+        g.save(); g.imageSmoothingEnabled = false;
+        g.globalAlpha = .09 * (7 - i);
+        const wr = w * (1 - i * .06), hr = h * (1 - i * .06);
+        g.drawImage(spr, X(depart + kr * CW * portee) - wr / 2, Y(ligneY(hollisY)) - hr * .62, wr, hr);
+        g.restore();
+      }
+      // grosses notes stylisees laissees dans le sillage
+      for (let i = 0; i < 9; i++) {
+        const k = ((kp * 1.15 + alea(i + 3)) % 1);
+        const px = tx - 30 - k * 150;
+        if (px < depart - 20) continue;
+        note(g, X(px), Y(ty + (alea(i + 30) - .5) * 60 - k * 16),
+             (12 + alea(i + 9) * 8) * e * 4, (1 - k) * .85, pop(i + 4));
+      }
+      // une onde au sol a chaque foulee
+      for (let n = 0; n < 4; n++) {
+        const f = ((avance * 4) - n);
+        if (f < 0 || f > 1) continue;
+        const px = depart + (n / 4) * CW * portee;
+        anneau(g, X(px), Y(ty + 12), (8 + f * 46) * e, (3 + f * 15) * e,
+               (1 - f) * .5, BLANC, 2);
       }
     }
+
+    // lueur SOUS la tete, puis la tete par-dessus
+    lueur(g, X(tx), Y(ty), w * .58, vis.v === 'or' ? OR : CYAN, phase === 2 ? .45 : .32);
+    lueur(g, X(tx), Y(ty), w * .24, BLANC, .55);
+    // l'aura crepitante, facon ouverture de porte
+    if (vis.v !== 'net') {
+      for (let i = 0; i < 5; i++) {
+        arc(g, X(tx), Y(ty - h * .1), w * .62, i + Math.floor(t * 22), .55, BLANC);
+      }
+    }
+    g.save(); g.imageSmoothingEnabled = false;
+    if (vis.v === 'esprit') g.globalAlpha = .6;
+    if (vis.v === 'silhouette') g.filter = 'brightness(2.6) saturate(0)';
+    if (vis.v === 'contraste') g.filter = 'contrast(1.9)';
+    if (vis.v === 'glace') g.filter = 'sepia(1) hue-rotate(150deg) saturate(3)';
+    if (vis.v === 'or') g.filter = 'sepia(1) saturate(3) hue-rotate(-12deg) brightness(1.15)';
+    g.drawImage(spr, X(tx) - w / 2, Y(ty) - h * .62, w, h);
+    g.restore();
   }
 
-  /* ---------- l'adversaire : stun, puis attraction ---------- */
+  /* ---------- 4. L'ENVOUTEMENT ---------- */
   const touche = phase >= 3;
+  const envoute = adv === 'stun_attire' || adv === 'stun' || adv === 'attire'
+                  || adv === 'contact' || adv === 'tous';
   let ax = advX0;
   if (touche && (adv === 'stun_attire' || adv === 'attire' || adv === 'contact')) {
     const force = adv === 'contact' ? 1 : .45;
@@ -589,31 +699,61 @@ function jouer(g, t, W, H) {
     ax = advX0 - k * (advX0 - hollisX) * force;
   }
   if (touche && adv === 'pousse') ax = advX0 + easeOut(phase === 3 ? kp : 1) * 130;
-  perso(g, CHARS.leon.frames.idle, ax, advY, vue, -1);
 
-  /* ---------- 4. L'IMPACT ---------- */
-  if (phase === 3) {
-    // L'eclat du choc, puis l'anneau qui s'ouvre.
-    lueur(g, X(advX0), Y(advY - 20), (30 + kp * 130) * e, BLANC, (1 - kp) * .8);
-    anneau(g, X(advX0), Y(advY - 10), (10 + kp * 150) * e, (4 + kp * 60) * e,
-           (1 - kp) * .8, CYAN, 3);
-    anneau(g, X(advX0), Y(advY - 10), (10 + kp * 96) * e, (4 + kp * 38) * e,
-           (1 - kp) * .6, OR, 2);
-  }
-  // Le charme : des notes qui tournent autour de celui qui est cloue. C'est le
-  // retour visuel du stun — sans lui, « immobilise » ne se voit pas.
-  if (touche && (adv === 'stun_attire' || adv === 'stun' || adv === 'tous')) {
+  // Il n'est pas blesse, il est ENVOUTE : bras leves, tire au sol, en transe.
+  // A la toute fin il secoue la tete et en sort.
+  const sortie = phase === 4 && kp > .55;
+  const sprAdv = CHARS.leon.frames.idle;
+  g.save();
+  if (touche && envoute && !sortie) {
+    // le raclement des pieds : de la poussiere derriere lui pendant qu'il glisse
     for (let i = 0; i < 5; i++) {
-      const a = t * 2.4 + i * TAU / 5;
-      note(g, X(ax + Math.cos(a) * 22), Y(advY - 34 + Math.sin(a) * 9),
-           7 * e * 4, .85, OR);
+      const k = (t * .9 + alea(i + 70)) % 1;
+      g.globalAlpha = (1 - k) * .35; g.fillStyle = '#cbb58a';
+      g.fillRect(X(ax + 14 + k * 26), Y(advY) - 2, 3, 3);
     }
-    anneau(g, X(ax), Y(advY), 26 * e, 10 * e, .55, OR, 2);
+    g.globalAlpha = 1;
   }
-  if (touche && adv === 'tous') anneau(g, X(hollisX), Y(hollisY), 26 * e, 10 * e, .55, OR, 2);
+  g.restore();
+  // le tremblement de la sortie de transe
+  const secousse = sortie ? Math.sin(t * 34) * 2 : 0;
+  perso(g, sprAdv, ax + secousse, advY, vue, -1);
 
-  /* ---------- la traction, montree et pas devinee ---------- */
-  if (phase >= 3 && (adv === 'stun_attire' || adv === 'attire' || adv === 'contact')) {
+  if (touche && envoute && !sortie) {
+    // coeurs et notes qui tourbillonnent autour de sa tete
+    for (let i = 0; i < 6; i++) {
+      const a = t * 2.6 + i * TAU / 6;
+      const px = X(ax + Math.cos(a) * 26), py = Y(advY - 40 + Math.sin(a) * 11);
+      if (i % 2) coeur(g, px, py, 7 * e * 4, .9, '#ff6fb5');
+      else note(g, px, py, 8 * e * 4, .9, pop(i + 12));
+    }
+    // les yeux vides : deux points pales par-dessus les siens
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .9;
+    g.fillStyle = BLANC;
+    g.fillRect(X(ax - 5) - 1, Y(advY - 52), 3, 3);
+    g.fillRect(X(ax + 3) - 1, Y(advY - 52), 3, 3);
+    g.restore();
+  }
+
+  /* ---------- l'impact ---------- */
+  if (phase === 3 && kp < .55) {
+    const ki = kp / .55;
+    lueur(g, X(advX0), Y(advY - 20), (30 + ki * 130) * e, BLANC, (1 - ki) * .8);
+    anneau(g, X(advX0), Y(advY - 10), (10 + ki * 150) * e, (4 + ki * 60) * e, (1 - ki) * .8, CYAN, 3);
+    anneau(g, X(advX0), Y(advY - 10), (10 + ki * 96) * e, (4 + ki * 38) * e, (1 - ki) * .6, OR, 2);
+  }
+
+  /* ---------- la dissipation : une pluie de notes de lumiere ---------- */
+  if (phase === 4) {
+    for (let i = 0; i < 16; i++) {
+      const k = Math.min(1, kp * 1.4 + alea(i + 50) * .35);
+      const px = CT.left + CW * (.3 + alea(i) * .6);
+      note(g, X(px), Y(hollisY - 70 + k * 90), (8 + alea(i + 6) * 6) * e * 4,
+           (1 - k) * .8, pop(i + 20));
+    }
+  }
+
+  if (phase >= 3 && (adv === 'stun_attire' || adv === 'attire' || adv === 'contact') && !sortie) {
     fleche(g, vue, ax, advY, hollisX + 44, hollisY, OR);
   }
 
@@ -644,8 +784,45 @@ function dessinerCarte(cv, sec, va) {
   const g = cv.getContext('2d');
   const sauve = { ...choix };
   choix[sec.id] = va.id;
-  jouer(g, D_CHANT + D_BOND + actuel('duree').dur * .62, cv.width, cv.height);
+  if (sec.grand) carteTigre(g, cv.width, cv.height);
+  else jouer(g, D_CHANT + D_BOND + actuel('duree').dur * .62, cv.width, cv.height);
   Object.assign(choix, sauve);
+}
+
+// Les sections « tigre » et « visuel » se jugent en GRAND, sur fond neutre :
+// une tete de vingt pixels perdue dans une vignette de terrain ne se juge pas.
+function carteTigre(g, W, H) {
+  g.fillStyle = '#0a1220'; g.fillRect(0, 0, W, H);
+  const vis = actuel('visuel'), tete = actuel('tigre');
+  const spr = TIGRE_SPR[tete.t] || TIGRE_SPR.A;
+  // Le corps est bien plus large que haut : on l'ajuste sur la LARGEUR de
+  // la carte, sinon il deborde.
+  const w = W * .82, h = w * (12 / 26);
+  const cx = W / 2, cy = H / 2;
+  lueur(g, cx, cy, w * .62, vis.v === 'or' ? OR : vis.v === 'rose' ? '#ff6fb5' : CYAN, .42);
+  lueur(g, cx, cy, w * .26, BLANC, .55);
+  if (vis.v !== 'net') {
+    const n = vis.v === 'aura' ? 10 : 5;
+    for (let i = 0; i < n; i++) arc(g, cx, cy, w * .6, i * 3 + 1, .5, BLANC);
+  }
+  if (vis.v === 'double') {
+    anneau(g, cx, cy, w * .5, h * .45, .4, CYAN, 2);
+    anneau(g, cx, cy, w * .58, h * .52, .3, OR, 2);
+  }
+  g.save(); g.imageSmoothingEnabled = false;
+  if (vis.v === 'esprit') g.globalAlpha = .6;
+  if (vis.v === 'silhouette') g.filter = 'brightness(2.6) saturate(0)';
+  if (vis.v === 'contraste') g.filter = 'contrast(1.9)';
+  if (vis.v === 'glace') g.filter = 'sepia(1) hue-rotate(150deg) saturate(3)';
+  if (vis.v === 'or') g.filter = 'sepia(1) saturate(3) hue-rotate(-12deg) brightness(1.15)';
+  if (vis.v === 'rose') g.filter = 'sepia(1) saturate(4) hue-rotate(270deg)';
+  g.drawImage(spr, cx - w / 2, cy - h / 2, w, h);
+  g.restore();
+  // quelques notes autour, pour situer l'echelle et rappeler d'ou il sort
+  for (let i = 0; i < 5; i++) {
+    const a = i * TAU / 5 + .4;
+    note(g, cx + Math.cos(a) * w * .62, cy + Math.sin(a) * h * .58, 13, .7, pop(i));
+  }
 }
 
 const boite = document.getElementById('sections');
