@@ -53,6 +53,13 @@
              padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
   .btnCopier:hover{background:#3b2568}
   .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .anatCorps{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+  .anatCorps canvas{image-rendering:pixelated;border-radius:10px;border:1px solid var(--edge)}
+  .anatListe{flex:1 1 340px;font-size:11.5px;line-height:1.6}
+  .anatListe div{display:flex;gap:8px;align-items:baseline;padding:2px 0}
+  .anatListe i{width:12px;height:12px;border-radius:3px;flex:0 0 auto;position:relative;top:1px}
+  .anatListe b{color:var(--or);font-weight:600}
+  .anatListe em{font-style:normal;color:#8d7fa8}
   .rosterRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
   .rosterOne{text-align:center;font-size:9px;color:#8d7fa8;font-family:Consolas,monospace}
   .rosterOne canvas{display:block;border-radius:6px;image-rendering:pixelated;border:1px solid var(--edge)}
@@ -100,6 +107,8 @@
     <div class="rosterRow" id="rosterRow"></div>
   </div>
 </div>
+
+<div class="apercu" id="anatomie" style="margin-top:14px;display:block"></div>
 
 <div class="apercu" id="editeur" style="margin-top:14px;display:block"></div>
 
@@ -173,12 +182,66 @@ function batir(remplace) {
   return { rows, pal, stats };
 }
 
+// Declare AVANT tout ce qui appelle batir() : la carte d'anatomie s'en sert,
+// et une variable `let` lue avant sa declaration jette au lieu de valoir
+// undefined. C'est ce qui vidait le panneau sans un mot dans la page.
+let ed = null;
+
+/* ===================== L'ANATOMIE ===================== */
+// Elle vit ici et pas dans une tête : c'est elle qui commande les poses
+// d'animation, et une pose se dessine en sachant CE QUI BOUGE. Dans une
+// course, la carapace et la tête ne bougent pas, les jambes alternent, et les
+// deux bras balancent À CONTRETEMPS l'un de l'autre — c'est ce contretemps qui
+// fait courir plutôt que glisser.
+const ANATOMIE = [
+  ['la crête', '#e8392f', 0, 4, 0, 15, 'fixe — elle ne se couche qu\'au dash'],
+  ['la monture et les deux verres', '#35e0ff', 5, 7, 0, 15, 'fixe'],
+  ['le museau', '#c98ae8', 6, 8, 7, 12, 'fixe'],
+  ['le collier clouté', '#f0e0bc', 9, 9, 0, 15, 'fixe'],
+  ['la carapace et ses pointes', '#a05a9c', 10, 17, 0, 7, 'fixe — c\'est le bloc de référence'],
+  ['LE BRAS PROCHE, avec ses bracelets', '#5df08a', 11, 16, 8, 9, 'il balance'],
+  ['le ventre, relié à la queue', '#ffd23e', 10, 17, 10, 12, 'fixe — il se penche au dash et au plongeon'],
+  ['LE BRAS LOIN', '#ff6fb5', 11, 16, 13, 14, 'il balance à contretemps de l\'autre'],
+  ['les jambes et les griffes', '#ff8c1a', 17, 19, 0, 15, 'elles alternent']
+];
+
+(function anatomie() {
+  const h = document.getElementById('anatomie');
+  h.innerHTML = '<div style="width:100%"><h3 style="margin:0 0 10px;font-size:12px;color:var(--accent);' +
+    'text-transform:uppercase;letter-spacing:1.2px">L\'anatomie — ce qui bouge et ce qui ne bouge pas</h3>' +
+    '<div class="anatCorps"><canvas id="cvAnat"></canvas><div class="anatListe" id="anatListe"></div></div></div>';
+  const cv = document.getElementById('cvAnat');
+  const e = 13;
+  cv.width = 16 * e; cv.height = 20 * e;
+  const g = cv.getContext('2d');
+  const { rows, pal } = batir();
+  fond(g, cv.width, cv.height);
+  for (let y = 0; y < 20; y++) {
+    for (let x = 0; x < 16; x++) {
+      const ch = rows[y][x];
+      if (ch === '.' || !pal[ch]) continue;
+      // La DERNIÈRE zone qui contient le pixel gagne : les zones larges sont
+      // déclarées d'abord, les pièces précises ensuite, et une pièce précise
+      // doit l'emporter sur le bloc qui la contient.
+      let coul = pal[ch];
+      for (const [, c, y0, y1, x0, x1] of ANATOMIE) {
+        if (y >= y0 && y <= y1 && x >= x0 && x <= x1) coul = c;
+      }
+      g.fillStyle = coul;
+      g.fillRect(x * e, y * e, e, e);
+    }
+  }
+  document.getElementById('anatListe').innerHTML = ANATOMIE.map(
+    ([nom, c, , , , , quoi]) =>
+      '<div><i style="background:' + c + '"></i><span><b>' + nom + '</b> — <em>' + quoi + '</em></span></div>'
+  ).join('');
+})();
+
 /* ===================== L'ÉDITEUR ===================== */
 // Les sections proposent les variantes que j'ai dessinees ; elles ne couvriront
 // jamais tout. Quand il manque deux pixels au bon endroit, il faut pouvoir les
 // poser soi-meme plutot que de decrire la correction et d'attendre.
 styleEditeur();
-let ed = null;
 ed = editeur({
   hote: document.getElementById('editeur'),
   cle: 'flowser',
