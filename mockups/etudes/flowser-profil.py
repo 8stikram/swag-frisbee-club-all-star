@@ -1,24 +1,32 @@
 # -*- coding: utf-8 -*-
-"""Flowser-Two DE PROFIL, dans la position de Yoshi.
+"""Flowser-Two v3 : tes retouches, adaptees.
 
-Releve de Yoshi, pixel par pixel, avant de dessiner :
+Ce que je garde de ta version, parce que c'etait juste :
+  - DEUX VERRES et non un. Le verre proche en grand, et l'eclat du verre
+    lointain qui depasse par-dessus le museau. C'est comme ca qu'une paire de
+    lunettes se lit sur un visage tourne, et je n'avais pas ose.
+  - LA CRETE PLUS GROSSE et qui deborde vers l'avant au lieu d'etre posee a
+    plat sur le crane.
+  - L'ARGENT COMME COULEUR A PART ENTIERE : les verres, les clous, les reflets.
+    Je ne m'en servais nulle part.
+  - UN BRAS VISIBLE. Tu avais raison de le poser : je n'en avais dessine aucun,
+    le bracelet flottait tout seul sur le torse.
 
-  tete  : le sommet du crane occupe les colonnes 4-8 ; les epines rouges sont
-          a GAUCHE, c'est-a-dire DERRIERE, sur l'arriere du crane ; l'oeil est
-          a la colonne 5-6, HAUT sur la tete ; le museau file vers la DROITE
-          jusqu'a la colonne 12 ; et la machoire claire tient les trois
-          dernieres lignes, sous le museau — c'est elle qui arrete la tete,
-          sans elle le crane n'a plus de bas.
-  corps : la carapace rouge est a GAUCHE (le dos), le ventre clair a DROITE
-          (le devant), les jambes aux colonnes 3-6 et 9-12, les bottes en
-          dessous avec leur semelle.
-
-Ce que ca donne pour lui, et pourquoi le profil lui va mieux que la face :
-  - la CARAPACE et la QUEUE sont des elements de DOS. De face on n'en voyait
-    que deux pointes aux epaules ; de profil elles sont entierement lisibles.
-  - les LUNETTES ne perdent rien : de profil on voit le verre ET la BRANCHE
-    qui part vers l'oreille. C'est meme la lecture la plus claire des deux —
-    de face, la branche tenait dans un seul pixel de chaque cote.
+Ce que j'adapte, et pourquoi :
+  - LA CRETE ETAIT TROP GROSSE. Elle mangeait la moitie de la hauteur du sprite
+    et debordait sur le visage : le crane disparaissait, et un perso sans crane
+    n'a plus de tete. Elle garde son volume et son elan vers l'avant, mais elle
+    s'arrete au front.
+  - LE BRAS N'AVAIT PAS DE FORME. Une colonne de taches claires et sombres
+    alignees se lit comme un motif, pas comme un membre. Un bras se lit a
+    trois choses : il part de l'EPAULE, il a une EPAISSEUR constante, et il se
+    termine par une MAIN. Il est maintenant d'un ton plus clair que le torse,
+    ce qui le pose DEVANT lui, avec le bracelet cloute a l'avant-bras et les
+    griffes au bout.
+  - LES TACHES CLAIRES SUR LA CARAPACE sont retirees. Deux pixels blancs isoles
+    au milieu du prune ne se lisent pas comme des plaques, ils se lisent comme
+    des TROUS. Une plaque a besoin d'un bord, et un bord ne tient pas en un
+    pixel : le liseré os fait deja ce travail sur tout le pourtour.
 """
 import sys
 sys.path.insert(0, '.')
@@ -29,72 +37,77 @@ PAL = {
     'V': '#a05a9c', 'v': '#7d3f78',
     'R': '#e8392f', 'r': '#a81f18',
     'C': '#f0e0bc', 'c': '#c9b283',
-    'N': '#1a1620', 'E': '#f2a03c',
+    'N': '#1a1620', 'A': '#e8edf6', 'E': '#f2a03c',
 }
 LARG, HAUT = 16, 20
 
 
 def L(*ls):
     o = [(s + '.' * LARG)[:LARG] for s in ls]
-    assert len(o) == HAUT, 'il faut %d lignes, pas %d' % (HAUT, len(o))
+    assert len(o) == HAUT, '%d lignes' % len(o)
+    for i, r in enumerate(o):
+        assert r[15] == '.', 'ligne %d deborde en colonne 15' % i
     return o
 
 
 SPR = L(
-    # ---- TETE, tournee vers la DROITE -------------------------------------
-    # 0  LA CRETE prend TROIS lignes. A deux, elle etait plus large que haute :
-    #    quoi qu'on fasse de sa ligne du haut, une barre entaillee reste une
-    #    barre entaillee. Avec une ligne de plus les epis sont enfin plus hauts
-    #    que larges, et c'est ca qui fait lire des epis. Le crane descend d'un
-    #    cran pour la payer, et le museau et la machoire fusionnent.
-    "....R..R..R.....",
-    # 1  ils s'epaississent sans se rejoindre
-    "...rRRRRRRr.....",
-    # 2  la base de la crete, et L'OREILLE DE MEWTWO qui pointe vers l'arriere
-    "L..rRRRRRRr.....",
-    # 3  l'oreille s'epaissit, le crane apparait sous la crete
-    "LLLmMMMMMLLm....",
-    # 4  le crane, et LE MUSEAU qui commence deja en clair
-    "mLLmMMMMMLLLm...",
-    # 5  LE VERRE, monture haute
-    ".mMNNNMLLLLLm...",
-    # 6  l'oeil orange dans le verre, et LA BRANCHE qui rejoint l'oreille
-    "mNNNENMLLLLLLm..",
-    # 7  monture basse, le museau au plus long
-    ".mMNNNMLLLLLLm..",
-    # 8  la machoire, plus courte que le museau
-    "..mMMMLLLLLLm...",
-    # 9  LE COLLIER cloute, au cou
-    "..NNCNNCNNm.....",
+    # ---- TETE -------------------------------------------------------------
+    # 0  la crete : des epis, separes au sommet
+    ".....R..R.R.....",
+    # 1  ils se rejoignent
+    "....rRRRRRRr....",
+    # 2  la masse, elle s'elargit vers l'avant
+    "..rRRRRRRRRRr...",
+    # 3  elle deborde en avant du crane, qui apparait dessous. Elle s'ARRETE
+    #    la : plus bas elle mangeait le visage, et un perso sans crane n'a
+    #    plus de tete.
+    ".rRRRmMMMMRRRr..",
+    # 4  le crane, et le museau qui commence deja en clair
+    ".rmLLmMMMMLLLm..",
+    # 5  LA MONTURE. Elle CERNE le verre proche et va rejoindre le verre
+    #    lointain par un pont ; elle ne traverse plus le visage d'un bord a
+    #    l'autre. Une bande pleine sur toute la largeur se lit comme un
+    #    masque de ski, pas comme une paire de lunettes — c'est l'erreur que
+    #    j'avais deja faite sur la marque de 2hollis.
+    ".rmMNNNNMMNNm...",
+    # 6  LE VERRE PROCHE en grand (AA), le museau, puis L'ECLAT DU VERRE
+    #    LOINTAIN qui depasse par-dessus. C'est ce deuxieme eclat qui fait lire
+    #    une PAIRE de lunettes et non un oeil cercle.
+    ".rmNAANMLLLNAN..",
+    # 7  la monture basse
+    ".rmMNNNNMLLNNm..",
+    # 8  le museau et la machoire
+    "..rmMMMLLLLLm...",
+    # 9  LE COLLIER, clous argentes
+    "..rRNNANNANNA...",
     # ---- CORPS ------------------------------------------------------------
-    # 10 LA CARAPACE commence. Elle est SEPAREE du corps par un LISERE OS :
-    #    sans lui le prune et le mauve se touchent et l'ensemble se lit comme
-    #    une seule masse un peu plus sombre d'un cote. C'est le liseré qui en
-    #    fait un objet POSE sur le dos.
-    "..cvvvCMMMMMm...",
-    # 11 elle s'elargit, une POINTE creme en depasse, le ventre devant
-    "CcvvvvCMMMVVMm..",
-    # 12 la carapace pleine
-    ".cvvvvCMMMMVVMm.",
-    # 13 deuxieme POINTE, et LE BRACELET cloute sur le bras, devant
-    "CcvvvvCMMNNVVMm.",
-    # 14 la main a griffes tendue devant lui
-    ".cvvvvCMMMMVVC..",
-    # 15 troisieme POINTE, le bas de la carapace
-    "CcvvvCMMMMMVVMm.",
-    # 16 la carapace se referme
-    ".cvvCMMMMMMMMm..",
-    # 17 LA QUEUE part du bas du dos et descend derriere lui, epaisse et
-    #    ATTACHEE : en pixels isoles en diagonale elle se lisait comme des
-    #    debris tombes a cote de la jambe.
-    "VVcvCMMMo.oMMm..",
-    # 18 elle s'enroule vers l'arriere
-    "vVV.mMMo.oMMMm..",
-    # 19 les griffes cremes devant chaque pied
-    "vv..CCC...CCC...",
+    # 10 les epaules, et le haut de la carapace
+    "..RcvvvCMMMMVm..",
+    # 11 LE BRAS part de l'epaule. Il est plus CLAIR que le torse ET borde
+    #    d'ombre des deux cotes : c'est le liseré d'ombre qui le DETACHE du
+    #    corps. Sans lui, un bras clair pose sur un torse mauve se lit comme
+    #    un reflet, pas comme un membre.
+    ".CcvvvCmLLmVVMm.",
+    # 12 il descend, epaisseur constante — c'est ce qui fait un membre plutot
+    #    qu'une tache
+    "..cvvvCmLLmVVMm.",
+    # 13 idem
+    ".CcvvvCmLLmVVMm.",
+    # 14 LE BRACELET cloute a l'avant-bras
+    "..cvvvCmNNmVVMm.",
+    # 15 la fin de l'avant-bras
+    ".CcvvvCmLLmVVMm.",
+    # 16 LA MAIN, plus large que l'avant-bras, et sa griffe creme
+    "..cvvvCmMLLCVMm.",
+    # 17 le bas de la carapace, la queue, le haut des cuisses
+    ".VvcvCMMMoLCMMm.",
+    # 18 les jambes
+    ".vVVvmMMo..MMMm.",
+    # 19 les griffes des pieds
+    "..vv.CCC...CCC..",
 )
 
-E = 26
+E = 24
 W = LARG * E + 40
 H = HAUT * E + 40
 px = [rgb('#101828')] * (W * H)
@@ -108,7 +121,7 @@ for y in range(HAUT):
         for dy in range(E):
             for dx in range(E):
                 px[(20 + y * E + dy) * W + 20 + x * E + dx] = c
-png('flowser-profil.png', px, W, H)
+png('flowser-v3.png', px, W, H)
 
 E2 = 5
 W2 = LARG * E2 * 4 + 60
@@ -124,5 +137,5 @@ for k in range(4):
             for dy in range(E2):
                 for dx in range(E2):
                     px2[(20 + y * E2 + dy) * W2 + 15 + k * (LARG * E2 + 6) + x * E2 + dx] = c
-png('flowser-profil-petit.png', px2, W2, H2)
-print('flowser-profil.png ecrit')
+png('flowser-v3-petit.png', px2, W2, H2)
+print('flowser-v3.png ecrit')

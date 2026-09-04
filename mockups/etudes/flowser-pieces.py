@@ -7,34 +7,38 @@ module de controle refuse deux variantes a moins de douze pixels d'ecart."""
 # d'une colonne. Les variantes ci-dessous, elles, ont ete dessinees sur la
 # base precedente : celles des sections que la retouche a refaites — les
 # lunettes, la carapace, la crete — ne sont plus d'aplomb avec elle.
+# Le sprite retouche a la main dans l'editeur, puis ADAPTE : la crete
+# ramenee au front, le bras redessine comme un membre et non comme une
+# colonne de taches, les lunettes rendues a une monture qui cerne les
+# verres au lieu d'une bande qui traverse le visage.
 SPR = [
-    ".....R..R..R....",
-    "..r.rRRRRRRr....",
-    ".LRrRRRRRRRrRR..",
-    ".LRNmrRRRRRRR...",
-    ".mLNNMRRRrrRRR..",
-    ".rmMNNNNNNNNNN..",
-    ".mmmNAANLLLLNAN.",
-    ".RmMNNNNLNNLNNm.",
-    ".rRmMMMLLLLLLm..",
-    ".rRNNANNANNA....",
-    "..RcvvvCMMVVMm..",
-    ".CcvovvCMMVVVMm.",
-    "..cvvoCoNAvVvAN.",
-    ".CcvvvCoMMvVvMM.",
-    "..cooooCANvVvNA.",
-    ".CcvvvCoMMvVvMM.",
-    "..cvoCMoNAvVvAN.",
-    ".VVcvCMoMMvovMm.",
-    ".vVVVmMMVVvMMMm.",
-    ".vvvvCCCvv.CCC..",
+    ".....R..R.R.....",
+    "....rRRRRRRr....",
+    "..rRRRRRRRRRr...",
+    ".rRRRmMMMMRRRr..",
+    ".rmLLmMMMMLLLm..",
+    ".rmMNNNNMMNNm...",
+    ".rmNAANMLLLNAN..",
+    ".rmMNNNNMLLNNm..",
+    "..rmMMMLLLLLm...",
+    "..rRNNANNANNA...",
+    "..RcvvvCMMMMVm..",
+    ".CcvvvCmLLmVVMm.",
+    "..cvvvCmLLmVVMm.",
+    ".CcvvvCmLLmVVMm.",
+    "..cvvvCmNNmVVMm.",
+    ".CcvvvCmLLmVVMm.",
+    "..cvvvCmMLLCVMm.",
+    ".VvcvCMMMoLCMMm.",
+    ".vVVvmMMo..MMMm.",
+    "..vv.CCC...CCC..",
 ]
 
 PAL = {
     'L': '#d9c2ee', 'M': '#b795d8', 'm': '#8f6bb0', 'o': '#6b4a87',
     'V': '#a05a9c', 'v': '#7d3f78',
     'R': '#e8392f', 'r': '#a81f18', 'O': '#f07a1e',
-    'C': '#f0e0bc', 'c': '#c9b283', 'A': '#dfe6ee',
+    'C': '#f0e0bc', 'c': '#c9b283', 'A': '#e8edf6',
     'N': '#1a1620', 'E': '#f2a03c', 'W': '#ffffff',
 }
 
