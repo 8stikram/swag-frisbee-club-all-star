@@ -1836,22 +1836,31 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
    ici aussi ne faisait que doubler le geste pour un résultat écrasé plus tard.
    À la place, tout le roster défile en boucle, chacun marchant sur place :
    une vitrine, pas un formulaire. */
-.persoChoix{ display:flex; align-items:flex-end; justify-content:center;
-  /* Marge haute : sans elle, le bob (translateY vers le haut) poussait la
-     tête hors de la zone visible — elle disparaissait à chaque rebond. */
-  margin-bottom:1.4cqh; padding-top:2.4cqh; overflow:hidden; width:100%;
+.persoChoix{ display:flex; align-items:flex-end;
+  /* Pas de justify-content:center : ça décalait le début réel de la bande
+     hors de la fenêtre visible, et sur une seule copie et demie de large,
+     le défilement finissait par montrer du vide avant que la copie
+     suivante n'arrive — d'où la coupure. Alignée à gauche, la bande (3
+     copies, cf. online-ui.js) garde toujours du contenu sous la fenêtre. */
+  margin-bottom:.3cqh; padding-top:.6cqh; overflow:hidden; width:100%;
   -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);
   mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%) }
-.persoStrip{ display:flex; align-items:flex-end; gap:2.6cqw; animation:persoScroll 22s linear infinite }
+/* --loop-shift : distance exacte (en px, posée par le JS) entre une case et
+   sa jumelle de la seconde copie. Le -50% seul ne suffit pas : le `gap` en
+   cqw ne partage pas forcément la largeur totale en deux moitiés égales,
+   d'où un petit à-coup visible à chaque tour. 50% reste le repli avant que
+   le JS n'ait mesuré. */
+.persoStrip{ display:flex; align-items:flex-end; gap:2.6cqw;
+  animation:persoScroll 22s linear infinite; --loop-shift:50% }
 .persoCase{ background:none; border:none; position:relative;
   padding:0 .6cqw; display:flex; flex-direction:column;
   align-items:center; flex-shrink:0 }
 /* Ombre au sol : sans elle les personnages semblaient flotter, surtout une
    fois agrandis. Fixe, elle ne bouge pas avec le bob — c'est justement ce
    contraste qui vend l'idée d'un rebond plutôt que d'une dérive. */
-.persoCase::after{ content:''; display:block; width:5.5cqh; height:1.1cqh;
-  margin-top:-.3cqh; border-radius:50%; background:rgba(0,0,0,.4); filter:blur(1.5px) }
-.persoCase canvas{ image-rendering:pixelated; height:11cqh; width:auto;
+.persoCase::after{ content:''; display:block; width:4cqh; height:.8cqh;
+  margin-top:-.2cqh; border-radius:50%; background:rgba(0,0,0,.4); filter:blur(1.5px) }
+.persoCase canvas{ image-rendering:pixelated; height:8cqh; width:auto;
   animation-name:personBob; animation-duration:2.4s; animation-timing-function:ease-in-out;
   animation-iteration-count:infinite }
 /* Amplitude réduite (3px, contre 8 pour les grands portraits) : à cette
@@ -1860,7 +1869,7 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
    par index — un décalage fixe entre voisins finissait par se lire comme
    une vaguelette, tout aussi rythmée qu'un saut synchrone. */
 @keyframes personBob{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-3px) } }
-@keyframes persoScroll{ from{ transform:translateX(0) } to{ transform:translateX(-50%) } }
+@keyframes persoScroll{ from{ transform:translateX(calc(-1 * var(--loop-shift))) } to{ transform:translateX(0) } }
 
 /* --- Corps de la fiche : quatre chiffres a gauche, le main a droite -------- */
 .ficheCorps{ display:grid; grid-template-columns:1fr auto; gap:1.2cqw;

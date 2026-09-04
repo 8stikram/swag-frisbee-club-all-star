@@ -258,53 +258,74 @@ export async function rejoindreDepuisAmi(code) {
 // le meme terrain, annonces par l'hote.
 surCoupDEnvoi((p1, p2, terrain, graine) => { sfx('go'); lancerMatch(p1, p2, graine); });
 
-// --- Choix du personnage ---------------------------------------------------
-// Chacun choisit le sien avant d'entrer : le choix part avec l'identite au
-// moment de se connecter, et l'hote assemble les deux au coup d'envoi.
+// --- Vitrine du roster -------------------------------------------------
+// Ancienne zone de choix, retirée : le vrai choix (perso + tenue) se fait sur
+// l'écran de sélection complet une fois l'adversaire trouvé (menus.js,
+// monPersoChoisi()), donc le proposer aussi ici ne faisait que doubler le
+// geste pour un résultat écrasé plus tard — d'où le contour jaune qui
+// laissait croire à un choix qui ne comptait déjà plus. À la place, tout le
+// roster défile en boucle et marche sur place : une vitrine, plus un
+// formulaire. Le roster est dupliqué une fois dans le DOM pour boucler le
+// défilement sans coupure (persoScroll va de 0 à -50%, soit tout juste la
+// largeur d'une copie).
 (function cablerPersos() {
   const zone = $('persoChoix');
   if (!zone) return;
-  const cases = {};
-  const choisir = ck => {
-    G.matchChar = ck;
-    for (const [k, el] of Object.entries(cases)) el.classList.toggle('on', k === ck);
-  };
-  let redessiner = () => { };
   import('../data/characters.js').then(({ CHARS, ROSTER }) => {
-    const toiles = {};
-    // La vignette montre la tenue réellement portée : sans ça on choisit un
-    // personnage sans voir de quoi il aura l'air sur le terrain.
-    redessiner = async () => {
-      const { skinActif } = await import('../data/skins-perso.js');
-      for (const k of Object.keys(toiles)) {
-        const jeu = CHARS[k].skins && CHARS[k].skins[skinActif(k)];
-        const g = toiles[k].getContext('2d');
-        g.clearRect(0, 0, 16, 20);
-        g.drawImage((jeu && jeu.idle) || CHARS[k].frames.idle, 0, 0);
+    const strip = document.createElement('div');
+    strip.className = 'persoStrip';
+    const marcheurs = [];
+    // Trois copies, pas deux : une seule fait à peu près la largeur de la
+    // fenêtre visible, donc deux à peine assez pour un cycle de défilement
+    // laissaient parfois voir du vide avant l'arrivée de la copie suivante.
+    for (let rep = 0; rep < 3; rep++) {
+      for (const ck of ROSTER) {
+        const b = document.createElement('div');
+        b.className = 'persoCase';
+        const cv = document.createElement('canvas');
+        cv.width = 16; cv.height = 20;
+        // Décalage tiré au hasard, pas par index : un délai fixe entre
+        // voisins (i * .18s) créait quand même une vaguelette bien visible
+        // d'un bout à l'autre de la rangée — tout aussi rythmée qu'un bond
+        // synchrone, juste plus lente.
+        const decale = Math.random() * 2.4;
+        cv.style.animationDelay = decale + 's';
+        cv.getContext('2d').drawImage(CHARS[ck].frames.idle, 0, 0);
+        b.appendChild(cv);
+        strip.appendChild(b);
+        marcheurs.push({ ck, cv, decale });
       }
-    };
-    for (const ck of ROSTER) {
-      const b = document.createElement('button');
-      b.className = 'persoCase';
-      const cv = document.createElement('canvas');
-      cv.width = 16; cv.height = 20;
-      toiles[ck] = cv;
-      cv.getContext('2d').drawImage(CHARS[ck].frames.idle, 0, 0);
-      const nom = document.createElement('span');
-      nom.textContent = CHARS[ck].short;
-      b.append(cv, nom);
-      // Même geste qu'en solo : le personnage ouvre ses tenues, et c'est la
-      // tenue qui arrête le choix. Les skins manquaient ici, on partait donc
-      // en ligne avec celle de la dernière partie sans pouvoir en changer.
-      b.addEventListener('click', async () => {
-        sfx('move');
-        const { ouvrirPanneauSkins } = await import('./skins-ui.js');
-        ouvrirPanneauSkins(1, ck, { auChoix: () => { choisir(ck); redessiner(); } });
-      });
-      cases[ck] = b;
-      zone.appendChild(b);
     }
-    choisir(G.matchChar && cases[G.matchChar] ? G.matchChar : ROSTER[0]);
-    redessiner();
+    zone.appendChild(strip);
+
+    // La boucle CSS ne peut pas juste dire -50% : le gap en cqw ne partage
+    // pas forcément la largeur totale en deux moitiés égales, ce qui laissait
+    // un petit à-coup visible à chaque tour. On mesure la vraie distance
+    // entre une case et sa jumelle de la seconde copie (offsetLeft, donc pas
+    // affecté par l'animation en cours), et on la repose si le conteneur
+    // change de taille.
+    const cases = strip.children;
+    const n = ROSTER.length;
+    const majBoucle = () => {
+      if (cases.length < n * 2) return;
+      const dist = cases[n].offsetLeft - cases[0].offsetLeft;
+      if (dist > 0) strip.style.setProperty('--loop-shift', dist + 'px');
+    };
+    majBoucle();
+    new ResizeObserver(majBoucle).observe(zone);
+
+    // Cycle de marche : run1/run2 alternés, au même rythme décalé que le bob
+    // (cf. cv.style.animationDelay) pour que le pas suive le rebond au lieu
+    // de le contredire.
+    let t = 0;
+    setInterval(() => {
+      t += .09;
+      for (const m of marcheurs) {
+        const paire = Math.floor((t + m.decale) / .28) % 2 === 0 ? 'run1' : 'run2';
+        const g = m.cv.getContext('2d');
+        g.clearRect(0, 0, 16, 20);
+        g.drawImage(CHARS[m.ck].frames[paire], 0, 0);
+      }
+    }, 90);
   });
 })();
