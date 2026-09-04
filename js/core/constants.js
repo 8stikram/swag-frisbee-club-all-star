@@ -38,6 +38,15 @@ export const DASH_CATCH_MULT = 1.4;
 export const DASH_SLIDE = .12;
 export const DASH_THROW_WINDOW = .5;  // délai pour déclencher un Dash Throw après le catch
 
+// Angle minimal d'un tir, au-delà du simple « pas vers l'arrière » déjà
+// imposé par viseVersAvant(). Un tir presque vertical (dir.x proche de 0)
+// passait cette règle-là — il a bien une composante avant, minuscule — tout
+// en restant piégé à ricocher plafond-sol dans son propre coin sans jamais
+// vraiment avancer vers l'adversaire. 0,3 exige au moins ~17° d'écart avec la
+// verticale pure : assez pour barrer ce tir-refuge, sans gêner un tir en
+// cloche par la bande, bien plus penché que ça.
+export const TIR_ANGLE_MIN = .3;
+
 // --- Plongeon : purement défensif, il repousse le disque mais ne l'attrape jamais.
 // DIVE_RANGE élargi de 52 à 72 (+38 %) : la portée réelle jugée à l'appui —
 // zone de contact ET distance maximale du Perfect Dive — était si étroite

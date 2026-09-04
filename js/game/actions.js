@@ -4,7 +4,8 @@ import { enregistrerMatchComplet } from '../reseau/compte.js';
 import {
   COURT, CX, CY, TARGET, GOAL_MID1, GOAL_MID2, throwSpeed,
   DIVE_TIME, DIVE_RANGE, DIVE_WHIFF_DOWN, DIVE_POWER,
-  PERFECT_WINDOW, PERFECT_SPEED, DISC_RADIUS, DASH_THROW_WINDOW, METER_GAIN, DISC_SPEED
+  PERFECT_WINDOW, PERFECT_SPEED, DISC_RADIUS, DASH_THROW_WINDOW, METER_GAIN, DISC_SPEED,
+  TIR_ANGLE_MIN
 } from '../core/constants.js';
 import { clamp, norm, gauss, pick, rand } from '../core/utils.js';
 import { gaussJeu, randJeu, aleaJeu } from '../core/alea.js';
@@ -133,6 +134,14 @@ export function doThrowHuman(p) {
   // tir qui part réellement — et pas sur un geste que l'hôte va refuser comme
   // lui vient de le faire, avec la même règle et la même visée.
   if (!viseVersAvant(p, dir)) return;
+  // Pas assez vers l'avant pour être un vrai tir : viseVersAvant laisse
+  // passer n'importe quelle composante avant, même minuscule, donc un tir
+  // presque vertical la satisfaisait tout en restant piégé dans son propre
+  // camp — voir TIR_ANGLE_MIN. Seul le TIR l'exige : la feinte et les
+  // ultimes gardent leurs propres règles, elles ne rejoignent jamais le mur
+  // assez fort pour y rester coincées de la même façon.
+  const versAdversaire = p.side === 1 ? 1 : -1;
+  if (dir.x * versAdversaire <= TIR_ANGLE_MIN) { sfx('deny'); return; }
   // Le geste le plus important du jeu, et jusqu'ici le seul dont l'invité
   // payait l'aller-retour en entier : le disque quittait sa main plus de cent
   // millisecondes après qu'il ait relâché le bouton. Il part maintenant tout
