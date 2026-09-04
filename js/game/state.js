@@ -195,7 +195,7 @@ export function initMatch(demo, ck, cpu, diffIdx, j2j) {
   // le tient l'écrasait aussitôt. Trouvé en cherchant pourquoi deux matchs
   // partis de la même graine ne se déroulaient pas pareil.
   G.timescale = 1; G.tsTimer = 0; G.goalT = 0; G.pendingServe = 1;
-  G.shake = 0; G.rally = 0; G.maxRally = 0; G.comment = null; G.idleT = 0;
+  G.shake = 0; G.rally = 0; G.maxRally = 0; G.comments = []; G.idleT = 0;
   G.mem = { t: 0, m: 0, b: 0 }; G.startCom = false; G.lungeBonus = false; G.lungeBonusTimer = 0;
   G.zoom = null; G.flash = 0; G.lastCatchIdx = -1;
   G.possessionT = 0; G.possessionDe = null; G.possessionCdN = 0;
@@ -224,4 +224,13 @@ export function initMatch(demo, ck, cpu, diffIdx, j2j) {
   }
 }
 
-export function comment(txt, dur = 2.4) { G.comment = { text: txt, t: 0, dur }; G.idleT = 0; sfx('talk'); }
+// `cat` pilote la couleur/lueur du liseré dans drawCommentator() : standard
+// (jaune), defense, but (jaune BUT!, distinct de standard côté texte mais pas
+// besoin d'une teinte à part), ultimate, legendary. Pile de 2 maximum — au-delà
+// le plus ancien est simplement oublié, pas la peine de le garder en mémoire
+// pour un message qu'on ne montrera jamais.
+export function comment(txt, dur = 2.4, cat = 'standard') {
+  G.comments.push({ text: txt, cat, t: 0, dur });
+  if (G.comments.length > 2) G.comments.shift();
+  G.idleT = 0; sfx('talk');
+}

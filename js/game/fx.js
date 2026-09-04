@@ -109,7 +109,11 @@ export function updateFX(dt) {
     if (p.t > p.dur) G.popups.splice(i, 1);
   }
   if (G.banner) { G.banner.t += dt; if (G.banner.t > G.banner.dur) G.banner = null; }
-  if (G.comment) { G.comment.t += dt; if (G.comment.t > G.comment.dur) G.comment = null; }
+  for (let i = G.comments.length - 1; i >= 0; i--) {
+    const c = G.comments[i];
+    c.t += dt;
+    if (c.t > c.dur) G.comments.splice(i, 1);
+  }
   majFilantes(dt);
   for (let i = G.ondesBut.length - 1; i >= 0; i--) {
     const o = G.ondesBut[i];

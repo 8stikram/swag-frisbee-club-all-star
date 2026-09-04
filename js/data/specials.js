@@ -138,7 +138,7 @@ export const SPECIALS = {
       G.flash = 1.3;
       // Tenue dorée et six orbes, le temps que l'échange se joue.
       p.sixT = SIX_DUREE; p.sixA = 0;
-      sfx('sixpaths'); comment('LES SIX CHEMINS !!');
+      sfx('sixpaths'); comment('LES SIX CHEMINS !!', undefined, 'ultimate');
     },
     launch(p) {
       let dir;
@@ -172,7 +172,7 @@ export const SPECIALS = {
       // Bras tendu, canon à l'horizontale : la lecture la plus directe, on voit
       // qu'il vise avant même que les disques partent.
       p.viseT = MATILDA_VISEE;
-      sfx('special'); comment('RAFALE TRIPLE !');
+      sfx('special'); comment('RAFALE TRIPLE !', undefined, 'ultimate');
       let dir;
       if (p.human) { dir = norm(Mouse.x - p.x, Mouse.y - p.y); }
       else {
@@ -213,7 +213,7 @@ export const SPECIALS = {
       };
       G.banner = { text: 'CLOCHE DE MINUIT !!', color: '#f5c542', t: 0, dur: 1.3 };
       G.shake = 12;
-      sfx('roar'); comment('LA CLOCHE SONNE MINUIT !');
+      sfx('roar'); comment('LA CLOCHE SONNE MINUIT !', undefined, 'ultimate');
     }
   },
 
@@ -235,7 +235,7 @@ export const SPECIALS = {
       // La secousse EST l'annonce : c'est la variante retenue en section 7.
       // Sans elle l'adversaire subirait une horde sortie de nulle part.
       G.shake = 18;
-      sfx('roar'); comment('LA HORDE DÉBOULE !!');
+      sfx('roar'); comment('LA HORDE DÉBOULE !!', undefined, 'ultimate');
     }
   },
 
@@ -254,7 +254,7 @@ export const SPECIALS = {
       G.chien = { owner: p, t: 0, dur: CHIEN_DUREE };
       G.banner = { text: 'LE CHIEN DE YUKI !!', color: '#3a86d6', t: 0, dur: 1.3 };
       G.shake = 14;
-      sfx('roar'); comment('MAIS D\'OÙ SORT CE CHIEN ?!');
+      sfx('roar'); comment('MAIS D\'OÙ SORT CE CHIEN ?!', undefined, 'ultimate');
     }
   },
 
@@ -298,7 +298,7 @@ export const SPECIALS = {
       };
       G.banner = { text: 'CROCHET DE CHOPPER !!', color: '#e8c23a', t: 0, dur: 1.3 };
       G.shake = 8;
-      sfx('throw'); comment('IL VA CHERCHER LE DISQUE !');
+      sfx('throw'); comment('IL VA CHERCHER LE DISQUE !', undefined, 'ultimate');
     }
   },
 
@@ -317,7 +317,7 @@ export const SPECIALS = {
       G.rafale = { owner: p, t: 0, dur: 2.6, prochainTir: 0 };
       G.banner = { text: 'RAFALE DE MAMIE !!', color: '#c9b380', t: 0, dur: 1.3 };
       G.shake = 10;
-      sfx('mamie-ulti'); comment('C\'EST L\'HEURE DE LA RAFALE !');
+      sfx('mamie-ulti'); comment('C\'EST L\'HEURE DE LA RAFALE !', undefined, 'ultimate');
     }
   },
 
@@ -338,7 +338,7 @@ export const SPECIALS = {
       G.hack = { t: 0, dur: PIRATAGE_INTRO, source: p, cible: foe, lignes: construireTerminal() };
       G.timescale = .3; G.tsTimer = .55; G.shake = 9;
       G.banner = { text: 'PIRATAGE !!', color: '#4fe8ff', t: 0, dur: 1.3 };
-      sfx('hack'); comment('IL PREND LA MAIN !');
+      sfx('hack'); comment('IL PREND LA MAIN !', undefined, 'ultimate');
     }
   },
 

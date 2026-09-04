@@ -375,7 +375,7 @@ function legImpact(L) {
     if (foe.holding) dropDisc(foe);
     foe.charging = false; foe.wasCharging = false; foe.charge = 0;
     addPopup('ÉTOURDI !', '#ffd23e', 15, 1.1);
-    sfx('stun'); comment('ÉCRASÉ !');
+    sfx('stun'); comment('ÉCRASÉ !', undefined, 'ultimate');
   }
   if (G.disc.free && Math.hypot(G.disc.x - L.x, G.disc.y - L.yTarget) < 95) {
     G.disc.vx = gaussJeu() * 380;           // semé : trajectoire du disque

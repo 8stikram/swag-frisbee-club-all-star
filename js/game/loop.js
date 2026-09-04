@@ -162,7 +162,7 @@ export function update(dt) {
         if (n > 0 && n <= 3) sfx('count');
         if (n <= 0) {
           sfx('go');
-          if (!G.startCom && !G.demo) { G.startCom = true; comment('PREMIER À 35 — BON MATCH !'); }
+          if (!G.startCom && !G.demo) { G.startCom = true; comment('PREMIER À 35 — BON MATCH !', undefined, 'standard'); }
         }
       }
       if (G.cdT <= -.4) setupServe(1);
@@ -278,7 +278,7 @@ export function update(dt) {
       if (G.state === 'play') {
         G.idleT += dt;
         if (G.idleT > 7 && !G.comment) {
-          comment(pick(['LE PUBLIC RETIENT SON SOUFFLE...', 'QUEL MATCH !', 'LA PRESSION MONTE...', 'PERSONNE NE LÂCHE RIEN !']));
+          comment(pick(['LE PUBLIC RETIENT SON SOUFFLE...', 'QUEL MATCH !', 'LA PRESSION MONTE...', 'PERSONNE NE LÂCHE RIEN !']), undefined, 'standard');
           G.idleT = 0;
         }
       }

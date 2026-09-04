@@ -2148,19 +2148,81 @@ function drawHUD() {
   }
 }
 
+// Couleur du liseré (et de sa lueur) selon le type d'événement commenté.
+// Pas de violet : cette teinte est déjà réservée au mode Apprentissage
+// ailleurs dans le jeu. Pas de rouge pour "but" non plus : BUT! est déjà
+// jaune partout (popup compris), le rouge reste le signal du négatif
+// (faute, interception).
+const COMMENT_COLORS = {
+  standard: '#f5e63d',
+  defense: '#2f6bff',
+  but: '#ffd23e',
+  ultimate: '#4fe8ff',
+  legendary: '#f5c518'
+};
+
+// Accélération avec un léger dépassement (overshoot) avant de se stabiliser —
+// c'est ce qui donne le petit "rebond" à l'arrivée de la pilule.
+function easeOutBack(x) {
+  const c1 = 1.70158, c3 = c1 + 1;
+  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+}
+
+// Toast de commentaire : pilule arrondie, fond gris très foncé translucide
+// (le jeu se devine derrière), liseré coloré selon la catégorie avec une
+// lueur assortie, ligne de temps qui se vide en bas. Empile jusqu'à 2
+// messages — au-delà, comment() dans state.js oublie le plus ancien avant
+// même qu'il arrive ici. Le plus récent est tout en bas ; le précédent,
+// juste au-dessus, est réduit de moitié en opacité.
 function drawCommentator() {
-  const c = G.comment;
-  if (!c) return;
-  const a = Math.min(1, c.t / .15) * (c.t > c.dur - .3 ? Math.max(0, (c.dur - c.t) / .3) : 1);
-  ctx.globalAlpha = a;
-  ctx.fillStyle = 'rgba(5,10,26,.82)';
-  ctx.fillRect(0, H - 30, W, 30);
-  ctx.fillStyle = '#ffd23e';
-  ctx.fillRect(0, H - 30, W, 2);
-  ctx.font = '11px "Archivo Black", system-ui, sans-serif';
+  const n = G.comments.length;
+  if (!n) return;
+  const ENTER = .3, EXIT = .4, PILL_H = 28, GAP = 8;
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#eaf2ff';
-  ctx.fillText('🎙  ' + c.text, CX, H - 11);
+  ctx.font = 'italic 11px "Archivo Black", system-ui, sans-serif';
+  ctx.lineJoin = 'round';
+  for (let i = 0; i < n; i++) {
+    const c = G.comments[i];
+    const slot = n - 1 - i; // 0 = le plus bas = le plus récent
+    const baseY = H - 20 - slot * (PILL_H + GAP);
+
+    let alpha = 1, yOff = 0, scale = 1;
+    if (c.t < ENTER) yOff = 40 * (1 - easeOutBack(c.t / ENTER));
+    if (c.t > c.dur - EXIT) {
+      const p = Math.min(1, (c.t - (c.dur - EXIT)) / EXIT);
+      alpha = 1 - p; scale = 1 - .05 * p; yOff -= 10 * p;
+    }
+    if (slot > 0) alpha *= .5; // messages plus anciens, en retrait
+
+    const col = COMMENT_COLORS[c.cat] || COMMENT_COLORS.standard;
+    const tw = ctx.measureText(c.text).width;
+    const padX = 20, w = tw + padX * 2, h = PILL_H;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(CX, baseY + yOff);
+    ctx.scale(scale, scale);
+
+    ctx.beginPath();
+    ctx.roundRect(-w / 2, -h / 2, w, h, h / 2);
+    ctx.fillStyle = 'rgba(15,15,20,.75)';
+    ctx.fill();
+    ctx.shadowColor = col; ctx.shadowBlur = 10;
+    ctx.strokeStyle = col; ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Ligne de temps : pleine à l'arrivée, se vide jusqu'à la sortie.
+    const prog = Math.max(0, 1 - c.t / c.dur);
+    ctx.fillStyle = col;
+    ctx.fillRect(-w / 2 + 8, h / 2 - 4.5, (w - 16) * prog, 2);
+
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#111318'; ctx.lineWidth = 3;
+    ctx.strokeText(c.text, 0, 3);
+    ctx.fillText(c.text, 0, 3);
+    ctx.restore();
+  }
   ctx.globalAlpha = 1;
 }
 

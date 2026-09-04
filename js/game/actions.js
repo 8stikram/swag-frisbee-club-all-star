@@ -93,7 +93,7 @@ export function throwDisc(p, dir, speed, kind = 'normal') {
       });
     }
     G.shake = Math.max(G.shake, 4);
-    comment('QUELLE PUISSANCE !');
+    comment('QUELLE PUISSANCE !', undefined, 'standard');
   }
   if (p.human) {
     if (Mouse.y < GOAL_MID1) G.mem.t++;
@@ -240,7 +240,7 @@ function perfectDive(p) {
   G.banner = { text: 'PERFECT DIVE !', color: '#35e0ff', t: 0, dur: 1.1 };
   burst(p.x, p.y, '#ffffff', 26); burst(p.x, p.y, '#35e0ff', 22);
   starBurst(p.x, p.y); ring(p.x, p.y, '#35e0ff');
-  sfx('perfect'); comment('QUEL RENVOI !');
+  sfx('perfect'); comment('QUEL RENVOI !', undefined, 'defense');
 }
 
 export function onThrowEvent(thrower) {
@@ -311,9 +311,9 @@ export function onCatch(p, sp, dirx, diry) {
     addPopup('PERFECT CATCH !', '#ffffff', 14, .9, p.y - 56);
     G.timescale = .3; G.tsTimer = .18; sfx('perfect');
     G.shake = Math.max(G.shake, 7);
-    comment('INCROYABLE ARRÊT !');
+    comment('INCROYABLE ARRÊT !', undefined, 'defense');
   } else if (sp > 420) { G.shake = Math.max(G.shake, 3); }
-  if (G.rally === 6) comment('QUEL ÉCHANGE !');
+  if (G.rally === 6) comment('QUEL ÉCHANGE !', undefined, 'standard');
   if (p.ai) p.ai.plan = null;
 }
 
@@ -335,7 +335,7 @@ export function ownFoul(p) {
   p.score = Math.max(0, p.score - 1);
   G.shake = 10; sfx('whistle');
   addPopup('FAUTE ! −1 POINT', '#ff5340', 20, 1.5);
-  comment('OH LA FAUTE !');
+  comment('OH LA FAUTE !', undefined, 'standard');
   burst(p.side === 1 ? COURT.left : COURT.right, p.y, '#ff5340', 18);
   setupServe(p.foe.side);
 }
@@ -359,6 +359,9 @@ export function scoreGoal(scorer, y) {
     return;
   }
   const pts = zoneByY(y);
+  // Repéré AVANT d'ajouter les points : c'est l'écart qui existait pendant
+  // tout l'échange qui vient de se jouer, pas celui qu'on vient de créer.
+  const deficitAvant = scorer.score - scorer.foe.score;
   scorer.score += pts;
   scorer.stats.buts++;
   if (pts >= 5) scorer.stats.z5++; else scorer.stats.z3++;
@@ -369,9 +372,20 @@ export function scoreGoal(scorer, y) {
   // points et ne passe jamais ici, il doit pouvoir la rejouer de son côté.
   effetDeBut(scorer.side, y, scorer.char.color, scorer.char.accent || scorer.char.color, pts, scorer.char.short);
   sfx('goal');
-  if (scorer.ai) { comment(pick(["L'IA EST EN FEU !", "L'IA FRAPPE FORT !", "LE CPU PUNIT !"])); }
-  else if (pts === 5) { comment(pick(['ZONE 5 ! QUEL SNIPER !', 'EN PLEINE LUCARNE !', 'MAGNIFIQUE !'])); }
-  else { comment(pick(['QUEL TIR !', 'BEAU LANCER !', 'DIRECT AU BUT !'])); }
+  // Commentaire "légendaire" : soit une grosse remontée (mené d'au moins 5,
+  // et ce point remet à égalité ou devant), soit le point de la victoire
+  // alors que l'adversaire restait dans le coup jusqu'au bout. Remplace le
+  // commentaire de but classique plutôt que de s'y ajouter — les deux
+  // parleraient du même point.
+  const remontada = deficitAvant <= -5 && scorer.score - scorer.foe.score >= 0;
+  const finClutch = scorer.score >= TARGET && scorer.foe.score >= TARGET - 3;
+  if (remontada || finClutch) {
+    comment(pick(remontada
+      ? ['QUELLE REMONTADA !', 'IL REVIENT DE NULLE PART !', 'RETOURNEMENT TOTAL !']
+      : ['FINISH DE LÉGENDE !', 'IL CLUTCH LE MATCH !', 'VICTOIRE ARRACHÉE !']), undefined, 'legendary');
+  } else if (scorer.ai) { comment(pick(["L'IA EST EN FEU !", "L'IA FRAPPE FORT !", "LE CPU PUNIT !"]), undefined, 'but'); }
+  else if (pts === 5) { comment(pick(['ZONE 5 ! QUEL SNIPER !', 'EN PLEINE LUCARNE !', 'MAGNIFIQUE !']), undefined, 'but'); }
+  else { comment(pick(['QUEL TIR !', 'BEAU LANCER !', 'DIRECT AU BUT !']), undefined, 'but'); }
   if (scorer.foe.ai) { scorer.foe.ai.aggro = 9; }
   if (scorer.score >= TARGET) G.winner = scorer;
   G.pendingServe = scorer.foe.side;

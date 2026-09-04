@@ -114,7 +114,7 @@ function marquer(p, pts, texte, couleur, x, y) {
   burst(x, y, couleur, 18);
   ring(x, y, couleur);
   sfx('perfect');
-  comment(pts >= POINTS_DUNK ? 'DANS LA ZONE !' : 'JOLI PLACEMENT !');
+  comment(pts >= POINTS_DUNK ? 'DANS LA ZONE !' : 'JOLI PLACEMENT !', undefined, 'but');
 }
 
 export const ZONES = { RAYON, DUREE, DUNK_RAYON, RAYON_PANIER, POINTS_PANIER };

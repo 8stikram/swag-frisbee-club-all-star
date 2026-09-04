@@ -226,10 +226,10 @@ function etatPourLeReseau() {
 // affichage — et l'aurait rejoué à l'infini chez l'invité.
 let dernierCommentaire = null;
 function commentaireNeuf() {
-  const c = G.comment;
+  const c = G.comments[G.comments.length - 1];
   if (!c || c.text === dernierCommentaire) return 0;
   dernierCommentaire = c.text;
-  return c.text;
+  return [c.text, c.cat];
 }
 
 function scenesPourLeReseau() {
@@ -793,7 +793,7 @@ function appliquerEtat(m) {
   if (m.fx) { G.shake = Math.max(G.shake, m.fx[0]); G.flash = Math.max(G.flash, m.fx[1]); }
   // Une phrase du commentateur n'arrive qu'une fois : elle est déjà filtrée au
   // départ, on peut la rejouer telle quelle.
-  if (m.cm) comment(m.cm);
+  if (m.cm) comment(m.cm[0], undefined, m.cm[1]);
   // Les messages de l'hôte, affichés tels quels : c'est la seule source de
   // l'invité, puisqu'il étouffe les siens.
   if (m.po) for (const p of m.po) popupDistant(p[0], p[1], p[2], p[3], p[4]);
