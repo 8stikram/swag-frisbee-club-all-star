@@ -1,0 +1,674 @@
+# -*- coding: utf-8 -*-
+"""Ecrit mockups/flowser-ulti.html : le mockup anime de PSYCHO-SHELL."""
+import io, os, sys
+sys.path.insert(0, '.')
+from fu_data import SECS, IDS
+from fl_mk_data import SPR, PAL
+
+R = r'C:\Jeu mata label\Jeu frisbee\claude local'
+
+
+def js(v):
+    if v is None:
+        return 'null'
+    if isinstance(v, str):
+        return "'" + v.replace('\\', '\\\\').replace("'", "\\'") + "'"
+    if isinstance(v, bool):
+        return 'true' if v else 'false'
+    if isinstance(v, (int, float)):
+        return repr(v)
+    if isinstance(v, (list, tuple)):
+        return '[' + ','.join(js(x) for x in v) + ']'
+    if isinstance(v, dict):
+        return '{' + ','.join('%s:%s' % (k, js(x)) for k, x in v.items()) + '}'
+    raise TypeError(v)
+
+
+DONNEES = ("const PAL = %s;\nconst TETE = %s;\nconst CORPS = %s;\nconst SECTIONS = %s;\n"
+           % (js(PAL), js(SPR[:10]), js(SPR[10:]), js(SECS)))
+
+HTML = r'''<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Flowser-Two — Psycho-Shell</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0a0713; --panel:#150e24; --edge:#33244d; --ink:#eee6fb; --accent:#c98ae8; --or:#efe4fa; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:23px;margin:0 0 4px;font-family:'Archivo Black',sans-serif;letter-spacing:.5px}
+  h2{font-size:14px;margin:36px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#a595c4;max-width:1000px;line-height:1.75;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px;
+        flex:1 1 220px;min-width:220px;max-width:290px;cursor:pointer;
+        transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#5b3f85}
+  .card.on{border-color:var(--or);transform:translateY(-2px);box-shadow:0 0 0 1px var(--or) inset}
+  .lbl{font-size:11px;color:#a595c4;margin-bottom:8px;line-height:1.5;min-height:96px}
+  .lbl b{display:block;font-size:13px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  .card canvas{display:block;width:100%;height:auto;border-radius:8px;background:#0a0713}
+  .reserve{display:none}
+  .reserve.ouverte{display:flex}
+  .plus{margin-top:10px;background:#20143a;color:#b8a3d8;border:1px solid var(--edge);
+        border-radius:8px;padding:6px 14px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#2c1b4f;color:var(--ink)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 560px}
+  .apercu canvas{display:block;width:100%;height:auto;border-radius:10px;background:#0a0713}
+  .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 290px}
+  .fiche h3{margin:0 0 10px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .fiche table{width:100%;border-collapse:collapse;font-size:11.5px;font-family:Consolas,monospace}
+  .fiche td{padding:3px 0;color:#a595c4;vertical-align:top}
+  .fiche td:last-child{color:var(--or);text-align:right;white-space:nowrap;padding-left:8px}
+  .pastilles{display:flex;gap:6px;margin:10px 0 0}
+  .pastille{flex:1 1 0;border-radius:8px;padding:6px 8px;font-size:10px;font-family:Consolas,monospace;
+            color:#0a0713;font-weight:700;text-align:center}
+  .choix{font-size:11.5px;color:#b8a3d8;margin-top:10px;font-family:Consolas,monospace;line-height:1.8}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0a0713;border:1px solid var(--edge);border-radius:8px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#2c1b4f;color:var(--ink);border:1px solid var(--edge);border-radius:8px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#3b2568}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>FLOWSER-TWO — PSYCHO-SHELL</h1>
+<p class="note">
+  <b>Une zone, pas un coup.</b> Il fait tomber une carapace d'énergie psychique dans le camp
+  d'en face ; elle s'écrase et laisse au sol une flaque qui <b>ralentit l'adversaire et vide sa
+  jauge d'ultime</b> pendant qu'il est dedans. Le lanceur, lui, ne gagne rien — et sa propre
+  jauge est <b>gelée</b> tant que la flaque vit. C'est ce gel qui empêche d'en spammer.
+  <br><br>
+  <b>LA JAMBE DE MAMAN FAIT DÉJÀ TOMBER QUELQUE CHOSE DU CIEL</b>, avec une ombre au sol, une
+  chute et un impact — le même squelette, temps pour temps. La différence de fond tient en une
+  phrase : <b>la Jambe est un ÉVÉNEMENT, Psycho-Shell est un LIEU.</b> La Jambe tombe, écrase et
+  disparaît en une seconde ; la carapace tombe et <b>reste</b>. D'où les trois partis pris :
+  le télégraphe <b>s'écrit</b> au lieu de grandir, la carapace <b>se recompose</b> en vol au lieu
+  de tomber droit, et à l'impact <b>la caméra dézoome au lieu de trembler</b> — un tremblement
+  dirait « ça a frappé », il faut dire « ça s'installe ».
+  <br><br>
+  <b>La barre sous la frise commande la lecture</b> : jusqu'à vingt fois plus lent, arrêt sur
+  image, pas à pas avec <code>&#9664;</code> et <code>&#9654;</code>. Cliquer une case de la frise
+  saute au début de cette phase. La phase de zone est <b>raccourcie à 2,6 s dans l'aperçu</b> —
+  sa vraie durée est celle de la section 8, et une flaque de huit secondes en boucle serait
+  invisible à force d'attendre.
+</p>
+
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvApercu" width="820" height="330"></canvas>
+    <div id="lecture"></div>
+    <div class="choix" id="choix"></div>
+    <div class="copier">
+      <input class="codeChoix" id="codeChoix" readonly>
+      <button class="btnCopier" id="btnCopier">copier mes choix</button>
+    </div>
+  </div>
+  <div class="fiche">
+    <h3>La fiche</h3>
+    <table id="fiche"></table>
+    <div class="pastilles">
+      <div class="pastille" style="background:#8b4fd6;color:#efe4fa">60 % violet</div>
+      <div class="pastille" style="background:#efe4fa">30 % lilas</div>
+      <div class="pastille" style="background:#7ef0ff">10 % cyan</div>
+    </div>
+    <p class="note" style="margin:10px 0 0;font-size:10.5px">
+      Le violet est la seule famille libre du roster : le jeu va du doré au beige en passant par
+      quatre cyans, et aucun ultime n'est violet. Le cyan d'accent frôle celui de White Tiger —
+      il est tenu à 10 %, en étincelles brèves, jamais en masse.
+    </p>
+  </div>
+</div>
+
+<div id="sections"></div>
+
+<script type="module">
+import { CHARS } from '../js/data/characters.js';
+import { verifier, afficher } from './_verif.js';
+import {
+  TAU, CT, CW, CH, CXX, CYY, TH, terrain, perso, disque,
+  easeOut, easeIn, easeInOut, easeBack, alea,
+  lueur, anneau, etincelle, arc, visionneuse, styleVisionneuse
+} from './_ulti.js';
+
+__DONNEES__
+
+/* ===================== LA PALETTE DE L'ULTIME ===================== */
+// Trois couleurs, et pas une de plus. Un ultime qui pioche partout n'a pas
+// d'identité colorimétrique, et c'est l'identité qui le rend reconnaissable à
+// l'autre bout du terrain.
+const VIOLET = '#8b4fd6', LILAS = '#efe4fa', CYAN = '#7ef0ff';
+
+/* ===================== LE PERSONNAGE ===================== */
+function bati(rows, pal, ech) {
+  const c = document.createElement('canvas');
+  c.width = 16 * ech; c.height = 20 * ech;
+  const g = c.getContext('2d');
+  for (let y = 0; y < 20; y++) for (let x = 0; x < 16; x++) {
+    const ch = rows[y][x];
+    if (ch === '.' || !pal[ch]) continue;
+    g.fillStyle = pal[ch]; g.fillRect(x * ech, y * ech, ech, ech);
+  }
+  return c;
+}
+const SPR_FLOWSER = bati([...TETE, ...CORPS], PAL, 4);
+
+/* ===================== LES PHASES ===================== */
+const PHASES = [
+  { nom: "L'INCANTATION", detail: 'le cercle s\'écrit' },
+  { nom: 'LA CONVERGENCE', detail: 'la carapace se recompose' },
+  { nom: "L'IMPACT",      detail: 'la caméra recule' },
+  { nom: 'LA ZONE',       detail: 'ralenti et drain' }
+];
+const D_RUNE = .7, D_CONV = .45, D_IMP = .3;
+// La zone dure six à huit secondes en jeu. Dans l'aperçu elle est ramenée à
+// 2,6 s : une flaque qui tourne huit secondes en boucle finit par ne plus être
+// regardée, et ce qu'on juge ici c'est son COMPORTEMENT, pas sa longueur.
+const D_ZONE_APERCU = 2.6;
+
+const choix = {};
+SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+const actuel = id => SECTIONS.find(s => s.id === id).variantes.find(x => x.id === choix[id]);
+
+const floX = CT.left + CW * .20, floY = CYY + 28;
+const advX0 = CT.left + CW * .82, advY = CYY - 26;
+const zoneX = CT.left + CW * .70, zoneY = CYY + 6;
+const disqX = CXX - 40, disqY = CYY + 40;
+
+// Le rayon vient d'une SURFACE et non d'une largeur : « 30 % de la moitié
+// adverse » veut dire 30 % de son aire, pas 30 % de sa largeur. Les deux
+// donnent des cercles très différents.
+const rayonZone = () => Math.sqrt(actuel('chiffres').ch2.ray * (CW / 2) * CH / Math.PI);
+
+/* ===================== LES FORMES ===================== */
+// La carapace : une coque à pics, TRANSLUCIDE. Le roster est entièrement
+// opaque — du tigre à la cloche — donc c'est ce qui la distingue au premier
+// coup d'oeil, avant même la couleur.
+function carapace(g, cx, cy, r, alpha, rot) {
+  if (alpha <= 0 || r <= 0) return;
+  g.save();
+  g.globalCompositeOperation = 'lighter';
+  g.translate(cx, cy); g.rotate(rot);
+  // les pics, d'abord, pour qu'ils passent derrière la coque
+  g.globalAlpha = alpha * .85; g.fillStyle = LILAS;
+  for (let i = 0; i < 8; i++) {
+    const a = i * TAU / 8 + .2;
+    g.beginPath();
+    g.moveTo(Math.cos(a) * r * 1.42, Math.sin(a) * r * .95);
+    g.lineTo(Math.cos(a + .22) * r * .82, Math.sin(a + .22) * r * .55);
+    g.lineTo(Math.cos(a - .22) * r * .82, Math.sin(a - .22) * r * .55);
+    g.closePath(); g.fill();
+  }
+  // la coque : un dégradé du centre clair vers le bord violet, jamais un aplat
+  const d = g.createRadialGradient(0, 0, 0, 0, 0, r);
+  d.addColorStop(0, 'rgba(239,228,250,.55)');
+  d.addColorStop(.6, 'rgba(139,79,214,.42)');
+  d.addColorStop(1, 'rgba(139,79,214,.05)');
+  g.globalAlpha = alpha; g.fillStyle = d;
+  g.beginPath(); g.ellipse(0, 0, r, r * .68, 0, 0, TAU); g.fill();
+  // les nervures hexagonales, en traits fins : c'est ce qui dit CRISTALLIN
+  g.globalAlpha = alpha * .5; g.strokeStyle = LILAS; g.lineWidth = 1.2;
+  for (let i = 0; i < 6; i++) {
+    const a = i * TAU / 6;
+    g.beginPath(); g.moveTo(0, 0);
+    g.lineTo(Math.cos(a) * r * .9, Math.sin(a) * r * .62); g.stroke();
+  }
+  g.beginPath(); g.ellipse(0, 0, r * .5, r * .34, 0, 0, TAU); g.stroke();
+  g.restore();
+}
+
+// Le cercle de runes. Il S'ÉCRIT : les runes apparaissent une par une dans le
+// sens des aiguilles. C'est ce qui le sépare de l'ombre de la Jambe de Maman,
+// qui grandit et bat vite — ici on lit un compte à rebours, pas une masse qui
+// approche.
+function runes(g, cx, cy, rx, ry, k, alpha, style) {
+  const N = 14;
+  g.save(); g.globalCompositeOperation = 'lighter';
+  g.globalAlpha = alpha * .55; g.strokeStyle = VIOLET; g.lineWidth = 2;
+  g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, -Math.PI / 2, -Math.PI / 2 + TAU * k);
+  g.stroke();
+  if (style !== 'plein') {
+    for (let i = 0; i < N; i++) {
+      if (i / N > k) break;
+      const a = -Math.PI / 2 + i * TAU / N;
+      const x = cx + Math.cos(a) * rx * .88, y = cy + Math.sin(a) * ry * .88;
+      const s = 4 + alea(i) * 3;
+      g.globalAlpha = alpha * (.55 + alea(i + 9) * .45);
+      g.strokeStyle = LILAS; g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(x - s, y - s * .5); g.lineTo(x + s * .3, y);
+      g.lineTo(x - s * .3, y + s * .3); g.lineTo(x + s, y + s * .6);
+      g.stroke();
+    }
+  }
+  g.restore();
+}
+
+// La flaque au sol. C'est ELLE la zone active — la carapace n'est qu'une mise
+// en scène. Elle est bâtie en SUITE DE HALOS et non au fillRect à dégradé :
+// un rectangle dégradé garde ses bords nets et se lit comme une bande de
+// peinture posée sur le terrain. La leçon vient de la traînée de White Tiger.
+function flaque(g, vue, cx, cy, r, t, k, style) {
+  const { e, X, Y } = vue;
+  const puls = .5 + .5 * Math.sin(t * 2.6);
+  const rr = style === 'retrecit' ? r * (1 - k * .45) : r;
+  const fin = style === 'fin' && k > .78 ? (.4 + .6 * Math.abs(Math.sin(t * 14))) : 1;
+  const a = (1 - Math.pow(Math.max(0, k - .85) / .15, 2)) * fin;
+  const px = X(cx), py = Y(cy), pr = rr * e, prY = pr * .58;
+
+  lueur(g, px, py, pr * 1.15, VIOLET, (.16 + puls * .07) * a);
+  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = a;
+  // l'intérieur
+  if (style !== 'anneau') {
+    const d = g.createRadialGradient(px, py, 0, px, py, pr);
+    d.addColorStop(0, 'rgba(139,79,214,' + (.30 + puls * .10).toFixed(3) + ')');
+    d.addColorStop(1, 'rgba(139,79,214,.06)');
+    g.fillStyle = d;
+    g.beginPath(); g.ellipse(px, py, pr, prY, 0, 0, TAU); g.fill();
+  }
+  // le bord, toujours : c'est la limite qui compte, et c'est elle qu'on doit
+  // pouvoir lire d'un coup d'oeil quand on court
+  g.globalAlpha = a * (.7 + puls * .3); g.strokeStyle = LILAS; g.lineWidth = 2;
+  g.beginPath(); g.ellipse(px, py, pr, prY, 0, 0, TAU); g.stroke();
+  g.restore();
+
+  const rot = style === 'tourne' ? t * .35 : 0;
+  g.save(); g.translate(px, py); g.rotate(rot); g.translate(-px, -py);
+  if (style === 'runes' || style === 'tourne' || style === 'fin' || style === 'retrecit') {
+    runes(g, px, py, pr * .82, prY * .82, 1, a * .8, style);
+  } else if (style === 'fissures') {
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = a * .7;
+    g.strokeStyle = LILAS; g.lineWidth = 1.4;
+    for (let i = 0; i < 10; i++) {
+      const ang = alea(i + 40) * TAU;
+      g.beginPath(); g.moveTo(px, py);
+      let lx = px, ly = py;
+      for (let s = 1; s <= 3; s++) {
+        const aa = ang + (alea(i * 4 + s) - .5) * .8;
+        lx += Math.cos(aa) * pr / 3; ly += Math.sin(aa) * prY / 3;
+        g.lineTo(lx, ly);
+      }
+      g.stroke();
+    }
+    g.restore();
+  } else if (style === 'grille') {
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = a * .45;
+    g.strokeStyle = CYAN; g.lineWidth = 1;
+    g.beginPath(); g.ellipse(px, py, pr, prY, 0, 0, TAU); g.clip();
+    for (let i = -8; i <= 8; i++) {
+      g.beginPath(); g.moveTo(px + i * pr / 8, py - prY); g.lineTo(px + i * pr / 8, py + prY); g.stroke();
+      g.beginPath(); g.moveTo(px - pr, py + i * prY / 8); g.lineTo(px + pr, py + i * prY / 8); g.stroke();
+    }
+    g.restore();
+  } else if (style === 'pics') {
+    for (let i = 0; i < 7; i++) {
+      const ang = alea(i + 3) * TAU, d2 = .35 + alea(i + 11) * .5;
+      const x = px + Math.cos(ang) * pr * d2, y = py + Math.sin(ang) * prY * d2;
+      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = a * .8;
+      g.fillStyle = LILAS;
+      g.beginPath(); g.moveTo(x, y - 13 * e); g.lineTo(x - 4 * e, y); g.lineTo(x + 4 * e, y);
+      g.closePath(); g.fill(); g.restore();
+    }
+  } else if (style === 'brume') {
+    for (let i = 0; i < 16; i++) {
+      const ang = alea(i + 5) * TAU + t * .12, d2 = alea(i + 21);
+      lueur(g, px + Math.cos(ang) * pr * d2, py + Math.sin(ang) * prY * d2,
+            pr * .3, VIOLET, a * .1);
+    }
+  }
+  g.restore();
+  return rr;
+}
+
+/* ===================== LA SÉQUENCE ===================== */
+function jouer(g, t, W, H) {
+  const cf = actuel('chiffres').ch2;
+  const total = D_RUNE + D_CONV + D_IMP + D_ZONE_APERCU;
+  const tt = t % total;
+  const b = [D_RUNE, D_RUNE + D_CONV, D_RUNE + D_CONV + D_IMP];
+  let phase, kp;
+  if (tt < b[0]) { phase = 0; kp = tt / D_RUNE; }
+  else if (tt < b[1]) { phase = 1; kp = (tt - b[0]) / D_CONV; }
+  else if (tt < b[2]) { phase = 2; kp = (tt - b[1]) / D_IMP; }
+  else { phase = 3; kp = (tt - b[2]) / D_ZONE_APERCU; }
+
+  const cib = actuel('cible').cib, ch = actuel('chute').ch, im = actuel('impact').im;
+  const fl = actuel('flaque').fl, ef = actuel('effet').ef, ma = actuel('marque').ma;
+  const ge = actuel('gel').ge;
+
+  // LE DÉZOOM. Pas de secousse : la caméra RECULE. C'est volontairement
+  // l'inverse du réflexe, et c'est le seul ultime du jeu qui fait ça. Ce qui
+  // compte à l'impact n'est pas le point de chute mais l'étendue de ce qui
+  // vient d'être posé — un tremblement dirait « ça a frappé », il faut dire
+  // « ça s'installe ».
+  let zoom = 1;
+  if (im !== 'secousse') {
+    if (phase === 2) zoom = 1 - easeOut(kp) * .10;
+    else if (phase === 3) zoom = .90 + easeOut(Math.min(1, kp * 3)) * .10;
+  }
+  g.fillStyle = TH.bgOuter; g.fillRect(0, 0, W, H);
+  g.save();
+  g.translate(W / 2, H / 2);
+  // La secousse existe quand même comme VARIANTE, pour pouvoir la comparer.
+  if (im === 'secousse' && phase === 2) {
+    g.translate(Math.sin(t * 118) * 6 * (1 - kp), Math.cos(t * 95) * 4 * (1 - kp));
+  }
+  g.scale(zoom, zoom);
+  g.translate(-W / 2, -H / 2);
+
+  const vue = terrain(g, W, H);
+  const { e, X, Y } = vue;
+  const rz = rayonZone();
+
+  // --- 1. L'INCANTATION : le cercle s'écrit -------------------------------
+  const visible = cib !== 'moi';
+  const kEcrit = phase === 0 ? (cib === 'tard' ? Math.max(0, (kp - .62) / .38) : kp) : 1;
+  if (phase <= 1 && visible) {
+    runes(g, X(zoneX), Y(zoneY), rz * e * .92, rz * e * .53, kEcrit, .8, fl);
+  }
+  if (phase === 0) {
+    // il lévite et tend la main : la posture de cast
+    lueur(g, X(floX), Y(floY - 26), 40 * e, VIOLET, .18 + Math.sin(t * 7) * .06);
+    for (let i = 0; i < 7; i++) {
+      const q = (kp * 1.3 + alea(i + 5)) % 1;
+      const a = alea(i) * TAU;
+      etincelle(g, X(floX + Math.cos(a) * (14 + q * 26)), Y(floY - 22 - q * 52),
+                (2 + alea(i + 2) * 3) * e * 3, (1 - q) * .9, i % 3 ? LILAS : CYAN);
+    }
+  }
+
+  // --- 2. LA CONVERGENCE : la carapace se recompose ----------------------
+  const hautDepart = 240;
+  if (phase === 1) {
+    const k = easeIn(kp);
+    // Les ÉCLATS arrivent des bords et convergent. Ils sont largement espacés :
+    // serrés, une rémanence fait une masse collée au lieu de dire la vitesse.
+    for (let i = 0; i < 18; i++) {
+      const a = alea(i + 30) * TAU, d0 = 300 + alea(i + 60) * 260;
+      const q = Math.min(1, k * (1 + alea(i + 90) * .5));
+      const px = X(zoneX) + Math.cos(a) * d0 * (1 - q) * e * .5;
+      const py = Y(zoneY - hautDepart * (1 - k)) + Math.sin(a) * d0 * (1 - q) * e * .3;
+      etincelle(g, px, py, (3 + alea(i) * 4) * e * 3, q * .9, i % 4 ? LILAS : CYAN);
+    }
+    const r = rz * e * .58 * (ch === 'place' ? 1 : easeOut(k));
+    const cy = ch === 'place' ? Y(zoneY) : Y(zoneY - hautDepart * (1 - k));
+    const cx = ch === 'diago' ? X(zoneX) - (1 - k) * 200 * e : X(zoneX);
+    carapace(g, cx, cy, r, Math.min(1, k * 2), ch === 'tourne' ? k * 3 : k * .6);
+    // l'ombre au sol se RESSERRE pendant qu'elle grandit : c'est ce couple qui
+    // fait lire une chute sur un jeu vu de dessus
+    g.save(); g.globalAlpha = .3 * k; g.fillStyle = '#000';
+    g.beginPath(); g.ellipse(X(zoneX), Y(zoneY), rz * e * .55 * (1.5 - k * .95),
+                             rz * e * .3 * (1.5 - k * .95), 0, 0, TAU);
+    g.fill(); g.restore();
+  }
+
+  // --- 3. L'IMPACT --------------------------------------------------------
+  if (phase === 2) {
+    const f = 1 - kp;
+    if (im === 'onde' || im === 'trois' || im === 'eclat') {
+      const n = im === 'trois' ? 3 : 1;
+      for (let j = 0; j < n; j++) {
+        const kj = Math.max(0, kp - j * .18) / (1 - j * .18);
+        if (kj <= 0) continue;
+        anneau(g, X(zoneX), Y(zoneY), rz * e * kj * 1.15, rz * e * .58 * kj,
+               (1 - kj) * .85, LILAS, 3);
+      }
+    }
+    if (im === 'flash') {
+      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = f * .3;
+      g.fillStyle = LILAS; g.fillRect(0, 0, W, H); g.restore();
+    }
+    if (im === 'colonne') {
+      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = f * .5;
+      const d = g.createLinearGradient(0, Y(zoneY), 0, Y(zoneY) - 260 * e);
+      d.addColorStop(0, VIOLET); d.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = d;
+      g.fillRect(X(zoneX) - rz * e * .35, Y(zoneY) - 260 * e, rz * e * .7, 260 * e);
+      g.restore();
+    }
+    if (im === 'fissure' || im === 'eclat') {
+      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = f * .8;
+      g.strokeStyle = CYAN; g.lineWidth = 1.6;
+      for (let i = 0; i < 12; i++) {
+        const a = alea(i + 70) * TAU;
+        g.beginPath(); g.moveTo(X(zoneX), Y(zoneY));
+        g.lineTo(X(zoneX) + Math.cos(a) * rz * e * kp * 1.2,
+                 Y(zoneY) + Math.sin(a) * rz * e * .58 * kp * 1.2);
+        g.stroke();
+      }
+      g.restore();
+    }
+    // les éclats projetés, toujours : c'est ce qui donne de la matière
+    for (let i = 0; i < 16; i++) {
+      const a = alea(i + 200) * TAU, d2 = kp * (.6 + alea(i + 12) * .7);
+      etincelle(g, X(zoneX) + Math.cos(a) * rz * e * d2,
+                Y(zoneY) + Math.sin(a) * rz * e * .58 * d2,
+                (2 + alea(i) * 3) * e * 3, f * .9, i % 3 ? CYAN : LILAS);
+    }
+    lueur(g, X(zoneX), Y(zoneY), rz * e * (.5 + kp), LILAS, f * .5);
+    carapace(g, X(zoneX), Y(zoneY), rz * e * .58 * (1 + kp * .3), f * .7, .6);
+  }
+
+  // --- 4. LA ZONE ---------------------------------------------------------
+  let rzz = rz;
+  if (phase === 3) {
+    rzz = flaque(g, vue, zoneX, zoneY, rz, t, kp, fl);
+    // le vignettage : c'est lui qui dit que le terrain n'est plus normal
+    g.save();
+    const vg = g.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, W * .62);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(70,30,120,.34)');
+    g.fillStyle = vg; g.fillRect(0, 0, W, H); g.restore();
+  }
+
+  // --- LES DEUX JOUEURS ---------------------------------------------------
+  const vol = phase === 0 ? 5 + Math.sin(t * 6) * 2 : 0;
+  perso(g, SPR_FLOWSER, floX, floY - vol, vue, 1);
+  if (vol) {
+    g.save(); g.globalAlpha = .3; g.fillStyle = '#000';
+    g.beginPath(); g.ellipse(X(floX), Y(floY), 16 * e, 5 * e, 0, 0, TAU);
+    g.fill(); g.restore();
+  }
+
+  // L'adversaire entre dans la zone pendant la phase 4, et ralentit.
+  let ax = advX0, dedans = false;
+  if (phase === 3) {
+    const k = Math.min(1, kp * 1.9);
+    ax = advX0 - k * (advX0 - (zoneX + rzz * .35));
+    dedans = Math.abs(ax - zoneX) < rzz;
+  }
+  const sprAdv = CHARS.leon.frames.idle;
+  if (dedans && ma !== 'rien' && ma !== 'hud') {
+    if (ma === 'aura' || ma === 'tout') lueur(g, X(ax), Y(advY - 20), 46 * e, VIOLET, .45);
+    if (ma === 'trainee' || ma === 'tout' || ma === 'colle') {
+      for (let i = 0; i < 6; i++) {
+        const q = (t * .8 + alea(i + 15)) % 1;
+        g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = (1 - q) * .55;
+        g.fillStyle = VIOLET;
+        g.fillRect(X(ax + 8 + q * 30) - 2, Y(advY) - 2, 4, 4); g.restore();
+      }
+      // la PESANTEUR : trois anneaux aplatis qui remontent le long du corps
+      for (let i = 0; i < 3; i++) {
+        const q = (t * .5 + i / 3) % 1;
+        anneau(g, X(ax), Y(advY - q * 44), (22 - q * 8) * e, (7 - q * 3) * e,
+               (1 - q) * .4, CYAN, 1.4);
+      }
+    }
+    if (ma === 'remanence' || ma === 'tout') perso(g, sprAdv, ax + 9, advY, vue, -1, .3);
+    if (ma === 'drainvfx' || ma === 'tout') {
+      for (let i = 0; i < 7; i++) {
+        const q = (t * .7 + alea(i + 33)) % 1;
+        etincelle(g, X(ax + (alea(i + 44) - .5) * 26), Y(advY - 10 - q * 56),
+                  (2 + alea(i) * 2) * e * 3, (1 - q) * .8, LILAS);
+      }
+    }
+    if (ma === 'chaines' || ma === 'tout') {
+      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .6;
+      g.strokeStyle = VIOLET; g.lineWidth = 2;
+      for (const dx of [-7, 7]) {
+        g.beginPath(); g.moveTo(X(ax + dx), Y(advY));
+        g.lineTo(X(ax + dx * 3), Y(zoneY)); g.stroke();
+      }
+      g.restore();
+    }
+  }
+  perso(g, sprAdv, ax, advY, vue, -1, (dedans && ma === 'teinte') ? .75 : 1);
+
+  // LE FIL DU LANCEUR : la règle anti-spam rendue visible. On comprend que la
+  // zone lui coûte quelque chose sans lire un mot.
+  if (phase === 3 && (ge === 'lien')) {
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .35 + Math.sin(t * 2.6) * .12;
+    g.strokeStyle = VIOLET; g.lineWidth = 1.6; g.beginPath();
+    g.moveTo(X(floX), Y(floY - 24));
+    g.quadraticCurveTo(X((floX + zoneX) / 2), Y(zoneY - 90), X(zoneX), Y(zoneY));
+    g.stroke(); g.restore();
+  }
+
+  disque(g, disqX, disqY, vue);
+
+  // --- LES DEUX JAUGES, en bas : c'est là que se lit tout l'équilibrage ----
+  if (phase === 3) {
+    const drain = Math.max(0, 1 - kp * (ef.drain / 100) * D_ZONE_APERCU * 6);
+    jauge(g, W * .06, H - 18, W * .26, 'ADVERSAIRE', dedans ? drain : 1,
+          dedans ? '#ff5340' : '#5df08a');
+    const gel = ge === 'rien' ? .55 + kp * .2 : .55;
+    jauge(g, W * .68, H - 18, W * .26, 'LANCEUR', gel,
+          ge === 'rien' ? '#5df08a' : '#6b6b80');
+  }
+  g.restore();
+  return phase;
+}
+
+function jauge(g, x, y, w, nom, k, coul) {
+  g.save();
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(x - 2, y - 10, w + 4, 14);
+  g.fillStyle = 'rgba(255,255,255,.10)'; g.fillRect(x, y - 8, w, 8);
+  g.fillStyle = coul; g.fillRect(x, y - 8, w * k, 8);
+  g.fillStyle = '#a595c4'; g.font = '9px Consolas,monospace';
+  g.fillText(nom, x, y + 12);
+  g.restore();
+}
+
+/* ===================== L'APERÇU ===================== */
+styleVisionneuse();
+const vis = visionneuse({
+  hote: document.getElementById('lecture'),
+  cv: document.getElementById('cvApercu'),
+  phases: PHASES,
+  duree: () => D_RUNE + D_CONV + D_IMP + D_ZONE_APERCU,
+  depart: () => [0, D_RUNE, D_RUNE + D_CONV, D_RUNE + D_CONV + D_IMP],
+  jouer
+});
+
+/* ===================== LES CARTES ===================== */
+// Figées : seul l'aperçu du haut bouge. Une grille de vignettes animées est
+// illisible, on ne sait plus laquelle regarder. Chaque carte est prise à
+// l'instant qui montre le mieux CE QUE SA SECTION COMMANDE.
+const INSTANT = {
+  cible: D_RUNE * .75,
+  chute: D_RUNE + D_CONV * .72,
+  impact: D_RUNE + D_CONV + D_IMP * .35,
+  flaque: D_RUNE + D_CONV + D_IMP + D_ZONE_APERCU * .3,
+  effet: D_RUNE + D_CONV + D_IMP + D_ZONE_APERCU * .75,
+  marque: D_RUNE + D_CONV + D_IMP + D_ZONE_APERCU * .8,
+  gel: D_RUNE + D_CONV + D_IMP + D_ZONE_APERCU * .6,
+  chiffres: D_RUNE + D_CONV + D_IMP + D_ZONE_APERCU * .35
+};
+
+const cartes = [];
+function dessinerCarte(cv, sec, va) {
+  const g = cv.getContext('2d');
+  const sauve = choix[sec.id];
+  choix[sec.id] = va.id;
+  jouer(g, INSTANT[sec.id] || 1, cv.width, cv.height);
+  choix[sec.id] = sauve;
+}
+
+const boite = document.getElementById('sections');
+SECTIONS.forEach(sec => {
+  const h2 = document.createElement('h2');
+  h2.textContent = sec.titre;
+  const note = document.createElement('p');
+  note.className = 'note'; note.textContent = sec.note;
+  boite.append(h2, note);
+  const rangee = (liste, reserve) => {
+    const row = document.createElement('div');
+    row.className = 'row' + (reserve ? ' reserve' : '');
+    liste.forEach(va => {
+      const card = document.createElement('div');
+      card.className = 'card' + (choix[sec.id] === va.id ? ' on' : '');
+      card.dataset.sec = sec.id; card.dataset.va = va.id;
+      const lbl = document.createElement('div');
+      lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + va.desc;
+      const cv = document.createElement('canvas');
+      cv.width = 380; cv.height = 160;
+      card.append(lbl, cv);
+      card.onclick = () => {
+        choix[sec.id] = va.id;
+        document.querySelectorAll('.card[data-sec="' + sec.id + '"]')
+          .forEach(c => c.classList.toggle('on', c.dataset.va === va.id));
+        rafraichir(); vis.relancer();
+      };
+      row.append(card);
+      cartes.push({ cv, sec, va });
+    });
+    return row;
+  };
+  boite.append(rangee(sec.variantes.slice(0, 5), false));
+  const res = rangee(sec.variantes.slice(5), true);
+  const btn = document.createElement('button');
+  btn.className = 'plus'; btn.textContent = '+ 5 autres choix';
+  btn.onclick = () => { res.classList.toggle('ouverte'); rafraichir(); };
+  boite.append(btn, res);
+});
+
+function rafraichir() {
+  cartes.forEach(({ cv, sec, va }) => { if (cv.offsetParent) dessinerCarte(cv, sec, va); });
+  const cf = actuel('chiffres').ch2, ef = actuel('effet').ef;
+  document.getElementById('fiche').innerHTML =
+    '<tr><td>Durée de la zone</td><td>' + cf.dur + ' s</td></tr>' +
+    '<tr><td>Recharge</td><td>' + (cf.cd ? cf.cd + ' s' : 'sur jauge') + '</td></tr>' +
+    '<tr><td>Rayon</td><td>' + Math.round(cf.ray * 100) + ' % de la moitié</td></tr>' +
+    '<tr><td>Ralenti</td><td>' + Math.round(ef.slow * 100) + ' %</td></tr>' +
+    '<tr><td>Drain de sa jauge</td><td>' + ef.drain + ' %/s</td></tr>' +
+    '<tr><td>Perte totale</td><td>' + Math.round(ef.drain * cf.dur) + ' % s\'il reste</td></tr>' +
+    '<tr><td>Jauge du lanceur</td><td>gelée</td></tr>';
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value =
+    SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+}
+
+document.getElementById('btnCopier').onclick = async () => {
+  const b = document.getElementById('btnCopier');
+  try { await navigator.clipboard.writeText(document.getElementById('codeChoix').value);
+        b.textContent = 'copié !'; b.classList.add('ok');
+        setTimeout(() => { b.textContent = 'copier mes choix'; b.classList.remove('ok'); }, 1400); }
+  catch (e) { document.getElementById('codeChoix').select(); }
+};
+
+// Le module de contrôle vérifie ici que le personnage montré n'a pas dérivé du
+// design arrêté : un mockup d'ultime qui montre un autre perso ne prouve rien.
+const PERSO = { nom: 'FLOWSER-TWO', dominante: 'LMmo', pal: PAL, tete: TETE, corps: CORPS };
+afficher(verifier({ id: 'flowser', PERSO, SECTIONS: [] }), document.getElementById('errs'));
+
+rafraichir();
+</script>
+</body>
+</html>
+'''
+
+HTML = HTML.replace('__DONNEES__', DONNEES)
+io.open(os.path.join(R, 'mockups', 'flowser-ulti.html'), 'w', encoding='utf-8').write(HTML)
+print('mockups/flowser-ulti.html ecrit : %d sections' % len(SECS))
