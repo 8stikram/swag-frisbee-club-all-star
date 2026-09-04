@@ -7,6 +7,7 @@ vérifications trompeuses.
 
 Usage : python serve.py [port]   (port par défaut : 8000)
 """
+import os
 import sys
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
@@ -23,6 +24,6 @@ class NoCacheHandler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", 8000))
     print(f"Serveur de dev sur http://localhost:{port} (cache desactive)")
     ThreadingHTTPServer(("", port), NoCacheHandler).serve_forever()

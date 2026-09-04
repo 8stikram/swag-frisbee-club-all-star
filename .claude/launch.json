@@ -4,8 +4,9 @@
     {
       "name": "frisbee",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["serve.py", "8000"],
-      "port": 8000
+      "runtimeArgs": ["serve.py"],
+      "port": 8010,
+      "autoPort": true
     }
   ]
 }
