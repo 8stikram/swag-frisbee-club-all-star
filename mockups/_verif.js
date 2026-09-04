@@ -181,10 +181,17 @@ function verifSprite(nom, rows, pal, bad) {
     for (const ch of l) if (ch !== '.' && !pal[ch]) {
       bad.push(nom + '[' + i + '] : lettre « ' + ch + ' » absente de la palette');
     }
-    // Colonnes 14 et 15 réservées : le gabarit du roster tient en 12 px de
-    // large, et un perso qui déborde ne s'aligne plus avec les autres.
-    if (l.length >= 16 && (l[14] !== '.' || l[15] !== '.')) {
-      bad.push(nom + '[' + i + '] : déborde à droite (colonnes 14-15 doivent rester vides)');
+    // La colonne 15 reste vide. Elle l'etait avec la 14, et c'est une colonne
+    // de trop : ce qui compte n'est pas la largeur mais le CENTRAGE. Le miroir
+    // de render.js retourne le sprite autour de son centre, donc la colonne c
+    // devient la 15-c. Un contenu cale de 0 a 13 se retrouve en 2 a 15 quand le
+    // perso se retourne, et il saute de deux pixels sur place — c'est le cas de
+    // tout le roster actuel, et ca se voit quand on vise a la souris. Le seul
+    // calage qui ne saute pas est 1 a 14, qui se renvoie sur lui-meme. On
+    // autorise donc la colonne 14, et on garde la 15 fermee pour que personne
+    // ne parte a droite sans marge a gauche.
+    if (l.length >= 16 && l[15] !== '.') {
+      bad.push(nom + '[' + i + '] : déborde à droite (la colonne 15 doit rester vide)');
     }
   });
 }
