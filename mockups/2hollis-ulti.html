@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>2hollis — l'ultime</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:34px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:980px;line-height:1.7;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;
+        flex:1 1 0;min-width:190px;cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d5c8a}
+  .card.on{border-color:var(--or);transform:translateY(-2px)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:78px}
+  .lbl b{display:block;font-size:14px;color:var(--or);letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px;image-rendering:pixelated}
+  .reserve{display:none}
+  .reserve.ouverte{display:flex}
+  .plus{margin-top:9px;background:#132038;color:#9fb4dd;border:1px solid var(--edge);
+        border-radius:7px;padding:6px 13px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#1a2b48;color:var(--ink)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 560px}
+  .apercu canvas{background:#0a1220}
+  .choix{font-size:11.5px;color:#9fb4dd;margin-top:9px;font-family:Consolas,monospace;line-height:1.7}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#24395e}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .frise{display:flex;gap:3px;margin-top:10px}
+  .ph{flex:1 1 0;text-align:center;font-size:9.5px;font-family:Consolas,monospace;
+      padding:5px 2px;border-radius:5px;background:#101a2e;color:#6d82a6;
+      border:1px solid transparent;transition:background .1s,color .1s}
+  .ph.on{background:#24395e;color:var(--or);border-color:var(--or)}
+  .ph i{display:block;font-style:normal;font-size:8.5px;opacity:.75}
+  .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;flex:1 1 280px}
+  .fiche h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .fiche table{width:100%;border-collapse:collapse;font-size:11.5px;font-family:Consolas,monospace}
+  .fiche td{padding:3px 0;color:#9fb4dd;vertical-align:top}
+  .fiche td:last-child{color:var(--or);text-align:right;white-space:nowrap;padding-left:8px}
+  .son{margin-top:10px}
+  .son audio{width:100%}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>2HOLLIS — L'ULTIME</h1>
+<p class="note">
+  Mockup dédié, séparé du chara-design — celui-ci est déjà arrêté :
+  <code>1A 2A 3B</code>. Le personnage montré ici est exactement celui-là, et le module de
+  contrôle vérifie qu'il n'a pas dérivé.
+  <br><br>
+  <b>LE TIGRE BLANC.</b> Il chante, et un tigre blanc part droit devant lui. Le modèle est
+  l'ultime de <b>Seraphine</b> dans League of Legends : une onde qui file en ligne droite,
+  immobilise ce qu'elle touche et <b>attire la cible vers le lanceur</b>. Reste à décider ce que
+  ça donne sur un terrain de disque — le stun et l'attraction ne sont pas la même chose, et
+  cumulés ils gagnent le point tout seuls.
+  <br><br>
+  Le terrain est le vrai terrain du jeu, vu de dessus, importé de <code>maps.js</code>. Clique les
+  cartes : l'aperçu du haut rejoue la séquence avec tes choix, et la frise s'allume phase par
+  phase.
+</p>
+
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvApercu" width="820" height="330"></canvas>
+    <div class="frise" id="frise"></div>
+    <div class="choix" id="choix"></div>
+    <div class="copier">
+      <input class="codeChoix" id="codeChoix" readonly>
+      <button class="btnCopier" id="btnCopier">copier mes choix</button>
+    </div>
+  </div>
+  <div class="fiche">
+    <h3>L'ultime de Seraphine, le modèle</h3>
+    <table>
+      <tr><td>Forme</td><td>onde en ligne droite</td></tr>
+      <tr><td>Effet</td><td>immobilise</td></tr>
+      <tr><td>Et surtout</td><td>attire vers le lanceur</td></tr>
+      <tr><td>Portée</td><td>s'allonge à chaque touche</td></tr>
+      <tr><td>Durée de l'immobilisation</td><td>1,25 à 1,75 s</td></tr>
+    </table>
+    <p class="note" style="margin:9px 0 0;font-size:10.5px">
+      Ces chiffres servent de repère de rythme, pas de cible à copier : une partie de MOBA
+      n'a pas la même échelle qu'un échange de disque. Et attirer l'adversaire vers soi
+      dans un jeu où le but est derrière soi n'a pas du tout le même sens qu'en MOBA.
+    </p>
+    <div class="son">
+      <audio controls preload="none" src="../assets/audio/2hollis-ulti.ogg"></audio>
+    </div>
+  </div>
+</div>
+
+<div id="sections"></div>
+
+<script type="module">
+import { MAPS } from '../js/data/maps.js';
+import { CHARS } from '../js/data/characters.js';
+// Les controles partages. L'id '2hollis' fait verifier ici aussi les traits
+// obligatoires du personnage : si ce mockup se met a montrer un 2hollis qui a
+// derive du design arrete, il passe au rouge.
+import { verifier, afficher } from './_verif.js';
+
+const TAU = Math.PI * 2;
+const ARENE = MAPS[0];
+const CT = ARENE.court;
+const CW = CT.right - CT.left, CH = CT.bottom - CT.top;
+const CXX = (CT.left + CT.right) / 2, CYY = (CT.top + CT.bottom) / 2;
+const GOAL_H = ARENE.goal.height, GOAL_D = ARENE.goal.depth;
+const TH = ARENE.theme;
+
+/* ===================== 2HOLLIS, BUILD ARRÊTÉ ===================== */
+const PAL = {
+  C:'#f8e9a8', c:'#e2c96e', k:'#c2a44e',
+  S:'#f0c8a4', s:'#cf9660',
+  N:'#15151a', W:'#f4f6fa', E:'#2c2a26', A:'#e8edf6',
+  P:'#2b2b33', p:'#15151a', O:'#1c1c22', K:'#0d0d11', R:'#c4485a'
+};
+const TETE = ["....CCCCCC......","..CCCCCCCCCC....",".cCCCCCCCCCCc...",".cCCCCCCCCCCc...",".cCCSSSSSSCCc...",".cCSSSSSSSSCc...",".cSSSSSSSSSSc...",".cSSSESSSSESc...",".cSSNNNNNNNNc...","..kSSSSSSSSk...."];
+const CORPS = ["..cSSSSSSSSc....",".SccSSSSSSccS...",".SccSsSSsSccS...",".SckSSsSSSkcS...","..SSSSsSSSS.....","..PPPPPPPPPP....","...PP....PP.....","...PP....PP.....","..OOO....OOO....","..KKK....KKK...."];
+// Bras leve : la pose de chant, celle qui declenche.
+const CORPS_CHANT = ["S..cSSSSSSSSc...","S..cSSSSSSccS...","S..cSsSSsSccS...","S.ckSSsSSSkcS...","..SSSSsSSSS.....","..PPPPPPPPPP....","...PP....PP.....","...PP....PP.....","..OOO....OOO....","..KKK....KKK...."];
+
+/* ===================== LE TIGRE BLANC ===================== */
+// De profil, tourne vers la droite. Les rayures sont des BARRES fines et
+// hautes : en carres de deux pixels elles se lisaient comme des hublots, et en
+// points isoles comme une vache. Deux temps de foulee, sinon il glisse.
+const PAL_T = { W:'#f8fafe', w:'#cdd5e4', k:'#23252e', E:'#7ad4f0', r:'#e8a0b4', K:'#15161c' };
+const TIGRE = [[
+ "......................ww..","....................wWWWw.","...........wwww....wWWWWWw",
+ ".......wwwWWWWWWww.wWWWWWW","w....wwWWWWWWWWWWWwWWWEWWr","ww..wWWWWWWWWWWWWWWWWWWWKw",
+ ".wwwWWkWWkWWkWWkWWWWWWww..",".wWWWWkWWkWWkWWkWWWWWw....",".wWWWWkWWkWWkWWkWWWWw.....",
+ "..wWWw........wWWw........","..wWWw........wWWw........","..wwww........wwww........"
+], [
+ "......................ww..","....................wWWWw.","...........wwww....wWWWWWw",
+ ".......wwwWWWWWWww.wWWWWWW","w....wwWWWWWWWWWWWwWWWEWWr","ww..wWWWWWWWWWWWWWWWWWWWKw",
+ ".wwwWWkWWkWWkWWkWWWWWWww..",".wWWWWkWWkWWkWWkWWWWWw....",".wWWWWkWWkWWkWWkWWWWw.....",
+ ".wWWw..........wWWw.......","wWWw............wWWw......","www..............www......"
+]];
+
+function bati(rows, pal, ech, larg) {
+  const c = document.createElement('canvas');
+  c.width = larg * ech; c.height = rows.length * ech;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) {
+    const ch = row[x];
+    if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x*ech, y*ech, ech, ech); }
+  }});
+  return c;
+}
+const SPR = bati([...TETE, ...CORPS], PAL, 4, 16);
+const SPR_CHANT = bati([...TETE, ...CORPS_CHANT], PAL, 4, 16);
+const TIGRE_SPR = TIGRE.map(r => bati(r, PAL_T, 4, 26));
+
+/* ===================== LE VRAI TERRAIN ===================== */
+function terrain(g, W, H) {
+  const e = Math.min(W / (CW + 2 * GOAL_D + 40), H / (CH + 40));
+  const ox = (W - CW * e) / 2, oy = (H - CH * e) / 2;
+  const X = x => ox + (x - CT.left) * e, Y = y => oy + (y - CT.top) * e;
+
+  g.fillStyle = TH.bgOuter; g.fillRect(0, 0, W, H);
+  g.fillStyle = TH.bgInner; g.fillRect(X(CT.left) - GOAL_D * e, Y(CT.top) - 8, CW * e + GOAL_D * 2 * e, CH * e + 16);
+  g.fillStyle = TH.floor;   g.fillRect(X(CT.left), Y(CT.top), CW * e, CH * e);
+
+  g.strokeStyle = TH.line; g.lineWidth = Math.max(1, 2 * e);
+  g.strokeRect(X(CT.left), Y(CT.top), CW * e, CH * e);
+  g.beginPath(); g.moveTo(X(CXX), Y(CT.top)); g.lineTo(X(CXX), Y(CT.bottom)); g.stroke();
+  g.beginPath(); g.arc(X(CXX), Y(CYY), 58 * e, 0, TAU); g.stroke();
+
+  for (const side of [1, 2]) {
+    const gx = side === 1 ? CT.left - GOAL_D : CT.right;
+    for (const z of ARENE.zones) {
+      g.globalAlpha = .5; g.fillStyle = z.color;
+      g.fillRect(X(gx), Y(CYY + z.from), GOAL_D * e, (z.to - z.from) * e);
+      g.globalAlpha = 1;
+      g.strokeStyle = TH.goalStroke; g.lineWidth = 1;
+      g.strokeRect(X(gx), Y(CYY + z.from), GOAL_D * e, (z.to - z.from) * e);
+    }
+    g.strokeStyle = TH.goalStroke; g.lineWidth = Math.max(1, 2 * e);
+    g.strokeRect(X(gx), Y(CYY - GOAL_H / 2), GOAL_D * e, GOAL_H * e);
+  }
+  return { e, X, Y };
+}
+function perso(g, sprite, x, y, vue, face, alpha = 1) {
+  const { e, X, Y } = vue;
+  const w = 48 * 1.6 * e, h = 60 * 1.6 * e;
+  g.save(); g.imageSmoothingEnabled = false; g.globalAlpha = alpha;
+  g.translate(X(x), Y(y));
+  if (face < 0) g.scale(-1, 1);
+  g.drawImage(sprite, -w / 2, -h + 10 * e, w, h);
+  g.restore();
+}
+function disque(g, x, y, vue, r = 11) {
+  const { e, X, Y } = vue;
+  g.save(); g.translate(X(x), Y(y));
+  g.fillStyle = '#35e0ff'; g.beginPath(); g.ellipse(0, 0, r * e, r * e * .42, 0, 0, TAU); g.fill();
+  g.strokeStyle = '#bff2ff'; g.lineWidth = 1.4; g.stroke(); g.restore();
+}
+function fleche(g, vue, x1, y1, x2, y2, coul) {
+  const { X, Y } = vue;
+  g.save(); g.strokeStyle = coul; g.fillStyle = coul; g.lineWidth = 2; g.setLineDash([6, 4]);
+  g.beginPath(); g.moveTo(X(x1), Y(y1)); g.lineTo(X(x2), Y(y2)); g.stroke();
+  g.setLineDash([]);
+  const a = Math.atan2(Y(y2) - Y(y1), X(x2) - X(x1));
+  g.translate(X(x2), Y(y2)); g.rotate(a);
+  g.beginPath(); g.moveTo(0, 0); g.lineTo(-9, -5); g.lineTo(-9, 5); g.fill();
+  g.restore();
+}
+// L'onde de chant : des arcs concentriques qui partent de lui.
+function onde(g, vue, x, y, k, largeur) {
+  const { e, X, Y } = vue;
+  g.save();
+  for (let i = 0; i < 3; i++) {
+    const r = (30 + i * 26 + k * 90) * e;
+    g.globalAlpha = Math.max(0, .5 - i * .13 - k * .3);
+    g.strokeStyle = '#bff2ff'; g.lineWidth = 2;
+    g.beginPath();
+    g.ellipse(X(x), Y(y), r, largeur * e * .5, 0, -Math.PI * .38, Math.PI * .38);
+    g.stroke();
+  }
+  g.restore();
+}
+
+/* ===================== LES PHASES ===================== */
+const PHASES = [
+  { id:'chant',  nom:'LE CHANT',  detail:'il lance la note' },
+  { id:'bond',   nom:'LE BOND',   detail:'le tigre part'    },
+  { id:'course', nom:'LA COURSE', detail:'il file tout droit' },
+  { id:'prise',  nom:'LA PRISE',  detail:'stun et attraction' }
+];
+const D_CHANT = .5, D_BOND = .25, D_PRISE = .5;
+
+const v = (id, nom, desc, p) => ({ id, nom, desc, ...p });
+
+const SECTIONS = [
+  {
+    id: 'invocation', titre: '1 · Comment le tigre apparaît',
+    note: 'Le moment où il surgit décide de la lisibilité de tout l\'ultime : un tigre qui apparaît déjà lancé se comprend mal, un tigre qui prend son temps se voit venir et s\'esquive.',
+    variantes: [
+      v('A','IL JAILLIT DE 2HOLLIS','Le tigre sort de lui au moment où il chante et part aussitôt. Le lien avec le lanceur est évident, mais il n\'y a aucun temps de réaction pour l\'adversaire.',{ inv:'perso' }),
+      v('B','IL SE FORME DANS L\'AIR DEVANT LUI','Une silhouette se dessine à deux mètres devant, puis se solidifie et bondit. On voit venir le coup, ce qui est plus juste, mais ça retarde l\'ultime d\'une demi-seconde.',{ inv:'devant' }),
+      v('C','IL DÉBOULE DE LA LIGNE DE FOND','Le tigre entre par derrière 2hollis et le dépasse en courant. Belle mise en scène et grande vitesse acquise, mais il met du temps à arriver au centre.',{ inv:'fond' }),
+      v('D','IL TOMBE DU CIEL DEVANT LUI','Il atterrit lourdement puis charge. Impact très marqué à l\'atterrissage, mais dans un jeu vu de dessus la chute se lit mal.',{ inv:'ciel' }),
+      v('E','IL SORT DU SOL','Le tigre émerge du terrain en projetant de la poussière. Surprenant et graphique, mais rien dans l\'univers du jeu ne justifie qu\'on traverse le sol.',{ inv:'sol' }),
+      v('F','IL ÉTAIT DÉJÀ LÀ, IL SE RÉVEILLE','Une forme pâle dormait à côté de lui et se lève au chant. Très élégant, mais il faut l\'avoir remarquée avant, sinon l\'effet tombe à plat.',{ inv:'dort' }),
+      v('G','IL SE CONSTRUIT À PARTIR DE L\'ONDE','L\'onde sonore prend la forme du tigre en avançant. C\'est le lien le plus fort entre le chant et la bête, mais c\'est aussi le plus long à dessiner.',{ inv:'onde' }),
+      v('H','DEUX TIGRES, UN DE CHAQUE CÔTÉ','Ils partent en parallèle et couvrent une bande plus large. Impressionnant et difficile à esquiver, mais on perd la lecture en ligne droite de Seraphine.',{ inv:'double' }),
+      v('I','IL APPARAÎT DIRECTEMENT SUR L\'ADVERSAIRE','Aucun trajet : il surgit sur la cible. Impossible à esquiver et très punitif, mais ça supprime tout ce qui fait l\'intérêt d\'un ultime en ligne.',{ inv:'cible' }),
+      v('J','IL SORT DU DISQUE','Le tigre naît là où est le disque et charge de là. Ça lie l\'ultime au jeu plutôt qu\'au personnage, mais l\'effet dépend entièrement du placement du disque.',{ inv:'disque' })
+    ]
+  },
+  {
+    id: 'trajet', titre: '2 · Sa trajectoire',
+    note: 'Chez Seraphine l\'onde part strictement en ligne droite et s\'allonge à chaque cible touchée. C\'est cette lisibilité qui rend l\'ultime juste : on sait exactement où ne pas être.',
+    variantes: [
+      v('A','TOUT DROIT DEVANT LUI','Une ligne parfaitement droite, dans la direction où il regarde. C\'est le modèle Seraphine : très lisible et donc esquivable, mais sans surprise.',{ traj:'droit' }),
+      v('B','IL SUIT LA SOURIS','Le tigre part dans la direction visée au moment du cast. Plus de contrôle pour le joueur, mais un adversaire distant ne peut pas anticiper.',{ traj:'visee' }),
+      v('C','IL TRAQUE L\'ADVERSAIRE','Il corrige légèrement sa course pour suivre la cible. Beaucoup plus fiable, mais on perd tout l\'intérêt de l\'esquive.',{ traj:'traque' }),
+      v('D','IL TRAVERSE TOUT LE TERRAIN','Il ne s\'arrête jamais et sort par l\'autre bord. Portée maximale et lecture parfaite, mais aucune notion de portée à équilibrer.',{ traj:'traverse' }),
+      v('E','IL S\'ARRÊTE À MI-TERRAIN','Portée limitée à la moitié du terrain. Il faut être en position d\'attaque pour en profiter, ce qui récompense la prise d\'initiative.',{ traj:'moitie' }),
+      v('F','IL VA ET REVIENT','Il file, puis fait demi-tour et repasse. Deux chances de toucher, mais l\'ultime dure deux fois plus longtemps.',{ traj:'aller' }),
+      v('G','IL DÉCRIT UNE COURBE','Sa course s\'incurve légèrement. Plus organique et plus vivant, mais beaucoup plus dur à lire pour celui qui esquive.',{ traj:'courbe' }),
+      v('H','IL ZIGZAGUE','Il bondit de gauche à droite en avançant. Couvre une large bande, mais le hasard apparent frustre autant qu\'il surprend.',{ traj:'zigzag' }),
+      v('I','IL S\'ALLONGE À CHAQUE TOUCHE','Comme chez Seraphine : la portée augmente s\'il touche. En un contre un il n\'y a qu\'une cible, donc la règle ne sert presque jamais.',{ traj:'allonge' }),
+      v('J','IL LONGE LA LIGNE DE FOND','Il court le long du but adverse au lieu de traverser. Excellent pour couper un angle de tir, mais il ne menace jamais le porteur du disque.',{ traj:'fond' })
+    ]
+  },
+  {
+    id: 'adverse', titre: '3 · Ce qu\'il fait à l\'adversaire',
+    note: 'Chez Seraphine l\'ultime immobilise ET attire vers le lanceur. Ce sont deux effets distincts, et sur un terrain de disque les cumuler donne le point : il faut choisir lequel fait le travail.',
+    variantes: [
+      v('A','IL L\'IMMOBILISE ET L\'ATTIRE','Le modèle complet : stun, puis il est traîné vers 2hollis. Le plus fidèle à Seraphine, mais c\'est aussi le plus fort de tout le roster.',{ adv:'stun_attire' }),
+      v('B','IL L\'IMMOBILISE SEULEMENT','Il est cloué sur place une seconde. Effet clair et facile à équilibrer, mais moins spectaculaire que l\'attraction.',{ adv:'stun' }),
+      v('C','IL L\'ATTIRE SANS L\'IMMOBILISER','Il est tiré vers 2hollis mais garde le contrôle. Beaucoup plus doux et plus juste, et l\'attraction reste très lisible.',{ adv:'attire' }),
+      v('D','IL LE REPOUSSE AU LIEU DE L\'ATTIRER','Il est projeté loin en arrière. Utile pour dégager son but, mais c\'est l\'inverse de Seraphine et ça perd la référence.',{ adv:'pousse' }),
+      v('E','IL LE RALENTIT','Sa vitesse est réduite quelques secondes. Effet durable et discret, mais très peu spectaculaire pour un ultime.',{ adv:'lent' }),
+      v('F','IL LUI FAIT LÂCHER LE DISQUE','S\'il le tient, il le lâche sur place. Ciblé et juste — ça ne punit que celui qui a le disque — mais sans effet s\'il ne l\'a pas.',{ adv:'lache' }),
+      v('G','IL L\'EMPÊCHE DE TIRER','Il peut bouger mais pas lancer. Contrainte fine et originale, mais difficile à comprendre sans un retour visuel clair.',{ adv:'muet' }),
+      v('H','IL L\'ATTIRE JUSQU\'AU CONTACT','Il est traîné jusqu\'à toucher 2hollis. Très fort visuellement, mais l\'amener contre soi n\'a aucun intérêt tactique dans ce jeu.',{ adv:'contact' }),
+      v('I','IL NE LE TOUCHE PAS','Le tigre l\'ignore. Tout repose alors sur ce qu\'il fait au disque, ce qui rend l\'ultime plus honnête mais moins impressionnant.',{ adv:'rien' }),
+      v('J','IL L\'IMMOBILISE, MAIS 2HOLLIS AUSSI','Les deux sont cloués le temps du chant. Le plus équitable, mais un ultime qui fige son lanceur demande un vrai sens du timing.',{ adv:'tous' })
+    ]
+  },
+  {
+    id: 'disque', titre: '4 · Ce qu\'il fait au disque',
+    note: 'Trois familles existent déjà : reprendre le disque comme Chopper, gêner l\'adversaire comme Yuki, bloquer le but comme Jingle. Le tigre a intérêt à ne pas être une quatrième version de la même chose.',
+    variantes: [
+      v('A','RIEN, IL PASSE À TRAVERS','Le disque n\'est pas affecté. L\'ultime reste purement un outil de contrôle, ce qui le distingue nettement des autres.',{ dsq:'rien' }),
+      v('B','IL LE RAPPORTE À 2HOLLIS','Le tigre saisit le disque et le ramène. Très satisfaisant, mais c\'est exactement le grappin de Chopper.',{ dsq:'rapporte' }),
+      v('C','IL LE POUSSE DEVANT LUI','Le disque est emporté vers le but adverse. Lisible et gratifiant, mais cumulé au stun c\'est un but gratuit.',{ dsq:'pousse' }),
+      v('D','IL LE FIGE SUR PLACE','Le disque s\'arrête net pendant la course. Crée un moment de suspens, mais un disque immobile favorise le mieux placé.',{ dsq:'fige' }),
+      v('E','IL L\'ACCÉLÈRE SANS LE DÉVIER','Le disque garde sa direction mais double de vitesse. Récompense un bon placement préalable, effet peu spectaculaire.',{ dsq:'accelere' }),
+      v('F','IL LE GOBE ET LE RECRACHE PLUS LOIN','Le tigre avale le disque et le relâche au bout de sa course. Très caractérisé, mais ça fige le jeu un instant.',{ dsq:'gobe' }),
+      v('G','IL LE RENVOIE VERS 2HOLLIS','Le disque revient dans ses mains, prêt à relancer. Bon enchaînement, mais redite du grappin.',{ dsq:'rend' }),
+      v('H','IL LE DÉVIE VERS LA ZONE LA PLUS CHÈRE','Le disque part vers la zone qui rapporte le plus. Très gratifiant, mais ça transforme l\'ultime en machine à marquer.',{ dsq:'zone' }),
+      v('I','IL LE REND INTOUCHABLE UN INSTANT','Personne ne peut l\'attraper pendant la course du tigre. Original et sans équivalent, mais difficile à comprendre sans explication.',{ dsq:'gele' }),
+      v('J','IL LE DÉDOUBLE','Le disque se scinde le temps de la course. Idée forte, mais c\'est le principe des faux disques de Leon.',{ dsq:'double' })
+    ]
+  },
+  {
+    id: 'allure', titre: '5 · L\'allure du tigre',
+    note: 'Il est blanc sur un terrain sombre : c\'est son seul avantage de lisibilité, et il est énorme. Reste à décider de sa taille et de son rendu, qui changent complètement le ton de l\'ultime.',
+    variantes: [
+      v('A','TAILLE D\'UN JOUEUR','Un tigre à l\'échelle des personnages. Crédible et lisible sans écraser le terrain, mais moins impressionnant qu\'un fauve géant.',{ taille:1 }),
+      v('B','DEUX FOIS PLUS GRAND','Un fauve massif qui domine le terrain. Impact maximal, mais il cache une partie de l\'action pendant sa course.',{ taille:2 }),
+      v('C','TROIS FOIS PLUS GRAND','Une bête énorme, presque toute la hauteur du terrain. Inoubliable, mais on ne voit plus rien pendant qu\'il passe.',{ taille:3 }),
+      v('D','PLUS PETIT, TRÈS RAPIDE','Un tigre agile et nerveux. Il laisse voir le terrain et colle au personnage, mais il perd sa présence.',{ taille:.7 }),
+      v('E','EN SILHOUETTE BLANCHE PURE','Aucun détail, juste une forme blanche. Très graphique et parfaitement lisible, mais on perd les rayures qui font le tigre.',{ taille:1, rendu:'silhouette' }),
+      v('F','TRANSLUCIDE, COMME UN ESPRIT','On voit le terrain à travers lui. Cohérent avec une invocation et ça ne cache rien, mais il perd de son poids.',{ taille:1.4, rendu:'esprit' }),
+      v('G','AVEC UNE TRAÎNÉE DERRIÈRE LUI','Des copies fantômes marquent sa course. La vitesse se lit instantanément, mais ça encombre la trajectoire.',{ taille:1, rendu:'trainee' }),
+      v('H','ENTOURÉ D\'UNE AURA SONORE','Des ondes le suivent pendant toute sa course. Le lien avec le chant reste visible du début à la fin, au prix de plus de bruit à l\'écran.',{ taille:1, rendu:'aura' }),
+      v('I','RAYURES NOIRES TRÈS MARQUÉES','Le contraste est poussé au maximum. On le reconnaît comme un tigre sans hésiter, mais il devient dur et agressif.',{ taille:1, rendu:'contraste' }),
+      v('J','BLANC ET BLEU GLACE','Ses rayures prennent la couleur du disque. Il s\'intègre à la palette du jeu, mais il ressemble moins à un vrai tigre.',{ taille:1, rendu:'glace' })
+    ]
+  },
+  {
+    id: 'duree', titre: '6 · Combien de temps ça dure',
+    note: 'Chez Seraphine l\'immobilisation va de 1,25 à 1,75 s. Le chien de Yuki dure 3 s et c\'est déjà jugé beaucoup. Ici la durée du stun et celle de la course sont deux boutons distincts.',
+    variantes: [
+      v('A','COURSE RAPIDE, STUN 0,8 s','Le tigre traverse vite et cloue brièvement. Le plus doux du lot, sans doute trop peu pour un ultime.',{ dur:.8, stun:.8 }),
+      v('B','COURSE RAPIDE, STUN 1,2 s','Une seconde et des poussières d\'immobilisation. C\'est la valeur de Seraphine, et le compromis le plus raisonnable.',{ dur:.9, stun:1.2 }),
+      v('C','COURSE LENTE, STUN 1,2 s','Le tigre prend son temps, on le voit venir. Beaucoup plus juste à subir, mais l\'effet de surprise disparaît.',{ dur:1.8, stun:1.2 }),
+      v('D','COURSE RAPIDE, STUN 2 s','Deux secondes sans bouger. Très fort, sans doute trop dans un jeu où un échange dure quelques secondes.',{ dur:.9, stun:2 }),
+      v('E','COURSE RAPIDE, STUN 3 s','La durée du chien de Yuki, déjà signalée comme probablement trop forte. À réserver si l\'ultime ne fait rien d\'autre.',{ dur:.9, stun:3 }),
+      v('F','TRÈS RAPIDE, STUN COURT','Un éclair : il traverse en un quart de seconde. Impossible à esquiver, donc il faut que le stun reste court.',{ dur:.35, stun:.7 }),
+      v('G','LE STUN DURE TANT QU\'IL COURT','L\'adversaire est bloqué jusqu\'à ce que le tigre sorte du terrain. Élégant et facile à comprendre, mais la durée dépend de la distance.',{ dur:1.2, stun:1.2, lie:true }),
+      v('H','DEUX PASSAGES COURTS','Il traverse, revient, et cloue à chaque fois. Le second surprend celui qui s\'est replacé, mais ça complique la lecture.',{ dur:.8, stun:.6, fois:2 }),
+      v('I','LA DURÉE DÉPEND DE LA DISTANCE','Plus il court longtemps avant de toucher, plus le stun est long. Récompense les tirs de loin, mais ajoute une règle à expliquer.',{ dur:1.2, stun:1.5, variable:true }),
+      v('J','TANT QUE LA TOUCHE EST TENUE','Le joueur décide, dans la limite de deux secondes. Contrôle total, mais c\'est déjà le principe de la rafale de Mamie.',{ dur:1.2, stun:2, tenue:true })
+    ]
+  },
+  {
+    id: 'annonce', titre: '7 · Ce qui prévient que l\'ultime part',
+    note: 'Un ultime qui immobilise doit s\'annoncer, sinon l\'adversaire subit sans comprendre. Le son est déjà en place : reste à savoir ce que l\'écran raconte en même temps.',
+    variantes: [
+      v('A','IL LÈVE LE BRAS ET CHANTE','La pose de chant, bras levé, avant que le tigre parte. Simple et lisible, mais il faut regarder 2hollis pour la voir.',{ ann:'bras' }),
+      v('B','UN COULOIR LUMINEUX AU SOL','La bande que le tigre va traverser s\'allume avant. Parfaitement clair et parfaitement esquivable, mais ça retire toute surprise.',{ ann:'couloir' }),
+      v('C','DES ONDES SONORES PARTENT DE LUI','Des arcs concentriques s\'élargissent depuis le personnage. Le lien avec le chant est immédiat, mais moins précis qu\'un couloir.',{ ann:'ondes' }),
+      v('D','AUCUNE ANNONCE','Le tigre débarque sans prévenir. Surprise maximale, mais l\'adversaire subit sans pouvoir rien faire, ce qui se vit très mal.',{ ann:'rien' }),
+      v('E','LE TERRAIN TREMBLE','L\'écran vibre une demi-seconde avant. Ça se sent sans regarder, mais le tremblement gêne aussi la visée de 2hollis.',{ ann:'secousse' }),
+      v('F','L\'ÉCRAN SE DÉSATURE','Les couleurs tombent le temps du chant. Très cinématographique et impossible à rater, mais ça touche à la lisibilité générale.',{ ann:'desature' }),
+      v('G','UN RUGISSEMENT AVANT LE BOND','Le tigre rugit avant de partir. Excellente annonce, entièrement portée par le son déjà enregistré.',{ ann:'rugit' }),
+      v('H','LES BORDS DU TERRAIN S\'ALLUMENT','Le bord d\'où part le tigre se met à briller. Discret et précis, ça n\'encombre pas le centre du terrain.',{ ann:'bord' }),
+      v('I','L\'ADVERSAIRE VOIT UN MARQUEUR SUR LUI','Une cible apparaît sur celui qui va être touché. Parfaitement juste, mais ça supprime toute notion d\'esquive par le placement.',{ ann:'cible' }),
+      v('J','LA JAUGE SUFFIT','Rien de plus que la jauge pleine, visible des deux joueurs. Le plus honnête et le moins encombrant, mais il faut y penser.',{ ann:'jauge' })
+    ]
+  },
+  {
+    id: 'chiffres', titre: '8 · Les chiffres',
+    note: 'Les valeurs concrètes, à comparer aux ultimes en place : le chien de Yuki dure 3 s, la ruée de Yoshi pousse fort sur 1,2 s, le grappin de Chopper gèle le disque pendant son vol.',
+    variantes: [
+      v('A','PRUDENT','Stun court, pas d\'attraction, recharge longue. Le réglage qui ne casse rien, mais qui risque de rendre l\'ultime décevant.',{ ch:{ stun:'0,8 s', attire:'non', recharge:'12 s', largeur:'étroite' } }),
+      v('B','ÉQUILIBRÉ','Stun d\'une seconde, attraction courte, recharge standard. Le point de départ raisonnable pour un premier test en match.',{ ch:{ stun:'1,2 s', attire:'courte', recharge:'9 s', largeur:'moyenne' } }),
+      v('C','AGRESSIF','Stun long, attraction forte, recharge courte. Très satisfaisant à lancer, probablement trop fort à subir.',{ ch:{ stun:'2 s', attire:'forte', recharge:'7 s', largeur:'large' } }),
+      v('D','TOUT OU RIEN','Stun énorme mais recharge très longue. L\'ultime devient un moment de match, mémorable, mais il ne sort qu\'une ou deux fois par partie.',{ ch:{ stun:'3 s', attire:'forte', recharge:'20 s', largeur:'large' } }),
+      v('E','HARCÈLEMENT','Stun très court mais recharge très courte. Le tigre revient sans arrêt, ce qui use l\'adversaire, mais il perd son statut d\'ultime.',{ ch:{ stun:'0,5 s', attire:'non', recharge:'5 s', largeur:'étroite' } }),
+      v('F','DÉFENSIF','Portée limitée à sa moitié de terrain. Excellent pour protéger son but, sans valeur en attaque.',{ ch:{ stun:'1,2 s', attire:'courte', recharge:'9 s', largeur:'sa moitié' } }),
+      v('G','OFFENSIF','Portée limitée à la moitié adverse. Il faut être en position d\'attaque pour en profiter, ce qui récompense l\'initiative.',{ ch:{ stun:'1,2 s', attire:'courte', recharge:'9 s', largeur:'moitié adverse' } }),
+      v('H','PROGRESSIF','Le stun s\'allonge avec le temps de charge de la jauge. Récompense la patience, mais ajoute une règle à expliquer.',{ ch:{ stun:'variable', attire:'courte', recharge:'10 s', largeur:'moyenne' } }),
+      v('I','SANS RECHARGE, SUR JAUGE SEULE','Pas de recharge : il revient quand la jauge se remplit, comme les autres personnages. Cohérent avec le roster, moins réglable finement.',{ ch:{ stun:'1,2 s', attire:'courte', recharge:'jauge', largeur:'moyenne' } }),
+      v('J','SYMÉTRIQUE','Le stun touche les deux joueurs, recharge courte. Le plus équitable et le plus facile à équilibrer, mais décevant à lancer.',{ ch:{ stun:'1 s', attire:'non', recharge:'7 s', largeur:'moyenne' } })
+    ]
+  }
+];
+
+/* ===================== CONTRÔLES ===================== */
+const PERSO = { nom:'2HOLLIS', dominante:'Cck', pal:PAL, tete:TETE, corps:CORPS };
+afficher(verifier({ id: '2hollis', PERSO, SECTIONS }), document.getElementById('errs'));
+
+/* ===================== L'ÉTAT ===================== */
+const choix = {};
+SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+const actuel = id => SECTIONS.find(s => s.id === id).variantes.find(x => x.id === choix[id]);
+
+const hollisX = CT.left + CW * .22, hollisY = CYY + 30;
+const advX0 = CT.left + CW * .76, advY = CYY - 20;
+const disqX = CXX + 50, disqY = CYY + 30;
+
+function jouer(g, t, W, H) {
+  const vue = terrain(g, W, H);
+  const { X, Y, e } = vue;
+  const d = actuel('duree');
+  const total = D_CHANT + D_BOND + d.dur + D_PRISE + .6;
+  const tt = t % total;
+  const b = [D_CHANT, D_CHANT + D_BOND, D_CHANT + D_BOND + d.dur,
+             D_CHANT + D_BOND + d.dur + D_PRISE];
+
+  let phase = -1, k = 0;
+  if (tt < b[0]) phase = 0;
+  else if (tt < b[1]) { phase = 1; k = (tt - b[0]) / D_BOND * .1; }
+  else if (tt < b[2]) { phase = 2; k = .1 + (tt - b[1]) / d.dur * .85; }
+  else if (tt < b[3]) { phase = 3; k = .95; }
+  else k = 1.1;
+
+  const ann = actuel('annonce').ann;
+  const traj = actuel('trajet').traj;
+  const adv = actuel('adverse').adv;
+  const al = actuel('allure');
+
+  // Le couloir annoncé, sous les personnages.
+  if (ann === 'couloir' && phase >= 0) {
+    g.save(); g.globalAlpha = phase === 0 ? .32 : .15; g.fillStyle = '#bff2ff';
+    g.fillRect(X(CT.left), Y(hollisY - 46), CW * e, 92 * e); g.restore();
+  }
+  if (ann === 'bord' && phase >= 0) {
+    g.save(); g.globalAlpha = .5; g.fillStyle = '#bff2ff';
+    g.fillRect(X(CT.left), Y(CT.top), 6, CH * e); g.restore();
+  }
+
+  perso(g, phase === 0 ? SPR_CHANT : SPR, hollisX, hollisY, vue, 1);
+
+  // L'onde de chant part de lui pendant la première phase.
+  if ((ann === 'ondes' || phase === 0) && phase <= 1) onde(g, vue, hollisX, hollisY, tt / D_CHANT, 120);
+
+  // L'adversaire : immobilisé puis tiré vers 2hollis selon la variante.
+  const touche = phase >= 2 && k > .5;
+  let ax = advX0;
+  if (touche && (adv === 'stun_attire' || adv === 'attire' || adv === 'contact')) {
+    const force = adv === 'contact' ? 1 : .45;
+    ax = advX0 - (k - .5) / .45 * (advX0 - hollisX) * force;
+  }
+  if (touche && adv === 'pousse') ax = advX0 + (k - .5) / .45 * 120;
+  perso(g, CHARS.leon.frames.idle, ax, advY, vue, -1);
+  // Le stun se voit : un anneau autour de celui qui est cloué.
+  if (touche && (adv === 'stun_attire' || adv === 'stun' || adv === 'tous')) {
+    g.save(); g.strokeStyle = '#ffd23e'; g.lineWidth = 2; g.globalAlpha = .8;
+    g.beginPath(); g.ellipse(X(ax), Y(advY), 26 * e, 10 * e, 0, 0, TAU); g.stroke(); g.restore();
+  }
+
+  disque(g, disqX, disqY, vue);
+
+  // Le tigre.
+  if (phase >= 1) {
+    let tx = hollisX + k * (CW * (traj === 'moitie' ? .5 : 1.05));
+    let ty = hollisY;
+    if (traj === 'courbe') ty = hollisY - Math.sin(k * Math.PI) * 60;
+    if (traj === 'zigzag') ty = hollisY + Math.sin(k * 9) * 46;
+    if (traj === 'traque') ty = hollisY + (advY - hollisY) * k;
+    if (traj === 'visee') ty = hollisY + (advY - hollisY) * k * .7;
+
+    const spr = TIGRE_SPR[Math.floor(t * 9) % 2];
+    // Un joueur fait 48 * 1,6 unites de large. A .38 le tigre en faisait la
+    // moitie : ce n'est pas un fauve, c'est un chat. A 1,05 il est un peu
+    // plus large qu'un joueur, ce qui est la bonne echelle pour un tigre.
+    const w = 26 * 4 * al.taille * e * 1.05, h = 12 * 4 * al.taille * e * 1.05;
+    g.save(); g.imageSmoothingEnabled = false;
+    if (al.rendu === 'esprit') g.globalAlpha = .55;
+    if (al.rendu === 'silhouette') g.filter = 'brightness(3) saturate(0)';
+    if (al.rendu === 'contraste') g.filter = 'contrast(1.7)';
+    if (al.rendu === 'glace') g.filter = 'sepia(1) hue-rotate(160deg) saturate(2.4)';
+    if (al.rendu === 'trainee') {
+      for (let i = 1; i <= 3; i++) {
+        g.globalAlpha = .16 * (4 - i);
+        g.drawImage(spr, X(tx - i * 34) - w / 2, Y(ty) - h, w, h);
+      }
+      g.globalAlpha = 1;
+    }
+    g.drawImage(spr, X(tx) - w / 2, Y(ty) - h, w, h);
+    g.restore();
+    if (al.rendu === 'aura') onde(g, vue, tx - 30, ty, .3, 70);
+  }
+
+  // La flèche d'attraction : elle dit ce que le déplacement ne montre pas.
+  if (phase === 3 && (adv === 'stun_attire' || adv === 'attire' || adv === 'contact')) {
+    fleche(g, vue, ax, advY, hollisX + 40, hollisY, '#ffd23e');
+  }
+  return phase;
+}
+
+/* ===================== L'APERÇU ===================== */
+const cvA = document.getElementById('cvApercu');
+const gA = cvA.getContext('2d');
+const friseEl = document.getElementById('frise');
+friseEl.innerHTML = PHASES.map(p =>
+  '<div class="ph"><b>' + p.nom + '</b><i>' + p.detail + '</i></div>').join('');
+
+let t0 = performance.now();
+function boucle(now) {
+  const ph = jouer(gA, (now - t0) / 1000, cvA.width, cvA.height);
+  [...friseEl.children].forEach((el, i) => el.classList.toggle('on', i === ph));
+  requestAnimationFrame(boucle);
+}
+requestAnimationFrame(boucle);
+
+/* ===================== LES CARTES ===================== */
+// Figées : seul l'aperçu du haut bouge. Une grille de vignettes animées est
+// illisible, on ne sait plus laquelle regarder.
+const cartes = [];
+function dessinerCarte(cv, sec, va) {
+  const g = cv.getContext('2d');
+  const sauve = { ...choix };
+  choix[sec.id] = va.id;
+  jouer(g, D_CHANT + D_BOND + actuel('duree').dur * .62, cv.width, cv.height);
+  Object.assign(choix, sauve);
+}
+
+const boite = document.getElementById('sections');
+SECTIONS.forEach(sec => {
+  const h2 = document.createElement('h2');
+  h2.textContent = sec.titre;
+  const note = document.createElement('p');
+  note.className = 'note'; note.textContent = sec.note;
+  boite.append(h2, note);
+
+  const faireRangee = (liste, reserve) => {
+    const row = document.createElement('div');
+    row.className = 'row' + (reserve ? ' reserve' : '');
+    liste.forEach(va => {
+      const card = document.createElement('div');
+      // La carte active suit le CHOIX, pas l'index.
+      card.className = 'card' + (choix[sec.id] === va.id ? ' on' : '');
+      card.dataset.sec = sec.id; card.dataset.va = va.id;
+      const lbl = document.createElement('div');
+      lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + va.desc;
+      const cv = document.createElement('canvas');
+      cv.width = 300; cv.height = 150;
+      card.append(lbl, cv);
+      card.onclick = () => {
+        choix[sec.id] = va.id;
+        document.querySelectorAll('.card[data-sec="' + sec.id + '"]')
+          .forEach(c => c.classList.toggle('on', c.dataset.va === va.id));
+        rafraichirCartes(); majChoix();
+      };
+      row.append(card);
+      cartes.push({ cv, sec, va });
+    });
+    return row;
+  };
+  boite.append(faireRangee(sec.variantes.slice(0, 5), false));
+  const res = faireRangee(sec.variantes.slice(5), true);
+  const btn = document.createElement('button');
+  btn.className = 'plus'; btn.textContent = '+ 5 autres choix';
+  btn.onclick = () => { res.classList.toggle('ouverte'); rafraichirCartes(); };
+  boite.append(btn, res);
+});
+
+function rafraichirCartes() {
+  cartes.forEach(({ cv, sec, va }) => { if (cv.offsetParent) dessinerCarte(cv, sec, va); });
+}
+function majChoix() {
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value =
+    SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+}
+document.getElementById('btnCopier').onclick = async () => {
+  const b = document.getElementById('btnCopier');
+  try { await navigator.clipboard.writeText(document.getElementById('codeChoix').value);
+        b.textContent = 'copié !'; b.classList.add('ok');
+        setTimeout(() => { b.textContent = 'copier mes choix'; b.classList.remove('ok'); }, 1400); }
+  catch (e) { document.getElementById('codeChoix').select(); }
+};
+rafraichirCartes();
+majChoix();
+</script>
+</body>
+</html>
