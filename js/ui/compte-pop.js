@@ -4,6 +4,7 @@ import {
   Compte, connecte, inscrire, connecterSe, deconnecter,
   chargerProfil, creerProfil
 } from '../reseau/compte.js';
+import { crediterEnAttente } from '../data/apprentissage.js';
 
 // ---------------------------------------------------------------------------
 // Fenêtre de compte.
@@ -87,6 +88,7 @@ const signaler = () => { if (auChangement) auChangement(); };
       await connecterSe(e, m);
       $('cpMdp').value = '';
       signaler();
+      crediterEnAttente();
       if (!Compte.profil) { montrerEtape('pseudo'); dire('choisis ton pseudo.'); }
       else { montrerEtape('connecte'); afficherMoi(); dire('te voila connecte.'); }
     } catch (err) { dire(err.message, true); }

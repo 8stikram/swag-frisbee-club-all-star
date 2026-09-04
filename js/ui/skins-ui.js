@@ -1,13 +1,14 @@
 import { $ } from '../core/dom.js';
 import { sfx } from '../audio/audio.js';
 import { CHARS } from '../data/characters.js';
-import { listeSkins, estDebloque, skinActif, setSkinActif } from '../data/skins-perso.js';
+import { listeSkins, estDebloque, skinActif, setSkinActif, acheterSkinPerso, COUT_SKIN } from '../data/skins-perso.js';
+import { Compte } from '../reseau/compte.js';
 
 // ---------------------------------------------------------------------------
 // Panneau de skins. Il s'ouvre en cliquant sur le grand portrait d'un camp et
 // se referme au clic à côté ou à Échap. Les skins encore à gagner y restent
-// visibles, cadenassés, avec leur condition — les cacher ne donnerait aucune
-// raison de les viser.
+// visibles, cadenassées : cliquer dessus tente de les acheter avec les pièces
+// du compte, toutes au même prix.
 // ---------------------------------------------------------------------------
 
 let campOuvert = null;          // 1 ou 2 quand le panneau est ouvert
@@ -41,6 +42,11 @@ export function ouvrirPanneauSkins(camp, ck, options) {
   const grille = $('skinsGrid');
   grille.innerHTML = '';
   $('skinsTitre').textContent = 'SKINS · ' + CHARS[ck].short;
+  const solde = $('skinsSolde');
+  if (solde) {
+    const p = Compte.profil;
+    solde.textContent = p ? ('🪙 ' + (p.pieces || 0)) : '';
+  }
 
   const actif = skinActif(ck);
   const dispos = listeSkins(ck);
@@ -64,12 +70,23 @@ export function ouvrirPanneauSkins(camp, ck, options) {
     cell.appendChild(nom);
     if (!libre) {
       const lock = document.createElement('span');
-      lock.className = 'skinTileLock'; lock.textContent = '🔒';
+      lock.className = 'skinTileLock';
+      lock.innerHTML = '🔒<b>' + COUT_SKIN + '</b>';
       cell.appendChild(lock);
     }
-    cell.addEventListener('click', e => {
+    cell.addEventListener('click', async e => {
       e.stopPropagation();
-      if (!libre) { sfx('deny'); message('🔒 ' + s.nom + ' — ' + s.texte); return; }
+      if (!libre) {
+        sfx('select');
+        try {
+          await acheterSkinPerso(ck, s.id);
+          sfx('full');
+          message('🎨 ' + s.nom + ' débloqué pour ' + CHARS[ck].short + ' !', true);
+          if (auChangement) auChangement();
+          ouvrirPanneauSkins(camp, ck);       // rafraîchit la tuile et le solde
+        } catch (err) { sfx('deny'); message('🔒 ' + err.message); }
+        return;
+      }
       setSkinActif(ck, s.id);
       sfx('select');
       if (auChangement) auChangement();
@@ -105,14 +122,6 @@ function message(texte, dore) {
   el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
   clearTimeout(effacer);
   effacer = setTimeout(() => el.classList.add('hidden'), dore ? 3000 : 2000);
-}
-
-// Appelé à la fin d'un match quand des skins viennent d'être gagnés.
-export function annoncerSkins(ck, gagnes) {
-  if (!gagnes || !gagnes.length) return;
-  const nom = CHARS[ck] ? CHARS[ck].short : ck;
-  message('🎨 SKIN DÉBLOQUÉ ! ' + gagnes.map(s => s.nom).join(' · ') + ' pour ' + nom, true);
-  sfx('full');
 }
 
 // Fermeture au clic à côté ou à Échap.

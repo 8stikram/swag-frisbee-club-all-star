@@ -1,6 +1,6 @@
 import { G, Mouse, resetDisc, initMatch, comment } from './state.js';
 import { Partie, monJoueur, etiquetteJoueur, jeSimule, signalerTirLocal, demanderSkipRejeu, skinDuJoueur } from '../reseau/partie.js';
-import { enregistrerMatchComplet } from '../reseau/compte.js';
+import { enregistrerMatchComplet, ajouterPieces } from '../reseau/compte.js';
 import {
   COURT, CX, CY, TARGET, GOAL_MID1, GOAL_MID2, throwSpeed,
   DIVE_TIME, DIVE_RANGE, DIVE_WHIFF_DOWN, DIVE_POWER,
@@ -15,9 +15,7 @@ import { sfx, setMuffled } from '../audio/audio.js';
 import { burst, dust, ring, confetti, starBurst, addPopup, ondeDeBut, confettiNumerique, effetDeBut } from './fx.js';
 import { $, cv, showScreen } from '../core/dom.js';
 import { signalerPerfectDive } from './moves.js';
-import { ajouterStat, verifierDeblocages } from '../data/skins-perso.js';
 import { getSkinId, teinteDeCharge, chaufferCouleur } from '../data/skins.js';
-import { annoncerSkins } from '../ui/skins-ui.js';
 
 // Commentaire personnalisé : varié, et cite le pseudo en ligne plutôt qu'un
 // texte générique — en multi les deux joueurs sont de vraies personnes, pas
@@ -541,34 +539,27 @@ $('vicDetailScrim').addEventListener('click', e => {
   if (e.target.id === 'vicDetailScrim') e.currentTarget.classList.remove('open');
 });
 
-// Fait le compte de ce que le joueur vient d'accomplir et débloque ce qui est
-// mérité. Les conditions « en un seul match » sont jugées ici, à chaud, sans
-// être stockées ; les autres viennent des compteurs cumulés.
-function bilanSkins(aGagne) {
-  // Celui qui regarde l'écran, pas le joueur de gauche : côté invité, ses
-  // déblocages étaient jugés sur les statistiques de son adversaire.
-  const p = monJoueur();
-  // Le JcJ local ne débloque rien — deux personnes sur un canapé s'offriraient
-  // n'importe quoi. Une victoire en ligne, elle, compte comme une victoire solo.
-  if (!p || !p.human || (G.isJ2J && !Partie.active)) return;
-  const ck = p.ck, s = p.stats;
-  const duree = (performance.now() - (G.debutMatch || 0)) / 1000;
+const COINS_VICTOIRE = 10, COINS_DEFAITE = 5;
 
-  if (s.perfects) ajouterStat(ck, 'perfects', s.perfects);
-  if (s.buts) ajouterStat(ck, 'buts', s.buts);
-  if (aGagne) {
-    ajouterStat(ck, 'victoires');
-    if (duree < 60) ajouterStat(ck, 'victoiresRapides');
-    if (G.matchDiff === 2) ajouterStat(ck, 'victoiresDifficile');
-    if (!G.aDashe) ajouterStat(ck, 'victoiresSansDash');
-  }
-  const gagnes = verifierDeblocages(ck, {
-    perfectsMatch: s.perfects,
-    butsMatch: s.buts,
-    dashThrowsMatch: s.dashThrows,
-    attrapesMatch: s.catches
-  });
-  if (gagnes.length) annoncerSkins(ck, gagnes);
+// Crédite les pièces gagnées à la fin d'un vrai match, contre un bot ou en
+// ligne. Le JcJ local n'en rapporte pas — deux personnes sur un canapé
+// s'offriraient des pièces à volonté. Une victoire en ligne compte comme une
+// victoire solo.
+function recompenserMatch(aGagne) {
+  // Celui qui regarde l'écran, pas le joueur de gauche : côté invité, le
+  // gain se juge sur SA partie, pas sur celle de son adversaire.
+  const p = monJoueur();
+  if (!p || !p.human || (G.isJ2J && !Partie.active)) return;
+  const montant = aGagne ? COINS_VICTOIRE : COINS_DEFAITE;
+  const vp = $('vicPieces');
+  if (vp) vp.classList.add('hidden');
+  // Rien ne se passe si le compte n'est pas connecté : les pièces vivent côté
+  // serveur, il n'y a pas de solde local à faire semblant d'avoir.
+  ajouterPieces(montant).then(solde => {
+    if (solde === null || !vp) return;
+    vp.textContent = '+' + montant + ' 🪙';
+    vp.classList.remove('hidden');
+  }).catch(() => { });
 }
 
 export function gameOver() {
@@ -582,7 +573,7 @@ export function gameOver() {
   // s'entendait donc jouer la fanfare de la victoire en ayant perdu.
   const jaiGagne = Partie.active ? winner === monJoueur() : winnerIsP1;
   sfx(jaiGagne ? 'win' : 'lose');
-  bilanSkins(jaiGagne);
+  recompenserMatch(jaiGagne);
   // Match en ligne : chacun enregistre le sien, de son point de vue. Seuls les
   // matchs en ligne comptent au classement — sinon il suffirait de battre l'IA
   // en très facile en boucle pour trôner en tête.

@@ -2,6 +2,7 @@
 // Tout est conservé en local : c'est un suivi personnel, pas un état de partie.
 import { brancherVerrouTuto } from './skins.js';
 import { brancherVerrouTutoMap } from './maps.js';
+import { ajouterPieces, connecte } from '../reseau/compte.js';
 
 export const CHAPITRES = [
   { id: 'bases', num: 1, nom: 'FONDATIONS', desc: 'Se déplacer, viser, attraper, tirer.' },
@@ -12,10 +13,14 @@ export const CHAPITRES = [
 ];
 
 const CLE = 'sbcbApprentissage';
+const PIECES_CHAPITRE = 10;
 
 // `proposé` retient qu'on a déjà posé la question au premier lancement, pour ne
 // jamais la reposer — même si le joueur a répondu non.
-let etat = { faits: [], propose: false };
+// `credites` retient les chapitres déjà payés en pièces, séparément de
+// `faits` : sans cette liste, se reconnecter reposerait la même question à
+// chaque chargement plutôt qu'une seule fois par chapitre.
+let etat = { faits: [], propose: false, credites: [] };
 
 function charger() {
   try {
@@ -24,6 +29,7 @@ function charger() {
     const o = JSON.parse(brut);
     if (Array.isArray(o.faits)) etat.faits = o.faits.filter(id => CHAPITRES.some(c => c.id === id));
     etat.propose = !!o.propose;
+    if (Array.isArray(o.credites)) etat.credites = o.credites.filter(id => CHAPITRES.some(c => c.id === id));
   } catch (e) { }
 }
 function sauver() {
@@ -42,7 +48,28 @@ export function marquerChapitreFait(id) {
   if (!CHAPITRES.some(c => c.id === id) || etat.faits.includes(id)) return;
   etat.faits.push(id);
   sauver();
+  crediterEnAttente();
 }
+
+// Paye les chapitres déjà terminés mais pas encore crédités — un chapitre
+// qu'on vient de finir, ou un rattrapage pour quelqu'un qui avait déjà fini
+// le tutoriel avant que les pièces n'existent. Ne fait rien hors connexion :
+// les pièces vivent côté serveur, on retentera à la prochaine connexion.
+export function crediterEnAttente() {
+  if (!connecte()) return;
+  const du = etat.faits.filter(id => !etat.credites.includes(id));
+  for (const id of du) {
+    etat.credites.push(id);
+    ajouterPieces(PIECES_CHAPITRE).catch(() => {
+      // Le crédit a échoué (réseau, jeton expiré...) : on retire la marque
+      // pour retenter au prochain appel plutôt que de perdre les pièces dues.
+      etat.credites = etat.credites.filter(x => x !== id);
+      sauver();
+    });
+  }
+  if (du.length) sauver();
+}
+crediterEnAttente();
 
 // Vrai quand les cinq chapitres sont derrière le joueur : c'est la condition de
 // déblocage du disque « 20/20 » et du terrain spécial.
@@ -53,6 +80,6 @@ export function marquerTutoPropose() { etat.propose = true; sauver(); }
 
 // Utilisé par les tests et par une éventuelle remise à zéro depuis les options.
 export function reinitialiserApprentissage() {
-  etat = { faits: [], propose: false };
+  etat = { faits: [], propose: false, credites: [] };
   sauver();
 }

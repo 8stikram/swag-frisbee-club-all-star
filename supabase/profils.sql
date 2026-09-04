@@ -405,3 +405,43 @@ on conflict do nothing;
 -- choisir dans une liste ne se verrait jamais.
 update profils set titre_actif = 'CRÉATEUR DU JEU'
  where id in (select id from auth.users where email = 'noe.dub@outlook.fr');
+
+-- ---------------------------------------------------------------------------
+-- 13. La monnaie du jeu : des pièces, gagnées en jouant, dépensées sur les
+-- tenues. Le solde vit côté serveur — c'est lui qu'on affiche sur le profil
+-- en ligne, et c'est lui qui décide si un achat passe, pas le navigateur.
+-- ---------------------------------------------------------------------------
+alter table profils add column if not exists pieces int not null default 0;
+
+-- Créditer ou débiter librement (le solde ne descend jamais sous zéro) :
+-- sert aux gains de fin de match comme aux chapitres de tutoriel terminés.
+create or replace function ajouter_pieces(p_montant int)
+returns int language sql security definer as $$
+  update profils set pieces = greatest(pieces + p_montant, 0) where id = auth.uid()
+  returning pieces;
+$$;
+
+-- Achat d'une tenue : ne débite que si le solde suffit, dans la même requête,
+-- pour qu'on ne puisse jamais passer sous zéro entre la vérification et le
+-- débit. Ne renvoie rien si le solde était insuffisant — c'est ce que le
+-- client interprète comme un refus.
+create or replace function acheter_skin(p_cout int)
+returns int language sql security definer as $$
+  update profils set pieces = pieces - p_cout
+  where id = auth.uid() and pieces >= p_cout
+  returning pieces;
+$$;
+
+-- La vue publique reprend les pièces : c'est un chiffre du profil comme les
+-- autres, pas un secret.
+drop view if exists profils_publics;
+create view profils_publics as
+  select id, pseudo, avatar, banniere, couleur1, couleur2,
+         statut, titre_actif, main, vu_le, texte_sombre, pieces,
+         (vu_le > now() - interval '2 minutes') as en_ligne,
+         matchs, victoires, defaites, points_marques, points_encaisses,
+         case when matchs > 0
+              then round(victoires::numeric / matchs * 100, 1)
+              else 0 end as taux_victoire,
+         persos, cree_le
+  from profils;

@@ -8,6 +8,7 @@ import {
   demarrerPresence, monId, lireCommentaires, ecrireCommentaire, supprimerCommentaire,
   pousserPreferences, dureeMoyenne
 } from '../reseau/compte.js';
+import { crediterEnAttente } from '../data/apprentissage.js';
 
 // ---------------------------------------------------------------------------
 // Compte, fiche de profil et classement. Trois panneaux qui vivent dans
@@ -49,6 +50,8 @@ export function afficherFiche() {
   carte.style.setProperty('--c1', p.couleur1 || '#35e0ff');
   carte.style.setProperty('--c2', p.couleur2 || '#7b2ff7');
   $('fichePseudo').textContent = p.pseudo || '';
+  const pieces = $('fichePieces');
+  if (pieces) pieces.textContent = '🪙 ' + (p.pieces || 0);
   const img = $('ficheAvatar'), vide = $('ficheAvatarVide');
   if (p.avatar) { img.src = p.avatar; img.classList.remove('hidden'); vide.classList.add('hidden'); }
   else { img.classList.add('hidden'); vide.classList.remove('hidden'); }
@@ -161,7 +164,7 @@ export async function ouvrirProfil() {
     const e = $('onEmail').value.trim(), m = $('onMdp').value;
     if (!e || !m) { dire('adresse et mot de passe, s il te plait.', true); return; }
     dire('connexion...');
-    try { await connecterSe(e, m); $('onMdp').value = ''; ouvrirProfil(); }
+    try { await connecterSe(e, m); $('onMdp').value = ''; ouvrirProfil(); crediterEnAttente(); }
     catch (err) { dire(err.message, true); }
   });
 
@@ -537,6 +540,8 @@ export async function voirProfil(id) {
     carte.style.setProperty('--c1', p.couleur1 || '#35e0ff');
     carte.style.setProperty('--c2', p.couleur2 || '#7b2ff7');
     $('fichePseudo').textContent = p.pseudo || '';
+    const pieces = $('fichePieces');
+    if (pieces) pieces.textContent = '🪙 ' + (p.pieces || 0);
     const img = $('ficheAvatar'), vide = $('ficheAvatarVide');
     if (p.avatar) { img.src = p.avatar; img.classList.remove('hidden'); vide.classList.add('hidden'); }
     else { img.classList.add('hidden'); vide.classList.remove('hidden'); }

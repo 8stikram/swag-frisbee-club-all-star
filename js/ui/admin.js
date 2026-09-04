@@ -7,7 +7,7 @@ import { throwDisc } from '../game/actions.js';
 import { sfx } from '../audio/audio.js';
 import { doAct, pauseGame, isAdminMode, setAdminMode, refreshSelect, refreshMaps } from './menus.js';
 import { ROSTER, CHARS } from '../data/characters.js';
-import { listeSkins, estDebloque } from '../data/skins-perso.js';
+import { listeSkins, estDebloque, COUT_SKIN } from '../data/skins-perso.js';
 import { MAPS, mapDebloquee } from '../data/maps.js';
 import { forcerTenue, forcerTuto, forcerTout, retablirEtatReel } from '../data/deverrouillage.js';
 
@@ -246,7 +246,7 @@ function buildTab(name) {
       if (!liste.length) continue;
       add(el('div', 'asec', 'TENUES · ' + CHARS[ck].short));
       for (const s of liste) {
-        const cc = card(s.nom, s.texte);
+        const cc = card(s.nom, COUT_SKIN + ' pièces');
         cc.card.querySelector('.aname').className = 'aname avar';
         const ouvert = () => estDebloque(ck, s.id);
         cc.ctrl.appendChild(btn(ouvert() ? 'OUVERT' : 'FERMÉ', ouvert() ? 'on' : '', b => {

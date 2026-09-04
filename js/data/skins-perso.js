@@ -1,49 +1,42 @@
 // ---------------------------------------------------------------------------
 // Skins de personnages. Purement cosmétiques : ils ne touchent ni aux stats,
-// ni aux vitesses, ni aux hitboxes.
+// ni aux vitesses, ni aux hitboxes. Chaque tenue non par défaut s'achète avec
+// les pièces gagnées en jouant, au même prix pour toutes — il n'y a plus de
+// défi à remplir.
 //
-// Trois clés de sauvegarde distinctes, et c'est volontaire :
-//   sbcbUnlockedSkins — ce qui a été gagné. JAMAIS effacé, même par une remise
-//                       à zéro : on ne reprend pas au joueur ce qu'il a mérité.
+// Deux clés de sauvegarde distinctes, et c'est volontaire :
+//   sbcbUnlockedSkins — ce qui a été acheté. JAMAIS effacé, même par une
+//                       remise à zéro : on ne reprend pas au joueur ce qu'il
+//                       a payé.
 //   sbcbActiveSkins   — le skin porté par chaque personnage.
-//   sbcbStats         — les compteurs de progression, eux réinitialisables.
 // ---------------------------------------------------------------------------
 
 import { forcageTenue } from './deverrouillage.js';
+import { acheterSkin as debiterPieces, connecte } from '../reseau/compte.js';
+
+export const COUT_SKIN = 100;
 
 export const SKINS = {
   naruto: [
     { id: 'shippuden', nom: 'SHIPPUDEN', defaut: true },
-    { id: 'hokage', nom: 'HOKAGE', cond: 'victoires', seuil: 10,
-      texte: 'Gagner 10 matchs avec Naruto' },
-    { id: 'ermite', nom: 'MODE ERMITE', cond: 'perfectsMatch', seuil: 5,
-      texte: 'Faire 5 Perfect Dives en un seul match' },
-    { id: 'thelast', nom: 'THE LAST', cond: 'victoiresRapides', seuil: 5,
-      texte: 'Gagner 5 matchs en moins de 60 secondes' },
-    { id: 'minato', nom: 'MINATO', cond: 'victoiresDifficile', seuil: 3,
-      texte: 'Gagner 3 matchs en difficulté Difficile' }
+    { id: 'hokage', nom: 'HOKAGE' },
+    { id: 'ermite', nom: 'MODE ERMITE' },
+    { id: 'thelast', nom: 'THE LAST' },
+    { id: 'minato', nom: 'MINATO' }
   ],
   leon: [
     { id: 'rpd', nom: 'R.P.D. STANDARD', defaut: true },
-    { id: 're2', nom: 'RE2 CLASSIQUE', cond: 'victoires', seuil: 10,
-      texte: 'Gagner 10 matchs avec Leon' },
-    { id: 're4', nom: 'RE4', cond: 'butsMatch', seuil: 5,
-      texte: 'Marquer 5 buts en un seul match' },
-    { id: 'darkside', nom: 'DARKSIDE', cond: 'dashThrowsMatch', seuil: 3,
-      texte: 'Faire 3 Dash Throws en un seul match' },
-    { id: 'requiem', nom: 'REQUIEM', cond: 'victoiresDifficile', seuil: 3,
-      texte: 'Gagner 3 matchs en difficulté Difficile' }
+    { id: 're2', nom: 'RE2 CLASSIQUE' },
+    { id: 're4', nom: 'RE4' },
+    { id: 'darkside', nom: 'DARKSIDE' },
+    { id: 'requiem', nom: 'REQUIEM' }
   ],
   isaac: [
     { id: 'isaac', nom: 'ISAAC', defaut: true },
-    { id: 'magdalene', nom: 'MAGDALENE', cond: 'victoires', seuil: 10,
-      texte: 'Gagner 10 matchs avec Isaac' },
-    { id: 'cain', nom: 'CAIN', cond: 'attrapesMatch', seuil: 20,
-      texte: 'Attraper le disque 20 fois en un seul match' },
-    { id: 'azazel', nom: 'AZAZEL', cond: 'perfects', seuil: 10,
-      texte: 'Faire 10 Perfect Dives au total' },
-    { id: 'eve', nom: 'EVE', cond: 'victoiresDifficile', seuil: 3,
-      texte: 'Gagner 3 matchs en difficulté Difficile' }
+    { id: 'magdalene', nom: 'MAGDALENE' },
+    { id: 'cain', nom: 'CAIN' },
+    { id: 'azazel', nom: 'AZAZEL' },
+    { id: 'eve', nom: 'EVE' }
   ],
   // Cyberleek n'a pour l'instant que sa tenue d'origine. L'entrée est quand
   // même nécessaire : sans elle sa liste de tenues est vide, le panneau s'ouvre
@@ -64,64 +57,39 @@ export const SKINS = {
   yuki: [
     { id: 'doudoune', nom: 'DOUDOUNE 雪', defaut: true }
   ],
-  // Yoshi est le seul a en avoir dix : ce sont ses couleurs, pas des tenues.
-  // Les conditions vont donc du plus courant au plus rare, pour que la
-  // collection se remplisse progressivement plutot que d'un coup.
   hollis: [
     { id: 'platine', nom: 'PLATINE', defaut: true },
-    { id: 'corbeau', nom: 'CORBEAU', cond: 'victoires', seuil: 3,
-      texte: 'Gagner 3 matchs avec 2hollis' },
-    { id: 'cerise', nom: 'CERISE', cond: 'victoires', seuil: 10,
-      texte: 'Gagner 10 matchs avec 2hollis' },
-    { id: 'argent', nom: 'ARGENT', cond: 'butsMatch', seuil: 5,
-      texte: 'Marquer 5 buts en un seul match' },
-    { id: 'glacier', nom: 'GLACIER', cond: 'victoiresDifficile', seuil: 3,
-      texte: 'Gagner 3 matchs en difficulte Difficile' }
+    { id: 'corbeau', nom: 'CORBEAU' },
+    { id: 'cerise', nom: 'CERISE' },
+    { id: 'argent', nom: 'ARGENT' },
+    { id: 'glacier', nom: 'GLACIER' }
   ],
   yoshi: [
     { id: 'vert', nom: 'VERT', defaut: true },
-    { id: 'rouge', nom: 'ROUGE', cond: 'victoires', seuil: 3,
-      texte: 'Gagner 3 matchs avec Yoshi' },
-    { id: 'bleu', nom: 'BLEU', cond: 'victoires', seuil: 10,
-      texte: 'Gagner 10 matchs avec Yoshi' },
-    { id: 'jaune', nom: 'JAUNE', cond: 'attrapesMatch', seuil: 12,
-      texte: 'Attraper 12 disques en un seul match' },
-    { id: 'violet', nom: 'VIOLET', cond: 'butsMatch', seuil: 5,
-      texte: 'Marquer 5 buts en un seul match' },
-    { id: 'cyan', nom: 'CYAN', cond: 'perfectsMatch', seuil: 4,
-      texte: 'Faire 4 Perfect Dives en un seul match' },
-    { id: 'orange', nom: 'ORANGE', cond: 'victoiresRapides', seuil: 5,
-      texte: 'Gagner 5 matchs en moins de 60 secondes' },
-    { id: 'rose', nom: 'ROSE', cond: 'victoiresSansDash', seuil: 3,
-      texte: 'Gagner 3 matchs sans utiliser le dash' },
-    { id: 'noir', nom: 'NOIR', cond: 'victoiresDifficile', seuil: 5,
-      texte: 'Gagner 5 matchs en difficulte Difficile' },
-    { id: 'blanc', nom: 'BLANC', cond: 'buts', seuil: 100,
-      texte: 'Marquer 100 buts avec Yoshi' }
+    { id: 'rouge', nom: 'ROUGE' },
+    { id: 'bleu', nom: 'BLEU' },
+    { id: 'jaune', nom: 'JAUNE' },
+    { id: 'violet', nom: 'VIOLET' },
+    { id: 'cyan', nom: 'CYAN' },
+    { id: 'orange', nom: 'ORANGE' },
+    { id: 'rose', nom: 'ROSE' },
+    { id: 'noir', nom: 'NOIR' },
+    { id: 'blanc', nom: 'BLANC' }
   ],
   jingle: [
     { id: 'polenord', nom: 'PÔLE NORD', defaut: true },
-    { id: 'smoking', nom: 'SMOKING NOIR', cond: 'victoires', seuil: 10,
-      texte: 'Gagner 10 matchs avec Jingle' },
-    { id: 'ninja', nom: 'NINJA', cond: 'victoiresSansDash', seuil: 1,
-      texte: 'Gagner un match sans jamais dasher' },
-    { id: 'cowboy', nom: 'COWBOY', cond: 'buts', seuil: 5,
-      texte: 'Marquer 5 buts avec Jingle' },
-    { id: 'halloween', nom: 'HALLOWEEN', cond: 'victoiresDifficile', seuil: 3,
-      texte: 'Gagner 3 matchs en difficulté Difficile' }
+    { id: 'smoking', nom: 'SMOKING NOIR' },
+    { id: 'ninja', nom: 'NINJA' },
+    { id: 'cowboy', nom: 'COWBOY' },
+    { id: 'halloween', nom: 'HALLOWEEN' }
   ]
 };
 
-// Les conditions dont le nom finit par « Match » se jugent sur une seule
-// partie : elles ne sont pas stockées, seulement testées à chaud à la fin du
-// match. Toutes les autres se cumulent dans sbcbStats.
 const CLE_DEBLOQUES = 'sbcbUnlockedSkins';
 const CLE_ACTIFS = 'sbcbActiveSkins';
-const CLE_STATS = 'sbcbStats';
 
 let debloques = [];        // ['naruto:hokage', ...]
 let actifs = {};           // { naruto: 'hokage', ... }
-let stats = {};            // { naruto: { victoires: 3, ... }, ... }
 
 function charger() {
   try {
@@ -129,16 +97,12 @@ function charger() {
     if (Array.isArray(d)) debloques = d;
   } catch (e) { }
   try { actifs = JSON.parse(localStorage.getItem(CLE_ACTIFS) || '{}') || {}; } catch (e) { }
-  try { stats = JSON.parse(localStorage.getItem(CLE_STATS) || '{}') || {}; } catch (e) { }
 }
 function sauverDebloques() {
   try { localStorage.setItem(CLE_DEBLOQUES, JSON.stringify(debloques)); } catch (e) { }
 }
 function sauverActifs() {
   try { localStorage.setItem(CLE_ACTIFS, JSON.stringify(actifs)); } catch (e) { }
-}
-function sauverStats() {
-  try { localStorage.setItem(CLE_STATS, JSON.stringify(stats)); } catch (e) { }
 }
 charger();
 
@@ -160,13 +124,24 @@ export function estDebloque(ck, id) {
   return debloques.includes(ck + ':' + id);
 }
 
-// Renvoie true si le skin vient tout juste d'être gagné, pour que l'appelant
-// puisse l'annoncer. Un skin déjà acquis ne redéclenche rien.
-export function debloquer(ck, id) {
+// Marque une tenue comme acquise, sans toucher aux pièces : sert à l'achat
+// ci-dessous, une fois le débit accepté par le serveur.
+function debloquer(ck, id) {
   if (estDebloque(ck, id)) return false;
   debloques.push(ck + ':' + id);
   sauverDebloques();
   return true;
+}
+
+// Achète une tenue : débite le compte en ligne d'abord — c'est le serveur qui
+// décide si le solde suffit, jamais le navigateur — puis ne la débloque en
+// local qu'une fois le débit accepté. Lève une erreur sinon (pas connecté,
+// pas assez de pièces), que l'appelant affiche tel quel.
+export async function acheterSkinPerso(ck, id) {
+  if (estDebloque(ck, id)) return;
+  if (!connecte()) throw new Error('connecte-toi pour acheter cette tenue');
+  await debiterPieces(COUT_SKIN);
+  debloquer(ck, id);
 }
 
 export function skinActif(ck) {
@@ -180,33 +155,7 @@ export function setSkinActif(ck, id) {
   return true;
 }
 
-// --- Compteurs --------------------------------------------------------------
-export function statsDe(ck) { return stats[ck] || {}; }
-export function ajouterStat(ck, cle, n = 1) {
-  if (!stats[ck]) stats[ck] = {};
-  stats[ck][cle] = (stats[ck][cle] || 0) + n;
-  sauverStats();
-}
-
-// Confronte les compteurs aux conditions et renvoie les skins nouvellement
-// gagnés. `ponctuelles` porte les valeurs du match qui vient de finir, celles
-// qui ne se cumulent pas.
-export function verifierDeblocages(ck, ponctuelles = {}) {
-  const gagnes = [];
-  for (const s of listeSkins(ck)) {
-    if (s.defaut || estDebloque(ck, s.id)) continue;
-    const valeur = (ponctuelles[s.cond] !== undefined)
-      ? ponctuelles[s.cond]
-      : (statsDe(ck)[s.cond] || 0);
-    if (valeur >= s.seuil && debloquer(ck, s.id)) gagnes.push(s);
-  }
-  return gagnes;
-}
-
-// --- Remise à zéro et sauvegarde externe ------------------------------------
-// Efface uniquement la progression : les skins gagnés restent acquis.
-export function reinitialiserStats() { stats = {}; sauverStats(); }
-
+// --- Sauvegarde externe ------------------------------------------------------
 export function exporter() {
   return JSON.stringify({ version: 1, debloques, actifs }, null, 2);
 }

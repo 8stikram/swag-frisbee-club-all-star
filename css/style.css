@@ -741,6 +741,12 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
   transform:skewX(-9deg) rotate(-6deg);transform-origin:left top;
   filter:drop-shadow(0 0 8px rgba(0,0,0,.5)) drop-shadow(4px 5px 0 rgba(0,0,0,.45));
 }
+.vicPieces{
+  margin:.6cqh 0 0 1.5cqw;font-family:'Russo One',sans-serif;
+  font-size:clamp(12px,2.6cqh,20px);color:var(--yellow);letter-spacing:.05em;
+  text-shadow:0 2px 0 rgba(20,26,38,.6);
+}
+.vicPieces.hidden{display:none}
 .heroPortrait{
   position:absolute;right:3cqw;bottom:0;z-index:3;height:86cqh;width:auto;cursor:pointer;
   image-rendering:pixelated;
@@ -1415,8 +1421,13 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 }
 .skinsCard>b{
   display:block;font-family:'Russo One',sans-serif;
-  font-size:clamp(12px,2.3cqh,20px);color:var(--accent);letter-spacing:.08em;margin-bottom:1.6cqh;
+  font-size:clamp(12px,2.3cqh,20px);color:var(--accent);letter-spacing:.08em;margin-bottom:.4cqh;
 }
+.skinsSolde{
+  display:block;font-family:'Russo One',sans-serif;font-size:clamp(10px,1.8cqh,15px);
+  color:var(--yellow);letter-spacing:.06em;margin-bottom:1.2cqh;
+}
+.skinsSolde:empty{display:none}
 .skinsGrid{display:flex;gap:1cqw;flex-wrap:wrap;justify-content:center}
 .skinTile{
   position:relative;background:rgba(255,255,255,.06);border:3px solid rgba(255,255,255,.16);
@@ -1431,13 +1442,17 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .skinTile em{
   font-style:normal;font-size:clamp(7px,1.15cqh,10px);color:#c9d4e8;letter-spacing:.04em;
 }
-.skinTile.locked{cursor:not-allowed}
+/* Verrouillée reste cliquable : c'est ce qui tente l'achat. */
 .skinTile.locked canvas{filter:grayscale(1) brightness(.4)}
 .skinTile.locked em{color:#6b7488}
 .skinTileLock{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-62%);
-  font-size:clamp(13px,2.2cqh,19px);pointer-events:none;
+  font-size:clamp(13px,2.2cqh,19px);pointer-events:none;text-align:center;
   filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));
+}
+.skinTileLock b{
+  display:block;font-family:'Russo One',sans-serif;font-size:clamp(8px,1.3cqh,11px);
+  color:var(--yellow);
 }
 .skinsAstuce{
   display:block;margin-top:1.4cqh;font-size:clamp(7px,1.15cqh,10px);color:#7c8aa4;
@@ -1639,6 +1654,10 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   font-family:'Archivo Black',sans-serif; font-size:3.6cqh; color:rgba(255,255,255,.8) }
 .fichePseudo{ font-family:'Archivo Black',sans-serif; font-size:clamp(14px,2.8cqh,24px);
   color:#fff; text-shadow:0 3px 0 rgba(20,26,38,.5) }
+.fichePieces{ font-family:'Russo One',sans-serif; font-size:clamp(9px,1.6cqh,14px);
+  color:var(--ink); background:#ffd23e; border:2px solid var(--ink); border-radius:999px;
+  padding:.15cqh .8cqw; margin-top:.3cqh }
+.fichePieces:empty{ display:none }
 .ficheStats{ display:grid; grid-template-columns:repeat(3,1fr); gap:.6cqh .8cqw; width:100% }
 .ficheStat{ background:rgba(255,255,255,.88); border:2px solid var(--ink);
   border-radius:9px; padding:.6cqh .5cqw; text-align:center }
@@ -1811,18 +1830,37 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .murVide{ font-family:'DotGothic16',monospace; font-size:clamp(7px,1.3cqh,11px);
   color:rgba(255,255,255,.85); text-align:center; text-shadow:0 2px 0 rgba(20,26,38,.5) }
 
-/* Choix du personnage avant d'entrer dans une arene. */
-.persoChoix{ display:flex; gap:1.2cqw; align-items:flex-end; justify-content:center;
-  margin-bottom:1.4cqh }
-.persoCase{ background:none; border:3px solid transparent; border-radius:12px;
-  padding:.4cqh .6cqw; cursor:pointer; display:flex; flex-direction:column;
-  align-items:center; gap:.2cqh; transition:transform .12s, border-color .12s }
-.persoCase canvas{ image-rendering:pixelated; height:8cqh; width:auto }
-.persoCase span{ font-family:'Russo One',sans-serif; font-size:clamp(7px,1.3cqh,11px);
-  color:#fff; text-shadow:0 2px 0 var(--ink) }
-.persoCase:hover{ transform:translateY(-.4cqh) }
-.persoCase.on{ border-color:#ffd23e; background:rgba(255,210,62,.16) }
-.persoCase.on span{ color:#ffd23e }
+/* Bande décorative du roster avant d'entrer dans une arène. Ce n'est PLUS un
+   choix : le vrai choix de perso se fait sur l'écran de sélection complet une
+   fois l'adversaire trouvé (voir menus.js, monPersoChoisi()) — le sélectionner
+   ici aussi ne faisait que doubler le geste pour un résultat écrasé plus tard.
+   À la place, tout le roster défile en boucle, chacun marchant sur place :
+   une vitrine, pas un formulaire. */
+.persoChoix{ display:flex; align-items:flex-end; justify-content:center;
+  /* Marge haute : sans elle, le bob (translateY vers le haut) poussait la
+     tête hors de la zone visible — elle disparaissait à chaque rebond. */
+  margin-bottom:1.4cqh; padding-top:2.4cqh; overflow:hidden; width:100%;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);
+  mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%) }
+.persoStrip{ display:flex; align-items:flex-end; gap:2.6cqw; animation:persoScroll 22s linear infinite }
+.persoCase{ background:none; border:none; position:relative;
+  padding:0 .6cqw; display:flex; flex-direction:column;
+  align-items:center; flex-shrink:0 }
+/* Ombre au sol : sans elle les personnages semblaient flotter, surtout une
+   fois agrandis. Fixe, elle ne bouge pas avec le bob — c'est justement ce
+   contraste qui vend l'idée d'un rebond plutôt que d'une dérive. */
+.persoCase::after{ content:''; display:block; width:5.5cqh; height:1.1cqh;
+  margin-top:-.3cqh; border-radius:50%; background:rgba(0,0,0,.4); filter:blur(1.5px) }
+.persoCase canvas{ image-rendering:pixelated; height:11cqh; width:auto;
+  animation-name:personBob; animation-duration:2.4s; animation-timing-function:ease-in-out;
+  animation-iteration-count:infinite }
+/* Amplitude réduite (3px, contre 8 pour les grands portraits) : à cette
+   taille miniature, 8px lisait comme un vrai saut plutôt qu'un rebond. Le
+   délai de chacune (animation-delay) est posé au hasard depuis le JS, pas
+   par index — un décalage fixe entre voisins finissait par se lire comme
+   une vaguelette, tout aussi rythmée qu'un saut synchrone. */
+@keyframes personBob{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-3px) } }
+@keyframes persoScroll{ from{ transform:translateX(0) } to{ transform:translateX(-50%) } }
 
 /* --- Corps de la fiche : quatre chiffres a gauche, le main a droite -------- */
 .ficheCorps{ display:grid; grid-template-columns:1fr auto; gap:1.2cqw;

@@ -307,6 +307,32 @@ export async function enregistrerMatchComplet(o) {
   });
 }
 
+// --- Pièces ------------------------------------------------------------
+// Le solde vit côté serveur, en une seule fonction atomique : deux gains qui
+// arriveraient en même temps (un match qui finit pendant qu'un chapitre de
+// tutoriel se valide) ne doivent jamais s'écraser l'un l'autre.
+export async function ajouterPieces(montant) {
+  if (!connecte()) return null;
+  const solde = await appel('/rest/v1/rpc/ajouter_pieces', {
+    method: 'POST', headers: entetes(), body: JSON.stringify({ p_montant: montant })
+  });
+  if (Compte.profil && solde !== null) Compte.profil.pieces = solde;
+  return solde;
+}
+
+// Débite le coût d'une tenue. La base refuse (renvoie null) si le solde est
+// insuffisant : c'est elle qui tranche, jamais le calcul fait dans le
+// navigateur, qu'on pourrait trafiquer depuis la console.
+export async function acheterSkin(cout) {
+  if (!connecte()) throw new Error('connecte-toi pour acheter une tenue');
+  const solde = await appel('/rest/v1/rpc/acheter_skin', {
+    method: 'POST', headers: entetes(), body: JSON.stringify({ p_cout: cout })
+  });
+  if (solde === null) throw new Error('pas assez de pièces');
+  if (Compte.profil) Compte.profil.pieces = solde;
+  return solde;
+}
+
 export async function faceAFace(adversaireId) {
   const r = await appel('/rest/v1/rpc/face_a_face', {
     method: 'POST', headers: entetes(),
