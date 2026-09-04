@@ -462,7 +462,7 @@ function ombre(g, x, y, r) {
 
 // L'état courant : une lettre retenue par section.
 const choix = {};
-const RETENU = { trait: 'A', cheveux: 'B', torse: 'B' };
+const RETENU = { trait: 'A', cheveux: 'A', torse: 'B' };
 SECTIONS.forEach(s => { choix[s.id] = RETENU[s.id] || s.variantes[0].id; });
 
 // Assemble le perso tel que les choix actuels le décrivent. Chaque section
