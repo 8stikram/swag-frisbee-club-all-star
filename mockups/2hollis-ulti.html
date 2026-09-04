@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>2hollis — l'ultime</title>
+<title>2hollis — White Tiger</title>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
 <style>
   :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
@@ -63,13 +63,13 @@
 </head>
 <body>
 
-<h1>2HOLLIS — L'ULTIME</h1>
+<h1>2HOLLIS — WHITE TIGER</h1>
 <p class="note">
   Mockup dédié, séparé du chara-design — celui-ci est déjà arrêté :
   <code>1A 2A 3B</code>. Le personnage montré ici est exactement celui-là, et le module de
   contrôle vérifie qu'il n'a pas dérivé.
   <br><br>
-  <b>LE TIGRE BLANC.</b> Il chante, et un tigre blanc part droit devant lui. Le modèle est
+  <b>WHITE TIGER.</b> C'est le nom de l'ultime. Il chante, et un tigre blanc part droit devant lui. Le modèle est
   l'ultime de <b>Seraphine</b> dans League of Legends : une onde qui file en ligne droite,
   immobilise ce qu'elle touche et <b>attire la cible vers le lanceur</b>. Reste à décider ce que
   ça donne sur un terrain de disque — le stun et l'attraction ne sont pas la même chose, et
@@ -165,7 +165,7 @@ const CORPS_CHANT = ["S.cSSSSSSSSc.S..","S.cSSSSSSccS.S..","S.cSsSSsSccS.S..","S
 // La tete du chant : les yeux fermes, un trait au lieu des deux pupilles.
 const TETE_CHANT = ["....CCCCCC......","..CCCCCCCCCC....",".cCCCCCCCCCCc...",".cCCCCCCCCCCc...",".cCCSSSSSSCCc...",".cCSSSSSSSSCc...",".cSSSSSSSSSSc...",".cSSEEESSEEEc...",".cSSNNNNNNNNc...","..kSSSSSSSSk...."];
 
-/* ===================== LE TIGRE BLANC ===================== */
+/* ===================== WHITE TIGER ===================== */
 // L'image fournie remplace le sprite que je dessinais. Elle porte deja son
 // canal alpha, donc aucun detourage : elle se charge comme la cloche de
 // Jingle. J'avais commence par ecrire un remplissage depuis les bords pour
@@ -514,6 +514,11 @@ function jouer(g, t, W, H) {
   // qu'on ait le temps de comprendre qu'il a commence.
   const HITSTOP = .1;
   if (tt > D_CHANT * .55 && tt < D_CHANT * .55 + HITSTOP) tt = D_CHANT * .55;
+  // Et un deuxieme AU CONTACT. Le tigre se fige un instant sur la cible avant
+  // que la prise commence : c'est ce qui donne du poids au coup. Sans lui on
+  // passe de la course a la transe sans avoir vu l'impact.
+  const T_CHOC = D_CHANT + D_BOND + d.dur;
+  if (tt > T_CHOC && tt < T_CHOC + .07) tt = T_CHOC - .0005;
 
   const b = [D_CHANT, D_CHANT + D_BOND, D_CHANT + D_BOND + d.dur,
              D_CHANT + D_BOND + d.dur + D_PRISE];
@@ -576,7 +581,10 @@ function jouer(g, t, W, H) {
   /* ---------- 2HOLLIS : il flotte legerement pendant le chant ---------- */
   // Les pieds decollent de quelques pixels : c'est ce petit decalage qui dit
   // que la scene n'est plus tout a fait reelle.
-  const vol = (phase === 0 || phase === 1) ? (4 + Math.sin(t * 5) * 2) : 0;
+  // Il redescend au lieu de retomber d'un coup : une chute instantanee de
+  // quatre pixels au demarrage de la course se voit comme un saut d'image.
+  const vol = (phase === 0 || phase === 1) ? (4 + Math.sin(t * 5) * 2)
+            : phase === 2 ? Math.max(0, 1 - kp * 3) * (4 + Math.sin(t * 5) * 2) : 0;
   perso(g, phase <= 1 ? SPR_CHANT : SPR, hollisX, hollisY - vol, vue, 1);
   if (vol) {
     // l'ombre portee se resserre quand il monte, sinon il ne decolle pas
@@ -624,6 +632,18 @@ function jouer(g, t, W, H) {
   }
 
   /* ---------- 2. L'INVOCATION : les notes convergent, le tigre nait ------- */
+  // La colonne et le pouls du chant ne s'eteignent pas net au bond : ils
+  // decroissent pendant la naissance. Une coupure a cet endroit se lit comme
+  // un bug d'affichage, pas comme une transition.
+  if (phase === 1) {
+    const r = 1 - easeOut(kp);
+    const gr = g.createLinearGradient(0, Y(hollisY), 0, Y(hollisY - 150));
+    gr.addColorStop(0, 'rgba(53,224,255,' + (.26 * r).toFixed(3) + ')');
+    gr.addColorStop(1, 'rgba(53,224,255,0)');
+    g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = gr;
+    g.fillRect(X(hollisX) - 22 * e, Y(hollisY - 150), 44 * e, 150 * e); g.restore();
+    lueur(g, X(hollisX), Y(hollisY - 30), 46 * e, CYAN, r * .3);
+  }
   if (phase === 1) {
     const k = easeOut(kp);
     for (let i = 0; i < 14; i++) {
@@ -644,7 +664,13 @@ function jouer(g, t, W, H) {
     // presque pas de marge transparente (95 % du cadre est occupe), donc sa
     // largeur de cadre EST sa largeur de bete : on la prend telle quelle.
     const spr = TIGRE_IMG;
-    const w = 26 * 4 * ech * e * 1.35, h = w * (spr.naturalHeight / spr.naturalWidth);
+    // Il s'ETIRE au demarrage puis se cale : la bete s'allonge dans le sens de
+    // la course quand elle accelere. C'est le meme principe que l'ecrasement
+    // d'une balle qui rebondit — sans ca elle demarre comme un decalcomanie
+    // qu'on glisse.
+    const etire = phase === 2 ? 1 + (1 - easeOut(Math.min(1, kp * 3.4))) * .3 : 1;
+    const w = 26 * 4 * ech * e * 1.35 * etire;
+    const h = 26 * 4 * ech * e * 1.35 * (spr.naturalHeight / spr.naturalWidth) / etire;
 
     // la traînee : large, en energie blanche, avec de GROSSES notes qui
     // flottent derriere et s'effacent doucement
@@ -659,22 +685,42 @@ function jouer(g, t, W, H) {
               .04 + q * q * .13);
       }
 
-      // Les CLONES FANTOMES ont ete retires. Espaces de cinq centiemes
-      // d'avance, ils se recouvraient : au lieu d'une trainee de vitesse on
-      // lisait une seule masse collee au tigre. La trainee de lumiere
-      // ci-dessus fait le travail toute seule.
+      // LA REMANENCE DU DASH. Elle avait ete retiree a tort : le reproche
+      // portait sur son ESPACEMENT, pas sur son principe. A cinq centiemes
+      // d'avance les images se recouvraient et faisaient une masse ; a vingt,
+      // on lit des positions successives, donc de la vitesse. Elles
+      // retrecissent en remontant le temps, ce qui donne le sens de la course.
+      for (let i = 4; i >= 1; i--) {
+        const ar = avance - i * .2;
+        if (ar <= .01) continue;
+        const pr = pos(ar);
+        const f = 1 - i / 5;
+        const wr = w * (.52 + f * .48), hr = h * (.52 + f * .48);
+        g.save(); g.imageSmoothingEnabled = false;
+        g.globalAlpha = f * f * .42;
+        if (vis.v === 'silhouette') g.filter = 'brightness(2.6) saturate(0)';
+        if (vis.v === 'esprit') g.globalAlpha *= .6;
+        g.drawImage(spr, X(pr.x) - wr / 2, Y(pr.y) - hr * .62, wr, hr);
+        g.restore();
+      }
 
       // Les notes ACCOMPAGNENT le tigre : elles tournent autour de lui
       // pendant la course. Lachees sur place derriere, elles se lisaient
       // comme un decor qu'on depasse, pas comme le chant qui le porte.
-      // Elles tournent LARGE : a quarante unites elles se posaient en plein
-      // milieu du tigre, qui en fait cent quarante de large. Une note doit
-      // border la bete, pas la couvrir.
-      for (let i = 0; i < 6; i++) {
-        const a = t * 2.6 + i * TAU / 6 + alea(i) * TAU;
-        note(g, X(tx + Math.cos(a) * (96 + alea(i + 3) * 34)),
-             Y(ty - 12 + Math.sin(a) * (40 + alea(i + 8) * 16)),
-             (8 + alea(i + 9) * 4) * e * 4, .8, pop(i + 4));
+      // Elles SUIVENT le tigre au lieu de tourner autour. Une note qui orbite
+      // reste sur lui quoi qu'il arrive — c'est ca qui se lisait comme
+      // « collee ». Chacune est maintenant posee sur le TRAJET, en retard
+      // d'une quantite fixe : elle file derriere lui sur la ligne qu'il a
+      // prise, s'ecarte et s'efface en remontant.
+      for (let i = 0; i < 11; i++) {
+        const retard = .05 + (i / 11) * .66 + alea(i) * .06;
+        const ar = avance - retard;
+        if (ar <= .005) continue;
+        const pn = pos(ar);
+        const f = Math.max(0, 1 - retard / .78);
+        const derive = (alea(i + 30) - .5) * 78 * (1 - f);
+        note(g, X(pn.x), Y(pn.y - 12 + derive - (1 - f) * 26),
+             (7 + alea(i + 9) * 5) * e * 4, f * f * .95, pop(i + 4));
       }
       // une onde au sol a chaque foulee
       for (let n = 0; n < 4; n++) {
@@ -795,6 +841,22 @@ function jouer(g, t, W, H) {
   if (phase >= 3 && (adv === 'stun_attire' || adv === 'attire' || adv === 'contact') && !sortie) {
     fleche(g, vue, ax, advY, hollisX + 44, hollisY, OR);
   }
+
+  /* ---------- le liant entre les phases ---------- */
+  // Un eclair bref a chaque passage. Une coupure nette entre deux phases se
+  // voit comme un saut d'image ; trois images de bloom la couvrent et donnent
+  // du poids au passage. Il part de l'endroit ou la phase suivante commence,
+  // pas du centre de l'ecran.
+  const bornes = [D_CHANT, D_CHANT + D_BOND, D_CHANT + D_BOND + d.dur];
+  const ptFlash = [[hollisX, hollisY - 24], [depart, hollisY], [cible, advY - 14]];
+  bornes.forEach((bt, i) => {
+    const dd = tt - bt;
+    if (dd < 0 || dd > .18) return;
+    const f = 1 - dd / .18;
+    lueur(g, X(ptFlash[i][0]), Y(ptFlash[i][1]), (52 + (1 - f) * 150) * e, BLANC, f * f * .5);
+    anneau(g, X(ptFlash[i][0]), Y(ptFlash[i][1]), (18 + (1 - f) * 130) * e,
+           (7 + (1 - f) * 52) * e, f * .5, i === 2 ? OR : CYAN, 2.5);
+  });
 
   disque(g, disqX, disqY, vue);
   return Math.min(phase, 3);
