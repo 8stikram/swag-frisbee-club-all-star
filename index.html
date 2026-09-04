@@ -643,14 +643,14 @@
   <!-- ============ PAUSE ============ -->
   <div class="screen scr-pause hidden" id="scr-pause">
     <div class="pauseCard">
-      <div class="titleRibbon"><span id="pauseTitre">PAUSE</span></div>
+      <div class="pauseTitle" id="pauseTitre">PAUSE</div>
       <!-- Vide et cachée hors reconnexion : pauseGame() ne la touche jamais,
            seule la coupure réseau la remplit. -->
       <p class="pauseSub hidden" id="pauseSousTitre"></p>
       <div class="menu">
-        <button class="mbtn" data-act="resume">Reprendre</button>
+        <button class="mbtn resume" data-act="resume">Reprendre</button>
         <button class="mbtn" data-act="restart">Recommencer</button>
-        <button class="mbtn c-red" data-act="abandon">Abandonner</button>
+        <button class="mbtn danger" data-act="abandon">Abandonner</button>
         <button class="mbtn" data-act="menu">Menu</button>
         <!-- Cachée hors reconnexion : seule la coupure de l'adversaire, côté
              hôte, la fait apparaître — lui seul peut prendre le relais IA. -->

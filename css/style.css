@@ -9,7 +9,7 @@
   --apane-w:min(17vw,210px);   /* largeur d'un volet admin */
   --ink:#111318;
   --yellow:#f5e63d; --green:#5df08a; --blue:#2f6bff; --red:#e5384f; --gray:#9aa0ac;
-  --pastel:#aecbff;
+  --pastel:#aecbff; --pastel-green:#7bea9e; --pastel-red:#ff8f9a;
   --learn:#d9b8f5; --learn-deep:#8f6fc7;   /* rose-violet pastel : apprentissage */
   --txt:#eaf2ff; --txt-dim:#8fa3cc;
 }
@@ -650,27 +650,54 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 .resetBtn{margin-top:1cqh;font-size:clamp(9px,1.5cqh,12px)}
 
 /* ================= PAUSE ================= */
-.scr-pause{background:rgba(6,8,14,.6)}
+/* Le match figé derrière la pause se floute et s'assombrit légèrement — repris
+   du mockup pause-final.html. Ciblé via :has() plutôt qu'une classe posée en
+   JS : la pause est déjà pilotée par showScreen()/.hidden, pas la peine
+   d'ajouter un second mécanisme rien que pour cet effet. */
+#stage:has(> .scr-pause:not(.hidden)) canvas#game{
+  filter:blur(1.3px) brightness(.82);transition:filter .2s;
+}
+.scr-pause{background:rgba(6,8,14,.5)}
 .pauseCard{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;
-  width:52cqh;display:flex;flex-direction:column;align-items:center;gap:2.8cqh;
+  width:44cqh;display:flex;flex-direction:column;align-items:center;gap:3.4cqh;
 }
-.titleRibbon{
-  background:var(--yellow);border:4px solid var(--ink);border-radius:8px;
-  padding:1.6cqh 3.6cqw;box-shadow:7px 7px 0 var(--ink);
-  clip-path:polygon(4% 0,96% 0,100% 100%,0 100%);
+/* Titre nu à contour noir + légère lueur externe noire, sans cadre autour :
+   le ruban jaune plein cadrait mal et se noyait dans un fond déjà chargé. */
+.pauseTitle{
+  font-family:'Archivo Black',sans-serif;font-size:clamp(38px,11cqh,84px);color:#fff;
+  -webkit-text-stroke:6px var(--ink);paint-order:stroke fill;letter-spacing:.06em;
+  filter:drop-shadow(0 0 10px rgba(0,0,0,.65)) drop-shadow(0 0 22px rgba(0,0,0,.4));
 }
-.titleRibbon span{font-family:'Archivo Black',sans-serif;font-size:clamp(20px,5cqh,38px);color:var(--ink);letter-spacing:.06em}
-.pauseCard .menu{display:flex;flex-direction:column;gap:1.2cqh;width:100%}
-.pauseCard .mbtn{background:var(--pastel)}
-.pauseCard .mbtn:hover{background:var(--ink);color:#fff}
+.pauseCard .menu{display:flex;flex-direction:column;gap:1.3cqh;width:100%}
+.pauseCard .mbtn{
+  background:var(--pastel);filter:drop-shadow(0 0 6px rgba(0,0,0,.4));
+  /* Apparition en cascade à l'ouverture de la pause : simple fondu + léger
+     glissement, pas de rebond. */
+  opacity:0;animation:pauseBtnIn .3s ease-out forwards;
+}
+.pauseCard .mbtn:nth-child(1){animation-delay:.05s}
+.pauseCard .mbtn:nth-child(2){animation-delay:.12s}
+.pauseCard .mbtn:nth-child(3){animation-delay:.19s}
+.pauseCard .mbtn:nth-child(4){animation-delay:.26s}
+.pauseCard .mbtn:nth-child(5){animation-delay:.33s}
+@keyframes pauseBtnIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+/* Couleur = intention (vert reprendre / bleu neutre / rouge danger), en
+   teintes pastel plutôt que vives — posées AVANT :hover pour que le survol
+   (même spécificité, deux classes chacun) gagne bien la bataille de cascade. */
+.pauseCard .mbtn.resume{background:var(--pastel-green)}
+.pauseCard .mbtn.danger{background:var(--pastel-red)}
+.pauseCard .mbtn.c-green{background:var(--pastel-green)}
+.pauseCard .mbtn:hover{
+  background:var(--ink);color:#fff;
+  transform:translate(-3px,-3px) scale(1.09);box-shadow:8px 8px 0 var(--ink);
+}
 /* Message de reconnexion : entre la bannière et les boutons, qui restent
    cachés tant qu'il n'y a rien de sensé à leur faire faire. */
 .pauseSub{
   font-family:'DotGothic16',monospace;font-size:clamp(10px,1.8cqh,15px);
-  color:var(--ink);text-align:center;max-width:44cqh;line-height:1.5;
+  color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.6);text-align:center;max-width:44cqh;line-height:1.5;
 }
-.pauseCard .mbtn.c-green{background:var(--green)}
 
 /* ================= VICTOIRE / DÉFAITE ================= */
 .overScrim{

@@ -61,6 +61,10 @@
      sentait que l'ombre bouger. Le grossissement est aussi beaucoup plus net. */
   .mbtn:hover{background:var(--ink);color:#fff;transform:translate(-3px,-3px) scale(1.09);box-shadow:8px 8px 0 var(--ink)}
 
+  .replay{font-family:'Archivo Black',sans-serif;font-size:12px;color:#c8d4ec;background:#141d30;
+    border:2px solid #263452;border-radius:7px;padding:8px 16px;cursor:pointer}
+  .replay:hover{background:#1c2740}
+
   .legend{max-width:920px;width:94vw;background:#0e1626;border:1px solid #22344f;border-radius:10px;padding:14px 18px;margin-top:6px}
   .legend h2{font-family:'Archivo Black',sans-serif;font-size:13px;color:#ffd23e;margin-bottom:8px}
   .legend p{color:#c8d4ec;font-size:13px;line-height:1.8}
@@ -90,12 +94,26 @@
     </div>
   </div>
 
+  <button class="replay" id="replayBtn">↺ Rejouer l'apparition des boutons</button>
+
   <div class="legend">
     <h2>C'est bon pour toi ?</h2>
     <p>Si oui, je passe ça dans <code>index.html</code> (markup de <code>#scr-pause</code>) et
     <code>style.css</code> (<code>.titleRibbon</code> → texte nu, <code>.pauseCard .mbtn</code> → couleurs
     pastel par intention). Sinon dis-moi ce qui coince.</p>
   </div>
+
+  <script>
+    // Une animation "forwards" ne se rejoue pas toute seule : on retire puis
+    // repose la classe pour forcer le navigateur à relancer le keyframe.
+    document.getElementById('replayBtn').addEventListener('click', () => {
+      document.querySelectorAll('.mbtn').forEach(b => {
+        b.style.animation = 'none';
+        void b.offsetWidth;
+        b.style.animation = '';
+      });
+    });
+  </script>
 
 <script>
 function buildSprite(rows, pal, target) {
