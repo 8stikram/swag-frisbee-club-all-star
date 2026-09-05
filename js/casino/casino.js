@@ -523,8 +523,13 @@ function message(texte) {
 // La carte s'enfonce, éclate en blanc, crache du feu, puis ouvre son jeu. Ce
 // n'est pas qu'un effet : ça occupe l'attente pendant que le module du jeu se
 // charge, et ça laisse le bruitage aller au bout.
+// La carte s'enfonce, éclate en blanc, puis PREND FEU avant d'ouvrir son jeu.
+// L'embrasement n'est pas qu'un effet : il occupe l'attente pendant que le
+// module du jeu se charge, et laisse le bruitage aller au bout.
+const DUREE_FEU = 620;
+
 function allumer(carte, jeu) {
-  if (carte.classList.contains('enfonce')) return;
+  if (carte.classList.contains('enFeu')) return;
   if (!connecte()) { sfx('deny'); message('Connecte-toi : les pièces vivent sur ton compte.'); return; }
   sfx('casinoFeu');
   carte.classList.add('enfonce');
@@ -532,10 +537,15 @@ function allumer(carte, jeu) {
     carte.classList.remove('enfonce');
     carte.classList.add('flash');
     setTimeout(() => carte.classList.remove('flash'), 110);
-    paillettes(carte, 14, ['#ff8a1e', '#ff4d18', '#f6e27a'], -1, 180);
+    carte.classList.add('enFeu');
+    paillettes(carte, 18, ['#ff8a1e', '#ff4d18', '#f6e27a', '#fff3c2'], -1, 200);
+    setTimeout(() => paillettes(carte, 14, ['#ff8a1e', '#ff4d18'], -1, 240), 220);
     $('scr-casino')?.classList.add('secoue');
     setTimeout(() => $('scr-casino')?.classList.remove('secoue'), 240);
-    ouvrirJeu(jeu);
+    setTimeout(() => {
+      carte.classList.remove('enFeu');
+      ouvrirJeu(jeu);
+    }, DUREE_FEU);
   }, 100);
 }
 
@@ -584,8 +594,18 @@ function brancherSurvol(carte) {
     const carte = document.createElement('button');
     carte.className = 'casinoCard';
     carte.dataset.jeu = jeu.id;
+    // Neuf langues de feu, chacune avec sa cadence : réglées ensemble elles
+    // battraient à l'unisson et se liraient comme un clignotant orange.
+    let langues = '';
+    for (let i = 0; i < 9; i++) {
+      langues += `<i style="left:${i * 11 + alea(-3, 3)}%;` +
+        `width:${alea(16, 30)}%;height:${alea(45, 95)}%;` +
+        `animation-duration:${alea(.28, .5).toFixed(2)}s;` +
+        `animation-delay:${(-alea(0, .5)).toFixed(2)}s"></i>`;
+    }
     carte.innerHTML = `<span class="casinoIco">${ICONES[jeu.id]}</span>` +
-                      `<b>${jeu.nom}</b><em>${jeu.desc}</em>`;
+                      `<b>${jeu.nom}</b><em>${jeu.desc}</em>` +
+                      `<span class="casFlammeCarte">${langues}</span>`;
     carte.addEventListener('click', () => allumer(carte, jeu));
     brancherSurvol(carte);
     grille.appendChild(carte);

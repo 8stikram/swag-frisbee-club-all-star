@@ -2781,3 +2781,39 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   transform-origin:bottom center;mix-blend-mode:screen;
   animation:casFlamme ease-in-out infinite alternate;
 }
+
+/* --- La carte prend feu quand on la choisit ---------------------------------
+   C'était l'effet de la première version, perdu en réécrivant le comptoir.
+   Le feu monte du bas de la carte et la dévore vers le haut, la bordure passe
+   au blanc chaud, et le texte rougeoie. Il occupe l'attente pendant que le
+   module du jeu se charge — sans lui, on clique dans le vide. */
+.casFlammeCarte{
+  position:absolute;left:-6%;right:-6%;bottom:-6%;height:0;
+  pointer-events:none;z-index:3;overflow:visible;
+  opacity:0;transition:opacity .12s;
+}
+.casinoCard.enFeu .casFlammeCarte{opacity:1}
+.casFlammeCarte i{
+  position:absolute;bottom:0;
+  border-radius:52% 48% 40% 60% / 76% 72% 28% 24%;
+  background:linear-gradient(180deg,
+    rgba(255,250,220,.95) 0%, rgba(255,215,110,.9) 22%,
+    rgba(255,120,25,.75) 55%, rgba(180,25,5,0) 100%);
+  transform-origin:bottom center;mix-blend-mode:screen;filter:blur(2px);
+  animation:casCarteFlamme .42s ease-out infinite alternate;
+}
+@keyframes casCarteFlamme{
+  0%{transform:scaleY(.45) scaleX(.85) skewX(-9deg);opacity:.55}
+  100%{transform:scaleY(1.25) scaleX(1.05) skewX(10deg);opacity:1}
+}
+/* La carte elle-même chauffe : bordure blanche, halo orange, contenu qui
+   rougeoie. Sans ça, les flammes ont l'air posées devant elle. */
+.casinoCard.enFeu{
+  border-color:#fff3c2 !important;
+  box-shadow:0 0 34px rgba(255,140,30,.95), 0 0 70px rgba(255,80,10,.6),
+             inset 0 -20px 34px rgba(255,110,20,.55) !important;
+  animation:casCarteChauffe .12s steps(2) infinite !important;
+}
+@keyframes casCarteChauffe{0%{filter:brightness(1.1)}100%{filter:brightness(1.28)}}
+.casinoCard.enFeu b{color:#fff3c2;text-shadow:0 0 12px rgba(255,150,40,.95)}
+.casinoCard.enFeu .casinoIco{filter:drop-shadow(0 0 12px rgba(255,170,60,1))}
