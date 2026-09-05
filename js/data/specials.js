@@ -77,6 +77,24 @@ export const WT_SORTIE = .22;     // le tigre s'efface au contact, en ce temps
 export const TIGRE_SPRITE = new Image();
 TIGRE_SPRITE.src = 'assets/img/2hollis-tigre.webp';
 
+// ---------------------------------------------------------------------------
+// PSYCHO-SHELL, l'ultime de Flowser-Two. Reglages arretes dans
+// mockups/flowser-ulti.html : 1A 2ADE 3ABDEG 4ABEGH 5A 6ABC 7A 8A.
+//
+// C'est le seul ultime du jeu qui pose une ZONE QUI DURE, le seul qui draine
+// la jauge d'en face, et le seul qui COUTE quelque chose a son lanceur pendant
+// qu'il agit.
+export const PS_CHANT = .55;    // l'incantation : le cercle de runes s'ecrit
+export const PS_CHUTE = .45;    // la carapace se recompose et tombe
+export const PS_IMPACT = .3;    // l'impact, sans secousse : la camera recule
+export const PS_DUREE = 7;      // la flaque, et le gel de la jauge du lanceur
+export const PS_SLOW = .25;     // ce qu'elle retire a la vitesse de l'adversaire
+export const PS_DRAIN = 2.5;    // %/s de sa jauge, soit 17,5 % sur sept secondes
+export const PS_RAY = .30;      // part de l'aire de la moitie adverse
+// Le rayon GRANDIT avec l'ecart entre les deux joueurs, jusqu'a moitie plus :
+// ca recompense de poser la zone au bon moment plutot que sur lui.
+export const PS_RAY_ECART = .5;
+
 // Registre des attaques spéciales. Pour ajouter une spéciale : une entrée ici,
 // puis `ult:'<clé>'` sur le personnage dans data/characters.js.
 //   needsDisc : refuse le cast si le perso n'a pas le disque
@@ -274,6 +292,44 @@ export const SPECIALS = {
       // (section 7, variante A), pas un tremblement. La secousse est reservee
       // au CONTACT, ou elle veut dire quelque chose.
       sfx('whiteTiger'); comment('IL CHANTE !!', undefined, 'ultimate');
+    }
+  },
+
+  psychoshell: {
+    name: 'PSYCHO-SHELL',
+    desc: 'Une carapace psychique s\'ecrase et laisse une zone qui ralentit l\'adversaire et vide sa jauge.',
+    // Il part meme disque en main : c'est une pose de zone, pas un tir.
+    needsDisc: false,
+    cast(p) {
+      p.meter = 0; p.stats.specials++;
+      const dir = p.side === 1 ? 1 : -1;
+      // PLACEMENT LIBRE A LA SOURIS, borne au camp d'en face. Sans cette borne
+      // il pourrait se poser la zone sur lui-meme pour couvrir son propre but,
+      // ce qui n'a aucun sens pour un ultime qui ne genera que l'adversaire.
+      // Le milieu se recalcule : ce module importe COURT mais pas CX.
+      const mid = (COURT.left + COURT.right) / 2;
+      const minX = dir > 0 ? mid + 60 : COURT.left + 80;
+      const maxX = dir > 0 ? COURT.right - 80 : mid - 60;
+      const foe = p.foe;
+      // L'IA n'a pas de souris : elle vise l'adversaire, decale devant lui.
+      const vx = p.human ? Mouse.x : (foe ? foe.x + dir * 40 : (minX + maxX) / 2);
+      const vy = p.human ? Mouse.y : (foe ? foe.y : CY);
+      const ecart = foe ? Math.min(1, Math.abs(foe.x - p.x) / ((COURT.right - COURT.left) * .8)) : .5;
+      const part = PS_RAY * (1 + ecart * PS_RAY_ECART);
+      const r = Math.sqrt(part * ((COURT.right - COURT.left) / 2)
+                          * (COURT.bottom - COURT.top) / Math.PI);
+      G.psycho = {
+        owner: p, t: 0, phase: 0,
+        x: clamp(vx, minX, maxX),
+        y: clamp(vy, COURT.top + r * .4, COURT.bottom - r * .4),
+        r
+      };
+      G.banner = { text: 'PSYCHO-SHELL !!', color: '#8b4fd6', t: 0, dur: 1.3 };
+      // Pas de secousse au cast NI a l'impact : la camera recule au lieu de
+      // trembler. C'est le seul ultime du jeu qui fait ca, et c'est voulu —
+      // ce qui compte n'est pas le point de chute mais l'etendue de ce qui
+      // vient d'etre pose.
+      sfx('psycho'); comment('LA CARAPACE TOMBE !!', undefined, 'ultimate');
     }
   },
 

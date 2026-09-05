@@ -57,6 +57,17 @@ export const SKINS = {
   yuki: [
     { id: 'doudoune', nom: 'DOUDOUNE 雪', defaut: true }
   ],
+  flowser: [
+    { id: 'psychique', nom: 'PSYCHIQUE', defaut: true },
+    { id: 'brasier', nom: 'BRASIER', cond: 'victoires', seuil: 3,
+      texte: 'Gagner 3 matchs avec Flowser-Two' },
+    { id: 'abysse', nom: 'ABYSSE', cond: 'victoires', seuil: 10,
+      texte: 'Gagner 10 matchs avec Flowser-Two' },
+    { id: 'venin', nom: 'VENIN', cond: 'attrapesMatch', seuil: 12,
+      texte: 'Attraper 12 disques en un seul match' },
+    { id: 'albinos', nom: 'ALBINOS', cond: 'victoiresDifficile', seuil: 3,
+      texte: 'Gagner 3 matchs en difficulté Difficile' }
+  ],
   hollis: [
     { id: 'platine', nom: 'PLATINE', defaut: true },
     { id: 'corbeau', nom: 'CORBEAU' },

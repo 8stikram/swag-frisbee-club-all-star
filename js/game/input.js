@@ -326,7 +326,9 @@ export function updatePlayerHuman(p, dt) {
   const l = Math.hypot(mx, my);
   if (l) { mx /= l; my /= l; }
   p.face = (c.visee.x >= 0) ? 1 : -1;
-  const spd = p.speed * (p.charging ? .55 : 1);
+  // `ralenti` vient de la zone de Psycho-Shell : elle retire un quart de sa
+  // vitesse tant qu'il a les pieds dedans.
+  const spd = p.speed * (p.charging ? .55 : 1) * (1 - (p.ralenti || 0));
   const tx = mx * spd, ty = my * spd;
   const rate = l ? 13 : 5;
   p.vx = approach(p.vx, tx, rate, dt);
@@ -361,7 +363,9 @@ export function updatePlayer2(dt) {
   let x = c.dep.x, y = c.dep.y;
   const l = Math.hypot(x, y); if (l) { x /= l; y /= l; }
   p.face = (c.visee.x >= 0) ? 1 : -1;
-  const spd = p.speed * (p.charging ? .55 : 1);
+  // `ralenti` vient de la zone de Psycho-Shell : elle retire un quart de sa
+  // vitesse tant qu'il a les pieds dedans.
+  const spd = p.speed * (p.charging ? .55 : 1) * (1 - (p.ralenti || 0));
   const tx = x * spd, ty = y * spd;
   const rate = l ? 13 : 5;
   p.vx = approach(p.vx, tx, rate, dt);
@@ -431,7 +435,9 @@ export function integratePlayer(p, dt) {
   // distance fixe. À la fin on la coupe net : sans ça elle décroît en douceur et
   // ajoute plus de 200 px de glissade, soit près du double de la distance voulue.
   if (p.dashT > 0) {
-    const v = DASH_DIST / DASH_TIME;
+    // Le dash reste AUTORISE dans la zone — c'est ce que demande le cahier
+    // des charges — mais il est ralenti lui aussi, donc il porte moins loin.
+    const v = DASH_DIST / DASH_TIME * (1 - (p.ralenti || 0));
     p.dashV.x = p.dashDir.x * v; p.dashV.y = p.dashDir.y * v;
     p.dashEnding = true;
   } else if (p.dashEnding) {

@@ -17,6 +17,7 @@ import { lancerChapitre } from './tutoriel.js';
 import { skinActif } from '../data/skins-perso.js';
 import { ouvrirPanneauSkins, brancherSkins } from './skins-ui.js';
 import { ouvrirEnLigne } from './online-ui.js';
+import { ouvrirCasino } from '../casino/casino.js';
 import {
   annoncerPause, annoncerAbandon, quandPause, quandAbandon, arreterPartieReseau,
   demanderRevanche, demanderChangementPerso, quandRevanche, quandChangementPerso,
@@ -1157,6 +1158,7 @@ export function doAct(act) {
     // personnage. L'inverse obligeait a picker a gauche pour jouer a droite.
     case 'online': sfx('select'); modeJ2J = false; modeEnLigne = false; musiqueDeMenu(); ouvrirEnLigne(); break;
     case 'learn': sfx('select'); musiqueDeMenu(); ouvrirApprentissage(); break;
+    case 'casino': sfx('select'); musiqueDeMenu(); ouvrirCasino(); break;
     case 'training': sfx('select'); jouerMusiqueEntrainement(); lancerEntrainement(); break;
     case 'tuto': sfx('select'); musiqueDeMenu(); ouvrirChapitres(); break;
     // Refuser le tutoriel au premier lancement ne doit se demander qu'une fois.

@@ -118,7 +118,7 @@ export function makePlayer(ck, side, human, diffIdx) {
     vx: 0, vy: 0, face: side === 1 ? 1 : -1,
     holding: false, charging: false, wasCharging: false, charge: 0, fullFlash: false,
     throwCd: 0, throwPoseT: 0, lunge: 0, lungeCd: 0, dashCd: 0, dashV: { x: 0, y: 0 },
-    walk: 0, moving: false, meter: 0, score: 0, speed: c.speed, stun: 0,
+    walk: 0, moving: false, meter: 0, score: 0, speed: c.speed, stun: 0, ralenti: 0,
     ghosts: [], ghostT: 0, forceFr: null,
     // buts / z5 / z3 / dashCatches alimentent l'écran de fin de match.
     // perfects et dashThrows servent aux conditions de déblocage des skins.

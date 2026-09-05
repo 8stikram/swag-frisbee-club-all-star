@@ -85,6 +85,10 @@
           <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5c3-1.6 6-1.6 9 0v13c-3-1.6-6-1.6-9 0z"/><path d="M21 6.5c-3-1.6-6-1.6-9 0v13c3-1.6 6-1.6 9 0z"/></svg></span>
           ENTRAÎNEMENT
         </button>
+        <button class="mbtn c-casino" data-act="casino">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10c0-3 3.5-6 8-6s8 3 8 6"/><path d="M6 7l-1.5-4M18 7l1.5-4"/><circle cx="9" cy="13" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="13" r="1.4" fill="currentColor" stroke="none"/><path d="M8 18c1.4 1.6 6.6 1.6 8 0"/></svg></span>
+          CASINO
+        </button>
         <button class="mbtn" data-act="options">
           <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></span>
           OPTIONS
@@ -271,6 +275,222 @@
     </div>
   </div>
 
+  <!-- ============ CASINO ============
+       Écran à part, volontairement sombre : le reste du jeu est clair et
+       cartoon, le casino est l'arrière-salle. Le croupier est un diable, et
+       chaque bloc prend feu avant d'ouvrir son jeu. -->
+  <div class="screen scr-casino hidden" id="scr-casino">
+    <div class="bg bg-casino"><div class="casinoEmbers"></div></div>
+    <div class="titlebar"><span>LE CASINO DU DIABLE</span></div>
+    <div class="casinoSolde" id="casinoSolde"></div>
+
+    <div class="casinoWrap">
+      <div class="devilBox">
+        <!-- Le croupier. Tout est vectoriel et animé par CSS (yeux, souffle,
+             cartes) : un sprite en images aurait figé le regard, et c'est le
+             regard qui fait le personnage. -->
+        <svg class="devilSvg" viewBox="0 0 360 300" aria-hidden="true">
+          <defs>
+            <linearGradient id="dvSkin" x1=".2" y1="0" x2=".85" y2="1">
+              <stop offset="0" stop-color="#c8474f"/><stop offset=".5" stop-color="#94202f"/>
+              <stop offset="1" stop-color="#590d1a"/>
+            </linearGradient>
+            <linearGradient id="dvHorn" x1=".1" y1="0" x2=".8" y2="1">
+              <stop offset="0" stop-color="#5f5866"/><stop offset=".45" stop-color="#2b2530"/>
+              <stop offset="1" stop-color="#110e16"/>
+            </linearGradient>
+            <linearGradient id="dvVest" x1=".2" y1="0" x2=".8" y2="1">
+              <stop offset="0" stop-color="#363644"/><stop offset=".55" stop-color="#1b1b25"/>
+              <stop offset="1" stop-color="#09090f"/>
+            </linearGradient>
+            <linearGradient id="dvShirt" x1=".1" y1="0" x2=".7" y2="1">
+              <stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#e6ebf6"/>
+              <stop offset="1" stop-color="#b4bccf"/>
+            </linearGradient>
+            <linearGradient id="dvGold" x1="0" y1="0" x2=".3" y2="1">
+              <stop offset="0" stop-color="#ffeb9c"/><stop offset=".45" stop-color="#eab73f"/>
+              <stop offset="1" stop-color="#9d6a15"/>
+            </linearGradient>
+            <radialGradient id="dvEyeGlow">
+              <stop offset="0" stop-color="#fff6c2"/>
+              <stop offset=".35" stop-color="#ff8a1e" stop-opacity=".9"/>
+              <stop offset="1" stop-color="#ff5a0a" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="dvCardGlow">
+              <stop offset="0" stop-color="#e3c8ff" stop-opacity=".95"/>
+              <stop offset="1" stop-color="#a855f7" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="dvSmoke" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="7"/>
+            </filter>
+            <!-- Les stries des cornes sont découpées à la forme de la corne :
+                 tracées librement, leurs extrémités débordaient dans le vide. -->
+            <clipPath id="dvHornClip">
+              <path d="M162 50 C122 32 78 44 64 76 C50 108 58 144 92 166 C84 148 76 134 76 120 C68 100 74 84 92 70 C110 54 140 52 156 66 Z"/>
+              <path d="M198 50 C238 32 282 44 296 76 C310 108 302 144 268 166 C276 148 284 134 284 120 C292 100 286 84 268 70 C250 54 220 52 204 66 Z"/>
+            </clipPath>
+          </defs>
+
+          <!-- Volutes violettes, derrière tout le reste -->
+          <g filter="url(#dvSmoke)" opacity=".5" class="devilFumee" fill="none" stroke-linecap="round">
+            <path d="M64 126 C28 104 38 56 78 52 C110 49 122 80 100 94 C86 103 68 94 74 82"
+                  stroke="#8b3df0" stroke-width="13"/>
+            <path d="M296 126 C332 104 322 56 282 52 C250 49 238 80 260 94 C274 103 292 94 286 82"
+                  stroke="#7526e0" stroke-width="13"/>
+            <path d="M306 214 C344 208 352 172 324 158" stroke="#9b4dff" stroke-width="10"/>
+            <path d="M54 220 C16 212 10 176 38 164" stroke="#9b4dff" stroke-width="10"/>
+          </g>
+
+          <!-- Buste : bras, torse, gilet -->
+          <g class="devilBuste">
+            <!-- bras droit (le nôtre : gauche), posé sur le comptoir -->
+            <path d="M142 208 C118 214 103 236 97 262 C94 278 101 290 116 292 L140 292 L136 262 L146 230 Z" fill="url(#dvShirt)"/>
+            <path d="M98 258 C96 276 104 290 122 294 L152 296 L148 274 C138 264 118 256 98 258 Z" fill="url(#dvSkin)"/>
+            <rect x="94" y="248" width="46" height="15" rx="7" fill="#f2f5fb" transform="rotate(-9 117 255)"/>
+            <!-- bras gauche (le nôtre : droite), levé, cartes en main -->
+            <path d="M218 206 C242 212 258 232 266 256 C271 270 264 281 250 282 C238 283 231 275 230 263 L221 230 Z" fill="url(#dvShirt)"/>
+            <path d="M250 272 C262 250 272 220 275 194 L253 190 C250 216 244 244 236 262 Z" fill="url(#dvSkin)"/>
+            <rect x="228" y="252" width="44" height="15" rx="7" fill="#e8edf7" transform="rotate(14 250 259)"/>
+            <!-- torse : chemise, gilet, bretelles -->
+            <path d="M180 196 L210 212 L210 300 L150 300 L150 212 Z" fill="url(#dvShirt)"/>
+            <path d="M156 202 L166 202 L178 300 L166 300 Z" fill="url(#dvGold)"/>
+            <path d="M204 202 L194 202 L182 300 L194 300 Z" fill="url(#dvGold)"/>
+            <rect x="160" y="252" width="16" height="13" rx="2" fill="#c58f22"/>
+            <rect x="184" y="252" width="16" height="13" rx="2" fill="#c58f22"/>
+            <path d="M150 200 C128 208 116 226 112 250 L108 300 L152 300 L162 226 Z" fill="url(#dvVest)"/>
+            <path d="M210 200 C232 208 244 226 248 250 L252 300 L208 300 L198 226 Z" fill="url(#dvVest)"/>
+            <circle cx="205" cy="258" r="3.4" fill="#3d3d4c"/><circle cx="207" cy="282" r="3.4" fill="#3d3d4c"/>
+            <!-- Le cou appartient au buste, pas à la tête : dessiné avec elle,
+                 il passait PAR-DESSUS le col et se lisait comme un tube posé
+                 sur la chemise. Ici le col vient le recouvrir. -->
+            <path d="M165 156 L163 200 C161 214 169 224 180 224 C191 224 199 214 197 200 L195 156 Z" fill="url(#dvSkin)"/>
+            <path d="M164 170 L196 170 L195 188 C186 197 173 194 164 184 Z" fill="#000" opacity=".26"/>
+            <!-- col et nœud papillon -->
+            <path d="M159 194 L180 218 L159 222 L147 202 Z" fill="url(#dvShirt)"/>
+            <path d="M201 194 L180 218 L201 222 L213 202 Z" fill="url(#dvShirt)"/>
+            <path d="M180 208 L156 196 L154 221 L180 213 Z" fill="#d81f36"/>
+            <path d="M180 208 L204 196 L206 221 L180 213 Z" fill="#d81f36"/>
+            <rect x="173" y="203" width="14" height="14" rx="4" fill="#a5142a"/>
+          </g>
+
+          <!-- Tête. Repères posés comme sur un visage humain, dans cet ordre :
+               ligne des sourcils à 42 % de la hauteur, yeux à 50 %, base du nez
+               à 72 %, bouche à 83 %, menton en bas. Les oreilles vont du sourcil
+               à la base du nez. Tout le reste se place là-dessus. -->
+          <g class="devilTete">
+            <!-- oreilles pointues, du sourcil à la base du nez -->
+            <path d="M140 100 C132 92 122 78 121 66 C131 69 142 80 148 94 L149 122 C144 118 141 110 140 100 Z" fill="url(#dvSkin)"/>
+            <path d="M220 100 C228 92 238 78 239 66 C229 69 218 80 212 94 L211 122 C216 118 219 110 220 100 Z" fill="url(#dvSkin)"/>
+            <path d="M180 46 C207 46 221 68 222 96 C223 124 214 148 200 160 C193 168 186 174 180 182 C174 174 167 168 160 160 C146 148 137 124 138 96 C139 68 153 46 180 46 Z" fill="url(#dvSkin)"/>
+            <path d="M222 96 C223 124 214 148 200 160 C193 168 186 174 180 182 C189 168 199 148 206 124 C211 106 213 88 212 74 C218 80 221 86 222 96 Z" fill="#000" opacity=".13"/>
+            <!-- Cornes de bélier. La pointe est un vrai angle : les deux bords
+                 arrivent au même point avec des directions opposées. -->
+            <g fill="url(#dvHorn)">
+              <path d="M162 50 C122 32 78 44 64 76 C50 108 58 144 92 166 C84 148 76 134 76 120 C68 100 74 84 92 70 C110 54 140 52 156 66 Z"/>
+              <path d="M198 50 C238 32 282 44 296 76 C310 108 302 144 268 166 C276 148 284 134 284 120 C292 100 286 84 268 70 C250 54 220 52 204 66 Z"/>
+            </g>
+            <g clip-path="url(#dvHornClip)" stroke="#0d0b12" stroke-width="2.6" fill="none"
+               opacity=".45" stroke-linecap="round">
+              <path d="M142 42 C138 50 137 57 139 65"/><path d="M114 44 C108 53 107 62 110 71"/>
+              <path d="M90 56 C82 66 80 77 83 87"/><path d="M72 78 C64 90 64 103 70 113"/>
+              <path d="M66 110 C62 126 68 142 80 154"/>
+              <path d="M218 42 C222 50 223 57 221 65"/><path d="M246 44 C252 53 253 62 250 71"/>
+              <path d="M270 56 C278 66 280 77 277 87"/><path d="M288 78 C296 90 296 103 290 113"/>
+              <path d="M294 110 C298 126 292 142 280 154"/>
+            </g>
+            <!-- cheveux plaqués en arrière -->
+            <path d="M180 44 C209 44 222 66 222 94 C219 82 213 74 205 71 C196 68 188 72 183 77 C182 79 181 80 180 81 C179 80 178 79 177 77 C172 72 164 68 155 71 C147 74 141 82 138 94 C138 66 151 44 180 44 Z" fill="#17131b"/>
+            <path d="M154 53 C170 42 196 42 211 55 C195 48 169 48 154 53 Z" fill="#251e2c"/>
+            <!-- Petites cornes frontales, incurvées vers le haut. Elles sortent
+                 juste sous la naissance des cheveux : plus haut elles auraient
+                 poussé dans la chevelure, plus bas sur le front. -->
+            <g fill="url(#dvHorn)">
+              <path d="M152 78 C146 64 148 50 156 40 C160 52 159 64 164 76 Z"/>
+              <path d="M208 78 C214 64 212 50 204 40 C200 52 201 64 196 76 Z"/>
+            </g>
+            <!-- sourcils sur la ligne du sourcil, yeux juste dessous -->
+            <path d="M150 98 L177 107 L175 115 L149 106 Z" fill="#17131b"/>
+            <path d="M210 98 L183 107 L185 115 L211 106 Z" fill="#17131b"/>
+            <g class="devilEye">
+              <ellipse cx="164" cy="118" rx="17" ry="13" fill="url(#dvEyeGlow)"/>
+              <ellipse cx="196" cy="118" rx="17" ry="13" fill="url(#dvEyeGlow)"/>
+            </g>
+            <path d="M153 118 C158 111 169 110 175 117 C169 124 158 124 153 118 Z" fill="#ffc24a"/>
+            <path d="M207 118 C202 111 191 110 185 117 C191 124 202 124 207 118 Z" fill="#ffc24a"/>
+            <ellipse cx="165" cy="117" rx="3.2" ry="5.4" fill="#360606"/>
+            <ellipse cx="195" cy="117" rx="3.2" ry="5.4" fill="#360606"/>
+            <!-- nez : arête depuis le front, base au tiers bas du visage -->
+            <path d="M180 122 L174 138 C177 141 183 141 186 138 Z" fill="#000" opacity=".2"/>
+            <!-- Moustache sous le nez, bouche sous la moustache, crocs dans la
+                 bouche : c'est cet ordre-là qui empêche la moustache de manger
+                 les dents. -->
+            <path d="M150 140 C162 142 172 144 180 147 C188 144 198 142 210 140 C208 148 202 154 194 155 C188 156 183 154 180 153 C177 154 172 156 166 155 C158 154 152 148 150 140 Z" fill="#17131b"/>
+            <!-- Bouche ouverte en coin, plus haute à droite. Les crocs pendent
+                 de la lèvre supérieure, DANS l'ouverture : posés sur la peau,
+                 ils passaient pour des défenses. -->
+            <path d="M161 155 C175 158 194 156 207 150 C205 170 186 181 172 173 C166 169 162 161 161 155 Z" fill="#2b0509"/>
+            <path d="M167 158 L174 159 L170 168 Z" fill="#fff"/>
+            <path d="M180 159 L187 158 L183 169 Z" fill="#fff"/>
+            <path d="M195 155 L201 153 L199 163 Z" fill="#fff"/>
+            <!-- Bouc : il commence juste sous la lèvre, habille la pointe du
+                 menton et s'arrête au-dessus du col. Détaché de la bouche, il
+                 flottait au milieu du menton comme une barbe collée. -->
+            <path d="M171 172 C176 169 184 169 189 172 C192 179 192 187 189 192 C186 196 183 199 180 202 C177 199 174 196 171 192 C168 187 168 179 171 172 Z" fill="#1c1622"/>
+            <!-- Liseré clair sur le haut du bouc : sans lui, la bouche sombre et
+                 la barbe se collent en une seule tache. -->
+            <path d="M171 172 C176 169 184 169 189 172" stroke="#5a4262" stroke-width="1.5" fill="none" opacity=".8"/>
+          </g>
+
+          <!-- Main levée et cartes lumineuses. Ordre imposé par la prise :
+               paume, puis cartes posées dedans, puis doigts par-dessus —
+               dessinées derrière la paume, les cartes flottaient à côté. -->
+          <g class="devilCartes">
+            <ellipse cx="270" cy="164" rx="48" ry="46" fill="url(#dvCardGlow)"/>
+            <path d="M250 190 C244 175 252 162 266 162 C281 162 289 174 284 189 C280 199 255 200 250 190 Z" fill="url(#dvSkin)"/>
+            <!-- As de trèfle et roi de carreau. Les figures sont placées haut :
+                 les doigts couvrent le bas des cartes, c'est le tiers supérieur
+                 qui doit porter l'information. -->
+            <g transform="translate(268 172)">
+              <g transform="rotate(-17)"><rect x="-21" y="-32" width="28" height="44" rx="3.5" fill="#fdfdff" stroke="#b9a6d8" stroke-width="1.2"/>
+                <text x="-18" y="-21" font-family="Georgia,serif" font-size="10" font-weight="bold" fill="#15151c">A</text>
+                <g fill="#15151c" transform="translate(-6 -18)">
+                  <circle cx="0" cy="-4.4" r="3.2"/><circle cx="-3.6" cy="1.4" r="3.2"/><circle cx="3.6" cy="1.4" r="3.2"/>
+                  <path d="M-1.7 3.2 L1.7 3.2 L2.8 9 L-2.8 9 Z"/>
+                </g></g>
+              <g transform="rotate(9)"><rect x="-5" y="-35" width="28" height="44" rx="3.5" fill="#fff" stroke="#c9b6e6" stroke-width="1.2"/>
+                <text x="-2" y="-24" font-family="Georgia,serif" font-size="10" font-weight="bold" fill="#c81a2e">K</text>
+                <path d="M4 -22 L7 -18 L4 -14 L1 -18 Z" fill="#c81a2e"/>
+                <path d="M13 -24 L19.5 -15 L13 -6 L6.5 -15 Z" fill="#c81a2e"/></g>
+            </g>
+            <g fill="url(#dvSkin)" stroke="#5d0f1c" stroke-width="1.1">
+              <rect x="251" y="172" width="11" height="24" rx="5.5" transform="rotate(-15 256 184)"/>
+              <rect x="263" y="169" width="11" height="26" rx="5.5" transform="rotate(-6 268 182)"/>
+              <rect x="275" y="171" width="11" height="24" rx="5.5" transform="rotate(4 280 183)"/>
+            </g>
+            <path d="M249 186 C252 178 262 176 272 179 C280 181 283 187 280 192 C274 198 254 196 249 186 Z" fill="url(#dvSkin)"/>
+          </g>
+        </svg>
+        <div class="devilBulle">Tes pièces dorment. Réveillons-les.</div>
+      </div>
+
+      <!-- Le comptoir : les quatre jeux y sont encastrés comme des boutons -->
+      <div class="casinoComptoir">
+        <div class="casinoJeux" id="casinoJeux"></div>
+      </div>
+    </div>
+
+    <!-- Pièces d'or et runes vertes en orbite, purement décoratives -->
+    <div class="casinoAura" aria-hidden="true">
+      <span class="casinoPiece p1"></span><span class="casinoPiece p2"></span>
+      <span class="casinoPiece p3"></span><span class="casinoPiece p4"></span>
+      <span class="casinoPiece p5"></span>
+      <span class="casinoRune r1">♠</span><span class="casinoRune r2">♦</span>
+      <span class="casinoRune r3">♣</span>
+    </div>
+
+    <div class="casinoMsg hidden" id="casinoMsg"></div>
+  </div>
+
   <!-- ============ SÉLECTION DES PERSONNAGES ============ -->
   <div class="screen scr-select hidden" id="scr-select">
     <div class="bg bg-select">
@@ -374,8 +594,9 @@
     <div class="onChoix hidden" id="onChoixArene">
       <!-- On choisit son personnage avant d'entrer : chacun le sien, et il
            part avec l'identite au moment de se connecter. -->
+      <div class="onVedette gauche" id="persoGauche"></div>
+      <div class="onVedette droite" id="persoDroite"></div>
       <button class="onLigne grand" id="onHeberger">HÉBERGER</button>
-      <div class="persoChoix" id="persoChoix"></div>
       <button class="onLigne grand" id="onRejoindre">REJOINDRE</button>
       <button class="onLigne bas" id="onRetourMenu">RETOUR</button>
     </div>

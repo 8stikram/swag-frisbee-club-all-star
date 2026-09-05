@@ -194,6 +194,13 @@ export function sfx(n, venuDuReseau) {
     case 'full': beep(700, 1400, .16, 'square', .14); beep(1400, 1400, .08, 'sine', .1, .1); break;
     case 'superthrow': noise(.2, .2, 2000); beep(200, 900, .16, 'sawtooth', .12); beep(900, 400, .1, 'square', .08, .05); break;
     case 'perfect': [990, 1320, 1760].forEach((f, i) => beep(f, f, .1, 'square', .13, i * .05)); break;
+    // PSYCHO-SHELL : grave et mineral, pas une explosion. Un bourdon qui
+    // monte, puis un craquement de verre.
+    case 'psycho':
+      beep(70, 240, .55, 'triangle', .16);
+      beep(880, 620, .35, 'sine', .09, .18);
+      noise(.35, .10, 2400);
+      break;
     case 'roar': beep(90, 55, .5, 'sawtooth', .22); noise(.5, .16, 300); break;
     // Six Paths : une montée d'énergie, pas un cri de bête. Deux sinus qui
     // montent à la quinte donnent l'afflux, un souffle aigu remplace le
@@ -216,6 +223,10 @@ export function sfx(n, venuDuReseau) {
     case 'skid': noise(.16, .07, 3200); noise(.12, .05, 1600, .03); break;
     // Claquement sec du disque qui revient en main à la fin d'une feinte.
     case 'swish': noise(.07, .06, 5200); beep(1500, 900, .06, 'sine', .06); break;
+    // Embrasement d'un bloc du casino : le souffle d'abord, la déflagration
+    // juste derrière — dans l'autre sens on entend un boum suivi d'un courant
+    // d'air, et ça ne prend pas feu, ça s'éteint.
+    case 'casinoFeu': noise(.26, .16, 2400); beep(200, 55, .34, 'sawtooth', .15, .05); break;
     // Cloche de Minuit : un vrai échantillon, avec repli sur le synthé si le
     // fichier n'a pas encore fini de charger.
     case 'bell':

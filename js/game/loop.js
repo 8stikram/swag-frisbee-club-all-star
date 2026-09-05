@@ -8,7 +8,7 @@ import { doThrowHuman } from './actions.js';
 import { majCommandes, appliquerActions } from './commandes.js';
 import { updateAI } from './ai.js';
 import { updateDisc, updateDecoys } from './disc.js';
-import { updateLeg, updateBell, updateHack, updateRafale, updateGrappin, updateChien, updateRuee, updateTigre, launchCine } from './specials.js';
+import { updateLeg, updateBell, updateHack, updateRafale, updateGrappin, updateChien, updateRuee, updateTigre, updatePsycho, launchCine } from './specials.js';
 import { updateDesert } from './desert.js';
 import { updateBrume } from './brume.js';
 import { SIX_ORBES } from '../data/specials.js';
@@ -151,9 +151,18 @@ export function update(dt) {
   updateChien(wdt);
   updateRuee(wdt);
   updateTigre(wdt);
+  updatePsycho(wdt);
   updateDesert(wdt);
   updateBrume(wdt);
-  for (const p of [G.p1, G.p2]) p.meter = clamp(p.meter + (G.state === 'play' ? 1.5 * METER_GAIN : 0) * wdt, 0, 100);
+  for (const p of [G.p1, G.p2]) {
+    // LE GEL DE PSYCHO-SHELL : tant que sa zone vit, son lanceur ne charge
+    // plus. C'est la regle anti-spam, et c'est une contrainte qu'il
+    // s'impose — il doit donc choisir le bon moment pour la poser plutot
+    // que de la relancer des qu'elle est prete.
+    const gele = G.psycho && G.psycho.owner === p;
+    const gain = (G.state === 'play' && !gele) ? 1.5 * METER_GAIN : 0;
+    p.meter = clamp(p.meter + gain * wdt, 0, 100);
+  }
   switch (G.state) {
     case 'countdown': {
       G.cdT -= dt;

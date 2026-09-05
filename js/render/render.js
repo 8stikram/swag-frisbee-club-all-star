@@ -8,7 +8,8 @@ import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap, getMapId, setMapId } from '../data/maps.js';
 import { drawCourtRaccoon, drawBrumeRaccoon } from './terrains/raccoon.js';
 import { getSkinId, drawSkinDisc, deformationDisque, tracerContour, teinteDeCharge, chaufferCouleur, avecAlpha } from '../data/skins.js';
-import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE, CHIEN_VIDEO, CHIEN_DUREE, RUEE_N, TIGRE_SPRITE, WT_CHANT, WT_SORTIE, WT_STUN } from '../data/specials.js';
+import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE, CHIEN_VIDEO, CHIEN_DUREE, RUEE_N, TIGRE_SPRITE, WT_CHANT, WT_SORTIE, WT_STUN,
+         PS_CHANT, PS_CHUTE, PS_IMPACT, PS_DUREE } from '../data/specials.js';
 import { CHARS } from '../data/characters.js';
 import { Reglages } from '../data/disc-fx.js';
 import { rayonSables, centreSables, densiteTempete } from '../game/desert.js';
@@ -2632,6 +2633,341 @@ function wtEtincelle(x, y, t, a, coul) {
   ctx.moveTo(x, y - t); ctx.lineTo(x, y + t); ctx.stroke(); ctx.restore();
 }
 
+/* PSYCHO-SHELL. Quatre temps, et trois partis pris qui viennent tous de la
+   collision avec LA JAMBE DE MAMAN — même squelette, temps pour temps : ombre
+   au sol, chute, impact secoué. La différence de fond tient en une phrase : la
+   Jambe est un ÉVÉNEMENT, Psycho-Shell est un LIEU.
+
+     LE TÉLÉGRAPHE S'ÉCRIT. Les runes apparaissent une par une le long du
+     cercle, dans le sens des aiguilles, avec une étoile vive au bout de la
+     ligne qui se dessine. L'ombre de la Jambe grandit et bat vite ; ici on lit
+     un compte à rebours, pas une masse qui approche. Sans le point de lumière
+     au bout, on ne voit pas le geste, juste le résultat qui grandit.
+
+     LA CARAPACE SE RECOMPOSE. Les éclats arrivent des bords et SPIRALENT vers
+     le point de rendez-vous : une convergence droite se lit comme une explosion
+     à l'envers, une spirale se lit comme quelque chose qu'on rassemble.
+
+     PAS DE SECOUSSE. La caméra ne tremble pas. Ce qui compte à l'impact n'est
+     pas le point de chute mais l'étendue de ce qui vient d'être posé — un
+     tremblement dirait « ça a frappé », il faut dire « ça s'installe ».
+     C'est le seul ultime du jeu qui renonce au screen shake. */
+const PS_VIOLET = '#8b4fd6', PS_LILAS = '#efe4fa', PS_CYAN = '#7ef0ff';
+const psAlea = i => { const v = Math.sin(i * 12.9898) * 43758.5453; return v - Math.floor(v); };
+
+function psLueur(x, y, r, coul, a) {
+  if (a <= 0 || r <= 0) return;
+  const d = ctx.createRadialGradient(x, y, 0, x, y, r);
+  d.addColorStop(0, coul); d.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+  ctx.fillStyle = d; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); ctx.restore();
+}
+// Une étoile à quatre branches avec son cœur. Elle s'allume UNE fois et
+// s'éteint : une étincelle qui clignote en boucle se lit comme un défaut
+// d'affichage, une étoile qui naît et meurt se lit comme de la magie.
+function psEtoile(x, y, t, a, coul) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+  ctx.fillStyle = coul; ctx.beginPath();
+  ctx.moveTo(x, y - t); ctx.quadraticCurveTo(x, y, x + t, y);
+  ctx.quadraticCurveTo(x, y, x, y + t); ctx.quadraticCurveTo(x, y, x - t, y);
+  ctx.quadraticCurveTo(x, y, x, y - t); ctx.fill();
+  ctx.globalAlpha = a * .8; ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(x, y, t * .18, 0, TAU); ctx.fill(); ctx.restore();
+}
+function psAnneau(x, y, rx, ry, a, coul, ep) {
+  if (a <= 0 || rx <= 0) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a;
+  ctx.strokeStyle = coul; ctx.lineWidth = ep;
+  ctx.beginPath(); ctx.ellipse(x, y, rx, Math.max(1, ry), 0, 0, TAU); ctx.stroke(); ctx.restore();
+}
+// Les runes le long du cercle. `k` est la part déjà écrite.
+function psRunes(x, y, rx, ry, k, a) {
+  const N = 14;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = a * .55; ctx.strokeStyle = PS_VIOLET; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, -Math.PI / 2, -Math.PI / 2 + TAU * k);
+  ctx.stroke();
+  for (let i = 0; i < N; i++) {
+    if (i / N > k) break;
+    const ang = -Math.PI / 2 + i * TAU / N;
+    const gx = x + Math.cos(ang) * rx * .88, gy = y + Math.sin(ang) * ry * .88;
+    const t = (4 + psAlea(i) * 3) * SCALE;
+    ctx.globalAlpha = a * (.55 + psAlea(i + 9) * .45);
+    ctx.strokeStyle = PS_LILAS; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(gx - t, gy - t * .5); ctx.lineTo(gx + t * .3, gy);
+    ctx.lineTo(gx - t * .3, gy + t * .3); ctx.lineTo(gx + t, gy + t * .6);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+// La carapace : une coque à pics TRANSLUCIDE. Le roster est entièrement
+// opaque, du tigre à la cloche : c'est ça qui la distingue au premier coup
+// d'œil, avant même la couleur.
+function psCarapace(cx, cy, r, a, rot) {
+  if (a <= 0 || r <= 0) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  ctx.translate(cx, cy); ctx.rotate(rot);
+  ctx.globalAlpha = a * .85; ctx.fillStyle = PS_LILAS;
+  for (let i = 0; i < 8; i++) {
+    const ang = i * TAU / 8 + .2;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(ang) * r * 1.42, Math.sin(ang) * r * .95);
+    ctx.lineTo(Math.cos(ang + .22) * r * .82, Math.sin(ang + .22) * r * .55);
+    ctx.lineTo(Math.cos(ang - .22) * r * .82, Math.sin(ang - .22) * r * .55);
+    ctx.closePath(); ctx.fill();
+  }
+  const d = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+  d.addColorStop(0, 'rgba(239,228,250,.55)');
+  d.addColorStop(.6, 'rgba(139,79,214,.42)');
+  d.addColorStop(1, 'rgba(139,79,214,.05)');
+  ctx.globalAlpha = a; ctx.fillStyle = d;
+  ctx.beginPath(); ctx.ellipse(0, 0, r, r * .68, 0, 0, TAU); ctx.fill();
+  ctx.globalAlpha = a * .5; ctx.strokeStyle = PS_LILAS; ctx.lineWidth = 1.2;
+  for (let i = 0; i < 6; i++) {
+    const ang = i * TAU / 6;
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(ang) * r * .9, Math.sin(ang) * r * .62); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.ellipse(0, 0, r * .5, r * .34, 0, 0, TAU); ctx.stroke();
+  ctx.restore();
+}
+
+function drawPsycho() {
+  const z = G.psycho;
+  if (!z) return;
+  const t = G.now;
+  const b = [PS_CHANT, PS_CHANT + PS_CHUTE, PS_CHANT + PS_CHUTE + PS_IMPACT];
+  const rx = z.r, ry = z.r * .58;
+  const haut = 240 * SCALE;
+
+  /* --- 1. L'INCANTATION : le cercle s'écrit --------------------------- */
+  if (z.t < b[1]) {
+    const k = z.t < b[0] ? z.t / PS_CHANT : 1;
+    psRunes(z.x, z.y, rx * .92, ry * .92, k, .8);
+    // LA TÊTE D'ÉCRITURE, au bout de la ligne qui se dessine.
+    if (k > .01 && k < .995) {
+      const ang = -Math.PI / 2 + TAU * k;
+      const hx = z.x + Math.cos(ang) * rx * .92, hy = z.y + Math.sin(ang) * ry * .92;
+      psLueur(hx, hy, 26 * SCALE, PS_LILAS, .55);
+      psEtoile(hx, hy, 9 * SCALE, 1, PS_LILAS);
+    }
+  }
+  if (z.t < b[0]) {
+    // Les poussières sont ASPIRÉES du sol vers sa main, pas projetées : il
+    // PREND l'énergie avant de la poser ailleurs, et c'est ce sens de
+    // circulation qui raconte un sort.
+    const o = z.owner;
+    psLueur(o.x, o.y - 26 * SCALE, (46 + Math.sin(t * 7) * 8) * SCALE, PS_VIOLET, .22);
+    for (let i = 0; i < 10; i++) {
+      const q = (t * .9 + psAlea(i + 5)) % 1;
+      const ang = psAlea(i) * TAU, d = (1 - q) * 54 * SCALE;
+      psEtoile(o.x + Math.cos(ang) * d, o.y - 20 * SCALE + Math.sin(ang) * d * .5,
+               (1.6 + psAlea(i + 2) * 2) * SCALE * 3, Math.sin(q * Math.PI) * .9,
+               i % 3 ? PS_LILAS : PS_CYAN);
+    }
+  }
+
+  /* --- 2. LA CONVERGENCE : la carapace se recompose ------------------- */
+  if (z.t >= b[0] && z.t < b[1]) {
+    const k = Math.pow((z.t - b[0]) / PS_CHUTE, 3);
+    const cy = z.y - haut * (1 - k);
+    for (let i = 0; i < 20; i++) {
+      const q = Math.min(1, k * (1 + psAlea(i + 90) * .5));
+      // Ils SPIRALENT : l'angle tourne pendant qu'ils approchent.
+      const ang = psAlea(i + 30) * TAU + (1 - q) * 1.5;
+      const d0 = (300 + psAlea(i + 60) * 260) * SCALE;
+      psEtoile(z.x + Math.cos(ang) * d0 * (1 - q) * .5,
+               cy + Math.sin(ang) * d0 * (1 - q) * .3,
+               (2.5 + psAlea(i) * 3.5) * SCALE * 3, q * .95,
+               i % 4 ? PS_LILAS : PS_CYAN);
+    }
+    psLueur(z.x, cy, rx * .8 * k, PS_VIOLET, k * .45);
+    psCarapace(z.x, cy, rx * .58 * (1 - Math.pow(1 - k, 3)), Math.min(1, k * 2), k * 3);
+    // L'ombre au sol se RESSERRE pendant que la carapace grandit : c'est ce
+    // couple qui fait lire une chute sur un jeu vu de dessus. Seule, l'une ou
+    // l'autre se lit comme une apparition.
+    ctx.save(); ctx.globalAlpha = .3 * k; ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(z.x, z.y, rx * .55 * (1.5 - k * .95), ry * .52 * (1.5 - k * .95), 0, 0, TAU);
+    ctx.fill(); ctx.restore();
+  }
+
+  /* --- 3. L'IMPACT : pas de secousse ---------------------------------- */
+  if (z.t >= b[1] && z.t < b[2]) {
+    const kp = (z.t - b[1]) / PS_IMPACT, f = 1 - kp;
+    // TROIS ondes successives
+    for (let j = 0; j < 3; j++) {
+      const kj = Math.max(0, kp - j * .18) / (1 - j * .18);
+      if (kj <= 0) continue;
+      psAnneau(z.x, z.y, rx * kj * 1.15, ry * kj, (1 - kj) * .85, PS_LILAS, 3);
+    }
+    // le double anneau décalé : une aberration chromatique pour deux traits
+    psAnneau(z.x, z.y, rx * kp * 1.05, ry * kp, f * .5, PS_VIOLET, 4);
+    psAnneau(z.x + 3, z.y, rx * kp * 1.10, ry * kp * 1.03, f * .4, PS_CYAN, 2);
+    // LES FISSURES et LES FAISCEAUX. Sept rais en étoile plutôt qu'une colonne
+    // centrale : une colonne masquait tout ce qui se passait dessous.
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = f * .8; ctx.strokeStyle = PS_CYAN; ctx.lineWidth = 1.6;
+    for (let i = 0; i < 12; i++) {
+      const ang = psAlea(i + 70) * TAU;
+      ctx.beginPath(); ctx.moveTo(z.x, z.y);
+      ctx.lineTo(z.x + Math.cos(ang) * rx * kp * 1.2, z.y + Math.sin(ang) * ry * kp * 1.2);
+      ctx.stroke();
+    }
+    for (let i = 0; i < 7; i++) {
+      const ang = psAlea(i + 400) * TAU;
+      const lg = (120 + psAlea(i + 410) * 190) * SCALE * (1 - Math.pow(1 - Math.min(1, kp * 1.6), 3));
+      const lx = z.x + Math.cos(ang) * lg, ly = z.y + Math.sin(ang) * lg * .62;
+      const d = ctx.createLinearGradient(z.x, z.y, lx, ly);
+      d.addColorStop(0, PS_LILAS); d.addColorStop(.35, PS_VIOLET);
+      d.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = f * .55; ctx.strokeStyle = d;
+      ctx.lineWidth = (2 + psAlea(i + 420) * 5) * SCALE; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(z.x, z.y); ctx.lineTo(lx, ly); ctx.stroke();
+    }
+    ctx.restore();
+    // La gerbe RETOMBE : les éclats partent vite, ralentissent, et le dernier
+    // tiers de leur course descend. Une gerbe qui file tout droit se lit comme
+    // un décor ; une gerbe qui retombe se lit comme de la matière.
+    for (let i = 0; i < 22; i++) {
+      const ang = psAlea(i + 200) * TAU, port = .5 + psAlea(i + 12) * .9;
+      const d2 = (1 - Math.pow(1 - kp, 3)) * port;
+      psEtoile(z.x + Math.cos(ang) * rx * d2,
+               z.y + Math.sin(ang) * ry * d2
+                 - Math.sin(Math.min(1, kp * 1.2) * Math.PI) * 26 * SCALE * psAlea(i + 33),
+               (2 + psAlea(i) * 3) * SCALE * 3, f * .95, i % 3 ? PS_CYAN : PS_LILAS);
+    }
+    psLueur(z.x, z.y, rx * (.5 + kp * 1.2), PS_LILAS, f * f * .6);
+    psLueur(z.x, z.y, rx * .35 * (1 - kp * .5), '#ffffff', Math.pow(f, 3) * .8);
+    psCarapace(z.x, z.y, rx * .58 * (1 + kp * .35), f * .7, .6);
+    return;
+  }
+  if (z.t < b[2]) return;
+
+  /* --- 4. LA ZONE : c'est ELLE, le vrai ultime ------------------------ */
+  const k = (z.t - b[2]) / PS_DUREE;
+  const puls = .5 + .5 * Math.sin(t * 2.6);
+  // Elle RÉTRÉCIT avec le temps : c'est un compte à rebours qu'on lit sans
+  // chiffre. Et elle bat plus vite sur la fin, pour prévenir honnêtement.
+  const rr = rx * (1 - k * .45), rrY = ry * (1 - k * .45);
+  const fin = k > .78 ? (.4 + .6 * Math.abs(Math.sin(t * 14))) : 1;
+  const op = fin;
+
+  psLueur(z.x, z.y, rr * 1.15, PS_VIOLET, (.16 + puls * .07) * op);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = op;
+  const d = ctx.createRadialGradient(z.x, z.y, 0, z.x, z.y, rr);
+  d.addColorStop(0, 'rgba(139,79,214,' + (.30 + puls * .10).toFixed(3) + ')');
+  d.addColorStop(1, 'rgba(139,79,214,.06)');
+  ctx.fillStyle = d;
+  ctx.beginPath(); ctx.ellipse(z.x, z.y, rr, rrY, 0, 0, TAU); ctx.fill();
+  // Le bord, toujours : c'est la LIMITE qui compte, et c'est elle qu'on doit
+  // lire d'un coup d'œil quand on court.
+  ctx.globalAlpha = op * (.7 + puls * .3); ctx.strokeStyle = PS_LILAS; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(z.x, z.y, rr, rrY, 0, 0, TAU); ctx.stroke();
+  ctx.restore();
+
+  // deux cercles de runes qui tournent À CONTRESENS l'un de l'autre : deux
+  // rotations opposées se lisent comme un mécanisme, une seule comme une image
+  // qu'on fait tourner
+  ctx.save(); ctx.translate(z.x, z.y); ctx.rotate(t * .06); ctx.translate(-z.x, -z.y);
+  psRunes(z.x, z.y, rr * .82, rrY * .82, 1, op * .8);
+  ctx.restore();
+  ctx.save(); ctx.translate(z.x, z.y); ctx.rotate(-t * .22); ctx.translate(-z.x, -z.y);
+  psRunes(z.x, z.y, rr * .5, rrY * .5, 1, op * .3);
+  ctx.restore();
+
+  // les fissures psychiques
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = op * .55;
+  ctx.strokeStyle = PS_LILAS; ctx.lineWidth = 1.4;
+  for (let i = 0; i < 10; i++) {
+    const ang0 = psAlea(i + 40) * TAU;
+    ctx.beginPath(); ctx.moveTo(z.x, z.y);
+    let lx = z.x, ly = z.y;
+    for (let j = 1; j <= 3; j++) {
+      const aa = ang0 + (psAlea(i * 4 + j) - .5) * .8;
+      lx += Math.cos(aa) * rr / 3; ly += Math.sin(aa) * rrY / 3;
+      ctx.lineTo(lx, ly);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // la grille, LÉGÈRE ET CLIGNOTANTE : à pleine opacité elle se disputait avec
+  // les lignes du terrain
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = op * (.10 + .13 * Math.abs(Math.sin(t * 1.9)));
+  ctx.strokeStyle = PS_CYAN; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.ellipse(z.x, z.y, rr, rrY, 0, 0, TAU); ctx.clip();
+  for (let i = -8; i <= 8; i++) {
+    ctx.beginPath(); ctx.moveTo(z.x + i * rr / 8, z.y - rrY); ctx.lineTo(z.x + i * rr / 8, z.y + rrY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(z.x - rr, z.y + i * rrY / 8); ctx.lineTo(z.x + rr, z.y + i * rrY / 8); ctx.stroke();
+  }
+  ctx.restore();
+
+  // la brume basse, et les poussières qui montent : c'est ce qui fait qu'une
+  // zone RESPIRE au lieu d'être un décalque posé au sol
+  for (let i = 0; i < 12; i++) {
+    const ang = psAlea(i + 5) * TAU + t * .12, dd = psAlea(i + 21);
+    psLueur(z.x + Math.cos(ang) * rr * dd, z.y + Math.sin(ang) * rrY * dd,
+            rr * .3, PS_VIOLET, op * .09);
+  }
+  for (let i = 0; i < 22; i++) {
+    const q = (t * .34 + psAlea(i + 300)) % 1;
+    const ang = psAlea(i + 350) * TAU, dd = .25 + psAlea(i + 390) * .75;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = Math.sin(q * Math.PI) * .55 * op; ctx.fillStyle = PS_LILAS;
+    ctx.beginPath();
+    ctx.arc(z.x + Math.cos(ang) * rr * dd + Math.sin(t * 1.7 + i) * 4 * SCALE,
+            z.y + Math.sin(ang) * rrY * dd - q * rrY * 1.5,
+            (1.1 + psAlea(i + 307) * 1.4) * SCALE, 0, TAU);
+    ctx.fill(); ctx.restore();
+  }
+  // les ondes lentes qui repartent du centre : une zone qui ne fait que pulser
+  // sur place s'oublie, une zone qui ÉMET rappelle qu'elle est vivante
+  for (let j = 0; j < 2; j++) {
+    const q = ((t / 1.3) + j * .5) % 1;
+    psAnneau(z.x, z.y, rr * q, rrY * q, (1 - q) * .3 * op, PS_LILAS, 1.6);
+  }
+
+  // LE FIL DU LANCEUR : la règle anti-spam rendue visible. On comprend que la
+  // zone lui coûte quelque chose sans lire un mot.
+  const o = z.owner;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = (.28 + Math.sin(t * 2.6) * .1) * op;
+  ctx.strokeStyle = PS_VIOLET; ctx.lineWidth = 1.6; ctx.beginPath();
+  ctx.moveTo(o.x, o.y - 24 * SCALE);
+  ctx.quadraticCurveTo((o.x + z.x) / 2, z.y - 90 * SCALE, z.x, z.y);
+  ctx.stroke(); ctx.restore();
+
+  // L'ADVERSAIRE DEDANS : traînées aux pieds, aura, et chaînes psychiques aux
+  // chevilles. Un effet qu'on ne voit pas n'existe pas — sans marque sur le
+  // personnage, celui qui subit croit à une latence et pas à un ultime.
+  const foe = o.foe;
+  if (foe && foe.ralenti > 0) {
+    psLueur(foe.x, foe.y - 20 * SCALE, 46 * SCALE, PS_VIOLET, .4);
+    for (let i = 0; i < 6; i++) {
+      const q = (t * .8 + psAlea(i + 15)) % 1;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - q) * .55;
+      ctx.fillStyle = PS_VIOLET;
+      ctx.fillRect(foe.x + (8 + q * 30) * SCALE - 2, foe.y - 2, 4, 4); ctx.restore();
+    }
+    for (let i = 0; i < 3; i++) {
+      const q = (t * .5 + i / 3) % 1;
+      psAnneau(foe.x, foe.y - q * 44 * SCALE, (22 - q * 8) * SCALE, (7 - q * 3) * SCALE,
+               (1 - q) * .4, PS_CYAN, 1.4);
+    }
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .5;
+    ctx.strokeStyle = PS_VIOLET; ctx.lineWidth = 2;
+    for (const dx of [-7, 7]) {
+      ctx.beginPath(); ctx.moveTo(foe.x + dx * SCALE, foe.y);
+      ctx.lineTo(foe.x + dx * 3 * SCALE, z.y); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
 function drawChien() {
   const c = G.chien;
   if (!c) return;
@@ -2970,6 +3306,7 @@ export function render() {
   // La horde se dessine en coordonnees de TERRAIN, donc ici, dans la
   // transformation camera. Placee apres le ctx.restore() comme le chien,
   // elle etait dessinee en espace ecran et partait hors du cadre.
+  if (G.psycho) drawPsycho();
   if (G.ruee) drawRuee();
   if (G.tigre) drawTigre();
   if (G.grappin) drawGrappin();

@@ -1830,46 +1830,32 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .murVide{ font-family:'DotGothic16',monospace; font-size:clamp(7px,1.3cqh,11px);
   color:rgba(255,255,255,.85); text-align:center; text-shadow:0 2px 0 rgba(20,26,38,.5) }
 
-/* Bande décorative du roster avant d'entrer dans une arène. Ce n'est PLUS un
-   choix : le vrai choix de perso se fait sur l'écran de sélection complet une
-   fois l'adversaire trouvé (voir menus.js, monPersoChoisi()) — le sélectionner
-   ici aussi ne faisait que doubler le geste pour un résultat écrasé plus tard.
-   À la place, tout le roster défile en boucle, chacun marchant sur place :
-   une vitrine, pas un formulaire. */
-.persoChoix{ display:flex; align-items:flex-end;
-  /* Pas de justify-content:center : ça décalait le début réel de la bande
-     hors de la fenêtre visible, et sur une seule copie et demie de large,
-     le défilement finissait par montrer du vide avant que la copie
-     suivante n'arrive — d'où la coupure. Alignée à gauche, la bande (3
-     copies, cf. online-ui.js) garde toujours du contenu sous la fenêtre. */
-  margin-bottom:.3cqh; padding-top:.6cqh; overflow:hidden; width:100%;
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);
-  mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%) }
-/* --loop-shift : distance exacte (en px, posée par le JS) entre une case et
-   sa jumelle de la seconde copie. Le -50% seul ne suffit pas : le `gap` en
-   cqw ne partage pas forcément la largeur totale en deux moitiés égales,
-   d'où un petit à-coup visible à chaque tour. 50% reste le repli avant que
-   le JS n'ait mesuré. */
-.persoStrip{ display:flex; align-items:flex-end; gap:2.6cqw;
-  animation:persoScroll 22s linear infinite; --loop-shift:50% }
-.persoCase{ background:none; border:none; position:relative;
-  padding:0 .6cqw; display:flex; flex-direction:column;
-  align-items:center; flex-shrink:0 }
-/* Ombre au sol : sans elle les personnages semblaient flotter, surtout une
-   fois agrandis. Fixe, elle ne bouge pas avec le bob — c'est justement ce
-   contraste qui vend l'idée d'un rebond plutôt que d'une dérive. */
-.persoCase::after{ content:''; display:block; width:4cqh; height:.8cqh;
-  margin-top:-.2cqh; border-radius:50%; background:rgba(0,0,0,.4); filter:blur(1.5px) }
-.persoCase canvas{ image-rendering:pixelated; height:8cqh; width:auto;
-  animation-name:personBob; animation-duration:2.4s; animation-timing-function:ease-in-out;
+/* Vitrine du roster avant d'entrer dans une arène. Ce n'est PLUS un choix :
+   le vrai choix de perso se fait sur l'écran de sélection complet une fois
+   l'adversaire trouvé (voir menus.js, monPersoChoisi()) — le proposer ici
+   aussi ne faisait que doubler le geste pour un résultat écrasé plus tard.
+   Deux vedettes tournent chacune de leur côté, indépendamment l'une de
+   l'autre pour ne pas avoir l'air synchronisées, dans le couloir entre le
+   bord de l'écran et les boutons — le centre reste entièrement dégagé. */
+.onVedette{ position:absolute; top:50%; transform:translateY(-50%); z-index:2;
+  width:26cqh; height:26cqh; display:flex; align-items:center; justify-content:center }
+.onVedette.gauche{ left:8cqw }
+.onVedette.droite{ right:8cqw }
+.onVedette::before{ content:''; position:absolute; inset:0; border-radius:50%;
+  background:radial-gradient(circle, rgba(255,210,62,.3) 0%, rgba(255,210,62,0) 70%) }
+.onVedette canvas{ position:relative; image-rendering:pixelated; height:23cqh; width:auto;
+  filter:drop-shadow(0 3px 0 rgba(0,0,0,.5));
+  animation-name:vedetteFade; animation-duration:3.6s; animation-timing-function:ease-in-out;
   animation-iteration-count:infinite }
-/* Amplitude réduite (3px, contre 8 pour les grands portraits) : à cette
-   taille miniature, 8px lisait comme un vrai saut plutôt qu'un rebond. Le
-   délai de chacune (animation-delay) est posé au hasard depuis le JS, pas
-   par index — un décalage fixe entre voisins finissait par se lire comme
-   une vaguelette, tout aussi rythmée qu'un saut synchrone. */
-@keyframes personBob{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-3px) } }
-@keyframes persoScroll{ from{ transform:translateX(calc(-1 * var(--loop-shift))) } to{ transform:translateX(0) } }
+.onVedette.droite canvas{ animation-name:vedetteFadeR }
+@keyframes vedetteFade{
+  0%,8%{ opacity:0; transform:translateY(6px) scale(.92) }
+  18%,82%{ opacity:1; transform:none }
+  94%,100%{ opacity:0; transform:translateY(-6px) scale(.92) } }
+@keyframes vedetteFadeR{
+  0%,8%{ opacity:0; transform:translateY(6px) scale(.92) scaleX(-1) }
+  18%,82%{ opacity:1; transform:scaleX(-1) }
+  94%,100%{ opacity:0; transform:translateY(-6px) scale(.92) scaleX(-1) } }
 
 /* --- Corps de la fiche : quatre chiffres a gauche, le main a droite -------- */
 .ficheCorps{ display:grid; grid-template-columns:1fr auto; gap:1.2cqw;
@@ -1952,3 +1938,229 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   animation:attentePouls 1.5s ease-in-out infinite;
 }
 @keyframes attentePouls{0%,100%{opacity:.72}50%{opacity:1}}
+
+/* ================= CASINO =================
+   Seul écran sombre du jeu, et c'est voulu : tout le reste est clair et
+   cartoon, le casino est l'arrière-salle. Les scanlines (.crt) du cadre
+   passent déjà par-dessus, donc rien à ajouter de ce côté. */
+.mbtn.c-casino{background:#e0574f;color:#2a0509}
+.mbtn.c-casino:hover,.mbtn.c-casino.sel{background:var(--ink);color:#ff8a6b}
+
+.bg-casino{
+  background:radial-gradient(110cqh 85cqh at 50% 28%,#4a0f1c 0%,#1c0509 56%,#050203 100%);
+}
+/* Braises qui montent : cinq points lents en fond, sans une seule particule
+   JS — l'écran doit rester gratuit pendant que le match de démo tourne. */
+.casinoEmbers{
+  position:absolute;inset:-40% 0 0 0;opacity:.55;
+  background-image:
+    radial-gradient(2px 2px at 12% 90%,#ff9a3d 0%,transparent 60%),
+    radial-gradient(2px 2px at 31% 96%,#ffcf5c 0%,transparent 60%),
+    radial-gradient(3px 3px at 57% 88%,#ff6a2a 0%,transparent 60%),
+    radial-gradient(2px 2px at 74% 98%,#ffcf5c 0%,transparent 60%),
+    radial-gradient(2px 2px at 91% 92%,#ff9a3d 0%,transparent 60%);
+  animation:embersRise 9s linear infinite;
+}
+@keyframes embersRise{
+  from{transform:translateY(0);opacity:.55}
+  to{transform:translateY(-46%);opacity:0}
+}
+.scr-casino .titlebar{background:#7a0f22}
+
+/* Sous le titre et centré, pas dans un coin : les deux coins du haut
+   appartiennent déjà à la barre du jeu (retour à gauche, compte à droite) et
+   le badge s'y posait par-dessus le bouton de connexion. */
+.casinoSolde{
+  position:absolute;top:11%;left:50%;transform:translateX(-50%);z-index:7;
+  font-family:'Russo One',sans-serif;font-size:clamp(10px,1.9cqh,16px);letter-spacing:.05em;
+  color:var(--yellow);background:rgba(0,0,0,.6);border:2px solid var(--yellow);
+  border-radius:999px;padding:.5cqh 1.2cqw;text-shadow:0 0 8px rgba(245,230,61,.55);
+  white-space:nowrap;
+}
+.casinoSolde.bad{color:#ff8f9a;border-color:#ff8f9a;text-shadow:none}
+
+.casinoWrap{
+  position:absolute;inset:0;z-index:5;padding:9cqh 4cqw 3cqh;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+}
+/* Le buste mord sur le comptoir : c'est ce chevauchement qui le fait tenir
+   DERRIÈRE le meuble au lieu de flotter au-dessus. */
+.devilBox{
+  position:relative;display:flex;flex-direction:column;align-items:center;
+  margin-bottom:-5cqh;z-index:1;
+}
+.devilSvg{
+  width:auto;height:clamp(150px,46cqh,420px);
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.65)) drop-shadow(0 0 22px rgba(255,60,40,.28));
+  animation:devilBob 4.2s ease-in-out infinite;
+}
+/* Il respire : le buste monte et descend, la tête suit avec un temps de
+   retard. Sans ce décalage il a l'air d'un bloc qu'on secoue. */
+@keyframes devilBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.4%)}}
+.devilTete{animation:devilTete 4.2s ease-in-out infinite;transform-origin:180px 160px}
+@keyframes devilTete{
+  0%,100%{transform:translateY(0) rotate(-.8deg)}
+  50%{transform:translateY(-1.6px) rotate(.8deg)}
+}
+/* Les yeux pulsent plus vite que le reste : c'est ce décalage qui donne
+   l'impression qu'il te regarde au lieu de flotter. */
+.devilEye{animation:devilGlow 2.1s ease-in-out infinite}
+@keyframes devilGlow{0%,100%{opacity:1}50%{opacity:.5}}
+.devilCartes{animation:devilCartes 3.1s ease-in-out infinite;transform-origin:272px 185px}
+@keyframes devilCartes{
+  0%,100%{transform:rotate(-3deg) translateY(0)}
+  50%{transform:rotate(3deg) translateY(-2px)}
+}
+.devilFumee{animation:devilFumee 7s ease-in-out infinite}
+@keyframes devilFumee{0%,100%{opacity:.45}50%{opacity:.75}}
+/* La réplique se pose à sa gauche, à hauteur de tête : sous lui, elle heurtait
+   le comptoir, et ça se lisait comme une étiquette de meuble. */
+.devilBulle{
+  position:absolute;top:16%;right:calc(50% + 9cqw);z-index:2;
+  width:max-content;max-width:21cqw;text-align:center;
+  font-family:'DotGothic16',monospace;font-size:clamp(8px,1.35cqh,13px);line-height:1.5;
+  color:#ffd7c2;background:rgba(12,4,8,.82);border:2px solid #7a0f22;border-radius:10px;
+  padding:.6cqh 1cqw;box-shadow:0 0 14px rgba(255,60,40,.2);
+}
+/* Petite pointe vers lui, pour qu'on sache qui parle. */
+.devilBulle::after{
+  content:'';position:absolute;right:-7px;top:52%;
+  border:6px solid transparent;border-left-color:#7a0f22;
+}
+
+/* --- Le comptoir : un meuble, pas un fond. Le liseré clair du dessus est ce
+   qui lui donne son épaisseur et sa laque. --- */
+.casinoComptoir{
+  position:relative;width:min(92cqw,1060px);border-radius:14px 14px 6px 6px;
+  padding:2.4cqh 2cqw 2cqh;
+  background:linear-gradient(180deg,#3b2530 0%,#241520 34%,#150c14 100%);
+  border-top:3px solid rgba(255,214,150,.5);
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.09),0 -14px 34px rgba(255,90,30,.14),
+             0 12px 26px rgba(0,0,0,.6);
+}
+
+.casinoJeux{display:flex;gap:1.6cqw;flex-wrap:wrap;justify-content:center}
+/* Chaque jeu est une dalle encastrée dans le comptoir, avec sa pastille néon.
+   Une vraie pastille ronde et rien d'autre serait plus fidèle à un vrai
+   casino, mais il faut bien lire le nom du jeu avant de miser dessus. */
+.casinoCard{
+  --neon:#ffb238;
+  position:relative;overflow:hidden;
+  width:19cqw;min-width:132px;min-height:17cqh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.7cqh;
+  padding:1.4cqh 1cqw;cursor:pointer;color:#fff;
+  background:linear-gradient(170deg,#241016 0%,#140a10 100%);
+  border:2px solid color-mix(in srgb,var(--neon) 65%,#000);border-radius:12px;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.06),0 0 16px -2px var(--neon);
+  transition:transform .12s,box-shadow .12s,border-color .12s;
+  animation:learnSlide .34s cubic-bezier(.2,.9,.3,1.2) backwards;
+}
+.casinoJeux .casinoCard:nth-child(2){animation-delay:.06s}
+.casinoJeux .casinoCard:nth-child(3){animation-delay:.12s}
+.casinoJeux .casinoCard:nth-child(4){animation-delay:.18s}
+.casinoCard:hover{
+  transform:translateY(-4px);border-color:var(--neon);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.08),0 0 30px -2px var(--neon);
+}
+.casinoCard:active{transform:translateY(-1px)}
+/* La pastille : un disque de verre allumé par en dessous. */
+.casinoIco{
+  display:flex;align-items:center;justify-content:center;
+  width:clamp(34px,7cqh,58px);height:clamp(34px,7cqh,58px);border-radius:50%;
+  font-size:clamp(16px,3.4cqh,28px);line-height:1;
+  background:radial-gradient(circle at 50% 32%,color-mix(in srgb,var(--neon) 55%,#fff) 0%,
+             color-mix(in srgb,var(--neon) 80%,#000) 55%,color-mix(in srgb,var(--neon) 40%,#000) 100%);
+  border:2px solid color-mix(in srgb,var(--neon) 70%,#fff);
+  box-shadow:0 0 16px var(--neon),inset 0 -3px 8px rgba(0,0,0,.5);
+}
+.casinoCard b{
+  font-family:'Russo One',sans-serif;font-size:clamp(10px,1.8cqh,15px);
+  letter-spacing:.05em;color:color-mix(in srgb,var(--neon) 55%,#fff);
+}
+.casinoCard em{
+  font-style:normal;font-family:'DotGothic16',monospace;
+  font-size:clamp(7px,1.1cqh,10px);color:#cfb4bd;line-height:1.45;
+  max-width:22ch;text-align:center;
+}
+
+/* --- Pièces d'or et runes en orbite ---------------------------------------
+   Purement décoratif, donc en CSS et hors du flux : rien ici ne doit peser
+   sur le jeu qui tourne derrière. */
+.casinoAura{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:hidden}
+.casinoPiece{
+  position:absolute;width:2.6cqh;height:2.6cqh;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#fff3b8 0%,#f5d268 24%,#eab73f 52%,#9d6a15 100%);
+  box-shadow:0 0 10px rgba(240,190,60,.55),inset 0 0 0 .35cqh rgba(255,255,255,.28);
+  animation:pieceFlotte 6s ease-in-out infinite;
+}
+.casinoPiece.p1{left:12%;top:36%;animation-delay:0s}
+.casinoPiece.p2{left:22%;top:58%;animation-delay:-1.6s;transform:scale(.78)}
+.casinoPiece.p3{right:14%;top:32%;animation-delay:-3.1s}
+.casinoPiece.p4{right:23%;top:56%;animation-delay:-4.4s;transform:scale(.7)}
+.casinoPiece.p5{left:44%;top:24%;animation-delay:-2.3s;transform:scale(.62)}
+/* Le pincement horizontal fait tourner la pièce sur elle-même : une rotation
+   3D coûterait un contexte de rendu de plus pour le même effet. */
+@keyframes pieceFlotte{
+  0%,100%{transform:translateY(0) scaleX(1)}
+  25%{transform:translateY(-1.6cqh) scaleX(.25)}
+  50%{transform:translateY(-2.4cqh) scaleX(1)}
+  75%{transform:translateY(-1.2cqh) scaleX(.4)}
+}
+.casinoRune{
+  position:absolute;font-size:clamp(11px,2.2cqh,20px);color:#7bff9d;
+  text-shadow:0 0 10px #35ff7a,0 0 22px rgba(53,255,122,.5);opacity:.75;
+  animation:runeOrbite 9s ease-in-out infinite;
+}
+.casinoRune.r1{left:31%;top:28%;animation-delay:0s}
+.casinoRune.r2{right:30%;top:44%;animation-delay:-3s}
+.casinoRune.r3{left:18%;top:47%;animation-delay:-6s}
+@keyframes runeOrbite{
+  0%,100%{transform:translate(0,0) rotate(-8deg);opacity:.35}
+  50%{transform:translate(1.4cqw,-2.6cqh) rotate(8deg);opacity:.85}
+}
+
+/* Embrasement : les flammes montent du bas de la carte, en fondu additif pour
+   qu'elles éclairent la carte au lieu de la recouvrir. */
+.casinoCard.onFire{border-color:#fff0a8;box-shadow:0 0 0 2px #000,0 0 40px rgba(255,120,30,.8)}
+/* Les foyers sont ancrés sur le bas de la carte, pas sous elle : la carte
+   masque ce qui dépasse (overflow), et une flamme dont le cœur tombe hors du
+   cadre ne montre plus que sa fumée. L'origine de la transformation est ce
+   même bas, pour que le vacillement étire la flamme vers le haut. */
+.casinoCard.onFire::before{
+  content:'';position:absolute;left:-10%;right:-10%;bottom:0;height:105%;
+  pointer-events:none;mix-blend-mode:screen;transform-origin:50% 100%;
+  background:
+    radial-gradient(46% 58% at 21% 100%,#ffcf5c 0%,rgba(255,90,31,.55) 45%,transparent 72%),
+    radial-gradient(56% 88% at 50% 100%,#fff0a8 0%,rgba(255,120,30,.7) 38%,transparent 76%),
+    radial-gradient(46% 58% at 79% 100%,#ffcf5c 0%,rgba(255,90,31,.55) 45%,transparent 72%);
+  animation:flameFlicker .12s steps(2,end) infinite;
+}
+@keyframes flameFlicker{
+  0%{transform:scaleY(1) scaleX(1)}
+  50%{transform:scaleY(1.14) scaleX(.95)}
+  100%{transform:scaleY(1.04) scaleX(1.03)}
+}
+/* Le tremblement porte sur le contenu, pas sur l'écran : `.screen` a déjà sa
+   propre animation d'entrée, et lui en poser une deuxième la remplaçait — en
+   retirant la classe, tout l'écran rejouait son fondu d'arrivée en plein
+   milieu de l'embrasement. */
+.casinoWrap.shake{animation:casinoShake .35s ease-in-out}
+@keyframes casinoShake{
+  0%,100%{transform:translate(0,0)}
+  20%{transform:translate(-6px,2px)}
+  40%{transform:translate(5px,-2px)}
+  60%{transform:translate(-4px,-1px)}
+  80%{transform:translate(3px,1px)}
+}
+
+.casinoMsg{
+  position:absolute;left:50%;bottom:4.5%;transform:translateX(-50%);z-index:8;
+  font-family:'Russo One',sans-serif;font-size:clamp(9px,1.6cqh,14px);
+  color:#fff;background:rgba(0,0,0,.75);border:2px solid var(--yellow);
+  border-radius:999px;padding:.6cqh 1.6cqw;white-space:nowrap;
+}
+.casinoMsg.pop{animation:casinoMsgPop .22s ease-out}
+@keyframes casinoMsgPop{
+  from{transform:translateX(-50%) scale(.75);opacity:0}
+  to{transform:translateX(-50%) scale(1);opacity:1}
+}

@@ -234,7 +234,7 @@ function commentaireNeuf() {
 
 function scenesPourLeReseau() {
   const c = G.cine, b = G.bell, h = G.hack, l = G.leg, t = G.tempete, br = G.brume;
-  const ba = G.banner, zo = G.zoom, ra = G.rafale, gr = G.grappin, ci = G.chien, ru = G.ruee, ti = G.tigre;
+  const ba = G.banner, zo = G.zoom, ra = G.rafale, gr = G.grappin, ci = G.chien, ru = G.ruee, ti = G.tigre, ps = G.psycho;
   if (!c && !b && !h && !l && !t && !br && !ba && !zo && !ra && !gr && !ci) return 0;
   const q = p => (p === G.p1 ? 1 : (p === G.p2 ? 2 : 0));
   return {
@@ -276,7 +276,12 @@ function scenesPourLeReseau() {
     // du moment ou il touche, et le recalculer chez l'invite l'aurait fait
     // disparaitre a un autre instant que celui qui est arbitre.
     ti: ti ? [q(ti.owner), +ti.t.toFixed(2), ti.dir, Math.round(ti.x),
-              Math.round(ti.y), ti.touche, +ti.prise.toFixed(2)] : 0
+              Math.round(ti.y), ti.touche, +ti.prise.toFixed(2)] : 0,
+    // La zone relaie son centre et son RAYON : celui-ci depend de l'ecart
+    // entre les joueurs au moment du cast, donc l'invite ne peut pas le
+    // recalculer — il n'a pas les positions de cet instant-la.
+    ps: ps ? [q(ps.owner), +ps.t.toFixed(2), Math.round(ps.x),
+              Math.round(ps.y), Math.round(ps.r)] : 0
   };
 }
 
@@ -286,7 +291,7 @@ function scenesPourLeReseau() {
 // resonnerait à chaque fois.
 function appliquerScenes(sc) {
   const j = n => (n === 1 ? G.p1 : (n === 2 ? G.p2 : null));
-  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.brume = null; G.banner = null; G.zoom = null; G.rafale = null; G.grappin = null; G.chien = null; G.ruee = null; G.tigre = null; return; }
+  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.brume = null; G.banner = null; G.zoom = null; G.rafale = null; G.grappin = null; G.chien = null; G.ruee = null; G.tigre = null; G.psycho = null; return; }
   const ba = sc.ba;
   if (ba) { if (!G.banner || G.banner.text !== ba[0]) G.banner = { text: ba[0], color: ba[1], t: ba[2], dur: ba[3] };
     else G.banner.t = ba[2]; }
@@ -347,6 +352,14 @@ function appliquerScenes(sc) {
     G.tigre.owner = j(ti[0]); G.tigre.t = ti[1]; G.tigre.dir = ti[2];
     G.tigre.x = ti[3]; G.tigre.y = ti[4]; G.tigre.touche = ti[5]; G.tigre.prise = ti[6]; }
   else G.tigre = null;
+  // La zone psychique : proprietaire, minuteur, centre et rayon. Sa phase se
+  // recalcule des deux cotes a partir du seul minuteur, puisque les trois
+  // durees de mise en scene sont fixes.
+  const ps = sc.ps;
+  if (ps) { if (!G.psycho) G.psycho = { owner: j(ps[0]), t: 0, phase: 0, x: ps[2], y: ps[3], r: ps[4] };
+    G.psycho.owner = j(ps[0]); G.psycho.t = ps[1];
+    G.psycho.x = ps[2]; G.psycho.y = ps[3]; G.psycho.r = ps[4]; }
+  else G.psycho = null;
 }
 
 // ---------------------------------------------------------------------------

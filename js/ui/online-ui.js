@@ -263,69 +263,30 @@ surCoupDEnvoi((p1, p2, terrain, graine) => { sfx('go'); lancerMatch(p1, p2, grai
 // l'écran de sélection complet une fois l'adversaire trouvé (menus.js,
 // monPersoChoisi()), donc le proposer aussi ici ne faisait que doubler le
 // geste pour un résultat écrasé plus tard — d'où le contour jaune qui
-// laissait croire à un choix qui ne comptait déjà plus. À la place, tout le
-// roster défile en boucle et marche sur place : une vitrine, plus un
-// formulaire. Le roster est dupliqué une fois dans le DOM pour boucler le
-// défilement sans coupure (persoScroll va de 0 à -50%, soit tout juste la
-// largeur d'une copie).
+// laissait croire à un choix qui ne comptait déjà plus. À la place, deux
+// vedettes tournent chacune de leur côté (une à gauche, une à droite),
+// indépendamment l'une de l'autre pour ne pas avoir l'air synchronisées, et
+// laissent le centre entièrement dégagé pour HÉBERGER / REJOINDRE.
 (function cablerPersos() {
-  const zone = $('persoChoix');
-  if (!zone) return;
+  const gauche = $('persoGauche'), droite = $('persoDroite');
+  if (!gauche || !droite) return;
   import('../data/characters.js').then(({ CHARS, ROSTER }) => {
-    const strip = document.createElement('div');
-    strip.className = 'persoStrip';
-    const marcheurs = [];
-    // Trois copies, pas deux : une seule fait à peu près la largeur de la
-    // fenêtre visible, donc deux à peine assez pour un cycle de défilement
-    // laissaient parfois voir du vide avant l'arrivée de la copie suivante.
-    for (let rep = 0; rep < 3; rep++) {
-      for (const ck of ROSTER) {
-        const b = document.createElement('div');
-        b.className = 'persoCase';
-        const cv = document.createElement('canvas');
-        cv.width = 16; cv.height = 20;
-        // Décalage tiré au hasard, pas par index : un délai fixe entre
-        // voisins (i * .18s) créait quand même une vaguelette bien visible
-        // d'un bout à l'autre de la rangée — tout aussi rythmée qu'un bond
-        // synchrone, juste plus lente.
-        const decale = Math.random() * 2.4;
-        cv.style.animationDelay = decale + 's';
-        cv.getContext('2d').drawImage(CHARS[ck].frames.idle, 0, 0);
-        b.appendChild(cv);
-        strip.appendChild(b);
-        marcheurs.push({ ck, cv, decale });
-      }
-    }
-    zone.appendChild(strip);
-
-    // La boucle CSS ne peut pas juste dire -50% : le gap en cqw ne partage
-    // pas forcément la largeur totale en deux moitiés égales, ce qui laissait
-    // un petit à-coup visible à chaque tour. On mesure la vraie distance
-    // entre une case et sa jumelle de la seconde copie (offsetLeft, donc pas
-    // affecté par l'animation en cours), et on la repose si le conteneur
-    // change de taille.
-    const cases = strip.children;
-    const n = ROSTER.length;
-    const majBoucle = () => {
-      if (cases.length < n * 2) return;
-      const dist = cases[n].offsetLeft - cases[0].offsetLeft;
-      if (dist > 0) strip.style.setProperty('--loop-shift', dist + 'px');
+    const carte = (ck) => {
+      const c = document.createElement('canvas');
+      c.width = 16; c.height = 20;
+      c.getContext('2d').drawImage(CHARS[ck].frames.idle, 0, 0);
+      return c;
     };
-    majBoucle();
-    new ResizeObserver(majBoucle).observe(zone);
-
-    // Cycle de marche : run1/run2 alternés, au même rythme décalé que le bob
-    // (cf. cv.style.animationDelay) pour que le pas suive le rebond au lieu
-    // de le contredire.
-    let t = 0;
-    setInterval(() => {
-      t += .09;
-      for (const m of marcheurs) {
-        const paire = Math.floor((t + m.decale) / .28) % 2 === 0 ? 'run1' : 'run2';
-        const g = m.cv.getContext('2d');
-        g.clearRect(0, 0, 16, 20);
-        g.drawImage(CHARS[m.ck].frames[paire], 0, 0);
-      }
-    }, 90);
+    const tourne = (host, depart) => {
+      let i = depart;
+      const montre = () => { host.innerHTML = ''; host.appendChild(carte(ROSTER[i % ROSTER.length])); i++; };
+      montre();
+      setInterval(montre, 3600);
+    };
+    tourne(gauche, 0);
+    // Décalées d'un demi-roster et d'un peu de temps : sans ça, les deux
+    // côtés changeaient le même perso au même instant, ce qui trahissait
+    // aussitôt qu'il n'y avait qu'un seul minuteur derrière les deux.
+    setTimeout(() => tourne(droite, Math.floor(ROSTER.length / 2)), 1400);
   });
 })();

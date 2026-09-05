@@ -19,7 +19,8 @@ export const W = 960, H = 600;
 export const SCREENS = {
   title: 'scr-title', select: 'scr-select', maps: 'scr-maps', options: 'scr-options',
   pause: 'scr-pause', over: 'scr-over',
-  learn: 'scr-learn', firstrun: 'scr-firstrun', chap: 'scr-chap', online: 'scr-online'
+  learn: 'scr-learn', firstrun: 'scr-firstrun', chap: 'scr-chap', online: 'scr-online',
+  casino: 'scr-casino'
 };
 
 export let curScreen = 'title';

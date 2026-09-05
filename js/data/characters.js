@@ -583,7 +583,73 @@ function construireSkin2H(teinte) {
   return out;
 }
 
-export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper', 'yuki', 'yoshi', 'hollis'];
+// ---------------------------------------------------------------------------
+// FLOWSER-TWO. Bowser x Mewtwo, et le seul perso du roster avec Yoshi a etre
+// dessine DE PROFIL — pour une raison : sa carapace et sa queue sont des
+// elements de DOS. De face on n'en voyait que deux pointes aux epaules et le
+// reste etait un aplat mauve.
+//
+// La carte d'anatomie, qui commande les poses (voir mockups/flowser.html) :
+//   la crete, les lunettes, le museau, le collier et la CARAPACE ne bougent
+//   pas — la carapace est le bloc de reference, tout se dessine par rapport a
+//   elle ; LES DEUX BRAS balancent A CONTRETEMPS l'un de l'autre, et c'est ca
+//   qui fait courir, deux bras qui balancent ensemble donnent un pantin ; les
+//   DEUX JAMBES alternent ; la QUEUE ne bouge pas en course, elle se tend au
+//   dash et fouette au tir.
+//
+// Le sprite est cale sur les colonnes 1 a 14 et non 0 a 13 comme le reste du
+// roster. Le miroir de render.js retourne le sprite autour de son centre, donc
+// la colonne c devient la 15-c : un contenu cale de 0 a 13 se retrouve en 2 a
+// 15 quand le perso se retourne et saute de deux pixels sur place. Les colonnes
+// 1 a 14 se renvoient sur elles-memes, c'est le seul calage qui ne saute pas.
+const PAL_FL = {
+  L: '#d9c2ee',                 // mauve eclaire : museau, bras, avant du corps
+  M: '#b795d8',                 // LE mauve de base
+  m: '#8f6bb0',                 // son ombre, qui longe le contour
+  o: '#6b4a87',                 // son creux
+  V: '#a05a9c', v: '#7d3f78',   // le prune de la carapace et de la queue
+  R: '#e8392f', r: '#a81f18',   // la crete
+  C: '#f0e0bc', c: '#c9b283',   // l'os : liseré de carapace, pointes, griffes
+  N: '#1a1620',                 // le cuir cloute et la monture
+  A: '#e8edf6'                  // l'argent : verres, clous, reflets
+};
+
+const FL_IDLE  = [".....Rr.R..R....", "..r.rRRrRRRr....", ".rRrRRRRRRRrRR..", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", ".CCcovvCNNVVVML.", "..cvvoCoLLVVvNN.", "CCcvvvCoNNVVvLL.", "..cooooCLLVVvNN.", ".CcvvvCoNNVVvLL.", "..cvoCMVLLVVvmL.", ".VvcvCMVVLvvMMm.", ".vVVvmMMvv.MMm..", "..vv.CCC...CCC.."];
+const FL_RUN1  = [".....Rr.R..R....", "..r.rRRrRRRr....", ".rRrRRRRRRRrRR..", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", ".CCcovvCLLVVVNN.", "..cvvoCoNNVVvLL.", "CCcvvvCoLLVVvNN.", "..cooooCNNVVvLL.", ".CcvvvCoLLVVvNN.", "..cvoCMVNNVVvmL.", ".VvcvCMVVLvvMMm.", ".vVVvmMMvv.CCC..", "..vv.CCC........"];
+const FL_RUN2  = [".....Rr.R..R....", "..r.rRRrRRRr....", ".rRrRRRRRRRrRR..", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", ".CCcovvCLLVVVLL.", "..cvvoCoNNVVvNN.", "CCcvvvCoLLVVvLL.", "..cooooCNNVVvNN.", ".CcvvvCoLLVVvLL.", "..cvoCMVNNVVvmN.", ".VvcvCMVVLvvMMm.", ".vVVvCCCvv.MMm..", "..vv.......CCC.."];
+const FL_THROW = [".....Rr.R..R....", "..r.rRRrRRRr....", ".rRrRRRRRRRrRR..", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", ".CCcovvCNNLLLLC.", "..cvvoCoLLVVvNN.", "CCcvvvCoNNVVvLL.", "..cooooCLLVVvNN.", ".CcvvvCoNNVVvLL.", "..cvoCMVLLVVvmL.", "VVvcvCMVVLvvMMm.", "vVVVvmMMvv.MMm..", "vv.v.CCC...CCC.."];
+const FL_DASH  = ["RrR.R..R........", "rRRRRRRr........", "rRRRRRRRRr......", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", ".CCcovvCNNVVVML.", "..cvvoCoLLVVvNN.", "CCcvvvCoNNVVvLL.", "..cooooCLLVVvNN.", ".CcvvvCoNNVVvLL.", "..cvoCMVLLVVvmL.", "VVvcvCMVVLvvMMm.", "vVVvvmMMvv.MMm..", "vv..CCC...CCC..."];
+const FL_DIVE  = ["RrR.R..R........", "rRRRRRRr........", "rRRRRRRRRr......", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", "CCCcovvCNNVVVML.", "CccvvoCoLLVVvNN.", "CCcvvvCoNNVVvLL.", "CcooooooCLLVVvN.", "vCcvvvCoNNVVvLL.", "vvcvoCMVLLVVMMm.", "vvvCCCCCCCCCCm..", "................", "................"];
+
+// Ses trois grandes surfaces sont le mauve du corps, le prune de la carapace
+// et le rouge de la crete : ce sont elles que les skins recolorent. La peau du
+// museau suit le corps, sinon la tete se detache du reste.
+const TEINTES_FL = {
+  psychique: {},
+  brasier:   { L: '#f7c9a8', M: '#e08a4a', m: '#a85c22', o: '#733a10',
+               V: '#c4485a', v: '#8f2c3c', R: '#ffd23e', r: '#c48a12' },
+  abysse:    { L: '#9fc4e8', M: '#5a7fb8', m: '#3d5885', o: '#26375a',
+               V: '#2e6b8f', v: '#1b4560', R: '#35e0ff', r: '#1e8fa8' },
+  venin:     { L: '#d4f0a8', M: '#8fc44a', m: '#638f26', o: '#3f6014',
+               V: '#5aa832', v: '#357018', R: '#e8e83a', r: '#a8a812' },
+  // Albinos : le corps devient presque blanc, donc la carapace DOIT s'assombrir
+  // pour rester lisible. En clair sur clair elle disparaissait dans le dos,
+  // exactement le defaut rencontre sur le Yoshi blanc.
+  albinos:   { L: '#ffffff', M: '#e0dce8', m: '#b0aabd', o: '#7d7788',
+               V: '#6b6478', v: '#453f52', R: '#e8392f', r: '#a81f18' }
+};
+
+const FL_POSES = { idle: FL_IDLE, run1: FL_RUN1, run2: FL_RUN2,
+                   throw: FL_THROW, dive: FL_DIVE, dash: FL_DASH };
+
+function construireSkinFL(teinte) {
+  const pal = { ...PAL_FL, ...TEINTES_FL[teinte] };
+  const out = {};
+  for (const [nom, rows] of Object.entries(FL_POSES)) out[nom] = buildSprite(rows, pal);
+  return out;
+}
+
+export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper', 'yuki', 'yoshi', 'hollis', 'flowser'];
 
 export const CHARS = {
   naruto: {
@@ -811,6 +877,32 @@ export const CHARS = {
       argent: construireSkin2H('argent'),
       glacier: construireSkin2H('glacier')
     }
+  },
+
+  flowser: {
+    name: 'FLOWSER-TWO', short: 'FLOWSER', icon: '\u{1F52E}', universe: 'LABORATOIRE DU CHÂTEAU',
+    // Profil « telekinesiste » : il charge son ultime plus vite que tout le
+    // monde et frappe le moins fort. Il gagne par le controle du terrain, pas
+    // par le bras — ce qui est exactement ce que fait Psycho-Shell.
+    speed: 322, power: .9, catchR: 31, chargeT: .62,
+    color: '#8b4fd6', accent: '#e8edf6',
+    stats: { spd: 3, pow: 2, ctl: 4 },
+    ult: 'psychoshell',
+    frames: {
+      idle: buildSprite(FL_IDLE, PAL_FL),
+      run1: buildSprite(FL_RUN1, PAL_FL),
+      run2: buildSprite(FL_RUN2, PAL_FL),
+      throw: buildSprite(FL_THROW, PAL_FL),
+      dive: buildSprite(FL_DIVE, PAL_FL),
+      dash: buildSprite(FL_DASH, PAL_FL)
+    },
+    skins: {
+      psychique: null,          // rempli plus bas : c'est `frames` lui-meme
+      brasier: construireSkinFL('brasier'),
+      abysse: construireSkinFL('abysse'),
+      venin: construireSkinFL('venin'),
+      albinos: construireSkinFL('albinos')
+    }
   }
 };
 
@@ -830,3 +922,4 @@ CHARS.naruto.skins.shippuden = CHARS.naruto.frames;
 CHARS.leon.skins.rpd = CHARS.leon.frames;
 CHARS.yoshi.skins.vert = CHARS.yoshi.frames;
 CHARS.hollis.skins.platine = CHARS.hollis.frames;
+CHARS.flowser.skins.psychique = CHARS.flowser.frames;

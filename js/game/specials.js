@@ -1,6 +1,7 @@
 import { G, comment } from './state.js';
 import { SPECIALS, RUEE_DISQUE, RUEE_POUSSEE, RUEE_CTRL, RUEE_LARGEUR,
-         WT_CHANT, WT_VITESSE, WT_RAYON, WT_BANDE, WT_STUN, WT_ATTIRE, WT_SORTIE }
+         WT_CHANT, WT_VITESSE, WT_RAYON, WT_BANDE, WT_STUN, WT_ATTIRE, WT_SORTIE,
+         PS_CHANT, PS_CHUTE, PS_IMPACT, PS_DUREE, PS_SLOW, PS_DRAIN }
   from '../data/specials.js';
 import { COURT } from '../core/constants.js';
 import { sfx } from '../audio/audio.js';
@@ -314,6 +315,49 @@ export function updateTigre(dt) {
     burst(w.x, w.y, '#35e0ff', 14);
     addPopup('ENVOUTE !', '#35e0ff', 16, 1.1);
     sfx('stun'); comment('LE TIGRE LE CLOUE !', undefined, 'ultimate');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PSYCHO-SHELL. Quatre temps : l'incantation ou le cercle s'ecrit, la chute ou
+// la carapace se recompose, l'impact, puis LA ZONE — qui est le vrai ultime,
+// les trois premiers temps n'etant que la mise en scene.
+//
+// Ce qui la separe de tout le reste du roster : elle DURE. La Jambe de Maman
+// tombe elle aussi du ciel, mais elle ecrase et disparait en une seconde. Ici
+// la carapace tombe et RESTE sept secondes, et c'est ce que l'adversaire doit
+// contourner pendant tout ce temps.
+export function updatePsycho(dt) {
+  const z = G.psycho;
+  if (!z) return;
+  z.t += dt;
+  const b = [PS_CHANT, PS_CHANT + PS_CHUTE, PS_CHANT + PS_CHUTE + PS_IMPACT];
+  z.phase = z.t < b[0] ? 0 : z.t < b[1] ? 1 : z.t < b[2] ? 2 : 3;
+  if (z.t >= b[2] + PS_DUREE) {
+    G.psycho = null;
+    const foe = z.owner.foe;
+    if (foe) foe.ralenti = 0;
+    addPopup('LA ZONE SE REFERME', '#8b4fd6', 13, .9);
+    return;
+  }
+  if (z.phase !== 3) return;
+
+  // Ce que la zone inflige est de l'arbitrage : l'invite la voit, mais c'est
+  // l'hote qui decide de ce qu'elle ralentit et de ce qu'elle vide.
+  if (!jeSimule()) return;
+  const foe = z.owner.foe;
+  if (!foe) return;
+  // La hitbox est un CERCLE PARFAIT, et ce sont les PIEDS qui comptent : des
+  // qu'ils touchent le bord lumineux, l'effet s'applique. C'est ce qui rend la
+  // limite lisible — on voit exactement ou elle est.
+  const dedans = Math.hypot(foe.x - z.x, foe.y - z.y) < z.r;
+  foe.ralenti = dedans ? PS_SLOW : 0;
+  if (dedans) {
+    // Le DRAIN. Il vide sa jauge d'ultime tant qu'il reste : c'est la vraie
+    // punition, le ralenti n'est que ce qui l'empeche de sortir vite.
+    foe.meter = Math.max(0, foe.meter - PS_DRAIN * dt);
+    if (foe.ai) foe.ai.hesT = Math.max(foe.ai.hesT || 0, .25);
+    if (Math.random() < .5) dust(foe.x, foe.y + 16, 1);
   }
 }
 
