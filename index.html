@@ -585,7 +585,19 @@
       <div class="casScanlines"></div>
       <div class="casGrain"></div>
     </div>
-    <div class="bjTapis" aria-hidden="true"><div class="bjTapisArc"></div></div>
+    <!-- Le tapis est un rectangle à coins arrondis, pas un ovale : c'est ce qui
+         le fait lire comme une table de jeu et non comme une démonstration.
+         Grain du feutre, sceau gravé dessous, double liseré, spot au centre. -->
+    <div class="bjTapis" aria-hidden="true">
+      <div class="bjGrain"></div>
+      <div class="casSceau bjSceauTapis" id="bjSceauTapis"></div>
+      <div class="bjTapisArc"></div>
+      <div class="bjSpot"></div>
+    </div>
+    <!-- Poussière d'or au-dessus des cartes, pour l'air entre le joueur et la
+         table. Trois nappes de vitesses différentes : une seule aurait glissé
+         comme une grille. -->
+    <div class="bjPoussiere" aria-hidden="true"><i></i><i></i><i></i></div>
 
     <div class="titlebar"><span>BLACKJACK</span></div>
     <div class="bjSolde" id="bjSolde" title="Tes pièces">

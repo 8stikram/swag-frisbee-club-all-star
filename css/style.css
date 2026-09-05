@@ -2359,134 +2359,261 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 }
 
 /* ================= BLACKJACK =================
-   Même arrière-salle que le comptoir : fond sombre, sceaux, fumée, braises,
-   scanlines. Le tapis vert est un MEUBLE posé dedans, éclairé par un lustre —
-   peindre tout l'écran en vert donnait une table de démonstration.
+   Même arrière-salle que le comptoir : fond sombre, sceaux, fumée violette,
+   braises, scanlines. Le tapis est un MEUBLE posé dedans, éclairé par un
+   lustre — peindre tout l'écran en vert donnait une table de démonstration.
 
    Les cartes sont en DOM et non sur un canvas : à une dizaine de cartes, le DOM
    tient les 60 images sans effort et hérite des polices déjà chargées. Un
    canvas aurait obligé à redessiner rangs et enseignes à la main. */
 .bjFond{background:#07040a;overflow:hidden}
-.bjSceaux .casSceau.a{left:3cqw;top:16cqh;width:26cqh;height:26cqh;opacity:.22}
-.bjSceaux .casSceau.b{right:3cqw;top:18cqh;width:21cqh;height:21cqh;opacity:.2}
-.bjSceaux .casSceau.c{left:50%;top:14cqh;width:52cqh;height:52cqh;margin-left:-26cqh;opacity:.08}
-.bjFumee{bottom:0;height:36cqh;opacity:.3;filter:blur(18px)}
+/* Runes du fond nettement plus lisibles qu'au comptoir : ici il n'y a pas de
+   diable pour occuper l'écran, la salle doit se tenir toute seule. */
+.bjSceaux .casSceau.a{left:2cqw;top:13cqh;width:30cqh;height:30cqh;opacity:.3}
+.bjSceaux .casSceau.b{right:2cqw;top:15cqh;width:25cqh;height:25cqh;opacity:.28}
+.bjSceaux .casSceau.c{left:50%;top:8cqh;width:60cqh;height:60cqh;margin-left:-30cqh;opacity:.2}
+.bjFumee{bottom:0;height:42cqh;opacity:.45;filter:blur(18px)}
 .bjBraises{
-  position:absolute;inset:-30% 0 0 0;opacity:.5;
+  position:absolute;inset:-30% 0 0 0;opacity:.62;
   background-image:
-    radial-gradient(2px 2px at 14% 92%,#ff9a3d 0%,transparent 60%),
-    radial-gradient(2px 2px at 31% 96%,#ffb648 0%,transparent 60%),
-    radial-gradient(1.6px 1.6px at 58% 90%,#ff7a1e 0%,transparent 60%),
-    radial-gradient(2.2px 2.2px at 76% 95%,#ffc46a 0%,transparent 60%),
-    radial-gradient(1.8px 1.8px at 89% 91%,#ff8a2a 0%,transparent 60%);
+    radial-gradient(2px 2px at 6% 92%,#ff9a3d 0%,transparent 60%),
+    radial-gradient(2px 2px at 15% 97%,#ffb648 0%,transparent 60%),
+    radial-gradient(1.6px 1.6px at 24% 90%,#ff7a1e 0%,transparent 60%),
+    radial-gradient(2.2px 2.2px at 33% 95%,#ffc46a 0%,transparent 60%),
+    radial-gradient(1.7px 1.7px at 42% 91%,#ff8a2a 0%,transparent 60%),
+    radial-gradient(2px 2px at 51% 96%,#ffa93d 0%,transparent 60%),
+    radial-gradient(1.5px 1.5px at 60% 90%,#ff7a1e 0%,transparent 60%),
+    radial-gradient(2.1px 2.1px at 69% 94%,#ffc46a 0%,transparent 60%),
+    radial-gradient(1.8px 1.8px at 78% 91%,#ff9a3d 0%,transparent 60%),
+    radial-gradient(2px 2px at 87% 96%,#ffb648 0%,transparent 60%),
+    radial-gradient(1.6px 1.6px at 95% 92%,#ff8a2a 0%,transparent 60%);
   animation:bjBraisesMontent 15s linear infinite;
+}
+/* Deuxième nappe décalée : une seule série montait par bouffées visibles, il
+   en faut deux déphasées pour que le flux paraisse continu. */
+.bjBraises::after{
+  content:'';position:absolute;inset:0;
+  background-image:inherit;background-position:9% 0;
+  animation:bjBraisesMontent 21s linear infinite -7s;
 }
 @keyframes bjBraisesMontent{
   from{transform:translateY(0);opacity:0}
-  12%{opacity:.55} 88%{opacity:.35}
-  to{transform:translateY(-46cqh);opacity:0}
+  12%{opacity:.7} 88%{opacity:.4}
+  to{transform:translateY(-54cqh);opacity:0}
 }
 /* Le lustre : c'est lui qui explique pourquoi le tapis est éclairé et le reste
    de la salle dans le noir. */
 .bjLustre{
-  position:absolute;left:50%;top:-24cqh;width:86cqw;height:86cqh;
+  position:absolute;left:50%;top:-24cqh;width:88cqw;height:88cqh;
   transform:translateX(-50%);pointer-events:none;
-  background:radial-gradient(50% 50% at 50% 50%,rgba(255,214,140,.2) 0%,rgba(255,170,70,.06) 45%,transparent 72%);
+  background:radial-gradient(50% 50% at 50% 50%,rgba(255,214,140,.22) 0%,rgba(255,170,70,.07) 45%,transparent 72%);
   animation:bjLustrePouls 6s ease-in-out infinite;
 }
 @keyframes bjLustrePouls{0%,100%{opacity:.7}50%{opacity:1}}
-
-/* --- Le tapis, meuble posé dans la salle --- */
-.bjTapis{
-  position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);
-  width:82cqw;height:62cqh;z-index:2;pointer-events:none;
-  border-radius:50% 50% 42% 42% / 46% 46% 54% 54%;
-  background:
-    radial-gradient(64% 58% at 50% 40%, #1f6b3f 0%, #14603a 34%, #0c3b25 72%, #06251a 100%);
-  border:.55cqh solid rgba(212,175,55,.55);
-  box-shadow:
-    inset 0 0 8cqh rgba(0,0,0,.6),
-    inset 0 2cqh 4cqh rgba(255,225,160,.08),
-    0 3cqh 6cqh rgba(0,0,0,.7),
-    0 0 6cqh rgba(212,175,55,.14);
+/* Vignettage prononcé : la salle s'éteint sur les bords, le tapis reste seul
+   dans la lumière. */
+.scr-blackjack .casVignette{
+  background:radial-gradient(62% 56% at 50% 46%, transparent 26%,
+             rgba(0,0,0,.55) 66%, rgba(0,0,0,.93) 100%);
 }
-/* Double liseré, comme sur un vrai tapis. */
+
+/* --- Le tapis : rectangle à coins arrondis ---------------------------------
+   L'ovale se lisait comme une table de démonstration. C'est le rectangle, avec
+   ses angles francs et son double liseré d'or, qui fait la table de jeu. */
+.bjTapis{
+  position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);
+  width:84cqw;height:60cqh;z-index:2;pointer-events:none;border-radius:3.2cqh;
+  background:radial-gradient(58% 62% at 50% 40%, #17603a 0%, #114a2c 34%, #0a2a1a 76%, #061a10 100%);
+  border:max(4px, .6cqh) solid #d4af37;
+  box-shadow:
+    inset 0 0 10cqh rgba(0,0,0,.66),
+    inset 0 1.6cqh 3cqh rgba(255,225,160,.07),
+    0 3cqh 7cqh rgba(0,0,0,.78),
+    0 0 5cqh rgba(212,175,55,.3);
+  overflow:hidden;
+}
+/* Grain du feutre : un bruit fractal plus deux trames croisées très fines. Le
+   vert plat se lisait comme du papier, pas comme du tissu.
+   Pas de mix-blend-mode ici : sur un fond aussi sombre, `overlay` et
+   `soft-light` conservent les noirs et effacent le bruit. Un calque à faible
+   opacité, posé normalement, est le seul qui se voie vraiment. */
+.bjGrain{
+  position:absolute;inset:0;pointer-events:none;opacity:.3;
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4'/></filter><rect width='140' height='140' filter='url(%23f)' opacity='.9'/></svg>"),
+    repeating-linear-gradient(38deg, rgba(0,0,0,.3) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(-38deg, rgba(255,255,255,.09) 0 1px, transparent 1px 3px);
+}
+/* Double liseré intérieur, filet plein puis filet pointillé. */
 .bjTapisArc{
-  position:absolute;inset:2.4cqh;border-radius:inherit;
-  border:.25cqh solid rgba(212,175,55,.3);
+  position:absolute;inset:2.2cqh;border-radius:2cqh;pointer-events:none;
+  border:.24cqh solid rgba(212,175,55,.36);
+  box-shadow:inset 0 0 3cqh rgba(0,0,0,.38);
 }
 .bjTapisArc::after{
-  content:'';position:absolute;left:50%;top:12%;width:56%;height:52%;
-  transform:translateX(-50%);border-radius:50%;
-  border:.22cqh dashed rgba(212,175,55,.22);
+  content:'';position:absolute;inset:.9cqh;border-radius:1.4cqh;
+  border:.16cqh dashed rgba(212,175,55,.22);
+}
+/* Sceau gravé dans le feutre, sous les cartes. */
+.bjSceauTapis{
+  left:50%;top:50%;width:44cqh;height:44cqh;margin:-22cqh 0 0 -22cqh;
+  opacity:.13;animation-duration:220s;
+}
+/* Spot au centre du tapis : il respire comme un feu qu'on ne voit pas. */
+.bjSpot{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(38% 46% at 50% 42%, rgba(255,236,180,.17) 0%, transparent 70%);
+  animation:bjSpotVacille 7s ease-in-out infinite alternate;
+}
+@keyframes bjSpotVacille{0%{opacity:.65}100%{opacity:1}}
+/* Assombrissement des bords du tapis, pour que le centre porte le regard. */
+.bjTapis::after{
+  content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:radial-gradient(64% 66% at 50% 44%, transparent 40%, rgba(0,0,0,.5) 100%);
+}
+/* Poussière d'or en suspension au-dessus des cartes. Trois nappes de vitesses
+   différentes : une seule donnait une grille qui glisse, pas un flottement. */
+.bjPoussiere{
+  position:absolute;left:8cqw;right:8cqw;top:14cqh;bottom:16cqh;
+  z-index:6;pointer-events:none;overflow:hidden;
+}
+.bjPoussiere i{
+  position:absolute;inset:-20% -10%;display:block;
+  background-image:
+    radial-gradient(2.4px 2.4px at 11% 22%,rgba(255,232,160,1) 0%,transparent 62%),
+    radial-gradient(1.8px 1.8px at 27% 61%,rgba(246,226,122,.95) 0%,transparent 62%),
+    radial-gradient(2.6px 2.6px at 44% 14%,rgba(255,244,196,1) 0%,transparent 62%),
+    radial-gradient(1.9px 1.9px at 58% 77%,rgba(232,196,86,.95) 0%,transparent 62%),
+    radial-gradient(2.2px 2.2px at 73% 36%,rgba(255,232,160,1) 0%,transparent 62%),
+    radial-gradient(1.7px 1.7px at 88% 68%,rgba(246,226,122,.9) 0%,transparent 62%),
+    radial-gradient(2.1px 2.1px at 19% 88%,rgba(255,240,180,.95) 0%,transparent 62%),
+    radial-gradient(1.6px 1.6px at 66% 5%,rgba(232,196,86,.9) 0%,transparent 62%),
+    radial-gradient(2.3px 2.3px at 93% 44%,rgba(255,232,160,.95) 0%,transparent 62%);
+  filter:drop-shadow(0 0 2px rgba(255,205,90,.8));
+  animation:bjPoussiereDerive linear infinite;
+}
+.bjPoussiere i:nth-child(1){animation-duration:19s;opacity:.85}
+.bjPoussiere i:nth-child(2){animation-duration:27s;animation-delay:-11s;opacity:.6;background-position:37% 21%}
+.bjPoussiere i:nth-child(3){animation-duration:34s;animation-delay:-21s;opacity:.45;background-position:-24% 63%}
+@keyframes bjPoussiereDerive{
+  0%{transform:translate(0,4cqh);opacity:0}
+  15%{opacity:.7} 85%{opacity:.5}
+  100%{transform:translate(2cqw,-14cqh);opacity:0}
 }
 .scr-blackjack .titlebar{background:#0f6b3c}
 
-/* --- Solde ---
+/* --- Solde : deux fois plus imposant ---------------------------------------
    À gauche et sous la barre du haut : à droite il passait derrière le bouton
    de compte et le plein écran, qui vivent au-dessus de tous les écrans. */
 .bjSolde{
-  position:absolute;top:11cqh;left:4cqw;z-index:7;
-  display:flex;align-items:center;gap:.8cqw;
-  padding:.7cqh 1.4cqw;border-radius:8px;
-  background:linear-gradient(165deg,#180a12 0%,#0a0409 100%);
-  border:2px solid rgba(212,175,55,.6);
-  box-shadow:inset 0 .3cqh .6cqh rgba(0,0,0,.8), 0 0 2cqh rgba(212,175,55,.25);
+  position:absolute;top:10.5cqh;left:3.5cqw;z-index:7;
+  display:flex;align-items:center;gap:1.2cqw;
+  padding:1.3cqh 2cqw;border-radius:12px;
+  background:linear-gradient(165deg,#1e0c16 0%,#0a0409 100%);
+  border:max(3px, .45cqh) solid #d4af37;
   transition:box-shadow .2s, border-color .2s;
+  animation:bjSoldeRespire 3.4s ease-in-out infinite;
+}
+@keyframes bjSoldeRespire{
+  0%,100%{box-shadow:inset 0 .4cqh .9cqh rgba(0,0,0,.85), 0 0 2.4cqh rgba(212,175,55,.4), 0 1cqh 2cqh rgba(0,0,0,.6)}
+  50%{box-shadow:inset 0 .4cqh .9cqh rgba(0,0,0,.85), 0 0 4.4cqh rgba(212,175,55,.72), 0 1cqh 2cqh rgba(0,0,0,.6)}
 }
 .bjSolde b{
-  font-family:'Russo One',sans-serif;font-size:clamp(11px,2.4cqh,20px);
-  color:#ffdf7a;letter-spacing:.06em;text-shadow:0 0 .8cqh rgba(255,200,60,.85);
+  font-family:'Russo One',sans-serif;font-size:clamp(16px,4.2cqh,36px);
+  color:#ffdf7a;letter-spacing:.05em;line-height:1;
+  text-shadow:0 .3cqh 0 rgba(0,0,0,.85), 0 0 1.4cqh rgba(255,200,60,.9);
 }
 .bjPiece{
-  width:2.4cqh;height:2.4cqh;border-radius:50%;
+  width:4.6cqh;height:4.6cqh;border-radius:50%;flex:none;
   background:radial-gradient(circle at 34% 30%,#fff3b8,#eab73f 52%,#8a5f11);
-  box-shadow:0 0 .8cqh rgba(240,190,60,.7);
-  animation:casPieceTourne 3.6s linear infinite;
+  box-shadow:0 0 1.6cqh rgba(240,190,60,.85), inset 0 -.4cqh .6cqh rgba(0,0,0,.45);
+  animation:casPieceTourne 4.2s linear infinite;
 }
-.bjSolde.gagne{border-color:#7bff9d;box-shadow:0 0 4cqh rgba(120,255,150,.8)}
-.bjSolde.perd{border-color:#ff4d4d;box-shadow:0 0 3cqh rgba(255,40,40,.75)}
+.bjSolde.gagne{border-color:#7bff9d;box-shadow:0 0 5cqh rgba(120,255,150,.9) !important;animation:none}
+.bjSolde.perd{border-color:#ff4d4d;box-shadow:0 0 4cqh rgba(255,40,40,.85) !important;animation:none}
 
 /* --- Le sabot --- */
 .bjSabot{
   position:absolute;top:11cqh;right:6cqw;width:9cqw;height:11cqh;z-index:4;
   background:linear-gradient(160deg,#2a1a10 0%,#160c07 100%);
-  border:2px solid rgba(212,175,55,.5);border-radius:6px 6px 3px 3px;
-  box-shadow:0 .6cqh 1.2cqh rgba(0,0,0,.6), 0 0 2cqh rgba(212,175,55,.15);
+  border:.3cqh solid #d4af37;border-radius:8px 8px 4px 4px;
+  box-shadow:0 .8cqh 1.6cqh rgba(0,0,0,.7), 0 0 2.4cqh rgba(212,175,55,.28);
   display:flex;flex-direction:column;justify-content:flex-end;gap:.35cqh;padding:.6cqh;
 }
 .bjSabot i{display:block;height:.9cqh;border-radius:2px;background:rgba(230,220,200,.55)}
+/* Le sabot s'illumine quand il crache une carte. */
+.bjSabot.donne{
+  animation:bjSabotSecoue .18s ease-out;
+  box-shadow:0 .8cqh 1.6cqh rgba(0,0,0,.7), 0 0 3.4cqh rgba(212,175,55,.85);
+}
 @keyframes bjSabotSecoue{0%,100%{transform:translate(0,0)}50%{transform:translate(-.4cqw,.3cqh)}}
 
 /* --- La table --- */
 .bjTable{
   position:absolute;inset:0;z-index:5;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.2cqh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.6cqh;
   padding:14cqh 4cqw 20cqh;pointer-events:none;
 }
-.bjRangee{display:flex;align-items:center;gap:1.6cqw;min-height:22cqh}
+.bjRangee{display:flex;align-items:center;gap:2.2cqw;min-height:22cqh}
 .bjCartes{display:flex;align-items:center;min-height:22cqh}
 
+/* --- Les scores : texte flottant, plus de badge ----------------------------
+   Le cartouche doré était un objet de plus posé sur la table, et il volait la
+   vedette aux cartes. Un chiffre qui flotte à côté de la main se lit aussi vite
+   sans rien ajouter au décor : pas de halo doré, une ombre portée noire suffit
+   à le décoller du feutre. */
 .bjScore{
-  min-width:5.5cqh;padding:.5cqh 1cqw;border-radius:999px;
-  font-family:'Russo One',sans-serif;font-size:clamp(10px,2.2cqh,18px);
-  color:#1a1008;background:linear-gradient(180deg,#f8ecb0,#d4af37);
-  border:2px solid #6b4d10;box-shadow:0 .3cqh .5cqh rgba(0,0,0,.5), 0 0 1.6cqh rgba(212,175,55,.4);
-  text-align:center;opacity:0;transition:opacity .2s;
+  font-family:'Russo One',sans-serif;font-size:clamp(15px,4.2cqh,36px);
+  color:#fdf6e0;letter-spacing:.03em;line-height:1;white-space:nowrap;
+  /* Une largeur plancher, sinon la rangée se recentre à chaque fois que le
+     chiffre passe d'un à deux caractères et les cartes glissent sous l'œil. */
+  min-width:7cqh;text-align:center;
+  text-shadow:0 .35cqh 0 rgba(0,0,0,.95), 0 .7cqh 1.3cqh rgba(0,0,0,.85),
+              0 0 .6cqh rgba(0,0,0,.9);
+  opacity:0;transform:translateY(.8cqh);
+  transition:opacity .3s ease-out, transform .3s ease-out, color .35s;
 }
-.bjScore.on{opacity:1}
-.bjScore.creve{background:linear-gradient(180deg,#ff9a9a,#c01818);color:#fff;border-color:#5a0808;
-               box-shadow:0 0 2cqh rgba(255,40,40,.8)}
+.bjScore.on{opacity:1;transform:translateY(0)}
+.bjScore.bond{animation:bjScoreBond .32s cubic-bezier(.2,1.5,.4,1)}
+@keyframes bjScoreBond{0%,100%{transform:scale(1)}42%{transform:scale(1.4)}}
+/* La chaleur passe par la couleur du chiffre, pas par un fond. */
+.bjScore.chaud{color:#ffe3a8}
+.bjScore.brulant{color:#ffb464;animation:bjScoreBrule 1.1s ease-in-out infinite}
+@keyframes bjScoreBrule{0%,100%{filter:brightness(1)}50%{filter:brightness(1.4)}}
+/* Vingt-et-un pile : ni chaud ni crevé, un état à part. C'est le seul score qui
+   a droit à une lueur — parce qu'il n'arrive presque jamais. */
+.bjScore.parfait{
+  color:#ffe873;
+  text-shadow:0 .35cqh 0 rgba(0,0,0,.95), 0 0 2.4cqh rgba(255,220,90,.95);
+  animation:bjScoreParfait .7s ease-in-out infinite;
+}
+@keyframes bjScoreParfait{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.bjScore.creve{
+  color:#ff7676;
+  text-shadow:0 .35cqh 0 rgba(0,0,0,.95), 0 0 2cqh rgba(255,40,40,.85);
+}
 
-/* --- Les cartes ---
-   Chacune est une charnière : la face et le dos occupent le même espace, et
-   c'est la rotation du conteneur qui les échange. Un simple échange d'image
-   n'aurait pas donné l'épaisseur du retournement. */
+/* --- Les cartes ------------------------------------------------------------
+   Ratio 2:3, comme un vrai carton. Chacune est une charnière : la face et le
+   dos occupent le même espace, et c'est la rotation du conteneur qui les
+   échange. Un simple échange d'image n'aurait pas donné l'épaisseur du
+   retournement. */
 .bjCarte{
-  position:relative;width:11cqh;height:16cqh;margin-left:-3.2cqh;
+  position:relative;width:11cqh;height:16.5cqh;margin-left:-3cqh;
   transform-style:preserve-3d;
-  animation:bjDonne .42s cubic-bezier(.2,.85,.3,1) backwards;
+  /* Deux animations : l'arrivée, puis un flottement perpétuel. Le retard de la
+     seconde est posé en JS carte par carte — réglées ensemble elles montaient
+     et descendaient à l'unisson, ce qui se lit comme une image qui vibre. */
+  animation:bjDonne .42s cubic-bezier(.2,.85,.3,1) backwards,
+            bjFlotte 4.6s ease-in-out infinite;
 }
+@keyframes bjFlotte{
+  0%,100%{transform:translateY(0) rotate(0)}
+  50%{transform:translateY(-.5cqh) rotate(.45deg)}
+}
+/* Une main terminée ne flotte plus : un résultat doit se figer pour se lire. */
+.bjCartes.gagne .bjCarte, .bjCartes.perd .bjCarte,
+.bjCartes.egalite .bjCarte, .bjCartes.creve .bjCarte{animation:none}
 .bjCarte:first-child{margin-left:0}
 /* Traînée lumineuse du voyage : elle s'éteint une fois la carte posée. */
 .bjCarte::before{
@@ -2501,26 +2628,28 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 }
 .bjCarte.face .bjFaces{transform:rotateY(0)}
 .bjFace, .bjDos{
-  position:absolute;inset:0;border-radius:1.1cqh;backface-visibility:hidden;
-  box-shadow:0 .5cqh 1cqh rgba(0,0,0,.6);
+  position:absolute;inset:0;border-radius:1.1cqh;backface-visibility:hidden;overflow:hidden;
 }
 .bjFace{
-  background:linear-gradient(160deg,#fffdf6 0%,#f0e6d2 100%);
-  border:.25cqh solid #b9a97f;
+  background:linear-gradient(158deg,#fbf8ea 0%,#f5f5dc 48%,#e6dec0 100%);
+  border:max(2px, .28cqh) solid #d4af37;
+  box-shadow:0 .8cqh 1.5cqh rgba(0,0,0,.72), 0 0 1.4cqh rgba(212,175,55,.4);
   display:flex;flex-direction:column;justify-content:space-between;padding:.7cqh;
 }
-/* Dos assorti au comptoir : bordeaux, résille dorée, cadre gravé. */
+/* La main du joueur luit ; celle du croupier reste sourde. C'est le seul indice
+   permanent de qui est qui, une fois les cartes étalées sur le tapis. */
+#bjJoueur .bjFace{box-shadow:0 .8cqh 1.5cqh rgba(0,0,0,.72), 0 0 2.6cqh rgba(255,222,130,.6)}
+#bjCroupier .bjFace{box-shadow:0 .8cqh 1.5cqh rgba(0,0,0,.78), 0 0 1.2cqh rgba(100,68,22,.5)}
+/* Dos bordeaux à motif runique doré : trame géométrique, médaillon central et
+   fleurons d'angle. Le SVG est monté en JS (voir casino/blackjack.js) — des
+   rayures en diagonale donnaient un dos de bloc-notes. */
 .bjDos{
   transform:rotateY(180deg);
-  background:
-    repeating-linear-gradient(45deg, rgba(212,175,55,.22) 0 .5cqh, transparent .5cqh 1cqh),
-    linear-gradient(160deg,#7a0f22 0%,#3a0510 100%);
-  border:.25cqh solid #d4af37;
+  background:radial-gradient(70% 60% at 50% 40%, #5c1010 0%, #4a0a0a 55%, #2e0505 100%);
+  border:max(2px, .28cqh) solid #d4af37;
+  box-shadow:0 .8cqh 1.5cqh rgba(0,0,0,.72);
 }
-.bjDos::after{
-  content:'';position:absolute;inset:1.1cqh;border:.2cqh solid rgba(212,175,55,.55);
-  border-radius:.6cqh;
-}
+.bjDos svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .bjCoin{
   font-family:'Russo One',sans-serif;font-size:clamp(9px,2.1cqh,17px);line-height:1;
   display:flex;flex-direction:column;align-items:center;gap:.15cqh;position:relative;z-index:2;
@@ -2529,11 +2658,22 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .bjPip{font-size:clamp(11px,2.6cqh,21px);line-height:1}
 .bjCentre{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:clamp(22px,7cqh,58px);line-height:1;opacity:.9;
+  font-size:clamp(22px,7.2cqh,60px);line-height:1;opacity:.92;
+  text-shadow:0 .2cqh .35cqh rgba(0,0,0,.22);
 }
 .bjRouge{color:#c0182e}
 .bjNoir{color:#15151c}
 
+/* La carte dépasse sa place avant de s'y poser : arrivée pile au but, elle
+   glisse au lieu de tomber. */
+@keyframes bjDonne{
+  0%{opacity:0;transform:translate(26cqw,-26cqh) rotate(24deg) scale(.78)}
+  68%{opacity:1;transform:translate(-1.4cqh,.7cqh) rotate(-3.5deg) scale(1.05)}
+  100%{opacity:1;transform:translate(0,0) rotate(0) scale(1)}
+}
+/* Et la main entière encaisse : c'est ce contrecoup qui donne du poids. */
+.bjCartes.impact{animation:bjImpact .2s ease-out}
+@keyframes bjImpact{0%,100%{transform:translateY(0)}45%{transform:translateY(.55cqh)}}
 /* Éclat au retournement de la carte cachée. */
 .bjCarte.revele::after{
   content:'';position:absolute;inset:-30%;border-radius:50%;pointer-events:none;
@@ -2544,22 +2684,24 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 
 /* Mains gagnantes, perdantes, à égalité. */
 .bjCartes.gagne .bjCarte .bjFace{
-  box-shadow:0 0 3cqh rgba(255,214,90,.95), 0 .5cqh 1cqh rgba(0,0,0,.6);
+  box-shadow:0 0 3.4cqh rgba(255,214,90,.95), 0 .8cqh 1.5cqh rgba(0,0,0,.72) !important;
   animation:bjCartePouls .55s ease-in-out 3;
 }
 @keyframes bjCartePouls{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.2cqh)}}
-.bjCartes.egalite .bjCarte .bjFace{box-shadow:0 0 2.4cqh rgba(120,200,255,.85), 0 .5cqh 1cqh rgba(0,0,0,.6)}
-/* Perdre éteint les cartes : elles grisent et s'affaissent. */
-.bjCartes.perd .bjCarte{filter:grayscale(.75) brightness(.62);transform:translateY(.6cqh) rotate(-1deg)}
-.bjCartes.perd .bjCarte, .bjCartes.gagne .bjCarte{transition:filter .4s, transform .4s}
-/* Bust : les cartes rougeoient comme des braises avant de s'éteindre. */
-.bjCartes.creve .bjCarte .bjFace{
-  animation:bjBrule .9s ease-out forwards;
+.bjCartes.egalite .bjCarte .bjFace{
+  box-shadow:0 0 2.6cqh rgba(120,200,255,.9), 0 .8cqh 1.5cqh rgba(0,0,0,.72) !important;
 }
+/* Perdre éteint les cartes : elles grisent et s'affaissent. */
+.bjCartes.perd .bjCarte{filter:grayscale(.75) brightness(.6);transform:translateY(.6cqh) rotate(-1deg)}
+.bjCartes.perd .bjCarte, .bjCartes.gagne .bjCarte{transition:filter .4s, transform .4s}
+/* Bust : les cartes rougeoient comme des braises avant de s'éteindre. Le
+   croupier qui crève a droit au même traitement — c'est le même événement, et
+   le grisage d'une défaite ordinaire le rendait invisible. */
+.bjCartes.creve .bjCarte .bjFace{animation:bjBrule .9s ease-out forwards}
 @keyframes bjBrule{
   0%{box-shadow:0 0 0 rgba(255,80,20,0)}
-  25%{box-shadow:0 0 4cqh rgba(255,90,20,.95);filter:brightness(1.25) saturate(1.4)}
-  100%{box-shadow:0 0 1cqh rgba(90,20,10,.6);filter:brightness(.45) saturate(.5)}
+  25%{box-shadow:0 0 4.4cqh rgba(255,90,20,.95);filter:brightness(1.3) saturate(1.5)}
+  100%{box-shadow:0 0 1cqh rgba(90,20,10,.6);filter:brightness(.42) saturate(.45)}
 }
 
 /* --- Annonce au centre --- */
@@ -2568,10 +2710,10 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   font-family:'Archivo Black',sans-serif;font-size:clamp(20px,7cqh,56px);
   letter-spacing:.04em;color:#fff;-webkit-text-stroke:.7cqh #1a0a02;paint-order:stroke fill;
   animation:bjAnnonceEntre .4s cubic-bezier(.2,.9,.3,1.5);
-  text-shadow:0 0 3cqh rgba(0,0,0,.7);pointer-events:none;
+  text-shadow:0 0 3cqh rgba(0,0,0,.8), 0 .6cqh 1.2cqh rgba(0,0,0,.9);pointer-events:none;
 }
-.bjAnnonce.gain{color:#ffdf7a;text-shadow:0 0 4cqh rgba(255,200,60,.9)}
-.bjAnnonce.perte{color:#ff6a6a;text-shadow:0 0 4cqh rgba(255,40,40,.8)}
+.bjAnnonce.gain{color:#ffdf7a;text-shadow:0 0 4cqh rgba(255,200,60,.9), 0 .6cqh 1.2cqh rgba(0,0,0,.9)}
+.bjAnnonce.perte{color:#ff6a6a;text-shadow:0 0 4cqh rgba(255,40,40,.85), 0 .6cqh 1.2cqh rgba(0,0,0,.9)}
 .bjAnnonce.egalite{color:#8fd8ff}
 /* Le blackjack ne se contente pas d'apparaître : il arrive de très loin et
    dépasse sa taille avant de se poser. */
@@ -2603,7 +2745,7 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
    ensemble invite à essayer. */
 .bjBarre{
   position:absolute;left:0;right:0;bottom:3cqh;z-index:7;
-  display:flex;align-items:center;justify-content:center;gap:1.6cqw;flex-wrap:wrap;
+  display:flex;align-items:center;justify-content:center;gap:1.8cqw;flex-wrap:wrap;
   padding:0 3cqw;
 }
 .bjJetons{display:flex;gap:1.1cqw}
@@ -2651,84 +2793,6 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .bjJeton.j100{--rune:#ff8a5c}
 .bjJeton.j500{--rune:#c99cf0}
 
-.bjSaisie{display:flex;align-items:center;gap:.9cqw}
-.bjSaisie label{
-  font-family:'Russo One',sans-serif;font-size:clamp(9px,1.7cqh,14px);
-  color:#ffdf7a;letter-spacing:.1em;
-}
-.bjSaisie input{
-  width:11cqw;max-width:130px;padding:.8cqh .8cqw;border-radius:7px;
-  background:#0a0409;border:2px solid rgba(212,175,55,.6);
-  font-family:'Russo One',sans-serif;font-size:clamp(11px,2.2cqh,18px);
-  color:#ffdf7a;text-align:center;
-}
-.bjSaisie input:focus{outline:none;border-color:#f6e27a;box-shadow:0 0 1.6cqh rgba(246,226,122,.5)}
-
-.bjBtn{
-  font-family:'Russo One',sans-serif;font-size:clamp(11px,2.3cqh,19px);letter-spacing:.06em;
-  color:#fff;padding:1.3cqh 2.4cqw;border-radius:12px;cursor:pointer;
-  border:.3cqh solid rgba(255,225,160,.35);
-  box-shadow:0 .7cqh 0 rgba(0,0,0,.6), 0 1cqh 1.6cqh rgba(0,0,0,.5),
-             0 0 2cqh var(--halo, rgba(212,175,55,.4));
-  text-shadow:0 .2cqh .3cqh rgba(0,0,0,.7);
-  transition:transform .1s, box-shadow .1s, filter .12s;
-}
-.bjBtn:hover{filter:brightness(1.18);box-shadow:0 .7cqh 0 rgba(0,0,0,.6), 0 0 3.4cqh var(--halo)}
-/* Le bouton descend ET son ombre raccourcit : sans les deux, il glisse au lieu
-   de s'enfoncer. */
-.bjBtn:active{transform:translateY(.6cqh);box-shadow:0 .1cqh 0 rgba(0,0,0,.6)}
-.bjBtn:disabled{filter:grayscale(.85) brightness(.5);cursor:not-allowed;box-shadow:0 .3cqh 0 rgba(0,0,0,.5)}
-.bjBtn.vert{background:linear-gradient(180deg,#3fbf6a,#12602c);--halo:rgba(90,255,150,.5)}
-.bjBtn.rouge{background:linear-gradient(180deg,#d8564f,#7a1010);--halo:rgba(255,90,80,.5)}
-.bjBtn.bleu{background:linear-gradient(180deg,#4a90dd,#123f78);--halo:rgba(90,170,255,.5)}
-
-.bjMsg{
-  position:absolute;bottom:15cqh;left:50%;transform:translateX(-50%);z-index:9;
-  font-family:'DotGothic16',monospace;font-size:clamp(8px,1.6cqh,13px);
-  color:#ffe9c2;background:rgba(10,3,6,.92);border:2px solid rgba(212,175,55,.6);
-  border-radius:10px;padding:.6cqh 1.6cqw;max-width:70cqw;text-align:center;
-}
-
-/* --- Gamefeel : ce que le joueur FAIT doit répondre ------------------------
-   Le reste du juice célébrait les résultats. Ici on répond aux gestes : le
-   score accuse le coup, la carte pèse en tombant, le jeton part vraiment vers
-   la mise, le bouton rend la pression. Sans ça, on regarde une animation au
-   lieu de jouer. */
-
-/* Le score bondit à chaque changement, et chauffe en approchant de 21. C'est
-   le chiffre que le joueur fixe : il doit être le premier à réagir. */
-.bjScore{transition:opacity .2s, background .35s, box-shadow .35s, color .35s}
-.bjScore.bond{animation:bjScoreBond .32s cubic-bezier(.2,1.5,.4,1)}
-@keyframes bjScoreBond{0%,100%{transform:scale(1)}42%{transform:scale(1.38)}}
-.bjScore.chaud{
-  background:linear-gradient(180deg,#ffd58a,#e08a1e);border-color:#7a4408;
-  box-shadow:0 .3cqh .5cqh rgba(0,0,0,.5), 0 0 2cqh rgba(255,150,40,.7);
-}
-.bjScore.brulant{
-  background:linear-gradient(180deg,#ffb36a,#d4460f);border-color:#5e1c04;color:#fff;
-  box-shadow:0 .3cqh .5cqh rgba(0,0,0,.5), 0 0 2.8cqh rgba(255,90,20,.9);
-  animation:bjScoreBrule 1.1s ease-in-out infinite;
-}
-@keyframes bjScoreBrule{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3)}}
-/* Vingt-et-un pile : ni chaud ni crevé, un état à part. */
-.bjScore.parfait{
-  background:linear-gradient(180deg,#fff6c2,#ffd23e);border-color:#8a6a14;color:#2a1a02;
-  box-shadow:0 0 3.6cqh rgba(255,220,90,1), 0 0 6cqh rgba(255,180,40,.6);
-  animation:bjScoreParfait .7s ease-in-out infinite;
-}
-@keyframes bjScoreParfait{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
-
-/* La carte dépasse sa place avant de s'y poser : arrivée pile au but, elle
-   glisse au lieu de tomber. */
-@keyframes bjDonne{
-  0%{opacity:0;transform:translate(26cqw,-26cqh) rotate(24deg) scale(.78)}
-  68%{opacity:1;transform:translate(-1.4cqh,.7cqh) rotate(-3.5deg) scale(1.05)}
-  100%{opacity:1;transform:translate(0,0) rotate(0) scale(1)}
-}
-/* Et la main entière encaisse : c'est ce contrecoup qui donne du poids. */
-.bjCartes.impact{animation:bjImpact .2s ease-out}
-@keyframes bjImpact{0%,100%{transform:translateY(0)}45%{transform:translateY(.55cqh)}}
-
 /* Le jeton vole vers la mise. Cliquer un jeton pour voir un nombre changer
    dans un champ, c'est remplir un formulaire ; le voir partir, c'est miser. */
 .bjJetonVol{
@@ -2741,20 +2805,71 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   box-shadow:0 0 1.8cqh var(--rune,#d4af37);
   text-shadow:0 0 .8cqh currentColor;
 }
+
+.bjSaisie{display:flex;align-items:center;gap:.9cqw}
+.bjSaisie label{
+  font-family:'Russo One',sans-serif;font-size:clamp(9px,1.7cqh,14px);
+  color:#ffdf7a;letter-spacing:.1em;text-shadow:0 .2cqh 0 rgba(0,0,0,.85);
+}
+.bjSaisie input{
+  width:11cqw;max-width:130px;padding:.9cqh .8cqw;border-radius:9px;
+  background:#0a0409;border:.28cqh solid #d4af37;
+  font-family:'Russo One',sans-serif;font-size:clamp(11px,2.4cqh,19px);
+  color:#ffdf7a;text-align:center;box-shadow:0 .5cqh 1cqh rgba(0,0,0,.6);
+}
+.bjSaisie input:focus{outline:none;border-color:#f6e27a;box-shadow:0 0 1.6cqh rgba(246,226,122,.6)}
 .bjSaisie input.bond{animation:bjChampBond .3s cubic-bezier(.2,1.5,.4,1)}
 @keyframes bjChampBond{
   0%,100%{transform:scale(1)}
   40%{transform:scale(1.12);box-shadow:0 0 2.4cqh rgba(246,226,122,.85)}
 }
 
-/* Le sabot s'illumine quand il crache une carte. */
-.bjSabot.donne{
-  animation:bjSabotSecoue .18s ease-out;
-  box-shadow:0 .6cqh 1.2cqh rgba(0,0,0,.6), 0 0 3cqh rgba(212,175,55,.7);
+/* --- Boutons d'action : cartes de tarot colorées ---------------------------
+   Même famille que les cartes du comptoir — bordure d'or épaisse, coins hauts
+   biseautés, fond qui plonge vers le noir. Seule la teinte change et elle porte
+   le sens : vert pour avancer, bordeaux pour s'arrêter, bleu pour le pari.
+   Le bouton respire au repos : posé sur un tapis qui vit, un rectangle immobile
+   avait l'air désactivé. */
+.bjBtn{
+  position:relative;overflow:hidden;
+  min-width:14cqw;padding:2.1cqh 2.2cqw;cursor:pointer;
+  font-family:'Russo One',sans-serif;font-size:clamp(12px,2.6cqh,22px);letter-spacing:.06em;
+  color:#f6e27a;
+  -webkit-text-stroke:.6px #17070c;paint-order:stroke fill;
+  text-shadow:0 .3cqh 0 rgba(0,0,0,.9);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.1) 0%, transparent 34%),
+    linear-gradient(180deg, var(--teinte) 0%, #12060a 62%, #08040a 100%);
+  /* Plancher en pixels : à .34cqh seul, le liseré tombait sous les deux pixels
+     sur un petit écran et la carte n'avait plus de cadre. */
+  border:max(3px, .38cqh) solid #d4af37;border-radius:11px;
+  transition:transform .12s, box-shadow .12s, filter .12s, border-color .12s;
+  animation:bjBtnRespire 2.6s ease-in-out infinite;
 }
-
-/* Onde au clic d'un bouton d'action : elle part du bouton et se dissipe. */
-.bjBtn{position:relative;overflow:hidden}
+/* Second filet à l'intérieur : c'est le double cadre qui fait la carte de
+   tarot. Un simple rectangle bordé restait un bouton. */
+.bjBtn::before{
+  content:'';position:absolute;inset:3px;border-radius:6px;pointer-events:none;
+  border:1px solid rgba(212,175,55,.42);
+}
+@keyframes bjBtnRespire{
+  0%,100%{box-shadow:0 0 12px rgba(212,175,55,.4), inset 0 0 20px rgba(0,0,0,.55);
+          border-color:#c9a233;transform:scale(1)}
+  50%{box-shadow:0 0 22px rgba(212,175,55,.75), inset 0 0 24px rgba(0,0,0,.55);
+      border-color:#f6e27a;transform:scale(1.02)}
+}
+.bjBtn:hover{
+  filter:brightness(1.16);transform:scale(1.05);border-color:#f6e27a;
+  box-shadow:0 0 30px var(--halo), inset 0 0 24px rgba(0,0,0,.45) !important;
+}
+/* Le bouton s'enfonce vraiment : il rétrécit ET son halo se resserre. */
+.bjBtn:active{transform:scale(.95);box-shadow:0 0 8px var(--halo) !important;filter:brightness(1.35)}
+.bjBtn:disabled{filter:grayscale(.85) brightness(.42);cursor:not-allowed;animation:none;
+                box-shadow:0 0 6px rgba(0,0,0,.6) !important}
+.bjBtn.vert{--teinte:#0f4a26;--halo:rgba(90,255,150,.75)}
+.bjBtn.rouge{--teinte:#5a1018;--halo:rgba(255,90,80,.75)}
+.bjBtn.bleu{--teinte:#132f5e;--halo:rgba(90,170,255,.75)}
+/* Onde au clic : elle part du point pressé et se dissipe. */
 .bjBtn .onde{
   position:absolute;border-radius:50%;pointer-events:none;
   background:radial-gradient(circle,rgba(255,255,255,.75),transparent 70%);
@@ -2762,9 +2877,13 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 }
 @keyframes bjOnde{to{transform:translate(-50%,-50%) scale(3.4);opacity:0}}
 
-/* Le croupier qui crève brûle comme le joueur : c'est le même événement, il
-   mérite la même image. */
-.bjCartes.creve .bjCarte .bjFace{animation:bjBrule .9s ease-out forwards}
+.bjMsg{
+  position:absolute;bottom:15cqh;left:50%;transform:translateX(-50%);z-index:9;
+  font-family:'DotGothic16',monospace;font-size:clamp(8px,1.6cqh,13px);
+  color:#ffe9c2;background:rgba(10,3,6,.92);border:.24cqh solid #d4af37;
+  border-radius:10px;padding:.6cqh 1.6cqw;max-width:70cqw;text-align:center;
+  box-shadow:0 .6cqh 1.2cqh rgba(0,0,0,.7);
+}
 
 /* Rampe de braises au pied des cartes du comptoir. Les flammes du décor sont
    derrière le meuble et n'en dépassaient plus que de quelques pixels : il en
