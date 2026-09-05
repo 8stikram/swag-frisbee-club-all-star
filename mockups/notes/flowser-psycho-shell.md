@@ -203,16 +203,23 @@ même attaque.
 
 ---
 
-## 8. LE CHIFFRE QUI A BOUGÉ APRÈS COUP
+## 8. LE CHIFFRE QUI A BOUGÉ, ET POURQUOI IL EST REVENU
 
-Le drain est parti de 2,5, puis 7,5, et il est à **12 %/s** — six fois le haut
-de la fourchette du cahier des charges, qui disait 1,5 à 2 %/s.
+Le drain a fait l'aller-retour : **2,5 → 7,5 → 12 → 7,5 %/s**. La valeur retenue
+est **7,5**, et le détour par 12 a servi à savoir pourquoi.
 
-Sur les sept secondes de zone, ça prend **84 % de la jauge adverse** : quatre
-cinquièmes d'un ultime. Le changement d'intention est net et il faut le dire —
-à 2,5 la zone **gênait**, à 7,5 elle **punissait**, à 12 c'est un **interdit**.
-On ne la traverse pas, on en fait le tour. Et comme elle couvre jusqu'à 45 % de
-son camp, l'adversaire est obligé de jouer sur les bords pendant sept secondes.
+**À 12 %/s**, la zone prenait 84 % de la jauge adverse en sept secondes. Sur le
+papier c'était l'ultime le plus fort du jeu ; en pratique il ne se jouait plus.
+On ne traversait plus la zone, on en faisait le tour — et un ultime que
+l'adversaire contourne sans y penser ne crée aucune situation. Il déplaçait le
+jeu au lieu de le disputer.
 
-C'est aussi le premier chiffre à rebaisser si elle paraît trop forte en match :
-il vit seul dans `PS_DRAIN`, une ligne de `js/data/specials.js`.
+**À 7,5 %/s**, elle en prend 52,5 %. C'est assez pour que la traverser soit une
+vraie décision, pas assez pour que ce soit un interdit : on peut choisir d'y
+aller parce que le disque est dedans, et le payer. C'est là que l'ultime devient
+intéressant des deux côtés — celui qui le pose espère qu'on y entrera, celui qui
+le subit calcule s'il en vaut la peine.
+
+C'est six fois le haut de la fourchette du cahier des charges, qui disait 1,5 à
+2 %/s. L'écart est assumé, et le chiffre vit seul dans `PS_DRAIN` — une ligne de
+`js/data/specials.js`, rien d'autre à toucher.

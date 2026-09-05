@@ -89,18 +89,18 @@ export const PS_CHUTE = .45;    // la carapace se recompose et tombe
 export const PS_IMPACT = .3;    // l'impact, sans secousse : la camera recule
 export const PS_DUREE = 7;      // la flaque, et le gel de la jauge du lanceur
 export const PS_SLOW = .25;     // ce qu'elle retire a la vitesse de l'adversaire
-export const PS_DRAIN = 12;     // %/s de sa jauge, soit 84 % sur sept secondes
-// Le chiffre est parti de 2,5, puis 7,5, et il est ici a DOUZE — six fois le
-// haut de la fourchette du cahier des charges, qui disait 1,5 a 2 %/s.
+export const PS_DRAIN = 7.5;    // %/s de sa jauge, soit 52,5 % sur sept secondes
+// Le chiffre a fait l'aller-retour : 2,5, puis 7,5, puis 12, et retour a 7,5.
+// C'est la valeur retenue, et l'essai a 12 a servi a savoir pourquoi.
 //
-// Ce que ca veut dire concretement : rester dans le cercle du debut a la fin
-// vide QUATRE CINQUIEMES de sa jauge. La zone n'est plus une gene ni meme une
-// punition, c'est un INTERDIT — on ne la traverse pas, on en fait le tour. Et
-// comme elle couvre jusqu'a 45 % de son camp, ca l'oblige a jouer sur les
-// bords pendant sept secondes.
+// A 12 la zone prenait 84 % de la jauge adverse : on ne la traversait plus, on
+// en faisait le tour. Elle ne se jouait plus, elle s'evitait — et un ultime que
+// l'adversaire contourne sans y penser ne cree aucune situation.
 //
-// C'est le premier chiffre a rebaisser si elle parait trop forte en match, et
-// il vit seul ici : une ligne, aucune autre a toucher.
+// A 7,5 elle en prend 52,5 %. C'est assez pour que la traverser soit une vraie
+// decision, pas assez pour que ce soit un interdit : on peut choisir d'y aller
+// parce que le disque est dedans, et le payer. C'est la que l'ultime devient
+// interessant a jouer des deux cotes.
 export const PS_RAY = .30;      // part de l'aire de la moitie adverse
 // Le rayon GRANDIT avec l'ecart entre les deux joueurs, jusqu'a moitie plus :
 // ca recompense de poser la zone au bon moment plutot que sur lui.
