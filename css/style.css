@@ -1980,17 +1980,17 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .casinoSolde.bad{color:#ff8f9a;border-color:#ff8f9a;text-shadow:none}
 
 .casinoWrap{
-  position:absolute;inset:0;z-index:5;padding:9cqh 4cqw 3cqh;
+  position:absolute;inset:0;z-index:5;padding:6cqh 4cqw 3cqh;
   display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
 }
 /* Le buste mord sur le comptoir : c'est ce chevauchement qui le fait tenir
    DERRIÈRE le meuble au lieu de flotter au-dessus. */
 .devilBox{
   position:relative;display:flex;flex-direction:column;align-items:center;
-  margin-bottom:-5cqh;z-index:1;
+  margin-bottom:-6cqh;z-index:1;
 }
 .devilSvg{
-  width:auto;height:clamp(150px,46cqh,420px);
+  width:auto;height:clamp(170px,56cqh,500px);
   filter:drop-shadow(0 6px 18px rgba(0,0,0,.65)) drop-shadow(0 0 22px rgba(255,60,40,.28));
   animation:devilBob 4.2s ease-in-out infinite;
 }

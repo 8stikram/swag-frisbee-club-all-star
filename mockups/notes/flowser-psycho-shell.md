@@ -1,6 +1,6 @@
 # PSYCHO-SHELL — direction artistique
 
-Ultime de **Flowser-Two** (Bowser × Mewtwo). Document de référence pour la
+Ultime de **Flowser-Two** (Bowser × Mewtwo), d'**Umbra Corporation**. Document de référence pour la
 séquence in-game, en vue de dessus.
 
 ---
@@ -205,14 +205,14 @@ même attaque.
 
 ## 8. LE CHIFFRE QUI A BOUGÉ APRÈS COUP
 
-Le drain est passé de 2,5 à **7,5 %/s** — trois fois la valeur d'abord posée,
-et cinq fois le haut de la fourchette du cahier des charges (1,5 à 2 %/s).
+Le drain est parti de 2,5, puis 7,5, et il est à **12 %/s** — six fois le haut
+de la fourchette du cahier des charges, qui disait 1,5 à 2 %/s.
 
-Sur les sept secondes de zone, ça prend **52,5 % de la jauge adverse** : plus de
-la moitié d'un ultime. Le changement d'intention est net et il faut le dire —
-à 2,5 la zone **gênait**, à 7,5 elle **punit**. La traverser coûte, y camper est
-impensable, et l'adversaire doit contourner un tiers de son propre camp pendant
-sept secondes.
+Sur les sept secondes de zone, ça prend **84 % de la jauge adverse** : quatre
+cinquièmes d'un ultime. Le changement d'intention est net et il faut le dire —
+à 2,5 la zone **gênait**, à 7,5 elle **punissait**, à 12 c'est un **interdit**.
+On ne la traverse pas, on en fait le tour. Et comme elle couvre jusqu'à 45 % de
+son camp, l'adversaire est obligé de jouer sur les bords pendant sept secondes.
 
 C'est aussi le premier chiffre à rebaisser si elle paraît trop forte en match :
 il vit seul dans `PS_DRAIN`, une ligne de `js/data/specials.js`.

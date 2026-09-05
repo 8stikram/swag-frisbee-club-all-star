@@ -43,18 +43,28 @@ def pose(**kw):
 
 
 # --- COURSE ----------------------------------------------------------------
-# Les bandes du bras proche (colonnes 8-9) montent d'un cran, celles du bras
-# loin (colonnes 13-14) descendent : c'est le CONTRETEMPS. Et la jambe droite
-# se leve, sa griffe remontant d'une ligne.
+# LES MAINS SONT CE QUI FAIT LIRE UN BRAS QUI BOUGE. Les bras sont des bandes
+# rayees (le cuir cloute) : deplacer les rayures d'un cran fait defiler un
+# motif, pas balancer un membre. C'est la MAIN qui donne le sens du mouvement,
+# et il n'y en avait aucune. Chaque bras porte maintenant une main creme, et
+# les deux montent et descendent A CONTRETEMPS l'un de l'autre — c'est ce
+# contretemps qui fait courir, deux bras qui balancent ensemble donnent un
+# pantin.
+#
+# Au repos les deux mains pendent en bas, a la meme hauteur.
+IDLE = pose(
+    l16="..cvoCMVCCVVvCC.",
+)
+# Premiere foulee : la main PROCHE remonte, la main LOIN descend.
 RUN1 = pose(
-    l11=".CCcovvCLLVVVNN.", l12="..cvvoCoNNVVvLL.", l13="CCcvvvCoLLVVvNN.",
-    l14="..cooooCNNVVvLL.", l15=".CcvvvCoLLVVvNN.", l16="..cvoCMVNNVVvmL.",
+    l11=".CCcovvCLLVVVNN.", l12="..cvvoCoCCVVvLL.", l13="CCcvvvCoLLVVvNN.",
+    l14="..cooooCNNVVvLL.", l15=".CcvvvCoLLVVvNN.", l16="..cvoCMVNNVVvCC.",
     l18=".vVVvmMMvv.CCC..", l19="..vv.CCC........",
 )
-# La deuxieme foulee : tout s'inverse, et c'est la jambe gauche qui se leve.
+# Deuxieme foulee : tout s'inverse, mains comprises.
 RUN2 = pose(
-    l11=".CCcovvCLLVVVLL.", l12="..cvvoCoNNVVvNN.", l13="CCcvvvCoLLVVvLL.",
-    l14="..cooooCNNVVvNN.", l15=".CcvvvCoLLVVvLL.", l16="..cvoCMVNNVVvmN.",
+    l11=".CCcovvCLLVVVCC.", l12="..cvvoCoNNVVvNN.", l13="CCcvvvCoLLVVvLL.",
+    l14="..cooooCNNVVvNN.", l15=".CcvvvCoCCVVvLL.", l16="..cvoCMVLLVVvNN.",
     l18=".vVVvCCCvv.MMm..", l19="..vv.......CCC..",
 )
 

@@ -89,11 +89,18 @@ export const PS_CHUTE = .45;    // la carapace se recompose et tombe
 export const PS_IMPACT = .3;    // l'impact, sans secousse : la camera recule
 export const PS_DUREE = 7;      // la flaque, et le gel de la jauge du lanceur
 export const PS_SLOW = .25;     // ce qu'elle retire a la vitesse de l'adversaire
-export const PS_DRAIN = 7.5;    // %/s de sa jauge, soit 52,5 % sur sept secondes
-// Trois fois la valeur d'abord posee, et cinq fois le haut de la fourchette du
-// cahier des charges qui disait 1,5 a 2 %/s. A ce prix la zone ne gene plus,
-// elle PUNIT : y rester du debut a la fin coute plus de la moitie d'un ultime.
-// C'est le premier chiffre a rebaisser si elle parait trop forte en match.
+export const PS_DRAIN = 12;     // %/s de sa jauge, soit 84 % sur sept secondes
+// Le chiffre est parti de 2,5, puis 7,5, et il est ici a DOUZE — six fois le
+// haut de la fourchette du cahier des charges, qui disait 1,5 a 2 %/s.
+//
+// Ce que ca veut dire concretement : rester dans le cercle du debut a la fin
+// vide QUATRE CINQUIEMES de sa jauge. La zone n'est plus une gene ni meme une
+// punition, c'est un INTERDIT — on ne la traverse pas, on en fait le tour. Et
+// comme elle couvre jusqu'a 45 % de son camp, ca l'oblige a jouer sur les
+// bords pendant sept secondes.
+//
+// C'est le premier chiffre a rebaisser si elle parait trop forte en match, et
+// il vit seul ici : une ligne, aucune autre a toucher.
 export const PS_RAY = .30;      // part de l'aire de la moitie adverse
 // Le rayon GRANDIT avec l'ecart entre les deux joueurs, jusqu'a moitie plus :
 // ca recompense de poser la zone au bon moment plutot que sur lui.
