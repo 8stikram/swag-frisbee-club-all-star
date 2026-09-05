@@ -101,6 +101,14 @@ function poserCarte(zone, carte, face, retard) {
   zone.appendChild(d);
   setTimeout(() => $('bjSabot')?.classList.add('donne'), retard);
   setTimeout(() => $('bjSabot')?.classList.remove('donne'), retard + 200);
+  // La main encaisse l'arrivée : sans ce contrecoup, la carte se pose sans
+  // peser sur celles qui l'attendaient.
+  setTimeout(() => {
+    zone.classList.remove('impact');
+    void zone.offsetWidth;
+    zone.classList.add('impact');
+    setTimeout(() => zone.classList.remove('impact'), 220);
+  }, retard + 260);
   // Le retournement part APRÈS que la carte soit arrivée : retournée en vol,
   // on ne voit ni le voyage ni la révélation.
   if (face) setTimeout(() => d.classList.add('face'), retard + 300);
@@ -124,13 +132,78 @@ function secousse(duree) {
   setTimeout(() => e.classList.remove('secoue'), duree || 700);
 }
 
+// Le jeton part vraiment vers la mise. Cliquer pour voir un nombre changer dans
+// un champ, c'est remplir un formulaire ; voir le jeton traverser la table,
+// c'est miser.
+function envoyerJeton(source, valeurJeton) {
+  const ecran = $('scr-blackjack'), cible = $('bjMontant');
+  if (!ecran || !cible) return;
+  const s = source.getBoundingClientRect(), c = cible.getBoundingClientRect();
+  const e = ecran.getBoundingClientRect();
+  const vol = document.createElement('div');
+  vol.className = 'bjJetonVol';
+  vol.style.cssText =
+    `left:${s.left - e.left}px;top:${s.top - e.top}px;width:${s.width}px;height:${s.height}px;` +
+    `font-size:${getComputedStyle(source).fontSize};`;
+  vol.style.setProperty('--rune', getComputedStyle(source).getPropertyValue('--rune'));
+  vol.textContent = valeurJeton;
+  ecran.appendChild(vol);
+  vol.animate([
+    { transform: 'translate(0,0) scale(1) rotate(0)', opacity: 1 },
+    { transform: `translate(${(c.left + c.width / 2) - (s.left + s.width / 2)}px,` +
+                 `${(c.top + c.height / 2) - (s.top + s.height / 2)}px) scale(.25) rotate(420deg)`,
+      opacity: 0 }
+  ], { duration: 420, easing: 'cubic-bezier(.4,0,.2,1)' }).onfinish = () => {
+    vol.remove();
+    cible.classList.remove('bond');
+    void cible.offsetWidth;
+    cible.classList.add('bond');
+    setTimeout(() => cible.classList.remove('bond'), 320);
+  };
+}
+
+// Onde partant du point cliqué : le bouton doit rendre la pression, pas
+// seulement changer d'état.
+function onde(bouton, ev) {
+  const r = bouton.getBoundingClientRect();
+  const o = document.createElement('span');
+  o.className = 'onde';
+  const d = Math.max(r.width, r.height);
+  o.style.cssText = `width:${d}px;height:${d}px;` +
+    `left:${(ev.clientX || r.left + r.width / 2) - r.left}px;` +
+    `top:${(ev.clientY || r.top + r.height / 2) - r.top}px;`;
+  bouton.appendChild(o);
+  setTimeout(() => o.remove(), 460);
+}
+
+// Le score chauffe en approchant de 21 : c'est le chiffre que le joueur fixe,
+// il doit porter la tension avant que la musique ou le texte s'en chargent.
+function chaleur(badge, total, creve) {
+  badge.classList.remove('chaud', 'brulant', 'parfait', 'creve');
+  if (creve) badge.classList.add('creve');
+  else if (total === 21) badge.classList.add('parfait');
+  else if (total >= 19) badge.classList.add('brulant');
+  else if (total >= 17) badge.classList.add('chaud');
+}
+
+// Un bond à chaque changement de valeur, pas à chaque appel : sinon le badge
+// tressaute quand on ne fait que le redessiner.
+function bondir(badge, avant) {
+  if (badge.textContent === avant) return;
+  badge.classList.remove('bond');
+  void badge.offsetWidth;
+  badge.classList.add('bond');
+}
+
 function majScores() {
   const sj = $('bjScoreJoueur'), sc = $('bjScoreCroupier');
+  const avantJ = sj.textContent, avantC = sc.textContent;
   const vj = valeur(mainJoueur);
   sj.textContent = mainJoueur.length
     ? (vj.souple && vj.total !== 21 ? `${vj.total - 10}/${vj.total}` : vj.total) : '';
   sj.classList.toggle('on', mainJoueur.length > 0);
-  sj.classList.toggle('creve', vj.total > 21);
+  chaleur(sj, vj.total, vj.total > 21);
+  bondir(sj, avantJ);
 
   // Tant que la carte du croupier est cachée, on n'affiche que ce que le joueur
   // peut réellement voir : afficher le vrai total reviendrait à tricher pour lui.
@@ -138,7 +211,8 @@ function majScores() {
   const vc = valeur(visibles);
   sc.textContent = visibles.length ? (cachee ? vc.total + ' + ?' : vc.total) : '';
   sc.classList.toggle('on', visibles.length > 0);
-  sc.classList.toggle('creve', !cachee && vc.total > 21);
+  chaleur(sc, cachee ? 0 : vc.total, !cachee && vc.total > 21);
+  bondir(sc, avantC);
 }
 
 // Le solde monte ou descend en défilant, jamais d'un coup. Un chiffre qui
@@ -354,11 +428,15 @@ function conclure(force) {
   // Le juice se règle sur l'enjeu : un blackjack met le feu à l'écran, une
   // défaite ordinaire éteint simplement les cartes. Tout secouer à chaque main
   // reviendrait à ne rien souligner du tout.
-  const mains = [$('bjJoueur'), $('bjCroupier')];
-  const etat = genre === 'gain' ? 'gagne' : genre === 'egalite' ? 'egalite'
-    : (force === 'creve' || vj > 21) ? 'creve' : 'perd';
-  $('bjJoueur').classList.add(etat);
-  if (genre === 'gain') $('bjCroupier').classList.add('perd');
+  const joueurCreve = force === 'creve' || vj > 21;
+  const croupierCreve = !joueurCreve && vc > 21;
+  $('bjJoueur').classList.add(
+    joueurCreve ? 'creve' : genre === 'gain' ? 'gagne' : genre === 'egalite' ? 'egalite' : 'perd');
+  // Le croupier qui crève brûle comme le joueur : c'est le même événement, et
+  // le grisage d'une défaite ordinaire le rendait invisible — on gagnait sans
+  // comprendre pourquoi.
+  if (croupierCreve) $('bjCroupier').classList.add('creve');
+  else if (genre === 'gain') $('bjCroupier').classList.add('perd');
   else if (genre === 'perte') $('bjCroupier').classList.add('gagne');
 
   if (genre === 'gain') {
@@ -446,16 +524,23 @@ export function ouvrirBlackjack() {
     b.addEventListener('click', () => {
       if (enCours) return;
       sfx('select');
+      envoyerJeton(b, v);
       const champ = $('bjMontant');
       champ.value = Math.max(MISE_MIN, (Math.floor(+champ.value) || 0) + v);
     });
     jetons.appendChild(b);
   }
 
-  $('bjDistribuer').addEventListener('click', distribuer);
-  $('bjTirer').addEventListener('click', tirer);
-  $('bjRester').addEventListener('click', rester);
-  $('bjDoubler').addEventListener('click', doubler);
+  for (const [id, fn] of [['bjDistribuer', distribuer], ['bjTirer', tirer],
+                          ['bjRester', rester], ['bjDoubler', doubler]]) {
+    const b = $(id);
+    b.addEventListener('click', ev => {
+      if (b.disabled) return;
+      onde(b, ev);
+      paillettes(b, 5, ['#f6e27a', '#fff3b8'], -1, 100);
+      fn();
+    });
+  }
 
   // Espace coupe court à ce qui est en train de jouer. Sur une table où l'on
   // enchaîne les mains, subir chaque fois la même distribution use vite ; la

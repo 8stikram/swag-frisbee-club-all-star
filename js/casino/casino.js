@@ -620,6 +620,19 @@ function brancherSurvol(carte) {
     flammes.appendChild(f);
   }
 
+  // Seconde rampe, au pied des cartes : plus serrée et plus courte que celle du
+  // décor, pour lécher les jeux sans les noyer.
+  const flammesFace = $('casFlammesFace');
+  if (flammesFace) for (let i = 0; i < 26; i++) {
+    const f = document.createElement('i');
+    f.style.left = (i * 3.9 + alea(-1.2, 1.2)) + '%';
+    f.style.height = alea(5, 10) + 'cqh';
+    f.style.width = alea(2.4, 4.4) + 'cqh';
+    f.style.animationDuration = alea(.7, 1.5) + 's';
+    f.style.animationDelay = -alea(0, 2) + 's';
+    flammesFace.appendChild(f);
+  }
+
   const zoneSceaux = $('casSceaux');
   if (zoneSceaux) for (const [classe, branches, runes] of
     [['a', 5, 8], ['b', 7, 7], ['c', 5, 12], ['d', 5, 6], ['e', 7, 6]]) {
