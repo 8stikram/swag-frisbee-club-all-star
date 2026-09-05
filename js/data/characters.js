@@ -887,7 +887,7 @@ export const CHARS = {
   },
 
   flowser: {
-    name: 'FLOWSER-TWO', short: 'FLOWSER', icon: '\u{1F52E}', universe: 'UMBRA CORPORATION',
+    name: 'FLOWSER-TWO', short: 'FLOWSER-TWO', icon: '\u{1F52E}', universe: 'UMBRA CORPORATION',
     // Profil « telekinesiste » : il charge son ultime plus vite que tout le
     // monde et frappe le moins fort. Il gagne par le controle du terrain, pas
     // par le bras — ce qui est exactement ce que fait Psycho-Shell.
