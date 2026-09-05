@@ -1249,6 +1249,9 @@ document.querySelectorAll('.tab').forEach(tab => {
     sfx('select');
     if (curScreen === 'chap') { doAct('learn'); return; }
     if (curScreen === 'maps') { showScreen('select'); refreshSelect(); return; }
+    // Quitter une table du casino ramène au comptoir, pas au menu principal :
+    // on se lève de la table, on ne sort pas de l'établissement.
+    if (curScreen === 'blackjack') { ouvrirCasino(); return; }
     // En ligne, il remonte d'abord d'un panneau : quitter l'écran entier parce
     // qu'on voulait sortir du classement serait un cran de trop.
     if (curScreen === 'online') {

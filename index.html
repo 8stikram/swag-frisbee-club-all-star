@@ -562,6 +562,69 @@
     <div class="casinoMsg hidden" id="casinoMsg"></div>
   </div>
 
+  <!-- ============ BLACKJACK ============
+       Table à part du comptoir : on quitte l'accueil du casino pour s'asseoir.
+       Le sabot est en haut à droite, d'où partent les cartes. -->
+  <div class="screen scr-blackjack hidden" id="scr-blackjack">
+    <!-- Le lieu ne change pas : c'est le fond sombre du comptoir, avec ses
+         sceaux, sa fumée et ses voiles. Seul le tapis vert est nouveau, et
+         c'est un MEUBLE posé dedans, pas la couleur de l'écran. Peindre tout
+         le fond en vert faisait une table de démonstration, pas l'arrière-salle
+         d'un casino. -->
+    <div class="bg bjFond" aria-hidden="true">
+      <div class="casFondCouleur"></div>
+      <div class="casSceaux bjSceaux" id="bjSceaux"></div>
+      <div class="casFumee bjFumee"><i></i><i></i><i></i><i></i></div>
+      <div class="bjBraises"></div>
+      <div class="bjLustre"></div>
+      <div class="casVignette"></div>
+      <div class="casScanlines"></div>
+      <div class="casGrain"></div>
+    </div>
+    <div class="bjTapis" aria-hidden="true"><div class="bjTapisArc"></div></div>
+
+    <div class="titlebar"><span>BLACKJACK</span></div>
+    <div class="bjSolde" id="bjSolde" title="Tes pièces">
+      <span class="bjPiece"></span><b id="bjSoldeVal">0</b>
+    </div>
+
+    <div class="bjSabot" id="bjSabot" aria-hidden="true"><i></i><i></i><i></i></div>
+
+    <div class="bjTable">
+      <div class="bjRangee croupier">
+        <div class="bjScore" id="bjScoreCroupier"></div>
+        <div class="bjCartes" id="bjCroupier"></div>
+      </div>
+
+      <div class="bjAnnonce hidden" id="bjAnnonce"></div>
+
+      <div class="bjRangee joueur">
+        <div class="bjCartes" id="bjJoueur"></div>
+        <div class="bjScore" id="bjScoreJoueur"></div>
+      </div>
+    </div>
+
+    <!-- Barre du bas : la mise avant la donne, les actions pendant. Les deux
+         ne coexistent jamais — miser une fois les cartes sur la table n'a
+         aucun sens, et les afficher ensemble invite à essayer. -->
+    <div class="bjBarre" id="bjBarreMise">
+      <div class="bjJetons" id="bjJetons"></div>
+      <div class="bjSaisie">
+        <label for="bjMontant">MISE</label>
+        <input type="number" id="bjMontant" min="10" step="10" value="10">
+        <button class="bjBtn vert" id="bjDistribuer">DISTRIBUER</button>
+      </div>
+    </div>
+
+    <div class="bjBarre hidden" id="bjBarreActions">
+      <button class="bjBtn vert" id="bjTirer">TIRER</button>
+      <button class="bjBtn rouge" id="bjRester">RESTER</button>
+      <button class="bjBtn bleu" id="bjDoubler">DOUBLER</button>
+    </div>
+
+    <div class="bjMsg hidden" id="bjMsg"></div>
+  </div>
+
   <!-- ============ SÉLECTION DES PERSONNAGES ============ -->
   <div class="screen scr-select hidden" id="scr-select">
     <div class="bg bg-select">

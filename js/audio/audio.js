@@ -231,6 +231,17 @@ export function sfx(n, venuDuReseau) {
     // La souris traverse plusieurs cartes par trajet, donc il doit passer
     // inaperçu tant qu'on ne s'arrête pas dessus.
     case 'casinoSurvol': beep(1750, 950, .06, 'triangle', .05); break;
+    // Blackjack. La carte qui glisse est un souffle court et aigu — le bruit
+    // du carton sur le feutre, pas un claquement.
+    case 'bjCarte': noise(.09, .05, 5200); beep(900, 500, .05, 'sine', .04); break;
+    // Révélation de la carte cachée : un souffle qui monte, puis un éclat.
+    case 'bjRevele':
+      noise(.2, .07, 3200);
+      [660, 990, 1320].forEach((f, i) => beep(f, f * 1.5, .12, 'sine', .09, i * .05));
+      break;
+    case 'bjGain': [523, 659, 784, 1046].forEach((f, i) => beep(f, f, .16, 'square', .13, i * .07)); break;
+    // Buzzer grave de la défaite : deux notes qui descendent, sans résolution.
+    case 'bjPerte': beep(200, 90, .38, 'sawtooth', .14); beep(150, 60, .3, 'square', .1, .12); break;
     // Cloche de Minuit : un vrai échantillon, avec repli sur le synthé si le
     // fichier n'a pas encore fini de charger.
     case 'bell':

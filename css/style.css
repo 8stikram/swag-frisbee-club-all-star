@@ -2357,3 +2357,339 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   from{transform:translateX(-50%) scale(.75);opacity:0}
   to{transform:translateX(-50%) scale(1);opacity:1}
 }
+
+/* ================= BLACKJACK =================
+   Même arrière-salle que le comptoir : fond sombre, sceaux, fumée, braises,
+   scanlines. Le tapis vert est un MEUBLE posé dedans, éclairé par un lustre —
+   peindre tout l'écran en vert donnait une table de démonstration.
+
+   Les cartes sont en DOM et non sur un canvas : à une dizaine de cartes, le DOM
+   tient les 60 images sans effort et hérite des polices déjà chargées. Un
+   canvas aurait obligé à redessiner rangs et enseignes à la main. */
+.bjFond{background:#07040a;overflow:hidden}
+.bjSceaux .casSceau.a{left:3cqw;top:16cqh;width:26cqh;height:26cqh;opacity:.22}
+.bjSceaux .casSceau.b{right:3cqw;top:18cqh;width:21cqh;height:21cqh;opacity:.2}
+.bjSceaux .casSceau.c{left:50%;top:14cqh;width:52cqh;height:52cqh;margin-left:-26cqh;opacity:.08}
+.bjFumee{bottom:0;height:36cqh;opacity:.3;filter:blur(18px)}
+.bjBraises{
+  position:absolute;inset:-30% 0 0 0;opacity:.5;
+  background-image:
+    radial-gradient(2px 2px at 14% 92%,#ff9a3d 0%,transparent 60%),
+    radial-gradient(2px 2px at 31% 96%,#ffb648 0%,transparent 60%),
+    radial-gradient(1.6px 1.6px at 58% 90%,#ff7a1e 0%,transparent 60%),
+    radial-gradient(2.2px 2.2px at 76% 95%,#ffc46a 0%,transparent 60%),
+    radial-gradient(1.8px 1.8px at 89% 91%,#ff8a2a 0%,transparent 60%);
+  animation:bjBraisesMontent 15s linear infinite;
+}
+@keyframes bjBraisesMontent{
+  from{transform:translateY(0);opacity:0}
+  12%{opacity:.55} 88%{opacity:.35}
+  to{transform:translateY(-46cqh);opacity:0}
+}
+/* Le lustre : c'est lui qui explique pourquoi le tapis est éclairé et le reste
+   de la salle dans le noir. */
+.bjLustre{
+  position:absolute;left:50%;top:-24cqh;width:86cqw;height:86cqh;
+  transform:translateX(-50%);pointer-events:none;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(255,214,140,.2) 0%,rgba(255,170,70,.06) 45%,transparent 72%);
+  animation:bjLustrePouls 6s ease-in-out infinite;
+}
+@keyframes bjLustrePouls{0%,100%{opacity:.7}50%{opacity:1}}
+
+/* --- Le tapis, meuble posé dans la salle --- */
+.bjTapis{
+  position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);
+  width:82cqw;height:62cqh;z-index:2;pointer-events:none;
+  border-radius:50% 50% 42% 42% / 46% 46% 54% 54%;
+  background:
+    radial-gradient(64% 58% at 50% 40%, #1f6b3f 0%, #14603a 34%, #0c3b25 72%, #06251a 100%);
+  border:.55cqh solid rgba(212,175,55,.55);
+  box-shadow:
+    inset 0 0 8cqh rgba(0,0,0,.6),
+    inset 0 2cqh 4cqh rgba(255,225,160,.08),
+    0 3cqh 6cqh rgba(0,0,0,.7),
+    0 0 6cqh rgba(212,175,55,.14);
+}
+/* Double liseré, comme sur un vrai tapis. */
+.bjTapisArc{
+  position:absolute;inset:2.4cqh;border-radius:inherit;
+  border:.25cqh solid rgba(212,175,55,.3);
+}
+.bjTapisArc::after{
+  content:'';position:absolute;left:50%;top:12%;width:56%;height:52%;
+  transform:translateX(-50%);border-radius:50%;
+  border:.22cqh dashed rgba(212,175,55,.22);
+}
+.scr-blackjack .titlebar{background:#0f6b3c}
+
+/* --- Solde ---
+   À gauche et sous la barre du haut : à droite il passait derrière le bouton
+   de compte et le plein écran, qui vivent au-dessus de tous les écrans. */
+.bjSolde{
+  position:absolute;top:11cqh;left:4cqw;z-index:7;
+  display:flex;align-items:center;gap:.8cqw;
+  padding:.7cqh 1.4cqw;border-radius:8px;
+  background:linear-gradient(165deg,#180a12 0%,#0a0409 100%);
+  border:2px solid rgba(212,175,55,.6);
+  box-shadow:inset 0 .3cqh .6cqh rgba(0,0,0,.8), 0 0 2cqh rgba(212,175,55,.25);
+  transition:box-shadow .2s, border-color .2s;
+}
+.bjSolde b{
+  font-family:'Russo One',sans-serif;font-size:clamp(11px,2.4cqh,20px);
+  color:#ffdf7a;letter-spacing:.06em;text-shadow:0 0 .8cqh rgba(255,200,60,.85);
+}
+.bjPiece{
+  width:2.4cqh;height:2.4cqh;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#fff3b8,#eab73f 52%,#8a5f11);
+  box-shadow:0 0 .8cqh rgba(240,190,60,.7);
+  animation:casPieceTourne 3.6s linear infinite;
+}
+.bjSolde.gagne{border-color:#7bff9d;box-shadow:0 0 4cqh rgba(120,255,150,.8)}
+.bjSolde.perd{border-color:#ff4d4d;box-shadow:0 0 3cqh rgba(255,40,40,.75)}
+
+/* --- Le sabot --- */
+.bjSabot{
+  position:absolute;top:11cqh;right:6cqw;width:9cqw;height:11cqh;z-index:4;
+  background:linear-gradient(160deg,#2a1a10 0%,#160c07 100%);
+  border:2px solid rgba(212,175,55,.5);border-radius:6px 6px 3px 3px;
+  box-shadow:0 .6cqh 1.2cqh rgba(0,0,0,.6), 0 0 2cqh rgba(212,175,55,.15);
+  display:flex;flex-direction:column;justify-content:flex-end;gap:.35cqh;padding:.6cqh;
+}
+.bjSabot i{display:block;height:.9cqh;border-radius:2px;background:rgba(230,220,200,.55)}
+.bjSabot.donne{animation:bjSabotSecoue .18s ease-out}
+@keyframes bjSabotSecoue{0%,100%{transform:translate(0,0)}50%{transform:translate(-.4cqw,.3cqh)}}
+
+/* --- La table --- */
+.bjTable{
+  position:absolute;inset:0;z-index:5;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.2cqh;
+  padding:14cqh 4cqw 20cqh;pointer-events:none;
+}
+.bjRangee{display:flex;align-items:center;gap:1.6cqw;min-height:22cqh}
+.bjCartes{display:flex;align-items:center;min-height:22cqh}
+
+.bjScore{
+  min-width:5.5cqh;padding:.5cqh 1cqw;border-radius:999px;
+  font-family:'Russo One',sans-serif;font-size:clamp(10px,2.2cqh,18px);
+  color:#1a1008;background:linear-gradient(180deg,#f8ecb0,#d4af37);
+  border:2px solid #6b4d10;box-shadow:0 .3cqh .5cqh rgba(0,0,0,.5), 0 0 1.6cqh rgba(212,175,55,.4);
+  text-align:center;opacity:0;transition:opacity .2s;
+}
+.bjScore.on{opacity:1}
+.bjScore.creve{background:linear-gradient(180deg,#ff9a9a,#c01818);color:#fff;border-color:#5a0808;
+               box-shadow:0 0 2cqh rgba(255,40,40,.8)}
+
+/* --- Les cartes ---
+   Chacune est une charnière : la face et le dos occupent le même espace, et
+   c'est la rotation du conteneur qui les échange. Un simple échange d'image
+   n'aurait pas donné l'épaisseur du retournement. */
+.bjCarte{
+  position:relative;width:11cqh;height:16cqh;margin-left:-3.2cqh;
+  transform-style:preserve-3d;
+  animation:bjDonne .42s cubic-bezier(.2,.85,.3,1) backwards;
+}
+.bjCarte:first-child{margin-left:0}
+/* Traînée lumineuse du voyage : elle s'éteint une fois la carte posée. */
+.bjCarte::before{
+  content:'';position:absolute;inset:-12%;border-radius:2cqh;pointer-events:none;
+  background:radial-gradient(circle,rgba(212,175,55,.55),rgba(150,60,235,.3) 55%,transparent 72%);
+  opacity:0;animation:bjTrainee .6s ease-out var(--retard, 0ms) backwards;
+}
+@keyframes bjTrainee{0%{opacity:.95}70%{opacity:.35}100%{opacity:0}}
+.bjFaces{
+  position:absolute;inset:0;transform-style:preserve-3d;
+  transform:rotateY(180deg);transition:transform .5s cubic-bezier(.3,.9,.3,1);
+}
+.bjCarte.face .bjFaces{transform:rotateY(0)}
+.bjFace, .bjDos{
+  position:absolute;inset:0;border-radius:1.1cqh;backface-visibility:hidden;
+  box-shadow:0 .5cqh 1cqh rgba(0,0,0,.6);
+}
+.bjFace{
+  background:linear-gradient(160deg,#fffdf6 0%,#f0e6d2 100%);
+  border:.25cqh solid #b9a97f;
+  display:flex;flex-direction:column;justify-content:space-between;padding:.7cqh;
+}
+/* Dos assorti au comptoir : bordeaux, résille dorée, cadre gravé. */
+.bjDos{
+  transform:rotateY(180deg);
+  background:
+    repeating-linear-gradient(45deg, rgba(212,175,55,.22) 0 .5cqh, transparent .5cqh 1cqh),
+    linear-gradient(160deg,#7a0f22 0%,#3a0510 100%);
+  border:.25cqh solid #d4af37;
+}
+.bjDos::after{
+  content:'';position:absolute;inset:1.1cqh;border:.2cqh solid rgba(212,175,55,.55);
+  border-radius:.6cqh;
+}
+.bjCoin{
+  font-family:'Russo One',sans-serif;font-size:clamp(9px,2.1cqh,17px);line-height:1;
+  display:flex;flex-direction:column;align-items:center;gap:.15cqh;position:relative;z-index:2;
+}
+.bjCoin.bas{transform:rotate(180deg)}
+.bjPip{font-size:clamp(11px,2.6cqh,21px);line-height:1}
+.bjCentre{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:clamp(22px,7cqh,58px);line-height:1;opacity:.9;
+}
+.bjRouge{color:#c0182e}
+.bjNoir{color:#15151c}
+
+@keyframes bjDonne{
+  from{opacity:0;transform:translate(26cqw,-26cqh) rotate(24deg) scale(.78)}
+  to{opacity:1;transform:translate(0,0) rotate(0) scale(1)}
+}
+/* Éclat au retournement de la carte cachée. */
+.bjCarte.revele::after{
+  content:'';position:absolute;inset:-30%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(255,240,190,.9),rgba(212,175,55,.4) 40%,transparent 70%);
+  animation:bjEclat .55s ease-out forwards;
+}
+@keyframes bjEclat{0%{opacity:0;transform:scale(.3)}25%{opacity:1}100%{opacity:0;transform:scale(1.5)}}
+
+/* Mains gagnantes, perdantes, à égalité. */
+.bjCartes.gagne .bjCarte .bjFace{
+  box-shadow:0 0 3cqh rgba(255,214,90,.95), 0 .5cqh 1cqh rgba(0,0,0,.6);
+  animation:bjCartePouls .55s ease-in-out 3;
+}
+@keyframes bjCartePouls{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.2cqh)}}
+.bjCartes.egalite .bjCarte .bjFace{box-shadow:0 0 2.4cqh rgba(120,200,255,.85), 0 .5cqh 1cqh rgba(0,0,0,.6)}
+/* Perdre éteint les cartes : elles grisent et s'affaissent. */
+.bjCartes.perd .bjCarte{filter:grayscale(.75) brightness(.62);transform:translateY(.6cqh) rotate(-1deg)}
+.bjCartes.perd .bjCarte, .bjCartes.gagne .bjCarte{transition:filter .4s, transform .4s}
+/* Bust : les cartes rougeoient comme des braises avant de s'éteindre. */
+.bjCartes.creve .bjCarte .bjFace{
+  animation:bjBrule .9s ease-out forwards;
+}
+@keyframes bjBrule{
+  0%{box-shadow:0 0 0 rgba(255,80,20,0)}
+  25%{box-shadow:0 0 4cqh rgba(255,90,20,.95);filter:brightness(1.25) saturate(1.4)}
+  100%{box-shadow:0 0 1cqh rgba(90,20,10,.6);filter:brightness(.45) saturate(.5)}
+}
+
+/* --- Annonce au centre --- */
+.bjAnnonce{
+  position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);z-index:8;
+  font-family:'Archivo Black',sans-serif;font-size:clamp(20px,7cqh,56px);
+  letter-spacing:.04em;color:#fff;-webkit-text-stroke:.7cqh #1a0a02;paint-order:stroke fill;
+  animation:bjAnnonceEntre .4s cubic-bezier(.2,.9,.3,1.5);
+  text-shadow:0 0 3cqh rgba(0,0,0,.7);pointer-events:none;
+}
+.bjAnnonce.gain{color:#ffdf7a;text-shadow:0 0 4cqh rgba(255,200,60,.9)}
+.bjAnnonce.perte{color:#ff6a6a;text-shadow:0 0 4cqh rgba(255,40,40,.8)}
+.bjAnnonce.egalite{color:#8fd8ff}
+/* Le blackjack ne se contente pas d'apparaître : il arrive de très loin et
+   dépasse sa taille avant de se poser. */
+.bjAnnonce.jackpot{
+  font-size:clamp(26px,10cqh,84px);
+  animation:bjJackpotEntre .7s cubic-bezier(.15,1.1,.3,1.4), bjJackpotPouls .5s ease-in-out .7s 4;
+}
+@keyframes bjAnnonceEntre{
+  from{opacity:0;transform:translate(-50%,-50%) scale(.4)}
+  to{opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+@keyframes bjJackpotEntre{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(3) rotate(-8deg)}
+  60%{opacity:1;transform:translate(-50%,-50%) scale(.82) rotate(2deg)}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}
+}
+@keyframes bjJackpotPouls{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.09)}}
+
+/* Voile plein écran, comme au comptoir. */
+.bjVoile{position:absolute;inset:0;z-index:8;pointer-events:none;opacity:0}
+.bjVoile.gain{background:radial-gradient(60% 55% at 50% 48%, rgba(255,214,90,.34), transparent 72%);
+              animation:casVoile .8s ease-out}
+.bjVoile.perte{background:rgba(255,20,20,.32);animation:casVoile .32s ease-out}
+.scr-blackjack.secoue{animation:casSecousse .22s steps(2) 3}
+
+/* --- Barres du bas ---
+   La mise avant la donne, les actions pendant : les deux ne coexistent jamais.
+   Miser une fois les cartes sur la table n'a aucun sens, et les afficher
+   ensemble invite à essayer. */
+.bjBarre{
+  position:absolute;left:0;right:0;bottom:3cqh;z-index:7;
+  display:flex;align-items:center;justify-content:center;gap:1.6cqw;flex-wrap:wrap;
+  padding:0 3cqw;
+}
+.bjJetons{display:flex;gap:1.1cqw}
+
+/* --- Jetons mystiques ---
+   Disque d'obsidienne cerclé d'or, avec une couronne de crans gravés et une
+   rune au centre. Les jetons de casino classiques, rayés et colorés, juraient
+   avec les sceaux du fond. */
+.bjJeton{
+  position:relative;width:8.4cqh;height:8.4cqh;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Russo One',sans-serif;font-size:clamp(9px,1.9cqh,15px);
+  background:
+    radial-gradient(circle at 50% 34%, rgba(255,255,255,.14) 0%, transparent 42%),
+    radial-gradient(circle at 50% 50%, #241028 0%, #120610 62%, #08040a 100%);
+  border:.35cqh solid var(--rune, #d4af37);
+  box-shadow:0 .5cqh .9cqh rgba(0,0,0,.7), 0 0 1.6cqh var(--rune, #d4af37),
+             inset 0 0 1.6cqh rgba(0,0,0,.75);
+  color:var(--rune, #d4af37);
+  text-shadow:0 0 .8cqh currentColor;
+  transition:transform .14s, box-shadow .14s, filter .14s;
+}
+/* Couronne de crans : un pointillé sur un anneau épais, comme les sceaux. */
+.bjJeton::before{
+  content:'';position:absolute;inset:.9cqh;border-radius:50%;
+  border:.5cqh dashed color-mix(in srgb, var(--rune, #d4af37) 60%, transparent);
+  animation:bjJetonTourne 14s linear infinite;
+}
+.bjJeton::after{
+  content:'';position:absolute;inset:-.5cqh;border-radius:50%;pointer-events:none;
+  box-shadow:0 0 2.4cqh var(--rune, #d4af37);opacity:.35;
+  animation:bjJetonRespire 3.2s ease-in-out infinite;
+}
+@keyframes bjJetonTourne{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes bjJetonRespire{0%,100%{opacity:.22}50%{opacity:.6}}
+.bjJeton b{position:relative;z-index:2;line-height:1}
+.bjJeton em{
+  position:relative;z-index:2;display:block;font-style:normal;
+  font-family:'DotGothic16',monospace;font-size:clamp(7px,1.4cqh,11px);opacity:.85;
+}
+.bjJeton:hover{transform:translateY(-1cqh) scale(1.06);filter:brightness(1.2)}
+.bjJeton:active{transform:translateY(-.2cqh) scale(.98)}
+.bjJeton.j10{--rune:#7fd8ff}
+.bjJeton.j50{--rune:#7bff9d}
+.bjJeton.j100{--rune:#ff8a5c}
+.bjJeton.j500{--rune:#c99cf0}
+
+.bjSaisie{display:flex;align-items:center;gap:.9cqw}
+.bjSaisie label{
+  font-family:'Russo One',sans-serif;font-size:clamp(9px,1.7cqh,14px);
+  color:#ffdf7a;letter-spacing:.1em;
+}
+.bjSaisie input{
+  width:11cqw;max-width:130px;padding:.8cqh .8cqw;border-radius:7px;
+  background:#0a0409;border:2px solid rgba(212,175,55,.6);
+  font-family:'Russo One',sans-serif;font-size:clamp(11px,2.2cqh,18px);
+  color:#ffdf7a;text-align:center;
+}
+.bjSaisie input:focus{outline:none;border-color:#f6e27a;box-shadow:0 0 1.6cqh rgba(246,226,122,.5)}
+
+.bjBtn{
+  font-family:'Russo One',sans-serif;font-size:clamp(11px,2.3cqh,19px);letter-spacing:.06em;
+  color:#fff;padding:1.3cqh 2.4cqw;border-radius:12px;cursor:pointer;
+  border:.3cqh solid rgba(255,225,160,.35);
+  box-shadow:0 .7cqh 0 rgba(0,0,0,.6), 0 1cqh 1.6cqh rgba(0,0,0,.5),
+             0 0 2cqh var(--halo, rgba(212,175,55,.4));
+  text-shadow:0 .2cqh .3cqh rgba(0,0,0,.7);
+  transition:transform .1s, box-shadow .1s, filter .12s;
+}
+.bjBtn:hover{filter:brightness(1.18);box-shadow:0 .7cqh 0 rgba(0,0,0,.6), 0 0 3.4cqh var(--halo)}
+/* Le bouton descend ET son ombre raccourcit : sans les deux, il glisse au lieu
+   de s'enfoncer. */
+.bjBtn:active{transform:translateY(.6cqh);box-shadow:0 .1cqh 0 rgba(0,0,0,.6)}
+.bjBtn:disabled{filter:grayscale(.85) brightness(.5);cursor:not-allowed;box-shadow:0 .3cqh 0 rgba(0,0,0,.5)}
+.bjBtn.vert{background:linear-gradient(180deg,#3fbf6a,#12602c);--halo:rgba(90,255,150,.5)}
+.bjBtn.rouge{background:linear-gradient(180deg,#d8564f,#7a1010);--halo:rgba(255,90,80,.5)}
+.bjBtn.bleu{background:linear-gradient(180deg,#4a90dd,#123f78);--halo:rgba(90,170,255,.5)}
+
+.bjMsg{
+  position:absolute;bottom:15cqh;left:50%;transform:translateX(-50%);z-index:9;
+  font-family:'DotGothic16',monospace;font-size:clamp(8px,1.6cqh,13px);
+  color:#ffe9c2;background:rgba(10,3,6,.92);border:2px solid rgba(212,175,55,.6);
+  border-radius:10px;padding:.6cqh 1.6cqw;max-width:70cqw;text-align:center;
+}

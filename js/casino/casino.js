@@ -177,7 +177,7 @@ const OBJETS = {
 // ---------------------------------------------------------------------------
 const RUNES_SCEAU = 'ᚦᚱᚲᛉᛊᛗᛞᛖᚷᚹᛚᛏ';
 
-function sceau(rayon, branches, nbRunes) {
+export function sceau(rayon, branches, nbRunes) {
   const pt = (r, deg) => {
     const a = (deg - 90) * Math.PI / 180;
     return [(r * Math.cos(a)).toFixed(2), (r * Math.sin(a)).toFixed(2)];
@@ -384,8 +384,11 @@ const plusTard = (fn, ms) => { minuteries.push(setTimeout(fn, ms)); };
 // pour le survol et le clic. Des div jetables plutôt qu'un canvas — quatre
 // cartes qui crachent quinze points, le DOM encaisse sans qu'on ait à tenir
 // une seconde boucle de rendu.
-function paillettes(cible, n, couleurs, sens, etale) {
-  const ecran = $('scr-casino');
+export function paillettes(cible, n, couleurs, sens, etale) {
+  // L'écran d'accueil ET les tables se servent d'ici : on remonte à l'écran
+  // qui contient la cible plutôt que de viser le casino en dur, sinon les
+  // paillettes d'une table iraient s'animer sur un écran caché.
+  const ecran = cible && cible.closest('.screen');
   if (!cible || !ecran) return;
   const r = cible.getBoundingClientRect(), s = ecran.getBoundingClientRect();
   for (let i = 0; i < n; i++) {
@@ -532,10 +535,20 @@ function allumer(carte, jeu) {
     paillettes(carte, 14, ['#ff8a1e', '#ff4d18', '#f6e27a'], -1, 180);
     $('scr-casino')?.classList.add('secoue');
     setTimeout(() => $('scr-casino')?.classList.remove('secoue'), 240);
-    // Les jeux arrivent un par un. Tant qu'un module n'existe pas, on le dit
-    // au lieu d'ouvrir un écran vide.
-    message(jeu.nom + ' — pas encore ouvert. Le diable finit d\'installer la table.');
+    ouvrirJeu(jeu);
   }, 100);
+}
+
+// Chaque jeu est chargé au moment où on l'ouvre, jamais avant : le casino ne
+// doit rien coûter à quelqu'un qui n'y entre pas. Tant qu'un module n'existe
+// pas, on le dit plutôt que d'ouvrir un écran vide.
+async function ouvrirJeu(jeu) {
+  if (jeu.id === 'blackjack') {
+    const { ouvrirBlackjack } = await import('./blackjack.js');
+    ouvrirBlackjack();
+    return;
+  }
+  message(jeu.nom + ' — pas encore ouvert. Le diable finit d\'installer la table.');
 }
 
 // La carte s'incline VERS la souris. L'axe X est piloté par la position
