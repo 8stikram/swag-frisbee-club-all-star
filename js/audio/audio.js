@@ -227,6 +227,10 @@ export function sfx(n, venuDuReseau) {
     // juste derrière — dans l'autre sens on entend un boum suivi d'un courant
     // d'air, et ça ne prend pas feu, ça s'éteint.
     case 'casinoFeu': noise(.26, .16, 2400); beep(200, 55, .34, 'sawtooth', .15, .05); break;
+    // Survol d'une carte du casino : un clic métallique très court et très bas.
+    // La souris traverse plusieurs cartes par trajet, donc il doit passer
+    // inaperçu tant qu'on ne s'arrête pas dessus.
+    case 'casinoSurvol': beep(1750, 950, .06, 'triangle', .05); break;
     // Cloche de Minuit : un vrai échantillon, avec repli sur le synthé si le
     // fichier n'a pas encore fini de charger.
     case 'bell':

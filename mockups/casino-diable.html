@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Casino — visage du diable croupier</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;
+       padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:30px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:1000px;line-height:1.7;margin:0 0 14px}
+  .note b{color:var(--or)}
+  code{background:#0a1220;border:1px solid var(--edge);border-radius:4px;padding:1px 5px;
+       font-family:Consolas,monospace;font-size:12px;color:var(--or)}
+
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .scene{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;
+         flex:1 1 520px;min-width:340px}
+  .scene svg{display:block;width:100%;height:auto;background:radial-gradient(90% 80% at 50% 30%,#3a0c17,#140407 70%);
+             border-radius:8px;touch-action:none}
+  .cote{flex:1 1 300px;min-width:270px;display:flex;flex-direction:column;gap:12px}
+  .bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px}
+  .bloc h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+
+  /* --- Liste des éléments --- */
+  .els{display:flex;flex-direction:column;gap:4px;max-height:340px;overflow:auto}
+  .el{display:flex;align-items:center;gap:8px;background:#0a1220;border:1px solid var(--edge);
+      border-radius:7px;padding:6px 9px;cursor:pointer;font-size:12px;transition:border-color .12s}
+  .el:hover{border-color:#3d5c8a}
+  .el.on{border-color:var(--or);background:#171205}
+  .el .nom{flex:1;letter-spacing:.3px}
+  .el .val{font-family:Consolas,monospace;font-size:11px;color:#7f93b3}
+  .el.on .val{color:var(--or)}
+  .el .oeil{opacity:.45;font-size:13px}
+  .el.masque{opacity:.4}
+  .el.masque .oeil{opacity:1}
+
+  /* --- Réglages de l'élément choisi --- */
+  .reg{display:grid;grid-template-columns:auto 1fr auto;gap:7px 10px;align-items:center;font-size:12px}
+  .reg label{color:#8fa4c4}
+  .reg input[type=range]{width:100%}
+  .reg .n{font-family:Consolas,monospace;color:var(--or);font-size:12px;min-width:44px;text-align:right}
+  .vide{font-size:12px;color:#6d80a0;line-height:1.6}
+
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  button{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+         padding:8px 14px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  button:hover{background:#24395e}
+  button.on{background:#3a2c06;border-color:var(--or);color:var(--or)}
+  button.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+
+  .sortie{width:100%;height:180px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+          color:var(--or);font-family:Consolas,monospace;font-size:11.5px;padding:9px;resize:vertical;
+          margin-top:10px;line-height:1.6}
+
+  /* --- Sélection sur la scène --- */
+  [data-el]{cursor:grab}
+  [data-el].sel{cursor:grabbing}
+  .cadre{fill:none;stroke:var(--or);stroke-width:1.4;stroke-dasharray:5 4;pointer-events:none;opacity:.95}
+  .poignee{fill:var(--or);stroke:#0a1220;stroke-width:1}
+  .poignee[data-poignee="l"]{cursor:ew-resize}
+  .poignee[data-poignee="h"]{cursor:ns-resize}
+  .poignee[data-poignee="lh"]{cursor:nwse-resize}
+  .repere{stroke:#35e0ff;stroke-width:.6;opacity:.42;pointer-events:none}
+  .repereTxt{fill:#7fd8ff;font-size:5.4px;font-family:Consolas,monospace;opacity:.75;pointer-events:none}
+
+  .duo{display:flex;gap:12px;flex-wrap:wrap}
+  .duo .scene{flex:1 1 300px;min-width:250px}
+  .duo h4{margin:0 0 8px;font-size:12px;color:var(--or);letter-spacing:.6px}
+</style>
+</head>
+<body>
+
+<h1>CASINO — VISAGE DU DIABLE CROUPIER</h1>
+<p class="note">
+  Chaque élément du visage est <b>attrapable à la souris</b> : clique dessus et fais-le glisser, ou
+  choisis-le dans la liste et règle-le au clavier (flèches, <code>Maj</code> pour 5 unités d'un coup).
+  Les repères bleus sont les lignes anatomiques — sourcils à 42 % de la hauteur du visage, yeux à 50 %,
+  base du nez à 72 %, bouche à 83 %. Quand c'est bon, <b>copie les réglages</b> en bas : ce sont ces
+  décalages que je reporte dans le jeu.
+  <br><br>
+  Le visage est déjà élargi (ratio 0,71 au lieu de 0,62), les cornes repartent vers l'arrière et
+  l'intérieur, et la lèvre inférieure, les rides du front et les joues creusées sont posées.
+  Les deux variantes de sourcils se comparent tout en bas.
+</p>
+
+<div class="haut">
+  <div class="scene">
+    <svg id="scene" viewBox="0 0 360 260" aria-label="Visage du diable">
+      <defs>
+        <linearGradient id="dvSkin" x1=".2" y1="0" x2=".85" y2="1">
+          <stop offset="0" stop-color="#c8474f"/><stop offset=".5" stop-color="#94202f"/>
+          <stop offset="1" stop-color="#590d1a"/>
+        </linearGradient>
+        <linearGradient id="dvHorn" x1=".1" y1="0" x2=".8" y2="1">
+          <stop offset="0" stop-color="#5f5866"/><stop offset=".45" stop-color="#2b2530"/>
+          <stop offset="1" stop-color="#110e16"/>
+        </linearGradient>
+        <radialGradient id="dvEyeGlow">
+          <stop offset="0" stop-color="#fff6c2"/>
+          <stop offset=".35" stop-color="#ff8a1e" stop-opacity=".9"/>
+          <stop offset="1" stop-color="#ff5a0a" stop-opacity="0"/>
+        </radialGradient>
+        <!-- Les creux de joue doivent être une ombre, pas une forme. Sans ce
+             flou, ils se lisaient comme deux estafilades sur les pommettes. -->
+        <filter id="dvDoux" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3.5"/>
+        </filter>
+      </defs>
+
+      <!-- Repères anatomiques. Visage : haut 46, menton 184 → hauteur 138. -->
+      <g id="reperes">
+        <line class="repere" x1="90" y1="104" x2="270" y2="104"/>
+        <text class="repereTxt" x="274" y="106">sourcils 42%</text>
+        <line class="repere" x1="90" y1="115" x2="270" y2="115"/>
+        <text class="repereTxt" x="274" y="117">yeux 50%</text>
+        <line class="repere" x1="90" y1="145" x2="270" y2="145"/>
+        <text class="repereTxt" x="274" y="147">nez 72%</text>
+        <line class="repere" x1="90" y1="160" x2="270" y2="160"/>
+        <text class="repereTxt" x="274" y="162">bouche 83%</text>
+        <line class="repere" x1="90" y1="184" x2="270" y2="184"/>
+        <text class="repereTxt" x="274" y="186">menton</text>
+      </g>
+
+      <!-- ================= LE VISAGE, COUCHE PAR COUCHE ================= -->
+
+      <!-- 1. Cornes, derrière la tête -->
+      <g data-el="cornes" data-nom="Grandes cornes" fill="url(#dvHorn)">
+        <path d="M146 72 C118 60 98 40 104 20 C107 11 118 5 130 8 C124 18 116 28 120 40 C126 52 138 62 152 62 Z"/>
+        <path d="M214 72 C242 60 262 40 256 20 C253 11 242 5 230 8 C236 18 244 28 240 40 C234 52 222 62 208 62 Z"/>
+        <g stroke="#0d0b12" stroke-width="2" fill="none" opacity=".4" stroke-linecap="round">
+          <path d="M132 58 C126 52 122 46 122 40"/><path d="M116 44 C110 38 107 32 108 26"/>
+          <path d="M110 26 C112 20 117 15 123 13"/>
+          <path d="M228 58 C234 52 238 46 238 40"/><path d="M244 44 C250 38 253 32 252 26"/>
+          <path d="M250 26 C248 20 243 15 237 13"/>
+        </g>
+      </g>
+
+      <!-- 2. Oreilles -->
+      <g data-el="oreilles" data-nom="Oreilles" fill="url(#dvSkin)">
+        <path d="M136 102 C127 94 116 80 115 68 C126 71 137 82 143 96 L144 124 C139 120 137 112 136 102 Z"/>
+        <path d="M224 102 C233 94 244 80 245 68 C234 71 223 82 217 96 L216 124 C221 120 223 112 224 102 Z"/>
+      </g>
+
+      <!-- 3. Tête. Visage élargi : 98 de large pour 138 de haut (ratio 0,71). -->
+      <g data-el="tete" data-nom="Tête">
+        <path d="M180 46 C210 46 228 68 229 96 C230 113 227 129 221 142
+                 C216 153 208 161 199 169 C192 175 186 179 180 184
+                 C174 179 168 175 161 169 C152 161 144 153 139 142
+                 C133 129 130 113 131 96 C132 68 150 46 180 46 Z" fill="url(#dvSkin)"/>
+        <path d="M229 96 C230 113 227 129 221 142 C216 153 208 161 199 169 C192 175 186 179 180 184
+                 C189 168 200 147 208 124 C213 106 215 88 214 74 C224 80 228 86 229 96 Z"
+              fill="#000" opacity=".13"/>
+      </g>
+
+      <!-- 4. Joues creusées : deux ombres sous les pommettes -->
+      <g data-el="joues" data-nom="Joues creusées" fill="#000" opacity=".2" filter="url(#dvDoux)">
+        <path d="M139 120 C145 134 151 146 158 156 C149 153 140 141 136 126 Z"/>
+        <path d="M221 120 C215 134 209 146 202 156 C211 153 220 141 224 126 Z"/>
+      </g>
+
+      <!-- 5. Cheveux plaqués -->
+      <g data-el="cheveux" data-nom="Cheveux">
+        <!-- Naissance des cheveux presque droite, avec une pointe discrète.
+             Creusée plus bas, elle dessinait un « M » de chauve-souris qui
+             mangeait tout le front. -->
+        <path d="M180 44 C212 44 229 66 229 89 C225 79 217 72 206 70
+                 C196 68 187 72 181 77 C180 78 180 78 179 77
+                 C173 72 164 68 154 70 C143 72 135 79 131 89
+                 C131 66 148 44 180 44 Z" fill="#17131b"/>
+        <path d="M152 54 C170 42 190 42 208 55 C190 48 170 48 152 54 Z" fill="#251e2c"/>
+      </g>
+
+      <!-- 6. Petites cornes frontales -->
+      <g data-el="petitesCornes" data-nom="Petites cornes" fill="url(#dvHorn)">
+        <path d="M150 80 C144 66 146 52 154 42 C158 54 157 66 162 78 Z"/>
+        <path d="M210 80 C216 66 214 52 206 42 C202 54 203 66 198 78 Z"/>
+      </g>
+
+      <!-- 7. Rides du front -->
+      <g data-el="rides" data-nom="Rides du front" stroke="#5c0f1c" stroke-width="1.5"
+         fill="none" opacity=".5" stroke-linecap="round">
+        <path d="M158 90 C168 87 192 87 202 90"/>
+        <path d="M162 97 C171 94 189 94 198 97"/>
+      </g>
+
+      <!-- 8. Sourcils. Deux variantes, une seule visible à la fois. -->
+      <g data-el="sourcils" data-nom="Sourcils">
+        <g data-var="sourcils" data-variante="fronces">
+          <path d="M146 100 L176 110 L174 118 L145 108 Z" fill="#17131b"/>
+          <path d="M214 100 L184 110 L186 118 L215 108 Z" fill="#17131b"/>
+        </g>
+        <g data-var="sourcils" data-variante="arques" style="display:none">
+          <path d="M144 110 C152 99 166 96 177 101 L175 108 C166 104 154 107 147 115 Z" fill="#17131b"/>
+          <path d="M216 110 C208 99 194 96 183 101 L185 108 C194 104 206 107 213 115 Z" fill="#17131b"/>
+        </g>
+      </g>
+
+      <!-- 9. Yeux -->
+      <g data-el="yeux" data-nom="Yeux">
+        <ellipse cx="160" cy="118" rx="18" ry="13" fill="url(#dvEyeGlow)"/>
+        <ellipse cx="200" cy="118" rx="18" ry="13" fill="url(#dvEyeGlow)"/>
+        <path d="M148 118 C154 110 166 109 173 117 C166 125 154 125 148 118 Z" fill="#ffc24a"/>
+        <path d="M212 118 C206 110 194 109 187 117 C194 125 206 125 212 118 Z" fill="#ffc24a"/>
+        <ellipse cx="161" cy="117" rx="3.4" ry="5.6" fill="#360606"/>
+        <ellipse cx="199" cy="117" rx="3.4" ry="5.6" fill="#360606"/>
+      </g>
+
+      <!-- 10. Nez -->
+      <g data-el="nez" data-nom="Nez">
+        <path d="M180 124 L172 143 C176 147 184 147 188 143 Z" fill="#000" opacity=".2"/>
+        <ellipse cx="175" cy="144" rx="2.1" ry="1.5" fill="#3a0810" opacity=".75"/>
+        <ellipse cx="185" cy="144" rx="2.1" ry="1.5" fill="#3a0810" opacity=".75"/>
+      </g>
+
+      <!-- 11. Moustache. Quatre bords supérieurs pour la même silhouette :
+           c'est le haut qui change, jamais l'emprise ni l'épaisseur. -->
+      <g data-el="moustache" data-nom="Moustache">
+        <g data-var="moustache" data-variante="actuelle">
+          <path d="M148 146 C161 148 172 150 180 153 C188 150 199 148 212 146
+                   C210 153 203 159 194 160 C188 161 183 159 180 158
+                   C177 159 172 161 166 160 C157 159 150 153 148 146 Z" fill="#17131b"/>
+        </g>
+        <g data-var="moustache" data-variante="dome" style="display:none">
+          <path d="M149 155 C157 143 168 138 180 138 C192 138 203 143 211 155
+                   C207 161 201 165 195 164 C188 163 183 160 180 159
+                   C177 160 172 163 165 164 C159 165 153 161 149 155 Z" fill="#17131b"/>
+        </g>
+        <g data-var="moustache" data-variante="cuvette" style="display:none">
+          <path d="M149 140 C153 155 165 162 180 162 C195 162 207 155 211 140
+                   C214 152 206 165 195 169 C188 171 183 169 180 168
+                   C177 169 172 171 165 169 C154 165 146 152 149 140 Z" fill="#17131b"/>
+        </g>
+        <g data-var="moustache" data-variante="dali" style="display:none">
+          <path d="M152 159 C160 151 170 148 180 150 C190 148 200 151 208 159
+                   C214 153 211 142 203 140 C196 138 189 143 185 150
+                   C183 153 182 154 180 154 C178 154 177 153 175 150
+                   C171 143 164 138 157 140 C149 142 146 153 152 159 Z" fill="#17131b"/>
+        </g>
+      </g>
+
+      <!-- 12. Bouche -->
+      <!-- Fond de bouche franchement plus sombre que la peau : au ton d'avant,
+           l'ouverture ne se distinguait pas et les crocs semblaient plantés
+           dans la joue. -->
+      <g data-el="bouche" data-nom="Bouche">
+        <path d="M164 164 C176 167 191 166 202 162 C200 173 185 178 174 174
+                 C169 172 166 167 164 164 Z" fill="#180205"/>
+      </g>
+
+      <!-- 13. Dents, entièrement contenues dans l'ouverture -->
+      <g data-el="dents" data-nom="Dents" fill="#fff">
+        <path d="M169 166 L174 167 L171 171 Z"/>
+        <path d="M179 168 L184 167 L181 172 Z"/>
+        <path d="M191 165 L196 164 L194 169 Z"/>
+      </g>
+
+      <!-- 14. Lèvre inférieure -->
+      <g data-el="levre" data-nom="Lèvre inférieure">
+        <path d="M172 174 C178 178 188 177 195 172 C192 180 178 182 172 174 Z" fill="#8e2434"/>
+      </g>
+
+      <!-- 15. Bouc, sur le menton, séparé de la moustache par la peau -->
+      <g data-el="bouc" data-nom="Bouc">
+        <path d="M173 184 C177 181 184 181 188 184 C190 188 190 193 188 196
+                 C186 199 183 201 180 204 C177 201 174 199 172 196
+                 C170 193 170 188 173 184 Z" fill="#1c1622"/>
+        <path d="M173 184 C177 181 184 181 188 184" stroke="#5a4262" stroke-width="1.4"
+              fill="none" opacity=".8"/>
+      </g>
+
+      <!-- Cadre de sélection et ses trois poignées : droite pour la largeur,
+           bas pour la hauteur, coin pour les deux. -->
+      <g id="cadreG">
+        <rect id="cadre" class="cadre" x="0" y="0" width="0" height="0" rx="3"/>
+        <rect class="poignee" data-poignee="l" width="5" height="5" rx="1"/>
+        <rect class="poignee" data-poignee="h" width="5" height="5" rx="1"/>
+        <rect class="poignee" data-poignee="lh" width="5" height="5" rx="1"/>
+      </g>
+    </svg>
+
+    <div class="btns">
+      <button id="bReperes" class="on">repères anatomiques</button>
+      <button data-choix="sourcils" data-variante="fronces" class="on">sourcils froncés</button>
+      <button data-choix="sourcils" data-variante="arques">sourcils arqués</button>
+      <button id="bReset">remettre les réglages validés</button>
+    </div>
+    <div class="btns" style="margin-top:4px">
+      <span style="font-size:11.5px;color:#8fa4c4;align-self:center;margin-right:2px">Moustache —</span>
+      <button data-choix="moustache" data-variante="actuelle" class="on">actuelle</button>
+      <button data-choix="moustache" data-variante="dome">dôme ⌒</button>
+      <button data-choix="moustache" data-variante="cuvette">cuvette ⌣</button>
+      <button data-choix="moustache" data-variante="dali">Dalí (pointes en boucle)</button>
+    </div>
+  </div>
+
+  <div class="cote">
+    <div class="bloc">
+      <h3>Éléments</h3>
+      <div class="els" id="els"></div>
+      <p class="note" style="margin:9px 0 0;font-size:11px">
+        L'œil à gauche masque l'élément, pour voir ce qu'il y a dessous.
+      </p>
+    </div>
+
+    <div class="bloc">
+      <h3>Élément choisi</h3>
+      <div id="reglages"><p class="vide">Clique un élément sur le visage ou dans la liste.</p></div>
+    </div>
+  </div>
+</div>
+
+<h2>Les deux sourcils côte à côte</h2>
+<p class="note">
+  Même visage, seuls les sourcils changent. À gauche les froncés (menaçant), à droite les arqués
+  (suffisant). Les décalages réglés au-dessus s'appliquent aussi ici.
+</p>
+<div class="duo">
+  <div class="scene"><h4>FRONCÉS — menaçant</h4><div id="duoA"></div></div>
+  <div class="scene"><h4>ARQUÉS — suffisant</h4><div id="duoB"></div></div>
+</div>
+
+<h2>Réglages à reporter</h2>
+<p class="note">
+  Ces lignes sont les décalages en unités du dessin. Copie-les-moi telles quelles : je les intègre
+  directement dans les coordonnées du diable, pour qu'il n'y ait aucune transformation à maintenir
+  dans le jeu.
+</p>
+<div class="bloc">
+  <textarea class="sortie" id="sortie" readonly></textarea>
+  <div class="btns">
+    <button id="bCopier">copier les réglages</button>
+  </div>
+</div>
+
+<script type="module">
+// ---------------------------------------------------------------------------
+// Éditeur de placement. Chaque groupe `data-el` du SVG reçoit un décalage et
+// une échelle, appliqués par un `transform`. Le mockup ne sert qu'à TROUVER
+// ces valeurs : une fois choisies, elles sont intégrées aux coordonnées du
+// dessin dans le jeu, qui ne porte donc aucun transform à maintenir.
+// ---------------------------------------------------------------------------
+const svg = document.getElementById('scene');
+const cadre = document.getElementById('cadre');
+const poignees = [...svg.querySelectorAll('.poignee')];
+const groupes = [...svg.querySelectorAll('[data-el]')];
+
+// L'état est volontairement plat : un décalage et deux échelles par élément.
+// Largeur et hauteur sont séparées parce qu'un visage se recale rarement de
+// façon homogène — une moustache s'élargit sans grandir, un bouc s'allonge
+// sans s'épaissir.
+// Réglages retenus lors de la passe du 5 septembre. Ils deviennent le point de
+// départ du mockup : on repart de la version validée, pas d'un visage nu.
+const DEFAUTS = {
+  cornes:        { dy: 6,   echX: .94 },
+  oreilles:      { dy: 15,  echX: 1.10, echY: .52 },
+  tete:          {          echX: .96 },
+  petitesCornes: { dy: -26, echX: .88, echY: 1.60 },
+  rides:         {          echX: 1.20, echY: 1.40 },
+  sourcils:      {          echX: 1.18, echY: .64 },
+  yeux:          {          echX: 1.14, echY: .74 },
+  nez:           { dy: -6,  echX: .82, echY: 1.10 },
+  moustache:     { dy: -8,  echX: 1.02, echY: 1.04 },
+  bouche:        { dx: -2,  dy: -4 },
+  dents:         { dx: -1,  dy: -5, echX: .98, echY: .78 },
+  levre:         { dx: -2,  dy: -5 },
+  bouc:          { dy: -6 }
+};
+function neuf(id) {
+  return { dx: 0, dy: 0, echX: 1, echY: 1, visible: true, ...(DEFAUTS[id] || {}) };
+}
+
+const etat = {};
+for (const g of groupes) etat[g.dataset.el] = neuf(g.dataset.el);
+let lier = false;   // largeur et hauteur ensemble
+
+let choisi = null;
+
+function centre(g) {
+  // Centre de la boîte AVANT transform : la mise à l'échelle doit se faire
+  // autour du milieu de l'élément, sinon régler l'échelle le fait aussi
+  // voyager à travers le visage.
+  const t = g.getAttribute('transform');
+  g.removeAttribute('transform');
+  const b = g.getBBox();
+  if (t) g.setAttribute('transform', t);
+  return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+}
+
+function appliquer(g) {
+  const e = etat[g.dataset.el];
+  const c = centre(g);
+  // Mise à l'échelle autour du centre de l'élément : sans les deux translations
+  // qui l'encadrent, régler la largeur le ferait aussi voyager vers la gauche.
+  g.setAttribute('transform',
+    `translate(${e.dx} ${e.dy}) translate(${c.x} ${c.y}) scale(${e.echX} ${e.echY}) translate(${-c.x} ${-c.y})`);
+  g.style.display = e.visible ? '' : 'none';
+}
+
+// Boîte de l'élément telle qu'elle est RÉELLEMENT posée à l'écran. getBBox
+// ignore le transform du groupe, donc on le rejoue à la main.
+function boite(g) {
+  const e = etat[g.dataset.el], c = centre(g);
+  const t = g.getAttribute('transform');
+  g.removeAttribute('transform');
+  const b = g.getBBox();
+  if (t) g.setAttribute('transform', t);
+  return {
+    x: c.x + (b.x - c.x) * e.echX + e.dx,
+    y: c.y + (b.y - c.y) * e.echY + e.dy,
+    w: b.width * e.echX,
+    h: b.height * e.echY,
+    brut: b, centre: c
+  };
+}
+
+function majCadre() {
+  const montre = choisi && etat[choisi.dataset.el].visible;
+  document.getElementById('cadreG').style.display = montre ? '' : 'none';
+  if (!montre) return;
+  const b = boite(choisi);
+  cadre.setAttribute('x', b.x - 3); cadre.setAttribute('y', b.y - 3);
+  cadre.setAttribute('width', b.w + 6); cadre.setAttribute('height', b.h + 6);
+  const pose = { l: [b.x + b.w + 3, b.y + b.h / 2], h: [b.x + b.w / 2, b.y + b.h + 3],
+                 lh: [b.x + b.w + 3, b.y + b.h + 3] };
+  for (const p of poignees) {
+    const [x, y] = pose[p.dataset.poignee];
+    p.setAttribute('x', x - 2.5); p.setAttribute('y', y - 2.5);
+  }
+}
+
+// --- Liste des éléments ----------------------------------------------------
+const liste = document.getElementById('els');
+function construireListe() {
+  liste.innerHTML = '';
+  for (const g of groupes) {
+    const id = g.dataset.el, e = etat[id];
+    const d = document.createElement('div');
+    d.className = 'el' + (choisi === g ? ' on' : '') + (e.visible ? '' : ' masque');
+    const taille = (e.echX !== 1 || e.echY !== 1)
+      ? ` ${Math.round(e.echX * 100)}×${Math.round(e.echY * 100)}%` : '';
+    d.innerHTML = `<span class="oeil">${e.visible ? '👁' : '🚫'}</span>` +
+                  `<span class="nom">${g.dataset.nom}</span>` +
+                  `<span class="val">${e.dx >= 0 ? '+' : ''}${e.dx} , ${e.dy >= 0 ? '+' : ''}${e.dy}` +
+                  `${taille}</span>`;
+    d.querySelector('.oeil').addEventListener('click', ev => {
+      ev.stopPropagation();
+      e.visible = !e.visible; appliquer(g); construireListe(); majCadre();
+    });
+    d.addEventListener('click', () => selectionner(g));
+    liste.appendChild(d);
+  }
+}
+
+// --- Réglages de l'élément choisi -----------------------------------------
+const zoneReglages = document.getElementById('reglages');
+function construireReglages() {
+  if (!choisi) {
+    zoneReglages.innerHTML = '<p class="vide">Clique un élément sur le visage ou dans la liste.</p>';
+    return;
+  }
+  const id = choisi.dataset.el, e = etat[id];
+  zoneReglages.innerHTML = `
+    <p class="vide" style="margin:0 0 9px">
+      <b style="color:var(--or)">${choisi.dataset.nom}</b> — glisse-le sur le visage pour le placer,
+      tire les carrés dorés pour le redimensionner. Flèches du clavier pour affiner
+      (Maj = 5 d'un coup).
+    </p>
+    <div class="reg">
+      <label>Horizontal</label><input type="range" id="rX" min="-40" max="40" step="1" value="${e.dx}">
+      <span class="n" id="nX">${e.dx}</span>
+      <label>Vertical</label><input type="range" id="rY" min="-40" max="40" step="1" value="${e.dy}">
+      <span class="n" id="nY">${e.dy}</span>
+      <label>Largeur</label><input type="range" id="rW" min="0.4" max="2" step="0.02" value="${e.echX}">
+      <span class="n" id="nW">${Math.round(e.echX * 100)}%</span>
+      <label>Hauteur</label><input type="range" id="rH" min="0.4" max="2" step="0.02" value="${e.echY}">
+      <span class="n" id="nH">${Math.round(e.echY * 100)}%</span>
+    </div>
+    <div class="btns" style="margin-top:8px">
+      <button id="bLier" class="${lier ? 'on' : ''}">${lier ? '🔗 largeur et hauteur liées' : '⛓ lier largeur et hauteur'}</button>
+      <button id="bTaille1">taille d'origine</button>
+    </div>`;
+  const rX = document.getElementById('rX'), rY = document.getElementById('rY');
+  const rW = document.getElementById('rW'), rH = document.getElementById('rH');
+  rX.addEventListener('input', () => { e.dx = +rX.value; rafraichir(); });
+  rY.addEventListener('input', () => { e.dy = +rY.value; rafraichir(); });
+  rW.addEventListener('input', () => { e.echX = +rW.value; if (lier) e.echY = e.echX; rafraichir(); });
+  rH.addEventListener('input', () => { e.echY = +rH.value; if (lier) e.echX = e.echY; rafraichir(); });
+  document.getElementById('bLier').addEventListener('click', () => {
+    lier = !lier;
+    if (lier) e.echY = e.echX;
+    rafraichir();
+  });
+  document.getElementById('bTaille1').addEventListener('click', () => {
+    e.echX = 1; e.echY = 1; rafraichir();
+  });
+}
+
+function selectionner(g) {
+  choisi = g;
+  construireListe(); construireReglages(); majCadre();
+}
+
+function rafraichir() {
+  for (const g of groupes) appliquer(g);
+  majCadre(); construireListe(); construireReglages(); majSortie(); majDuo();
+}
+
+// --- Glisser sur la scène --------------------------------------------------
+// La souris est en pixels d'écran, le dessin en unités de viewBox : sans cette
+// conversion, un élément part deux fois trop vite sur un grand écran.
+function versSvg(ev) {
+  const r = svg.getBoundingClientRect();
+  const vb = svg.viewBox.baseVal;
+  return { x: (ev.clientX - r.left) / r.width * vb.width,
+           y: (ev.clientY - r.top) / r.height * vb.height };
+}
+
+let glisse = null;
+svg.addEventListener('pointerdown', ev => {
+  const p = versSvg(ev);
+  // Une poignée l'emporte sur l'élément qu'elle borde : elles se chevauchent,
+  // et c'est toujours la poignée qu'on visait quand on clique dessus.
+  const poignee = ev.target.closest('.poignee');
+  if (poignee && choisi) {
+    const e = etat[choisi.dataset.el], b = boite(choisi);
+    glisse = { g: choisi, mode: poignee.dataset.poignee, b,
+               echX0: e.echX, echY0: e.echY, p0: p };
+    svg.setPointerCapture(ev.pointerId);
+    return;
+  }
+  const g = ev.target.closest('[data-el]');
+  if (!g) return;
+  selectionner(g);
+  const e = etat[g.dataset.el];
+  glisse = { g, mode: 'deplacer', x0: p.x - e.dx, y0: p.y - e.dy };
+  g.classList.add('sel');
+  svg.setPointerCapture(ev.pointerId);
+});
+
+svg.addEventListener('pointermove', ev => {
+  if (!glisse) return;
+  const p = versSvg(ev), e = etat[glisse.g.dataset.el];
+  if (glisse.mode === 'deplacer') {
+    e.dx = Math.round(p.x - glisse.x0);
+    e.dy = Math.round(p.y - glisse.y0);
+  } else {
+    // L'élément grandit autour de son centre : la poignée mesure donc la
+    // demi-largeur, pas la largeur. Sans ce facteur 2, il grossit deux fois
+    // trop vite sous le curseur.
+    const b = glisse.b;
+    const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+    const largeurBrute = b.brut.width || 1, hauteurBrute = b.brut.height || 1;
+    if (glisse.mode !== 'h') {
+      e.echX = borne(Math.abs(p.x - cx) * 2 / largeurBrute);
+      if (lier) e.echY = e.echX;
+    }
+    if (glisse.mode !== 'l') {
+      e.echY = borne(Math.abs(p.y - cy) * 2 / hauteurBrute);
+      if (lier) e.echX = e.echY;
+    }
+  }
+  appliquer(glisse.g); majCadre(); construireListe(); construireReglages(); majSortie();
+});
+
+function borne(v) { return Math.min(2, Math.max(.4, Math.round(v * 50) / 50)); }
+
+svg.addEventListener('pointerup', ev => {
+  if (!glisse) return;
+  glisse.g.classList.remove('sel'); glisse = null;
+  svg.releasePointerCapture(ev.pointerId); majDuo();
+});
+
+window.addEventListener('keydown', ev => {
+  if (!choisi) return;
+  const pas = ev.shiftKey ? 5 : 1, e = etat[choisi.dataset.el];
+  if (ev.key === 'ArrowLeft') e.dx -= pas;
+  else if (ev.key === 'ArrowRight') e.dx += pas;
+  else if (ev.key === 'ArrowUp') e.dy -= pas;
+  else if (ev.key === 'ArrowDown') e.dy += pas;
+  else return;
+  ev.preventDefault();
+  rafraichir();
+});
+
+// --- Variantes ------------------------------------------------------------
+// Deux familles indépendantes : les sourcils et la moustache. Un seul
+// commutateur pour les deux mélangerait les choix.
+const choixVariante = { sourcils: 'fronces', moustache: 'actuelle' };
+
+function variante(famille, nom) {
+  choixVariante[famille] = nom;
+  for (const g of svg.querySelectorAll(`[data-var="${famille}"]`)) {
+    g.style.display = g.dataset.variante === nom ? '' : 'none';
+  }
+  for (const b of document.querySelectorAll(`[data-choix="${famille}"]`)) {
+    b.classList.toggle('on', b.dataset.variante === nom);
+  }
+  majSortie(); majDuo();
+}
+for (const b of document.querySelectorAll('[data-choix]')) {
+  b.addEventListener('click', () => variante(b.dataset.choix, b.dataset.variante));
+}
+
+document.getElementById('bReperes').addEventListener('click', e => {
+  const r = document.getElementById('reperes');
+  const montre = r.style.display === 'none';
+  r.style.display = montre ? '' : 'none';
+  e.currentTarget.classList.toggle('on', montre);
+});
+
+document.getElementById('bReset').addEventListener('click', () => {
+  for (const id in etat) etat[id] = neuf(id);
+  rafraichir();
+});
+
+// --- Sortie ----------------------------------------------------------------
+const sortie = document.getElementById('sortie');
+function majSortie() {
+  const lignes = ['sourcils : ' + choixVariante.sourcils.toUpperCase(),
+                  'moustache : ' + choixVariante.moustache.toUpperCase(), ''];
+  let rien = true;
+  for (const g of groupes) {
+    const id = g.dataset.el, e = etat[id];
+    if (!e.dx && !e.dy && e.echX === 1 && e.echY === 1 && e.visible) continue;
+    rien = false;
+    let l = g.dataset.nom.padEnd(18, ' ') + ` dx ${e.dx >= 0 ? '+' : ''}${e.dx}  dy ${e.dy >= 0 ? '+' : ''}${e.dy}`;
+    if (e.echX !== 1) l += `  largeur ${Math.round(e.echX * 100)}%`;
+    if (e.echY !== 1) l += `  hauteur ${Math.round(e.echY * 100)}%`;
+    if (!e.visible) l += '  (masqué)';
+    lignes.push(l);
+  }
+  if (rien) lignes.push('(rien de bougé pour l\'instant)');
+  sortie.value = lignes.join('\n');
+}
+
+document.getElementById('bCopier').addEventListener('click', async e => {
+  try { await navigator.clipboard.writeText(sortie.value); }
+  catch (err) { sortie.select(); document.execCommand('copy'); }
+  e.currentTarget.textContent = 'copié !';
+  e.currentTarget.classList.add('ok');
+  setTimeout(() => {
+    e.currentTarget.textContent = 'copier les réglages';
+    e.currentTarget.classList.remove('ok');
+  }, 1400);
+});
+
+// --- Comparaison des deux sourcils ----------------------------------------
+// Deux copies du visage réglé, l'une avec chaque variante. Elles se refont à
+// chaque changement : comparer deux sourcils sur un visage périmé n'aurait
+// aucun intérêt.
+function majDuo() {
+  for (const [cible, nom] of [['duoA', 'fronces'], ['duoB', 'arques']]) {
+    const hote = document.getElementById(cible);
+    hote.innerHTML = '';
+    const c = svg.cloneNode(true);
+    c.removeAttribute('id');
+    c.querySelector('#reperes')?.remove();
+    c.querySelector('#cadreG')?.remove();   // le cadre ET ses poignées
+    c.setAttribute('viewBox', '120 20 120 200');
+    // Seuls les sourcils changent d'une colonne à l'autre : la moustache garde
+    // le choix en cours, sinon on comparerait deux visages différents.
+    for (const g of c.querySelectorAll('[data-var="sourcils"]')) {
+      g.style.display = g.dataset.variante === nom ? '' : 'none';
+    }
+    // Les dégradés sont référencés par identifiant : deux copies dans la page
+    // porteraient les mêmes, et le navigateur ne résoudrait que les premiers.
+    c.querySelector('defs')?.remove();
+    hote.appendChild(c);
+  }
+}
+
+// --- Démarrage -------------------------------------------------------------
+for (const g of groupes) appliquer(g);
+construireListe();
+majCadre();          // rien de choisi au départ : cache le cadre et ses poignées
+variante('sourcils', 'fronces');
+variante('moustache', 'actuelle');
+majSortie();
+majDuo();
+</script>
+</body>
+</html>

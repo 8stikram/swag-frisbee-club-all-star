@@ -1,0 +1,1336 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Casino — le comptoir du diable</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Russo+One&family=Barlow:wght@700;800&family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff;
+         --or:#d4af37; --or-clair:#f6e27a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;
+       padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:30px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:1020px;line-height:1.7;margin:0 0 14px}
+  .note b{color:var(--or-clair)}
+  .bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:14px}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .btns button{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+               padding:7px 13px;font-size:11.5px;cursor:pointer}
+  .btns button:hover{background:#24395e}
+  .btns button.on{background:#3a2c06;border-color:var(--or);color:var(--or-clair)}
+  .btns .sep{width:1px;background:var(--edge);margin:0 3px}
+
+  /* ======================================================================
+     LA SCÈNE. Reproduit le cadre du jeu (16:10, requêtes de conteneur) pour
+     que les proportions lues ici soient celles du casino, pas celles du
+     navigateur.
+     ====================================================================== */
+  .scene{
+    position:relative;width:100%;max-width:1100px;aspect-ratio:16/10;margin:0 auto;
+    border:5px solid #1b2a52;border-radius:12px;overflow:hidden;container-type:size;
+    background:#07040a;
+  }
+
+  /* ======================================================================
+     LE FOND. Cinq couches empilées sous tout le reste : dégradé qui dérive,
+     cercle de texte en filigrane, particules en canvas, puis les voiles
+     (vignette, scanlines, grain). Il doit rester TRÈS sombre — c'est lui qui
+     décide si l'or des cartes ressort ou se noie.
+     ====================================================================== */
+  .fond{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+
+  .fondCouleur{
+    position:absolute;inset:-10%;
+    background:
+      radial-gradient(70% 60% at 30% 25%, #1a0505 0%, transparent 60%),
+      radial-gradient(70% 60% at 72% 70%, #0f0515 0%, transparent 62%),
+      radial-gradient(100% 90% at 50% 40%, #150409 0%, #0a0a0a 70%, #050206 100%);
+    animation:fondDerive 18s ease-in-out infinite alternate, fondRespire 9s ease-in-out infinite;
+  }
+  /* La dérive déplace les deux foyers de couleur au lieu de changer la teinte :
+     un filtre hue-rotate aurait fait virer le bordeaux au vert au passage. */
+  @keyframes fondDerive{
+    0%{ background-position:0% 0%, 0% 0%, 0% 0%; filter:saturate(1) }
+    100%{ background-position:8% 6%, -7% -5%, 0% 0%; filter:saturate(1.25) }
+  }
+  @keyframes fondRespire{0%,100%{opacity:1}50%{opacity:.95}}
+
+  /* Cercle de texte tournant, repris du menu principal du jeu. */
+  .anneau{
+    position:absolute;top:46%;left:50%;width:135cqh;height:135cqh;
+    transform:translate(-50%,-50%);animation:anneauTourne 90s linear infinite;opacity:.26;
+  }
+  @keyframes anneauTourne{
+    from{transform:translate(-50%,-50%) rotate(0)}
+    to{transform:translate(-50%,-50%) rotate(360deg)}
+  }
+  .anneau svg{width:100%;height:100%}
+  .anneau text{
+    font-family:'Archivo Black',sans-serif;font-size:14px;letter-spacing:.4em;
+    fill:#d4af37;
+  }
+  .anneauInterne{
+    position:absolute;top:46%;left:50%;width:108cqh;height:108cqh;
+    transform:translate(-50%,-50%);border:2px dashed rgba(140,30,45,.5);border-radius:50%;
+    animation:anneauTourne 130s linear infinite reverse;
+  }
+
+  #fondCanvas{position:absolute;inset:0;width:100%;height:100%}
+
+  /* --- Sceaux magiques ---
+     Des cercles gravés plutôt que des caractères de police : un pentacle
+     inscrit dans son anneau se lit comme un sceau, là où un glyphe piqué dans
+     une police se lit comme du texte. Ils tournent chacun à leur vitesse et
+     respirent en décalé, pour qu'aucun battement commun ne se voie. */
+  .sceaux{position:absolute;inset:0;pointer-events:none}
+  .sceau{position:absolute;animation:sceauTourne linear infinite}
+  .sceau svg{width:100%;height:100%;overflow:visible}
+  .sceau .trait{fill:none;stroke:#d4af37;vector-effect:non-scaling-stroke}
+  .sceau .lueur{fill:none;stroke:#ff7a2a;vector-effect:non-scaling-stroke;
+                animation:sceauRespire ease-in-out infinite}
+  @keyframes sceauTourne{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  @keyframes sceauRespire{0%,100%{opacity:.18}50%{opacity:.7}}
+
+  .sceau.a{left:7cqw;top:16cqh;width:26cqh;height:26cqh;animation-duration:120s;opacity:.34}
+  .sceau.b{right:6cqw;top:24cqh;width:20cqh;height:20cqh;animation-duration:95s;
+           animation-direction:reverse;opacity:.3}
+  .sceau.c{left:50%;top:6cqh;width:34cqh;height:34cqh;margin-left:-17cqh;
+           animation-duration:170s;opacity:.16}
+  .sceau.d{left:20cqw;bottom:50cqh;width:14cqh;height:14cqh;animation-duration:70s;
+           animation-direction:reverse;opacity:.26}
+  .sceau.e{right:22cqw;bottom:52cqh;width:16cqh;height:16cqh;animation-duration:88s;opacity:.24}
+
+  /* --- Fumée violette derrière le diable ---
+     Elle a quitté le personnage pour rejoindre le décor : accrochée à lui,
+     elle le suivait dans ses mouvements comme une écharpe. Ici elle dérive
+     pour son compte, derrière lui. */
+  .fumeeDecor{position:absolute;left:50%;bottom:34cqh;width:56cqw;height:44cqh;
+              transform:translateX(-50%);filter:blur(14px);opacity:.55}
+  .fumeeDecor i{
+    position:absolute;border-radius:50%;
+    background:radial-gradient(circle,rgba(150,60,235,.5),transparent 70%);
+    animation:volute linear infinite;
+  }
+  .fumeeDecor i:nth-child(1){left:6%;bottom:0;width:16cqh;height:16cqh;animation-duration:17s}
+  .fumeeDecor i:nth-child(2){left:34%;bottom:-6%;width:21cqh;height:21cqh;animation-duration:23s;animation-delay:-8s}
+  .fumeeDecor i:nth-child(3){left:62%;bottom:-2%;width:14cqh;height:14cqh;animation-duration:19s;animation-delay:-13s}
+  .fumeeDecor i:nth-child(4){left:80%;bottom:-8%;width:19cqh;height:19cqh;animation-duration:26s;animation-delay:-4s}
+  @keyframes volute{
+    0%{transform:translate(0,0) scale(.6);opacity:0}
+    18%{opacity:.75}
+    70%{opacity:.5}
+    100%{transform:translate(4cqw,-38cqh) scale(1.7);opacity:0}
+  }
+
+  /* --- Flammes derrière le comptoir ---
+     Une rampe de langues de feu qui lèchent le rebord par-derrière. Elles sont
+     SOUS le comptoir dans l'ordre d'empilement : on ne doit voir dépasser que
+     leur pointe, sinon le meuble a l'air en feu au lieu d'être éclairé. */
+  .rampeFlammes{position:absolute;left:0;right:0;bottom:39cqh;height:12cqh;z-index:1;
+                pointer-events:none;filter:blur(5px);opacity:.62}
+  /* Langue effilée : une pointe en haut, une base large. Arrondie de partout,
+     elle se lisait comme un ballon orange posé derrière le meuble. */
+  .rampeFlammes i{
+    position:absolute;bottom:0;
+    border-radius:52% 48% 42% 58% / 74% 70% 30% 26%;
+    background:linear-gradient(180deg,rgba(255,235,150,.75) 0%,rgba(255,120,20,.6) 46%,rgba(170,25,5,0) 100%);
+    transform-origin:bottom center;mix-blend-mode:screen;
+    animation:flamme ease-in-out infinite alternate;
+  }
+  @keyframes flamme{
+    0%{transform:scaleY(.5) scaleX(.85) skewX(-7deg);opacity:.35}
+    100%{transform:scaleY(1.1) scaleX(1) skewX(8deg);opacity:.8}
+  }
+
+  /* --- Le diable respire ---
+     Reprend les animations du jeu : le mockup charge son SVG mais pas la
+     feuille de style du casino, il restait donc figé ici alors qu'il bouge
+     en ligne. */
+  .diable svg{animation:devilBob 4.2s ease-in-out infinite}
+  @keyframes devilBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.4%)}}
+  .diable .devilTete{animation:devilTete 4.2s ease-in-out infinite;transform-origin:180px 160px}
+  @keyframes devilTete{
+    0%,100%{transform:translateY(0) rotate(-.8deg)}
+    50%{transform:translateY(-1.6px) rotate(.8deg)}
+  }
+  .diable .devilEye{animation:devilGlow 2.1s ease-in-out infinite}
+  @keyframes devilGlow{0%,100%{opacity:1}50%{opacity:.5}}
+  .diable .devilCartes{animation:devilCartes 3.1s ease-in-out infinite;transform-origin:272px 185px}
+  @keyframes devilCartes{
+    0%,100%{transform:rotate(-3deg) translateY(0)}
+    50%{transform:rotate(3deg) translateY(-2px)}
+  }
+
+  .vignette{
+    position:absolute;inset:0;
+    background:radial-gradient(75% 65% at 50% 45%, transparent 40%, rgba(0,0,0,.55) 82%, rgba(0,0,0,.85) 100%);
+  }
+  .scanlines{
+    position:absolute;inset:0;opacity:.13;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.9) 0 1.5px, transparent 1.5px 3.5px);
+  }
+  /* Grain de pellicule : un bruit dessiné une fois en SVG, décalé sans fin.
+     Regénérer du bruit à chaque image coûterait cher pour un effet qu'on ne
+     regarde jamais en face. */
+  .grain{
+    position:absolute;inset:-50%;opacity:.05;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
+    animation:grainBouge .9s steps(3) infinite;
+  }
+  @keyframes grainBouge{
+    0%{transform:translate(0,0)} 33%{transform:translate(-2%,1.5%)} 66%{transform:translate(1.5%,-2%)}
+  }
+
+  /* Spots dorés tombant du haut. Deux cônes très ouverts, en fondu. */
+  .spots{position:absolute;inset:0;pointer-events:none;z-index:1}
+  .spot{
+    position:absolute;top:-6cqh;width:34cqw;height:80cqh;
+    background:linear-gradient(180deg,rgba(255,209,120,.20) 0%,rgba(255,180,80,.07) 46%,transparent 78%);
+    filter:blur(7px);animation:spotPulse 5.2s ease-in-out infinite;
+  }
+  .spot.g{left:6cqw;transform:perspective(300px) rotateY(9deg)}
+  .spot.d{right:6cqw;transform:perspective(300px) rotateY(-9deg);animation-delay:-2.4s}
+  @keyframes spotPulse{0%,100%{opacity:.55}50%{opacity:1}}
+
+  /* Le diable. Il est DERRIÈRE le comptoir : c'est son z-index inférieur qui
+     le met à son poste plutôt que devant son meuble. */
+  .diable{
+    /* Le comptoir lui coupe le bas du torse, à la taille. Posé plus haut, il
+       flottait derrière son meuble au lieu de se tenir dedans. */
+    position:absolute;left:50%;bottom:44cqh;z-index:2;
+    height:47cqh;display:flex;transform:translateX(-50%);
+  }
+  .diable svg{height:100%;width:auto;filter:drop-shadow(0 6px 18px rgba(0,0,0,.65))}
+  .diable.devant{z-index:6}
+
+  /* ======================================================================
+     LE COMPTOIR. Trois couches : le plateau vu de biais, la face avant, et
+     le rebord épais qui les sépare. C'est le rebord qui donne l'épaisseur —
+     sans lui, le meuble redevient un rectangle peint.
+     ====================================================================== */
+  /* La face avant prend presque tout : elle doit loger quatre cartes VERTICALES
+     plus le compteur. Le plateau se contente de la bande où l'on pose les
+     objets — c'est un dessus de bar vu de biais, pas une table. */
+  .comptoir{position:absolute;left:0;right:0;bottom:0;height:46cqh;z-index:5}
+
+  .plateau{
+    position:absolute;left:0;right:0;top:0;height:8cqh;
+    background:
+      linear-gradient(180deg,#2a1016 0%,#160709 38%,#0c0407 100%);
+    border-top:.5cqh solid #3d2a1a;
+  }
+  /* Reflet miroir du plateau poli : une bande claire très étirée. */
+  .plateau::before{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(255,214,150,.30) 0%,rgba(255,180,90,.06) 40%,transparent 70%);
+  }
+  /* Reflets de flammes qui dansent sur le poli. */
+  .flammes{
+    position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:.5;
+    background:
+      radial-gradient(22cqw 5cqh at 22% 60%, rgba(255,120,30,.5), transparent 70%),
+      radial-gradient(18cqw 4cqh at 62% 70%, rgba(255,80,20,.42), transparent 70%),
+      radial-gradient(26cqw 5cqh at 86% 55%, rgba(255,150,50,.38), transparent 70%);
+    animation:flammes 6.5s ease-in-out infinite alternate;
+  }
+  @keyframes flammes{
+    0%{ background-position:0 0, 0 0, 0 0; opacity:.34 }
+    50%{ opacity:.62 }
+    100%{ background-position:4cqw 0, -3cqw 0, 2cqw 0; opacity:.4 }
+  }
+
+  .rebord{
+    position:absolute;left:0;right:0;top:8cqh;height:2.2cqh;
+    background:linear-gradient(180deg,#6b5330 0%,#3a2a15 45%,#1b1209 100%);
+    box-shadow:0 .3cqh 1cqh rgba(0,0,0,.7), inset 0 .25cqh 0 rgba(255,225,160,.42);
+    border-radius:0 0 3px 3px;
+  }
+
+  .face{
+    position:absolute;left:0;right:0;top:10.2cqh;bottom:0;
+    background:
+      linear-gradient(180deg,#14080c 0%,#0a0405 55%,#050203 100%);
+    border-top:1px solid rgba(255,200,130,.12);
+  }
+  .rivets{position:absolute;left:0;right:0;top:2cqh;display:flex;justify-content:space-around;
+          padding:0 2cqw;pointer-events:none}
+  .rivet{
+    width:1.1cqh;height:1.1cqh;border-radius:50%;
+    background:radial-gradient(circle at 34% 30%,#ffe9a8,#c9a032 62%,#6b4d10);
+    box-shadow:0 .18cqh .3cqh rgba(0,0,0,.75), 0 0 .5cqh rgba(212,175,55,.4);
+  }
+
+  /* Runes gravées dans la face : elles s'allument et s'éteignent en cycle. */
+  /* Bandeau haut de la face : les runes encadrent le compteur. Empilés, ils ne
+     tenaient pas — la face doit encore loger la rangée de plaques. */
+  .bandeauFace{
+    position:absolute;left:0;right:0;top:1.6cqh;display:flex;align-items:center;
+    justify-content:center;gap:3cqw;
+  }
+  .runes{
+    display:flex;gap:2.6cqw;
+    font-family:'DotGothic16',monospace;font-size:clamp(9px,2.1cqh,18px);
+    color:#ff9b3d;pointer-events:none;
+  }
+  .runes span{opacity:.3;text-shadow:0 0 .8cqh rgba(255,140,40,.85);animation:rune 3.6s ease-in-out infinite}
+  .runes span:nth-child(2){animation-delay:-.9s}
+  .runes span:nth-child(3){animation-delay:-1.8s}
+  .runes span:nth-child(4){animation-delay:-2.7s}
+  .runes span:nth-child(5){animation-delay:-3.2s}
+  @keyframes rune{0%,100%{opacity:.28}50%{opacity:.62}}
+
+  /* --- Le compteur cristal, encastré dans la face avant --- */
+  /* Le compteur se pose dans le haut de la face, au-dessus de la rangée. Glissé
+     au milieu des quatre plaques, il passait pour un cinquième bouton. */
+  /* Le grossissement vit sur le cristal et non sur son bandeau : l'éditeur
+     réécrit le `transform` de ce qu'il déplace, il l'aurait effacé. */
+  .cristal{
+    position:relative;display:flex;align-items:center;gap:1.1cqw;transform:scale(1.06);
+    padding:.9cqh 2cqw;border-radius:7px;
+    background:linear-gradient(165deg,#180a12 0%,#0a0409 100%);
+    /* L'enfoncement vient de l'ombre INTÉRIEURE haute : sans elle, le cristal
+       a l'air posé sur la face, pas creusé dedans. */
+    box-shadow:inset 0 .5cqh .9cqh rgba(0,0,0,.95), inset 0 -.2cqh 0 rgba(255,214,150,.22),
+               0 0 2.4cqh rgba(212,175,55,.3);
+    border:1px solid rgba(212,175,55,.4);
+    transition:box-shadow .2s, border-color .2s;
+  }
+
+  /* --- La pièce, en vraie rotation 3D --- */
+  .piece3d{
+    width:2.6cqh;height:2.6cqh;position:relative;transform-style:preserve-3d;
+    animation:pieceTourne 3.6s linear infinite;
+  }
+  .piece3d span{
+    position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;
+    box-shadow:0 0 1cqh rgba(240,190,60,.75);
+  }
+  .piece3d .avant{background:radial-gradient(circle at 34% 30%,#fff3b8,#eab73f 52%,#8a5f11)}
+  .piece3d .arriere{
+    background:radial-gradient(circle at 66% 30%,#f2d98a,#c9a032 52%,#6b4d10);
+    transform:rotateY(180deg);
+  }
+  @keyframes pieceTourne{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}
+
+  /* --- Les chiffres, en rouleaux de machine à sous ---
+     Chaque colonne porte 0-9 répétés et se translate. Remplacer le texte
+     d'un coup aurait donné un compteur qui saute ; ici il défile. */
+  /* La hauteur d'un chiffre est une variable, et le décalage des rouleaux se
+     calcule dans la MÊME unité. Mesurée au moment de la construction, elle
+     valait zéro tant que la mise en page n'était pas faite, et le compteur
+     s'ouvrait sur « 000 ». */
+  .rouleaux{--hChiffre:3.2cqh;display:flex;gap:.1cqw;overflow:hidden;height:var(--hChiffre)}
+  .rouleau{overflow:hidden;height:var(--hChiffre)}
+  .bande{
+    display:flex;flex-direction:column;
+    transition:transform .9s cubic-bezier(.16,.9,.28,1);
+  }
+  .bande span{
+    height:var(--hChiffre);line-height:var(--hChiffre);
+    font-family:'Russo One',sans-serif;font-size:clamp(11px,2.6cqh,22px);
+    color:#ffdf7a;letter-spacing:.06em;text-shadow:0 0 .9cqh rgba(255,200,60,.9);
+  }
+  .cristal.roule .bande{transition-timing-function:cubic-bezier(.3,0,.1,1)}
+  /* Perdre doit peser : la descente est plus longue et démarre lourdement. */
+  .cristal.perd .bande{transition-duration:1.5s;transition-timing-function:cubic-bezier(.7,0,.5,1)}
+
+  /* --- Surcharge de gain --- */
+  .cristal.gagne{
+    border-color:#7bff9d;
+    box-shadow:inset 0 .5cqh .9cqh rgba(0,0,0,.9), 0 0 5cqh rgba(120,255,150,.85),
+               0 0 9cqh rgba(255,210,70,.6);
+    animation:cristalJackpot .5s ease-in-out 3;
+  }
+  @keyframes cristalJackpot{0%,100%{transform:scale(1.06)}50%{transform:scale(1.16)}}
+  .cristal.gagne .bande span{color:#c8ffd6;text-shadow:0 0 1.4cqh rgba(120,255,160,1)}
+
+  /* --- Surcharge de perte --- */
+  .cristal.perd{
+    border-color:#ff4d4d;
+    box-shadow:inset 0 .5cqh .9cqh rgba(0,0,0,.95), 0 0 4cqh rgba(255,40,40,.8);
+    animation:cristalSaigne .28s steps(2) 6;
+  }
+  @keyframes cristalSaigne{0%,100%{transform:scale(1.06) translateX(0)}50%{transform:scale(1.06) translateX(-1.4%)}}
+  .cristal.perd .bande span{color:#ff9a9a;text-shadow:0 0 1.2cqh rgba(255,50,50,1)}
+
+  /* Flash sur le cristal à l'arrêt du défilement. */
+  .cristal::after{
+    content:'';position:absolute;inset:0;border-radius:7px;background:#fff;
+    opacity:0;pointer-events:none;transition:opacity .28s;
+  }
+  .cristal.flash::after{opacity:.75;transition:none}
+
+  /* Runes rouges autour du cristal, à la perte. */
+  .runeRouge{
+    position:absolute;font-family:'DotGothic16',monospace;font-size:2.4cqh;color:#ff3b3b;
+    text-shadow:0 0 1cqh rgba(255,40,40,.95);pointer-events:none;opacity:0;
+    animation:runeRouge 1s ease-out forwards;
+  }
+  @keyframes runeRouge{
+    0%{opacity:0;transform:scale(.4)}
+    30%{opacity:1;transform:scale(1.15)}
+    100%{opacity:0;transform:scale(1.5) translateY(-2cqh)}
+  }
+
+  /* Guirlande de lumières qui clignote autour du compteur, au gain. */
+  .cristal.gagne ~ .runes span{animation-duration:.22s !important}
+
+  /* Secousse de l'écran entier. */
+  .scene.secoue{animation:sceneSecoue .22s steps(2) 3}
+  @keyframes sceneSecoue{
+    0%,100%{transform:translate(0,0)} 25%{transform:translate(-3px,2px)}
+    50%{transform:translate(3px,-2px)} 75%{transform:translate(-2px,-3px)}
+  }
+  /* Voile de couleur plein écran : vert-or au gain, rouge sang à la perte. */
+  .voile{position:absolute;inset:0;z-index:8;pointer-events:none;opacity:0}
+  .voile.gain{background:radial-gradient(60% 50% at 50% 78%, rgba(120,255,150,.3), transparent 70%);
+              animation:voile .7s ease-out}
+  .voile.perte{background:rgba(255,20,20,.34);animation:voile .3s ease-out}
+  @keyframes voile{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+
+  .paillette{position:absolute;pointer-events:none;z-index:9;border-radius:1px}
+
+  /* --- Objets posés sur le plateau --- */
+  /* La zone des objets épouse le plateau, et leur base se pose DANS cette
+     bande. Ancrés au-dessus du comptoir, ils flottaient au lieu d'être posés
+     dessus — l'ombre tombait dans le vide. */
+  .objets{position:absolute;left:0;right:0;top:0;height:8cqh;z-index:2;pointer-events:none}
+  /* Les objets réactivent le pointeur que leur conteneur coupe : sans cette
+     ligne, l'éditeur ne peut pas les attraper à la souris. */
+  .objet{position:absolute;pointer-events:auto;filter:drop-shadow(0 .5cqh .45cqh rgba(0,0,0,.85))}
+  .objet svg{display:block;height:100%;width:auto}
+  /* Placements réglés à la main dans l'éditeur, puis figés ici. */
+  .objet.verre{left:9.5cqw;bottom:3.1cqh;height:7.7cqh}
+  .objet.cendrier{left:15cqw;bottom:2.6cqh;height:8.1cqh}
+  .objet.jetons{left:22.5cqw;bottom:4.1cqh;height:3.9cqh}
+  .objet.bouteille{right:12.5cqw;bottom:.1cqh;height:20.8cqh}
+  .objet.grimoire{right:26cqw;bottom:.1cqh;height:8.78cqh}
+
+  /* Fumée du cigare : trois bouffées qui montent en se dispersant. */
+  .fumee{position:absolute;left:52%;bottom:88%;width:2cqh;height:2cqh;pointer-events:none}
+  .fumee i{
+    position:absolute;left:0;bottom:0;width:1.5cqh;height:1.5cqh;border-radius:50%;
+    background:radial-gradient(circle,rgba(190,120,255,.55),transparent 70%);
+    animation:fumee 4.2s linear infinite;
+  }
+  .fumee i:nth-child(2){animation-delay:-1.4s}
+  .fumee i:nth-child(3){animation-delay:-2.8s}
+  @keyframes fumee{
+    0%{transform:translate(0,0) scale(.5);opacity:0}
+    15%{opacity:.75}
+    100%{transform:translate(2.5cqh,-13cqh) scale(2.6);opacity:0}
+  }
+
+  /* --- Les quatre boutons, FIXÉS SUR LA FACE AVANT ---
+     Ce sont des plaques vissées sur le mur du comptoir, pas des cartes posées
+     sur le plateau. L'ombre portée vers le bas est ce qui les décolle de la
+     face : sans elle, elles se lisent comme un motif imprimé dessus. */
+  /* Écart large entre les cartes : serrées, la rangée faisait un bloc au milieu
+     de la face et laissait deux grands vides sur les côtés. */
+  .jeux{
+    position:absolute;left:0;right:0;bottom:2.1cqh;z-index:3;
+    display:flex;gap:7cqw;justify-content:center;align-items:flex-end;perspective:900px;
+  }
+  /* Cartes verticales, vissées sur la face. En paysage elles ressemblaient à
+     des cartes de visite : c'est le format 3:4 debout qui dit « carte à
+     jouer », et c'est lui qui compte ici. */
+  .carte{
+    position:relative;width:11.35cqw;max-width:150px;height:24.3cqh;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.7cqh;
+    padding:1.4cqh .8cqw;cursor:pointer;color:#fff;text-align:center;
+    background:linear-gradient(180deg,#0a0a0a 0%,#1a0708 52%,#2a0a0a 100%);
+    border:3px solid var(--or);border-radius:9px;
+    clip-path:polygon(13px 0, calc(100% - 13px) 0, 100% 13px, 100% 100%, 0 100%, 0 13px);
+    transform-style:preserve-3d;
+    transition:transform .16s ease-out, box-shadow .16s ease-out, border-color .16s;
+    animation:carteRespire 2.6s ease-in-out infinite;
+    filter:drop-shadow(0 .55cqh .5cqh rgba(0,0,0,.85));
+  }
+  .carte::before{
+    content:'';position:absolute;inset:0;pointer-events:none;opacity:.13;
+    background-image:
+      radial-gradient(circle at 18% 22%, #d4af37 0 1.6px, transparent 1.7px),
+      radial-gradient(circle at 74% 38%, #d4af37 0 1.4px, transparent 1.5px),
+      radial-gradient(circle at 38% 68%, #d4af37 0 1.5px, transparent 1.6px);
+    background-size:64px 64px;
+  }
+  @keyframes carteRespire{
+    0%,100%{ box-shadow:0 0 12px rgba(212,175,55,.42), inset 0 0 22px rgba(212,175,55,.05) }
+    50%{ box-shadow:0 0 20px rgba(212,175,55,.72), inset 0 0 26px rgba(212,175,55,.09) }
+  }
+  .carte:hover{ border-color:var(--or-clair); box-shadow:0 0 34px rgba(246,226,122,.75) !important }
+  .carteIco{height:9.45cqh;flex-shrink:0;filter:drop-shadow(0 0 7px rgba(212,175,55,.55))}
+  .carteIco svg{height:100%;width:auto;display:block}
+  .carteTxt{display:flex;flex-direction:column;align-items:center;gap:.35cqh;min-width:0}
+  .carte b{font-family:'Russo One',sans-serif;font-size:clamp(8px,1.75cqh,15px);
+           color:var(--or-clair);line-height:1.1;text-align:center;
+           -webkit-text-stroke:.7px #1a0a02;paint-order:stroke fill}
+  .carte em{font-family:'Barlow',sans-serif;font-weight:700;font-style:normal;
+            font-size:clamp(5.5px,1.1cqh,10px);color:#aaa;line-height:1.35;text-align:center}
+
+  .bandeau{
+    position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:7;
+    background:#8f1226;border:3px solid #111318;border-top:0;border-radius:0 0 8px 8px;
+    padding:.9cqh 2.2cqw;font-family:'Archivo Black',sans-serif;
+    font-size:clamp(10px,2.2cqh,18px);color:#fff;letter-spacing:.04em;
+  }
+  .eteint{display:none !important}
+
+  /* --- Éditeur de placement --------------------------------------------- */
+  [data-dep]{cursor:grab}
+  [data-dep].attrape{cursor:grabbing}
+  .surligne{outline:2px dashed var(--or);outline-offset:3px}
+  .editeur{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+  .depList{flex:1 1 240px;display:flex;flex-direction:column;gap:4px;max-height:230px;overflow:auto}
+  .dep{display:flex;align-items:center;gap:8px;background:#0a1220;border:1px solid var(--edge);
+       border-radius:7px;padding:6px 9px;cursor:pointer;font-size:12px}
+  .dep:hover{border-color:#3d5c8a}
+  .dep.on{border-color:var(--or);background:#171205}
+  .dep .nom{flex:1}
+  .dep .val{font-family:Consolas,monospace;font-size:11px;color:#7f93b3}
+  .dep.on .val{color:var(--or-clair)}
+  .reglages{flex:1 1 250px;background:#0a1220;border:1px solid var(--edge);border-radius:9px;padding:11px}
+  .reg{display:grid;grid-template-columns:auto 1fr auto;gap:7px 10px;align-items:center;font-size:12px}
+  .reg label{color:#8fa4c4}
+  .reg input[type=range]{width:100%}
+  .reg .n{font-family:Consolas,monospace;color:var(--or-clair);min-width:46px;text-align:right}
+  .vide{font-size:12px;color:#6d80a0;line-height:1.6;margin:0}
+  .sortie{width:100%;height:130px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+          color:var(--or-clair);font-family:Consolas,monospace;font-size:11.5px;padding:9px;
+          margin-top:10px;resize:vertical;line-height:1.6}
+</style>
+</head>
+<body>
+
+<h1>CASINO — LE COMPTOIR DU DIABLE</h1>
+<p class="note">
+  La scène complète, aux proportions du jeu. Le diable est chargé depuis
+  <code>index.html</code> : ce mockup montre donc toujours le visage réellement en place, sans copie
+  à maintenir.
+  <br><br>
+  <b>Ce qui a été tranché</b> — le comptoir monte à 36 % et le diable redescend à 47 %, seule
+  combinaison où les boutons gardent leur format de carte sans que le diable redevienne une figurine.
+  Le compteur est encastré dans la <b>face avant</b>, pas dans le plateau : le dessus est déjà pris
+  par les quatre objets et les quatre boutons. Quatre objets au lieu de six, plus gros et lisibles.
+  <br><br>
+  Les boutons du bas allument et éteignent chaque effet, pour juger ce qui sert et ce qui surcharge.
+  <b>« Diable devant »</b> remet l'erreur d'aujourd'hui, pour comparer.
+</p>
+
+<div class="bloc">
+  <div class="scene" id="scene">
+    <div class="fond" id="fond">
+      <div class="fondCouleur" id="fondCouleur"></div>
+      <div class="anneau" id="anneau">
+        <svg viewBox="0 0 400 400">
+          <path id="anneauCasino" fill="none"
+                d="M 200,200 m -160,0 a 160,160 0 1,1 320,0 a 160,160 0 1,1 -320,0"/>
+          <!-- textLength force le texte à occuper EXACTEMENT la circonférence
+               (2π × 160 ≈ 1005). Laissé libre, il était trop court et laissait
+               un arc vide qui tournait avec lui. -->
+          <text><textPath href="#anneauCasino" startOffset="0%"
+                textLength="1005" lengthAdjust="spacingAndGlyphs">CASINO • BLACKJACK • ROULETTE • POKER • CASE OPENING • DIABLE •</textPath></text>
+        </svg>
+      </div>
+      <div class="anneauInterne" id="anneauInterne"></div>
+      <div class="sceaux" id="sceaux"></div>
+      <canvas id="fondCanvas"></canvas>
+      <div class="fumeeDecor" id="fumeeDecor"><i></i><i></i><i></i><i></i></div>
+      <div class="rampeFlammes" id="rampeFlammes"></div>
+      <div class="vignette" id="vignette"></div>
+      <div class="scanlines" id="scanlines"></div>
+      <div class="grain" id="grain"></div>
+    </div>
+
+    <div class="spots" id="spots"><div class="spot g"></div><div class="spot d"></div></div>
+
+    <div class="bandeau">LE CASINO DU DIABLE</div>
+
+    <div class="diable" id="diable"></div>
+
+    <div class="comptoir">
+      <div class="plateau">
+        <div class="flammes" id="flammes"></div>
+      </div>
+      <div class="rebord"></div>
+
+      <!-- Objets posés sur le plateau, ancrés à sa ligne haute -->
+      <div class="objets" id="objets">
+        <div class="objet verre" data-objet="verre"></div>
+        <div class="objet cendrier" data-objet="cendrier"></div>
+        <div class="objet jetons" data-objet="jetons"></div>
+        <div class="objet bouteille" data-objet="bouteille"></div>
+        <div class="objet grimoire" data-objet="grimoire"></div>
+      </div>
+
+      <div class="face">
+        <div class="rivets" id="rivets"></div>
+        <!-- Les plaques appartiennent à la face : posées à côté dans le
+             comptoir, elles tombaient juste par hasard au bon endroit et
+             auraient décroché au premier changement de proportion. -->
+        <div class="jeux" id="jeux"></div>
+        <div class="bandeauFace">
+          <div class="runes" id="runes"><span>✦</span><span>♠</span><span>✧</span></div>
+          <div class="cristal" id="cristal">
+            <div class="piece3d"><span class="avant"></span><span class="arriere"></span></div>
+            <div class="rouleaux" id="rouleaux"></div>
+          </div>
+          <div class="runes"><span>♦</span><span>✧</span><span>✦</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btns">
+    <button data-eff="spots" class="on">spots dorés</button>
+    <button data-eff="flammes" class="on">reflets de flammes</button>
+    <button data-eff="runes" class="on">runes gravées</button>
+    <button data-eff="rivets" class="on">rivets</button>
+    <span class="sep"></span>
+    <button data-obj="verre" class="on">verre</button>
+    <button data-obj="cendrier" class="on">cendrier + cigare</button>
+    <button data-obj="jetons" class="on">jetons</button>
+    <button data-obj="bouteille" class="on">bouteille</button>
+    <button data-obj="grimoire" class="on">grimoire</button>
+    <span class="sep"></span>
+    <button id="bDevant">diable devant (l'erreur d'aujourd'hui)</button>
+    <span class="sep"></span>
+    <button id="bGain">+120 pièces (jackpot)</button>
+    <button id="bPerte">−85 pièces (perte)</button>
+  </div>
+
+  <h2 style="margin-top:22px">Placement — attrape et déplace</h2>
+  <p class="note" style="margin-bottom:10px">
+    Attrape n'importe quel élément de la scène à la souris, ou choisis-le dans la liste et règle-le
+    aux flèches (<b>Maj</b> = 5 d'un coup). Les valeurs sont en pourcentage de l'écran, comme dans
+    le jeu : je les reporte telles quelles.
+  </p>
+  <div class="editeur">
+    <div class="depList" id="depList"></div>
+    <div class="reglages" id="reglages"><p class="vide">Clique un élément de la scène ou de la liste.</p></div>
+  </div>
+  <textarea class="sortie" id="sortie" readonly></textarea>
+  <div class="btns">
+    <button id="bCopierPlacement">copier les placements</button>
+    <button id="bResetPlacement">tout remettre à zéro</button>
+  </div>
+</div>
+
+<script type="module">
+// Tirage au sort, utilisé partout : flammes, particules, étincelles. Défini
+// tout en haut parce qu'un `const` ne remonte pas — placé plus bas, la rampe
+// de flammes plantait avant même de s'allumer.
+const alea = (a, b) => a + Math.random() * (b - a);
+
+// ---------------------------------------------------------------------------
+// Le diable vient du jeu lui-même. Le recopier ici aurait créé une deuxième
+// vérité à tenir à jour : au premier réglage du visage, le mockup aurait menti.
+// ---------------------------------------------------------------------------
+try {
+  const html = await fetch('../index.html').then(r => r.text());
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const svg = doc.querySelector('.devilSvg');
+  if (svg) document.getElementById('diable').appendChild(svg);
+} catch (e) {
+  document.getElementById('diable').textContent = 'diable introuvable (sers la page par http)';
+}
+
+// --- Icônes des quatre jeux (dessin A, retenu) -----------------------------
+const PIQUE = 'M0 -9 C-5 -2 -9 2 -4.5 5.6 C-2 7.4 0 6 .4 4 C.8 6 3 7.4 5.4 5.6 C9.6 2 5 -2 0 -9 Z';
+const COEUR = 'M0 7 C-6 1.6 -9.5 -2 -6 -6 C-3.6 -8.6 -.8 -7 0 -4.6 C.8 -7 3.6 -8.6 6 -6 C9.5 -2 6 1.6 0 7 Z';
+
+function carteSvg(x, y, l, h, rang, pip, couleur, rot) {
+  return `<g transform="rotate(${rot} 50 88)">
+    <rect x="${x}" y="${y}" width="${l}" height="${h}" rx="3"
+          fill="url(#orClair)" stroke="#8a6a14" stroke-width="1.6"/>
+    <text x="${x + 4}" y="${y + 12}" font-family="Georgia,serif" font-size="10"
+          font-weight="bold" fill="${couleur}">${rang}</text>
+    <g transform="translate(${x + l / 2} ${y + h / 2 + 3}) scale(1.15)" fill="${couleur}">
+      <path d="${pip}"/></g></g>`;
+}
+
+const DEFS = `<defs>
+  <linearGradient id="or" x1="0" y1="0" x2=".3" y2="1">
+    <stop offset="0" stop-color="#f8ecb0"/><stop offset=".45" stop-color="#d4af37"/>
+    <stop offset="1" stop-color="#8a6a14"/></linearGradient>
+  <linearGradient id="orClair" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#e8d9a8"/></linearGradient>
+</defs>`;
+
+const ICONES = {
+  blackjack: `<svg viewBox="0 0 100 100">${DEFS}
+    <g transform="translate(0 -6)">${carteSvg(28, 20, 30, 44, 'A', PIQUE, '#1a1a22', -20)}
+    ${carteSvg(42, 20, 30, 44, 'A', COEUR, '#c0182e', 18)}</g>
+    <text x="50" y="92" text-anchor="middle" font-family="Russo One,sans-serif"
+          font-size="21" fill="url(#or)">21</text></svg>`,
+  roulette: `<svg viewBox="0 0 100 100">${DEFS}
+    <circle cx="50" cy="50" r="40" fill="none" stroke="url(#or)" stroke-width="3.5"/>
+    <circle cx="50" cy="50" r="34" fill="#140406"/>
+    <circle cx="50" cy="50" r="26.5" fill="none" stroke="#241014" stroke-width="15"/>
+    <circle cx="50" cy="50" r="26.5" fill="none" stroke="#8f1226" stroke-width="15" stroke-dasharray="10.4 10.4"/>
+    <circle cx="50" cy="50" r="34" fill="none" stroke="url(#or)" stroke-width="1.6"/>
+    <circle cx="50" cy="50" r="19" fill="none" stroke="url(#or)" stroke-width="1.6"/>
+    <circle cx="50" cy="50" r="15" fill="#2a1218" stroke="url(#or)" stroke-width="2"/>
+    <path d="M50 35 L50 65 M35 50 L65 50 M39.4 39.4 L60.6 60.6 M60.6 39.4 L39.4 60.6"
+          stroke="url(#or)" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="50" cy="50" r="4.6" fill="url(#or)"/>
+    <circle cx="50" cy="23" r="4" fill="#fffaf0"/></svg>`,
+  poker: `<svg viewBox="0 0 100 100">${DEFS}
+    ${carteSvg(38, 16, 25, 40, '10', PIQUE, '#1a1a22', -34)}
+    ${carteSvg(38, 14, 25, 40, 'J', PIQUE, '#1a1a22', -17)}
+    ${carteSvg(38, 13, 25, 40, 'Q', PIQUE, '#1a1a22', 0)}
+    ${carteSvg(38, 14, 25, 40, 'K', PIQUE, '#1a1a22', 17)}
+    ${carteSvg(38, 16, 25, 40, 'A', PIQUE, '#1a1a22', 34)}</svg>`,
+  caisses: `<svg viewBox="0 0 100 100">${DEFS}
+    <path d="M22 52 C22 33 78 33 78 52 Z" fill="#331620" stroke="url(#or)" stroke-width="2.6"/>
+    <rect x="22" y="52" width="56" height="30" rx="3" fill="#2a1218" stroke="url(#or)" stroke-width="2.6"/>
+    <path d="M22 60 H78" stroke="url(#or)" stroke-width="2.2"/>
+    <path d="M34 34 L34 82 M66 34 L66 82" stroke="url(#or)" stroke-width="1.6" opacity=".75"/>
+    <rect x="44" y="55" width="12" height="15" rx="2.5" fill="url(#or)"/>
+    <circle cx="50" cy="62" r="2.2" fill="#2a1218"/>
+    <text x="50" y="30" text-anchor="middle" font-family="Russo One,sans-serif"
+          font-size="26" fill="#fffaf0">?</text>
+    <g fill="#fffaf0">
+      <path d="M16 30 l1.6 4.2 4.2 1.6 -4.2 1.6 -1.6 4.2 -1.6 -4.2 -4.2 -1.6 4.2 -1.6 z"/>
+      <path d="M84 26 l1.3 3.4 3.4 1.3 -3.4 1.3 -1.3 3.4 -1.3 -3.4 -3.4 -1.3 3.4 -1.3 z"/>
+    </g></svg>`
+};
+
+const JEUX = [
+  { id: 'blackjack', nom: 'BLACKJACK', desc: 'Six jeux mélangés. Le croupier tire jusqu\'à 17.' },
+  { id: 'roulette',  nom: 'ROULETTE',  desc: 'Européenne, un seul zéro. Tapis complet.' },
+  { id: 'poker',     nom: 'POKER',     desc: 'Texas Hold\'em en tête-à-tête contre la maison.' },
+  { id: 'caisses',   nom: 'CASE OPENING', desc: 'Tenues et dos de cartes, tirés au sort.' }
+];
+
+const hoteJeux = document.getElementById('jeux');
+for (const j of JEUX) {
+  const c = document.createElement('button');
+  c.className = 'carte';
+  c.innerHTML = `<span class="carteIco">${ICONES[j.id]}</span>` +
+                `<span class="carteTxt"><b>${j.nom}</b><em>${j.desc}</em></span>`;
+  hoteJeux.appendChild(c);
+}
+
+// --- Les objets posés sur le comptoir --------------------------------------
+// Verre, cendrier, dés, grimoire. Dessinés en SVG comme les icônes : à cette
+// taille, une image bitmap se verrait pixelliser au plein écran.
+const OBJETS = {
+  // Vrai tumbler : large, bas, à fond épais. L'ancien était un long verre à
+  // soda, pas un verre à whisky.
+  verre: `<svg viewBox="0 0 70 62">
+    <defs><linearGradient id="wsk" x1="0" y1="0" x2=".4" y2="1">
+      <stop offset="0" stop-color="#ffb648"/><stop offset="1" stop-color="#a5490c"/></linearGradient></defs>
+    <path d="M12 26 L58 26 L55 50 C55 54 15 54 15 50 Z" fill="url(#wsk)" opacity=".92"/>
+    <path d="M12 26 L58 26 L57 33 L13 33 Z" fill="#2a1206" opacity=".22"/>
+    <path d="M9 14 L61 14 L56 52 C56 57 14 57 14 52 Z" fill="rgba(210,235,255,.13)"
+          stroke="rgba(225,245,255,.62)" stroke-width="2.2"/>
+    <path d="M14 50 L56 50 L55 55 C55 58 15 58 15 55 Z" fill="rgba(210,235,255,.3)"
+          stroke="rgba(225,245,255,.55)" stroke-width="1.6"/>
+    <path d="M16 18 L19 50" stroke="rgba(255,255,255,.5)" stroke-width="2.6" stroke-linecap="round"/>
+    <rect x="22" y="24" width="14" height="12" rx="2.5" fill="rgba(235,250,255,.55)"
+          stroke="rgba(255,255,255,.75)" stroke-width="1.2" transform="rotate(-13 29 30)"/>
+    <rect x="36" y="32" width="13" height="11" rx="2.5" fill="rgba(235,250,255,.46)"
+          stroke="rgba(255,255,255,.68)" stroke-width="1.2" transform="rotate(15 42 37)"/>
+    <ellipse cx="35" cy="58" rx="24" ry="3.6" fill="#000" opacity=".5"/>
+  </svg>`,
+  // Pile de jetons rouge / noir / or, tranches visibles.
+  jetons: `<svg viewBox="0 0 70 56">
+    <g transform="translate(35 44)">
+      <path d="M-24 0 A24 8 0 0 0 24 0 L24 -7 A24 8 0 0 1 -24 -7 Z" fill="#6b1220" stroke="#d4af37" stroke-width="1.8"/>
+      <path d="M-24 -8 A24 8 0 0 0 24 -8 L24 -15 A24 8 0 0 1 -24 -15 Z" fill="#14090e" stroke="#d4af37" stroke-width="1.8"/>
+      <path d="M-24 -16 A24 8 0 0 0 24 -16 L24 -23 A24 8 0 0 1 -24 -23 Z" fill="#a5801e" stroke="#f6e27a" stroke-width="1.8"/>
+      <ellipse cy="-24" rx="24" ry="8" fill="#c9a032" stroke="#f6e27a" stroke-width="2"/>
+      <ellipse cy="-24" rx="13" ry="4.2" fill="none" stroke="#6b4d10" stroke-width="1.5"/>
+    </g>
+    <ellipse cx="35" cy="50" rx="26" ry="4" fill="#000" opacity=".5"/>
+  </svg>`,
+  // Bouteille à étiquette dorée, en remplacement des dés.
+  bouteille: `<svg viewBox="0 0 54 120">
+    <defs><linearGradient id="btl" x1="0" y1="0" x2=".5" y2="1">
+      <stop offset="0" stop-color="#c8253c"/><stop offset=".55" stop-color="#7a0d1e"/>
+      <stop offset="1" stop-color="#3a040d"/></linearGradient></defs>
+    <path d="M22 8 L32 8 L32 34 C32 40 44 48 44 62 L44 104 C44 110 40 112 34 112
+             L20 112 C14 112 10 110 10 104 L10 62 C10 48 22 40 22 34 Z"
+          fill="url(#btl)" stroke="#4a0a14" stroke-width="2"/>
+    <rect x="20" y="2" width="14" height="9" rx="2" fill="#d4af37" stroke="#8a6a14" stroke-width="1.4"/>
+    <path d="M24 12 L30 12 L30 33 L24 33 Z" fill="rgba(255,255,255,.18)"/>
+    <rect x="11" y="66" width="32" height="28" rx="2" fill="#f2e3b4" stroke="#8a6a14" stroke-width="1.6"/>
+    <path d="M27 71 l2.4 5.6 6 .6 -4.6 4 1.4 6 -5.2 -3.2 -5.2 3.2 1.4 -6 -4.6 -4 6 -.6 Z" fill="#a5801e"/>
+    <path d="M15 88 H39" stroke="#a5801e" stroke-width="1.4"/>
+    <path d="M15 50 C15 44 20 40 20 36" stroke="rgba(255,255,255,.35)" stroke-width="2.4"
+          fill="none" stroke-linecap="round"/>
+    <ellipse cx="27" cy="114" rx="20" ry="4" fill="#000" opacity=".5"/>
+  </svg>`,
+  cendrier: `<svg viewBox="0 0 90 60">
+    <ellipse cx="45" cy="46" rx="30" ry="10" fill="#1b1016" stroke="#6b5330" stroke-width="2"/>
+    <ellipse cx="45" cy="43" rx="23" ry="7" fill="#0c0609"/>
+    <ellipse cx="45" cy="52" rx="30" ry="7" fill="#241722"/>
+    <!-- cigare, posé en travers -->
+    <g transform="rotate(-13 45 40)">
+      <rect x="34" y="34" width="40" height="8" rx="4" fill="#5a3419"/>
+      <rect x="34" y="34" width="12" height="8" rx="4" fill="#3d2210"/>
+      <rect x="60" y="34" width="7" height="8" rx="3" fill="#7a4a22"/>
+      <circle cx="76" cy="38" r="4.4" fill="#ff7a1e"/>
+      <circle cx="76" cy="38" r="2.2" fill="#ffe08a"/>
+    </g>
+  </svg>`,
+  grimoire: `<svg viewBox="0 0 100 66">
+    <defs><radialGradient id="pageLueur">
+      <stop offset="0" stop-color="#ffeaa0" stop-opacity=".85"/>
+      <stop offset="1" stop-color="#ffca4a" stop-opacity="0"/></radialGradient></defs>
+    <ellipse cx="50" cy="26" rx="34" ry="20" fill="url(#pageLueur)"/>
+    <path d="M50 24 C38 16 20 16 8 22 L8 52 C20 46 38 46 50 54 Z" fill="#efe0b6" stroke="#8a6a14" stroke-width="2"/>
+    <path d="M50 24 C62 16 80 16 92 22 L92 52 C80 46 62 46 50 54 Z" fill="#f6ead0" stroke="#8a6a14" stroke-width="2"/>
+    <path d="M8 22 L8 56 C20 50 38 50 50 58 L50 54 C38 46 20 46 8 52 Z" fill="#5a3a12"/>
+    <path d="M92 22 L92 56 C80 50 62 50 50 58 L50 54 C62 46 80 46 92 52 Z" fill="#6b4718"/>
+    <g stroke="#a08040" stroke-width="1.4" opacity=".8" stroke-linecap="round">
+      <path d="M16 28 H40 M16 34 H38 M16 40 H41"/>
+      <path d="M60 28 H84 M62 34 H84 M60 40 H83"/>
+    </g>
+  </svg>`
+};
+
+for (const [id, svg] of Object.entries(OBJETS)) {
+  document.querySelector(`[data-objet="${id}"]`).innerHTML = svg;
+}
+// La fumée appartient au cigare : elle part de sa braise, pas du cendrier.
+const cendrier = document.querySelector('[data-objet="cendrier"]');
+const fumee = document.createElement('div');
+fumee.className = 'fumee';
+fumee.innerHTML = '<i></i><i></i><i></i>';
+cendrier.appendChild(fumee);
+
+// --- Rivets ----------------------------------------------------------------
+const rivets = document.getElementById('rivets');
+for (let i = 0; i < 22; i++) {
+  const r = document.createElement('div'); r.className = 'rivet'; rivets.appendChild(r);
+}
+
+// --- Sceaux magiques -------------------------------------------------------
+// Un sceau = un anneau, une couronne de crans, un pentacle inscrit, et
+// quelques runes posées sur le cercle. Tout est calculé plutôt qu'écrit à la
+// main : cinq sceaux de tailles différentes, c'est cinq fois la même
+// trigonométrie, et la recopier serait cinq occasions de se tromper.
+const RUNES_SCEAU = 'ᚦᚱᚲᛉᛊᛗᛞᛖᚷᚹᛚᛏ';
+
+function sceau(rayon, branches, nbRunes) {
+  const pt = (r, deg) => {
+    const a = (deg - 90) * Math.PI / 180;
+    return [ (r * Math.cos(a)).toFixed(2), (r * Math.sin(a)).toFixed(2) ];
+  };
+  // Pentacle : on relie un sommet sur deux, ce qui donne l'étoile d'un seul
+  // trait. Relier les sommets à la suite ne donnerait qu'un pentagone.
+  const sommets = [];
+  for (let i = 0; i < branches; i++) sommets.push(pt(rayon * .74, i * 360 / branches));
+  const ordre = [];
+  for (let i = 0, j = 0; i < branches; i++, j = (j + 2) % branches) ordre.push(sommets[j]);
+  const etoile = 'M' + ordre.map(p => p.join(' ')).join(' L') + ' Z';
+
+  let crans = '';
+  for (let i = 0; i < 36; i++) {
+    const [x1, y1] = pt(rayon * .88, i * 10), [x2, y2] = pt(rayon * .94, i * 10);
+    crans += `M${x1} ${y1} L${x2} ${y2} `;
+  }
+
+  let runes = '';
+  for (let i = 0; i < nbRunes; i++) {
+    const [x, y] = pt(rayon * .62, i * 360 / nbRunes);
+    const g = RUNES_SCEAU[(Math.random() * RUNES_SCEAU.length) | 0];
+    runes += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central"
+              font-size="${(rayon * .13).toFixed(1)}" fill="#ff9b3d" opacity=".75">${g}</text>`;
+  }
+
+  return `<svg viewBox="${-rayon} ${-rayon} ${rayon * 2} ${rayon * 2}">
+    <circle class="trait" r="${rayon * .97}" stroke-width="1.1"/>
+    <circle class="trait" r="${rayon * .86}" stroke-width=".6"/>
+    <circle class="lueur" r="${rayon * .5}" stroke-width="1"
+            style="animation-duration:${alea(5, 9).toFixed(1)}s;animation-delay:${-alea(0, 6).toFixed(1)}s"/>
+    <path class="trait" d="${crans}" stroke-width=".7" opacity=".65"/>
+    <path class="lueur" d="${etoile}" stroke-width="1"
+          style="animation-duration:${alea(4, 8).toFixed(1)}s;animation-delay:${-alea(0, 5).toFixed(1)}s"/>
+    ${runes}
+  </svg>`;
+}
+
+const zoneSceaux = document.getElementById('sceaux');
+for (const [classe, branches, runes] of
+     [['a', 5, 8], ['b', 7, 7], ['c', 5, 12], ['d', 5, 6], ['e', 7, 6]]) {
+  const d = document.createElement('div');
+  d.className = 'sceau ' + classe;
+  d.innerHTML = sceau(50, branches, runes);
+  zoneSceaux.appendChild(d);
+}
+
+// --- Rampe de flammes ------------------------------------------------------
+// Chaque langue a sa propre cadence et son propre retard : réglées ensemble,
+// elles battraient à l'unisson et se liraient comme un clignotant.
+const rampe = document.getElementById('rampeFlammes');
+for (let i = 0; i < 17; i++) {
+  const f = document.createElement('i');
+  f.style.left = (i * 6 + alea(-1.6, 1.6)) + '%';
+  f.style.height = alea(6, 11) + 'cqh';
+  f.style.width = alea(3, 5.5) + 'cqh';
+  f.style.animationDuration = alea(.8, 1.7) + 's';
+  f.style.animationDelay = -alea(0, 2) + 's';
+  rampe.appendChild(f);
+}
+
+// --- Interrupteurs ---------------------------------------------------------
+for (const b of document.querySelectorAll('[data-eff]')) {
+  b.addEventListener('click', () => {
+    const el = document.getElementById(b.dataset.eff);
+    const on = el.classList.toggle('eteint');
+    b.classList.toggle('on', !on);
+  });
+}
+for (const b of document.querySelectorAll('[data-obj]')) {
+  b.addEventListener('click', () => {
+    const el = document.querySelector(`[data-objet="${b.dataset.obj}"]`);
+    const on = el.classList.toggle('eteint');
+    b.classList.toggle('on', !on);
+  });
+}
+document.getElementById('bDevant').addEventListener('click', e => {
+  const d = document.getElementById('diable');
+  const devant = d.classList.toggle('devant');
+  e.currentTarget.classList.toggle('on', devant);
+});
+
+// ---------------------------------------------------------------------------
+// LE COMPTEUR DE PIÈCES
+//
+// Les chiffres sont des rouleaux : chaque colonne porte 0-9 répétés trois fois
+// et se translate vers le chiffre voulu. Le nombre de tours supplémentaires
+// fait la vitesse ressentie — c'est lui qui donne la machine à sous, pas la
+// durée de l'animation.
+// ---------------------------------------------------------------------------
+const cristal = document.getElementById('cristal');
+const zoneRouleaux = document.getElementById('rouleaux');
+let solde = 340;
+
+// Sept copies des dix chiffres, et l'on se repose toujours sur celle du milieu
+// après chaque défilement. C'est ce retour au centre qui garantit qu'il reste
+// toujours vingt chiffres de bande au-dessus ET au-dessous : sans lui, deux
+// pertes de suite finissaient en bout de rouleau et la seconde ne défilait
+// plus du tout.
+const SERIES = 7, SERIE_REPOS = 3;
+
+// Prend une chaîne déjà complétée de zéros : le nombre de colonnes est décidé
+// par l'appelant, qui seul sait si la valeur va gagner ou perdre un chiffre.
+function construireRouleaux(texte) {
+  zoneRouleaux.innerHTML = '';
+  for (const c of texte) {
+    const r = document.createElement('div'); r.className = 'rouleau';
+    const b = document.createElement('div'); b.className = 'bande';
+    for (let s = 0; s < SERIES; s++) for (let d = 0; d <= 9; d++) {
+      const e = document.createElement('span'); e.textContent = d; b.appendChild(e);
+    }
+    r.appendChild(b); zoneRouleaux.appendChild(r);
+    poser(b, +c, SERIE_REPOS);
+  }
+}
+
+function poser(bande, chiffre, serie, anime) {
+  if (!anime) bande.style.transition = 'none';
+  // Exprimé dans l'unité même qui définit la hauteur d'un chiffre : aucune
+  // mesure, donc rien à rater si la mise en page n'est pas encore faite.
+  bande.style.transform = `translateY(calc(var(--hChiffre) * ${-(serie * 10 + chiffre)}))`;
+  bande.dataset.chiffre = chiffre;
+  if (!anime) { void bande.offsetHeight; bande.style.transition = ''; }
+}
+
+function etincellesCompteur(n, couleurs, sens, etale) {
+  const r = cristal.getBoundingClientRect();
+  const s = document.getElementById('scene').getBoundingClientRect();
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement('div');
+    p.className = 'paillette';
+    const t = 3 + Math.random() * 5;
+    p.style.cssText = `width:${t}px;height:${t * (Math.random() < .5 ? 1 : 2.2)}px;` +
+      `background:${couleurs[(Math.random() * couleurs.length) | 0]};` +
+      `left:${r.left - s.left + Math.random() * r.width}px;` +
+      `top:${r.top - s.top + r.height * .5}px;box-shadow:0 0 6px currentColor;`;
+    p.style.color = p.style.background;
+    document.getElementById('scene').appendChild(p);
+    const dx = (Math.random() - .5) * etale, dy = sens * (40 + Math.random() * 110);
+    p.animate([{ transform: 'translate(0,0) rotate(0)', opacity: 1 },
+               { transform: `translate(${dx}px,${dy}px) rotate(${(Math.random() - .5) * 540}deg)`, opacity: 0 }],
+              { duration: 700 + Math.random() * 700, easing: 'cubic-bezier(.2,.7,.4,1)' })
+     .onfinish = () => p.remove();
+  }
+}
+
+function voile(genre) {
+  const v = document.createElement('div');
+  v.className = 'voile ' + genre;
+  document.getElementById('scene').appendChild(v);
+  setTimeout(() => v.remove(), 800);
+}
+
+function runesRouges() {
+  const r = cristal.getBoundingClientRect();
+  const s = document.getElementById('scene').getBoundingClientRect();
+  for (const [i, g] of ['⛧', '☠', '⛧', '✚'].entries()) {
+    const e = document.createElement('div');
+    e.className = 'runeRouge';
+    e.textContent = g;
+    e.style.left = (r.left - s.left + (i / 3) * r.width) + 'px';
+    e.style.top = (r.top - s.top - 10) + 'px';
+    e.style.animationDelay = (i * 90) + 'ms';
+    document.getElementById('scene').appendChild(e);
+    setTimeout(() => e.remove(), 1300);
+  }
+}
+
+// Minuteries du roulement en cours. Sans ce suivi, deux gains rapprochés
+// laissaient les minuteries du premier écrire dans des rouleaux que le second
+// avait déjà remplacés : l'affichage partait en chiffres aléatoires.
+let minuteries = [];
+function arreterRoulement() {
+  for (const t of minuteries) clearTimeout(t);
+  minuteries = [];
+  cristal.classList.remove('roule', 'gagne', 'perd', 'flash');
+  document.getElementById('scene').classList.remove('secoue');
+}
+const plusTard = (fn, ms) => { minuteries.push(setTimeout(fn, ms)); };
+
+// Point d'entrée unique : c'est cette fonction que le jeu appellera.
+function majPieces(montant) {
+  arreterRoulement();
+  const gain = montant > 0;
+  const avant = solde;
+  solde = Math.max(0, solde + montant);
+
+  // On construit d'emblée les colonnes du plus large des deux nombres, en
+  // affichant l'ancienne valeur complétée de zéros. La colonne du millier
+  // existe donc AVANT le défilement, et peut rouler de 0 à 1 comme les autres.
+  const largeur = Math.max(String(solde).length, String(avant).length);
+  construireRouleaux(String(avant).padStart(largeur, '0'));
+
+  const bandes = [...zoneRouleaux.querySelectorAll('.bande')];
+  const cible = String(solde).padStart(largeur, '0');
+  cristal.classList.add('roule', gain ? 'gagne' : 'perd');
+  const scene = document.getElementById('scene');
+  scene.classList.add('secoue');
+  voile(gain ? 'gain' : 'perte');
+  if (!gain) runesRouges();
+
+  // Gagner fait descendre la bande, perdre la fait remonter : le sens du
+  // défilement dit déjà ce qui vient d'arriver, avant même de lire le chiffre.
+  const serieVisee = gain ? SERIE_REPOS + 2 : SERIE_REPOS - 2;
+  bandes.forEach((b, i) => {
+    // Décalage entre colonnes : les rouleaux s'arrêtent l'un après l'autre,
+    // comme sur une vraie machine. Tous ensemble, ça fait un compteur qui
+    // change, pas une machine qui tourne.
+    plusTard(() => poser(b, +cible[i], serieVisee, true), i * 110);
+  });
+
+  const fin = 900 + bandes.length * 110 + (gain ? 0 : 600);
+  plusTard(() => {
+    cristal.classList.add('flash');
+    plusTard(() => cristal.classList.remove('flash'), 110);
+    if (gain) etincellesCompteur(26, ['#f6e27a', '#d4af37', '#7bff9d', '#fff'], -1, 220);
+    else etincellesCompteur(16, ['#3a2b2b', '#5a4040', '#8a2020'], 1, 120);
+  }, fin);
+
+  plusTard(() => {
+    cristal.classList.remove('roule', 'gagne', 'perd');
+    scene.classList.remove('secoue');
+    // Le zéro de tête d'un nombre qui a rétréci (1010 → 990) doit disparaître :
+    // on rebâtit sur la vraie largeur. Sinon on reste avec « 0990 ».
+    if (String(solde).length !== largeur) construireRouleaux(String(solde));
+    // Sinon, retour silencieux au centre de la bande. Le chiffre affiché ne
+    // change pas — c'est le même glyphe, une série plus loin — donc le saut
+    // est invisible, et le roulement suivant a de nouveau de la course des
+    // deux côtés.
+    else for (const b of bandes) poser(b, +b.dataset.chiffre, SERIE_REPOS);
+  }, fin + 700);
+}
+
+construireRouleaux(String(solde));
+document.getElementById('bGain').addEventListener('click', () => majPieces(120));
+document.getElementById('bPerte').addEventListener('click', () => majPieces(-85));
+// Exposé pour la mise au point : c'est aussi le nom que prendra la fonction
+// dans le jeu.
+window.majPieces = majPieces;
+
+// ---------------------------------------------------------------------------
+// PARTICULES DU FOND
+//
+// Un seul canvas pour les trois familles : braises qui montent, volutes
+// violettes sur les côtés, pièces d'or qui dérivent. Trente-cinq en tout —
+// au-delà, elles cessent d'être une atmosphère pour devenir un décor, et le
+// fond doit rester en retrait.
+//
+// Le canvas dort dès que l'onglet passe en arrière-plan : une boucle de rendu
+// qui tourne dans le vide, c'est de la batterie brûlée pour personne.
+// ---------------------------------------------------------------------------
+const cvFond = document.getElementById('fondCanvas');
+const ctx = cvFond.getContext('2d');
+let L = 0, H = 0;
+
+function taillerCanvas() {
+  const r = cvFond.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  L = r.width; H = r.height;
+  cvFond.width = L * dpr; cvFond.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+new ResizeObserver(taillerCanvas).observe(cvFond);
+taillerCanvas();
+
+function neuveBraise() {
+  return { type: 'braise', x: alea(0, L), y: H + alea(0, 60), r: alea(.8, 2.4),
+           vy: alea(-.35, -.14), vx: alea(-.12, .12), vie: 0, duree: alea(6, 13),
+           teinte: alea(18, 38) };
+}
+function neuveFumee() {
+  // Les volutes restent sur les bords : au centre, elles voileraient le diable.
+  const gauche = Math.random() < .5;
+  return { type: 'fumee', x: gauche ? alea(-40, L * .22) : alea(L * .78, L + 40),
+           y: alea(H * .15, H), r: alea(28, 62), vy: alea(-.22, -.06),
+           vx: alea(-.09, .09), vie: 0, duree: alea(9, 17), phase: alea(0, 6.3) };
+}
+function neuvePiece() {
+  return { type: 'piece', x: alea(0, L), y: alea(-40, H * .3), r: alea(4, 9),
+           vy: alea(.12, .34), vx: alea(-.06, .06), vie: 0, duree: alea(11, 20),
+           tour: alea(0, 6.3), vTour: alea(.012, .035) };
+}
+
+let particules = [];
+function semer() {
+  particules = [];
+  // Les pièces dominent maintenant : c'est le motif du lieu. La fumée du canvas
+  // se fait discrète, puisque la vraie volute est passée en CSS derrière le
+  // diable — deux sources de fumée auraient empâté le fond.
+  for (let i = 0; i < 16; i++) { const p = neuveBraise(); p.vie = alea(0, p.duree); particules.push(p); }
+  for (let i = 0; i < 4; i++)  { const p = neuveFumee();  p.vie = alea(0, p.duree); particules.push(p); }
+  for (let i = 0; i < 26; i++) { const p = neuvePiece();  p.vie = alea(0, p.duree); particules.push(p); }
+}
+semer();
+
+// Fondu d'entrée et de sortie : une particule qui apparaît ou disparaît d'un
+// coup se remarque, et c'est exactement ce qu'on ne veut pas d'un fond.
+function opacite(p) {
+  const t = p.vie / p.duree;
+  if (t < .18) return t / .18;
+  if (t > .8) return (1 - t) / .2;
+  return 1;
+}
+
+function dessinerParticules(dt) {
+  ctx.clearRect(0, 0, L, H);
+  for (let i = 0; i < particules.length; i++) {
+    const p = particules[i];
+    p.vie += dt;
+    p.x += p.vx * dt * 60;
+    p.y += p.vy * dt * 60;
+    if (p.vie >= p.duree) {
+      particules[i] = p.type === 'braise' ? neuveBraise()
+                    : p.type === 'fumee' ? neuveFumee() : neuvePiece();
+      continue;
+    }
+    const o = opacite(p);
+    if (p.type === 'braise') {
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 4);
+      g.addColorStop(0, `hsla(${p.teinte},100%,66%,${o * .95})`);
+      g.addColorStop(1, `hsla(${p.teinte},100%,50%,0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 4, 0, 6.284); ctx.fill();
+    } else if (p.type === 'fumee') {
+      const ond = Math.sin(p.vie * .7 + p.phase) * 14;
+      const g = ctx.createRadialGradient(p.x + ond, p.y, 0, p.x + ond, p.y, p.r);
+      g.addColorStop(0, `rgba(150,70,225,${o * .17})`);
+      g.addColorStop(1, 'rgba(120,40,200,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p.x + ond, p.y, p.r, 0, 6.284); ctx.fill();
+    } else {
+      // Le pincement horizontal fait tourner la pièce sur elle-même, sans
+      // recourir à une vraie rotation 3D pour un disque de huit pixels.
+      p.tour += p.vTour * dt * 60;
+      const larg = Math.abs(Math.cos(p.tour)) * p.r + .6;
+      ctx.save();
+      ctx.globalAlpha = o * .5;
+      const g = ctx.createLinearGradient(p.x - larg, p.y - p.r, p.x + larg, p.y + p.r);
+      g.addColorStop(0, '#fff3b8'); g.addColorStop(.5, '#d4af37'); g.addColorStop(1, '#7a5510');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.ellipse(p.x, p.y, larg, p.r, 0, 0, 6.284); ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+let derniere = performance.now(), boucle = null;
+function image(t) {
+  const dt = Math.min((t - derniere) / 1000, .05);
+  derniere = t;
+  dessinerParticules(dt);
+  boucle = requestAnimationFrame(image);
+}
+boucle = requestAnimationFrame(image);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { cancelAnimationFrame(boucle); boucle = null; }
+  else if (!boucle) { derniere = performance.now(); boucle = requestAnimationFrame(image); }
+});
+
+// ---------------------------------------------------------------------------
+// ÉDITEUR DE PLACEMENT
+//
+// Tout se règle en pourcentage de la scène (cqw / cqh) et non en pixels : ce
+// sont les unités du jeu, donc les valeurs sorties d'ici sont reportables
+// telles quelles, quelle que soit la taille de l'écran.
+// ---------------------------------------------------------------------------
+const scene = document.getElementById('scene');
+
+const DEPLACABLES = [
+  { id: 'diable',    nom: 'Diable',           sel: '#diable' },
+  { id: 'verre',     nom: 'Verre de whisky',  sel: '[data-objet="verre"]' },
+  { id: 'cendrier',  nom: 'Cendrier + cigare',sel: '[data-objet="cendrier"]' },
+  { id: 'jetons',    nom: 'Pile de jetons',   sel: '[data-objet="jetons"]' },
+  { id: 'bouteille', nom: 'Bouteille',        sel: '[data-objet="bouteille"]' },
+  { id: 'grimoire',  nom: 'Grimoire',         sel: '[data-objet="grimoire"]' },
+  { id: 'jeux',      nom: 'Rangée de cartes', sel: '#jeux' },
+  { id: 'cristal',   nom: 'Compteur cristal', sel: '.bandeauFace' }
+];
+
+const place = {};
+for (const d of DEPLACABLES) {
+  d.el = scene.querySelector(d.sel);
+  if (d.el) d.el.dataset.dep = d.id;
+  place[d.id] = { dx: 0, dy: 0, ech: 1 };
+}
+let choisiDep = null;
+
+// Le diable est déjà centré par un translateX(-50%) : le décalage doit s'y
+// ajouter, sinon le régler le renvoie brutalement à gauche.
+function appliquerPlace(d) {
+  const p = place[d.id];
+  if (!d.el) return;
+  const centre = d.id === 'diable' ? 'translateX(-50%) ' : '';
+  d.el.style.transform = `${centre}translate(${p.dx}cqw, ${p.dy}cqh) scale(${p.ech})`;
+}
+
+function listeDep() {
+  const hote = document.getElementById('depList');
+  hote.innerHTML = '';
+  for (const d of DEPLACABLES) {
+    if (!d.el) continue;
+    const p = place[d.id];
+    const l = document.createElement('div');
+    l.className = 'dep' + (choisiDep === d ? ' on' : '');
+    l.innerHTML = `<span class="nom">${d.nom}</span><span class="val">` +
+      `${p.dx >= 0 ? '+' : ''}${p.dx} , ${p.dy >= 0 ? '+' : ''}${p.dy}` +
+      `${p.ech !== 1 ? '  ×' + p.ech.toFixed(2) : ''}</span>`;
+    l.addEventListener('click', () => choisir(d));
+    hote.appendChild(l);
+  }
+}
+
+function reglagesDep() {
+  const z = document.getElementById('reglages');
+  if (!choisiDep) { z.innerHTML = '<p class="vide">Clique un élément de la scène ou de la liste.</p>'; return; }
+  const p = place[choisiDep.id];
+  z.innerHTML = `
+    <p class="vide" style="margin:0 0 9px"><b style="color:var(--or-clair)">${choisiDep.nom}</b>
+      — glisse-le sur la scène, ou flèches du clavier.</p>
+    <div class="reg">
+      <label>Horizontal</label><input type="range" id="pX" min="-45" max="45" step="0.5" value="${p.dx}">
+      <span class="n">${p.dx} cqw</span>
+      <label>Vertical</label><input type="range" id="pY" min="-45" max="45" step="0.5" value="${p.dy}">
+      <span class="n">${p.dy} cqh</span>
+      <label>Taille</label><input type="range" id="pE" min="0.4" max="2" step="0.02" value="${p.ech}">
+      <span class="n">${Math.round(p.ech * 100)}%</span>
+    </div>`;
+  const px = document.getElementById('pX'), py = document.getElementById('pY'), pe = document.getElementById('pE');
+  px.addEventListener('input', () => { p.dx = +px.value; rafraichirPlace(); });
+  py.addEventListener('input', () => { p.dy = +py.value; rafraichirPlace(); });
+  pe.addEventListener('input', () => { p.ech = +pe.value; rafraichirPlace(); });
+}
+
+function choisir(d) {
+  for (const x of DEPLACABLES) x.el?.classList.remove('surligne');
+  choisiDep = d;
+  d.el?.classList.add('surligne');
+  listeDep(); reglagesDep();
+}
+
+function rafraichirPlace() {
+  for (const d of DEPLACABLES) appliquerPlace(d);
+  listeDep(); reglagesDep(); sortiePlace();
+}
+
+// --- Glisser sur la scène --------------------------------------------------
+let prise = null;
+scene.addEventListener('pointerdown', ev => {
+  const el = ev.target.closest('[data-dep]');
+  if (!el) return;
+  const d = DEPLACABLES.find(x => x.id === el.dataset.dep);
+  if (!d) return;
+  choisir(d);
+  const r = scene.getBoundingClientRect(), p = place[d.id];
+  prise = { d, r, x0: (ev.clientX - r.left) / r.width * 100 - p.dx,
+                   y0: (ev.clientY - r.top) / r.height * 100 - p.dy };
+  el.classList.add('attrape');
+  scene.setPointerCapture(ev.pointerId);
+  ev.preventDefault();
+});
+scene.addEventListener('pointermove', ev => {
+  if (!prise) return;
+  const { d, r } = prise, p = place[d.id];
+  p.dx = Math.round(((ev.clientX - r.left) / r.width * 100 - prise.x0) * 2) / 2;
+  p.dy = Math.round(((ev.clientY - r.top) / r.height * 100 - prise.y0) * 2) / 2;
+  appliquerPlace(d); listeDep(); reglagesDep(); sortiePlace();
+});
+scene.addEventListener('pointerup', ev => {
+  if (!prise) return;
+  prise.d.el.classList.remove('attrape');
+  prise = null;
+  scene.releasePointerCapture(ev.pointerId);
+});
+
+window.addEventListener('keydown', ev => {
+  if (!choisiDep) return;
+  const pas = ev.shiftKey ? 5 : .5, p = place[choisiDep.id];
+  if (ev.key === 'ArrowLeft') p.dx -= pas;
+  else if (ev.key === 'ArrowRight') p.dx += pas;
+  else if (ev.key === 'ArrowUp') p.dy -= pas;
+  else if (ev.key === 'ArrowDown') p.dy += pas;
+  else return;
+  ev.preventDefault();
+  rafraichirPlace();
+});
+
+// --- Sortie ----------------------------------------------------------------
+const sortie = document.getElementById('sortie');
+function sortiePlace() {
+  const l = [];
+  for (const d of DEPLACABLES) {
+    const p = place[d.id];
+    if (!p.dx && !p.dy && p.ech === 1) continue;
+    let s = d.nom.padEnd(20, ' ') + ` x ${p.dx >= 0 ? '+' : ''}${p.dx} cqw   y ${p.dy >= 0 ? '+' : ''}${p.dy} cqh`;
+    if (p.ech !== 1) s += `   taille ${Math.round(p.ech * 100)}%`;
+    l.push(s);
+  }
+  sortie.value = l.length ? l.join('\n') : '(rien de bougé pour l\'instant)';
+}
+
+document.getElementById('bCopierPlacement').addEventListener('click', async e => {
+  try { await navigator.clipboard.writeText(sortie.value); }
+  catch (err) { sortie.select(); document.execCommand('copy'); }
+  e.currentTarget.textContent = 'copié !';
+  setTimeout(() => { e.currentTarget.textContent = 'copier les placements'; }, 1400);
+});
+document.getElementById('bResetPlacement').addEventListener('click', () => {
+  for (const id in place) place[id] = { dx: 0, dy: 0, ech: 1 };
+  rafraichirPlace();
+});
+
+listeDep();
+sortiePlace();
+</script>
+</body>
+</html>

@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Casino — les quatre boutons du comptoir</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Russo+One&family=Barlow:wght@700;800&family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff;
+         --or:#d4af37; --or-clair:#f6e27a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;
+       padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:32px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:1000px;line-height:1.7;margin:0 0 14px}
+  .note b{color:var(--or-clair)}
+  code{background:#0a1220;border:1px solid var(--edge);border-radius:4px;padding:1px 5px;
+       font-family:Consolas,monospace;font-size:12px;color:var(--or-clair)}
+  .bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:14px}
+
+  /* --- Les icônes en grand, pour juger le dessin --- */
+  .grandes{display:flex;gap:12px;flex-wrap:wrap}
+  .une{flex:1 1 200px;min-width:180px;background:#0a1220;border:1px solid var(--edge);
+       border-radius:10px;padding:12px;text-align:center}
+  .une h3{margin:0 0 8px;font-size:12px;color:var(--accent);letter-spacing:1.1px;text-transform:uppercase}
+  .une svg{display:block;width:100%;height:auto;max-height:190px;
+           background:radial-gradient(70% 60% at 50% 42%,#2a0a0a,#0a0a0a 78%);border-radius:8px}
+  .choixVar{display:flex;gap:6px;justify-content:center;margin-top:9px}
+  .choixVar button{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:6px;
+                   padding:5px 12px;font-size:11px;cursor:pointer}
+  .choixVar button.on{background:#3a2c06;border-color:var(--or);color:var(--or-clair)}
+
+  /* ====================================================================
+     LE BOUTON RÉEL. Tout ce bloc est écrit pour être repris tel quel dans
+     le jeu : c'est le dessin définitif, pas une approximation de mockup.
+     ==================================================================== */
+  .comptoir{
+    background:linear-gradient(180deg,#3b2530 0%,#241520 34%,#150c14 100%);
+    border-top:3px solid rgba(255,214,150,.5);border-radius:14px 14px 6px 6px;
+    box-shadow:inset 0 3px 0 rgba(255,255,255,.09),0 -14px 34px rgba(255,90,30,.14),
+               0 12px 26px rgba(0,0,0,.6);
+    padding:26px 22px 22px;
+  }
+  .jeux{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;perspective:900px}
+
+  .carte{
+    position:relative;width:186px;min-height:236px;
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;
+    padding:16px 13px 15px;cursor:pointer;color:#fff;
+    background:linear-gradient(180deg,#0a0a0a 0%,#1a0708 52%,#2a0a0a 100%);
+    border:3px solid var(--or);
+    /* Coins hauts coupés : c'est ce biseau qui fait « carte premium »
+       plutôt que « bouton arrondi ». */
+    border-radius:9px;
+    clip-path:polygon(14px 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%, 0 14px);
+    transform-style:preserve-3d;
+    transition:transform .16s ease-out, box-shadow .16s ease-out, border-color .16s;
+    animation:carteRespire 2.6s ease-in-out infinite;
+  }
+  /* Filigrane : un semis de pique/cœur/trèfle/carreau très effacé, posé en
+     fond. Il ne se lit pas, il se sent. */
+  .carte::before{
+    content:'';position:absolute;inset:0;pointer-events:none;opacity:.13;
+    background-image:
+      radial-gradient(circle at 18% 22%, #d4af37 0 1.6px, transparent 1.7px),
+      radial-gradient(circle at 74% 38%, #d4af37 0 1.4px, transparent 1.5px),
+      radial-gradient(circle at 38% 68%, #d4af37 0 1.5px, transparent 1.6px),
+      radial-gradient(circle at 86% 82%, #d4af37 0 1.3px, transparent 1.4px);
+    background-size:64px 64px;
+  }
+  /* Flash blanc du clic. Séparé du fond pour ne pas écraser le dégradé. */
+  .carte::after{
+    content:'';position:absolute;inset:0;pointer-events:none;background:#fff;opacity:0;
+    transition:opacity .1s;
+  }
+  .carte.flash::after{opacity:.8;transition:none}
+
+  @keyframes carteRespire{
+    0%,100%{ box-shadow:0 0 12px rgba(212,175,55,.42), inset 0 0 22px rgba(212,175,55,.05) }
+    50%{ box-shadow:0 0 20px rgba(212,175,55,.72), inset 0 0 26px rgba(212,175,55,.09) }
+  }
+  .carte:hover{ border-color:var(--or-clair); box-shadow:0 0 34px rgba(246,226,122,.75) !important }
+  .carte.enfonce{ transform:scale(.95) !important; transition:transform .1s }
+
+  .carteIco{width:96px;height:96px;flex-shrink:0;filter:drop-shadow(0 0 7px rgba(212,175,55,.55))}
+  .carteIco svg{width:100%;height:100%;display:block}
+  .carte b{
+    font-family:'Russo One',sans-serif;font-size:19px;letter-spacing:.04em;
+    color:var(--or-clair);text-align:center;line-height:1.15;
+    -webkit-text-stroke:.7px #1a0a02;paint-order:stroke fill;
+  }
+  .carte em{
+    font-family:'Barlow',sans-serif;font-weight:700;font-style:normal;font-size:11.5px;
+    color:#aaa;text-align:center;line-height:1.45;
+  }
+
+  /* Particules : de simples points animés, créés puis retirés. */
+  .etincelle{position:absolute;width:5px;height:5px;border-radius:50%;pointer-events:none;z-index:5}
+
+  .comptoir.secousse{animation:secousse .2s}
+  @keyframes secousse{
+    0%,100%{transform:translate(0,0)} 25%{transform:translate(-2px,1px)}
+    50%{transform:translate(2px,-1px)} 75%{transform:translate(-1px,-2px)}
+  }
+
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .btns button{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+               padding:8px 14px;font-size:11.5px;cursor:pointer}
+  .btns button:hover{background:#24395e}
+  .btns button.on{background:#3a2c06;border-color:var(--or);color:var(--or-clair)}
+  .sortie{width:100%;height:96px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+          color:var(--or-clair);font-family:Consolas,monospace;font-size:12px;padding:9px;
+          margin-top:10px;resize:vertical;line-height:1.6}
+</style>
+</head>
+<body>
+
+<h1>CASINO — LES QUATRE BOUTONS DU COMPTOIR</h1>
+<p class="note">
+  Une <b>rangée de quatre</b>, encastrée dans le comptoir : la grille 2×2 ne tenait pas sous un diable
+  qui occupe 56 % de la hauteur. Tout le reste de la direction demandée s'applique — bordure or qui
+  respire, dégradé noir→bordeaux, filigrane de symboles, titre Russo One, description Barlow.
+  <br><br>
+  <b>Deux dessins par icône</b> : choisis-en un par jeu dans la première section, la rangée du bas se
+  met à jour. Survole et clique les vraies cartes pour juger les animations
+  (respiration, inclinaison 3D vers la souris, enfoncement, flash, étincelles, secousse).
+</p>
+
+<!-- Dégradés et lueurs partagés par toutes les icônes. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="or" x1="0" y1="0" x2=".3" y2="1">
+    <stop offset="0" stop-color="#f8ecb0"/><stop offset=".45" stop-color="#d4af37"/>
+    <stop offset="1" stop-color="#8a6a14"/>
+  </linearGradient>
+  <linearGradient id="orClair" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#e8d9a8"/>
+  </linearGradient>
+</defs></svg>
+
+<h2>Les icônes en grand</h2>
+<div class="grandes" id="grandes"></div>
+
+<h2>Sur le comptoir, à la taille réelle</h2>
+<p class="note">
+  C'est ici que ça se joue : une icône peut être superbe en grand et illisible à 96 px.
+</p>
+<div class="bloc">
+  <div class="comptoir" id="comptoir"><div class="jeux" id="jeux"></div></div>
+  <div class="btns">
+    <button id="bRespire" class="on">respiration au repos</button>
+    <button id="b3d" class="on">inclinaison 3D au survol</button>
+  </div>
+</div>
+
+<h2>Choix à reporter</h2>
+<div class="bloc">
+  <textarea class="sortie" id="sortie" readonly></textarea>
+  <div class="btns"><button id="bCopier">copier les choix</button></div>
+</div>
+
+<script type="module">
+// ---------------------------------------------------------------------------
+// Les icônes. Deux dessins par jeu, en or sur fond sombre. Elles sont écrites
+// en SVG pur plutôt qu'en images : à 96 px comme à 190 px, il ne doit y avoir
+// aucun rééchantillonnage, et la couleur doit suivre la palette du casino.
+// ---------------------------------------------------------------------------
+const PIQUE = 'M0 -9 C-5 -2 -9 2 -4.5 5.6 C-2 7.4 0 6 .4 4 C.8 6 3 7.4 5.4 5.6 C9.6 2 5 -2 0 -9 Z';
+const COEUR = 'M0 7 C-6 1.6 -9.5 -2 -6 -6 C-3.6 -8.6 -.8 -7 0 -4.6 C.8 -7 3.6 -8.6 6 -6 C9.5 -2 6 1.6 0 7 Z';
+const TREFLE = 'M0 7 L-2.6 7 L-1.4 2.4 A3.4 3.4 0 1 1 -2.6 -1.4 A3.4 3.4 0 1 1 2.6 -1.4 A3.4 3.4 0 1 1 1.4 2.4 L2.6 7 Z';
+const CARREAU = 'M0 -8 L5.6 0 L0 8 L-5.6 0 Z';
+
+// Petite carte à jouer, réutilisée par trois icônes sur quatre.
+function carteSvg(x, y, l, h, rang, pip, couleur, rot) {
+  return `<g transform="rotate(${rot} 50 88)">
+    <rect x="${x}" y="${y}" width="${l}" height="${h}" rx="3"
+          fill="url(#orClair)" stroke="#8a6a14" stroke-width="1.6"/>
+    <text x="${x + 4}" y="${y + 12}" font-family="Georgia,serif" font-size="10"
+          font-weight="bold" fill="${couleur}">${rang}</text>
+    <g transform="translate(${x + l / 2} ${y + h / 2 + 3}) scale(1.15)" fill="${couleur}">
+      <path d="${pip}"/></g>
+  </g>`;
+}
+
+const ICONES = {
+  blackjack: {
+    // Deux as croisés, le « 21 » posé dessous comme une enseigne.
+    a: `<svg viewBox="0 0 100 100">
+      <g transform="translate(0 -6)">
+        ${carteSvg(28, 20, 30, 44, 'A', PIQUE, '#1a1a22', -20)}
+        ${carteSvg(42, 20, 30, 44, 'A', COEUR, '#c0182e', 18)}
+      </g>
+      <text x="50" y="92" text-anchor="middle" font-family="Russo One,sans-serif"
+            font-size="21" fill="url(#or)">21</text>
+    </svg>`,
+    // Variante : les cartes se chevauchent à peine, un jeton passe devant.
+    b: `<svg viewBox="0 0 100 100">
+      <g transform="translate(-4 -8)">
+        ${carteSvg(26, 22, 30, 44, 'A', PIQUE, '#1a1a22', -9)}
+        ${carteSvg(46, 22, 30, 44, 'A', COEUR, '#c0182e', 7)}
+      </g>
+      <g transform="translate(68 74)">
+        <circle r="15" fill="#2a0a0a" stroke="url(#or)" stroke-width="2.5"/>
+        <circle r="9" fill="none" stroke="url(#or)" stroke-width="1.4" stroke-dasharray="3 3"/>
+        <text y="4" text-anchor="middle" font-family="Russo One,sans-serif"
+              font-size="11" fill="url(#or)">21</text>
+      </g>
+    </svg>`
+  },
+
+  roulette: {
+    // Vue de dessus. Les alternances rouge/noir sont un pointillé sur un
+    // anneau épais : douze secteurs dessinés à la main auraient dérivé.
+    a: `<svg viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="40" fill="none" stroke="url(#or)" stroke-width="3.5"/>
+      <circle cx="50" cy="50" r="34" fill="#140406"/>
+      <circle cx="50" cy="50" r="26.5" fill="none" stroke="#241014" stroke-width="15"/>
+      <circle cx="50" cy="50" r="26.5" fill="none" stroke="#8f1226" stroke-width="15"
+              stroke-dasharray="10.4 10.4"/>
+      <circle cx="50" cy="50" r="34" fill="none" stroke="url(#or)" stroke-width="1.6"/>
+      <circle cx="50" cy="50" r="19" fill="none" stroke="url(#or)" stroke-width="1.6"/>
+      <circle cx="50" cy="50" r="15" fill="#2a1218" stroke="url(#or)" stroke-width="2"/>
+      <path d="M50 35 L50 65 M35 50 L65 50 M39.4 39.4 L60.6 60.6 M60.6 39.4 L39.4 60.6"
+            stroke="url(#or)" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="50" cy="50" r="4.6" fill="url(#or)"/>
+      <circle cx="50" cy="23" r="4" fill="#fffaf0"/>
+      <circle cx="50" cy="23" r="4" fill="none" stroke="#8a6a14" stroke-width=".8"/>
+    </svg>`,
+    // Variante : la roue de trois quarts, dans sa cuve. La cuve est fermée
+    // par le haut — un simple arc sous la roue flottait sans y toucher.
+    b: `<svg viewBox="0 0 100 100">
+      <path d="M6 54 C6 82 94 82 94 54 C94 34 6 34 6 54 Z" fill="#1d0a10"
+            stroke="url(#or)" stroke-width="2.6"/>
+      <ellipse cx="50" cy="54" rx="44" ry="20" fill="#140406" stroke="url(#or)" stroke-width="2"/>
+      <ellipse cx="50" cy="54" rx="30" ry="13.5" fill="none" stroke="#241014" stroke-width="12"/>
+      <ellipse cx="50" cy="54" rx="30" ry="13.5" fill="none" stroke="#8f1226" stroke-width="12"
+               stroke-dasharray="10 10"/>
+      <ellipse cx="50" cy="54" rx="36" ry="16.5" fill="none" stroke="url(#or)" stroke-width="1.5"/>
+      <ellipse cx="50" cy="54" rx="20" ry="9" fill="#2a1218" stroke="url(#or)" stroke-width="2"/>
+      <path d="M32 54 H68 M50 45.5 V62.5 M37 47.5 L63 60.5 M63 47.5 L37 60.5"
+            stroke="url(#or)" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="50" cy="54" r="4.2" fill="url(#or)"/>
+      <circle cx="27" cy="49" r="4" fill="#fffaf0"/>
+    </svg>`
+  },
+
+  poker: {
+    // Quinte flush royale, étalée en éventail depuis un point bas.
+    a: `<svg viewBox="0 0 100 100">
+      ${carteSvg(38, 16, 25, 40, '10', PIQUE, '#1a1a22', -34)}
+      ${carteSvg(38, 14, 25, 40, 'J', PIQUE, '#1a1a22', -17)}
+      ${carteSvg(38, 13, 25, 40, 'Q', PIQUE, '#1a1a22', 0)}
+      ${carteSvg(38, 14, 25, 40, 'K', PIQUE, '#1a1a22', 17)}
+      ${carteSvg(38, 16, 25, 40, 'A', PIQUE, '#1a1a22', 34)}
+    </svg>`,
+    // Variante : éventail resserré, et deux jetons empilés devant.
+    b: `<svg viewBox="0 0 100 100">
+      <g transform="translate(0 -10)">
+        ${carteSvg(38, 16, 25, 40, '10', PIQUE, '#1a1a22', -22)}
+        ${carteSvg(38, 14, 25, 40, 'J', PIQUE, '#1a1a22', -11)}
+        ${carteSvg(38, 13, 25, 40, 'Q', PIQUE, '#1a1a22', 0)}
+        ${carteSvg(38, 14, 25, 40, 'K', PIQUE, '#1a1a22', 11)}
+        ${carteSvg(38, 16, 25, 40, 'A', PIQUE, '#1a1a22', 22)}
+      </g>
+      <!-- Pile de trois jetons : la tranche de chacun est visible, sinon
+           l'empilement se lisait comme une flaque. -->
+      <g transform="translate(50 82)">
+        <path d="M-19 0 A19 6.5 0 0 0 19 0 L19 -5 A19 6.5 0 0 1 -19 -5 Z" fill="#1d0a10" stroke="url(#or)" stroke-width="1.6"/>
+        <path d="M-19 -6 A19 6.5 0 0 0 19 -6 L19 -11 A19 6.5 0 0 1 -19 -11 Z" fill="#3a1014" stroke="url(#or)" stroke-width="1.6"/>
+        <ellipse cy="-12" rx="19" ry="6.5" fill="#4a151a" stroke="url(#or)" stroke-width="1.8"/>
+        <ellipse cy="-12" rx="10" ry="3.4" fill="none" stroke="url(#or)" stroke-width="1.3"/>
+      </g>
+    </svg>`
+  },
+
+  caisses: {
+    // Coffre fermé, point d'interrogation en lévitation au-dessus.
+    a: `<svg viewBox="0 0 100 100">
+      <path d="M22 52 C22 33 78 33 78 52 Z" fill="#331620" stroke="url(#or)" stroke-width="2.6"/>
+      <rect x="22" y="52" width="56" height="30" rx="3" fill="#2a1218"
+            stroke="url(#or)" stroke-width="2.6"/>
+      <path d="M22 60 H78" stroke="url(#or)" stroke-width="2.2"/>
+      <path d="M34 34 L34 82 M66 34 L66 82" stroke="url(#or)" stroke-width="1.6" opacity=".75"/>
+      <rect x="44" y="55" width="12" height="15" rx="2.5" fill="url(#or)"/>
+      <circle cx="50" cy="62" r="2.2" fill="#2a1218"/>
+      <text x="50" y="30" text-anchor="middle" font-family="Russo One,sans-serif"
+            font-size="26" fill="#fffaf0">?</text>
+      <g fill="#fffaf0">
+        <path d="M16 30 l1.6 4.2 4.2 1.6 -4.2 1.6 -1.6 4.2 -1.6 -4.2 -4.2 -1.6 4.2 -1.6 z"/>
+        <path d="M84 26 l1.3 3.4 3.4 1.3 -3.4 1.3 -1.3 3.4 -1.3 -3.4 -3.4 -1.3 3.4 -1.3 z"/>
+        <path d="M78 14 l1 2.6 2.6 1 -2.6 1 -1 2.6 -1 -2.6 -2.6 -1 2.6 -1 z"/>
+      </g>
+    </svg>`,
+    // Variante : caisse ouverte. Le couvercle pivote autour de sa charnière
+    // arrière — posé à main levée, il se détachait du coffre.
+    b: `<svg viewBox="0 0 100 100">
+      <path d="M50 48 L27 10 L73 10 Z" fill="#f8ecb0" opacity=".15"/>
+      <g transform="rotate(-40 24 52)">
+        <path d="M24 52 C24 36 76 36 76 52 Z" fill="#331620" stroke="url(#or)" stroke-width="2.4"/>
+        <path d="M24 52 C24 42 76 42 76 52" fill="none" stroke="url(#or)" stroke-width="1.4" opacity=".7"/>
+      </g>
+      <rect x="22" y="52" width="56" height="30" rx="3" fill="#2a1218"
+            stroke="url(#or)" stroke-width="2.6"/>
+      <ellipse cx="50" cy="52" rx="28" ry="4.5" fill="#120508" stroke="url(#or)" stroke-width="1.8"/>
+      <path d="M22 66 H78" stroke="url(#or)" stroke-width="2"/>
+      <path d="M36 55 L36 82 M64 55 L64 82" stroke="url(#or)" stroke-width="1.6" opacity=".7"/>
+      <text x="50" y="42" text-anchor="middle" font-family="Russo One,sans-serif"
+            font-size="25" fill="#fffaf0">?</text>
+      <g fill="#fffaf0">
+        <path d="M22 30 l1.4 3.6 3.6 1.4 -3.6 1.4 -1.4 3.6 -1.4 -3.6 -3.6 -1.4 3.6 -1.4 z"/>
+        <path d="M78 24 l1.2 3.2 3.2 1.2 -3.2 1.2 -1.2 3.2 -1.2 -3.2 -3.2 -1.2 3.2 -1.2 z"/>
+        <path d="M70 40 l1 2.6 2.6 1 -2.6 1 -1 2.6 -1 -2.6 -2.6 -1 2.6 -1 z"/>
+      </g>
+    </svg>`
+  }
+};
+
+// Les textes gardent la règle plutôt qu'une accroche : on mise de vraies
+// pièces ici, et il n'y a pas de filet. Savoir à quoi on s'engage prime.
+const JEUX = [
+  { id: 'blackjack', nom: 'BLACKJACK', desc: 'Six jeux mélangés. Le croupier tire jusqu\'à 17.' },
+  { id: 'roulette',  nom: 'ROULETTE',  desc: 'Européenne, un seul zéro. Tapis complet.' },
+  { id: 'poker',     nom: 'POKER',     desc: 'Texas Hold\'em en tête-à-tête contre la maison.' },
+  { id: 'caisses',   nom: 'CASE OPENING', desc: 'Tenues et dos de cartes, tirés au sort.' }
+];
+
+const choix = { blackjack: 'a', roulette: 'a', poker: 'a', caisses: 'a' };
+
+// --- Les icônes en grand ---------------------------------------------------
+function construireGrandes() {
+  const hote = document.getElementById('grandes');
+  hote.innerHTML = '';
+  for (const jeu of JEUX) {
+    const d = document.createElement('div');
+    d.className = 'une';
+    d.innerHTML = `<h3>${jeu.nom}</h3>${ICONES[jeu.id][choix[jeu.id]]}
+      <div class="choixVar">
+        <button data-jeu="${jeu.id}" data-var="a" class="${choix[jeu.id] === 'a' ? 'on' : ''}">dessin A</button>
+        <button data-jeu="${jeu.id}" data-var="b" class="${choix[jeu.id] === 'b' ? 'on' : ''}">dessin B</button>
+      </div>`;
+    hote.appendChild(d);
+  }
+  for (const b of hote.querySelectorAll('[data-jeu]')) {
+    b.addEventListener('click', () => {
+      choix[b.dataset.jeu] = b.dataset.var;
+      construireGrandes(); construireCartes(); majSortie();
+    });
+  }
+}
+
+// --- Les vraies cartes -----------------------------------------------------
+let respire = true, incline = true;
+
+function construireCartes() {
+  const hote = document.getElementById('jeux');
+  hote.innerHTML = '';
+  for (const jeu of JEUX) {
+    const c = document.createElement('button');
+    c.className = 'carte';
+    c.dataset.jeu = jeu.id;
+    c.innerHTML = `<span class="carteIco">${ICONES[jeu.id][choix[jeu.id]]}</span>` +
+                  `<b>${jeu.nom}</b><em>${jeu.desc}</em>`;
+    if (!respire) c.style.animation = 'none';
+    brancherCarte(c);
+    hote.appendChild(c);
+  }
+}
+
+// Inclinaison 3D : la carte se penche VERS la souris. L'axe X est piloté par
+// la position verticale et inversement — c'est ce croisement qui donne
+// l'impression d'un objet qu'on regarde de biais, et non d'une image qui glisse.
+function brancherCarte(c) {
+  c.addEventListener('pointermove', ev => {
+    if (!incline) return;
+    const r = c.getBoundingClientRect();
+    const px = (ev.clientX - r.left) / r.width - .5;
+    const py = (ev.clientY - r.top) / r.height - .5;
+    c.style.transform = `perspective(900px) rotateX(${-py * 6}deg) rotateY(${px * 6}deg) scale(1.06)`;
+  });
+  c.addEventListener('pointerenter', () => {
+    sifflement();
+    etincelles(c, 4, ['#f6e27a', '#d4af37'], -1);
+  });
+  c.addEventListener('pointerleave', () => { c.style.transform = ''; });
+  c.addEventListener('click', () => sequenceClic(c));
+}
+
+// --- Étincelles ------------------------------------------------------------
+// Des div jetables plutôt qu'un canvas : quatre boutons qui crachent quinze
+// points chacun, le DOM encaisse sans qu'on ait à tenir une boucle de rendu.
+function etincelles(c, n, couleurs, sens) {
+  const r = c.getBoundingClientRect();
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement('div');
+    p.className = 'etincelle';
+    const taille = 3 + Math.random() * 4;
+    p.style.width = p.style.height = taille + 'px';
+    p.style.background = couleurs[(Math.random() * couleurs.length) | 0];
+    p.style.boxShadow = '0 0 7px currentColor';
+    p.style.color = p.style.background;
+    p.style.left = (r.left + window.scrollX + Math.random() * r.width) + 'px';
+    p.style.top = (r.top + window.scrollY + (sens < 0 ? 0 : r.height * .7)) + 'px';
+    p.style.position = 'absolute';
+    document.body.appendChild(p);
+    const dx = (Math.random() - .5) * 60, dy = sens * (30 + Math.random() * 60);
+    p.animate([{ transform: 'translate(0,0) scale(1)', opacity: 1 },
+               { transform: `translate(${dx}px,${dy}px) scale(.2)`, opacity: 0 }],
+              { duration: 520 + Math.random() * 380, easing: 'cubic-bezier(.2,.7,.4,1)' })
+     .onfinish = () => p.remove();
+  }
+}
+
+// --- Son -------------------------------------------------------------------
+// Un clic métallique court, synthétisé : le jeu n'utilise aucun fichier son.
+// Le garde-fou de 90 ms évite que balayer la rangée n'en déclenche quatre.
+let AC = null, dernierSon = 0;
+function sifflement() {
+  const t = performance.now();
+  if (t - dernierSon < 90) return;
+  dernierSon = t;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(1750, AC.currentTime);
+    o.frequency.exponentialRampToValueAtTime(950, AC.currentTime + .05);
+    g.gain.setValueAtTime(.05, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0005, AC.currentTime + .07);
+    o.connect(g); g.connect(AC.destination);
+    o.start(); o.stop(AC.currentTime + .08);
+  } catch (e) { /* pas d'audio : le survol reste muet, rien de grave */ }
+}
+
+// --- Séquence de clic ------------------------------------------------------
+function sequenceClic(c) {
+  c.classList.add('enfonce');
+  setTimeout(() => {
+    c.classList.remove('enfonce');
+    c.classList.add('flash');
+    setTimeout(() => c.classList.remove('flash'), 100);
+    etincelles(c, 14, ['#ff8a1e', '#ff4d18', '#f6e27a'], -1);
+    const comptoir = document.getElementById('comptoir');
+    comptoir.classList.add('secousse');
+    setTimeout(() => comptoir.classList.remove('secousse'), 210);
+  }, 100);
+}
+
+// --- Réglages et sortie ----------------------------------------------------
+document.getElementById('bRespire').addEventListener('click', e => {
+  respire = !respire; e.currentTarget.classList.toggle('on', respire); construireCartes();
+});
+document.getElementById('b3d').addEventListener('click', e => {
+  incline = !incline; e.currentTarget.classList.toggle('on', incline);
+  if (!incline) for (const c of document.querySelectorAll('.carte')) c.style.transform = '';
+});
+
+const sortie = document.getElementById('sortie');
+function majSortie() {
+  sortie.value = JEUX.map(j => j.nom.padEnd(14, ' ') + ' dessin ' + choix[j.id].toUpperCase()).join('\n');
+}
+document.getElementById('bCopier').addEventListener('click', async e => {
+  try { await navigator.clipboard.writeText(sortie.value); }
+  catch (err) { sortie.select(); document.execCommand('copy'); }
+  e.currentTarget.textContent = 'copié !';
+  setTimeout(() => { e.currentTarget.textContent = 'copier les choix'; }, 1400);
+});
+
+construireGrandes();
+construireCartes();
+majSortie();
+</script>
+</body>
+</html>

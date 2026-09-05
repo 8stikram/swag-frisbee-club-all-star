@@ -1815,9 +1815,13 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
    qu'elle repond a ce qui la precede, sans avoir a lire. */
 .murMot.reponse{ margin-left:2.2cqw; background:#e7edf6 }
 .murPhoto{ width:3cqh; height:3cqh; min-width:22px; min-height:22px; border-radius:50%;
-  object-fit:cover; border:2px solid var(--ink); background:#dfe8f2 }
+  object-fit:cover; border:2px solid var(--ink); background:#dfe8f2; cursor:pointer }
 .murCorps{ display:flex; flex-direction:column; gap:.1cqh; min-width:0 }
-.murQui{ font-family:'Russo One',sans-serif; font-size:clamp(7px,1.3cqh,11px); color:#1f6aa8 }
+/* Cliquable vers le profil de l'auteur, comme dans le classement et la liste
+   d'amis : sur un mur, on veut pouvoir remonter jusqu'à qui a écrit quoi. */
+.murQui{ font-family:'Russo One',sans-serif; font-size:clamp(7px,1.3cqh,11px); color:#1f6aa8;
+  cursor:pointer; width:fit-content }
+.murQui:hover{ text-decoration:underline }
 .murTexte{ font-family:'Barlow',sans-serif; font-weight:600;
   font-size:clamp(8px,1.4cqh,12px); color:var(--ink); word-break:break-word }
 .murQuand{ font-family:'DotGothic16',monospace; font-size:clamp(6px,1.1cqh,9px); color:#5b6478 }
@@ -1941,56 +1945,143 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 
 /* ================= CASINO =================
    Seul écran sombre du jeu, et c'est voulu : tout le reste est clair et
-   cartoon, le casino est l'arrière-salle. Les scanlines (.crt) du cadre
-   passent déjà par-dessus, donc rien à ajouter de ce côté. */
+   cartoon, le casino est l'arrière-salle.
+
+   La scène se lit en profondeur, de l'arrière vers l'avant : le fond et ses
+   sceaux, le diable derrière son meuble, puis le comptoir qui lui coupe le bas
+   du corps et porte les quatre jeux. C'est cet ordre qui fait un lieu plutôt
+   qu'un empilement d'éléments. */
 .mbtn.c-casino{background:#e0574f;color:#2a0509}
-.mbtn.c-casino:hover,.mbtn.c-casino.sel{background:var(--ink);color:#ff8a6b}
+.scr-casino .titlebar{background:#8f1226}
 
-.bg-casino{
-  background:radial-gradient(110cqh 85cqh at 50% 28%,#4a0f1c 0%,#1c0509 56%,#050203 100%);
-}
-/* Braises qui montent : cinq points lents en fond, sans une seule particule
-   JS — l'écran doit rester gratuit pendant que le match de démo tourne. */
-.casinoEmbers{
-  position:absolute;inset:-40% 0 0 0;opacity:.55;
-  background-image:
-    radial-gradient(2px 2px at 12% 90%,#ff9a3d 0%,transparent 60%),
-    radial-gradient(2px 2px at 31% 96%,#ffcf5c 0%,transparent 60%),
-    radial-gradient(3px 3px at 57% 88%,#ff6a2a 0%,transparent 60%),
-    radial-gradient(2px 2px at 74% 98%,#ffcf5c 0%,transparent 60%),
-    radial-gradient(2px 2px at 91% 92%,#ff9a3d 0%,transparent 60%);
-  animation:embersRise 9s linear infinite;
-}
-@keyframes embersRise{
-  from{transform:translateY(0);opacity:.55}
-  to{transform:translateY(-46%);opacity:0}
-}
-.scr-casino .titlebar{background:#7a0f22}
+/* --- Le fond, en couches ---------------------------------------------------
+   Il doit rester TRÈS sombre : c'est lui qui décide si l'or des cartes
+   ressort ou s'y noie. */
+.bg-casino{background:#07040a;overflow:hidden}
 
-/* Sous le titre et centré, pas dans un coin : les deux coins du haut
-   appartiennent déjà à la barre du jeu (retour à gauche, compte à droite) et
-   le badge s'y posait par-dessus le bouton de connexion. */
-.casinoSolde{
-  position:absolute;top:11%;left:50%;transform:translateX(-50%);z-index:7;
-  font-family:'Russo One',sans-serif;font-size:clamp(10px,1.9cqh,16px);letter-spacing:.05em;
-  color:var(--yellow);background:rgba(0,0,0,.6);border:2px solid var(--yellow);
-  border-radius:999px;padding:.5cqh 1.2cqw;text-shadow:0 0 8px rgba(245,230,61,.55);
-  white-space:nowrap;
+.casFondCouleur{
+  position:absolute;inset:-10%;
+  background:
+    radial-gradient(70% 60% at 30% 25%, #1a0505 0%, transparent 60%),
+    radial-gradient(70% 60% at 72% 70%, #0f0515 0%, transparent 62%),
+    radial-gradient(100% 90% at 50% 40%, #150409 0%, #0a0a0a 70%, #050206 100%);
+  animation:casDerive 18s ease-in-out infinite alternate, casRespire 9s ease-in-out infinite;
 }
-.casinoSolde.bad{color:#ff8f9a;border-color:#ff8f9a;text-shadow:none}
+/* La dérive déplace les foyers de couleur au lieu de tourner la teinte : un
+   hue-rotate aurait fait virer le bordeaux au vert au passage. */
+@keyframes casDerive{
+  0%{background-position:0% 0%, 0% 0%, 0% 0%;filter:saturate(1)}
+  100%{background-position:8% 6%, -7% -5%, 0% 0%;filter:saturate(1.25)}
+}
+@keyframes casRespire{0%,100%{opacity:1}50%{opacity:.95}}
 
-.casinoWrap{
-  position:absolute;inset:0;z-index:5;padding:6cqh 4cqw 3cqh;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+/* Anneau de texte, repris de l'écran titre. */
+.casAnneau{
+  position:absolute;top:46%;left:50%;width:135cqh;height:135cqh;
+  transform:translate(-50%,-50%);animation:casAnneauTourne 90s linear infinite;opacity:.26;
 }
-/* Le buste mord sur le comptoir : c'est ce chevauchement qui le fait tenir
-   DERRIÈRE le meuble au lieu de flotter au-dessus. */
-.devilBox{
-  position:relative;display:flex;flex-direction:column;align-items:center;
-  margin-bottom:-6cqh;z-index:1;
+@keyframes casAnneauTourne{
+  from{transform:translate(-50%,-50%) rotate(0)}
+  to{transform:translate(-50%,-50%) rotate(360deg)}
 }
+.casAnneau svg{width:100%;height:100%}
+.casAnneau text{font-family:'Archivo Black',sans-serif;font-size:14px;letter-spacing:.4em;fill:#d4af37}
+.casAnneauInterne{
+  position:absolute;top:46%;left:50%;width:108cqh;height:108cqh;
+  transform:translate(-50%,-50%);border:2px dashed rgba(140,30,45,.5);border-radius:50%;
+  animation:casAnneauTourne 130s linear infinite reverse;
+}
+
+/* Sceaux gravés. Cercles plutôt que caractères de police : un pentacle inscrit
+   dans son anneau se lit comme un sceau, un glyphe se lit comme du texte. */
+.casSceaux{position:absolute;inset:0;pointer-events:none}
+.casSceau{position:absolute;animation:casSceauTourne linear infinite}
+.casSceau svg{width:100%;height:100%;overflow:visible}
+.casSceau .trait{fill:none;stroke:#d4af37;vector-effect:non-scaling-stroke}
+.casSceau .lueur{fill:none;stroke:#ff7a2a;vector-effect:non-scaling-stroke;
+                 animation:casSceauRespire ease-in-out infinite}
+@keyframes casSceauTourne{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes casSceauRespire{0%,100%{opacity:.18}50%{opacity:.7}}
+.casSceau.a{left:7cqw;top:16cqh;width:26cqh;height:26cqh;animation-duration:120s;opacity:.34}
+.casSceau.b{right:6cqw;top:24cqh;width:20cqh;height:20cqh;animation-duration:95s;
+            animation-direction:reverse;opacity:.3}
+.casSceau.c{left:50%;top:6cqh;width:34cqh;height:34cqh;margin-left:-17cqh;
+            animation-duration:170s;opacity:.16}
+.casSceau.d{left:20cqw;bottom:50cqh;width:14cqh;height:14cqh;animation-duration:70s;
+            animation-direction:reverse;opacity:.26}
+.casSceau.e{right:22cqw;bottom:52cqh;width:16cqh;height:16cqh;animation-duration:88s;opacity:.24}
+
+#casCanvas{position:absolute;inset:0;width:100%;height:100%}
+
+/* Fumée violette derrière le diable. Elle a quitté le personnage pour rejoindre
+   le décor : accrochée à lui, elle le suivait comme une écharpe. */
+.casFumee{position:absolute;left:50%;bottom:34cqh;width:56cqw;height:44cqh;
+          transform:translateX(-50%);filter:blur(14px);opacity:.55}
+.casFumee i{
+  position:absolute;border-radius:50%;
+  background:radial-gradient(circle,rgba(150,60,235,.5),transparent 70%);
+  animation:casVolute linear infinite;
+}
+.casFumee i:nth-child(1){left:6%;bottom:0;width:16cqh;height:16cqh;animation-duration:17s}
+.casFumee i:nth-child(2){left:34%;bottom:-6%;width:21cqh;height:21cqh;animation-duration:23s;animation-delay:-8s}
+.casFumee i:nth-child(3){left:62%;bottom:-2%;width:14cqh;height:14cqh;animation-duration:19s;animation-delay:-13s}
+.casFumee i:nth-child(4){left:80%;bottom:-8%;width:19cqh;height:19cqh;animation-duration:26s;animation-delay:-4s}
+@keyframes casVolute{
+  0%{transform:translate(0,0) scale(.6);opacity:0}
+  18%{opacity:.75}
+  70%{opacity:.5}
+  100%{transform:translate(4cqw,-38cqh) scale(1.7);opacity:0}
+}
+
+/* Rampe de flammes derrière le comptoir. Elles sont SOUS lui dans l'ordre
+   d'empilement : on ne doit voir dépasser que les pointes, sinon le meuble a
+   l'air en feu au lieu d'être éclairé. */
+.casFlammes{position:absolute;left:0;right:0;bottom:39cqh;height:12cqh;
+            pointer-events:none;filter:blur(5px);opacity:.62}
+.casFlammes i{
+  position:absolute;bottom:0;
+  border-radius:52% 48% 42% 58% / 74% 70% 30% 26%;
+  background:linear-gradient(180deg,rgba(255,235,150,.75) 0%,rgba(255,120,20,.6) 46%,rgba(170,25,5,0) 100%);
+  transform-origin:bottom center;mix-blend-mode:screen;
+  animation:casFlamme ease-in-out infinite alternate;
+}
+@keyframes casFlamme{
+  0%{transform:scaleY(.5) scaleX(.85) skewX(-7deg);opacity:.35}
+  100%{transform:scaleY(1.1) scaleX(1) skewX(8deg);opacity:.8}
+}
+
+.casVignette{position:absolute;inset:0;
+  background:radial-gradient(75% 65% at 50% 45%, transparent 40%, rgba(0,0,0,.55) 82%, rgba(0,0,0,.85) 100%)}
+.casScanlines{position:absolute;inset:0;opacity:.13;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.9) 0 1.5px, transparent 1.5px 3.5px)}
+/* Grain : un bruit dessiné une fois, décalé sans fin. Le régénérer à chaque
+   image coûterait cher pour un effet qu'on ne regarde jamais en face. */
+.casGrain{
+  position:absolute;inset:-50%;opacity:.05;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
+  animation:casGrainBouge .9s steps(3) infinite;
+}
+@keyframes casGrainBouge{
+  0%{transform:translate(0,0)} 33%{transform:translate(-2%,1.5%)} 66%{transform:translate(1.5%,-2%)}
+}
+
+/* Spots dorés tombant du haut. */
+.casSpots{position:absolute;inset:0;z-index:1;pointer-events:none}
+.casSpots i{
+  position:absolute;top:-6cqh;width:34cqw;height:80cqh;
+  background:linear-gradient(180deg,rgba(255,209,120,.20) 0%,rgba(255,180,80,.07) 46%,transparent 78%);
+  filter:blur(7px);animation:casSpotPouls 5.2s ease-in-out infinite;
+}
+.casSpots i.g{left:6cqw;transform:perspective(300px) rotateY(9deg)}
+.casSpots i.d{right:6cqw;transform:perspective(300px) rotateY(-9deg);animation-delay:-2.4s}
+@keyframes casSpotPouls{0%,100%{opacity:.55}50%{opacity:1}}
+
+/* --- Le diable ------------------------------------------------------------
+   Il est DERRIÈRE le comptoir, qui lui coupe le bas du torse. */
+.casinoWrap{position:absolute;inset:0;z-index:5}
+.devilBox{position:absolute;left:50%;bottom:44cqh;transform:translateX(-50%);z-index:2}
 .devilSvg{
-  width:auto;height:clamp(170px,56cqh,500px);
+  height:47cqh;width:auto;display:block;
   filter:drop-shadow(0 6px 18px rgba(0,0,0,.65)) drop-shadow(0 0 22px rgba(255,60,40,.28));
   animation:devilBob 4.2s ease-in-out infinite;
 }
@@ -2011,10 +2102,8 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   0%,100%{transform:rotate(-3deg) translateY(0)}
   50%{transform:rotate(3deg) translateY(-2px)}
 }
-.devilFumee{animation:devilFumee 7s ease-in-out infinite}
-@keyframes devilFumee{0%,100%{opacity:.45}50%{opacity:.75}}
 /* La réplique se pose à sa gauche, à hauteur de tête : sous lui, elle heurtait
-   le comptoir, et ça se lisait comme une étiquette de meuble. */
+   le comptoir et se lisait comme une étiquette de meuble. */
 .devilBulle{
   position:absolute;top:16%;right:calc(50% + 9cqw);z-index:2;
   width:max-content;max-width:21cqw;text-align:center;
@@ -2022,142 +2111,246 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   color:#ffd7c2;background:rgba(12,4,8,.82);border:2px solid #7a0f22;border-radius:10px;
   padding:.6cqh 1cqw;box-shadow:0 0 14px rgba(255,60,40,.2);
 }
-/* Petite pointe vers lui, pour qu'on sache qui parle. */
 .devilBulle::after{
   content:'';position:absolute;right:-7px;top:52%;
   border:6px solid transparent;border-left-color:#7a0f22;
 }
 
-/* --- Le comptoir : un meuble, pas un fond. Le liseré clair du dessus est ce
-   qui lui donne son épaisseur et sa laque. --- */
-.casinoComptoir{
-  position:relative;width:min(92cqw,1060px);border-radius:14px 14px 6px 6px;
-  padding:2.4cqh 2cqw 2cqh;
-  background:linear-gradient(180deg,#3b2530 0%,#241520 34%,#150c14 100%);
-  border-top:3px solid rgba(255,214,150,.5);
-  box-shadow:inset 0 3px 0 rgba(255,255,255,.09),0 -14px 34px rgba(255,90,30,.14),
-             0 12px 26px rgba(0,0,0,.6);
+/* --- Le comptoir ----------------------------------------------------------
+   Deux tiers de face avant pour un tiers de plateau : c'est cette proportion
+   qui fait un meuble de bar. Le plateau ne sert qu'à poser des choses, la face
+   porte les quatre jeux et le compteur. */
+.casinoComptoir{position:absolute;left:0;right:0;bottom:0;height:46cqh;z-index:5}
+
+.casPlateau{
+  position:absolute;left:0;right:0;top:0;height:8cqh;
+  background:linear-gradient(180deg,#2a1016 0%,#160709 38%,#0c0407 100%);
+  border-top:.5cqh solid #3d2a1a;
+}
+.casPlateau::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(255,214,150,.30) 0%,rgba(255,180,90,.06) 40%,transparent 70%);
+}
+/* Reflets de flammes qui dansent sur le poli. */
+.casReflets{
+  position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:.5;
+  background:
+    radial-gradient(22cqw 5cqh at 22% 60%, rgba(255,120,30,.5), transparent 70%),
+    radial-gradient(18cqw 4cqh at 62% 70%, rgba(255,80,20,.42), transparent 70%),
+    radial-gradient(26cqw 5cqh at 86% 55%, rgba(255,150,50,.38), transparent 70%);
+  animation:casRefletsBougent 6.5s ease-in-out infinite alternate;
+}
+@keyframes casRefletsBougent{
+  0%{background-position:0 0, 0 0, 0 0;opacity:.34}
+  50%{opacity:.62}
+  100%{background-position:4cqw 0, -3cqw 0, 2cqw 0;opacity:.4}
+}
+/* Le rebord donne l'épaisseur. Sans lui, le meuble redevient un rectangle. */
+.casRebord{
+  position:absolute;left:0;right:0;top:8cqh;height:2.2cqh;
+  background:linear-gradient(180deg,#6b5330 0%,#3a2a15 45%,#1b1209 100%);
+  box-shadow:0 .3cqh 1cqh rgba(0,0,0,.7), inset 0 .25cqh 0 rgba(255,225,160,.42);
+  border-radius:0 0 3px 3px;
+}
+.casFace{
+  position:absolute;left:0;right:0;top:10.2cqh;bottom:0;
+  background:linear-gradient(180deg,#14080c 0%,#0a0405 55%,#050203 100%);
+  border-top:1px solid rgba(255,200,130,.12);
+}
+.casRivets{position:absolute;left:0;right:0;top:2cqh;display:flex;justify-content:space-around;
+           padding:0 2cqw;pointer-events:none}
+.casRivets i{
+  width:1.1cqh;height:1.1cqh;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#ffe9a8,#c9a032 62%,#6b4d10);
+  box-shadow:0 .18cqh .3cqh rgba(0,0,0,.75), 0 0 .5cqh rgba(212,175,55,.4);
 }
 
-.casinoJeux{display:flex;gap:1.6cqw;flex-wrap:wrap;justify-content:center}
-/* Chaque jeu est une dalle encastrée dans le comptoir, avec sa pastille néon.
-   Une vraie pastille ronde et rien d'autre serait plus fidèle à un vrai
-   casino, mais il faut bien lire le nom du jeu avant de miser dessus. */
+/* Objets posés sur le plateau. Leur base est DANS la bande du plateau :
+   ancrés au-dessus, ils flottaient et leur ombre tombait dans le vide. */
+.casObjets{position:absolute;left:0;right:0;top:0;height:8cqh;z-index:2;pointer-events:none}
+.casObjet{position:absolute;filter:drop-shadow(0 .5cqh .45cqh rgba(0,0,0,.85))}
+.casObjet svg{display:block;height:100%;width:auto}
+.casObjet.verre{left:9.5cqw;bottom:3.1cqh;height:7.7cqh}
+.casObjet.cendrier{left:15cqw;bottom:2.6cqh;height:8.1cqh}
+.casObjet.jetons{left:22.5cqw;bottom:4.1cqh;height:3.9cqh}
+.casObjet.bouteille{right:12.5cqw;bottom:.1cqh;height:20.8cqh}
+.casObjet.grimoire{right:26cqw;bottom:.1cqh;height:8.78cqh}
+/* Fumée du cigare : elle part de la braise, pas du cendrier. */
+.casFumeeCigare{position:absolute;left:52%;bottom:88%;width:2cqh;height:2cqh;pointer-events:none}
+.casFumeeCigare i{
+  position:absolute;left:0;bottom:0;width:1.5cqh;height:1.5cqh;border-radius:50%;
+  background:radial-gradient(circle,rgba(190,120,255,.55),transparent 70%);
+  animation:casCigare 4.2s linear infinite;
+}
+.casFumeeCigare i:nth-child(2){animation-delay:-1.4s}
+.casFumeeCigare i:nth-child(3){animation-delay:-2.8s}
+@keyframes casCigare{
+  0%{transform:translate(0,0) scale(.5);opacity:0}
+  15%{opacity:.75}
+  100%{transform:translate(2.5cqh,-13cqh) scale(2.6);opacity:0}
+}
+
+/* --- Les quatre jeux ------------------------------------------------------
+   Cartes verticales vissées sur la face. En paysage elles ressemblaient à des
+   cartes de visite : c'est le format 3:4 debout qui dit « carte à jouer ».
+   Espacées large, sinon la rangée fait un bloc au milieu et laisse deux vides
+   sur les côtés. */
+.casinoJeux{
+  position:absolute;left:0;right:0;bottom:2.1cqh;z-index:3;
+  display:flex;gap:7cqw;justify-content:center;align-items:flex-end;perspective:900px;
+}
 .casinoCard{
-  --neon:#ffb238;
-  position:relative;overflow:hidden;
-  width:19cqw;min-width:132px;min-height:17cqh;
+  position:relative;width:11.35cqw;max-width:150px;height:24.3cqh;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.7cqh;
-  padding:1.4cqh 1cqw;cursor:pointer;color:#fff;
-  background:linear-gradient(170deg,#241016 0%,#140a10 100%);
-  border:2px solid color-mix(in srgb,var(--neon) 65%,#000);border-radius:12px;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.06),0 0 16px -2px var(--neon);
-  transition:transform .12s,box-shadow .12s,border-color .12s;
-  animation:learnSlide .34s cubic-bezier(.2,.9,.3,1.2) backwards;
+  padding:1.4cqh .8cqw;cursor:pointer;color:#fff;text-align:center;
+  background:linear-gradient(180deg,#0a0a0a 0%,#1a0708 52%,#2a0a0a 100%);
+  border:3px solid #d4af37;border-radius:9px;
+  /* Coins hauts coupés : c'est ce biseau qui fait « carte premium » plutôt que
+     « bouton arrondi ». */
+  clip-path:polygon(13px 0, calc(100% - 13px) 0, 100% 13px, 100% 100%, 0 100%, 0 13px);
+  transform-style:preserve-3d;
+  transition:transform .16s ease-out, box-shadow .16s ease-out, border-color .16s;
+  animation:casCarteRespire 2.6s ease-in-out infinite;
+  filter:drop-shadow(0 .55cqh .5cqh rgba(0,0,0,.85));
 }
-.casinoJeux .casinoCard:nth-child(2){animation-delay:.06s}
-.casinoJeux .casinoCard:nth-child(3){animation-delay:.12s}
-.casinoJeux .casinoCard:nth-child(4){animation-delay:.18s}
-.casinoCard:hover{
-  transform:translateY(-4px);border-color:var(--neon);
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.08),0 0 30px -2px var(--neon);
+/* Filigrane de symboles, très effacé : il ne se lit pas, il se sent. */
+.casinoCard::before{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:.13;
+  background-image:
+    radial-gradient(circle at 18% 22%, #d4af37 0 1.6px, transparent 1.7px),
+    radial-gradient(circle at 74% 38%, #d4af37 0 1.4px, transparent 1.5px),
+    radial-gradient(circle at 38% 68%, #d4af37 0 1.5px, transparent 1.6px);
+  background-size:64px 64px;
 }
-.casinoCard:active{transform:translateY(-1px)}
-/* La pastille : un disque de verre allumé par en dessous. */
-.casinoIco{
-  display:flex;align-items:center;justify-content:center;
-  width:clamp(34px,7cqh,58px);height:clamp(34px,7cqh,58px);border-radius:50%;
-  font-size:clamp(16px,3.4cqh,28px);line-height:1;
-  background:radial-gradient(circle at 50% 32%,color-mix(in srgb,var(--neon) 55%,#fff) 0%,
-             color-mix(in srgb,var(--neon) 80%,#000) 55%,color-mix(in srgb,var(--neon) 40%,#000) 100%);
-  border:2px solid color-mix(in srgb,var(--neon) 70%,#fff);
-  box-shadow:0 0 16px var(--neon),inset 0 -3px 8px rgba(0,0,0,.5);
+.casinoCard::after{
+  content:'';position:absolute;inset:0;pointer-events:none;background:#fff;opacity:0;
+  transition:opacity .1s;
 }
+.casinoCard.flash::after{opacity:.8;transition:none}
+@keyframes casCarteRespire{
+  0%,100%{box-shadow:0 0 12px rgba(212,175,55,.42), inset 0 0 22px rgba(212,175,55,.05)}
+  50%{box-shadow:0 0 20px rgba(212,175,55,.72), inset 0 0 26px rgba(212,175,55,.09)}
+}
+.casinoCard:hover{border-color:#f6e27a;box-shadow:0 0 34px rgba(246,226,122,.75) !important}
+.casinoCard.enfonce{transform:scale(.95) !important;transition:transform .1s}
+.casinoIco{height:9.45cqh;flex-shrink:0;filter:drop-shadow(0 0 7px rgba(212,175,55,.55))}
+.casinoIco svg{height:100%;width:auto;display:block}
 .casinoCard b{
-  font-family:'Russo One',sans-serif;font-size:clamp(10px,1.8cqh,15px);
-  letter-spacing:.05em;color:color-mix(in srgb,var(--neon) 55%,#fff);
+  font-family:'Russo One',sans-serif;font-size:clamp(8px,1.75cqh,15px);
+  color:#f6e27a;line-height:1.1;
+  -webkit-text-stroke:.7px #1a0a02;paint-order:stroke fill;
 }
 .casinoCard em{
-  font-style:normal;font-family:'DotGothic16',monospace;
-  font-size:clamp(7px,1.1cqh,10px);color:#cfb4bd;line-height:1.45;
-  max-width:22ch;text-align:center;
+  font-family:'Barlow',sans-serif;font-weight:700;font-style:normal;
+  font-size:clamp(5.5px,1.1cqh,10px);color:#aaa;line-height:1.35;
 }
 
-/* --- Pièces d'or et runes en orbite ---------------------------------------
-   Purement décoratif, donc en CSS et hors du flux : rien ici ne doit peser
-   sur le jeu qui tourne derrière. */
-.casinoAura{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:hidden}
-.casinoPiece{
-  position:absolute;width:2.6cqh;height:2.6cqh;border-radius:50%;
-  background:radial-gradient(circle at 34% 30%,#fff3b8 0%,#f5d268 24%,#eab73f 52%,#9d6a15 100%);
-  box-shadow:0 0 10px rgba(240,190,60,.55),inset 0 0 0 .35cqh rgba(255,255,255,.28);
-  animation:pieceFlotte 6s ease-in-out infinite;
+/* --- Le compteur de pièces ------------------------------------------------ */
+.casBandeau{
+  position:absolute;left:0;right:0;top:1.6cqh;display:flex;align-items:center;
+  justify-content:center;gap:3cqw;
 }
-.casinoPiece.p1{left:12%;top:36%;animation-delay:0s}
-.casinoPiece.p2{left:22%;top:58%;animation-delay:-1.6s;transform:scale(.78)}
-.casinoPiece.p3{right:14%;top:32%;animation-delay:-3.1s}
-.casinoPiece.p4{right:23%;top:56%;animation-delay:-4.4s;transform:scale(.7)}
-.casinoPiece.p5{left:44%;top:24%;animation-delay:-2.3s;transform:scale(.62)}
-/* Le pincement horizontal fait tourner la pièce sur elle-même : une rotation
-   3D coûterait un contexte de rendu de plus pour le même effet. */
-@keyframes pieceFlotte{
-  0%,100%{transform:translateY(0) scaleX(1)}
-  25%{transform:translateY(-1.6cqh) scaleX(.25)}
-  50%{transform:translateY(-2.4cqh) scaleX(1)}
-  75%{transform:translateY(-1.2cqh) scaleX(.4)}
+.casRunes{display:flex;gap:2.6cqw;font-family:'DotGothic16',monospace;
+          font-size:clamp(9px,2.1cqh,18px);color:#ff9b3d;pointer-events:none}
+.casRunes span{opacity:.3;text-shadow:0 0 .8cqh rgba(255,140,40,.85);
+               animation:casRune 3.6s ease-in-out infinite}
+.casRunes span:nth-child(2){animation-delay:-.9s}
+.casRunes span:nth-child(3){animation-delay:-1.8s}
+@keyframes casRune{0%,100%{opacity:.28}50%{opacity:.62}}
+
+/* L'enfoncement vient de l'ombre INTÉRIEURE haute : sans elle, le cristal a
+   l'air posé sur la face, pas creusé dedans. */
+.casCristal{
+  position:relative;display:flex;align-items:center;gap:1.1cqw;transform:scale(1.06);
+  padding:.9cqh 2cqw;border-radius:7px;
+  background:linear-gradient(165deg,#180a12 0%,#0a0409 100%);
+  box-shadow:inset 0 .5cqh .9cqh rgba(0,0,0,.95), inset 0 -.2cqh 0 rgba(255,214,150,.22),
+             0 0 2.4cqh rgba(212,175,55,.3);
+  border:1px solid rgba(212,175,55,.4);
+  transition:box-shadow .2s, border-color .2s;
 }
-.casinoRune{
-  position:absolute;font-size:clamp(11px,2.2cqh,20px);color:#7bff9d;
-  text-shadow:0 0 10px #35ff7a,0 0 22px rgba(53,255,122,.5);opacity:.75;
-  animation:runeOrbite 9s ease-in-out infinite;
+.casPiece3d{width:2.6cqh;height:2.6cqh;position:relative;transform-style:preserve-3d;
+            animation:casPieceTourne 3.6s linear infinite}
+.casPiece3d span{position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;
+                 box-shadow:0 0 1cqh rgba(240,190,60,.75)}
+.casPiece3d .avant{background:radial-gradient(circle at 34% 30%,#fff3b8,#eab73f 52%,#8a5f11)}
+.casPiece3d .arriere{background:radial-gradient(circle at 66% 30%,#f2d98a,#c9a032 52%,#6b4d10);
+                     transform:rotateY(180deg)}
+@keyframes casPieceTourne{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}
+
+/* La hauteur d'un chiffre est une variable, et le décalage des rouleaux se
+   calcule dans la MÊME unité. Mesurée à la construction, elle valait zéro tant
+   que la mise en page n'était pas faite, et le compteur s'ouvrait sur 000. */
+.casRouleaux{--hChiffre:3.2cqh;display:flex;gap:.1cqw;overflow:hidden;height:var(--hChiffre)}
+.casRouleau{overflow:hidden;height:var(--hChiffre)}
+.casBande{display:flex;flex-direction:column;
+          transition:transform .9s cubic-bezier(.16,.9,.28,1)}
+.casBande span{
+  height:var(--hChiffre);line-height:var(--hChiffre);
+  font-family:'Russo One',sans-serif;font-size:clamp(11px,2.6cqh,22px);
+  color:#ffdf7a;letter-spacing:.06em;text-shadow:0 0 .9cqh rgba(255,200,60,.9);
 }
-.casinoRune.r1{left:31%;top:28%;animation-delay:0s}
-.casinoRune.r2{right:30%;top:44%;animation-delay:-3s}
-.casinoRune.r3{left:18%;top:47%;animation-delay:-6s}
-@keyframes runeOrbite{
-  0%,100%{transform:translate(0,0) rotate(-8deg);opacity:.35}
-  50%{transform:translate(1.4cqw,-2.6cqh) rotate(8deg);opacity:.85}
+/* Perdre doit peser : la descente est plus longue et démarre lourdement. */
+.casCristal.perd .casBande{transition-duration:1.5s;transition-timing-function:cubic-bezier(.7,0,.5,1)}
+.casCristal.gagne{
+  border-color:#7bff9d;
+  box-shadow:inset 0 .5cqh .9cqh rgba(0,0,0,.9), 0 0 5cqh rgba(120,255,150,.85),
+             0 0 9cqh rgba(255,210,70,.6);
+  animation:casJackpot .5s ease-in-out 3;
+}
+@keyframes casJackpot{0%,100%{transform:scale(1.06)}50%{transform:scale(1.16)}}
+.casCristal.gagne .casBande span{color:#c8ffd6;text-shadow:0 0 1.4cqh rgba(120,255,160,1)}
+.casCristal.perd{
+  border-color:#ff4d4d;
+  box-shadow:inset 0 .5cqh .9cqh rgba(0,0,0,.95), 0 0 4cqh rgba(255,40,40,.8);
+  animation:casSaigne .28s steps(2) 6;
+}
+@keyframes casSaigne{0%,100%{transform:scale(1.06) translateX(0)}50%{transform:scale(1.06) translateX(-1.4%)}}
+.casCristal.perd .casBande span{color:#ff9a9a;text-shadow:0 0 1.2cqh rgba(255,50,50,1)}
+.casCristal::after{
+  content:'';position:absolute;inset:0;border-radius:7px;background:#fff;
+  opacity:0;pointer-events:none;transition:opacity .28s;
+}
+.casCristal.flash::after{opacity:.75;transition:none}
+
+.casRuneRouge{
+  position:absolute;font-family:'DotGothic16',monospace;font-size:2.4cqh;color:#ff3b3b;
+  text-shadow:0 0 1cqh rgba(255,40,40,.95);pointer-events:none;opacity:0;z-index:9;
+  animation:casRuneRouge 1s ease-out forwards;
+}
+@keyframes casRuneRouge{
+  0%{opacity:0;transform:scale(.4)}
+  30%{opacity:1;transform:scale(1.15)}
+  100%{opacity:0;transform:scale(1.5) translateY(-2cqh)}
+}
+.casVoile{position:absolute;inset:0;z-index:8;pointer-events:none;opacity:0}
+.casVoile.gain{background:radial-gradient(60% 50% at 50% 78%, rgba(120,255,150,.3), transparent 70%);
+               animation:casVoile .7s ease-out}
+.casVoile.perte{background:rgba(255,20,20,.34);animation:casVoile .3s ease-out}
+@keyframes casVoile{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+.casPaillette{position:absolute;pointer-events:none;z-index:9;border-radius:1px}
+
+/* Secousse de l'écran : au gain, à la perte, et quand une carte prend feu. */
+.scr-casino.secoue{animation:casSecousse .22s steps(2) 3}
+@keyframes casSecousse{
+  0%,100%{transform:translate(0,0)} 25%{transform:translate(-3px,2px)}
+  50%{transform:translate(3px,-2px)} 75%{transform:translate(-2px,-3px)}
 }
 
-/* Embrasement : les flammes montent du bas de la carte, en fondu additif pour
-   qu'elles éclairent la carte au lieu de la recouvrir. */
-.casinoCard.onFire{border-color:#fff0a8;box-shadow:0 0 0 2px #000,0 0 40px rgba(255,120,30,.8)}
-/* Les foyers sont ancrés sur le bas de la carte, pas sous elle : la carte
-   masque ce qui dépasse (overflow), et une flamme dont le cœur tombe hors du
-   cadre ne montre plus que sa fumée. L'origine de la transformation est ce
-   même bas, pour que le vacillement étire la flamme vers le haut. */
-.casinoCard.onFire::before{
-  content:'';position:absolute;left:-10%;right:-10%;bottom:0;height:105%;
-  pointer-events:none;mix-blend-mode:screen;transform-origin:50% 100%;
-  background:
-    radial-gradient(46% 58% at 21% 100%,#ffcf5c 0%,rgba(255,90,31,.55) 45%,transparent 72%),
-    radial-gradient(56% 88% at 50% 100%,#fff0a8 0%,rgba(255,120,30,.7) 38%,transparent 76%),
-    radial-gradient(46% 58% at 79% 100%,#ffcf5c 0%,rgba(255,90,31,.55) 45%,transparent 72%);
-  animation:flameFlicker .12s steps(2,end) infinite;
+/* --- Messages -------------------------------------------------------------
+   Le solde vit dans le cristal ; cette ligne ne sert qu'à dire qu'on n'est
+   pas connecté, là où il n'y a rien à afficher. */
+.casinoSolde{
+  position:absolute;top:9cqh;left:50%;transform:translateX(-50%);z-index:7;
+  font-family:'Russo One',sans-serif;font-size:clamp(8px,1.5cqh,13px);letter-spacing:.08em;
+  color:#ff8f9a;background:rgba(12,4,8,.8);border:2px solid #ff8f9a;border-radius:999px;
+  padding:.35cqh 1.4cqw;
 }
-@keyframes flameFlicker{
-  0%{transform:scaleY(1) scaleX(1)}
-  50%{transform:scaleY(1.14) scaleX(.95)}
-  100%{transform:scaleY(1.04) scaleX(1.03)}
-}
-/* Le tremblement porte sur le contenu, pas sur l'écran : `.screen` a déjà sa
-   propre animation d'entrée, et lui en poser une deuxième la remplaçait — en
-   retirant la classe, tout l'écran rejouait son fondu d'arrivée en plein
-   milieu de l'embrasement. */
-.casinoWrap.shake{animation:casinoShake .35s ease-in-out}
-@keyframes casinoShake{
-  0%,100%{transform:translate(0,0)}
-  20%{transform:translate(-6px,2px)}
-  40%{transform:translate(5px,-2px)}
-  60%{transform:translate(-4px,-1px)}
-  80%{transform:translate(3px,1px)}
-}
-
 .casinoMsg{
-  position:absolute;left:50%;bottom:4.5%;transform:translateX(-50%);z-index:8;
-  font-family:'Russo One',sans-serif;font-size:clamp(9px,1.6cqh,14px);
-  color:#fff;background:rgba(0,0,0,.75);border:2px solid var(--yellow);
-  border-radius:999px;padding:.6cqh 1.6cqw;white-space:nowrap;
+  position:absolute;bottom:3cqh;left:50%;transform:translateX(-50%);z-index:9;
+  font-family:'DotGothic16',monospace;font-size:clamp(8px,1.5cqh,13px);
+  color:#ffd7c2;background:rgba(10,3,6,.9);border:2px solid #7a0f22;border-radius:10px;
+  padding:.6cqh 1.6cqw;max-width:70cqw;text-align:center;
 }
 .casinoMsg.pop{animation:casinoMsgPop .22s ease-out}
 @keyframes casinoMsgPop{
