@@ -89,18 +89,20 @@ export const PS_CHUTE = .45;    // la carapace se recompose et tombe
 export const PS_IMPACT = .3;    // l'impact, sans secousse : la camera recule
 export const PS_DUREE = 7;      // la flaque, et le gel de la jauge du lanceur
 export const PS_SLOW = .25;     // ce qu'elle retire a la vitesse de l'adversaire
-export const PS_DRAIN = 7.5;    // %/s de sa jauge, soit 52,5 % sur sept secondes
-// Le chiffre a fait l'aller-retour : 2,5, puis 7,5, puis 12, et retour a 7,5.
-// C'est la valeur retenue, et l'essai a 12 a servi a savoir pourquoi.
+// Le drain est ecrit comme une PART DE LA JAUGE et non comme une vitesse : ce
+// qu'on regle, c'est « combien il perd s'il reste du debut a la fin », et c'est
+// la seule facon de le lire sans calculer. Il reste juste s'il change de duree.
+export const PS_PART = 60;                    // % de sa jauge sur toute la zone
+export const PS_DRAIN = PS_PART / PS_DUREE;   // soit 8,57 %/s sur sept secondes
+// Le chiffre a fait l'aller-retour : 2,5, 7,5, 12, puis cale ici a 60 %.
 //
-// A 12 la zone prenait 84 % de la jauge adverse : on ne la traversait plus, on
-// en faisait le tour. Elle ne se jouait plus, elle s'evitait — et un ultime que
-// l'adversaire contourne sans y penser ne cree aucune situation.
+// A 12 %/s — 84 % de la jauge — la zone ne se jouait plus : on ne la traversait
+// plus, on en faisait le tour. Un ultime que l'adversaire contourne sans y
+// penser ne cree aucune situation, il deplace le jeu au lieu de le disputer.
 //
-// A 7,5 elle en prend 52,5 %. C'est assez pour que la traverser soit une vraie
-// decision, pas assez pour que ce soit un interdit : on peut choisir d'y aller
-// parce que le disque est dedans, et le payer. C'est la que l'ultime devient
-// interessant a jouer des deux cotes.
+// A 60 % la traversee redevient une DECISION : on peut choisir d'y aller parce
+// que le disque est dedans, et le payer cher. C'est la que l'ultime est
+// interessant des deux cotes.
 export const PS_RAY = .30;      // part de l'aire de la moitie adverse
 // Le rayon GRANDIT avec l'ecart entre les deux joueurs, jusqu'a moitie plus :
 // ca recompense de poser la zone au bon moment plutot que sur lui.

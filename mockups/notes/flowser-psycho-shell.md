@@ -203,23 +203,32 @@ même attaque.
 
 ---
 
-## 8. LE CHIFFRE QUI A BOUGÉ, ET POURQUOI IL EST REVENU
+## 8. LE CHIFFRE QUI A BOUGÉ, ET COMMENT IL EST ÉCRIT
 
-Le drain a fait l'aller-retour : **2,5 → 7,5 → 12 → 7,5 %/s**. La valeur retenue
-est **7,5**, et le détour par 12 a servi à savoir pourquoi.
+Le drain a fait l'aller-retour : **2,5 → 7,5 → 12 → 60 %**. Et le dernier
+changement n'est pas qu'une valeur, c'est une **façon de l'écrire**.
 
-**À 12 %/s**, la zone prenait 84 % de la jauge adverse en sept secondes. Sur le
-papier c'était l'ultime le plus fort du jeu ; en pratique il ne se jouait plus.
-On ne traversait plus la zone, on en faisait le tour — et un ultime que
-l'adversaire contourne sans y penser ne crée aucune situation. Il déplaçait le
-jeu au lieu de le disputer.
+Il est désormais réglé comme une **part de la jauge**, pas comme une vitesse :
 
-**À 7,5 %/s**, elle en prend 52,5 %. C'est assez pour que la traverser soit une
-vraie décision, pas assez pour que ce soit un interdit : on peut choisir d'y
-aller parce que le disque est dedans, et le payer. C'est là que l'ultime devient
-intéressant des deux côtés — celui qui le pose espère qu'on y entrera, celui qui
-le subit calcule s'il en vaut la peine.
+```js
+export const PS_PART  = 60;                    // % de sa jauge sur toute la zone
+export const PS_DRAIN = PS_PART / PS_DUREE;    // soit 8,57 %/s sur sept secondes
+```
 
-C'est six fois le haut de la fourchette du cahier des charges, qui disait 1,5 à
-2 %/s. L'écart est assumé, et le chiffre vit seul dans `PS_DRAIN` — une ligne de
-`js/data/specials.js`, rien d'autre à toucher.
+Ce qu'on veut régler, c'est « combien il perd s'il reste du début à la fin » —
+et c'est la seule formulation qui se lise sans calculer. Elle reste juste si la
+durée de la zone change un jour ; l'ancienne aurait silencieusement dérivé.
+
+**Ce que le détour par 12 %/s a appris.** À ce prix la zone prenait 84 % de la
+jauge adverse. Sur le papier, l'ultime le plus fort du jeu ; en pratique il ne
+se jouait plus. On ne traversait plus la zone, on en faisait le tour — et un
+ultime que l'adversaire contourne sans y penser ne crée aucune situation. Il
+déplaçait le jeu au lieu de le disputer.
+
+**À 60 %**, la traversée redevient une décision : on peut choisir d'y aller
+parce que le disque est dedans, et le payer cher. C'est là que l'ultime est
+intéressant des deux côtés — celui qui le pose espère qu'on y entrera, celui
+qui le subit calcule si ça en vaut la peine.
+
+L'écart au cahier des charges, qui disait 1,5 à 2 %/s, est assumé. Le chiffre
+vit seul dans `PS_PART` — une ligne de `js/data/specials.js`.

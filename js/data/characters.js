@@ -597,11 +597,12 @@ function construireSkin2H(teinte) {
 //   DEUX JAMBES alternent ; la QUEUE ne bouge pas en course, elle se tend au
 //   dash et fouette au tir.
 //
-// LES MAINS SONT CE QUI FAIT LIRE UN BRAS QUI BOUGE. Les bras sont des
-// bandes rayees — le cuir cloute — et deplacer les rayures d'un cran fait
-// defiler un motif, pas balancer un membre. Chaque bras porte donc une main
-// creme, et les deux montent et descendent A CONTRETEMPS l'une de l'autre.
-// Sans elles la course se lisait comme un motif qui glisse sur un corps fixe.
+// Les bras sont des bandes rayees — le cuir cloute — et c'est le DECALAGE des
+// rayures qui les fait bouger, d'un cran vers le haut pour l'un pendant que
+// l'autre descend. Une main creme au bout de chaque bras avait ete essayee :
+// elle rendait le mouvement plus lisible, mais deux taches claires qui sautent
+// a chaque foulee tiraient l'oeil hors du personnage. Le decalage seul est plus
+// discret, et c'est celui qui est garde.
 //
 // Le sprite est cale sur les colonnes 1 a 14 et non 0 a 13 comme le reste du
 // roster. Le miroir de render.js retourne le sprite autour de son centre, donc
@@ -620,9 +621,9 @@ const PAL_FL = {
   A: '#e8edf6'                  // l'argent : verres, clous, reflets
 };
 
-const FL_IDLE  = [".....Rr.R..R....", "..r.rRRrRRRr....", ".rRrRRRRRRRrRR..", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", ".CCcovvCNNVVVML.", "..cvvoCoLLVVvNN.", "CCcvvvCoNNVVvLL.", "..cooooCLLVVvNN.", ".CcvvvCoNNVVvLL.", "..cvoCMVCCVVvCC.", ".VvcvCMVVLvvMMm.", ".vVVvmMMvv.MMm..", "..vv.CCC...CCC.."];
-const FL_RUN1  = [".....Rr.R..R....", "..r.rRRrRRRr....", ".rRrRRRRRRRrRR..", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", ".CCcovvCLLVVVNN.", "..cvvoCoCCVVvLL.", "CCcvvvCoLLVVvNN.", "..cooooCNNVVvLL.", ".CcvvvCoLLVVvNN.", "..cvoCMVNNVVvCC.", ".VvcvCMVVLvvMMm.", ".vVVvmMMvv.CCC..", "..vv.CCC........"];
-const FL_RUN2  = [".....Rr.R..R....", "..r.rRRrRRRr....", ".rRrRRRRRRRrRR..", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", ".CCcovvCLLVVVCC.", "..cvvoCoNNVVvNN.", "CCcvvvCoLLVVvLL.", "..cooooCNNVVvNN.", ".CcvvvCoCCVVvLL.", "..cvoCMVLLVVvNN.", ".VvcvCMVVLvvMMm.", ".vVVvCCCvv.MMm..", "..vv.......CCC.."];
+const FL_IDLE  = [".....Rr.R..R....", "..r.rRRrRRRr....", ".rRrRRRRRRRrRR..", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", ".CCcovvCNNVVVML.", "..cvvoCoLLVVvNN.", "CCcvvvCoNNVVvLL.", "..cooooCLLVVvNN.", ".CcvvvCoNNVVvLL.", "..cvoCMVLLVVvmL.", ".VvcvCMVVLvvMMm.", ".vVVvmMMvv.MMm..", "..vv.CCC...CCC.."];
+const FL_RUN1  = [".....Rr.R..R....", "..r.rRRrRRRr....", ".rRrRRRRRRRrRR..", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", ".CCcovvCLLVVVNN.", "..cvvoCoNNVVvLL.", "CCcvvvCoLLVVvNN.", "..cooooCNNVVvLL.", ".CcvvvCoLLVVvNN.", "..cvoCMVNNVVvmL.", ".VvcvCMVVLvvMMm.", ".vVVvmMMvv.CCC..", "..vv.CCC........"];
+const FL_RUN2  = [".....Rr.R..R....", "..r.rRRrRRRr....", ".rRrRRRRRRRrRR..", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", ".CCcovvCLLVVVLL.", "..cvvoCoNNVVvNN.", "CCcvvvCoLLVVvLL.", "..cooooCNNVVvNN.", ".CcvvvCoLLVVvLL.", "..cvoCMVNNVVvmN.", ".VvcvCMVVLvvMMm.", ".vVVvCCCvv.MMm..", "..vv.......CCC.."];
 const FL_THROW = [".....Rr.R..R....", "..r.rRRrRRRr....", ".rRrRRRRRRRrRR..", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", ".CCcovvCNNLLLLC.", "..cvvoCoLLVVvNN.", "CCcvvvCoNNVVvLL.", "..cooooCLLVVvNN.", ".CcvvvCoNNVVvLL.", "..cvoCMVCCVVvCC.", "VVvcvCMVVLvvMMm.", "vVVVvmMMvv.MMm..", "vv.v.CCC...CCC.."];
 const FL_DASH  = ["RrR.R..R........", "rRRRRRRr........", "rRRRRRRRRr......", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", ".CCcovvCNNVVVML.", "..cvvoCoLLVVvNN.", "CCcvvvCoNNVVvLL.", "..cooooCLLVVvNN.", ".CcvvvCoNNVVvLL.", "..cvoCMVLLVVvmL.", "VVvcvCMVVLvvMMm.", "vVVvvmMMvv.MMm..", "vv..CCC...CCC..."];
 const FL_DIVE  = ["RrR.R..R........", "rRRRRRRr........", "rRRRRRRRRr......", "rLRNmrRRRRRRR...", "rmLNNMrRRrrRRR..", ".rmMNNNrNNNrNN..", "rmmmNAANLLLLNAN.", "rRmMNNNNLNNLNNm.", ".rRmMMMLLLLLLm..", ".rRRNANNANNAN...", "..RcvvvCMMVVMM..", "CCCcovvCNNVVVML.", "CccvvoCoLLVVvNN.", "CCcvvvCoNNVVvLL.", "CcooooooCLLVVvN.", "vCcvvvCoNNVVvLL.", "vvcvoCMVLLVVMMm.", "vvvCCCCCCCCCCm..", "................", "................"];
