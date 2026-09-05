@@ -97,11 +97,11 @@ sec('effet', "5 · Ce que la zone fait à l'adversaire",
     "à 2 % par seconde. Les variantes règlent le curseur entre « il l'évite "
     "par confort » et « il ne peut plus jouer ».",
     [
-     ("RALENTI 25 %, DRAIN 2,5 %/s — RETENU", "Le ralenti au milieu de la fourchette, mais le drain AU-DESSUS : le cahier des charges disait 1,5 à 2 %/s, on est à 2,5. Sur sept secondes ça fait 17,5 % de sa barre s'il reste dedans du début à la fin — c'est un quart d'ultime volé, et c'est assumé.", dict(ef={'slow': .25, 'drain': 2.5})),
+     ("RALENTI 25 %, DRAIN 7,5 %/s — RETENU", "Le ralenti au milieu de la fourchette, et le drain TRÈS au-dessus : le cahier des charges disait 1,5 à 2 %/s, on est à 7,5. Sur sept secondes ça lui prend 52,5 % de sa barre s'il reste dedans du début à la fin — plus de la moitié d'un ultime. À ce prix la zone ne gêne plus, elle punit : la traverser coûte, y camper est impensable. C'est le premier chiffre à rebaisser si elle paraît trop forte.", dict(ef={'slow': .25, 'drain': 7.5})),
      ("RALENTI 20 %, DRAIN 1,5 %/s", "Le bas de la fourchette. Le plus doux à subir, mais il risque de traverser la zone sans y penser.", dict(ef={'slow': .20, 'drain': 1.5})),
      ("RALENTI 30 %, DRAIN 2 %/s", "Le haut de la fourchette. La zone devient un vrai mur, mais le contrôle perdu se vit mal sur un jeu de réflexe.", dict(ef={'slow': .30, 'drain': 2.0})),
      ("RALENTI SEUL, PAS DE DRAIN", "La zone gêne mais ne punit pas. Beaucoup plus juste, mais l'ultime perd son intention — vider la jauge d'en face.", dict(ef={'slow': .30, 'drain': 0})),
-     ("DRAIN SEUL, PAS DE RALENTI", "Il traverse normalement mais perd sa jauge. Très original et sans frustration de contrôle, mais on ne SENT rien quand on y entre.", dict(ef={'slow': 0, 'drain': 2.5})),
+     ("DRAIN SEUL, PAS DE RALENTI", "Il traverse normalement mais perd sa jauge, encore plus vite. Très original et sans frustration de contrôle, mais on ne SENT rien quand on y entre.", dict(ef={'slow': 0, 'drain': 9})),
      ("LE RALENTI S'AGGRAVE AVEC LE TEMPS PASSÉ DEDANS", "Léger à l'entrée, lourd si on s'attarde. Récompense celui qui réagit vite, mais ça ajoute une règle invisible à comprendre.", dict(ef={'slow': .35, 'drain': 1.75})),
      ("LE DASH EST INTERDIT DANS LA ZONE", "Il peut marcher mais pas s'élancer. Beaucoup plus fort et très lisible, mais le cahier des charges dit explicitement que le dash reste autorisé.", dict(ef={'slow': .25, 'drain': 1.75})),
      ("SA VISÉE TREMBLE AUSSI", "En plus du ralenti, son tir part de travers. Très Mewtwo, mais c'est déjà ce que fait la cloche de Jingle.", dict(ef={'slow': .25, 'drain': 1.75})),
