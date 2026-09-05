@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Blackjack — les quatre fins de main</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Russo+One&family=Barlow:wght@700;800&family=DotGothic16&display=swap" rel="stylesheet">
+<!-- La feuille du JEU, pas une copie. Le banc d'essai doit casser en même
+     temps que la table, sinon il ne teste plus rien. -->
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff;
+         --or:#d4af37; --or-clair:#f6e27a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;
+       padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:26px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:1020px;line-height:1.7;margin:0 0 14px}
+  .note b{color:var(--or-clair)}
+  .note code{color:#9fd8ff;font-size:12px}
+
+  /* La scène reproduit le cadre du jeu : 16:10 et requêtes de conteneur, pour
+     que les cqw/cqh de style.css valent ici ce qu'ils valent en jeu. Sans
+     `container-type`, toutes les tailles du blackjack s'effondrent à zéro. */
+  .scene{
+    position:relative;width:100%;max-width:1100px;aspect-ratio:16/10;margin:0 auto;
+    border:5px solid #1b2a52;border-radius:12px;overflow:hidden;container-type:size;
+    background:#07040a;
+  }
+  /* `.screen` est en `position:absolute;inset:0` dans le jeu : il remplit donc
+     la scène tel quel, sans qu'on ait à redéclarer sa mise en page. */
+
+  .pupitre{max-width:1100px;margin:14px auto 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .pupitre button{
+    background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+    padding:10px 16px;font-size:12px;font-weight:700;letter-spacing:.06em;cursor:pointer;
+  }
+  .pupitre button:hover{background:#24395e}
+  .pupitre button.test{border-color:var(--or);color:var(--or-clair);background:#2a2206}
+  .pupitre button.test:hover{background:#3a2f08}
+  .pupitre .sep{width:1px;height:26px;background:var(--edge);margin:0 4px}
+  .pupitre .etat{font-size:12px;color:#8fa4c4;margin-left:auto}
+  .pupitre .etat b{color:var(--or-clair);font-family:'Russo One',sans-serif}
+
+  /* Béquilles d'import. audio.js lit ces quatre éléments au chargement du
+     module, et dom.js prend le contexte 2D de #game : sans eux, importer le
+     moindre morceau du jeu jette avant la première ligne utile. Ils sont
+     invisibles et ne servent qu'à ça. */
+  .bequilles{position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden}
+</style>
+</head>
+<body>
+
+<h1>Blackjack — les quatre fins de main</h1>
+<p class="note">
+  Chaque bouton rejoue une séquence complète, avec sa distribution : la main du
+  joueur et celle du croupier sont refaites pour que le résultat annoncé
+  corresponde aux cartes posées. Le code exécuté est celui du jeu —
+  <code>js/casino/fins.js</code> pour les séquences, <code>js/casino/effets.js</code>
+  pour les systèmes partagés (temps, secousse, voiles, particules) et
+  <code>js/casino/cartes.js</code> pour les cartons. Rien n'est réécrit ici :
+  <b>ce banc d'essai ne peut pas diverger de la table</b>.
+</p>
+<p class="note">
+  Ce qui distingue les quatre : <b>victoire</b> — la main du joueur s'allume,
+  rebond doré, confettis, la mise remonte au compteur. <b>Bust</b> — ralenti à
+  0,3×, vignettage rouge et canaux RVB décalés, puis déflagration, feu sous les
+  cartes et envol en fumée. <b>Défaite</b> — c'est la main du <i>croupier</i> qui
+  s'allume, le texte tombe au lieu de rebondir, la mise part vers le haut.
+  <b>Égalité</b> — la seule qui ne secoue rien : les jetons restent sur le
+  feutre et s'auréolent de bleu.
+</p>
+
+<div class="scene">
+  <div class="screen scr-blackjack" id="scr-blackjack">
+    <div class="bg bjFond" aria-hidden="true">
+      <div class="casFondCouleur"></div>
+      <div class="casSceaux bjSceaux" id="bjSceaux"></div>
+      <div class="casFumee bjFumee"><i></i><i></i><i></i><i></i></div>
+      <div class="bjBraises"></div>
+      <div class="bjLustre"></div>
+      <div class="casVignette"></div>
+      <div class="casScanlines"></div>
+      <div class="casGrain"></div>
+    </div>
+    <div class="bjTapis" aria-hidden="true">
+      <div class="bjGrain"></div>
+      <div class="casSceau bjSceauTapis" id="bjSceauTapis"></div>
+      <div class="bjTapisArc"></div>
+      <div class="bjSpot"></div>
+    </div>
+    <div class="bjPoussiere" aria-hidden="true"><i></i><i></i><i></i></div>
+
+    <div class="bjMise" id="bjMise" aria-hidden="true">
+      <span class="pile"><i></i><i></i><i></i></span><b>250</b>
+    </div>
+
+    <div class="titlebar"><span>BLACKJACK</span></div>
+    <div class="bjSolde" id="bjSolde"><span class="bjPiece"></span><b id="bjSoldeVal">5000</b></div>
+    <div class="bjSabot" id="bjSabot" aria-hidden="true"><i></i><i></i><i></i></div>
+
+    <div class="bjTable">
+      <div class="bjRangee croupier">
+        <div class="bjScore" id="bjScoreCroupier"></div>
+        <div class="bjCartes" id="bjCroupier"></div>
+      </div>
+      <div class="bjAnnonce hidden" id="bjAnnonce"></div>
+      <div class="bjRangee joueur">
+        <div class="bjCartes" id="bjJoueur"></div>
+        <div class="bjScore" id="bjScoreJoueur"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pupitre">
+  <button class="test" data-fin="win">TEST VICTOIRE</button>
+  <button class="test" data-fin="bust">TEST BUST</button>
+  <button class="test" data-fin="lose">TEST DÉFAITE</button>
+  <button class="test" data-fin="push">TEST ÉGALITÉ</button>
+  <span class="sep"></span>
+  <button id="btnReset">REDISTRIBUER</button>
+  <button id="btnJackpot">VICTOIRE « BLACKJACK »</button>
+  <span class="etat">solde&nbsp;: <b id="etatSolde">5000</b> · mise&nbsp;: <b>250</b></span>
+</div>
+
+<div class="bequilles" aria-hidden="true">
+  <canvas id="game" width="8" height="8"></canvas>
+  <input id="musicVol" type="range" value="5"><span id="musicVal"></span>
+  <input id="sfxVol" type="range" value="20"><span id="sfxVal"></span>
+</div>
+
+<script type="module">
+import { carteDom } from '../js/casino/cartes.js';
+import { jouerFin, nettoyerFin } from '../js/casino/fins.js';
+import { sceau } from '../js/casino/casino.js';
+import { initAudio, sfx } from '../js/audio/audio.js';
+
+const $ = id => document.getElementById(id);
+const hote = $('scr-blackjack');
+
+// Le décor de la table, monté comme en jeu : les sceaux du fond et celui gravé
+// dans le feutre. Sans eux, on jugerait les séquences sur un fond qui n'est pas
+// celui où elles se joueront.
+for (const [classe, branches, runes] of [['a', 5, 8], ['b', 7, 7], ['c', 5, 12]]) {
+  const d = document.createElement('div');
+  d.className = 'casSceau ' + classe;
+  d.innerHTML = sceau(50, branches, runes);
+  $('bjSceaux').appendChild(d);
+}
+$('bjSceauTapis').innerHTML = sceau(50, 5, 12);
+
+// --- Les distributions d'essai ---------------------------------------------
+// Une main par issue, choisie pour que le résultat annoncé soit lisible sur les
+// cartes posées. Une distribution unique pour les quatre aurait fait dire
+// « PERDU » à une main de 19 face à un 17, et on ne saurait plus si c'est la
+// séquence ou l'arbitrage qui déraille.
+const C = (rang, ens, rouge) => ({ rang, ens: { s: ens, rouge } });
+const MAINS = {
+  win:  { j: [C('10','♥',1), C('9','♠',0)],                joueur: 19,
+          c: [C('K','♦',1), C('7','♣',0)],                 croupier: 17 },
+  bust: { j: [C('10','♥',1), C('9','♠',0), C('8','♦',1)],  joueur: 27,
+          c: [C('K','♦',1), null],                         croupier: '10 + ?' },
+  lose: { j: [C('10','♥',1), C('8','♠',0)],                joueur: 18,
+          c: [C('K','♦',1), C('Q','♣',0)],                 croupier: 20 },
+  push: { j: [C('10','♥',1), C('9','♠',0)],                joueur: 19,
+          c: [C('K','♦',1), C('9','♣',0)],                 croupier: 19 }
+};
+// Le blackjack naturel réutilise la séquence de victoire, avec `fort` : c'est
+// exactement ce que fait la table.
+MAINS.jackpot = { j: [C('A','♥',1), C('K','♥',1)], joueur: 21,
+                  c: [C('9','♦',1), C('8','♣',0)], croupier: 17 };
+
+// `null` dans la liste = carte face cachée. Au bust le croupier n'a pas eu à
+// jouer, donc sa deuxième carte est encore retournée — et la séquence n'a rien
+// à dévoiler, ce qui est justement le cas à vérifier.
+function poserMain(zone, cartes) {
+  zone.innerHTML = '';
+  zone.className = 'bjCartes';
+  cartes.forEach((c, i) => {
+    const carte = c || C('4', '♠', 0);
+    const d = carteDom(carte, !!c);
+    d.style.animationDelay = `${i * 220}ms, ${i * 220 + 620}ms`;
+    d.style.setProperty('--retard', i * 220 + 'ms');
+    zone.appendChild(d);
+    if (c) setTimeout(() => sfx('bjCarte'), i * 220);
+  });
+}
+
+function poserScore(el, valeur) {
+  el.textContent = valeur;
+  el.className = 'bjScore on';
+  const n = +valeur;
+  if (n > 21) el.classList.add('creve');
+  else if (n === 21) el.classList.add('parfait');
+  else if (n >= 19) el.classList.add('brulant');
+  else if (n >= 17) el.classList.add('chaud');
+}
+
+let solde = 5000;
+const MISE = 250;
+
+function majSolde(net) {
+  solde = Math.max(0, solde + net);
+  const el = $('bjSoldeVal');
+  const depart = +el.textContent || 0;
+  const pas = Math.max(1, Math.ceil(Math.abs(solde - depart) / 18));
+  const sens = solde > depart ? 1 : -1;
+  let v = depart;
+  const t = setInterval(() => {
+    v += pas * sens;
+    if ((sens > 0 && v >= solde) || (sens < 0 && v <= solde)) { v = solde; clearInterval(t); }
+    el.textContent = v;
+    $('etatSolde').textContent = v;
+  }, 28);
+}
+
+function distribuer(genre) {
+  const m = MAINS[genre];
+  nettoyerFin(hote);
+  $('bjMise').classList.remove('hidden', 'partie', 'rendue');
+  poserMain($('bjJoueur'), m.j);
+  poserMain($('bjCroupier'), m.c);
+  poserScore($('bjScoreJoueur'), m.joueur);
+  poserScore($('bjScoreCroupier'), m.croupier);
+  return m;
+}
+
+function lancer(genre) {
+  initAudio();
+  const jackpot = genre === 'jackpot';
+  const seq = jackpot ? 'win' : genre;
+  distribuer(genre);
+  // On laisse les cartes se poser avant d'enchaîner : lancée dans la foulée,
+  // la séquence commencerait par dévoiler des cartes encore en vol.
+  setTimeout(() => {
+    const net = seq === 'win' ? (jackpot ? Math.floor(MISE * 1.5) : MISE)
+              : seq === 'push' ? 0 : -MISE;
+    jouerFin(seq, hote, {
+      mise: MISE, net,
+      texte: jackpot ? 'BLACKJACK !' : undefined,
+      fort: jackpot,
+      payer: () => majSolde(net)
+    });
+  }, 760);
+}
+
+for (const b of document.querySelectorAll('.pupitre .test'))
+  b.addEventListener('click', () => lancer(b.dataset.fin));
+$('btnJackpot').addEventListener('click', () => lancer('jackpot'));
+$('btnReset').addEventListener('click', () => { initAudio(); distribuer('win'); });
+
+distribuer('win');
+</script>
+</body>
+</html>

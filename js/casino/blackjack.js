@@ -14,14 +14,9 @@ import { $, showScreen } from '../core/dom.js';
 import { sfx } from '../audio/audio.js';
 import { Compte, connecte, ajouterPieces } from '../reseau/compte.js';
 import { sceau, paillettes } from './casino.js';
-
-const ENSEIGNES = [
-  { s: '♠', nom: 'pique', rouge: false },
-  { s: '♥', nom: 'coeur', rouge: true },
-  { s: '♦', nom: 'carreau', rouge: true },
-  { s: '♣', nom: 'trefle', rouge: false }
-];
-const RANGS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+import { jouerFin, nettoyerFin } from './fins.js';
+import { ralentir } from './effets.js';
+import { ENSEIGNES, RANGS, carteDom } from './cartes.js';
 
 const NB_JEUX = 6;
 const MISE_MIN = 10;
@@ -77,96 +72,13 @@ let solde = 0;
 // ---------------------------------------------------------------------------
 // Affichage
 // ---------------------------------------------------------------------------
-
-// --- Le dos des cartes ------------------------------------------------------
-// Trame géométrique, médaillon à pentagramme, couronne de runes et fleurons
-// d'angle, en or sur bordeaux. Des rayures en diagonale — ce qu'il y avait
-// avant — donnaient un dos de bloc-notes : c'est le motif construit, avec son
-// centre et ses angles, qui fait la carte de jeu.
-//
-// Tout est calculé ici plutôt que déclaré en CSS parce que le pentagramme et
-// la couronne demandent de la trigonométrie. Et pas de <pattern> ni de
-// clipPath : leur id serait répété par les soixante cartes du sabot, et toutes
-// pointeraient vers celui de la première — qui disparaît à chaque donne. Le
-// débordement est déjà coupé par overflow:hidden sur .bjDos.
-const RUNES_DOS = ['ᚦ', 'ᚱ', 'ᛉ', 'ᛟ', 'ᛃ', 'ᚨ', 'ᛗ', 'ᛖ'];
-
-const dosSvg = (() => {
-  const L = 100, H = 150;                 // ratio 2:3, comme le carton
-  const pt = (cx, cy, r, deg) => {
-    const a = (deg - 90) * Math.PI / 180;
-    return [(cx + r * Math.cos(a)).toFixed(2), (cy + r * Math.sin(a)).toFixed(2)];
-  };
-
-  // Trame : deux familles de diagonales croisées, plus un point d'or à chaque
-  // nœud. Sans les nœuds, les diagonales seules redeviennent des rayures.
-  let trame = '', noeuds = '';
-  for (let d = -H; d < L + H; d += 9) {
-    trame += `M${d} 0 L${d + H} ${H} M${d} ${H} L${d + H} 0 `;
-  }
-  for (let y = 9; y < H; y += 9)
-    for (let x = ((y / 9) % 2 ? 4.5 : 9); x < L; x += 9)
-      noeuds += `<circle cx="${x}" cy="${y}" r=".7"/>`;
-
-  // Pentagramme du médaillon : un sommet sur deux, d'un seul trait.
-  const cx = L / 2, cy = H / 2;
-  const sommets = [];
-  for (let i = 0; i < 5; i++) sommets.push(pt(cx, cy, 14, i * 72));
-  const ordre = [];
-  for (let i = 0, j = 0; i < 5; i++, j = (j + 2) % 5) ordre.push(sommets[j]);
-  const etoile = 'M' + ordre.map(p => p.join(' ')).join(' L') + ' Z';
-
-  let couronne = '';
-  RUNES_DOS.forEach((g, i) => {
-    const [x, y] = pt(cx, cy, 25.5, i * 360 / RUNES_DOS.length);
-    couronne += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central"
-                 font-size="5.4" fill="#e8c565" opacity=".72">${g}</text>`;
-  });
-
-  // Fleurons d'angle : une petite étoile à quatre branches, dessinée en losange
-  // creusé pour rester lisible à la taille d'une carte.
-  const fleuron = (x, y) => {
-    const b = 4.6, t = 1.3;
-    return `<path d="M${x} ${y - b} Q${x + t} ${y - t} ${x + b} ${y}` +
-           ` Q${x + t} ${y + t} ${x} ${y + b} Q${x - t} ${y + t} ${x - b} ${y}` +
-           ` Q${x - t} ${y - t} ${x} ${y - b} Z" fill="#d4af37" opacity=".5"/>`;
-  };
-
-  return `<svg viewBox="0 0 ${L} ${H}" preserveAspectRatio="none">
-    <path d="${trame}" fill="none" stroke="#d4af37" stroke-width=".55" opacity=".26"/>
-    <g fill="#f6e27a" opacity=".3">${noeuds}</g>
-    <rect x="4" y="4" width="${L - 8}" height="${H - 8}" rx="4"
-          fill="none" stroke="#d4af37" stroke-width="1.6" opacity=".9"/>
-    <rect x="8.5" y="8.5" width="${L - 17}" height="${H - 17}" rx="2.5"
-          fill="none" stroke="#d4af37" stroke-width=".6" opacity=".55"/>
-    ${fleuron(16, 22)}${fleuron(L - 16, 22)}${fleuron(16, H - 22)}${fleuron(L - 16, H - 22)}
-    <circle cx="${cx}" cy="${cy}" r="30" fill="#3a0707" opacity=".82"/>
-    <circle cx="${cx}" cy="${cy}" r="30" fill="none" stroke="#d4af37" stroke-width=".9" opacity=".75"/>
-    <circle cx="${cx}" cy="${cy}" r="20" fill="none" stroke="#d4af37" stroke-width=".5"
-            stroke-dasharray="2 2.4" opacity=".6"/>
-    ${couronne}
-    <path d="${etoile}" fill="none" stroke="#f6e27a" stroke-width="1.1" opacity=".85"/>
-    <circle cx="${cx}" cy="${cy}" r="2.2" fill="#f6e27a" opacity=".9"/>
-  </svg>`;
-})();
-
-function carteDom(carte, face) {
-  const d = document.createElement('div');
-  d.className = 'bjCarte' + (face ? ' face' : '');
-  const couleur = carte.ens.rouge ? 'bjRouge' : 'bjNoir';
-  d.innerHTML = `<div class="bjFaces">
-      <div class="bjFace">
-        <span class="bjCoin ${couleur}">${carte.rang}<span class="bjPip">${carte.ens.s}</span></span>
-        <span class="bjCentre ${couleur}">${carte.ens.s}</span>
-        <span class="bjCoin bas ${couleur}">${carte.rang}<span class="bjPip">${carte.ens.s}</span></span>
-      </div>
-      <div class="bjDos">${dosSvg}</div>
-    </div>`;
-  return d;
-}
-
-function poserCarte(zone, carte, face, retard) {
+// `lent` sert à la carte qui fait crever : elle arrive au ralenti. La durée est
+// posée ICI, en ligne, plutôt que par une classe ajoutée après coup — changer
+// une durée d'animation en vol recalcule la progression, et la carte repartirait
+// en arrière au moment précis où on veut la regarder tomber.
+function poserCarte(zone, carte, face, retard, lent) {
   const d = carteDom(carte, false);
+  if (lent) d.style.animationDuration = '1.1s, 4.6s';
   // Deux valeurs : l'arrivée attend son tour dans la donne, le flottement ne
   // démarre qu'une fois la carte posée — et avec un décalage propre à chacune,
   // sinon toute la main respire au même rythme et l'image paraît vibrer.
@@ -191,21 +103,18 @@ function poserCarte(zone, carte, face, retard) {
   return d;
 }
 
-// Voile de couleur plein écran, repris du comptoir.
-function voile(genre) {
-  const ecran = $('scr-blackjack');
-  if (!ecran) return;
-  const v = document.createElement('div');
-  v.className = 'bjVoile ' + genre;
-  ecran.appendChild(v);
-  setTimeout(() => v.remove(), 900);
-}
-
-function secousse(duree) {
-  const e = $('scr-blackjack');
-  if (!e) return;
-  e.classList.add('secoue');
-  setTimeout(() => e.classList.remove('secoue'), duree || 700);
+// La mise posée sur le feutre. Elle existe pour que les fins de main aient
+// quelque chose à faire voler : voir le compteur changer tout seul, c'est lire
+// un bilan ; voir les jetons traverser la table, c'est encaisser ou payer.
+function poserMise(montant) {
+  const el = $('bjMise');
+  if (!el) return;
+  el.classList.remove('hidden', 'partie', 'rendue');
+  el.querySelector('b').textContent = montant;
+  // La pile monte avec la mise, jusqu'à quatre jetons : une hauteur fixe ne
+  // dirait pas si on joue le minimum ou tout ce qu'on a.
+  const n = montant >= 500 ? 4 : montant >= 100 ? 3 : montant >= 50 ? 2 : 1;
+  el.querySelector('.pile').innerHTML = '<i></i>'.repeat(n);
 }
 
 // Le jeton part vraiment vers la mise. Cliquer pour voir un nombre changer dans
@@ -323,11 +232,8 @@ function message(texte) {
   effacerMsg = setTimeout(() => el.classList.add('hidden'), 2600);
 }
 
-function annonce(texte, genre) {
-  const el = $('bjAnnonce');
-  el.className = 'bjAnnonce ' + (genre || '');
-  el.textContent = texte;
-}
+// Le texte des fins est posé par casino/fins.js ; il ne reste ici que de quoi
+// l'effacer entre deux mains.
 function effacerAnnonce() { $('bjAnnonce').className = 'bjAnnonce hidden'; }
 
 function barre(miser) {
@@ -349,13 +255,13 @@ function distribuer() {
   mise = saisie;
   mainJoueur = []; mainCroupier = [];
   enCours = true; cachee = true; aDouble = false;
+  // Coupe net la fin précédente et efface ses marques : sans ça la nouvelle
+  // main arrive déjà grisée, et une séquence encore en vol continue d'écrire
+  // par-dessus celle qui commence.
+  nettoyerFin($('scr-blackjack'));
   effacerAnnonce();
-  // Les marques du résultat précédent doivent partir, sinon la nouvelle main
-  // arrive déjà grisée ou déjà auréolée.
-  for (const z of [$('bjJoueur'), $('bjCroupier')]) {
-    z.classList.remove('gagne', 'perd', 'egalite', 'creve');
-    z.innerHTML = '';
-  }
+  for (const z of [$('bjJoueur'), $('bjCroupier')]) z.innerHTML = '';
+  poserMise(mise);
   barre(false);
 
   // L'ordre d'une vraie table : joueur, croupier, joueur, croupier — et la
@@ -394,13 +300,18 @@ function tirer() {
   if (!enCours) return;
   const c = piocher();
   mainJoueur.push(c);
+  // On sait AVANT de la poser que cette carte fait crever : c'est ce qui permet
+  // de la faire arriver au ralenti, et de laisser le joueur la voir tomber au
+  // lieu de découvrir le résultat une fois qu'elle est déjà à plat.
+  const creve = valeur(mainJoueur).total > 21;
+  if (creve) ralentir($('scr-blackjack'), .3, 900);
   sfx('bjCarte');
-  poserCarte($('bjJoueur'), c, true, 0);
+  poserCarte($('bjJoueur'), c, true, 0, creve);
   setTimeout(() => {
     majScores();
-    if (valeur(mainJoueur).total > 21) return conclure('creve');
+    if (creve) return conclure('creve');
     majBoutons();
-  }, 340);
+  }, creve ? 1000 : 340);
 }
 
 function rester() {
@@ -413,17 +324,23 @@ function doubler() {
   if (solde < mise * 2) { sfx('deny'); message('Pas assez de pièces pour doubler.'); return; }
   aDouble = true;
   mise *= 2;
+  poserMise(mise);
   message('Mise doublée : ' + mise + ' pièces.');
   const c = piocher();
   mainJoueur.push(c);
+  // Même traitement qu'au tirage : si la carte fait crever, elle arrive au
+  // ralenti. Doubler et crever est le moment le plus dur de la table, il ne
+  // doit pas défiler plus vite qu'un tirage ordinaire.
+  const creve = valeur(mainJoueur).total > 21;
+  if (creve) ralentir($('scr-blackjack'), .3, 900);
   sfx('bjCarte');
-  poserCarte($('bjJoueur'), c, true, 0);
+  poserCarte($('bjJoueur'), c, true, 0, creve);
   setTimeout(() => {
     majScores();
     // Doubler donne UNE carte, puis la main passe. Même en crevant.
-    if (valeur(mainJoueur).total > 21) return conclure('creve');
+    if (creve) return conclure('creve');
     devoiler();
-  }, 340);
+  }, creve ? 1000 : 340);
 }
 
 // Le croupier retourne sa carte, puis tire jusqu'à 17. Il reste sur 17, souple
@@ -498,43 +415,21 @@ function conclure(force) {
   }
 
   const jackpot = bjJoueur && !bjCroupier;
-  annonce(texte, genre + (jackpot ? ' jackpot' : ''));
-  sfx(genre === 'gain' ? 'bjGain' : genre === 'perte' ? 'bjPerte' : 'select');
-
-  // Le juice se règle sur l'enjeu : un blackjack met le feu à l'écran, une
-  // défaite ordinaire éteint simplement les cartes. Tout secouer à chaque main
-  // reviendrait à ne rien souligner du tout.
   const joueurCreve = force === 'creve' || vj > 21;
-  const croupierCreve = !joueurCreve && vc > 21;
-  $('bjJoueur').classList.add(
-    joueurCreve ? 'creve' : genre === 'gain' ? 'gagne' : genre === 'egalite' ? 'egalite' : 'perd');
-  // Le croupier qui crève brûle comme le joueur : c'est le même événement, et
-  // le grisage d'une défaite ordinaire le rendait invisible — on gagnait sans
-  // comprendre pourquoi.
-  if (croupierCreve) $('bjCroupier').classList.add('creve');
-  else if (genre === 'gain') $('bjCroupier').classList.add('perd');
-  else if (genre === 'perte') $('bjCroupier').classList.add('gagne');
 
-  if (genre === 'gain') {
-    voile('gain');
-    secousse(jackpot ? 1400 : 700);
-    paillettes($('bjJoueur'), jackpot ? 60 : 24, ['#f6e27a', '#d4af37', '#fff3b8', '#7bff9d'], -1, 320);
-    if (jackpot) {
-      // Pluie tombant du haut, en plus de l'explosion : c'est ce qui distingue
-      // le blackjack d'un gain ordinaire.
-      setTimeout(() => paillettes($('bjAnnonce'), 40, ['#f6e27a', '#fff', '#d4af37'], 1, 420), 260);
-      setTimeout(() => paillettes($('bjAnnonce'), 40, ['#f6e27a', '#fff', '#d4af37'], 1, 420), 620);
-    }
-  } else if (genre === 'perte') {
-    voile('perte');
-    secousse(400);
-    paillettes($('bjJoueur'), 14, ['#3a2b2b', '#5a4040', '#8a2020'], 1, 140);
-  }
+  // Quatre issues, quatre séquences : voir casino/fins.js. Tout le visuel de la
+  // fin de main vit là-bas — ici on ne fait qu'arbitrer et payer. Les avoir
+  // gardés ensemble aurait rendu impossible de rejouer une fin au banc d'essai
+  // sans sabot ni compte.
+  const type = joueurCreve ? 'bust'
+    : genre === 'gain' ? 'win'
+    : genre === 'perte' ? 'lose' : 'push';
 
-  if (net !== 0) {
-    const badge = $('bjSolde');
-    badge.classList.add(net > 0 ? 'gagne' : 'perd');
-    setTimeout(() => badge.classList.remove('gagne', 'perd'), 1200);
+  // Le règlement est passé en rappel : la séquence le déclenche à sa phase de
+  // paiement, pas à l'instant du résultat. Payer d'abord ferait lire l'issue
+  // dans le compteur avant de la voir sur la table.
+  const payer = () => {
+    if (net === 0) return;
     solde = Math.max(0, solde + net);
     majSolde(true);
     // Le serveur tranche : on lui envoie le net une seule fois, et c'est sa
@@ -543,15 +438,21 @@ function conclure(force) {
     ajouterPieces(net).then(s => {
       if (s !== null && s !== undefined) { solde = s; majSolde(); }
     }).catch(() => { /* le solde se resynchronisera à la prochaine ouverture */ });
-  }
+  };
+
+  jouerFin(type, $('scr-blackjack'), { payer, texte, fort: jackpot, mise, net });
 
   // La mise doublée ne doit pas rester pour la main suivante.
   if (aDouble) mise = Math.floor(mise / 2);
 
+  // On laisse les trois phases se dérouler avant de rendre la main. Rouvrir la
+  // barre de mise pendant que les cartes brûlent invite à relancer par-dessus
+  // sa propre défaite.
   setTimeout(() => {
     barre(true);
+    $('bjMise')?.classList.add('hidden');
     $('bjMontant').value = Math.min(mise, solde) || MISE_MIN;
-  }, 900);
+  }, 2200);
 }
 
 // ---------------------------------------------------------------------------
@@ -563,6 +464,11 @@ export function ouvrirBlackjack() {
   mainJoueur = []; mainCroupier = [];
   enCours = false; cachee = true;
   $('bjJoueur').innerHTML = ''; $('bjCroupier').innerHTML = '';
+  // Une séquence de fin peut encore tourner si on a quitté la table au milieu
+  // d'une main : on la coupe avant de rouvrir, sinon elle reprend la parole
+  // sur un tapis vide.
+  nettoyerFin($('scr-blackjack'));
+  $('bjMise')?.classList.add('hidden');
   effacerAnnonce();
   majScores(); majSolde();
   barre(true);

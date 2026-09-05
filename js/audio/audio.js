@@ -242,6 +242,80 @@ export function sfx(n, venuDuReseau) {
     case 'bjGain': [523, 659, 784, 1046].forEach((f, i) => beep(f, f, .16, 'square', .13, i * .07)); break;
     // Buzzer grave de la défaite : deux notes qui descendent, sans résolution.
     case 'bjPerte': beep(200, 90, .38, 'sawtooth', .14); beep(150, 60, .3, 'square', .1, .12); break;
+
+    // --- Couches des quatre fins de main ------------------------------------
+    // Chaque fin superpose deux ou trois de ces couches (voir casino/fins.js)
+    // plutôt qu'un bruitage unique : c'est la superposition qui distingue la
+    // satisfaction d'une victoire du soulagement d'une égalité, là où un seul
+    // son par écran les rendait interchangeables.
+
+    // Ding cristallin : trois partiels purs qui s'éteignent de plus en plus
+    // vite. C'est cette décroissance étagée qui fait « cloche » et non « bip ».
+    case 'bjDing':
+      beep(1568, 1568, .5, 'sine', .1);
+      beep(2349, 2349, .34, 'sine', .05, .02);
+      beep(3136, 3136, .22, 'sine', .028, .04);
+      break;
+    // Caisse enregistreuse : le tiroir claque, puis les deux notes du timbre.
+    case 'bjCaching':
+      noise(.05, .13, 3000);
+      beep(1046, 1046, .13, 'square', .09, .02);
+      beep(1568, 1568, .24, 'square', .075, .09);
+      noise(.2, .05, 1100, .13);
+      break;
+    // Défilement du compteur : douze crans qui se resserrent. Réglés à
+    // intervalle constant, ça sonne comme une alarme ; en accélérant, comme un
+    // rouleau qu'on lance.
+    case 'bjCompteur':
+      for (let i = 0, t = 0; i < 12; i++, t += .052 - i * .0022)
+        beep(2400 + i * 70, 1800, .025, 'square', .035, t);
+      break;
+    // Basse grave qui monte : la tension du bust, avant la déflagration.
+    case 'bjTension':
+      beep(42, 190, .6, 'sawtooth', .17);
+      beep(84, 240, .55, 'sine', .1, .02);
+      break;
+    // Explosion sourde : un souffle très bas, doublé d'un coup de grosse
+    // caisse. Sans le souffle, il ne reste qu'un « boum » de dessin animé.
+    case 'bjExplosion':
+      noise(.55, .3, 240);
+      beep(120, 28, .5, 'sine', .22);
+      noise(.16, .16, 900, .02);
+      break;
+    // Buzzer grave : deux carrés désaccordés d'un demi-hertz. C'est le
+    // battement entre les deux qui donne le désagrément voulu.
+    case 'bjBuzzer':
+      beep(110, 100, .46, 'square', .13);
+      beep(103.5, 94, .46, 'sawtooth', .1);
+      break;
+    // Ding grave et sourd de la défaite ordinaire : même geste que le ding
+    // cristallin, deux octaves plus bas et sans le partiel aigu.
+    case 'bjDingGrave':
+      beep(392, 392, .46, 'sine', .1);
+      beep(261, 261, .52, 'sine', .07, .02);
+      break;
+    // Soupir : un souffle qui retombe. Deux bandes de bruit décalées font
+    // entendre la descente qu'un bruit à fréquence fixe ne donne pas.
+    case 'bjSoupir':
+      noise(.3, .07, 1500);
+      noise(.42, .06, 620, .16);
+      beep(190, 120, .5, 'sine', .05, .08);
+      break;
+    // Ding neutre : une seule note, ni majeure ni mineure, sans rien dessus.
+    case 'bjDingNeutre':
+      beep(880, 880, .36, 'sine', .09);
+      beep(1320, 1320, .24, 'sine', .04, .03);
+      break;
+    // Whoosh : deux bandes de bruit qui se recouvrent, l'aiguë puis la grave.
+    case 'bjWhoosh':
+      noise(.18, .085, 3200);
+      noise(.24, .07, 1150, .07);
+      break;
+    // Clic de mécanisme qui se ferme : très court, très sec, un peu métallique.
+    case 'bjClic':
+      noise(.03, .13, 5000);
+      beep(2200, 1400, .045, 'square', .06);
+      break;
     // Cloche de Minuit : un vrai échantillon, avec repli sur le synthé si le
     // fichier n'a pas encore fini de charger.
     case 'bell':
