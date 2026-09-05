@@ -177,9 +177,38 @@ const D_RUNE = .7, D_CONV = .45, D_IMP = .3;
 // regardée, et ce qu'on juge ici c'est son COMPORTEMENT, pas sa longueur.
 const D_ZONE_APERCU = 2.6;
 
+// Les choix arrêtés. Les sections cumulables gardent un ENSEMBLE de lettres :
+// les effets d'un ultime se superposent, et demander d'en choisir un seul sur
+// la chute ou sur l'impact serait poser une fausse question.
+const RETENU = {
+  cible: 'A',
+  chute: ['A', 'D', 'E'],
+  impact: ['A', 'B', 'D', 'E', 'G'],
+  flaque: ['A', 'B', 'E', 'G', 'H'],
+  effet: 'A',
+  marque: ['A', 'B', 'C'],
+  gel: 'A',
+  chiffres: 'A'
+};
 const choix = {};
-SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
-const actuel = id => SECTIONS.find(s => s.id === id).variantes.find(x => x.id === choix[id]);
+SECTIONS.forEach(s => {
+  choix[s.id] = s.multi ? new Set(RETENU[s.id] || [s.variantes[0].id])
+                        : (RETENU[s.id] || s.variantes[0].id);
+});
+const varDe = (id, lettre) =>
+  SECTIONS.find(s => s.id === id).variantes.find(x => x.id === lettre);
+const actuel = id => varDe(id, choix[id]);
+// La clé utile d'une variante : la seule qui ne soit ni son identité ni son
+// texte. Elle change d'une section à l'autre (ch, im, fl, ma…), donc on la
+// retrouve plutôt que de la répéter à chaque appel.
+const cleDe = id => Object.keys(SECTIONS.find(s => s.id === id).variantes[0])
+  .find(k => !['id', 'nom', 'desc'].includes(k));
+// Est-ce que cette valeur est cochée dans une section cumulable ?
+function on(id, val) {
+  const c = cleDe(id);
+  for (const l of choix[id]) if (varDe(id, l)[c] === val) return true;
+  return false;
+}
 
 const floX = CT.left + CW * .20, floY = CYY + 28;
 const advX0 = CT.left + CW * .82, advY = CYY - 26;
@@ -189,7 +218,15 @@ const disqX = CXX - 40, disqY = CYY + 40;
 // Le rayon vient d'une SURFACE et non d'une largeur : « 30 % de la moitié
 // adverse » veut dire 30 % de son aire, pas 30 % de sa largeur. Les deux
 // donnent des cercles très différents.
-const rayonZone = () => Math.sqrt(actuel('chiffres').ch2.ray * (CW / 2) * CH / Math.PI);
+// Et il GRANDIT avec l'écart entre les deux joueurs quand la variante le
+// demande : 30 % quand ils se touchent, jusqu'à moitié plus quand ils sont aux
+// deux bouts. Ça récompense de le poser au bon moment plutôt que sur lui.
+function rayonZone(ecartJoueurs) {
+  const cf = actuel('chiffres').ch2;
+  let part = cf.ray;
+  if (cf.ecart) part *= 1 + Math.min(1, (ecartJoueurs === undefined ? .8 : ecartJoueurs)) * .5;
+  return Math.sqrt(part * (CW / 2) * CH / Math.PI);
+}
 
 /* ===================== LES OUTILS EN PLUS ===================== */
 // Une TRAINEE : le segment entre l'ancienne et la nouvelle position, avec un
@@ -280,13 +317,13 @@ function carapace(g, cx, cy, r, alpha, rot) {
 // sens des aiguilles. C'est ce qui le sépare de l'ombre de la Jambe de Maman,
 // qui grandit et bat vite — ici on lit un compte à rebours, pas une masse qui
 // approche.
-function runes(g, cx, cy, rx, ry, k, alpha, style) {
+function runes(g, cx, cy, rx, ry, k, alpha, glyphes) {
   const N = 14;
   g.save(); g.globalCompositeOperation = 'lighter';
   g.globalAlpha = alpha * .55; g.strokeStyle = VIOLET; g.lineWidth = 2;
   g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, -Math.PI / 2, -Math.PI / 2 + TAU * k);
   g.stroke();
-  if (style !== 'plein') {
+  if (glyphes) {
     for (let i = 0; i < N; i++) {
       if (i / N > k) break;
       const a = -Math.PI / 2 + i * TAU / N;
@@ -307,18 +344,18 @@ function runes(g, cx, cy, rx, ry, k, alpha, style) {
 // en scène. Elle est bâtie en SUITE DE HALOS et non au fillRect à dégradé :
 // un rectangle dégradé garde ses bords nets et se lit comme une bande de
 // peinture posée sur le terrain. La leçon vient de la traînée de White Tiger.
-function flaque(g, vue, cx, cy, r, t, k, style) {
+function flaque(g, vue, cx, cy, r, t, k, a) {
   const { e, X, Y } = vue;
   const puls = .5 + .5 * Math.sin(t * 2.6);
-  const rr = style === 'retrecit' ? r * (1 - k * .45) : r;
-  const fin = style === 'fin' && k > .78 ? (.4 + .6 * Math.abs(Math.sin(t * 14))) : 1;
-  const a = (1 - Math.pow(Math.max(0, k - .85) / .15, 2)) * fin;
+  const rr = a('retrecit') ? r * (1 - k * .45) : r;
+  const fin = a('fin') && k > .78 ? (.4 + .6 * Math.abs(Math.sin(t * 14))) : 1;
+  const op = (1 - Math.pow(Math.max(0, k - .85) / .15, 2)) * fin;
   const px = X(cx), py = Y(cy), pr = rr * e, prY = pr * .58;
 
-  lueur(g, px, py, pr * 1.15, VIOLET, (.16 + puls * .07) * a);
-  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = a;
+  lueur(g, px, py, pr * 1.15, VIOLET, (.16 + puls * .07) * op);
+  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = op;
   // l'intérieur
-  if (style !== 'anneau') {
+  if (!a('anneau')) {
     const d = g.createRadialGradient(px, py, 0, px, py, pr);
     d.addColorStop(0, 'rgba(139,79,214,' + (.30 + puls * .10).toFixed(3) + ')');
     d.addColorStop(1, 'rgba(139,79,214,.06)');
@@ -327,16 +364,17 @@ function flaque(g, vue, cx, cy, r, t, k, style) {
   }
   // le bord, toujours : c'est la limite qui compte, et c'est elle qu'on doit
   // pouvoir lire d'un coup d'oeil quand on court
-  g.globalAlpha = a * (.7 + puls * .3); g.strokeStyle = LILAS; g.lineWidth = 2;
+  g.globalAlpha = op * (.7 + puls * .3); g.strokeStyle = LILAS; g.lineWidth = 2;
   g.beginPath(); g.ellipse(px, py, pr, prY, 0, 0, TAU); g.stroke();
   g.restore();
 
-  const rot = style === 'tourne' ? t * .35 : t * .06;   // toujours un souffle de rotation
+  const rot = a('tourne') ? t * .35 : t * .06;   // toujours un souffle de rotation
   g.save(); g.translate(px, py); g.rotate(rot); g.translate(-px, -py);
-  if (style === 'runes' || style === 'tourne' || style === 'fin' || style === 'retrecit') {
-    runes(g, px, py, pr * .82, prY * .82, 1, a * .8, style);
-  } else if (style === 'fissures') {
-    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = a * .7;
+  if (a('runes') || a('tourne') || a('fin') || a('retrecit')) {
+    runes(g, px, py, pr * .82, prY * .82, 1, op * .8, !a('plein'));
+  }
+  if (a('fissures')) {
+    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = op * .7;
     g.strokeStyle = LILAS; g.lineWidth = 1.4;
     for (let i = 0; i < 10; i++) {
       const ang = alea(i + 40) * TAU;
@@ -350,8 +388,12 @@ function flaque(g, vue, cx, cy, r, t, k, style) {
       g.stroke();
     }
     g.restore();
-  } else if (style === 'grille') {
-    g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = a * .45;
+  }
+  if (a('grille')) {
+    // LEGERE ET CLIGNOTANTE : a pleine opacite elle se disputait avec les
+    // lignes du terrain. Elle grésille au lieu de s'imposer.
+    g.save(); g.globalCompositeOperation = 'lighter';
+    g.globalAlpha = op * (.10 + .13 * Math.abs(Math.sin(t * 1.9)));
     g.strokeStyle = CYAN; g.lineWidth = 1;
     g.beginPath(); g.ellipse(px, py, pr, prY, 0, 0, TAU); g.clip();
     for (let i = -8; i <= 8; i++) {
@@ -359,20 +401,22 @@ function flaque(g, vue, cx, cy, r, t, k, style) {
       g.beginPath(); g.moveTo(px - pr, py + i * prY / 8); g.lineTo(px + pr, py + i * prY / 8); g.stroke();
     }
     g.restore();
-  } else if (style === 'pics') {
+  }
+  if (a('pics')) {
     for (let i = 0; i < 7; i++) {
       const ang = alea(i + 3) * TAU, d2 = .35 + alea(i + 11) * .5;
       const x = px + Math.cos(ang) * pr * d2, y = py + Math.sin(ang) * prY * d2;
-      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = a * .8;
+      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = op * .8;
       g.fillStyle = LILAS;
       g.beginPath(); g.moveTo(x, y - 13 * e); g.lineTo(x - 4 * e, y); g.lineTo(x + 4 * e, y);
       g.closePath(); g.fill(); g.restore();
     }
-  } else if (style === 'brume') {
+  }
+  if (a('brume')) {
     for (let i = 0; i < 16; i++) {
       const ang = alea(i + 5) * TAU + t * .12, d2 = alea(i + 21);
       lueur(g, px + Math.cos(ang) * pr * d2, py + Math.sin(ang) * prY * d2,
-            pr * .3, VIOLET, a * .1);
+            pr * .3, VIOLET, op * .1);
     }
   }
   g.restore();
@@ -391,9 +435,14 @@ function jouer(g, t, W, H) {
   else if (tt < b[2]) { phase = 2; kp = (tt - b[1]) / D_IMP; }
   else { phase = 3; kp = (tt - b[2]) / D_ZONE_APERCU; }
 
-  const cib = actuel('cible').cib, ch = actuel('chute').ch, im = actuel('impact').im;
-  const fl = actuel('flaque').fl, ef = actuel('effet').ef, ma = actuel('marque').ma;
-  const ge = actuel('gel').ge;
+  const cib = actuel('cible').cib, ef = actuel('effet').ef, ge = actuel('gel').ge;
+  // Les quatre sections cumulables se lisent par cases cochées : un effet
+  // d'ultime se superpose aux autres, il ne les remplace pas.
+  const ch = v => on('chute', v), im = v => on('impact', v);
+  const fl = v => on('flaque', v), ma = v => on('marque', v);
+  // L'ÉCART entre les deux joueurs, ramené entre 0 et 1 : c'est lui qui
+  // commande le rayon quand la variante retenue le demande.
+  const ecart = Math.min(1, Math.abs(advX0 - floX) / (CW * .8));
 
   // LE DÉZOOM. Pas de secousse : la caméra RECULE. C'est volontairement
   // l'inverse du réflexe, et c'est le seul ultime du jeu qui fait ça. Ce qui
@@ -401,7 +450,7 @@ function jouer(g, t, W, H) {
   // vient d'être posé — un tremblement dirait « ça a frappé », il faut dire
   // « ça s'installe ».
   let zoom = 1;
-  if (im !== 'secousse') {
+  if (!im('secousse')) {
     if (phase === 2) zoom = 1 - easeOut(kp) * .10;
     else if (phase === 3) zoom = .90 + easeOut(Math.min(1, kp * 3)) * .10;
   }
@@ -409,7 +458,7 @@ function jouer(g, t, W, H) {
   g.save();
   g.translate(W / 2, H / 2);
   // La secousse existe quand même comme VARIANTE, pour pouvoir la comparer.
-  if (im === 'secousse' && phase === 2) {
+  if (im('secousse') && phase === 2) {
     g.translate(Math.sin(t * 118) * 6 * (1 - kp), Math.cos(t * 95) * 4 * (1 - kp));
   }
   g.scale(zoom, zoom);
@@ -417,13 +466,13 @@ function jouer(g, t, W, H) {
 
   const vue = terrain(g, W, H);
   const { e, X, Y } = vue;
-  const rz = rayonZone();
+  const rz = rayonZone(ecart);
 
   // --- 1. L'INCANTATION : le cercle s'écrit -------------------------------
   const visible = cib !== 'moi';
   const kEcrit = phase === 0 ? (cib === 'tard' ? Math.max(0, (kp - .62) / .38) : kp) : 1;
   if (phase <= 1 && visible) {
-    runes(g, X(zoneX), Y(zoneY), rz * e * .92, rz * e * .53, kEcrit, .8, fl);
+    runes(g, X(zoneX), Y(zoneY), rz * e * .92, rz * e * .53, kEcrit, .8, !fl('plein'));
   }
   if (phase === 0) {
     // LUI : il lévite, une aura qui bat, et des poussières aspirées du SOL vers
@@ -498,10 +547,10 @@ function jouer(g, t, W, H) {
     // Le halo qui se forme au point de rendez-vous, de plus en plus dense
     lueur(g, X(zoneX), Y(zoneY - hautDepart * (1 - k)), rz * e * .8 * k, VIOLET, k * .45);
     lueur(g, X(zoneX), Y(zoneY - hautDepart * (1 - k)), rz * e * .3 * k, LILAS, k * .5);
-    const r = rz * e * .58 * (ch === 'place' ? 1 : easeOut(k));
-    const cy = ch === 'place' ? Y(zoneY) : Y(zoneY - hautDepart * (1 - k));
-    const cx = ch === 'diago' ? X(zoneX) - (1 - k) * 200 * e : X(zoneX);
-    carapace(g, cx, cy, r, Math.min(1, k * 2), ch === 'tourne' ? k * 3 : k * .6);
+    const r = rz * e * .58 * (ch('place') ? 1 : easeOut(k));
+    const cy = ch('place') ? Y(zoneY) : Y(zoneY - hautDepart * (1 - k));
+    const cx = ch('diago') ? X(zoneX) - (1 - k) * 200 * e : X(zoneX);
+    carapace(g, cx, cy, r, Math.min(1, k * 2), ch('tourne') ? k * 3 : k * .6);
     // l'ombre au sol se RESSERRE pendant qu'elle grandit : c'est ce couple qui
     // fait lire une chute sur un jeu vu de dessus
     g.save(); g.globalAlpha = .3 * k; g.fillStyle = '#000';
@@ -513,8 +562,8 @@ function jouer(g, t, W, H) {
   // --- 3. L'IMPACT --------------------------------------------------------
   if (phase === 2) {
     const f = 1 - kp;
-    if (im === 'onde' || im === 'trois' || im === 'eclat') {
-      const n = im === 'trois' ? 3 : 1;
+    if (im('onde') || im('trois') || im('eclat')) {
+      const n = im('trois') ? 3 : 1;
       for (let j = 0; j < n; j++) {
         const kj = Math.max(0, kp - j * .18) / (1 - j * .18);
         if (kj <= 0) continue;
@@ -522,19 +571,29 @@ function jouer(g, t, W, H) {
                (1 - kj) * .85, LILAS, 3);
       }
     }
-    if (im === 'flash') {
+    if (im('flash')) {
       g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = f * .3;
       g.fillStyle = LILAS; g.fillRect(0, 0, W, H); g.restore();
     }
-    if (im === 'colonne') {
-      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = f * .5;
-      const d = g.createLinearGradient(0, Y(zoneY), 0, Y(zoneY) - 260 * e);
-      d.addColorStop(0, VIOLET); d.addColorStop(1, 'rgba(0,0,0,0)');
-      g.fillStyle = d;
-      g.fillRect(X(zoneX) - rz * e * .35, Y(zoneY) - 260 * e, rz * e * .7, 260 * e);
+    // LES FAISCEAUX : sept, en étoile, chacun sa direction et sa longueur. Une
+    // colonne centrale unique masquait tout ce qui se passait dessous ; sept
+    // rais fins disent l'impact de partout sur le terrain sans rien cacher.
+    if (im('faisceaux')) {
+      g.save(); g.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 7; i++) {
+        const ang = alea(i + 400) * TAU;
+        const lg = (120 + alea(i + 410) * 190) * e * easeOut(Math.min(1, kp * 1.6));
+        const lx = X(zoneX) + Math.cos(ang) * lg, ly = Y(zoneY) + Math.sin(ang) * lg * .62;
+        const d = g.createLinearGradient(X(zoneX), Y(zoneY), lx, ly);
+        d.addColorStop(0, LILAS); d.addColorStop(.35, VIOLET);
+        d.addColorStop(1, 'rgba(0,0,0,0)');
+        g.globalAlpha = f * .55; g.strokeStyle = d;
+        g.lineWidth = (2 + alea(i + 420) * 5) * e; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(X(zoneX), Y(zoneY)); g.lineTo(lx, ly); g.stroke();
+      }
       g.restore();
     }
-    if (im === 'fissure' || im === 'eclat') {
+    if (im('fissure') || im('eclat')) {
       g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = f * .8;
       g.strokeStyle = CYAN; g.lineWidth = 1.6;
       for (let i = 0; i < 12; i++) {
@@ -592,7 +651,7 @@ function jouer(g, t, W, H) {
     // une image qu'on fait tourner.
     g.save(); g.translate(X(zoneX), Y(zoneY)); g.rotate(-t * .22);
     g.translate(-X(zoneX), -Y(zoneY));
-    runes(g, X(zoneX), Y(zoneY), pr * .55, pr * .32, 1, .3, fl);
+    runes(g, X(zoneX), Y(zoneY), pr * .55, pr * .32, 1, .3, !fl('plein'));
     g.restore();
     // le vignettage : c'est lui qui dit que le terrain n'est plus normal
     g.save();
@@ -618,9 +677,9 @@ function jouer(g, t, W, H) {
     dedans = Math.abs(ax - zoneX) < rzz;
   }
   const sprAdv = CHARS.leon.frames.idle;
-  if (dedans && ma !== 'rien' && ma !== 'hud') {
-    if (ma === 'aura' || ma === 'tout') lueur(g, X(ax), Y(advY - 20), 46 * e, VIOLET, .45);
-    if (ma === 'trainee' || ma === 'tout' || ma === 'colle') {
+  if (dedans) {
+    if (ma('aura') || ma('tout')) lueur(g, X(ax), Y(advY - 20), 46 * e, VIOLET, .45);
+    if (ma('trainee') || ma('tout') || ma('colle')) {
       for (let i = 0; i < 6; i++) {
         const q = (t * .8 + alea(i + 15)) % 1;
         g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = (1 - q) * .55;
@@ -634,15 +693,15 @@ function jouer(g, t, W, H) {
                (1 - q) * .4, CYAN, 1.4);
       }
     }
-    if (ma === 'remanence' || ma === 'tout') perso(g, sprAdv, ax + 9, advY, vue, -1, .3);
-    if (ma === 'drainvfx' || ma === 'tout') {
+    if (ma('remanence') || ma('tout')) perso(g, sprAdv, ax + 9, advY, vue, -1, .3);
+    if (ma('drainvfx') || ma('tout')) {
       for (let i = 0; i < 7; i++) {
         const q = (t * .7 + alea(i + 33)) % 1;
         etincelle(g, X(ax + (alea(i + 44) - .5) * 26), Y(advY - 10 - q * 56),
                   (2 + alea(i) * 2) * e * 3, (1 - q) * .8, LILAS);
       }
     }
-    if (ma === 'chaines' || ma === 'tout') {
+    if (ma('chaines') || ma('tout')) {
       g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .6;
       g.strokeStyle = VIOLET; g.lineWidth = 2;
       for (const dx of [-7, 7]) {
@@ -652,7 +711,7 @@ function jouer(g, t, W, H) {
       g.restore();
     }
   }
-  perso(g, sprAdv, ax, advY, vue, -1, (dedans && ma === 'teinte') ? .75 : 1);
+  perso(g, sprAdv, ax, advY, vue, -1, (dedans && ma('teinte')) ? .75 : 1);
 
   // LE FIL DU LANCEUR : la règle anti-spam rendue visible. On comprend que la
   // zone lui coûte quelque chose sans lire un mot.
@@ -719,7 +778,10 @@ const cartes = [];
 function dessinerCarte(cv, sec, va) {
   const g = cv.getContext('2d');
   const sauve = choix[sec.id];
-  choix[sec.id] = va.id;
+  // Sur une section cumulable, la carte montre cet effet SEUL, jamais la pile
+  // entière : sinon les dix cartes se ressemblent toutes puisque huit d'entre
+  // elles sont déjà cochées. Ce qu'on juge, c'est ce que la case AJOUTE.
+  choix[sec.id] = sec.multi ? new Set([va.id]) : va.id;
   jouer(g, INSTANT[sec.id] || 1, cv.width, cv.height);
   choix[sec.id] = sauve;
 }
@@ -729,14 +791,19 @@ SECTIONS.forEach(sec => {
   const h2 = document.createElement('h2');
   h2.textContent = sec.titre;
   const note = document.createElement('p');
-  note.className = 'note'; note.textContent = sec.note;
+  note.className = 'note';
+  note.textContent = sec.note + (sec.multi
+    ? '  ⧉ Cette section se COCHE : les effets se superposent, plusieurs cases '
+      + 'peuvent être actives en même temps. Chaque carte montre son effet SEUL.'
+    : '');
   boite.append(h2, note);
   const rangee = (liste, reserve) => {
     const row = document.createElement('div');
     row.className = 'row' + (reserve ? ' reserve' : '');
     liste.forEach(va => {
       const card = document.createElement('div');
-      card.className = 'card' + (choix[sec.id] === va.id ? ' on' : '');
+      const coche = () => sec.multi ? choix[sec.id].has(va.id) : choix[sec.id] === va.id;
+      card.className = 'card' + (coche() ? ' on' : '');
       card.dataset.sec = sec.id; card.dataset.va = va.id;
       const lbl = document.createElement('div');
       lbl.className = 'lbl';
@@ -745,9 +812,17 @@ SECTIONS.forEach(sec => {
       cv.width = 380; cv.height = 160;
       card.append(lbl, cv);
       card.onclick = () => {
-        choix[sec.id] = va.id;
-        document.querySelectorAll('.card[data-sec="' + sec.id + '"]')
-          .forEach(c => c.classList.toggle('on', c.dataset.va === va.id));
+        if (sec.multi) {
+          const e = choix[sec.id];
+          if (e.has(va.id)) { if (e.size > 1) e.delete(va.id); }  // jamais vide
+          else e.add(va.id);
+          document.querySelectorAll('.card[data-sec="' + sec.id + '"]')
+            .forEach(c => c.classList.toggle('on', e.has(c.dataset.va)));
+        } else {
+          choix[sec.id] = va.id;
+          document.querySelectorAll('.card[data-sec="' + sec.id + '"]')
+            .forEach(c => c.classList.toggle('on', c.dataset.va === va.id));
+        }
         rafraichir(); vis.relancer();
       };
       row.append(card);
@@ -769,15 +844,19 @@ function rafraichir() {
   document.getElementById('fiche').innerHTML =
     '<tr><td>Durée de la zone</td><td>' + cf.dur + ' s</td></tr>' +
     '<tr><td>Recharge</td><td>' + (cf.cd ? cf.cd + ' s' : 'sur jauge') + '</td></tr>' +
-    '<tr><td>Rayon</td><td>' + Math.round(cf.ray * 100) + ' % de la moitié</td></tr>' +
+    '<tr><td>Rayon</td><td>' + Math.round(cf.ray * 100) + ' %'
+      + (cf.ecart ? ' → ' + Math.round(cf.ray * 150) + ' %' : '') + '</td></tr>' +
+    (cf.ecart ? '<tr><td>…selon l’écart</td><td>plus ils sont loin, plus c’est large</td></tr>' : '') +
     '<tr><td>Ralenti</td><td>' + Math.round(ef.slow * 100) + ' %</td></tr>' +
     '<tr><td>Drain de sa jauge</td><td>' + ef.drain + ' %/s</td></tr>' +
     '<tr><td>Perte totale</td><td>' + Math.round(ef.drain * cf.dur) + ' % s\'il reste</td></tr>' +
-    '<tr><td>Jauge du lanceur</td><td>gelée</td></tr>';
+    '<tr><td>Jauge du lanceur</td><td>gelée ' + cf.dur + ' s</td></tr>' +
+    '<tr><td>Puis</td><td>elle repart normalement</td></tr>';
+  const lettres = s => s.multi ? [...choix[s.id]].sort().join('') : choix[s.id];
   document.getElementById('choix').innerHTML =
-    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + lettres(s) + '</b>').join('  ·  ');
   document.getElementById('codeChoix').value =
-    SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+    SECTIONS.map((s, i) => (i + 1) + lettres(s)).join(' ');
 }
 
 document.getElementById('btnCopier').onclick = async () => {

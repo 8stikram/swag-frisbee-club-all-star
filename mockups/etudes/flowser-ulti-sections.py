@@ -5,8 +5,12 @@ IDS = list('ABCDEFGHIJ')
 SECS = []
 
 
-def sec(sid, titre, note, items):
-    SECS.append(dict(id=sid, titre=titre, note=note,
+# `multi` : les effets d'un ultime SE SUPERPOSENT. Demander d'en choisir un
+# seul sur la chute, l'impact, la flaque ou la marque, c'est poser une fausse
+# question — on veut trois ondes ET des fissures ET des morceaux. Ces
+# sections-la se cochent, les autres se choisissent.
+def sec(sid, titre, note, items, multi=False):
+    SECS.append(dict(id=sid, titre=titre, note=note, multi=multi,
                      variantes=[dict(id=IDS[i], nom=n, desc=d, **p)
                                 for i, (n, d, p) in enumerate(items)]))
 
@@ -47,7 +51,7 @@ sec('chute', '2 · La chute de la carapace',
      ("ELLE MONTE DU SOL AU LIEU DE TOMBER", "Elle jaillit du terrain. Surprenant et graphique, mais rien dans l'univers du jeu ne justifie qu'on traverse le sol.", dict(ch='sol')),
      ("IL LA LANCE LUI-MÊME", "Sa vraie carapace se détache de son dos et part en télékinésie. La fusion est assumée à fond, mais il faut le dessiner sans carapace pendant tout l'ultime.", dict(ch='lance')),
      ("ELLE REBONDIT UNE FOIS AVANT DE SE POSER", "Un rebond, puis elle se pose. Ça donne du poids et de la matière, mais ça retarde la zone d'une demi-seconde.", dict(ch='rebond')),
-    ])
+    ], multi=True)
 
 # --- 3. L'IMPACT -----------------------------------------------------------
 sec('impact', "3 · L'impact",
@@ -61,11 +65,11 @@ sec('impact', "3 · L'impact",
      ("LE SOL SE FISSURE", "Des fissures violettes partent du point d'impact. Très matériel et ça prépare bien la flaque, mais ça encombre le terrain avant que la zone n'apparaisse.", dict(im='fissure')),
      ("LA CARAPACE ÉCLATE EN MORCEAUX", "Elle se brise et les éclats retombent en formant le cercle. C'est le plus joli enchaînement vers la flaque, mais c'est aussi le plus long à dessiner.", dict(im='eclat')),
      ("PAS D'IMPACT : ELLE FOND DANS LE SOL", "Elle se dissout doucement en flaque. Le plus doux et le plus élégant, mais on ne sent plus qu'elle est tombée de haut.", dict(im='fond')),
-     ("UNE COLONNE DE LUMIÈRE MONTE", "Un pilier violet jaillit vers le haut à l'impact. Très visible même de l'autre bout du terrain, mais il masque ce qui se passe dessous.", dict(im='colonne')),
+     ("DES FAISCEAUX PARTENT DANS TOUS LES SENS", "Non pas une colonne centrale, qui masquerait ce qui se passe dessous, mais SEPT faisceaux violets qui jaillissent en étoile, chacun dans sa direction et à sa longueur. On voit l'impact de partout sur le terrain sans rien perdre du point de chute.", dict(im='faisceaux')),
      ("SECOUSSE SEULE, SANS EFFET", "L'écran tremble, rien d'autre. Le plus sobre et le plus propre, mais un ultime mérite mieux qu'un tremblement.", dict(im='secousse')),
      ("LES JOUEURS PROCHES SONT REPOUSSÉS", "Un souffle écarte qui se trouve au point de chute. Ça donne une raison de ne pas rester là, mais ça ajoute un effet que le cahier des charges n'a pas demandé.", dict(im='souffle')),
      ("LE DISQUE EST DÉVIÉ S'IL PASSE LÀ", "L'onde bouscule le disque. Ça lie l'ultime au jeu, mais le cahier des charges dit que l'ultime ne touche pas au disque.", dict(im='disque')),
-    ])
+    ], multi=True)
 
 # --- 4. LA FLAQUE ----------------------------------------------------------
 sec('flaque', '4 · La flaque au sol',
@@ -78,13 +82,13 @@ sec('flaque', '4 · La flaque au sol',
      ("DES FISSURES PSYCHIQUES", "Pas de runes mais un réseau de fêlures lumineuses. Plus brutal et plus Bowser, mais moins Mewtwo.", dict(fl='fissures')),
      ("UN SIMPLE DISQUE PLEIN", "Aucun motif, juste un aplat violet qui pulse. Le plus propre et celui qui gêne le moins la lecture du jeu, mais aussi le plus fade.", dict(fl='plein')),
      ("SEULEMENT UN ANNEAU, CREUX AU MILIEU", "Le bord est marqué, l'intérieur reste clair. On voit parfaitement où est la limite — et la limite est ce qui compte — mais on oublie qu'on est dedans.", dict(fl='anneau')),
-     ("UNE GRILLE PSYCHIQUE", "Un quadrillage lumineux, comme un champ de force. Très science-fiction et très lisible, mais ça se dispute avec les lignes du terrain.", dict(fl='grille')),
+     ("UNE GRILLE PSYCHIQUE, LÉGÈRE ET CLIGNOTANTE", "Un quadrillage à peine visible qui s'allume et s'éteint lentement, comme un champ de force qui grésille. À pleine opacité il se disputait avec les lignes du terrain ; discret et intermittent, il ajoute la texture sans encombrer.", dict(fl='grille')),
      ("ELLE TOURNE LENTEMENT", "Le motif pivote sur lui-même. Ça la rend vivante sans qu'elle clignote, mais une rotation lente pendant huit secondes finit par attirer l'œil.", dict(fl='tourne')),
      ("ELLE RÉTRÉCIT AVEC LE TEMPS", "Le cercle se resserre à mesure que la durée s'écoule. C'est un compte à rebours qu'on lit sans chiffre, et c'est le plus élégant du lot ; en revanche l'adversaire regagne du terrain tout seul.", dict(fl='retrecit')),
      ("UN BROUILLARD BAS PLUTÔT QU'UN DÉCALQUE", "De la brume violette au ras du sol. Très atmosphérique, mais on ne voit plus le bord, donc on ne sait plus si on est dedans.", dict(fl='brume')),
      ("DES PICS D'ÉNERGIE PLANTÉS DEDANS", "La carapace laisse ses pics fichés dans le sol. Ça garde le lien avec Bowser, mais ça encombre une zone où les deux joueurs vont passer.", dict(fl='pics')),
      ("ELLE CLIGNOTE QUAND ELLE VA DISPARAÎTRE", "Rien ne change pendant six secondes, puis elle bat plus vite sur la fin. Prévient honnêtement, mais un clignotement rapide finit par agacer.", dict(fl='fin')),
-    ])
+    ], multi=True)
 
 # --- 5. L'EFFET SUR L'ADVERSAIRE -------------------------------------------
 sec('effet', "5 · Ce que la zone fait à l'adversaire",
@@ -93,7 +97,7 @@ sec('effet', "5 · Ce que la zone fait à l'adversaire",
     "à 2 % par seconde. Les variantes règlent le curseur entre « il l'évite "
     "par confort » et « il ne peut plus jouer ».",
     [
-     ("RALENTI 25 %, DRAIN 1,75 %/s", "Le milieu de la fourchette. Assez pour qu'il préfère sortir, pas assez pour qu'il subisse : c'est la valeur à essayer en premier.", dict(ef={'slow': .25, 'drain': 1.75})),
+     ("RALENTI 25 %, DRAIN 2,5 %/s — RETENU", "Le ralenti au milieu de la fourchette, mais le drain AU-DESSUS : le cahier des charges disait 1,5 à 2 %/s, on est à 2,5. Sur sept secondes ça fait 17,5 % de sa barre s'il reste dedans du début à la fin — c'est un quart d'ultime volé, et c'est assumé.", dict(ef={'slow': .25, 'drain': 2.5})),
      ("RALENTI 20 %, DRAIN 1,5 %/s", "Le bas de la fourchette. Le plus doux à subir, mais il risque de traverser la zone sans y penser.", dict(ef={'slow': .20, 'drain': 1.5})),
      ("RALENTI 30 %, DRAIN 2 %/s", "Le haut de la fourchette. La zone devient un vrai mur, mais le contrôle perdu se vit mal sur un jeu de réflexe.", dict(ef={'slow': .30, 'drain': 2.0})),
      ("RALENTI SEUL, PAS DE DRAIN", "La zone gêne mais ne punit pas. Beaucoup plus juste, mais l'ultime perd son intention — vider la jauge d'en face.", dict(ef={'slow': .30, 'drain': 0})),
@@ -121,7 +125,7 @@ sec('marque', "6 · Comment on voit qu'il est ralenti",
      ("DES PARTICULES QUI MONTENT DE LUI", "Son énergie s'échappe vers le haut. C'est le drain rendu visible, et c'est le plus juste des dix ; en revanche ça ne dit rien du ralenti.", dict(ma='drainvfx')),
      ("LE SOL COLLE À SES PIEDS", "De la matière violette s'étire quand il lève le pied. Très matériel et très satisfaisant, mais c'est le plus coûteux à dessiner.", dict(ma='colle')),
      ("TOUT EN MÊME TEMPS", "Traînées, aura, particules et HUD. Impossible de ne pas comprendre, mais l'écran devient illisible.", dict(ma='tout')),
-    ])
+    ], multi=True)
 
 # --- 7. LE GEL DE SA PROPRE JAUGE ------------------------------------------
 sec('gel', '7 · Le gel de sa propre jauge',
@@ -148,7 +152,7 @@ sec('chiffres', '8 · Les chiffres',
     "recharge après la fin, et un rayon qui couvre environ 30 % de la moitié "
     "adverse.",
     [
-     ("7 s DE ZONE, 27 s DE RECHARGE, RAYON 30 %", "Le milieu de toutes les fourchettes. C'est la valeur à essayer en premier, et celle à bouger en dernier.", dict(ch2={'dur': 7, 'cd': 27, 'ray': .30})),
+     ("7 s, RAYON QUI GRANDIT AVEC L'ÉCART — RETENU", "Sept secondes de zone. Aucune recharge en secondes : la jauge est simplement INCHARGEABLE pendant ces sept secondes, puis elle repart normalement — l'anti-spam est le gel lui-même, pas un compteur en plus. Et le rayon part de 30 % mais GRANDIT avec la distance entre les deux joueurs : plus l'adversaire est loin, plus la zone est large. Ça récompense le fait de le poser au bon moment plutôt que de le poser sur lui.", dict(ch2={'dur': 7, 'cd': 0, 'ray': .30, 'ecart': True})),
      ("6 s, 25 s, RAYON 30 %", "Le bas de la fourchette : la zone passe vite et revient vite. Plus nerveux, mais moins marquant.", dict(ch2={'dur': 6, 'cd': 25, 'ray': .30})),
      ("8 s, 30 s, RAYON 30 %", "Le haut de la fourchette : une zone qui pèse longtemps et se mérite. Plus stratégique, mais deux ultimes par match seulement.", dict(ch2={'dur': 8, 'cd': 30, 'ray': .30})),
      ("7 s, 27 s, RAYON 20 %", "Une zone plus petite, donc un placement plus exigeant. Récompense la précision, mais rate souvent.", dict(ch2={'dur': 7, 'cd': 27, 'ray': .20})),
