@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Jingle Bells — les tenues</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#07120c; --panel:#0e1e15; --edge:#244433; --ink:#e8f5ec; --accent:#3fae70; --or:#f5c542; --rouge:#a8232f; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:23px;margin:0 0 4px;font-family:'Archivo Black',sans-serif;letter-spacing:.5px}
+  h2{font-size:14px;margin:36px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fb7a1;max-width:1000px;line-height:1.75;margin:0 0 14px}
+  .note b{color:var(--or)}
+  .onglets{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 16px}
+  .onglet{background:var(--panel);border:1px solid var(--edge);border-radius:9px;padding:8px 16px;
+          font-size:12px;letter-spacing:1px;color:#8fb7a1;cursor:pointer;font-family:Consolas,monospace}
+  .onglet.on{border-color:var(--or);color:var(--or);background:#16281c}
+  .onglet.mort{opacity:.4;cursor:not-allowed}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px;
+        flex:1 1 206px;min-width:206px;max-width:268px;cursor:pointer;
+        transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d7a58}
+  .card.on{border-color:var(--or);transform:translateY(-2px);box-shadow:0 0 0 1px var(--or) inset}
+  .lbl{font-size:11px;color:#8fb7a1;margin-bottom:8px;line-height:1.5;min-height:96px}
+  .lbl b{display:block;font-size:13px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  .duo{display:flex;gap:8px;align-items:flex-end;justify-content:center}
+  .duo canvas{background:#0a1710;border-radius:8px;display:block;image-rendering:pixelated;flex:0 0 auto}
+  .duo .zoom{border:1px solid #3d7a58}
+  .duo .plein{opacity:.85}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 420px;
+          display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+  .apercu canvas{background:#0a1710;border-radius:10px;image-rendering:pixelated;display:block}
+  .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 300px}
+  .fiche h3{margin:0 0 10px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .choix{font-size:11.5px;color:#8fb7a1;margin-top:10px;font-family:Consolas,monospace;line-height:1.8}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0a1710;border:1px solid var(--edge);border-radius:8px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#16281c;color:var(--ink);border:1px solid var(--edge);border-radius:8px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#1e3a28}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .rosterRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .rosterOne{text-align:center;font-size:9px;color:#6f9782;font-family:Consolas,monospace}
+  .rosterOne canvas{display:block;border-radius:6px;image-rendering:pixelated;border:1px solid var(--edge)}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>JINGLE BELLS — LES TENUES</h1>
+<p class="note">
+  <b>Un skin de Jingle n'est pas une recoloration.</b> Sa tete EST une cloche, pas un visage :
+  changer de tenue change litteralement ce qu'est cette tete. Chaque skin se juge donc sur
+  <b>deux pieces</b> — le chapeau qui remplace la cloche, et la tenue qui habille le corps.
+  <br><br>
+  <b>Le corps garde la charpente d'origine.</b> Memes epaules, memes jambes, memes bras qui
+  balancent : ce sont eux qui rendent la course lisible, et les cinq autres poses du jeu
+  (course x2, tir, plongeon, dash) se deduisent de la tenue choisie ici par recoloration. Une
+  tenue qui ne tient que sur la pose immobile ne tiendrait pas en match.
+  <br><br>
+  <b>On les fait un skin a la fois.</b> Les onglets grises attendent que celui-ci soit valide.
+  Et tout est <b>dessinable</b> : l'editeur plus bas permet de poser les pixels a la main sur
+  le rendu final, par-dessus les variantes.
+</p>
+
+<div class="onglets" id="onglets"></div>
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvGrand" width="304" height="380"></canvas>
+    <div>
+      <canvas id="cvPetit" width="230" height="120"></canvas>
+      <div class="choix" id="choix"></div>
+      <div class="copier">
+        <input class="codeChoix" id="codeChoix" readonly>
+        <button class="btnCopier" id="btnCopier">copier mes choix</button>
+      </div>
+    </div>
+  </div>
+  <div class="fiche">
+    <h3>La tenue en cours</h3>
+    <div class="choix" id="resume"></div>
+    <h3 style="margin-top:14px">A l'echelle du match, a cote du roster</h3>
+    <div class="rosterRow" id="rosterRow"></div>
+  </div>
+</div>
+
+<div class="apercu" id="editeur" style="margin-top:14px;display:block"></div>
+
+<div id="sections"></div>
+
+<script type="module">
+import { MAPS } from '../js/data/maps.js';
+import { CHARS, ROSTER } from '../js/data/characters.js';
+import { verifier, afficher } from './_verif.js';
+import { editeur, styleEditeur } from './_pixel.js';
+
+const PAL = {G:'#f5c542',g:'#c9992a',W:'#ffe9a0',d:'#8a6a15',R:'#a8232f',r:'#7a1620',V:'#1f5c3a',v:'#143f28',l:'#3fae70',S:'#b9c0cb',s:'#7e8794',K:'#241318',H:'#17171b',h:'#0a0a0d',P:'#f2f0ea',p:'#c9c6bd',L:'#2a2a33'};
+const BASE = { tete: ['......WG........','.....WgGg.......','.....WGGg.......','....WGGGgg......','....WGGGgd......','...WGGGGggd.....','...WGGGGggd.....','..gWGGGGgggd....','..dgGGGgggdg....','..RVRVRVRVRV....'], corps: ['....rvrvrv......','..SVvRVVRvVS....','.SSVvVVVVvVSS...','.SSlvVVVVvlSS...','..rrlSssSlrr....','..rRRlsSlRRr....','...RRRllRRR.....','...SS....SS.....','...SS....SS.....','..GSS....SSG....'] };
+const SKINS = [{id:'smoking',nom:'SMOKING NOIR',accroche:'Jingle Bells en soiree de gala. La cloche laisse la place a un couvre-chef — c\'est le seul skin ou le rouge de Noel survit, en ruban de chapeau et en ceinture de smoking.',dominante:'HhL',tete:['.....HHHH.......','.....HLLh.......','.....HLLh.......','.....HLLh.......','.....HLLh.......','....hHHHHh......','...hRRRRRRh.....','..HHHHHHHHHH....','..HhHHHHHHhH....','..PPPPPPPPPP....'],corps:['.....HHrrHH.....','.HHHHppppHHHH...','HHHpppppppHHH...','.HHpppppppppHH..','..HHRRRRRRRRHH..','...HHHHHHHHHH...','....HHHppHHH....','...HH....HH.....','..HHH....HHH....','..KKK....KKK....'],sections:[{id:'chapeau',titre:'1 · LE CHAPEAU',note:'C\'est la piece qui remplace la cloche, donc la seule qui decide si on reconnait encore Jingle Bells de loin. La cloche d\'origine est une forme EVASEE : etroite en haut, large en bas. Plus un chapeau garde cette silhouette, plus il reste lisible a l\'echelle du match ; plus il s\'en eloigne, plus il raconte le gala mais moins il dit que c\'est lui.',zoom:[1,0,14,9],variantes:[{id:'A',nom:'HAUT-DE-FORME',desc:'Cylindre haut, ruban rouge, large rebord plat. C\'est la silhouette la plus proche de la cloche — etroite en haut, large en bas — donc celle qui se reconnait le mieux de loin. En contrepartie c\'est aussi la plus attendue des cinq.',tete:['.....HHHH.......','.....HLLh.......','.....HLLh.......','.....HLLh.......','.....HLLh.......','....hHHHHh......','...hRRRRRRh.....','..HHHHHHHHHH....','..HhHHHHHHhH....','..PPPPPPPPPP....']},{id:'B',nom:'PORTE DE TRAVERS',desc:'Le meme haut-de-forme, mais la calotte est decalee d\'un pixel sur le rebord : il est pose de traviole, a la maniere d\'un bonimenteur. Ca lui donne du caractere ; le risque est que ca se lise comme un defaut de dessin plutot que comme une intention.',tete:['......HHHH......','......HLLh......','......HLLh......','......HLLh......','......HLLh......','.....hHHHHh.....','....hRRRRRRh....','..HHHHHHHHHH....','..HhHHHHHHhH....','..PPPPPPPPPP....']},{id:'C',nom:'MELON A JUGULAIRE',desc:'Calotte ronde et courte, petit rebord, et une jugulaire qui descend jusqu\'au col. La silhouette est ramassee, donc tres differente des autres a l\'oeil ; mais elle abandonne la forme evasee de la cloche, c\'est le chapeau qui ressemble le moins a Jingle.',tete:['.....HHHH.......','....HHHHHH......','....HLLLLh......','...hRRRRRRh.....','..HHHHHHHHHH....','.HhHHHHHHHhH....','......HH........','......Hh........','......HH........','..PPPPPPPPPP....']},{id:'D',nom:'GIBUS DORE',desc:'Le chapeau claque d\'opera : calotte large et plate, ruban DORE au lieu du rouge, rebord le plus large des cinq. C\'est le plus riche a l\'oeil et l\'or renvoie a la cloche d\'origine — mais il flotte plus haut, donc il laisse un vide au-dessus des epaules.',tete:['...HHHHHHHH.....','...HLLLLLLh.....','...HLLLLLLh.....','...HLLLLLLh.....','...hGGGGGGh.....','..HHHHHHHHHH....','.HHHHHHHHHHHH...','.HhHHHHHHHHhH...','................','..PPPPPPPPPP....']},{id:'E',nom:'ECARLATE DE MAGICIEN',desc:'Tout s\'inverse : le chapeau devient rouge et c\'est le ruban qui passe au noir. Il se detache enormement sur le terrain bleu nuit et garde la couleur de Noel en grand ; en revanche il ne dit plus \'smoking\' du tout, il dit numero de magie.',tete:['.....RRRR.......','.....RrRr.......','.....RRRr.......','....RRRRrr......','....RRRRrd......','...RRRRRrrd.....','...dHHHHHHd.....','..RRRRRRRRRR....','..RrRRRRRRrR....','..PPPPPPPPPP....']}]},{id:'tenue',titre:'2 · LA TENUE',note:'Le corps garde exactement la charpente d\'origine — les memes epaules, les memes jambes, les memes bras qui balancent — parce que c\'est elle qui rend les poses de course lisibles. Ce qui change, c\'est ce qu\'on habille dessus. Le piege ici est le contraste : trop de blanc et il devient une tache lumineuse, trop de noir et il disparait sur le fond du terrain.',zoom:[0,10,15,19],variantes:[{id:'A',nom:'TROIS PIECES',desc:'Veston noir large aux epaules, plastron blanc qui s\'ouvre en V jusqu\'a la ceinture rouge. C\'est le smoking le plus lisible : trois zones nettes, noir / blanc / rouge. Reproche possible : c\'est le plus sage.',corps:['.....HHrrHH.....','.HHHHppppHHHH...','HHHpppppppHHH...','.HHpppppppppHH..','..HHRRRRRRRRHH..','...HHHHHHHHHH...','....HHHppHHH....','...HH....HH.....','..HHH....HHH....','..KKK....KKK....']},{id:'B',nom:'QUEUE-DE-PIE',desc:'Le veston est echancre devant — le plastron descend bien plus bas — et deux pans noirs tombent le long des jambes jusqu\'aux chaussures. C\'est la silhouette la plus habillee ; en revanche les pans epaississent le bas et le rendent un peu plus lourd en course.',corps:['.....HHrrHH.....','.HHHHppppHHHH...','HHHpppppppHHH...','.HHpppppppppHH..','..HpppppppppppH.','..HHpppppppphH..','..HHRRRRRRRRHH..','..HH.HH..HH.HH..','..HH.HH..HH.HH..','..HH.KK..KK.HH..']},{id:'C',nom:'GILET DORE',desc:'Un gilet dore prend tout le torse, le plastron blanc se reduit a un liseré. L\'or fait le lien avec la cloche d\'origine et se voit tres bien sur le terrain ; le risque est qu\'il tire le perso vers le costume de scene plutot que vers le smoking.',corps:['.....HHrrHH.....','.HHHHppppHHHH...','HHHpGGGGGpHHH...','.HHpGGGGGGGpHH..','..HGGGGGGGGGGH..','..HHGGGGGGGGHH..','....HHHGGHHH....','...HH....HH.....','..HHH....HHH....','..KKK....KKK....']},{id:'D',nom:'CAPE DOUBLEE ROUGE',desc:'Une cape d\'opera encadre tout le corps, avec sa doublure rouge visible en liseré a l\'interieur. C\'est de loin la silhouette la plus large et la plus theatrale ; en contrepartie elle mange les bras, donc les poses de course se lisent moins bien.',corps:['.....HHrrHH.....','HRHHHppppHHHRH..','HRHpppppppppRH..','HRHpppppppppRH..','HRHHRRRRRRRRHRH.','HRHHHHHHHHHHRH..','HRHHHHppHHHHRH..','HR.HH....HH.RH..','HR.HHH..HHH.RH..','..KKK....KKK....']},{id:'E',nom:'NOEUD PAPILLON GEANT',desc:'Costume noir integral, sans plastron ouvert : tout le costume se resume a un noeud papillon rouge surdimensionne au col. C\'est le plus graphique et le plus lisible de loin ; mais un corps presque tout noir se fond davantage dans le fond du terrain.',corps:['....HrrrrrrH....','..HHHHHHHHHHHH..','.HHHHHHppHHHHH..','.HHHHHpppHHHHH..','..HHHHHHHHHHHH..','...HHHHHHHHHH...','....HHHppHHH....','...HH....HH.....','..HHH....HHH....','..KKK....KKK....']}]}]}];
+const A_VENIR = [{id:'ninja',nom:'NINJA'},{id:'cowboy',nom:'COWBOY'},{id:'halloween',nom:'HALLOWEEN'}];
+
+
+let skin = SKINS[0];
+
+/* ===================== LE DESSIN ===================== */
+function peindre(g, rows, pal, ech, ox, oy, zone) {
+  const [x0, y0, x1, y1] = zone || [0, 0, 15, 19];
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const ch = rows[y][x];
+      if (ch === '.' || !pal[ch]) continue;
+      g.fillStyle = pal[ch];
+      g.fillRect(ox + (x - x0) * ech, oy + (y - y0) * ech, ech, ech);
+    }
+  }
+}
+
+function fond(g, W, H) {
+  const d = g.createLinearGradient(0, 0, 0, H);
+  d.addColorStop(0, '#132a1d'); d.addColorStop(1, '#08130d');
+  g.fillStyle = d; g.fillRect(0, 0, W, H);
+}
+
+/* ===================== L'ETAT ===================== */
+const choix = {};
+skin.sections.forEach(s => { choix[s.id] = s.variantes[0].id; });
+const actuel = id => skin.sections.find(s => s.id === id).variantes.find(x => x.id === choix[id]);
+
+function batir(remplace) {
+  let tete = skin.tete, corps = skin.corps;
+  for (const s of skin.sections) {
+    const va = (remplace && remplace.sec === s.id) ? remplace.va : actuel(s.id);
+    if (va.tete) tete = va.tete;
+    if (va.corps) corps = va.corps;
+  }
+  // La retouche de l'editeur ne s'applique qu'au perso ASSEMBLE, jamais aux
+  // cartes : une carte doit montrer SA variante, sinon on choisit a l'aveugle.
+  let rows = [...tete, ...corps];
+  if (!remplace && ed && ed.actif()) rows = ed.rows();
+  return { rows, pal: PAL };
+}
+
+let ed = null;
+
+/* ===================== LES ONGLETS ===================== */
+(function onglets() {
+  const h = document.getElementById('onglets');
+  SKINS.forEach(sk => {
+    const b = document.createElement('button');
+    b.className = 'onglet' + (sk.id === skin.id ? ' on' : '');
+    b.textContent = sk.nom;
+    b.onclick = () => { skin = sk; location.reload(); };
+    h.append(b);
+  });
+  A_VENIR.forEach(sk => {
+    const b = document.createElement('button');
+    b.className = 'onglet mort';
+    b.textContent = sk.nom + ' — a venir';
+    b.title = 'On fait un skin a la fois : celui-ci arrive quand le precedent est valide.';
+    h.append(b);
+  });
+})();
+
+/* ===================== L'EDITEUR ===================== */
+styleEditeur();
+ed = editeur({
+  hote: document.getElementById('editeur'),
+  cle: 'jingle-' + skin.id,
+  rows: () => batir().rows,
+  pal: () => PAL,
+  change: () => rafraichir()
+});
+
+/* ===================== L'APERCU ===================== */
+const gG = document.getElementById('cvGrand').getContext('2d');
+const gP = document.getElementById('cvPetit').getContext('2d');
+const ARENE = MAPS[0], TH = ARENE.theme;
+
+function majApercu() {
+  const { rows, pal } = batir();
+  const cv = gG.canvas;
+  fond(gG, cv.width, cv.height);
+  const ech = 19;
+  peindre(gG, rows, pal, ech, (cv.width - 16 * ech) / 2, (cv.height - 20 * ech) / 2);
+
+  const c2 = gP.canvas;
+  gP.fillStyle = TH.floor; gP.fillRect(0, 0, c2.width, c2.height);
+  gP.strokeStyle = TH.line; gP.lineWidth = 1;
+  gP.beginPath(); gP.moveTo(0, c2.height - 14); gP.lineTo(c2.width, c2.height - 14); gP.stroke();
+  for (let i = 0; i < 3; i++) peindre(gP, rows, pal, 4.8, 14 + i * 74, c2.height - 14 - 20 * 4.8);
+
+  majChoix();
+}
+
+function majChoix() {
+  document.getElementById('choix').innerHTML =
+    skin.sections.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value =
+    skin.nom + ' : ' + skin.sections.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+  document.getElementById('resume').innerHTML =
+    '<b>' + skin.nom + '</b><br>' + skin.accroche + '<br><br>' +
+    skin.sections.map(s => {
+      const va = actuel(s.id);
+      return s.titre.replace(/^\d+ · /, '') + ' — <b>' + va.id + ' · ' + va.nom + '</b>';
+    }).join('<br>');
+}
+
+/* ===================== LES CARTES ===================== */
+const cartes = [];
+function dessinerCarte(o) {
+  const { rows, pal } = batir({ sec: o.sec.id, va: o.va });
+  const gc = o.plein.getContext('2d');
+  fond(gc, o.plein.width, o.plein.height);
+  peindre(gc, rows, pal, o.zoom ? 4 : 8, 0, 0);
+  if (!o.zoom) return;
+  const gz = o.zoom.getContext('2d');
+  fond(gz, o.zoom.width, o.zoom.height);
+  const z = o.sec.zoom;
+  peindre(gz, rows, pal, o.zoom.width / (z[2] - z[0] + 1), 0, 0, z);
+}
+
+const boite = document.getElementById('sections');
+skin.sections.forEach(sec => {
+  const h2 = document.createElement('h2');
+  h2.textContent = sec.titre;
+  const note = document.createElement('p');
+  note.className = 'note'; note.textContent = sec.note;
+  boite.append(h2, note);
+
+  const row = document.createElement('div');
+  row.className = 'row';
+  sec.variantes.forEach(va => {
+    const card = document.createElement('div');
+    card.className = 'card' + (choix[sec.id] === va.id ? ' on' : '');
+    card.dataset.sec = sec.id; card.dataset.va = va.id;
+    const lbl = document.createElement('div');
+    lbl.className = 'lbl';
+    lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + va.desc;
+    // LE GROS PLAN EST LE DESSIN PRINCIPAL, le perso entier n'est qu'une
+    // vignette a cote : ce qui change tient dans dix lignes de pixels, et se
+    // noierait au milieu de tout le personnage.
+    const duo = document.createElement('div'); duo.className = 'duo';
+    let zoom = null;
+    if (sec.zoom) {
+      const z = sec.zoom, zw = z[2] - z[0] + 1, zh = z[3] - z[1] + 1;
+      const ez = Math.min(15, Math.floor(168 / zw), Math.floor(168 / zh));
+      zoom = document.createElement('canvas');
+      zoom.className = 'zoom'; zoom.width = zw * ez; zoom.height = zh * ez;
+      duo.append(zoom);
+    }
+    const plein = document.createElement('canvas');
+    plein.className = 'plein';
+    plein.width = sec.zoom ? 16 * 4 : 16 * 8;
+    plein.height = sec.zoom ? 20 * 4 : 20 * 8;
+    duo.append(plein);
+    card.append(lbl, duo);
+    card.onclick = () => {
+      choix[sec.id] = va.id;
+      document.querySelectorAll('.card[data-sec="' + sec.id + '"]')
+        .forEach(c => c.classList.toggle('on', c.dataset.va === va.id));
+      rafraichir();
+    };
+    row.append(card);
+    cartes.push({ plein, zoom, sec, va });
+  });
+  boite.append(row);
+});
+
+function rafraichir() {
+  majApercu();
+  if (ed) ed.maj();
+  cartes.forEach(o => { if (o.plein.offsetParent) dessinerCarte(o); });
+}
+
+document.getElementById('btnCopier').onclick = async () => {
+  const b = document.getElementById('btnCopier');
+  try {
+    await navigator.clipboard.writeText(document.getElementById('codeChoix').value);
+    b.textContent = 'copié !'; b.classList.add('ok');
+    setTimeout(() => { b.textContent = 'copier mes choix'; b.classList.remove('ok'); }, 1400);
+  } catch (e) { document.getElementById('codeChoix').select(); }
+};
+
+/* --- La bande du roster, a l'echelle du match --- */
+(function bande() {
+  const hote = document.getElementById('rosterRow');
+  const ajoute = (dessine, nom) => {
+    const d = document.createElement('div'); d.className = 'rosterOne';
+    const cv = document.createElement('canvas');
+    cv.width = 16 * 4.2; cv.height = 20 * 4.2;
+    const g = cv.getContext('2d');
+    g.fillStyle = TH.floor; g.fillRect(0, 0, cv.width, cv.height);
+    dessine(g, cv);
+    const e = document.createElement('em'); e.style.fontStyle = 'normal'; e.textContent = nom;
+    d.append(cv, e); hote.append(d);
+  };
+  const moi = batir();
+  ajoute(g => peindre(g, moi.rows, moi.pal, 4.2, 0, 0), skin.nom.split(' ')[0]);
+  // Le Jingle d'origine juste a cote : c'est LUI que la tenue doit encore
+  // evoquer, sinon ce n'est plus un skin mais un autre personnage.
+  ajoute(g => peindre(g, [...BASE.tete, ...BASE.corps], PAL, 4.2, 0, 0), 'PÔLE NORD');
+  for (const ck of ROSTER) {
+    const c = CHARS[ck];
+    ajoute((g, cv) => { g.imageSmoothingEnabled = false; g.drawImage(c.frames.idle, 0, 0, cv.width, cv.height); },
+           c.short || c.name);
+  }
+})();
+
+/* --- Le module de controle partage --- */
+const PERSO = { pal: PAL, tete: skin.tete, corps: skin.corps, dominante: skin.dominante };
+afficher(verifier({ id: 'jingle', PERSO, SECTIONS: skin.sections,
+                    options: { variantesAttendues: 5 } }), document.getElementById('errs'));
+
+rafraichir();
+</script>
+</body>
+</html>

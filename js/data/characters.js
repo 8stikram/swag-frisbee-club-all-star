@@ -100,6 +100,82 @@ const J_DIVE_B = ["....rvrvrv......", "..SVvRVVRvVSS...", "..SVvVVVVvVSSS..", ".
 const J_DASH_B = ["....rvrvrv......", "SSSVvVVRRvVR....", "SSSVvVVVVvVR....", "..RlvVVVVvlR....", "..rrlSssSlrr....", "..rRRlsSlRRr....", "..RRRRllRR......", "..SS..SS........", ".SS..SS.........", "GSS.GSS........."];
 
 // ---------------------------------------------------------------------------
+// Skins de Jingle Bells. Chez lui la tête n'est pas un visage mais une
+// cloche qui lévite au-dessus des épaules — donc un skin de Jingle ne
+// recolore pas une tête fixe comme chez Naruto, il change littéralement ce
+// qu'est cette tête : un haut-de-forme, une cagoule, un chapeau de cowboy,
+// une citrouille. La tête change par skin (comme chez Leon) mais le corps
+// réutilise les poses d'origine (J_RUN1_B etc.) simplement reteintées :
+// l'écharpe/cape de Noël devient jacquette, gi, poncho ou robe élimée selon
+// la même charpente de bras qui balancent.
+//   Smoking  — costume trois pièces, la cloche laisse place au haut-de-forme.
+//   Ninja    — cagoule pointue et gi sombre, bandeau rouge en guise de rappel.
+//   Cowboy   — chapeau à larges bords, foulard rouge et poncho.
+//   Halloween — citrouille sculptée sur une robe de faucheuse élimée.
+// ---------------------------------------------------------------------------
+const PAL_SKINS_J = {
+  ...PAL_J,
+  H: '#17171b', h: '#0a0a0d', P: '#f2f0ea', p: '#c9c6bd', L: '#2a2a33',
+  N: '#232833', n: '#14171d', T: '#3a4150',
+  C: '#8a5a2e', c: '#5e3c1c', E: '#d9b56a',
+  O: '#e0711f', o: '#a8480f', Q: '#3a2245', q: '#221328', F: '#3fae70'
+};
+
+const SKINS_J = {
+  smoking: {
+    // Le haut-de-forme reprend la silhouette évasée de la cloche (col.3-10
+    // à la base), pour rester reconnaissable en un coup d'œil malgré le
+    // changement de forme. Bande rouge en clin d'œil au ruban de Noël.
+    // Le sommet du haut-de-forme (lignes 0-6) était décalé d'un pixel à
+    // droite par rapport à sa propre bordure de rebord (ligne 7-8) : le
+    // chapeau semblait posé de travers. Recentré sur le même axe.
+    tete: [".....HHHH.......", ".....HLLh.......", ".....HLLh.......", ".....HLLh.......", ".....HLLh.......", "....hHHHHh......", "...hRRRRRRh.....", "..HHHHHHHHHH....", "..HhHHHHHHhH....", "..PPPPPPPPPP...."],
+    // Le veston doit rester visible en large sur les épaules — l'ancienne
+    // version ne laissait qu'un liseré de 2px et se lisait comme une
+    // chemise blanche toute seule. Le plastron blanc s'ouvre en V, étroit
+    // en haut et large à la ceinture, comme un vrai revers de smoking.
+    idle: [".....HHrrHH.....", ".HHHHppppHHHH...", "HHHpppppppHHH...", ".HHpppppppppHH..", "..HHRRRRRRRRHH..", "...HHHHHHHHHH...", "....HHHppHHH....", "...HH....HH.....", "..HHH....HHH....", "..KKK....KKK...."],
+    // Écharpe et cape (r/v) → veston noir, plastron (R/V/l) → chemise blanche,
+    // plaque d'acier (S/s) → veston. Le petit fermoir doré (G) reste tel quel :
+    // c'est le bouton de manchette.
+    teinte: { r: 'H', v: 'h', R: 'p', V: 'P', l: 'p', S: 'H', s: 'h' }
+  },
+  ninja: {
+    tete: ["......NN........", ".....NnNn.......", ".....NNNn.......", "....NNNNnn......", "....NNNNnT......", "...NNNNNnnT.....", "...RRRRRRRRR....", "..nNNNNNnnnT....", "..TnNNNnnnTn....", "..NnNnNnNnNn...."],
+    idle: ["....nTnTnT......", "..TNnNNNNnNT....", ".TTNnNNNNnNTT...", ".TTnNNNNNNnTT...", "..RRTNnnNTRR....", "..RNNTnnTNNR....", "...NNNNnnNNNN...", "...NN....NN.....", "..NNN....NNN....", "..KKK....KKK...."],
+    // Le bandeau rouge (R) reste rouge d'un skin à l'autre — c'est le seul
+    // repère de couleur chaude sur une silhouette autrement toute en gris sombre.
+    teinte: { r: 'N', v: 'n', V: 'T', l: 'T', S: 'N', s: 'n', G: 'R' }
+  },
+  cowboy: {
+    tete: ["......CC........", ".....CEEc.......", ".....CCCc.......", "....CCCCcc......", "....CCCCcE......", "...EEEEEEEEE....", "..CCCCCCCCCCCC..", ".cCCCCCCCCCCc...", "..cCCCCCCCCc....", "..RrRrRrRrRr...."],
+    idle: ["....rCrCrC......", "..CCEEEEEECC....", ".CCCEEEEEECCC...", ".CCCcEEEEcCCC...", "..RRccccccRR....", "..RccGGccRR.....", "...CCCcccCCC....", "...CC....CC.....", "..CCC....CCC....", "..KGK....KGK...."],
+    // L'or (G) reste l'or de la boucle de ceinturon et des éperons : seul
+    // détail qui ne bascule pas dans le marron du poncho.
+    teinte: { r: 'C', v: 'c', R: 'E', V: 'E', l: 'E', S: 'C', s: 'c' }
+  },
+  halloween: {
+    tete: ["......FO........", ".....OoOo.......", ".....OOOo.......", "....OKOOKo......", "....OOOOOo......", "...OKOKOKOo.....", "...OOOOOOOOo....", "..oOOOOOOOOo....", "..oOOOOOOOoo....", "..QqQqQqQqQq...."],
+    idle: ["....qQqQqQ......", "..QQqqqqqqQQ....", ".QQQqqqqqqQQQ...", ".QQQQqqqqQQQQ...", "..qqQQQQQQqq....", "..qQQQQQQqq.....", "...QQQqqqQQQ....", "..QQ....QQ......", ".QQQ....QQQ.....", "Q.QQ....QQ.Q...."],
+    // Tout bascule dans le violet-noir de la robe : sur une silhouette de
+    // faucheuse, un accent doré ou rouge qui swingue au bras aurait cassé le
+    // silence visuel du costume.
+    teinte: { r: 'q', v: 'q', R: 'Q', V: 'Q', l: 'Q', S: 'Q', s: 'q', G: 'Q' }
+  }
+};
+
+// Construit les six poses d'un skin de Jingle : tête et idle dessinés à la
+// main, le reste des poses reprend les silhouettes d'origine reteintées.
+function construireSkinJ(s) {
+  const corps = { run1: J_RUN1_B, run2: J_RUN2_B, throw: J_THROW_B, dive: J_DIVE_B, dash: J_DASH_B };
+  const out = { idle: buildSprite([...s.tete, ...s.idle], PAL_SKINS_J) };
+  for (const [nom, base] of Object.entries(corps)) {
+    out[nom] = buildSprite([...s.tete, ...teinter(base, s.teinte)], PAL_SKINS_J);
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Mamie Trayette. Une grand-mère vétérane en treillis, pas une mamie en
 // cardigan : le premier jet (cape rouge pointue sur bloc blanc) se lisait
 // comme un costume de super-héros, d'où la silhouette arrondie et le vert
@@ -739,6 +815,13 @@ export const CHARS = {
       dash: buildSprite([...J_HEAD, ...J_DASH_B], PAL_J)
       // Sa tête qui lévite n'a pas besoin de frame dédiée : le rendu découpe
       // directement la pose courante entre la cloche et les épaules.
+    },
+    skins: {
+      polenord: null,           // rempli plus bas : c'est `frames` lui-même
+      smoking: construireSkinJ(SKINS_J.smoking),
+      ninja: construireSkinJ(SKINS_J.ninja),
+      cowboy: construireSkinJ(SKINS_J.cowboy),
+      halloween: construireSkinJ(SKINS_J.halloween)
     }
   },
 
@@ -927,6 +1010,7 @@ export function portraitURL(ck) {
 // les sprites de base, ce qui évite de les dupliquer.
 CHARS.naruto.skins.shippuden = CHARS.naruto.frames;
 CHARS.leon.skins.rpd = CHARS.leon.frames;
+CHARS.jingle.skins.polenord = CHARS.jingle.frames;
 CHARS.yoshi.skins.vert = CHARS.yoshi.frames;
 CHARS.hollis.skins.platine = CHARS.hollis.frames;
 CHARS.flowser.skins.psychique = CHARS.flowser.frames;
