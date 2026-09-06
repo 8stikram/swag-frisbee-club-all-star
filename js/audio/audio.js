@@ -311,6 +311,20 @@ export function sfx(n, venuDuReseau) {
       noise(.18, .085, 3200);
       noise(.24, .07, 1150, .07);
       break;
+    // --- Roulette -----------------------------------------------------------
+    // Le jeton qu'on pose : un claquement mat sur le feutre, pas un clic d'UI.
+    case 'rlJeton': noise(.05, .1, 1800); beep(320, 190, .05, 'triangle', .05); break;
+    // Le cliquetis de la bille sur les séparations. Très court et très haut : il
+    // en passe des dizaines par lancer, et le moindre corps le rendrait
+    // insupportable au bout de trois tours.
+    case 'rlTic': noise(.014, .05, 6500); break;
+    // La bille qui tombe dans sa case : le cliquetis s'arrête net, un timbre
+    // reste. C'est ce silence soudain qui fait le résultat, pas le timbre.
+    case 'rlChute':
+      noise(.06, .14, 2600);
+      beep(1320, 990, .3, 'sine', .1, .02);
+      beep(1980, 1480, .2, 'sine', .045, .05);
+      break;
     // Clic de mécanisme qui se ferme : très court, très sec, un peu métallique.
     case 'bjClic':
       noise(.03, .13, 5000);

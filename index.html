@@ -725,6 +725,63 @@
       </div>
     </div>
   </div>
+
+  <!-- ============ ROULETTE ============
+       Même arrière-salle que le blackjack et le poker. La roue est un canvas
+       (trente-huit secteurs redessinés à chaque image), le tapis du DOM : ses
+       cases doivent être cliquables, et les chevaux, carrés et sixains se
+       jouent sur les ARÊTES entre elles. -->
+  <div class="screen scr-roulette hidden" id="scr-roulette">
+    <div class="bg bjFond" aria-hidden="true">
+      <div class="casFondCouleur"></div>
+      <div class="casSceaux bjSceaux" id="rlSceaux"></div>
+      <div class="casFumee bjFumee"><i></i><i></i><i></i><i></i></div>
+      <div class="bjBraises"></div>
+      <div class="bjLustre"></div>
+      <div class="casVignette"></div>
+      <div class="casScanlines"></div>
+      <div class="casGrain"></div>
+    </div>
+
+    <div class="titlebar"><span>ROULETTE</span></div>
+    <div class="bjSolde" id="rlSolde" title="Tes pièces">
+      <span class="bjPiece"></span><b id="rlSoldeVal">0</b>
+    </div>
+
+    <canvas class="rlRoue" id="rlRoue" aria-hidden="true"></canvas>
+
+    <!-- Les dix derniers numéros tombés. C'est de la superstition pure — chaque
+         tirage est indépendant — mais une table sans historique n'a pas l'air
+         d'une table. -->
+    <div class="rlHistorique" id="rlHistorique" aria-hidden="true"></div>
+
+    <div class="rlTapis">
+      <div class="bjGrain"></div>
+      <div class="casSceau bjSceauTapis" id="rlSceauTapis"></div>
+      <div class="rlPlateau">
+        <div class="rlZeros" id="rlZeros"></div>
+        <div class="rlCorps">
+          <div class="rlDouzaines" id="rlDouzaines"></div>
+          <div class="rlGrille" id="rlGrille"></div>
+          <div class="rlSimples" id="rlSimples"></div>
+        </div>
+        <div class="rlColonnes" id="rlColonnes"></div>
+      </div>
+    </div>
+
+    <div class="rlAnnonce hidden" id="rlAnnonce"></div>
+
+    <div class="rlBarre">
+      <div class="rlJetons" id="rlJetons"></div>
+      <div class="rlTotalBloc">MISE <b id="rlTotal">0</b></div>
+      <button class="bjBtn vert" id="rlLancer" disabled>LANCER</button>
+      <button class="bjBtn bleu" id="rlRejouer" disabled>REJOUER</button>
+      <button class="bjBtn bleu" id="rlDoubler" disabled>DOUBLER</button>
+      <button class="bjBtn rouge" id="rlEffacer" disabled>EFFACER</button>
+    </div>
+
+    <div class="bjMsg hidden" id="rlMsg"></div>
+  </div>
   <!-- ============ SÉLECTION DES PERSONNAGES ============ -->
   <div class="screen scr-select hidden" id="scr-select">
     <div class="bg bg-select">

@@ -87,7 +87,7 @@ const ICONES = {
 // ici, et il n'y a pas de filet. Savoir à quoi on s'engage prime.
 const JEUX = [
   { id: 'blackjack', nom: 'BLACKJACK', desc: 'Six jeux mélangés. Le croupier tire jusqu\'à 17.' },
-  { id: 'roulette', nom: 'ROULETTE', desc: 'Européenne, un seul zéro. Tapis complet.' },
+  { id: 'roulette', nom: 'ROULETTE', desc: 'Américaine, zéro et double zéro. Tapis complet.' },
   { id: 'poker', nom: 'POKER', desc: 'Texas Hold\'em en tête-à-tête contre la maison.' },
   { id: 'caisses', nom: 'CASE OPENING', desc: 'Tenues et dos de cartes, tirés au sort.' }
 ];
@@ -561,6 +561,11 @@ async function ouvrirJeu(jeu) {
   if (jeu.id === 'poker') {
     const { ouvrirPoker } = await import('./poker.js');
     ouvrirPoker();
+    return;
+  }
+  if (jeu.id === 'roulette') {
+    const { ouvrirRoulette } = await import('./roulette.js');
+    ouvrirRoulette();
     return;
   }
   message(jeu.nom + ' — pas encore ouvert. Le diable finit d\'installer la table.');

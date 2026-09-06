@@ -20,7 +20,8 @@ export const SCREENS = {
   title: 'scr-title', select: 'scr-select', maps: 'scr-maps', options: 'scr-options',
   pause: 'scr-pause', over: 'scr-over',
   learn: 'scr-learn', firstrun: 'scr-firstrun', chap: 'scr-chap', online: 'scr-online',
-  casino: 'scr-casino', blackjack: 'scr-blackjack', poker: 'scr-poker'
+  casino: 'scr-casino', blackjack: 'scr-blackjack', poker: 'scr-poker',
+  roulette: 'scr-roulette'
 };
 
 export let curScreen = 'title';

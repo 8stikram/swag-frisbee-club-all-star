@@ -3301,3 +3301,229 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   color:#f6e27a;font-family:'Russo One',sans-serif;font-size:clamp(10px,2cqh,17px);line-height:1;
 }
 .pkFermer:hover{background:#4a1020;color:#fff3c2}
+
+/* ================= ROULETTE =================
+   Même salle, même feutre, mêmes jetons que le blackjack et le poker. Ce qui
+   est propre à la roulette : la roue, le tapis de mises et ses arêtes.
+
+   Budget vertical, sur 100cqh : barre du haut 8, roue 32, tapis 42, commandes
+   16. Ça ne rentre qu'en posant la roue à cheval sur le haut du tapis plutôt
+   qu'en lui donnant son propre bandeau. */
+.scr-roulette .titlebar{background:#5a1018;border-color:#1a0a02}
+.scr-roulette .titlebar span{color:#f6e27a;-webkit-text-stroke:4px #1a0a02}
+
+.rlRoue{
+  position:absolute;left:50%;top:7cqh;width:33cqh;height:33cqh;
+  transform:translateX(-50%);z-index:4;pointer-events:none;
+}
+
+/* L'historique : de la superstition pure — chaque tirage est indépendant — mais
+   une table sans historique n'a pas l'air d'une table. */
+.rlHistorique{
+  position:absolute;top:10cqh;right:3cqw;z-index:6;
+  display:flex;flex-direction:column;flex-wrap:wrap;
+  align-content:flex-end;gap:.5cqh;max-height:26cqh;
+}
+.rlHisto{
+  width:4.4cqh;height:4.4cqh;border-radius:50%;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Russo One',sans-serif;font-size:clamp(7px,1.6cqh,13px);color:#fff;
+  border:.2cqh solid #d4af37;box-shadow:0 .2cqh .5cqh rgba(0,0,0,.7);
+  text-shadow:0 .2cqh 0 rgba(0,0,0,.9);
+}
+.rlHisto.rouge{background:#8c1222}
+.rlHisto.noir{background:#15151c}
+.rlHisto.vert{background:#0b6038}
+
+/* --- Le tapis --- */
+.rlTapis{
+  position:absolute;left:50%;top:40cqh;transform:translateX(-50%);
+  width:86cqw;height:42cqh;z-index:3;border-radius:2.4cqh;overflow:hidden;
+  background:radial-gradient(58% 62% at 50% 40%, #17603a 0%, #114a2c 34%, #0a2a1a 76%, #061a10 100%);
+  border:max(4px, .55cqh) solid #d4af37;
+  box-shadow:inset 0 0 8cqh rgba(0,0,0,.66), 0 2cqh 5cqh rgba(0,0,0,.78),
+             0 0 4cqh rgba(212,175,55,.3);
+}
+.rlPlateau{
+  position:absolute;inset:1.4cqh 1.4cqw;z-index:2;
+  display:grid;grid-template-columns:5cqw 1fr 7cqw;gap:.5cqw;
+}
+.rlCorps{display:grid;grid-template-rows:5.6cqh 1fr 5.6cqh;gap:.6cqh}
+.rlGrille{
+  display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(3,1fr);
+  gap:.4cqh .2cqw;
+}
+/* Le zéro, le double zéro et les colonnes s'alignent sur la GRILLE, pas sur la
+   colonne entière : sans ces marges ils déborderaient sous les douzaines et
+   par-dessus les chances simples. */
+.rlZeros, .rlColonnes{display:flex;flex-direction:column;gap:.4cqh;padding:6.2cqh 0}
+.rlZeros .rlNum, .rlColonnes .rlExterne{flex:1}
+.rlDouzaines{display:grid;grid-template-columns:repeat(3,1fr);gap:.2cqw}
+.rlSimples{display:grid;grid-template-columns:repeat(6,1fr);gap:.2cqw}
+
+.rlNum, .rlExterne{
+  position:relative;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Russo One',sans-serif;font-size:clamp(7px,1.9cqh,15px);
+  color:#fdf6e0;border:1px solid rgba(212,175,55,.45);border-radius:3px;
+  text-shadow:0 .2cqh 0 rgba(0,0,0,.9);
+  transition:box-shadow .12s, filter .12s;
+}
+.rlNum.rouge{background:linear-gradient(180deg,#a01828,#6d0d18)}
+.rlNum.noir{background:linear-gradient(180deg,#22222c,#0d0d12)}
+.rlNum.vert{background:linear-gradient(180deg,#0e7a46,#063d22)}
+.rlExterne{background:rgba(8,26,16,.5);font-size:clamp(6px,1.5cqh,12px);letter-spacing:.06em}
+.rlExterne.rouge{background:linear-gradient(180deg,#a01828,#6d0d18)}
+.rlExterne.noir{background:linear-gradient(180deg,#22222c,#0d0d12)}
+.rlNum:hover, .rlExterne:hover{
+  filter:brightness(1.35);
+  box-shadow:inset 0 0 0 1px #f6e27a, 0 0 1.6cqh rgba(246,226,122,.75);
+}
+
+/* --- Les arêtes -----------------------------------------------------------
+   Un cheval se joue à cheval sur deux cases, un carré sur le coin où quatre se
+   touchent. Ce sont donc de vraies zones posées sur les bords, et pas des
+   boutons « cheval 17-18 » dans une liste : personne ne mise de cette
+   façon-là. Elles restent invisibles tant qu'on ne les survole pas — allumées
+   en permanence, elles couvriraient le tapis d'un quadrillage. */
+.rlArete{
+  position:absolute;z-index:3;background:transparent;border:0;border-radius:2px;
+  transition:background .1s, box-shadow .1s;
+}
+.rlArete:hover{background:rgba(246,226,122,.55);box-shadow:0 0 1.4cqh rgba(246,226,122,.9)}
+.rlArete.droite{right:-14%;top:14%;width:28%;height:72%}
+.rlArete.basse{bottom:-16%;left:14%;height:32%;width:72%}
+.rlArete.coin{right:-14%;bottom:-16%;width:28%;height:32%}
+.rlArete.dessous{bottom:-32%;left:18%;height:30%;width:64%}
+.rlArete.coinBas{right:-14%;bottom:-32%;width:28%;height:30%}
+
+/* La pastille de mise, posée sur la case. Elle porte le total : empiler des
+   disques serait plus joli et illisible dès trois jetons. */
+.rlPastille{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;
+  min-width:3.4cqh;height:3.4cqh;padding:0 .3cqw;border-radius:999px;
+  display:flex;align-items:center;justify-content:center;pointer-events:none;
+  font-family:'Russo One',sans-serif;font-size:clamp(6px,1.4cqh,11px);
+  background:radial-gradient(circle at 50% 34%, #3a1a2e 0%, #120610 70%);
+  border:.22cqh solid #f6e27a;color:#ffdf7a;
+  box-shadow:0 .2cqh .5cqh rgba(0,0,0,.8), 0 0 1.2cqh rgba(246,226,122,.7);
+}
+.rlNum.gagnante, .rlExterne.gagnante, .rlArete.gagnante{
+  box-shadow:inset 0 0 0 2px #ffe873, 0 0 2.6cqh rgba(255,214,90,.95) !important;
+  animation:rlGagnante .5s ease-in-out 3;
+}
+@keyframes rlGagnante{0%,100%{filter:brightness(1)}50%{filter:brightness(1.6)}}
+.rlNum.perdante, .rlExterne.perdante{filter:grayscale(.7) brightness(.5);transition:filter .5s}
+/* La case tombée s'allume sur le tapis comme sur la roue : c'est le même
+   numéro, il doit être trouvé des deux côtés sans le chercher. */
+.rlNum.tombe{
+  box-shadow:inset 0 0 0 2px #fff6c2, 0 0 3cqh rgba(255,240,180,1) !important;
+  animation:rlTombe .45s ease-out 4;
+}
+@keyframes rlTombe{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+
+/* --- Commandes --- */
+.rlBarre{
+  position:absolute;left:0;right:0;bottom:1.4cqh;z-index:7;
+  display:flex;align-items:center;justify-content:center;gap:1cqw;flex-wrap:wrap;
+  padding:0 2cqw;
+}
+.rlJetons{display:flex;gap:.7cqw}
+.rlJeton{
+  position:relative;width:7.2cqh;height:7.2cqh;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Russo One',sans-serif;font-size:clamp(7px,1.7cqh,14px);
+  color:var(--teinte);border:.34cqh solid var(--teinte);
+  background:radial-gradient(circle at 50% 32%, rgba(255,255,255,.14) 0%, transparent 44%),
+             radial-gradient(circle at 50% 50%, #241028 0%, #120610 62%, #08040a 100%);
+  box-shadow:0 .4cqh .8cqh rgba(0,0,0,.7), inset 0 0 1.4cqh rgba(0,0,0,.75);
+  text-shadow:0 0 .8cqh currentColor;
+  transition:transform .12s, box-shadow .12s;
+}
+.rlJeton::before{
+  content:'';position:absolute;inset:.8cqh;border-radius:50%;
+  border:.4cqh dashed color-mix(in srgb, var(--teinte) 55%, transparent);
+}
+.rlJeton b{position:relative;z-index:2}
+.rlJeton:hover{transform:translateY(-.8cqh)}
+/* Le jeton choisi sort de la rangée. Une simple bordure plus claire se perd au
+   milieu de cinq disques qui brillent déjà. */
+.rlJeton.choisi{
+  transform:translateY(-1.4cqh) scale(1.1);
+  box-shadow:0 .6cqh 1.2cqh rgba(0,0,0,.75), 0 0 2.4cqh var(--teinte);
+}
+.rlTotalBloc{
+  display:flex;align-items:center;gap:.6cqw;padding:.8cqh 1.2cqw;border-radius:10px;
+  font-family:'Russo One',sans-serif;font-size:clamp(7px,1.5cqh,12px);
+  color:#c9ac72;letter-spacing:.12em;
+  background:linear-gradient(165deg,#1e0c16,#0a0409);border:max(2px,.3cqh) solid #d4af37;
+}
+.rlTotalBloc b{
+  font-size:clamp(11px,2.4cqh,20px);color:#ffdf7a;
+  text-shadow:0 .3cqh 0 rgba(0,0,0,.95), 0 0 1.2cqh rgba(255,200,60,.7);
+}
+.scr-roulette .bjBtn{min-width:9cqw;padding:1.4cqh 1.2cqw;font-size:clamp(8px,1.9cqh,16px)}
+
+/* --- L'annonce --- */
+.rlAnnonce{
+  position:absolute;left:50%;top:33cqh;transform:translate(-50%,-50%);z-index:9;
+  display:flex;flex-direction:column;align-items:center;gap:.4cqh;
+  pointer-events:none;animation:bjFinPop .5s cubic-bezier(.2,1.6,.35,1);
+}
+.rlAnnonce b{
+  font-family:'Archivo Black',sans-serif;font-size:clamp(18px,6.4cqh,52px);
+  -webkit-text-stroke:.55cqh #1a0a02;paint-order:stroke fill;
+  text-shadow:0 .6cqh 1.2cqh rgba(0,0,0,.95);
+}
+.rlAnnonce em{
+  font-family:'Russo One',sans-serif;font-style:normal;
+  font-size:clamp(10px,2.6cqh,22px);color:#ffdf7a;letter-spacing:.06em;
+  text-shadow:0 .3cqh 0 rgba(0,0,0,.95);
+}
+.rlAnnonce.rouge b{color:#ff6a6a;text-shadow:0 0 3cqh rgba(255,40,30,.9), 0 .6cqh 1.2cqh rgba(0,0,0,.95)}
+.rlAnnonce.noir b{color:#fdf6e0;text-shadow:0 0 3cqh rgba(0,0,0,.95), 0 .6cqh 1.2cqh rgba(0,0,0,.95)}
+.rlAnnonce.vert b{color:#7bff9d;text-shadow:0 0 3cqh rgba(60,255,140,.85), 0 .6cqh 1.2cqh rgba(0,0,0,.95)}
+.rlAnnonce.jackpot b{
+  font-size:clamp(22px,8.4cqh,70px);
+  animation:bjJackpotEntre .7s cubic-bezier(.15,1.1,.3,1.4);
+}
+
+/* --- Deux états, une seule table ------------------------------------------
+   Sur un écran plus large que haut, la roue et le tapis ne peuvent pas être
+   grands en même temps : à se partager la hauteur, ils finissent tous les deux
+   trop petits pour être lus. Alors ils se la passent. Pendant le lancer, la
+   roue prend soixante-quatre pour cent de la hauteur et le tapis s'efface ;
+   dès que le numéro est lu, le tapis revient et la case gagnante s'allume. */
+.rlRoue{
+  transition:width .55s cubic-bezier(.2,.85,.3,1), height .55s cubic-bezier(.2,.85,.3,1),
+             top .55s cubic-bezier(.2,.85,.3,1);
+}
+.scr-roulette.lance .rlRoue{width:66cqh;height:66cqh;top:15cqh}
+
+.rlTapis{transition:transform .5s ease, opacity .45s ease, filter .45s ease}
+.scr-roulette.lance .rlTapis{
+  opacity:.16;filter:blur(2px) saturate(.5);
+  transform:translateX(-50%) scale(.93);
+}
+.rlBarre{transition:opacity .4s ease}
+.scr-roulette.lance .rlBarre{opacity:.2;pointer-events:none}
+.rlHistorique{transition:opacity .4s ease}
+.scr-roulette.lance .rlHistorique{opacity:.35}
+
+/* L'annonce se pose au centre, c'est-à-dire sur le moyeu de la grande roue —
+   le seul endroit vide du plateau, et exactement là où l'œil suit la bille. */
+.rlAnnonce{top:48cqh}
+.rlAnnonce b{font-size:clamp(20px,7.4cqh,62px)}
+.rlAnnonce em{font-size:clamp(11px,3cqh,26px)}
+.scr-roulette.lance .rlAnnonce b{font-size:clamp(26px,10.5cqh,88px)}
+.scr-roulette.lance .rlAnnonce em{font-size:clamp(13px,3.6cqh,31px)}
+
+/* L'historique remonte sous la barre du haut : à dix cqh il passait derrière le
+   bouton de compte et le plein écran, qui vivent au-dessus de tous les écrans. */
+.rlHistorique{top:16cqh;right:2.4cqw;max-height:22cqh}
+.rlHisto{width:5cqh;height:5cqh;font-size:clamp(8px,1.8cqh,15px)}
+
+/* Une annonce est là pour le grand moment, pas pour rester en travers des
+   numéros : elle se retire quand le tapis revient. */
+.rlAnnonce{transition:opacity .45s ease}
+.rlAnnonce.fane{opacity:0}
