@@ -3804,3 +3804,21 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   0%{transform:scale(.95);opacity:.4}
   100%{transform:scale(1);opacity:1}
 }
+
+/* --- Poker : deux gestes propres à la table ------------------------------- */
+/* Le turn et la river éclosent au lieu de glisser. Une carte qui traverse la
+   table à ce moment-là se lit comme une distribution de plus, alors que c'est
+   le seul instant de la main où tout le monde attend la même chose. */
+.bjCarte.pkEclot{animation:pkEclot .5s cubic-bezier(.2,1.5,.35,1) backwards, bjFlotte 4.6s ease-in-out infinite}
+@keyframes pkEclot{
+  0%{opacity:0;transform:scale(0) rotate(-14deg)}
+  58%{opacity:1;transform:scale(1.14) rotate(4deg)}
+  100%{opacity:1;transform:scale(1) rotate(0)}
+}
+/* Les cartes jetées montent en tournant. Les faire disparaître d'un coup
+   laisserait croire à un bug ; les voir partir dit qu'on les a rendues. */
+.bjCartes.pkJette .bjCarte{animation:pkJette .6s cubic-bezier(.5,0,.85,.3) forwards !important}
+@keyframes pkJette{
+  0%{transform:translateY(0) rotate(0) scale(1);opacity:1}
+  100%{transform:translateY(-46cqh) rotate(-24deg) scale(.72);opacity:0;filter:grayscale(1) brightness(.35)}
+}

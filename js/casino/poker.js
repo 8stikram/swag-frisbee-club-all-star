@@ -18,6 +18,7 @@ import { $, showScreen } from '../core/dom.js';
 import { sfx } from '../audio/audio.js';
 import { Compte, connecte, ajouterPieces } from '../reseau/compte.js';
 import { sceau, message as messageCasino } from './casino.js';
+import { secousse, flash, emettre, boiteDe } from './effets.js';
 import { ENSEIGNES, RANGS, carteDom } from './cartes.js';
 
 // --- Constantes de table ----------------------------------------------------
@@ -187,10 +188,20 @@ export function agir(qui, action, montant) {
   let phrase = '';
 
   switch (action) {
-    case 'coucher':
+    case 'coucher': {
       P.enCours = false;
+      // Les cartes jetées s'envolent en fumée. Les faire disparaître d'un coup
+      // laisserait croire à un bug ; les voir partir dit qu'on les a rendues.
+      const main = $(qui === 'joueur' ? 'pkJoueur' : 'pkIA');
+      const ecran = $('scr-poker');
+      if (main && ecran) {
+        main.classList.add('pkJette');
+        emettre(ecran, 'fumee', boiteDe(ecran, main), 22, '#2a1040');
+        sfx('bjWhoosh');
+      }
       terminer(autre(qui), 'abandon');
       return `${nom(qui)} se couche.`;
+    }
 
     case 'checker':
       if (du > 0) return null;                  // on ne checke pas devant une mise
@@ -242,6 +253,15 @@ export function agir(qui, action, montant) {
   }
 
   P.aAgi[qui] = true;
+  // Des jetons quittent le tapis pour le pot dès qu'on met quelque chose. Le
+  // nombre suit la taille du coup, pas le montant exact : trois disques pour
+  // une relance, un pour un simple suivi — au-delà on ne compte plus, on voit
+  // juste un tas.
+  const misEnJeu = action === 'suivre' || action === 'relancer' || action === 'tapis';
+  if (misEnJeu) volerJetons(
+    qui === 'joueur' ? 'pkStackJoueur' : 'pkStackIA', 'pkPotVal',
+    action === 'suivre' ? 1 : action === 'tapis' ? 5 : 3,
+    qui === 'joueur' ? '#f6e27a' : '#c99cf0');
   // La maison n'observe que ça du joueur : la part de ses actions qui sont des
   // relances. Compté ici, donc jamais oublié quand une nouvelle action arrive.
   if (qui === 'joueur') {
@@ -285,7 +305,12 @@ export function nouvelleMain() {
   // Le résultat précédent doit partir AVANT la donne : sinon on distribue sous
   // un « GAGNÉ » qui parle de la main d'avant.
   $('pkAnnonce').className = 'pkAnnonce hidden';
-  for (const id of ['pkJoueur', 'pkIA', 'pkBoard']) $(id).innerHTML = '';
+  // La classe est portée par la ZONE, pas par les cartes : vider le contenu ne
+  // suffit pas, et la main suivante repartirait en s'envolant.
+  for (const id of ['pkJoueur', 'pkIA', 'pkBoard']) {
+    $(id).innerHTML = '';
+    $(id).classList.remove('pkJette');
+  }
   P.soldeAvant = P.stackJoueur;
   // Le bouton change de main à chaque coup : sinon le même joueur paierait
   // toujours la petite blinde, et l'avantage de position ne tournerait jamais.
@@ -338,6 +363,7 @@ function abattage() {
 function terminer(gagnant, cause, mj, mi) {
   P.enCours = false;
   ramasser();
+  const potGagne = P.pot;
   if (gagnant === 'partage') {
     // Le jeton impair va au joueur : un demi-jeton n'existe pas, et l'écrire au
     // compte en fraction casserait le solde.
@@ -367,6 +393,29 @@ function terminer(gagnant, cause, mj, mi) {
   // en solitaire. Après `rendre()`, sinon la phase « attente » les recacherait.
   devoilerMaison();
   annoncer(gagnant, cause, mj, mi);
+
+  // Le pot part vers celui qui l'emporte. C'est le seul moment de la main où
+  // l'argent change vraiment de côté, et jusqu'ici il se contentait de changer
+  // de chiffre.
+  const ecran = $('scr-poker');
+  if (potGagne > 0 && gagnant !== 'partage') {
+    const vers = gagnant === 'joueur' ? 'pkStackJoueur' : 'pkStackIA';
+    setTimeout(() => volerJetons('pkPotVal', vers, 6,
+                                 gagnant === 'joueur' ? '#f6e27a' : '#ff8a5c'), 420);
+  }
+  if (gagnant === 'joueur' && ecran) {
+    // La secousse se règle sur le pot, pas sur la victoire : rafler quarante
+    // pièces et en rafler mille ne se célèbrent pas pareil.
+    const gros = potGagne >= P.stackJoueur * .5;
+    setTimeout(() => {
+      secousse(ecran, gros ? 8 : 4, gros ? 340 : 220);
+      flash(ecran, 'or', gros ? 150 : 100);
+      const cible = $('pkJoueur');
+      if (cible) emettre(ecran, 'confetti', boiteDe(ecran, cible), gros ? 34 : 16);
+      emettre(ecran, 'confetti', { x: 0, y: -30, l: ecran.clientWidth, h: 20 }, gros ? 26 : 10);
+      sfx(gros ? 'bjCaching' : 'bjDing');
+    }, 640);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -530,23 +579,82 @@ function annoncer(gagnant, cause, mj, mi) {
 function poser(zone, cartes, face) {
   const el = $(zone);
   if (!el) return;
+  const ecran = $('scr-poker');
   for (let i = el.children.length; i < cartes.length; i++) {
     const d = carteDom(cartes[i], false);
+    // Le turn et la river ne GLISSENT pas : ils apparaissent. Une carte qui
+    // traverse la table à ce moment-là se lit comme une distribution de plus,
+    // alors que c'est le seul moment de la main où tout le monde attend la même
+    // chose. Le flop, lui, garde le glissement : trois cartes qui éclosent
+    // ensemble feraient un feu d'artifice au lieu d'un tirage.
+    const eclot = zone === 'pkBoard' && el.children.length >= 3;
+    if (eclot) d.classList.add('pkEclot');
     d.style.animationDelay = `${i * 160}ms, ${i * 160 + 500 + (Math.random() * 900 | 0)}ms`;
     d.style.setProperty('--retard', i * 160 + 'ms');
     el.appendChild(d);
-    setTimeout(() => sfx('bjCarte'), i * 160);
-    if (face) setTimeout(() => d.classList.add('face'), i * 160 + 300);
+    setTimeout(() => sfx(eclot ? 'bjRevele' : 'bjCarte'), i * 160);
+    if (face) setTimeout(() => d.classList.add('face'), i * 160 + (eclot ? 120 : 300));
+    if (eclot && ecran) setTimeout(() => {
+      flash(ecran, 'or', 110);
+      emettre(ecran, 'trainee', boiteDe(ecran, d), 16, '#f6e27a');
+    }, i * 160 + 180);
   }
+}
+
+// --- Les jetons traversent la table ----------------------------------------
+// Voir un nombre changer dans un coin ne dit rien de ce qui vient d'être risqué.
+// Voir les jetons quitter son tapis pour le pot, si.
+function volerJetons(depuis, vers, n, teinte) {
+  const ecran = $('scr-poker');
+  const a = $(depuis), b = $(vers);
+  if (!ecran || !a || !b) return;
+  const da = boiteDe(ecran, a), db = boiteDe(ecran, b);
+
+  for (let i = 0; i < n; i++) {
+    const j = document.createElement('div');
+    j.className = 'bjJetonVol bjJetonMise';
+    j.style.cssText = `left:${da.x + da.l * .5 - 12}px;top:${da.y + da.h * .5 - 12}px;` +
+                      `width:24px;height:24px;--rune:${teinte};`;
+    ecran.appendChild(j);
+    const dx = (db.x + db.l * .5) - (da.x + da.l * .5);
+    const dy = (db.y + db.h * .5) - (da.y + da.h * .5);
+    const anim = j.animate([
+      { transform: 'translate(0,0) rotate(0) scale(1)', opacity: 1 },
+      { transform: `translate(${dx * .5}px, ${dy * .5 - 34}px) rotate(220deg) scale(1.05)`, opacity: 1, offset: .55 },
+      { transform: `translate(${dx}px, ${dy}px) rotate(460deg) scale(.5)`, opacity: 0 }
+    ], { duration: 340 + i * 60, easing: 'cubic-bezier(.35,0,.3,1)', delay: i * 55 });
+    // La traînée est semée depuis la position réelle du jeton, image par image :
+    // calculée à l'avance sur la courbe, elle se décale dès que l'animation
+    // prend du retard, et les éclats volent à côté du jeton.
+    const semer = () => {
+      if (anim.playState === 'finished') return;
+      const p = boiteDe(ecran, j);
+      emettre(ecran, 'trainee', { x: p.x + 7, y: p.y + 7, l: 10, h: 10 }, 1, teinte);
+      requestAnimationFrame(semer);
+    };
+    requestAnimationFrame(semer);
+    anim.onfinish = () => j.remove();
+  }
+  sfx('rlJeton');
 }
 
 // Les cartes de la maison se retournent une à une, avec un temps entre les
 // deux : retournées ensemble, on lit le résultat sans voir la révélation.
 function devoilerMaison() {
+  const ecran = $('scr-poker');
   let retard = 120;
   for (const c of $('pkIA').children) {
     if (c.classList.contains('face')) continue;
-    setTimeout(() => { c.classList.add('face'); sfx('bjRevele'); }, retard);
+    setTimeout(() => {
+      c.classList.add('face');
+      sfx('bjRevele');
+      // L'éclair part à mi-retournement, comme au blackjack : au départ il
+      // éclairerait un dos qu'on connaît déjà.
+      if (ecran) setTimeout(() => {
+        flash(ecran, 'or', 100);
+        emettre(ecran, 'trainee', boiteDe(ecran, c), 12, '#f6e27a');
+      }, 250);
+    }, retard);
     retard += 260;
   }
 }
