@@ -113,64 +113,119 @@ const J_DASH_B = ["....rvrvrv......", "SSSVvVVRRvVR....", "SSSVvVVVVvVR....", ".
 //   Cowboy   — chapeau à larges bords, foulard rouge et poncho.
 //   Halloween — citrouille sculptée sur une robe de faucheuse élimée.
 // ---------------------------------------------------------------------------
+// Le noir a QUATRE valeurs, comme l'or de la cloche en a quatre (W G g d).
+// Avec deux tons seulement un haut-de-forme devient un rectangle plat : c'est
+// la meme lecon que le Yoshi blanc et le Yuki blanc, et elle vaut aussi pour
+// le noir. J est le reflet du feutre, c'est le W du chapeau.
 const PAL_SKINS_J = {
   ...PAL_J,
-  H: '#17171b', h: '#0a0a0d', P: '#f2f0ea', p: '#c9c6bd', L: '#2a2a33',
+  J: '#4a4a55', L: '#2a2a33', H: '#17171b', h: '#0a0a0d',
+  P: '#f2f0ea', p: '#c9c6bd',   // le plastron de chemise
+  X: '#d4574c',                 // le rouge eclaire du gibus ecarlate
   N: '#232833', n: '#14171d', T: '#3a4150',
   C: '#8a5a2e', c: '#5e3c1c', E: '#d9b56a',
-  O: '#e0711f', o: '#a8480f', Q: '#3a2245', q: '#221328', F: '#3fae70'
+  O: '#e0711f', o: '#a8480f', Q: '#3a2245', q: '#221328', Z: '#5c3563', F: '#3fae70'
 };
+
+// Le col de chemise et le noeud de CRAVATE prennent exactement la place de
+// l'echarpe rayee : derniere ligne de tete + premiere ligne de corps, aux
+// memes colonnes. Un noeud papillon avait ete essaye d'abord — sur deux lignes
+// de seize pixels il ne se lisait pas comme un papillon mais comme une barre
+// rouge posee en travers. La cravate, elle, DESCEND : c'est cette verticale de
+// deux pixels sur cinq lignes qui la rend evidente.
+const J_COL_TETE = '.HHHPPRRPPHHH...';
 
 const SKINS_J = {
   smoking: {
-    // Le haut-de-forme reprend la silhouette évasée de la cloche (col.3-10
-    // à la base), pour rester reconnaissable en un coup d'œil malgré le
-    // changement de forme. Bande rouge en clin d'œil au ruban de Noël.
-    // Le sommet du haut-de-forme (lignes 0-6) était décalé d'un pixel à
-    // droite par rapport à sa propre bordure de rebord (ligne 7-8) : le
-    // chapeau semblait posé de travers. Recentré sur le même axe.
-    tete: [".....HHHH.......", ".....HLLh.......", ".....HLLh.......", ".....HLLh.......", ".....HLLh.......", "....hHHHHh......", "...hRRRRRRh.....", "..HHHHHHHHHH....", "..HhHHHHHHhH....", "..PPPPPPPPPP...."],
-    // Le veston doit rester visible en large sur les épaules — l'ancienne
-    // version ne laissait qu'un liseré de 2px et se lisait comme une
-    // chemise blanche toute seule. Le plastron blanc s'ouvre en V, étroit
-    // en haut et large à la ceinture, comme un vrai revers de smoking.
-    idle: [".....HHrrHH.....", ".HHHHppppHHHH...", "HHHpppppppHHH...", ".HHpppppppppHH..", "..HHRRRRRRRRHH..", "...HHHHHHHHHH...", "....HHHppHHH....", "...HH....HH.....", "..HHH....HHH....", "..KKK....KKK...."],
-    // Écharpe et cape (r/v) → veston noir, plastron (R/V/l) → chemise blanche,
-    // plaque d'acier (S/s) → veston. Le petit fermoir doré (G) reste tel quel :
-    // c'est le bouton de manchette.
-    teinte: { r: 'H', v: 'h', R: 'p', V: 'P', l: 'p', S: 'H', s: 'h' }
+    // Le haut-de-forme est dessine SUR le gabarit de la cloche : meme axe,
+    // meme largeur en bas, et surtout meme lumiere — le reflet (J) longe le
+    // bord GAUCHE sur toute la hauteur, exactement ou la cloche pose son W,
+    // puis ca s'assombrit vers la droite. C'est ce degrade qui fait lire du
+    // volume ; sans lui le chapeau est un rectangle noir.
+    tete: ["....JLLLHh......", "....JLLLHh......", "....JLLLHh......", "....JLLLHh......",
+           "....XRRRrr......", "....JLLLHh......", "..JLLLLLLHHh....", ".JLLLLLLLLHHh...",
+           "..hHHHHHHHHh....", J_COL_TETE],
+    col: '..HHLPRRPLHH....',
+    // Le corps n'est pas redessine : il est SUBSTITUE au gabarit, ligne a ligne.
+    //   les bras (S aux colonnes 1-2 et 11-12)  -> H, la manche du veston
+    //   la cape (V/v)                           -> L/H, le veston
+    //   la bandouliere (l)                      -> J, le revers satine, qui
+    //     reprend telle quelle la diagonale d'origine
+    //   le plastron d'acier (S/s au centre)     -> P/p, le plastron de chemise
+    //   la ceinture (R/r)                       -> INCHANGEE : elle devient la
+    //     ceinture de smoking sans qu'on y touche
+    //   l'or au bord des bottes (G)             -> INCHANGE, boucle de soulier
+    buste: { S: 'H', V: 'L', v: 'L', R: 'P', l: 'J' },
+    poitrine: { l: 'J', S: 'P', s: 'p' },
+    bas: { l: 'J', S: 'H' },
+    // Le plastron et la cravate, reinjectes colonne par colonne. La cravate
+    // court des lignes 1 a 4 : au-dela, la ceinture la recouvre, comme en vrai.
+    //
+    // Le plastron ne fait qu'UN pixel de chaque cote de la cravate. Une premiere
+    // version en mettait deux, plus le col tout blanc : ca se lisait comme un
+    // t-shirt blanc sous une veste, pas comme un smoking. Sur seize pixels de
+    // large, c'est la proportion de noir qui dit le costume.
+    ouverture: { cols: { 5: 'P', 6: 'R', 7: 'R', 8: 'P' }, tissu: 'Lp' }
   },
   ninja: {
-    tete: ["......NN........", ".....NnNn.......", ".....NNNn.......", "....NNNNnn......", "....NNNNnT......", "...NNNNNnnT.....", "...RRRRRRRRR....", "..nNNNNNnnnT....", "..TnNNNnnnTn....", "..NnNnNnNnNn...."],
-    idle: ["....nTnTnT......", "..TNnNNNNnNT....", ".TTNnNNNNnNTT...", ".TTnNNNNNNnTT...", "..RRTNnnNTRR....", "..RNNTnnTNNR....", "...NNNNnnNNNN...", "...NN....NN.....", "..NNN....NNN....", "..KKK....KKK...."],
-    // Le bandeau rouge (R) reste rouge d'un skin à l'autre — c'est le seul
-    // repère de couleur chaude sur une silhouette autrement toute en gris sombre.
-    teinte: { r: 'N', v: 'n', V: 'T', l: 'T', S: 'N', s: 'n', G: 'R' }
+    tete: ["......NN........", ".....NnNn.......", ".....NNNn.......", "....NNNNnn......",
+           "....NNNNnT......", "...NNNNNnnT.....", "...RRRRRRRRR....", "..nNNNNNnnnT....",
+           "..TnNNNnnnTn....", "..NnNnNnNnNn...."],
+    col: '....NnNnNn......',
+    buste: { S: 'N', V: 'T', v: 'n', R: 'N', l: 'T' },
+    poitrine: { l: 'T', S: 'N', s: 'n' },
+    bas: { l: 'T', S: 'N' }
   },
   cowboy: {
-    tete: ["......CC........", ".....CEEc.......", ".....CCCc.......", "....CCCCcc......", "....CCCCcE......", "...EEEEEEEEE....", "..CCCCCCCCCCCC..", ".cCCCCCCCCCCc...", "..cCCCCCCCCc....", "..RrRrRrRrRr...."],
-    idle: ["....rCrCrC......", "..CCEEEEEECC....", ".CCCEEEEEECCC...", ".CCCcEEEEcCCC...", "..RRccccccRR....", "..RccGGccRR.....", "...CCCcccCCC....", "...CC....CC.....", "..CCC....CCC....", "..KGK....KGK...."],
-    // L'or (G) reste l'or de la boucle de ceinturon et des éperons : seul
-    // détail qui ne bascule pas dans le marron du poncho.
-    teinte: { r: 'C', v: 'c', R: 'E', V: 'E', l: 'E', S: 'C', s: 'c' }
+    tete: ["......CC........", ".....CEEc.......", ".....CCCc.......", "....CCCCcc......",
+           "....CCCCcE......", "...EEEEEEEEE....", "..CCCCCCCCCCCC..", ".cCCCCCCCCCCc...",
+           "..cCCCCCCCCc....", "..RrRrRrRrRr...."],
+    col: '....rRrRrR......',
+    buste: { S: 'C', V: 'E', v: 'c', R: 'E', l: 'E' },
+    poitrine: { l: 'E', S: 'E', s: 'c' },
+    bas: { l: 'E', S: 'C' }
   },
   halloween: {
-    tete: ["......FO........", ".....OoOo.......", ".....OOOo.......", "....OKOOKo......", "....OOOOOo......", "...OKOKOKOo.....", "...OOOOOOOOo....", "..oOOOOOOOOo....", "..oOOOOOOOoo....", "..QqQqQqQqQq...."],
-    idle: ["....qQqQqQ......", "..QQqqqqqqQQ....", ".QQQqqqqqqQQQ...", ".QQQQqqqqQQQQ...", "..qqQQQQQQqq....", "..qQQQQQQqq.....", "...QQQqqqQQQ....", "..QQ....QQ......", ".QQQ....QQQ.....", "Q.QQ....QQ.Q...."],
-    // Tout bascule dans le violet-noir de la robe : sur une silhouette de
-    // faucheuse, un accent doré ou rouge qui swingue au bras aurait cassé le
-    // silence visuel du costume.
-    teinte: { r: 'q', v: 'q', R: 'Q', V: 'Q', l: 'Q', S: 'Q', s: 'q', G: 'Q' }
+    tete: ["......FO........", ".....OoOo.......", ".....OOOo.......", "....OKOOKo......",
+           "....OOOOOo......", "...OKOKOKOo.....", "...OOOOOOOOo....", "..oOOOOOOOOo....",
+           "..oOOOOOOOoo....", "..QqQqQqQqQq...."],
+    col: '....qQqQqQ......',
+    buste: { S: 'Q', V: 'Z', v: 'q', R: 'Q', l: 'Z' },
+    poitrine: { r: 'q', R: 'Q', l: 'Z', S: 'Q', s: 'q' },
+    bas: { R: 'Q', l: 'Z', S: 'Q', G: 'Q' }
   }
 };
 
-// Construit les six poses d'un skin de Jingle : tête et idle dessinés à la
-// main, le reste des poses reprend les silhouettes d'origine reteintées.
+// Construit les six poses d'un skin de Jingle.
+//
+// RIEN N'EST DESSINE A LA MAIN ICI SAUF LA TETE ET LE COL. Le corps se deduit
+// du gabarit d'origine, et c'est volontaire : une premiere version dessinait
+// l'immobile a la main et reteignait les cinq autres poses, si bien que le
+// plastron n'avait pas la meme largeur a l'arret et en course. En le derivant,
+// les six poses ne peuvent plus diverger.
+//
+// Une teinte unique appliquee a tout le corps ne marcherait pas chez lui : la
+// meme lettre y designe deux choses selon l'endroit. `S` est le bras aux
+// colonnes 1-2, le plastron d'acier au centre et la jambe en bas ; `R` est le
+// haut du plastron sur les lignes 1-3 et la ceinture sur les lignes 6+. Une
+// substitution globale peignait la ceinture en blanc de chemise. D'ou trois
+// tables — le buste, la poitrine, le bas — et le col traite a part.
 function construireSkinJ(s) {
-  const corps = { run1: J_RUN1_B, run2: J_RUN2_B, throw: J_THROW_B, dive: J_DIVE_B, dash: J_DASH_B };
-  const out = { idle: buildSprite([...s.tete, ...s.idle], PAL_SKINS_J) };
-  for (const [nom, base] of Object.entries(corps)) {
-    out[nom] = buildSprite([...s.tete, ...teinter(base, s.teinte)], PAL_SKINS_J);
+  const poses = { idle: J_IDLE_B, run1: J_RUN1_B, run2: J_RUN2_B,
+                  throw: J_THROW_B, dive: J_DIVE_B, dash: J_DASH_B };
+  const out = {};
+  for (const [nom, base] of Object.entries(poses)) {
+    const corps = base.map((ligne, i) => {
+      if (i === 0) return s.col;
+      if (i >= 6) return teinter([ligne], s.bas)[0];
+      const t = teinter([ligne], i >= 4 ? s.poitrine : s.buste)[0];
+      if (!s.ouverture || i > 4) return t;
+      const o = s.ouverture;
+      // `tissu` est une LISTE de lettres, pas une seule : le plastron doit
+      // pouvoir se poser aussi bien sur le veston que sur son ombre.
+      return [...t].map((ch, x) => (o.cols[x] && o.tissu.includes(ch)) ? o.cols[x] : ch).join('');
+    });
+    out[nom] = buildSprite([...s.tete, ...corps], PAL_SKINS_J);
   }
   return out;
 }
