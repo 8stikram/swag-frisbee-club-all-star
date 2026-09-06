@@ -3171,3 +3171,136 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .bjRalenti .bjBtn{animation-duration:8.6s}
 .bjTable{transition:transform .55s ease-out}
 .bjRalenti .bjTable{transform:scale(1.05);transition:transform .42s cubic-bezier(.2,.7,.3,1)}
+
+/* ================= POKER =================
+   Le décor, le feutre, les cartons, les boutons et le compteur sont ceux du
+   blackjack : ces classes décrivent la table du casino, pas les règles du
+   vingt-et-un. Seul ce qui est propre au Hold'em est ici.
+
+   Trois rangées à caser dans la même hauteur que deux : les cartes du poker
+   sont donc plus petites que celles du blackjack, sinon le board mange la barre
+   d'actions. */
+.scr-poker .titlebar{background:#3a1160;border-color:#1a0a02}
+.scr-poker .titlebar span{color:#f6e27a;-webkit-text-stroke:4px #1a0a02}
+.scr-poker .bjCarte{width:9.4cqh;height:14.1cqh;margin-left:-2.6cqh}
+.scr-poker .bjCarte:first-child{margin-left:0}
+/* Le board n'est pas une main : ses cartes sont posées côte à côte, pas
+   éventées. Les chevaucher laisserait croire qu'elles appartiennent à
+   quelqu'un. */
+.pkBoard .bjCarte{margin-left:1cqh}
+.pkBoard .bjCarte:first-child{margin-left:0}
+
+.pkTable{
+  position:absolute;inset:0;z-index:5;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2cqh;
+  padding:12cqh 4cqw 13cqh;pointer-events:none;
+}
+/* Le nom et le tapis sont À CÔTÉ des cartes, pas au-dessus : trois rangées
+   empilées dans la hauteur de deux, tout ce qui se met au-dessus finit sous la
+   barre du haut ou sous celle des actions. */
+.pkSiege{display:flex;align-items:center;justify-content:center;gap:1.6cqw;min-height:15cqh}
+.pkInfos{display:flex;flex-direction:column;align-items:center;gap:.2cqh;min-width:11cqw}
+.pkCentre{display:flex;flex-direction:column;align-items:center;gap:.8cqh}
+.pkNom{
+  font-family:"Russo One",sans-serif;font-size:clamp(7px,1.5cqh,13px);
+  color:#c9ac72;letter-spacing:.14em;white-space:nowrap;
+  text-shadow:0 .2cqh 0 rgba(0,0,0,.9);
+}
+.pkInfos b{
+  font-size:clamp(11px,2.6cqh,22px);color:#ffdf7a;letter-spacing:.03em;
+  text-shadow:0 .3cqh 0 rgba(0,0,0,.95), 0 0 1.2cqh rgba(255,200,60,.7);
+}
+/* Ce qu'on a engagé DANS CE TOUR, posé devant soi comme à une vraie table. Le
+   pot au centre ne dit pas qui doit encore payer ; cette ligne, si. */
+.pkEngage{
+  min-height:2.4cqh;
+  font-family:'Russo One',sans-serif;font-size:clamp(8px,1.8cqh,15px);
+  color:#f6e27a;letter-spacing:.06em;
+  text-shadow:0 .3cqh 0 rgba(0,0,0,.95);
+}
+.pkEngage:not(:empty)::before{content:'▸ ';opacity:.6}
+.pkPot{
+  display:flex;align-items:center;gap:.8cqw;
+  padding:.5cqh 1.6cqw;border-radius:999px;
+  background:linear-gradient(165deg,#1e0c16 0%,#0a0409 100%);
+  border:max(2px,.3cqh) solid #d4af37;
+  box-shadow:inset 0 .3cqh .7cqh rgba(0,0,0,.85), 0 0 2.6cqh rgba(212,175,55,.5);
+}
+.pkPot b{
+  font-family:'Russo One',sans-serif;font-size:clamp(12px,3cqh,26px);
+  color:#ffdf7a;line-height:1;
+  text-shadow:0 .3cqh 0 rgba(0,0,0,.85), 0 0 1.2cqh rgba(255,200,60,.9);
+}
+.pkPot .bjPiece{width:3cqh;height:3cqh}
+
+.bjBtn.orange{--teinte:#6b2a06;--halo:rgba(255,150,50,.75)}
+
+.pkAnnonce{
+  position:absolute;left:50%;top:34%;transform:translate(-50%,-50%);z-index:8;
+  font-family:"Archivo Black",sans-serif;font-size:clamp(16px,5.4cqh,44px);
+  letter-spacing:.03em;color:#fff;-webkit-text-stroke:.55cqh #1a0a02;paint-order:stroke fill;
+  text-shadow:0 .6cqh 1.2cqh rgba(0,0,0,.95);pointer-events:none;white-space:nowrap;
+  animation:bjFinPop .5s cubic-bezier(.2,1.6,.35,1);
+}
+.pkAnnonce.gain{color:#d4af37;text-shadow:0 0 3.4cqh rgba(255,200,60,.9), 0 .6cqh 1.2cqh rgba(0,0,0,.95)}
+.pkAnnonce.perte{color:#8b0000;text-shadow:0 0 1.4cqh rgba(255,50,40,.85), 0 .6cqh 1.2cqh rgba(0,0,0,.95)}
+.pkAnnonce.egalite{color:#4a90e2}
+
+/* --- Le rappel du classement ---
+   Un rappel, pas un tutoriel : il s'ouvre par-dessus et se ferme au clic à
+   côté autant qu'à la croix. Chercher le bouton pour sortir d'une aide est le
+   meilleur moyen de ne plus jamais l'ouvrir. */
+.pkAide{
+  position:absolute;top:10.5cqh;right:4cqw;z-index:9;
+  width:5cqh;height:5cqh;min-width:26px;min-height:26px;border-radius:50%;cursor:pointer;
+  background:linear-gradient(165deg,#1e0c16,#0a0409);
+  border:max(2px,.3cqh) solid #d4af37;color:#f6e27a;
+  font-family:'Russo One',sans-serif;font-size:clamp(11px,2.4cqh,20px);
+  box-shadow:0 0 2cqh rgba(212,175,55,.5);
+}
+.pkAide:hover{color:#fff3c2;border-color:#f6e27a;box-shadow:0 0 3.4cqh rgba(246,226,122,.85)}
+.pkRegles{
+  position:absolute;inset:0;z-index:14;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(4,2,6,.82);
+}
+.pkReglesBoite{
+  position:relative;width:min(78cqw,720px);max-height:82cqh;overflow:auto;
+  padding:2.4cqh 2.6cqw;border-radius:14px;
+  background:linear-gradient(165deg,#1a0a14 0%,#0a0409 100%);
+  border:max(3px,.4cqh) solid #d4af37;
+  box-shadow:0 2cqh 5cqh rgba(0,0,0,.85), 0 0 4cqh rgba(212,175,55,.5);
+}
+.pkReglesBoite h3{
+  margin:0 0 1.4cqh;font-family:'Russo One',sans-serif;
+  font-size:clamp(12px,2.8cqh,24px);color:#ffdf7a;letter-spacing:.12em;text-align:center;
+  text-shadow:0 .3cqh 0 rgba(0,0,0,.9);
+}
+.pkReglesBoite ol{margin:0;padding:0;list-style:none;counter-reset:main}
+.pkReglesBoite li{
+  counter-increment:main;
+  display:flex;align-items:center;gap:1.2cqw;padding:.7cqh .6cqw;
+  border-bottom:1px solid rgba(212,175,55,.16);
+}
+.pkReglesBoite li::before{
+  content:counter(main);flex:none;width:3.4cqh;text-align:center;
+  font-family:'Russo One',sans-serif;font-size:clamp(8px,1.7cqh,14px);color:#8a6f2a;
+}
+.pkReglesBoite .nom{
+  flex:1;font-family:'Russo One',sans-serif;font-size:clamp(9px,1.9cqh,16px);color:#f6e27a;
+}
+.pkReglesBoite .exemple{
+  display:flex;gap:.4cqw;font-family:'Russo One',sans-serif;
+  font-size:clamp(9px,2cqh,17px);
+}
+.pkReglesBoite .exemple span{
+  min-width:3.4cqh;padding:.2cqh .3cqw;border-radius:4px;text-align:center;
+  background:linear-gradient(158deg,#fbf8ea,#e6dec0);border:1px solid #d4af37;
+  box-shadow:0 .2cqh .4cqh rgba(0,0,0,.6);
+}
+.pkFermer{
+  position:absolute;top:.8cqh;right:.8cqw;width:4cqh;height:4cqh;min-width:22px;min-height:22px;
+  border-radius:50%;cursor:pointer;background:#2a0d18;border:2px solid #d4af37;
+  color:#f6e27a;font-family:'Russo One',sans-serif;font-size:clamp(10px,2cqh,17px);line-height:1;
+}
+.pkFermer:hover{background:#4a1020;color:#fff3c2}

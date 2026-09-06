@@ -558,6 +558,11 @@ async function ouvrirJeu(jeu) {
     ouvrirBlackjack();
     return;
   }
+  if (jeu.id === 'poker') {
+    const { ouvrirPoker } = await import('./poker.js');
+    ouvrirPoker();
+    return;
+  }
   message(jeu.nom + ' — pas encore ouvert. Le diable finit d\'installer la table.');
 }
 

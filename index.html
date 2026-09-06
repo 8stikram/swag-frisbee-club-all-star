@@ -648,6 +648,83 @@
     <div class="bjMsg hidden" id="bjMsg"></div>
   </div>
 
+
+  <!-- ============ POKER ============
+       Même arrière-salle et même feutre que le blackjack : les classes `bj*`
+       décrivent la table du casino, pas les règles du vingt-et-un, et les
+       recopier sous un autre nom aurait fait deux décors à retoucher. Seul ce
+       qui est propre au poker porte le préfixe `pk`. -->
+  <div class="screen scr-poker hidden" id="scr-poker">
+    <div class="bg bjFond" aria-hidden="true">
+      <div class="casFondCouleur"></div>
+      <div class="casSceaux bjSceaux" id="pkSceaux"></div>
+      <div class="casFumee bjFumee"><i></i><i></i><i></i><i></i></div>
+      <div class="bjBraises"></div>
+      <div class="bjLustre"></div>
+      <div class="casVignette"></div>
+      <div class="casScanlines"></div>
+      <div class="casGrain"></div>
+    </div>
+    <div class="bjTapis" aria-hidden="true">
+      <div class="bjGrain"></div>
+      <div class="casSceau bjSceauTapis" id="pkSceauTapis"></div>
+      <div class="bjTapisArc"></div>
+      <div class="bjSpot"></div>
+    </div>
+    <div class="bjPoussiere" aria-hidden="true"><i></i><i></i><i></i></div>
+
+    <div class="titlebar"><span>POKER</span></div>
+    <div class="bjSolde" id="pkSolde" title="Tes pièces">
+      <span class="bjPiece"></span><b id="pkSoldeVal">0</b>
+    </div>
+    <button class="pkAide" id="pkAide" title="Classement des mains">?</button>
+    <div class="pkTable">
+      <div class="pkSiege">
+        <div class="pkInfos"><span class="pkNom">LA MAISON</span><b id="pkStackIA">0</b></div>
+        <div class="bjCartes" id="pkIA"></div>
+        <div class="pkEngage" id="pkEngageIA"></div>
+      </div>
+
+      <div class="pkCentre">
+        <div class="pkPot"><span class="bjPiece"></span><b id="pkPotVal">0</b></div>
+        <div class="bjCartes pkBoard" id="pkBoard"></div>
+      </div>
+
+      <div class="pkSiege">
+        <div class="pkEngage" id="pkEngageJoueur"></div>
+        <div class="bjCartes" id="pkJoueur"></div>
+        <div class="pkInfos"><span class="pkNom">TOI</span><b id="pkStackJoueur">0</b></div>
+      </div>
+    </div>
+
+    <div class="pkAnnonce hidden" id="pkAnnonce"></div>
+
+    <!-- Les actions et la donne ne coexistent jamais : proposer de distribuer
+         pendant qu'on doit parler invite à couper sa propre main. -->
+    <div class="bjBarre hidden" id="pkBarre">
+      <button class="bjBtn rouge" id="pkFold">SE COUCHER</button>
+      <button class="bjBtn vert" id="pkCheck">CHECK</button>
+      <button class="bjBtn vert" id="pkCall">SUIVRE</button>
+      <div class="bjSaisie">
+        <input type="number" id="pkMontant" min="20" step="10" value="40">
+        <button class="bjBtn bleu" id="pkRaise">RELANCER</button>
+      </div>
+      <button class="bjBtn orange" id="pkAllin">TAPIS</button>
+    </div>
+    <div class="bjBarre">
+      <button class="bjBtn vert" id="pkNouvelle">DISTRIBUER</button>
+    </div>
+
+    <div class="bjMsg hidden" id="pkMsg"></div>
+
+    <div class="pkRegles hidden" id="pkRegles">
+      <div class="pkReglesBoite">
+        <button class="pkFermer" data-fermer>×</button>
+        <h3>CLASSEMENT DES MAINS</h3>
+        <ol id="pkReglesListe"></ol>
+      </div>
+    </div>
+  </div>
   <!-- ============ SÉLECTION DES PERSONNAGES ============ -->
   <div class="screen scr-select hidden" id="scr-select">
     <div class="bg bg-select">
