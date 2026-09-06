@@ -168,25 +168,41 @@ const SKINS_J = {
     ouverture: { cols: { 5: 'P', 6: 'R', 7: 'R', 8: 'P' }, tissu: 'Lp' }
   },
   ninja: {
-    // D'apres reference : la cagoule couvre TOUTE la tete, le bandeau est noue
-    // derriere et ses deux pans volent — vers la gauche, donc derriere lui,
-    // puisque le sprite naturel est tourne vers la droite.
-    tete: ["......TN........", ".....TNNn.......", ".....TNNn.......", "....TNNNnn......",
-           "....TNNNnw......", "...TNNNNnnw.....", "...rRRRRRRr.....", "rrnTNNNNnnnw....",
-           "rrwnNNNnnnwn....", "..nNnwnwnNnw...."],
-    col: '....nNwwNn......',
-    // NOIR INTEGRAL : plus d'acier nulle part, quatre valeurs de tres sombre.
-    // Une premiere version gardait l'acier du gabarit aux avant-bras et au
-    // plastron pour donner un point clair — ca marchait, mais ca faisait un
-    // ninja gris. Le contraste vient donc entierement des TROIS ROUGES de la
-    // reference : le bandeau, le col croise, l'obi. Et de l'ecart de valeur :
-    // torse le plus sombre, bras et jambes un cran au-dessus.
-    buste: { V: 'n', v: 'w', R: 'n', S: 'N', l: 'T' },
-    poitrine: { l: 'T', S: 'n', s: 'w' },
-    bas: { l: 'T', S: 'N', G: 'T' },
-    // Le col croise en V du kimono, pose apres coup sur les lignes 1 a 4. Il ne
-    // mord que sur de la matiere deja peinte, donc la silhouette ne bouge pas.
-    croise: [[1, [4, 9]], [2, [5, 8]], [3, [6, 7]], [4, [6, 7]]]
+    // Dessine a la main dans l'editeur du mockup, puis remis sur le gabarit.
+    // Trois idees viennent de ce dessin et aucune n'etait dans ma version :
+    //   la PLAQUE D'OR au centre du bandeau (gGGg) — c'est le hitai-ate d'un
+    //     vrai bandeau ninja, et c'est surtout le seul endroit ou l'or de la
+    //     cloche survit : le skin redevient Jingle Bells ;
+    //   le NOEUD passe a DROITE, pans qui remontent en diagonale, comme sur la
+    //     reference ou il est noue sur le cote et pas dans le dos ;
+    //   la cagoule descend d'un cran (ligne 0 vide), donc plus ramassee et
+    //     moins « chapeau pointu ».
+    tete: ["................", "......TN........", ".....TNNn.......", "....TNNNnn.r....",
+           "....TNNNnwr.....", "...TTTTTNnwrR...", "...rRgGGgrr.....", "..nTNNnnnnnw....",
+           "..wnNNNnnnwn....", "..nNnwnwnNnw...."],
+    // Les lignes 0, 4 et 5 du corps sont IDENTIQUES dans les six poses
+    // d'origine : on y recopie le dessin tel quel, sans rien en deduire.
+    fixes: { 0: "....nNwwNn......", 4: ".NnTTRrrnTTnN...", 5: "..nrRrrnrrrn...." },
+    buste: { S: 'N', V: 'n', v: 'n', R: 'n', l: 'T' },
+    poitrine: { S: 'n', s: 'n', l: 'T' },
+    bas: { l: 'T', S: 'N', G: 'g' },
+    // Le col croise en X, le galbe des bras et le volume des jambes ne sont pas
+    // des substitutions : la meme lettre du gabarit y devient deux couleurs
+    // differentes selon la COLONNE. On les repose donc en calque, apres coup —
+    // et seulement la ou il y a deja de la matiere, sinon le col deborderait
+    // dans le vide des que le bras s'ecarte du corps.
+    //
+    // C'est ce qui fait survivre le X a la course : dessine seulement dans la
+    // pose immobile, il disparaissait des cinq autres.
+    calque: [
+      [1, { 3: 'R', 4: 'R', 8: 'R', 9: 'r', 10: 'r' }],
+      [2, { 2: 'n', 4: 'R', 5: 'R', 7: 'R', 8: 'r', 9: 'r', 11: 'n' }],
+      [3, { 2: 'n', 4: 'w', 5: 'r', 6: 'R', 7: 'r', 8: 'r', 9: 'w', 11: 'n' }],
+      [6, { 4: 'r', 5: 'r', 6: 'N', 8: 'T', 9: 'N', 10: 'N' }],
+      [7, { 4: 'n', 9: 'n' }],
+      [8, { 4: 'n', 9: 'n' }],
+      [9, { 4: 'n', 9: 'n' }]
+    ]
   },
   cowboy: {
     tete: ["......CC........", ".....CEEc.......", ".....CCCc.......", "....CCCCcc......",
@@ -228,16 +244,15 @@ function construireSkinJ(s) {
   const out = {};
   for (const [nom, base] of Object.entries(poses)) {
     const corps = base.map((ligne, i) => {
+      if (s.fixes && s.fixes[i] !== undefined) return s.fixes[i];
       if (i === 0) return s.col;
-      if (i >= 6) return teinter([ligne], s.bas)[0];
-      let t = teinter([ligne], i >= 4 ? s.poitrine : s.buste)[0];
-      // Le col croise : une lettre posee a des colonnes precises, mais SEULEMENT
-      // la ou il y a deja de la matiere — sinon le col depasserait dans le vide
-      // des que le bras s'ecarte du corps.
-      if (s.croise) {
-        for (const [y, cols] of s.croise) {
+      let t = teinter([ligne], i >= 6 ? s.bas : (i >= 4 ? s.poitrine : s.buste))[0];
+      // Le calque : des couleurs posees a des colonnes precises, mais SEULEMENT
+      // la ou il y a deja de la matiere.
+      if (s.calque) {
+        for (const [y, cols] of s.calque) {
           if (y !== i) continue;
-          t = [...t].map((ch, x) => (cols.includes(x) && ch !== '.') ? 'R' : ch).join('');
+          t = [...t].map((ch, x) => (cols[x] && ch !== '.') ? cols[x] : ch).join('');
         }
       }
       if (!s.ouverture || i > 4) return t;
