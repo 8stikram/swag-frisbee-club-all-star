@@ -3679,8 +3679,10 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   font-family:'DotGothic16',monospace;font-size:clamp(7px,1.5cqh,12px);
   color:#7bff9d;letter-spacing:.16em;
 }
-.coCarte.doublon{border-color:#8a7f6a;box-shadow:0 0 2.4cqh rgba(120,110,90,.6), 0 2cqh 4cqh rgba(0,0,0,.8)}
-.coCarte.doublon .coEtat{color:#c9ac72}
+/* Un personnage dont toutes les tenues sont prises reste dans la grille, mais
+   Ã©teint : le retirer le ferait disparaÃ®tre sans qu'on comprenne pourquoi. */
+.coPerso.epuise{filter:grayscale(.85) brightness(.5);cursor:not-allowed}
+.coPerso.epuise:hover{transform:none;box-shadow:none}
 /* Le trait de couleur du personnage, en bas de la carte comme sur la bande. */
 .coCarte::after{
   content:'';position:absolute;left:12%;right:12%;bottom:6px;height:5px;border-radius:3px;

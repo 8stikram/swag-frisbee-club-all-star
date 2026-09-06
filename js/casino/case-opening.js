@@ -29,9 +29,19 @@ const PRIX = { alea: 25, perso: 75 };
 // monde, et une caisse qui peut ne rien donner du tout n'est pas une caisse.
 const skinsDe = ck => (SKINS[ck] || []).filter(s => !s.defaut).map(s => ({ ck, skin: s }));
 const tousLesSkins = () => Object.keys(SKINS).flatMap(skinsDe);
+// Une tenue déjà prise ne peut pas ressortir. Payer une caisse pour recevoir ce
+// qu'on possède déjà, c'est payer pour rien — et à vingt-cinq ou soixante-quinze
+// pièces la fois, ça se remarque vite.
+const nonPris = liste => liste.filter(e => !estDebloque(e.ck, e.skin.id));
 // Un personnage sans tenue à débloquer ne peut pas être choisi : sa caisse
 // ciblée serait soixante-quinze pièces pour un résultat connu d'avance.
 const persosOuvrables = () => Object.keys(SKINS).filter(ck => skinsDe(ck).length > 0 && CHARS[ck]);
+
+// Ce qui peut tomber, et ce qui défile. Les deux diffèrent volontairement : la
+// bande montre aussi des tenues déjà prises, sinon un personnage à qui il n'en
+// reste qu'une ferait défiler soixante fois la même carte.
+const bassinGagnant = () => nonPris(C.mode === 'perso' ? skinsDe(C.perso) : tousLesSkins());
+const bassinVisuel = () => (C.mode === 'perso' ? skinsDe(C.perso) : tousLesSkins());
 
 const sprite = (ck, id) => {
   const c = CHARS[ck];
@@ -101,9 +111,12 @@ function construireGrille() {
     const n = document.createElement('b');
     // Le nombre de tenues encore à prendre : sans lui, on paie soixante-quinze
     // pièces sans savoir s'il reste quoi que ce soit à gagner chez ce perso.
-    const restant = skinsDe(ck).filter(s => !estDebloque(ck, s.skin.id)).length;
+    const restant = nonPris(skinsDe(ck)).length;
     n.innerHTML = `${p.short}<em>${restant ? restant + ' à prendre' : 'tout est pris'}</em>`;
     d.appendChild(n);
+    // Épuisé : on l'affiche quand même, éteint. Le retirer de la grille ferait
+    // disparaître un personnage sans qu'on comprenne pourquoi.
+    if (!restant) { d.classList.add('epuise'); d.disabled = true; }
     d.addEventListener('click', () => {
       sfx('select');
       demander(`Ouvrir une caisse pour ${p.short} à ${PRIX.perso} pièces ?`, () => {
@@ -123,12 +136,12 @@ const INDEX_GAGNANT = 52;      // sur soixante : il en reste huit à droite
 const NB_CARTES = 60;
 
 function tirer() {
-  const bassin = C.mode === 'perso' ? skinsDe(C.perso) : tousLesSkins();
+  const bassin = bassinGagnant();
   return bassin[(Math.random() * bassin.length) | 0];
 }
 
 function construireBande(gagne) {
-  const bassin = C.mode === 'perso' ? skinsDe(C.perso) : tousLesSkins();
+  const bassin = bassinVisuel();
   const b = [];
   for (let i = 0; i < NB_CARTES; i++) b.push(bassin[(Math.random() * bassin.length) | 0]);
   b[INDEX_GAGNANT] = gagne;
@@ -207,8 +220,16 @@ function lancerOuverture() {
   const prix = PRIX[C.mode];
   if (prix > C.solde) { sfx('deny'); messageCo('Pas assez de pièces.'); return; }
 
+  // Le tirage se fait AVANT le débit. Une caisse qui n'a plus rien à donner ne
+  // doit pas d'abord prendre les pièces pour l'annoncer ensuite.
   C.gagne = tirer();
-  if (!C.gagne) { messageCo('Plus rien à gagner ici.'); return; }
+  if (!C.gagne) {
+    sfx('deny');
+    messageCo(C.mode === 'perso'
+      ? 'Tu as déjà toutes ses tenues.'
+      : 'Tu as déjà toutes les tenues du jeu.');
+    return;
+  }
   C.bande = construireBande(C.gagne);
   C.ouvre = true;
   C.sauter = false;
@@ -262,7 +283,6 @@ function pulserLigne() {
 function conclure(prix) {
   const ecran = $('scr-caisses');
   const { ck, skin } = C.gagne;
-  const deja = estDebloque(ck, skin.id);
 
   sfx('coGain');
   flash(ecran, 'or', 160);
@@ -277,14 +297,14 @@ function conclure(prix) {
   if (connecte()) {
     ajouterPieces(-prix).then(s => {
       if (s !== null && s !== undefined) { C.solde = s; majSolde(); }
-      if (!deja) offrirSkin(ck, skin.id);
+      offrirSkin(ck, skin.id);
     }).catch(() => messageCo('Le débit n\'est pas passé : la tenue reste à prendre.'));
-  } else if (!deja) offrirSkin(ck, skin.id);
+  } else offrirSkin(ck, skin.id);
 
-  setTimeout(() => reveler(deja), 620);
+  setTimeout(reveler, 620);
 }
 
-function reveler(deja) {
+function reveler() {
   const { ck, skin } = C.gagne;
   const p = CHARS[ck];
   montrer('revele');
@@ -302,8 +322,8 @@ function reveler(deja) {
   }
   carte.querySelector('.coNom').textContent = p ? p.short : ck;
   carte.querySelector('.coSkin').textContent = skin.nom;
-  carte.querySelector('.coEtat').textContent = deja ? 'DÉJÀ POSSÉDÉE' : 'NOUVELLE TENUE';
-  carte.classList.toggle('doublon', deja);
+  // Toujours neuve : le tirage exclut ce qu'on possède déjà.
+  carte.querySelector('.coEtat').textContent = 'NOUVELLE TENUE';
 
   const ecran = $('scr-caisses');
   emettre(ecran, 'confetti', boiteDe(ecran, carte), 26);
