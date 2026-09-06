@@ -3830,3 +3830,61 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   background:radial-gradient(circle at 50% 34%, #3a1a2e 0%, #120610 70%);
   box-shadow:0 0 1.4cqh var(--rune,#f6e27a);
 }
+
+/* ================= ANIMATIONS RÉDUITES =================
+   Le réglage vit dans data/settings.js, qui pose la classe sur <html>. Il coupe
+   ce qui décore et garde ce qui informe : les cartes se retournent toujours,
+   les scores changent toujours, les résultats s'affichent toujours. Supprimer
+   les animations n'a jamais voulu dire supprimer ce qu'elles disent.
+
+   Les particules, les secousses et les voiles sont coupés côté JavaScript (voir
+   casino/effets.js) : les couper ici aurait laissé le moteur de particules
+   tourner pour dessiner dans le vide. Ce bloc n'arrête que les boucles
+   décoratives — celles qui n'ont ni début ni fin et ne racontent rien. */
+.animReduites .bjBraises,
+.animReduites .bjBraises::after,
+.animReduites .bjPoussiere,
+.animReduites .casFumee,
+.animReduites .casSceau,
+.animReduites .bjSceauTapis,
+.animReduites .bjSpot,
+.animReduites .bjLustre,
+.animReduites .casScanlines,
+.animReduites .coGyro,
+.animReduites .bjJeton::before,
+.animReduites .bjJeton::after,
+.animReduites .rlJeton::before,
+.animReduites .bjPiece,
+.animReduites .bjSolde{
+  animation:none !important;
+}
+/* La poussière et les braises disparaissent au lieu de se figer : arrêtées en
+   place, elles laissent des points lumineux plaqués sur le feutre. */
+.animReduites .bjPoussiere,
+.animReduites .bjBraises,
+.animReduites .casFumee{display:none !important}
+
+/* Le flottement des cartes s'arrête, mais leur ARRIVÉE reste : c'est elle qui
+   dit qu'une carte vient d'être donnée. Elle est seulement deux fois plus
+   courte. */
+.animReduites .bjCarte{
+  animation:bjDonne .2s cubic-bezier(.2,.85,.3,1) backwards !important;
+}
+.animReduites .bjCarte.pkEclot{
+  animation:pkEclot .24s cubic-bezier(.2,1.5,.35,1) backwards !important;
+}
+/* Le retournement reste, deux fois plus rapide : sans lui on ne voit plus la
+   carte se révéler, elle change simplement de face. */
+.animReduites .bjFaces{transition-duration:.25s}
+.animReduites .bjTapis::after,
+.animReduites .rlAnnonce,
+.animReduites .bjAnnonce,
+.animReduites .pkAnnonce{animation-duration:.25s !important}
+
+/* Le portail du casino se réduit à un fondu : c'est la seule séquence du jeu
+   qui dure une seconde et demie, et c'est celle qu'on traverse le plus souvent. */
+.animReduites .ctVortex,
+.animReduites .ctFente{display:none !important}
+.animReduites .ctPlonge{animation:none !important}
+.animReduites .ctDissout{animation-duration:.2s !important}
+.animReduites .ctFend{animation:none !important;filter:brightness(1.6)}

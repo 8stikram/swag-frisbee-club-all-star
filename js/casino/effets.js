@@ -8,6 +8,7 @@
 // séquences que la table : le banc d'essai ne peut pas diverger de ce qu'il
 // teste s'il exécute le même code.
 // ---------------------------------------------------------------------------
+import { getAnimReduites } from '../data/settings.js';
 
 // --- Échelle de temps -------------------------------------------------------
 // Une scène en DOM n'a pas d'horloge de simulation à ralentir : les cartes sont
@@ -49,11 +50,14 @@ export function enchainer(etapes) {
   const suivant = () => {
     if (annule || i >= etapes.length) return;
     const [attente, fn] = etapes[i++];
+    // En animations réduites, les séquences vont deux fois plus vite. On ne
+    // les supprime pas : ce sont elles qui portent le résultat, et une main qui
+    // se conclut sans un temps de lecture ne se comprend plus.
     minuterie = setTimeout(() => {
       if (annule) return;
       fn();
       suivant();
-    }, attente);
+    }, getAnimReduites() ? attente * .5 : attente);
   };
   suivant();
   return () => { annule = true; clearTimeout(minuterie); };
@@ -68,7 +72,7 @@ export function enchainer(etapes) {
 // occupe toute la scène, donc le déplacer laisse voir le vide sur les bords.
 // Trois pour cent suffisent à couvrir vingt pixels de débattement.
 export function secousse(hote, intensite, duree) {
-  if (!hote || intensite <= 0) return;
+  if (!hote || intensite <= 0 || getAnimReduites()) return;
   const debut = performance.now();
   const marge = 1 + Math.min(.06, intensite / 320);
   const pas = () => {
@@ -87,7 +91,9 @@ export function secousse(hote, intensite, duree) {
 // se chevauchent doivent s'additionner, et une classe posée deux fois sur le
 // même élément ne redémarre pas son animation.
 function voile(hote, classe, duree) {
-  if (!hote) return null;
+  // Les voiles sont purement décoratifs : ils colorent l'écran, ils ne disent
+  // rien qui ne soit dit ailleurs. C'est ce qui part en premier.
+  if (!hote || getAnimReduites()) return null;
   const v = document.createElement('div');
   v.className = classe;
   hote.appendChild(v);
@@ -135,7 +141,7 @@ function installerFiltre() {
 }
 
 export function aberration(hote, duree = 420) {
-  if (!hote) return;
+  if (!hote || getAnimReduites()) return;
   installerFiltre();
   hote.classList.add('bjAberre');
   setTimeout(() => hote.classList.remove('bjAberre'), duree);
@@ -221,7 +227,7 @@ const GENRES = {
 // `boite` est en coordonnées de l'hôte : {x, y, l, h}. Passer un rectangle
 // plutôt qu'un point évite d'appeler la fonction une fois par carte.
 export function emettre(hote, genre, boite, n, teinte) {
-  if (!hote || !GENRES[genre]) return;
+  if (!hote || !GENRES[genre] || getAnimReduites()) return;
   const s = systeme(hote);
   calibrer(s, hote);
   for (let i = 0; i < n; i++) {

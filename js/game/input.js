@@ -10,7 +10,7 @@ import {
 import { clamp, norm, approach, gauss } from '../core/utils.js';
 import { gaussJeu } from '../core/alea.js';
 import { getKey } from '../data/keymap.js';
-import { getDashAim, toggleDashAim } from '../data/settings.js';
+import { getDashAim, toggleDashAim, getAnimReduites, toggleAnimReduites } from '../data/settings.js';
 import { initAudio, sfx, toggleMusic } from '../audio/audio.js';
 import { addPopup, dust } from './fx.js';
 import { doThrowHuman, throwDisc, skipReplay, doDive, viseVersAvant } from './actions.js';
@@ -226,6 +226,15 @@ window.addEventListener('keyup', e => {
   if (!b) return;
   const refresh = () => { b.textContent = getDashAim() === 'move' ? 'SENS DU DÉPLACEMENT' : 'VERS LA SOURIS'; };
   b.addEventListener('click', e => { e.stopPropagation(); toggleDashAim(); refresh(); sfx('move'); });
+  refresh();
+})();
+
+// Bascule des animations du casino, juste en dessous.
+(function () {
+  const b = $('animReduites');
+  if (!b) return;
+  const refresh = () => { b.textContent = getAnimReduites() ? 'RÉDUITES' : 'COMPLÈTES'; };
+  b.addEventListener('click', e => { e.stopPropagation(); toggleAnimReduites(); refresh(); sfx('move'); });
   refresh();
 })();
 
