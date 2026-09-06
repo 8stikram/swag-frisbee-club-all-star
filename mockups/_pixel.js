@@ -31,9 +31,24 @@ export function editeur(o) {
   let grille = true;
   const pile = [];            // pour annuler : les états précédents
 
+  // Le fond du damier est COMMUTABLE, et c'est indispensable : sur le damier
+  // sombre d'origine, poser du noir revient à dessiner à l'aveugle — c'est
+  // exactement le cas de la cagoule de Jingle ou du cuir de Flowser. Mais un
+  // fond blanc fixe aurait le même défaut à l'envers, sur les pixels clairs.
+  // D'où trois fonds qui se succèdent, et des traits de grille qui suivent :
+  // clairs sur fond sombre, sombres sur fond clair.
+  const FONDS = [
+    { nom: 'fond sombre', a: '#181228', b: '#120d1e', trait: 'rgba(255,255,255,.10)', coupe: 'rgba(240,224,188,.45)' },
+    { nom: 'fond blanc', a: '#ffffff', b: '#e9e9ef', trait: 'rgba(0,0,0,.16)', coupe: 'rgba(0,0,0,.55)' },
+    { nom: 'fond gris', a: '#8a8a93', b: '#7c7c85', trait: 'rgba(0,0,0,.18)', coupe: 'rgba(0,0,0,.5)' }
+  ];
+  let fond = 0;
+
   try {
     const gard = localStorage.getItem(CLE);
     if (gard) dessin = JSON.parse(gard);
+    const f = +localStorage.getItem(CLE + ':fond');
+    if (f >= 0 && f < FONDS.length) fond = f;
   } catch (e) { /* navigation privée, mode fichier : on s'en passe */ }
 
   const garder = () => {
@@ -57,6 +72,7 @@ export function editeur(o) {
       '<div class="pxCote">' +
         '<div class="pxPal"></div>' +
         '<div class="pxBoutons">' +
+          '<button class="pxBtn" data-a="fond">fond sombre</button>' +
           '<button class="pxBtn" data-a="grille">grille</button>' +
           '<button class="pxBtn" data-a="annuler">annuler</button>' +
           '<button class="pxBtn" data-a="reset">repartir des choix</button>' +
@@ -97,9 +113,10 @@ export function editeur(o) {
     const r = courant(), p = pal();
     // Un damier sous le sprite : sans lui on ne distingue pas un pixel vide
     // d'un pixel noir, et le collier devient un trou.
+    const F = FONDS[fond];
     for (let y = 0; y < HAUT; y++) {
       for (let x = 0; x < LARG; x++) {
-        g.fillStyle = ((x + y) & 1) ? '#181228' : '#120d1e';
+        g.fillStyle = ((x + y) & 1) ? F.a : F.b;
         g.fillRect(x * ECH, y * ECH, ECH, ECH);
         const ch = r[y][x];
         if (ch !== '.' && p[ch]) {
@@ -109,7 +126,7 @@ export function editeur(o) {
       }
     }
     if (grille) {
-      g.strokeStyle = 'rgba(255,255,255,.10)'; g.lineWidth = 1;
+      g.strokeStyle = F.trait; g.lineWidth = 1;
       for (let x = 0; x <= LARG; x++) {
         g.beginPath(); g.moveTo(x * ECH + .5, 0); g.lineTo(x * ECH + .5, toile.height); g.stroke();
       }
@@ -121,7 +138,7 @@ export function editeur(o) {
       g.fillStyle = 'rgba(255,83,64,.14)';
       g.fillRect(14 * ECH, 0, 2 * ECH, toile.height);
       // Et la coupure tête / corps, qui tombe toujours à la dixième ligne.
-      g.strokeStyle = 'rgba(240,224,188,.45)'; g.lineWidth = 1;
+      g.strokeStyle = F.coupe; g.lineWidth = 1;
       g.beginPath(); g.moveTo(0, 10 * ECH + .5); g.lineTo(toile.width, 10 * ECH + .5); g.stroke();
     }
     sortie.value = 'tete: ' + JSON.stringify(courant().slice(0, 10)) +
@@ -161,6 +178,12 @@ export function editeur(o) {
   hote.querySelectorAll('.pxBtn').forEach(b => {
     b.onclick = async () => {
       const a = b.dataset.a;
+      if (a === 'fond') {
+        fond = (fond + 1) % FONDS.length;
+        try { localStorage.setItem(CLE + ':fond', fond); } catch (e) { /* idem */ }
+        b.textContent = FONDS[fond].nom;
+        peindre();
+      }
       if (a === 'grille') { grille = !grille; peindre(); }
       if (a === 'annuler') {
         if (!pile.length) return;
@@ -179,6 +202,9 @@ export function editeur(o) {
   });
 
   majPalette();
+  // Le libellé du bouton doit dire le fond RESTAURÉ, pas celui écrit en dur
+  // dans le panneau : sinon il annonce « fond sombre » sur un fond blanc.
+  hote.querySelector('.pxBtn[data-a="fond"]').textContent = FONDS[fond].nom;
   peindre();
   addEventListener('resize', peindre);
 
