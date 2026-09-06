@@ -311,6 +311,28 @@ export function sfx(n, venuDuReseau) {
       noise(.18, .085, 3200);
       noise(.24, .07, 1150, .07);
       break;
+    // --- Transitions du casino ----------------------------------------------
+    // Le diable qui part en fumée : un souffle qui s'ouvre, sans attaque. Le
+    // moindre claquement et ce n'est plus une disparition, c'est une explosion.
+    case 'ctPoof':
+      noise(.34, .1, 900);
+      noise(.26, .07, 2600, .02);
+      beep(520, 90, .38, 'sine', .06, .01);
+      break;
+    // Le portail : une nappe grave qui monte, et un timbre aigu par-dessus. Les
+    // deux ensemble font le passage ; la nappe seule ferait un grondement.
+    case 'ctPortail':
+      beep(58, 190, .85, 'sawtooth', .13);
+      beep(116, 380, .8, 'sine', .07, .02);
+      [1568, 2093, 2637].forEach((f, i) => beep(f, f * 1.35, .5, 'sine', .035, .1 + i * .07));
+      noise(.6, .07, 1400, .06);
+      break;
+    // Le retour : le même souffle, plus court et descendant.
+    case 'ctRetour':
+      noise(.2, .09, 2200);
+      beep(420, 120, .26, 'sine', .07);
+      break;
+
     // --- Case opening -------------------------------------------------------
     // Le cran d'une carte qui franchit la ligne. Il en passe une soixantaine
     // par ouverture, de plus en plus lentement : c'est ce cliquetis qui fait

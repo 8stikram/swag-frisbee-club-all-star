@@ -3710,3 +3710,97 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   text-shadow:0 .3cqh 0 rgba(0,0,0,.9);
 }
 .coConfirmeBtns{display:flex;gap:1.6cqw;justify-content:center}
+
+/* ================= TRANSITIONS DU CASINO =================
+   Voir casino/animations.js pour le déroulé des cinq temps. Ce bloc ne contient
+   que ce qui se déclare : le voile, la fente, l'éclair, et les trois états
+   posés sur le décor (le diable qui se dissout, le comptoir qui s'ouvre, la
+   caméra qui plonge). */
+
+.ctVoile{
+  position:absolute;inset:0;z-index:60;pointer-events:none;
+  opacity:1;transition:opacity .32s ease;
+}
+.ctVoile.sort{opacity:0}
+.ctVortex{position:absolute;inset:0;width:100%;height:100%}
+
+/* La fente : le trait de lumière qui s'ouvre là où on a cliqué. Elle grandit
+   en hauteur avant de s'élargir — une fente qui s'épaissit d'abord ressemble à
+   une barre, pas à une déchirure. */
+.ctFente{
+  position:absolute;top:50%;left:50%;width:3px;height:0;
+  transform:translate(-50%,-50%);border-radius:99px;
+  background:linear-gradient(180deg,transparent,#fff6c2 18%,#d48aff 50%,#fff6c2 82%,transparent);
+  box-shadow:0 0 24px rgba(255,214,90,.95), 0 0 60px rgba(180,80,255,.8);
+  opacity:0;
+}
+.ctFente.ouvre{animation:ctFente .62s cubic-bezier(.3,.7,.3,1) forwards}
+@keyframes ctFente{
+  0%{height:0;width:3px;opacity:0}
+  22%{height:64%;width:3px;opacity:1}
+  100%{height:106%;width:13%;opacity:.28}
+}
+
+/* L'éclair de traversée. Volontairement discret : à pleine opacité il efface le
+   vortex qu'on a mis une seconde à ouvrir, et on ne traverse plus rien, on
+   regarde un fondu au blanc. */
+.ctEclair{position:absolute;inset:0;opacity:0}
+.ctEclair.passe{
+  background:radial-gradient(60% 55% at 50% 55%, rgba(255,236,180,.42), rgba(170,70,255,.3) 55%, rgba(20,4,26,.55) 100%);
+  animation:ctPasse .5s ease-out forwards;
+}
+/* La caisse plonge dans l'or plutôt que dans le violet : ce n'est pas la même
+   porte, et le joueur doit le sentir avant de lire l'écran d'arrivée. */
+.ctEclair.passe.caisse{
+  background:radial-gradient(60% 55% at 50% 55%, rgba(255,240,190,.5), rgba(255,170,40,.32) 55%, rgba(26,10,2,.55) 100%);
+}
+@keyframes ctPasse{0%{opacity:0}45%{opacity:.62}100%{opacity:.5}}
+.ctEclair.retour{background:rgba(4,2,6,.92);animation:ctRetourAnim .3s ease-in forwards}
+@keyframes ctRetourAnim{from{opacity:0}to{opacity:1}}
+
+/* --- Ce que la transition fait au décor ---------------------------------- */
+
+/* Le diable se dissout vers le haut en perdant ses contours. */
+.ctDissout{
+  animation:ctDissout .42s ease-in forwards;
+  filter:blur(0) saturate(1);
+}
+@keyframes ctDissout{
+  0%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
+  100%{opacity:0;transform:translateY(-9%) scale(1.04);filter:blur(7px) saturate(2) hue-rotate(45deg)}
+}
+
+/* Le comptoir s'ouvre en deux. Le masque creuse une bande transparente au
+   centre et l'élargit : les deux moitiés s'écartent vraiment, là où un simple
+   fondu aurait fait disparaître le meuble sans qu'il s'ouvre.
+   `@property` est nécessaire — sans lui, une variable de pourcentage saute
+   d'une valeur à l'autre au lieu de s'animer. */
+@property --ctG1{syntax:'<percentage>';inherits:false;initial-value:50%}
+@property --ctG2{syntax:'<percentage>';inherits:false;initial-value:50%}
+.ctFend{
+  --ctG1:50%; --ctG2:50%;
+  -webkit-mask-image:linear-gradient(90deg,#000 0 var(--ctG1),transparent var(--ctG1) var(--ctG2),#000 var(--ctG2) 100%);
+  mask-image:linear-gradient(90deg,#000 0 var(--ctG1),transparent var(--ctG1) var(--ctG2),#000 var(--ctG2) 100%);
+  animation:ctFend .6s cubic-bezier(.4,0,.6,1) forwards;
+}
+@keyframes ctFend{
+  0%{--ctG1:50%;--ctG2:50%;filter:brightness(1)}
+  30%{filter:brightness(1.5) saturate(1.3)}
+  100%{--ctG1:2%;--ctG2:98%;filter:brightness(2.2) saturate(1.5)}
+}
+
+/* La caméra plonge vers le vortex. C'est l'écran entier qui avance, décor
+   compris : zoomer seulement le comptoir aurait décollé le meuble du fond. */
+.ctPlonge{animation:ctPlonge .9s cubic-bezier(.5,0,.8,.4) forwards}
+@keyframes ctPlonge{
+  0%{transform:scale(1)}
+  100%{transform:scale(1.9)}
+}
+
+/* La table d'arrivée se pose : elle vient d'un peu trop petit, pas d'un fondu.
+   Un fondu dit « nouvel écran » ; ce léger rebond dit « on est arrivés ». */
+.ctPose{animation:ctPose .45s cubic-bezier(.2,1.3,.4,1)}
+@keyframes ctPose{
+  0%{transform:scale(.95);opacity:.4}
+  100%{transform:scale(1);opacity:1}
+}

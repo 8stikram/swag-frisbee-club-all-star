@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Casino — les transitions vers les jeux</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Russo+One&family=Barlow:wght@700;800&family=DotGothic16&display=swap" rel="stylesheet">
+<!-- La feuille du JEU, pas une copie : le banc d'essai doit casser en même
+     temps que le casino, sinon il ne teste plus rien. -->
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff;
+         --or:#d4af37; --or-clair:#f6e27a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;
+       padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:1020px;line-height:1.7;margin:0 0 14px}
+  .note b{color:var(--or-clair)} .note code{color:#9fd8ff;font-size:12px}
+
+  /* La scène reproduit le cadre du jeu : 16:10 et requêtes de conteneur, sinon
+     tous les cqw/cqh de style.css valent zéro. */
+  .scene{
+    position:relative;width:100%;max-width:1100px;aspect-ratio:16/10;margin:0 auto;
+    border:5px solid #1b2a52;border-radius:12px;overflow:hidden;container-type:size;
+    background:#07040a;
+  }
+  .pupitre{max-width:1100px;margin:14px auto 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .pupitre button{
+    background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+    padding:10px 16px;font-size:12px;font-weight:700;letter-spacing:.06em;cursor:pointer;
+  }
+  .pupitre button.test{border-color:var(--or);color:var(--or-clair);background:#2a2206}
+  .pupitre button.test:hover{background:#3a2f08}
+  .pupitre .sep{width:1px;height:26px;background:var(--edge);margin:0 4px}
+  .pupitre .etat{font-size:12px;color:#8fa4c4;margin-left:auto}
+
+  /* Béquilles d'import : audio.js lit ces quatre éléments au chargement du
+     module, et dom.js prend le contexte 2D de #game. Sans eux, importer le
+     moindre morceau du jeu jette avant la première ligne utile. */
+  .bequilles{position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden}
+
+  /* La fausse table d'arrivée. Elle n'existe que pour qu'il y ait quelque chose
+     de l'autre côté du portail. */
+  .fausseTable{
+    position:absolute;inset:0;z-index:8;display:none;
+    align-items:center;justify-content:center;
+    background:radial-gradient(60% 60% at 50% 45%,#123,#050208);
+  }
+  .fausseTable.on{display:flex}
+  .fausseTable b{
+    font-family:'Archivo Black',sans-serif;font-size:clamp(18px,7cqh,56px);color:#f6e27a;
+    -webkit-text-stroke:.5cqh #1a0a02;paint-order:stroke fill;
+  }
+</style>
+</head>
+<body>
+
+<h1>Casino — les transitions vers les jeux</h1>
+<p class="note">
+  Chaque bouton rejoue la transition complète du comptoir vers un jeu. Le code
+  exécuté est celui du casino : <code>js/casino/animations.js</code> pour les
+  cinq temps, <code>js/casino/effets.js</code> pour les systèmes partagés
+  (particules, secousse, enchaînement). Le décor — diable, comptoir, cartes —
+  est chargé <b>en direct depuis index.html</b>, donc il ne peut pas dériver
+  de celui du jeu.
+</p>
+<p class="note">
+  Les cinq temps : <b>1</b> la carte s'enflamme et l'écran encaisse le clic ·
+  <b>2</b> le diable se dissout en fumée violette · <b>3</b> le comptoir s'ouvre
+  en deux, le vortex apparaît, la caméra plonge · <b>4</b> la traversée, avec
+  les cartes aspirées · <b>5</b> l'arrivée, et les braises qui restent.
+  La caisse plonge dans l'or au lieu du violet : ce n'est pas la même porte.
+</p>
+
+<div class="scene" id="scene"></div>
+
+<div class="pupitre">
+  <button class="test" data-jeu="blackjack">→ BLACKJACK</button>
+  <button class="test" data-jeu="roulette">→ ROULETTE</button>
+  <button class="test" data-jeu="poker">→ POKER</button>
+  <button class="test" data-jeu="caisses">→ CASE OPENING</button>
+  <span class="sep"></span>
+  <button id="btnRetour">← RETOUR AU COMPTOIR</button>
+  <span class="etat" id="etat">prêt</span>
+</div>
+
+<div class="bequilles" aria-hidden="true">
+  <canvas id="game" width="8" height="8"></canvas>
+  <input id="musicVol" type="range" value="5"><span id="musicVal"></span>
+  <input id="sfxVol" type="range" value="20"><span id="sfxVal"></span>
+</div>
+
+<script type="module">
+import { transitionVersJeu, transitionRetour } from '../js/casino/animations.js';
+import { initAudio } from '../js/audio/audio.js';
+
+const scene = document.getElementById('scene');
+const etat = document.getElementById('etat');
+
+// Le décor du comptoir est repris tel quel dans index.html. Le redessiner ici
+// aurait garanti qu'il dérive dès la première retouche du diable.
+const page = new DOMParser().parseFromString(await (await fetch('../index.html')).text(), 'text/html');
+const casino = page.getElementById('scr-casino');
+casino.classList.remove('hidden');
+casino.removeAttribute('id');
+casino.classList.add('sceneCasino');
+scene.appendChild(casino);
+
+// Un écran d'arrivée pour avoir quelque chose de l'autre côté du portail.
+const table = document.createElement('div');
+table.className = 'fausseTable';
+table.innerHTML = '<b></b>';
+scene.appendChild(table);
+
+// Le décor du casino est monté par casino.js au chargement du module, mais il
+// vise `#scr-casino` par identifiant — ici l'écran n'en a plus. On remonte donc
+// les seuls morceaux dont la transition a besoin : les quatre cartes.
+const JEUX = { blackjack: 'BLACKJACK', roulette: 'ROULETTE', poker: 'POKER', caisses: 'CASE OPENING' };
+const grille = casino.querySelector('#casinoJeux');
+grille.id = '';
+for (const [id, nom] of Object.entries(JEUX)) {
+  const c = document.createElement('button');
+  c.className = 'casinoCard';
+  c.dataset.jeu = id;
+  let langues = '';
+  for (let i = 0; i < 9; i++)
+    langues += `<i style="left:${i * 11 - 2}%;width:${18 + (i % 3) * 5}%;height:${55 + (i % 4) * 10}%;` +
+               `animation-duration:${(.3 + (i % 5) * .04).toFixed(2)}s;animation-delay:-${(i * .07).toFixed(2)}s"></i>`;
+  c.innerHTML = `<span class="casinoIco">✦</span><b>${nom}</b><em>Table du casino</em>` +
+                `<span class="casFlammeCarte">${langues}</span>`;
+  grille.appendChild(c);
+}
+
+let annuler = null;
+function jouer(jeu) {
+  initAudio();
+  if (annuler) annuler();
+  table.classList.remove('on');
+  etat.textContent = 'transition vers ' + JEUX[jeu] + '…';
+  annuler = transitionVersJeu({
+    hote: casino,
+    carte: grille.querySelector(`[data-jeu="${jeu}"]`),
+    diable: casino.querySelector('.devilBox'),
+    comptoir: casino.querySelector('.casinoComptoir'),
+    variante: jeu === 'caisses' ? 'caisse' : 'table'
+  }, () => {
+    table.querySelector('b').textContent = JEUX[jeu];
+    table.classList.add('on');
+    etat.textContent = 'arrivé — ' + JEUX[jeu];
+  });
+}
+
+for (const b of document.querySelectorAll('.pupitre .test'))
+  b.addEventListener('click', () => jouer(b.dataset.jeu));
+
+document.getElementById('btnRetour').addEventListener('click', () => {
+  initAudio();
+  transitionRetour(scene, () => { table.classList.remove('on'); etat.textContent = 'au comptoir'; });
+});
+</script>
+</body>
+</html>

@@ -531,49 +531,56 @@ const DUREE_FEU = 620;
 function allumer(carte, jeu) {
   if (carte.classList.contains('enFeu')) return;
   if (!connecte()) { sfx('deny'); message('Connecte-toi : les pièces vivent sur ton compte.'); return; }
-  sfx('casinoFeu');
   carte.classList.add('enfonce');
-  setTimeout(() => {
+  setTimeout(async () => {
     carte.classList.remove('enfonce');
     carte.classList.add('flash');
     setTimeout(() => carte.classList.remove('flash'), 110);
-    carte.classList.add('enFeu');
     paillettes(carte, 18, ['#ff8a1e', '#ff4d18', '#f6e27a', '#fff3c2'], -1, 200);
     setTimeout(() => paillettes(carte, 14, ['#ff8a1e', '#ff4d18'], -1, 240), 220);
-    $('scr-casino')?.classList.add('secoue');
-    setTimeout(() => $('scr-casino')?.classList.remove('secoue'), 240);
-    setTimeout(() => {
-      carte.classList.remove('enFeu');
-      ouvrirJeu(jeu);
-    }, DUREE_FEU);
+
+    // Le module est chargé AVANT d'ouvrir le portail. Le charger pendant aurait
+    // masqué son temps de chargement, mais un module absent aurait alors fait
+    // jouer toute la transition pour rien — on serait arrivé nulle part.
+    const [{ transitionVersJeu }, ouvrir] = await Promise.all([
+      import('./animations.js'), chargerJeu(jeu)
+    ]);
+    if (!ouvrir) { carte.classList.remove('enFeu'); return; }
+
+    transitionVersJeu({
+      hote: $('scr-casino'),
+      carte,
+      diable: document.querySelector('#scr-casino .devilBox'),
+      comptoir: document.querySelector('#scr-casino .casinoComptoir'),
+      variante: jeu.id === 'caisses' ? 'caisse' : 'table'
+    }, ouvrir);
   }, 100);
 }
 
 // Chaque jeu est chargé au moment où on l'ouvre, jamais avant : le casino ne
 // doit rien coûter à quelqu'un qui n'y entre pas. Tant qu'un module n'existe
 // pas, on le dit plutôt que d'ouvrir un écran vide.
-async function ouvrirJeu(jeu) {
-  if (jeu.id === 'blackjack') {
-    const { ouvrirBlackjack } = await import('./blackjack.js');
-    ouvrirBlackjack();
-    return;
+// Charge le module d'un jeu et renvoie de quoi l'ouvrir, sans l'ouvrir. La
+// séparation compte : le chargement démarre au clic, l'ouverture attend d'être
+// sous le voile de la transition. Les faire ensemble montrerait la table
+// apparaître au milieu du portail.
+const MODULES = {
+  blackjack: () => import('./blackjack.js').then(m => m.ouvrirBlackjack),
+  poker: () => import('./poker.js').then(m => m.ouvrirPoker),
+  roulette: () => import('./roulette.js').then(m => m.ouvrirRoulette),
+  caisses: () => import('./case-opening.js').then(m => m.ouvrirCaisses)
+};
+
+function chargerJeu(jeu) {
+  const charge = MODULES[jeu.id];
+  if (!charge) {
+    message(jeu.nom + ' — pas encore ouvert. Le diable finit d\'installer la table.');
+    return Promise.resolve(null);
   }
-  if (jeu.id === 'poker') {
-    const { ouvrirPoker } = await import('./poker.js');
-    ouvrirPoker();
-    return;
-  }
-  if (jeu.id === 'roulette') {
-    const { ouvrirRoulette } = await import('./roulette.js');
-    ouvrirRoulette();
-    return;
-  }
-  if (jeu.id === 'caisses') {
-    const { ouvrirCaisses } = await import('./case-opening.js');
-    ouvrirCaisses();
-    return;
-  }
-  message(jeu.nom + ' — pas encore ouvert. Le diable finit d\'installer la table.');
+  return charge().catch(() => {
+    message(jeu.nom + ' — la table ne s\'ouvre pas. Recharge la page.');
+    return null;
+  });
 }
 
 // La carte s'incline VERS la souris. L'axe X est piloté par la position

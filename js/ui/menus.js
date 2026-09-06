@@ -1168,11 +1168,23 @@ export function doAct(act) {
     // bien qu'un coup d'envoi de l'hôte pouvait démarrer un match depuis
     // l'écran-titre. Échap et « retour » ferment donc vraiment la session et
     // ramènent au menu de l'arène, d'où l'on peut rechercher quelqu'un.
-    case 'back':
+    case 'back': {
       sfx('select'); musiqueDeMenu();
       if (modeEnLigne) { quitterChoixEnLigne(); break; }
+      // Depuis une table du casino, on ne repart pas au titre : on revient au
+      // comptoir, et par un fondu court. Aussi cérémonieux que l'entrée, ça
+      // pèserait dès le troisième aller-retour.
+      const table = document.querySelector(
+        '#scr-blackjack:not(.hidden), #scr-poker:not(.hidden), #scr-roulette:not(.hidden), #scr-caisses:not(.hidden)');
+      if (table) {
+        import('../casino/animations.js')
+          .then(m => m.transitionRetour(table, () => showScreen('casino')))
+          .catch(() => showScreen('casino'));
+        break;
+      }
       showScreen('title');
       break;
+    }
     // En ligne, ce bouton n'est plus une porte : c'est un compteur d'attente.
     // Cliquer dessus avant que les deux soient prêts doit rester sans effet,
     // sinon on repasserait devant l'adversaire encore en train de choisir.
