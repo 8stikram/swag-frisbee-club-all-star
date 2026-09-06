@@ -84,7 +84,48 @@ function poserMise(id, type, nums) {
   m.montant += R.jeton;
   R.mises.set(id, m);
   sfx('rlJeton');
+  // Le jeton part de la rangée et va se poser sur la case. La pastille
+  // apparaissait jusqu'ici par magie ; ce trajet est ce qui fait qu'on a
+  // l'impression de l'avoir posée soi-même.
+  glisserJeton(id);
   majTapis();
+}
+
+// --- Un jeton traverse le tapis ---------------------------------------------
+// `depuis` et `vers` sont des éléments ; le jeton n'est qu'un disque jetable qui
+// suit une courbe et sème quelques éclats. Le même trajet sert à la pose, au
+// paiement et à la reprise, dans un sens ou dans l'autre.
+function volerJeton(depuis, vers, teinte, retard) {
+  const ecran = $('scr-roulette');
+  if (!ecran || !depuis || !vers) return;
+  const a = boiteDe(ecran, depuis), b = boiteDe(ecran, vers);
+  const j = document.createElement('div');
+  j.className = 'bjJetonVol rlJetonVol';
+  j.style.cssText = `left:${a.x + a.l * .5 - 11}px;top:${a.y + a.h * .5 - 11}px;` +
+                    `width:22px;height:22px;--rune:${teinte};`;
+  ecran.appendChild(j);
+  const dx = (b.x + b.l * .5) - (a.x + a.l * .5);
+  const dy = (b.y + b.h * .5) - (a.y + a.h * .5);
+  const anim = j.animate([
+    { transform: 'translate(0,0) rotate(0) scale(1)', opacity: 1 },
+    { transform: `translate(${dx * .5}px, ${dy * .5 - 26}px) rotate(200deg) scale(1.05)`, opacity: 1, offset: .55 },
+    { transform: `translate(${dx}px, ${dy}px) rotate(400deg) scale(.55)`, opacity: 0 }
+  ], { duration: 320, easing: 'cubic-bezier(.35,0,.3,1)', delay: retard || 0 });
+  const semer = () => {
+    if (anim.playState === 'finished') return;
+    const p = boiteDe(ecran, j);
+    emettre(ecran, 'trainee', { x: p.x + 6, y: p.y + 6, l: 8, h: 8 }, 1, teinte);
+    requestAnimationFrame(semer);
+  };
+  requestAnimationFrame(semer);
+  anim.onfinish = () => j.remove();
+}
+
+function glisserJeton(id) {
+  const source = document.querySelector('.rlJeton.choisi');
+  const cible = document.querySelector(`[data-mise="${CSS.escape(id)}"]`);
+  const teinte = (JETONS.find(j => j.v === R.jeton) || {}).teinte || '#f6e27a';
+  if (source && cible) volerJeton(source, cible, teinte);
 }
 
 // Un clic droit retire la dernière mise posée sur la case : sans ça, une erreur
@@ -227,6 +268,9 @@ let ctx = null, taille = 0;
 // ce croisement qui rend le tirage illisible à l'œil, et c'est aussi pour ça
 // qu'une vraie table le fait.
 let angleRoue = 0, angleBille = 0, rayonBille = 0;
+// Vitesse angulaire de la bille, en radians par image : c'est elle qui donne la
+// longueur de sa traÃ®nÃ©e, donc le freinage qu'on voit.
+let vitesseBille = 0, sensBille = -1;
 
 function calibrerRoue() {
   const cv = $('rlRoue');
@@ -304,6 +348,35 @@ function dessinerRoue(gagnant) {
 
   // La bille, et sa traînée.
   const bx = cx + Math.cos(angleBille) * rayonBille, by = cy + Math.sin(angleBille) * rayonBille;
+
+  // La traînée suit la PISTE, pas les positions échantillonnées. En reliant une
+  // image à la suivante, on obtenait une corde qui coupait à travers le moyeu :
+  // au plus vite, la bille parcourt près d'un tiers de tour entre deux images.
+  // On la redessine donc comme un arc derrière elle, dont la longueur suit sa
+  // vitesse — c'est ce raccourcissement qui rend le freinage lisible.
+  if (R.tourne && vitesseBille > .002) {
+    const arc = Math.min(2.2, vitesseBille * 9);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    const PAS_ARC = 18;
+    for (let i = 0; i < PAS_ARC; i++) {
+      const k = 1 - i / PAS_ARC;
+      const a0 = angleBille - (i / PAS_ARC) * arc * sensBille;
+      const a1 = angleBille - ((i + 1) / PAS_ARC) * arc * sensBille;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a0) * rayonBille, cy + Math.sin(a0) * rayonBille);
+      ctx.lineTo(cx + Math.cos(a1) * rayonBille, cy + Math.sin(a1) * rayonBille);
+      // L'or en tête, le violet derrière : la même palette que le portail du
+      // casino, dont la bille garde la trace.
+      ctx.strokeStyle = k > .6
+        ? `rgba(255,236,180,${k * .75})`
+        : `rgba(180,90,255,${k * .5})`;
+      ctx.lineWidth = Math.max(1, taille * .018 * k);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
   const halo = ctx.createRadialGradient(bx, by, 0, bx, by, taille * .06);
   halo.addColorStop(0, 'rgba(255,240,190,.9)');
   halo.addColorStop(.4, 'rgba(190,110,255,.45)');
@@ -339,7 +412,12 @@ function lancer() {
   // la seule façon d'avoir les deux en grand sur un écran plus large que haut :
   // chacun au moment où il compte, plutôt qu'un compromis où les deux sont
   // trop petits pour être lus.
-  $('scr-roulette').classList.add('lance');
+  const ecranLance = $('scr-roulette');
+  ecranLance.classList.add('lance');
+  // Un éclair au départ : sans lui, la roue se met simplement à tourner, et
+  // rien ne dit que c'est le clic qui l'a lancée.
+  flash(ecranLance, 'or', 140);
+  secousse(ecranLance, 4, 200);
 
   // Le tirage est fait MAINTENANT, avant la moindre image : l'animation ne
   // décide de rien, elle raconte. Faire tomber la bille « où elle arrive »
@@ -376,7 +454,14 @@ function lancer() {
     const t = sauter ? 1 : brut;
     const e = easeOut(t);
     angleRoue = roue0 + (roueF - roue0) * e;
+    const avant = angleBille;
     angleBille = bille0 + (billeF - bille0) * e;
+    // Ce que la bille a parcouru depuis l'image précédente : c'est cette valeur
+    // qui donne la longueur de sa traînée, donc le freinage qu'on voit. La
+    // calculer plutôt que de la déduire de la courbe évite d'avoir deux
+    // formules à garder d'accord quand on retouche l'accélération.
+    vitesseBille = Math.abs(angleBille - avant);
+    sensBille = Math.sign(angleBille - avant) || -1;
 
     // La bille descend vers sa case sur le dernier tiers, et rebondit deux ou
     // trois fois avant de se poser. Sans ces rebonds elle se colle à sa case,
@@ -433,13 +518,32 @@ function regler(gagnant) {
     flash(ecran, 'or', gros ? 180 : 110);
     secousse(ecran, gros ? 14 : 5, gros ? 420 : 240);
     emettre(ecran, 'confetti', { x: 0, y: -30, l: ecran.clientWidth, h: 20 }, gros ? 40 : 16);
-    for (const c of document.querySelectorAll('.rlNum.gagnante, .rlExterne.gagnante, .rlArete.gagnante'))
+    // Les jetons gagnants remontent vers le compteur, un par case. Le tapis
+    // revient à 1,5 s (voir plus bas), donc on part après : lancés pendant que
+    // le feutre est encore effacé, ils voleraient depuis des cases invisibles.
+    const solde = $('rlSolde');
+    let n = 0;
+    for (const c of document.querySelectorAll('.rlNum.gagnante, .rlExterne.gagnante, .rlArete.gagnante')) {
       emettre(ecran, 'confetti', boiteDe(ecran, c), 6);
+      if (solde) volerJeton(c, solde, '#f6e27a', 1600 + (n++) * 90);
+    }
     sfx(gros ? 'bjCaching' : 'bjDing');
   } else if (net < 0) {
     flash(ecran, 'rougeDoux', 120);
     secousse(ecran, 4, 200);
     sfx('bjBuzzer');
+    // Les mises perdues partent en fumée et remontent vers la roue — c'est là
+    // que se tient la maison. Grisées sur place, elles restaient posées comme un
+    // reproche. Le départ est calé sur le retour du tapis (1,5 s plus bas) :
+    // lancées avant, elles voleraient depuis des cases encore effacées.
+    const roue = $('rlRoue');
+    let n = 0;
+    for (const c of document.querySelectorAll('.rlNum.perdante, .rlExterne.perdante')) {
+      if (!R.mises.has(c.dataset.mise)) continue;
+      const retard = 1600 + (n++) * 70;
+      setTimeout(() => emettre(ecran, 'fumee', boiteDe(ecran, c), 8, '#2a1040'), retard);
+      if (roue) volerJeton(c, roue, '#ff6a6a', retard);
+    }
   } else sfx('bjDingNeutre');
 
   if (net !== 0 && connecte()) {
