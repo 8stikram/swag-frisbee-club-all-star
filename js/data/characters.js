@@ -122,7 +122,7 @@ const PAL_SKINS_J = {
   J: '#4a4a55', L: '#2a2a33', H: '#17171b', h: '#0a0a0d',
   P: '#f2f0ea', p: '#c9c6bd',   // le plastron de chemise
   X: '#d4574c',                 // le rouge eclaire du gibus ecarlate
-  N: '#232833', n: '#14171d', T: '#3a4150',
+  T: '#3a4150', N: '#22262f', n: '#141720', w: '#08090d',
   C: '#8a5a2e', c: '#5e3c1c', E: '#d9b56a',
   O: '#e0711f', o: '#a8480f', Q: '#3a2245', q: '#221328', Z: '#5c3563', F: '#3fae70'
 };
@@ -168,13 +168,25 @@ const SKINS_J = {
     ouverture: { cols: { 5: 'P', 6: 'R', 7: 'R', 8: 'P' }, tissu: 'Lp' }
   },
   ninja: {
-    tete: ["......NN........", ".....NnNn.......", ".....NNNn.......", "....NNNNnn......",
-           "....NNNNnT......", "...NNNNNnnT.....", "...RRRRRRRRR....", "..nNNNNNnnnT....",
-           "..TnNNNnnnTn....", "..NnNnNnNnNn...."],
-    col: '....NnNnNn......',
-    buste: { S: 'N', V: 'T', v: 'n', R: 'N', l: 'T' },
-    poitrine: { l: 'T', S: 'N', s: 'n' },
-    bas: { l: 'T', S: 'N' }
+    // D'apres reference : la cagoule couvre TOUTE la tete, le bandeau est noue
+    // derriere et ses deux pans volent — vers la gauche, donc derriere lui,
+    // puisque le sprite naturel est tourne vers la droite.
+    tete: ["......TN........", ".....TNNn.......", ".....TNNn.......", "....TNNNnn......",
+           "....TNNNnw......", "...TNNNNnnw.....", "...rRRRRRRr.....", "rrnTNNNNnnnw....",
+           "rrwnNNNnnnwn....", "..nNnwnwnNnw...."],
+    col: '....nNwwNn......',
+    // NOIR INTEGRAL : plus d'acier nulle part, quatre valeurs de tres sombre.
+    // Une premiere version gardait l'acier du gabarit aux avant-bras et au
+    // plastron pour donner un point clair — ca marchait, mais ca faisait un
+    // ninja gris. Le contraste vient donc entierement des TROIS ROUGES de la
+    // reference : le bandeau, le col croise, l'obi. Et de l'ecart de valeur :
+    // torse le plus sombre, bras et jambes un cran au-dessus.
+    buste: { V: 'n', v: 'w', R: 'n', S: 'N', l: 'T' },
+    poitrine: { l: 'T', S: 'n', s: 'w' },
+    bas: { l: 'T', S: 'N', G: 'T' },
+    // Le col croise en V du kimono, pose apres coup sur les lignes 1 a 4. Il ne
+    // mord que sur de la matiere deja peinte, donc la silhouette ne bouge pas.
+    croise: [[1, [4, 9]], [2, [5, 8]], [3, [6, 7]], [4, [6, 7]]]
   },
   cowboy: {
     tete: ["......CC........", ".....CEEc.......", ".....CCCc.......", "....CCCCcc......",
@@ -218,7 +230,16 @@ function construireSkinJ(s) {
     const corps = base.map((ligne, i) => {
       if (i === 0) return s.col;
       if (i >= 6) return teinter([ligne], s.bas)[0];
-      const t = teinter([ligne], i >= 4 ? s.poitrine : s.buste)[0];
+      let t = teinter([ligne], i >= 4 ? s.poitrine : s.buste)[0];
+      // Le col croise : une lettre posee a des colonnes precises, mais SEULEMENT
+      // la ou il y a deja de la matiere — sinon le col depasserait dans le vide
+      // des que le bras s'ecarte du corps.
+      if (s.croise) {
+        for (const [y, cols] of s.croise) {
+          if (y !== i) continue;
+          t = [...t].map((ch, x) => (cols.includes(x) && ch !== '.') ? 'R' : ch).join('');
+        }
+      }
       if (!s.ouverture || i > 4) return t;
       const o = s.ouverture;
       // `tissu` est une LISTE de lettres, pas une seule : le plastron doit
