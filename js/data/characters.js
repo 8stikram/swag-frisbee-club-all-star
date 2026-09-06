@@ -205,36 +205,38 @@ const SKINS_J = {
     ]
   },
   cowboy: {
-    // Le chapeau est BRUN sur un poncho CREME : deux matieres et deux valeurs
-    // differentes. C'est la lecon du ninja, ou une cagoule sombre au-dessus
-    // d'un gi sombre ne faisait qu'une seule masse grise.
-    //
-    // Le ruban est cale sur la largeur EXACTE de la calotte a sa ligne. Le
-    // premier haut-de-forme du smoking debordait d'un pixel de chaque cote.
-    tete: ["................", "......EC........", ".....ECCc.......", "....ECCCcc......",
-           "....ECCCcc......", "....rRRRrr......", "...ECCCCCcc.....", ".ECCCCCCCCccy...",
-           "..yccccccccy....", "..RrRrRrRrRr...."],
-    // L'OR SURVIT A TROIS ENDROITS, et le gabarit les designait deja tous les
-    // trois : la bandouliere (`l`) devient la ceinture a CARTOUCHES, le centre
-    // de la ceinture devient la BOUCLE, et le `G` au bord des bottes devient
-    // les EPERONS. C'est ce qui garde le lien avec la cloche doree — le ninja
-    // a montre qu'un skin qui perd l'or perd le personnage.
+    // Dessine a la main dans l'editeur du mockup, puis remis sur le gabarit.
+    // Ce que le dessin apporte par rapport a ma proposition :
+    //   les POINTES DU BORD SE RELEVENT au lieu d'un bord plat — le chapeau a
+    //     une allure au lieu d'etre une dalle ;
+    //   le poncho est ENCADRE de brun sombre au lieu d'etre un grand aplat
+    //     creme. C'est la vraie lecon : mon poncho etait une seule masse
+    //     claire, celui-ci separe chaque element ;
+    //   la ceinture rouge descend a sa place, la BOUCLE d'or au centre, et les
+    //     bottes passent au cuir sombre au lieu de rester couleur pantalon.
+    tete: ["................", "......EC........", ".....ECCc.......", ".....CCCc.......",
+           "....ECCCcc......", "....rRRRrr......", ".y.ECCCCCcc.y...", "..yCCCCCCCCy....",
+           "...ycccccyy.....", "...rRrRrRrR....."],
+    // Lignes 0, 4 et 5 : identiques dans les six poses d'origine, donc
+    // recopiees telles quelles.
     fixes: {
-      0: "....rRRRRr......",
-      4: "..cEEEEEEEEc....",
-      5: "..ccccGGcccc...."
+      0: "....RrRrRr......",
+      4: "..yyyEccEyyy....",
+      5: "..RRRrGgrrrr...."
     },
-    // `l` est la bandouliere sur les lignes 1-3 et la ceinture sur les lignes
-    // 6+. Comme le buste et le bas ont chacun leur table, la meme lettre peut
-    // devenir les CARTOUCHES en haut et du simple cuir en bas.
-    buste: { S: 'C', V: 'E', v: 'c', R: 'E', l: 'G' },
+    buste: { S: 'E', V: 'y', v: 'y', R: 'E', l: 'G' },
     poitrine: { l: 'G', S: 'E', s: 'c', r: 'c', R: 'C' },
-    bas: { l: 'c', S: 'C', s: 'c' },
-    // UNE bande de serape, pas deux. Un premier jet en peignait deux entieres :
-    // ca ne faisait plus un poncho creme raye de rouge, mais un poncho rouge
-    // avec un filet creme. Sur seize pixels de large, une bande suffit.
+    bas: { R: 'r', l: 'G', S: 'C', s: 'c' },
+    // L'or survit aux trois endroits que le gabarit designait deja : la
+    // bandouliere devient les CARTOUCHES, le centre de la ceinture la BOUCLE,
+    // et le G au bord des bottes les EPERONS.
     calque: [
-      [2, { 4: 'R', 5: 'R', 6: 'R', 7: 'R', 8: 'R', 9: 'R' }]
+      [1, { 6: 'c', 7: 'c' }],
+      [2, { 4: 'R', 5: 'R', 6: 'R', 7: 'R', 8: 'R', 9: 'R' }],
+      [3, { 5: 'E', 6: 'c', 7: 'c', 8: 'E', 10: 'g' }],
+      [6, { 3: 'R', 7: 'g' }],
+      [8, { 3: 'c', 4: 'c', 9: 'c', 10: 'c' }],
+      [9, { 3: 'y', 4: 'y', 9: 'y', 10: 'y' }]
     ]
   },
   halloween: {
