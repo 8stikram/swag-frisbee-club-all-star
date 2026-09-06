@@ -568,6 +568,11 @@ async function ouvrirJeu(jeu) {
     ouvrirRoulette();
     return;
   }
+  if (jeu.id === 'caisses') {
+    const { ouvrirCaisses } = await import('./case-opening.js');
+    ouvrirCaisses();
+    return;
+  }
   message(jeu.nom + ' — pas encore ouvert. Le diable finit d\'installer la table.');
 }
 

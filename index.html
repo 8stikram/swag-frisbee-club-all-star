@@ -782,6 +782,91 @@
 
     <div class="bjMsg hidden" id="rlMsg"></div>
   </div>
+
+  <!-- ============ CASE OPENING ============
+       Quatre étapes dans un seul écran : le choix du mode, la grille des
+       personnages, la bande qui défile, la révélation. Des écrans séparés
+       auraient multiplié les entrées dans le registre pour un seul jeu. -->
+  <div class="screen scr-caisses hidden" id="scr-caisses">
+    <div class="bg bjFond" aria-hidden="true">
+      <div class="casFondCouleur"></div>
+      <div class="casSceaux bjSceaux" id="coSceaux"></div>
+      <div class="casFumee bjFumee"><i></i><i></i><i></i><i></i></div>
+      <div class="bjBraises"></div>
+      <div class="bjLustre"></div>
+      <div class="casVignette"></div>
+      <div class="casScanlines"></div>
+      <div class="casGrain"></div>
+    </div>
+    <div class="bjPoussiere" aria-hidden="true"><i></i><i></i><i></i></div>
+
+    <div class="titlebar"><span>CAISSES</span></div>
+    <div class="bjSolde" id="coSolde" title="Tes pièces">
+      <span class="bjPiece"></span><b id="coSoldeVal">0</b>
+    </div>
+
+    <!-- Étape 1 : le mode -->
+    <div class="coEtape choix">
+      <div class="coCartes">
+        <button class="coCaisse" id="coAlea">
+          <span class="coIco">🎁</span>
+          <b>CAISSE ALÉATOIRE</b>
+          <em>Une tenue au hasard, tous personnages confondus.</em>
+          <span class="coPrix"><i class="bjPiece"></i>25</span>
+        </button>
+        <button class="coCaisse ciblee" id="coCiblee">
+          <span class="coIco">🎯</span>
+          <b>CAISSE CIBLÉE</b>
+          <em>Tu choisis le personnage, le hasard choisit la tenue.</em>
+          <span class="coPrix"><i class="bjPiece"></i>75</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Étape 2 : le personnage -->
+    <div class="coEtape persos hidden">
+      <div class="coTitre">POUR QUI ?</div>
+      <div class="coGrille" id="coPersos"></div>
+      <button class="bjBtn rouge" id="coRetourChoix">RETOUR</button>
+    </div>
+
+    <!-- Étape 3 : la bande -->
+    <div class="coEtape ouverture hidden">
+      <div class="coPiste">
+        <canvas id="coBande"></canvas>
+        <div class="coLigne" id="coLigne"></div>
+        <div class="coGyro g1"></div>
+        <div class="coGyro g2"></div>
+      </div>
+      <button class="bjBtn bleu coSkip" id="coSkip">SKIP</button>
+    </div>
+
+    <!-- Étape 4 : la révélation -->
+    <div class="coEtape revele hidden">
+      <div class="coCarte" id="coCarte">
+        <canvas></canvas>
+        <b class="coNom"></b>
+        <em class="coSkin"></em>
+        <span class="coEtat"></span>
+      </div>
+      <div class="coBoutons">
+        <button class="bjBtn vert" id="coEncore">OUVRIR UNE AUTRE CAISSE</button>
+        <button class="bjBtn rouge" id="coRetour">RETOUR</button>
+      </div>
+    </div>
+
+    <div class="coConfirme hidden" id="coConfirme">
+      <div class="coConfirmeBoite">
+        <p id="coConfirmeTexte"></p>
+        <div class="coConfirmeBtns">
+          <button class="bjBtn vert" id="coOui">OUI</button>
+          <button class="bjBtn rouge" id="coNon">NON</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bjMsg hidden" id="coMsg"></div>
+  </div>
   <!-- ============ SÉLECTION DES PERSONNAGES ============ -->
   <div class="screen scr-select hidden" id="scr-select">
     <div class="bg bg-select">

@@ -311,6 +311,17 @@ export function sfx(n, venuDuReseau) {
       noise(.18, .085, 3200);
       noise(.24, .07, 1150, .07);
       break;
+    // --- Case opening -------------------------------------------------------
+    // Le cran d'une carte qui franchit la ligne. Il en passe une soixantaine
+    // par ouverture, de plus en plus lentement : c'est ce cliquetis qui fait
+    // entendre le freinage, donc il doit rester très court et sans traîne.
+    case 'coCran': noise(.018, .07, 5200); beep(1900, 1500, .02, 'square', .03); break;
+    // L'arrêt sur la tenue gagnée : un accord montant, pas un simple ding.
+    case 'coGain':
+      noise(.1, .12, 3000);
+      [784, 988, 1319, 1568].forEach((f, i) => beep(f, f, .26, 'triangle', .1, i * .06));
+      beep(196, 392, .5, 'sine', .09, .04);
+      break;
     // --- Roulette -----------------------------------------------------------
     // Le jeton qu'on pose : un claquement mat sur le feutre, pas un clic d'UI.
     case 'rlJeton': noise(.05, .1, 1800); beep(320, 190, .05, 'triangle', .05); break;

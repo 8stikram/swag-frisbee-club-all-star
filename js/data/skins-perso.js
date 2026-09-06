@@ -155,6 +155,14 @@ export async function acheterSkinPerso(ck, id) {
   debloquer(ck, id);
 }
 
+// Offre une tenue sans rien débiter. Le case opening s'en sert : il a déjà payé
+// SON prix — vingt-cinq ou soixante-quinze pièces selon le mode — et ce prix
+// n'a rien à voir avec les cent pièces de la boutique. Passer par
+// `acheterSkinPerso` aurait facturé deux fois, et au mauvais tarif.
+export function offrirSkin(ck, id) {
+  return debloquer(ck, id);
+}
+
 export function skinActif(ck) {
   const id = actifs[ck];
   return (id && estDebloque(ck, id)) ? id : skinParDefaut(ck);

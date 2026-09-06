@@ -3527,3 +3527,184 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
    numéros : elle se retire quand le tapis revient. */
 .rlAnnonce{transition:opacity .45s ease}
 .rlAnnonce.fane{opacity:0}
+
+/* ================= CASE OPENING =================
+   Quatre étapes dans un seul écran. Chacune occupe toute la place : elles ne
+   se voient jamais en même temps, donc aucune ne se serre pour l'autre. */
+.scr-caisses .titlebar{background:#3f1160;border-color:#1a0a02}
+.scr-caisses .titlebar span{color:#f6e27a;-webkit-text-stroke:4px #1a0a02}
+.coEtape{
+  position:absolute;left:0;right:0;top:9cqh;bottom:2cqh;z-index:5;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.4cqh;
+  padding:0 4cqw;
+}
+
+/* --- Étape 1 : le mode --- */
+.coCartes{display:flex;gap:3cqw;align-items:stretch}
+.coCaisse{
+  position:relative;width:30cqw;max-width:340px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:1.2cqh;
+  padding:3cqh 2cqw;border-radius:14px;
+  background:linear-gradient(180deg, #0f4a26 0%, #12060a 62%, #08040a 100%);
+  border:max(3px,.38cqh) solid #d4af37;
+  box-shadow:0 1cqh 2.4cqh rgba(0,0,0,.7), inset 0 0 30px rgba(0,0,0,.55);
+  transition:transform .14s, box-shadow .14s, filter .14s;
+}
+.coCaisse.ciblee{background:linear-gradient(180deg, #5a1018 0%, #12060a 62%, #08040a 100%)}
+.coCaisse::before{
+  content:'';position:absolute;inset:4px;border-radius:9px;pointer-events:none;
+  border:1px solid rgba(212,175,55,.4);
+}
+.coCaisse:hover{transform:translateY(-1cqh) scale(1.03);filter:brightness(1.15);
+  box-shadow:0 1.6cqh 3cqh rgba(0,0,0,.75), 0 0 3.4cqh rgba(246,226,122,.6)}
+.coCaisse:active{transform:scale(.97)}
+.coIco{font-size:clamp(24px,7cqh,58px);line-height:1;filter:drop-shadow(0 0 12px rgba(255,190,60,.7))}
+.coCaisse b{
+  font-family:'Russo One',sans-serif;font-size:clamp(11px,2.6cqh,22px);
+  color:#f6e27a;letter-spacing:.06em;text-shadow:0 .3cqh 0 rgba(0,0,0,.9);
+}
+.coCaisse em{
+  font-family:'DotGothic16',monospace;font-style:normal;
+  font-size:clamp(8px,1.6cqh,13px);color:#c9ac72;text-align:center;line-height:1.5;
+}
+.coPrix{
+  display:flex;align-items:center;gap:.5cqw;
+  font-family:'Russo One',sans-serif;font-size:clamp(12px,2.8cqh,24px);color:#ffdf7a;
+  text-shadow:0 .3cqh 0 rgba(0,0,0,.95), 0 0 1.2cqh rgba(255,200,60,.8);
+}
+.coPrix .bjPiece{width:3cqh;height:3cqh}
+
+/* --- Étape 2 : la grille --- */
+.coTitre{
+  font-family:'Archivo Black',sans-serif;font-size:clamp(13px,3.4cqh,28px);
+  color:#f6e27a;letter-spacing:.14em;-webkit-text-stroke:.35cqh #1a0a02;paint-order:stroke fill;
+}
+.coGrille{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:1.4cqw 1.2cqw;
+  max-height:62cqh;overflow-y:auto;padding:.5cqh;
+}
+.coPerso{
+  width:11cqw;min-width:78px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:.5cqh;
+  padding:1.2cqh .5cqw;border-radius:10px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--teinte) 22%, #0a0409), #08040a);
+  border:2px solid color-mix(in srgb, var(--teinte) 60%, #d4af37);
+  transition:transform .12s, box-shadow .12s;
+}
+.coPerso canvas{
+  width:6cqh;height:auto;image-rendering:pixelated;
+  filter:drop-shadow(0 .3cqh .5cqh rgba(0,0,0,.8));
+}
+.coPerso b{
+  font-family:'Russo One',sans-serif;font-size:clamp(7px,1.5cqh,12px);
+  color:#fdf6e0;text-align:center;line-height:1.3;
+}
+/* Le nombre de tenues encore à prendre : sans lui, on paie soixante-quinze
+   pièces sans savoir s'il reste quoi que ce soit à gagner chez ce perso. */
+.coPerso em{
+  display:block;font-style:normal;font-family:'DotGothic16',monospace;
+  font-size:clamp(6px,1.2cqh,10px);color:var(--teinte);opacity:.9;margin-top:.2cqh;
+}
+.coPerso:hover{transform:translateY(-.8cqh);box-shadow:0 0 2.4cqh var(--teinte)}
+
+/* --- Étape 3 : la bande --- */
+.coPiste{
+  position:relative;width:92cqw;height:34cqh;
+  border-radius:12px;overflow:hidden;
+  background:linear-gradient(180deg,#0d0510,#050208);
+  border:max(3px,.4cqh) solid #d4af37;
+  box-shadow:inset 0 0 6cqh rgba(0,0,0,.8), 0 1.4cqh 3cqh rgba(0,0,0,.75);
+}
+.coPiste canvas{position:absolute;inset:0;width:100%;height:100%}
+/* La ligne du milieu : c'est elle qui désigne le gain, elle doit être la chose
+   la plus lumineuse de l'écran pendant tout le défilement. */
+.coLigne{
+  position:absolute;left:50%;top:0;bottom:0;width:4px;margin-left:-2px;
+  background:linear-gradient(180deg,#fff6c2,#ffd24a 40%,#ff9a1e);
+  box-shadow:0 0 16px rgba(255,214,90,.95), 0 0 40px rgba(255,150,30,.6);
+  pointer-events:none;
+}
+.coLigne::before, .coLigne::after{
+  content:'';position:absolute;left:50%;width:0;height:0;
+  border-left:9px solid transparent;border-right:9px solid transparent;
+  margin-left:-9px;
+}
+.coLigne::before{top:-1px;border-top:12px solid #ffd24a}
+.coLigne::after{bottom:-1px;border-bottom:12px solid #ffd24a}
+.coLigne.cran{animation:coCran .1s ease-out}
+@keyframes coCran{
+  0%{transform:scaleX(1);filter:brightness(1)}
+  50%{transform:scaleX(2.4);filter:brightness(1.7)}
+  100%{transform:scaleX(1);filter:brightness(1)}
+}
+/* Gyrophares de bord, comme sur une machine à sous : ils ne disent rien, ils
+   font la salle. */
+.coGyro{
+  position:absolute;top:0;bottom:0;width:14%;pointer-events:none;
+  animation:coGyro 1.1s ease-in-out infinite alternate;
+}
+.coGyro.g1{left:0;background:linear-gradient(90deg,rgba(255,170,40,.4),transparent)}
+.coGyro.g2{right:0;background:linear-gradient(270deg,rgba(190,90,255,.4),transparent);animation-delay:-.55s}
+@keyframes coGyro{0%{opacity:.15}100%{opacity:.75}}
+.coSkip{align-self:flex-end;margin-right:4cqw}
+
+/* --- Étape 4 : la révélation --- */
+.coCarte{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:.8cqh;
+  padding:2.6cqh 3cqw;border-radius:16px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--teinte) 26%, #0a0409), #08040a);
+  border:max(3px,.42cqh) solid var(--teinte);
+  box-shadow:0 0 5cqh var(--teinte), 0 2cqh 4cqh rgba(0,0,0,.8);
+  animation:coRevele .6s cubic-bezier(.2,1.5,.35,1);
+}
+@keyframes coRevele{
+  0%{opacity:0;transform:scale(.5) rotate(-6deg)}
+  60%{opacity:1;transform:scale(1.08) rotate(2deg)}
+  100%{opacity:1;transform:scale(1) rotate(0)}
+}
+.coCarte canvas{
+  width:22cqh;height:auto;image-rendering:pixelated;
+  filter:drop-shadow(0 1cqh 1.6cqh rgba(0,0,0,.85));
+}
+.coCarte .coNom{
+  font-family:'Archivo Black',sans-serif;font-size:clamp(14px,4cqh,34px);
+  color:#fdf6e0;-webkit-text-stroke:.4cqh #1a0a02;paint-order:stroke fill;
+}
+.coCarte .coSkin{
+  font-family:'Russo One',sans-serif;font-style:normal;
+  font-size:clamp(10px,2.4cqh,20px);color:var(--teinte);letter-spacing:.08em;
+  text-shadow:0 .3cqh 0 rgba(0,0,0,.95);
+}
+.coCarte .coEtat{
+  font-family:'DotGothic16',monospace;font-size:clamp(7px,1.5cqh,12px);
+  color:#7bff9d;letter-spacing:.16em;
+}
+.coCarte.doublon{border-color:#8a7f6a;box-shadow:0 0 2.4cqh rgba(120,110,90,.6), 0 2cqh 4cqh rgba(0,0,0,.8)}
+.coCarte.doublon .coEtat{color:#c9ac72}
+/* Le trait de couleur du personnage, en bas de la carte comme sur la bande. */
+.coCarte::after{
+  content:'';position:absolute;left:12%;right:12%;bottom:6px;height:5px;border-radius:3px;
+  background:var(--teinte);box-shadow:0 0 1.6cqh var(--teinte);
+}
+.coBoutons{display:flex;gap:1.6cqw}
+
+/* --- La confirmation ---
+   Une caisse se paie avant de savoir ce qu'elle contient : c'est le seul geste
+   du casino qui vide le compte sans rien montrer d'abord. */
+.coConfirme{
+  position:absolute;inset:0;z-index:14;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(4,2,6,.84);
+}
+.coConfirmeBoite{
+  width:min(56cqw,520px);padding:3cqh 3cqw;border-radius:14px;text-align:center;
+  background:linear-gradient(165deg,#1a0a14 0%,#0a0409 100%);
+  border:max(3px,.4cqh) solid #d4af37;
+  box-shadow:0 2cqh 5cqh rgba(0,0,0,.85), 0 0 4cqh rgba(212,175,55,.5);
+}
+.coConfirmeBoite p{
+  margin:0 0 2.4cqh;font-family:'Russo One',sans-serif;
+  font-size:clamp(11px,2.6cqh,22px);color:#ffdf7a;line-height:1.5;
+  text-shadow:0 .3cqh 0 rgba(0,0,0,.9);
+}
+.coConfirmeBtns{display:flex;gap:1.6cqw;justify-content:center}
