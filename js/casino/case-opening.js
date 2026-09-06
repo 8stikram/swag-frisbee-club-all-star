@@ -50,6 +50,10 @@ const sprite = (ck, id) => {
 };
 
 // --- État -------------------------------------------------------------------
+// La poussière qui tourne autour de la tenue révélée, tant qu'elle est à
+// l'écran.
+let halo = null;
+
 const C = {
   solde: 0,
   mode: null,        // 'alea' | 'perso'
@@ -233,8 +237,29 @@ function lancerOuverture() {
   C.bande = construireBande(C.gagne);
   C.ouvre = true;
   C.sauter = false;
+  cranSansEclat = 0;
   montrer('ouverture');
-  requestAnimationFrame(() => { calibrer(); animer(prix); });
+
+  // La caisse s'ouvre avant que la bande parte : un éclair, de la fumée
+  // violette, une secousse. Sans ce battement, on clique sur OUI et la bande
+  // défile déjà — on n'a rien ouvert du tout, on a juste changé d'écran.
+  const ecran = $('scr-caisses');
+  if (ecran) {
+    sfx('ctPoof');
+    flash(ecran, 'or', 200);
+    secousse(ecran, 7, 300);
+    const centre = { x: ecran.clientWidth * .35, y: ecran.clientHeight * .35,
+                     l: ecran.clientWidth * .3, h: ecran.clientHeight * .3 };
+    emettre(ecran, 'fumee', centre, 26, '#3a1050');
+    emettre(ecran, 'trainee', centre, 30, '#f6e27a');
+  }
+
+  requestAnimationFrame(() => {
+    calibrer();
+    // La bande démarre APRÈS l'ouverture, pas pendant : les deux ensemble et
+    // l'un mange l'autre.
+    setTimeout(() => { if (C.ouvre) animer(prix); }, 420);
+  });
 }
 
 function animer(prix) {
@@ -269,12 +294,20 @@ function animer(prix) {
   C.anim = requestAnimationFrame(pas);
 }
 
+let cranSansEclat = 0;
 function pulserLigne() {
   const l = $('coLigne');
   if (!l) return;
   l.classList.remove('cran');
   void l.offsetWidth;
   l.classList.add('cran');
+  // Des éclats d'or à la ligne, mais pas à chaque cran : au début la bande
+  // défile si vite qu'on en cracherait quarante par seconde, et il n'en
+  // resterait qu'un brouillard. Un cran sur trois, et tous à la fin — quand ils
+  // deviennent rares, ils redeviennent lisibles.
+  if (cranSansEclat++ % 3) return;
+  const ecran = $('scr-caisses');
+  if (ecran) emettre(ecran, 'trainee', boiteDe(ecran, l), 3, '#f6e27a');
 }
 
 // ---------------------------------------------------------------------------
@@ -328,6 +361,18 @@ function reveler() {
   const ecran = $('scr-caisses');
   emettre(ecran, 'confetti', boiteDe(ecran, carte), 26);
   setTimeout(() => emettre(ecran, 'confetti', boiteDe(ecran, carte), 18), 260);
+
+  // La tenue flotte ensuite dans une poussière d'or et de violet, quelques
+  // secondes. Un jet unique retombe et la carte se retrouve seule au milieu
+  // d'un écran vide juste au moment où l'on veut la regarder.
+  clearInterval(halo);
+  let restant = 14;
+  halo = setInterval(() => {
+    if (--restant < 0 || !ecran.isConnected || carte.offsetParent === null) { clearInterval(halo); return; }
+    const b = boiteDe(ecran, carte);
+    emettre(ecran, 'trainee', { x: b.x - 14, y: b.y - 14, l: b.l + 28, h: b.h + 28 }, 2,
+            restant % 2 ? '#f6e27a' : '#c99cf0');
+  }, 180);
 }
 
 // ---------------------------------------------------------------------------
