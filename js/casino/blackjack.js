@@ -15,7 +15,7 @@ import { sfx } from '../audio/audio.js';
 import { Compte, connecte, ajouterPieces } from '../reseau/compte.js';
 import { sceau, paillettes } from './casino.js';
 import { jouerFin, nettoyerFin } from './fins.js';
-import { ralentir } from './effets.js';
+import { ralentir, flash, emettre, boiteDe } from './effets.js';
 import { ENSEIGNES, RANGS, carteDom } from './cartes.js';
 
 const NB_JEUX = 6;
@@ -72,13 +72,19 @@ let solde = 0;
 // ---------------------------------------------------------------------------
 // Affichage
 // ---------------------------------------------------------------------------
-// `lent` sert à la carte qui fait crever : elle arrive au ralenti. La durée est
-// posée ICI, en ligne, plutôt que par une classe ajoutée après coup — changer
-// une durée d'animation en vol recalcule la progression, et la carte repartirait
-// en arrière au moment précis où on veut la regarder tomber.
-function poserCarte(zone, carte, face, retard, lent) {
+// `vitesse` règle l'arrivée : `lent` pour la carte qui fait crever, `rapide`
+// pour un tirage en cours de main. La donne initiale garde la vitesse normale —
+// c'est le seul moment où l'on distribue quatre cartes de suite, et les presser
+// ferait un paquet qui se déverse au lieu d'une donne.
+//
+// La durée est posée ICI, en ligne, plutôt que par une classe ajoutée après
+// coup : changer une durée d'animation en vol recalcule la progression, et la
+// carte repartirait en arrière au moment précis où on la regarde tomber.
+const DUREES = { lent: '1.1s, 4.6s', rapide: '.24s, 4.6s' };
+
+function poserCarte(zone, carte, face, retard, vitesse) {
   const d = carteDom(carte, false);
-  if (lent) d.style.animationDuration = '1.1s, 4.6s';
+  if (DUREES[vitesse]) d.style.animationDuration = DUREES[vitesse];
   // Deux valeurs : l'arrivée attend son tour dans la donne, le flottement ne
   // démarre qu'une fois la carte posée — et avec un décalage propre à chacune,
   // sinon toute la main respire au même rythme et l'image paraît vibrer.
@@ -100,7 +106,53 @@ function poserCarte(zone, carte, face, retard, lent) {
   // Le retournement part APRÈS que la carte soit arrivée : retournée en vol,
   // on ne voit ni le voyage ni la révélation.
   if (face) setTimeout(() => d.classList.add('face'), retard + 300);
+  // Une poignée d'éclats d'or à l'atterrissage d'un tirage. Sur la donne
+  // initiale on s'en passe : quatre cartes qui étincellent d'affilée, ce n'est
+  // plus un accent, c'est un fond.
+  if (vitesse === 'rapide') setTimeout(() => {
+    const ecran = $('scr-blackjack');
+    if (ecran) emettre(ecran, 'trainee', boiteDe(ecran, d), 12, '#f6e27a');
+  }, retard + 240);
   return d;
+}
+
+// Des jetons poussés vers la mise, depuis le bas de l'écran. Sert au doublement :
+// voir le compteur passer de 100 à 200 ne dit rien ; voir les jetons partir de
+// devant soi et rejoindre la pile, si.
+function pousserJetons(vers, n) {
+  const ecran = $('scr-blackjack');
+  const cible = $(vers);
+  if (!ecran || !cible || cible.classList.contains('hidden')) return;
+  const c = boiteDe(ecran, cible);
+  const depart = { x: ecran.clientWidth * .5, y: ecran.clientHeight * .93 };
+
+  for (let i = 0; i < n; i++) {
+    const j = document.createElement('div');
+    j.className = 'bjJetonVol bjJetonMise';
+    j.style.cssText = `left:${depart.x - 13}px;top:${depart.y - 13}px;` +
+                      'width:26px;height:26px;--rune:#f6e27a;';
+    ecran.appendChild(j);
+    const dx = (c.x + c.l * .5) - depart.x, dy = (c.y + c.h * .5) - depart.y;
+    const anim = j.animate([
+      { transform: 'translate(0,0) rotate(0) scale(1)', opacity: 1 },
+      { transform: `translate(${dx * .55}px, ${dy * .55 - 40}px) rotate(200deg) scale(1.05)`, opacity: 1, offset: .55 },
+      { transform: `translate(${dx}px, ${dy}px) rotate(430deg) scale(.6)`, opacity: 0 }
+    ], { duration: 380 + i * 70, easing: 'cubic-bezier(.35,0,.3,1)', delay: i * 60 });
+    // La traînée est semée depuis la position réelle du jeton, image par image :
+    // calculée à l'avance sur la courbe, elle se décale dès que l'animation
+    // prend du retard, et les éclats volent à côté du jeton.
+    const semer = () => {
+      if (anim.playState === 'finished') return;
+      const b = boiteDe(ecran, j);
+      emettre(ecran, 'trainee', { x: b.x + 8, y: b.y + 8, l: 10, h: 10 }, 1, '#f6e27a');
+      requestAnimationFrame(semer);
+    };
+    requestAnimationFrame(semer);
+    anim.onfinish = () => {
+      j.remove();
+      if (i === n - 1) { flash(ecran, 'or', 100); sfx('bjClic'); }
+    };
+  }
 }
 
 // La mise posée sur le feutre. Elle existe pour que les fins de main aient
@@ -306,7 +358,7 @@ function tirer() {
   const creve = valeur(mainJoueur).total > 21;
   if (creve) ralentir($('scr-blackjack'), .3, 900);
   sfx('bjCarte');
-  poserCarte($('bjJoueur'), c, true, 0, creve);
+  poserCarte($('bjJoueur'), c, true, 0, creve ? 'lent' : 'rapide');
   setTimeout(() => {
     majScores();
     if (creve) return conclure('creve');
@@ -325,6 +377,10 @@ function doubler() {
   aDouble = true;
   mise *= 2;
   poserMise(mise);
+  // Les jetons partent de devant soi et rejoignent la pile. Voir le compteur
+  // passer de cent à deux cents ne dit rien ; voir la mise doubler sur le
+  // feutre, si — et c'est le geste le plus engageant de la table.
+  pousserJetons('bjMise', 3);
   message('Mise doublée : ' + mise + ' pièces.');
   const c = piocher();
   mainJoueur.push(c);
@@ -334,7 +390,7 @@ function doubler() {
   const creve = valeur(mainJoueur).total > 21;
   if (creve) ralentir($('scr-blackjack'), .3, 900);
   sfx('bjCarte');
-  poserCarte($('bjJoueur'), c, true, 0, creve);
+  poserCarte($('bjJoueur'), c, true, 0, creve ? 'lent' : 'rapide');
   setTimeout(() => {
     majScores();
     // Doubler donne UNE carte, puis la main passe. Même en crevant.
@@ -359,6 +415,13 @@ function devoiler() {
     if (dos) {
       dos.classList.add('face', 'revele');
       paillettes(dos, 10, ['#f6e27a', '#d4af37', '#c99cf0'], -1, 120);
+      // L'éclair part à MI-RETOURNEMENT, pas au clic : la carte met une demi-
+      // seconde à pivoter, et un flash au départ éclaire un dos qu'on connaît
+      // déjà au lieu de la face qu'on attend.
+      setTimeout(() => {
+        flash($('scr-blackjack'), 'or', 110);
+        emettre($('scr-blackjack'), 'trainee', boiteDe($('scr-blackjack'), dos), 14, '#f6e27a');
+      }, 250);
       setTimeout(() => dos.classList.remove('revele'), 600);
     }
     majScores();
