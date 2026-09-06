@@ -1,7 +1,7 @@
 import { $ } from '../core/dom.js';
 import { sfx } from '../audio/audio.js';
 import { CHARS } from '../data/characters.js';
-import { listeSkins, estDebloque, skinActif, setSkinActif, acheterSkinPerso, COUT_SKIN } from '../data/skins-perso.js';
+import { listeSkins, estDebloque, skinActif, setSkinActif, acheterSkinPerso, coutSkin } from '../data/skins-perso.js';
 import { Compte } from '../reseau/compte.js';
 
 // ---------------------------------------------------------------------------
@@ -70,8 +70,12 @@ export function ouvrirPanneauSkins(camp, ck, options) {
     cell.appendChild(nom);
     if (!libre) {
       const lock = document.createElement('span');
-      lock.className = 'skinTileLock';
-      lock.innerHTML = '🔒<b>' + COUT_SKIN + '</b>';
+      // Le prix affiché est celui de CETTE tenue : un chroma coûte moins qu'une
+      // vraie tenue, et l'annoncer après le clic aurait été une surprise, pas
+      // une information.
+      lock.className = 'skinTileLock' + (s.chroma ? ' chroma' : '');
+      lock.innerHTML = '🔒<b>' + coutSkin(ck, s.id) + '</b>';
+      lock.title = s.chroma ? 'Chroma — même tenue, autres couleurs' : 'Tenue complète';
       cell.appendChild(lock);
     }
     cell.addEventListener('click', async e => {

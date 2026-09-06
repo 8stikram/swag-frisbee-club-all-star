@@ -445,3 +445,43 @@ create view profils_publics as
               else 0 end as taux_victoire,
          persos, cree_le
   from profils;
+
+-- ===========================================================================
+-- 14. Les tenues débloquées vivent sur le compte
+--
+-- Elles ne tenaient jusqu'ici que dans le navigateur. Une tenue payée cent
+-- pièces qui disparaît en changeant de machine ou en vidant son cache, c'est
+-- de l'argent repris au joueur — et il n'a aucun moyen de le prouver.
+--
+-- Le format est 'perso:tenue' ('naruto:hokage'), le même que la clé locale :
+-- une seule chaîne à comparer des deux côtés, et rien à traduire.
+-- ===========================================================================
+alter table profils add column if not exists tenues text[] not null default '{}';
+
+-- Ajoute une tenue et renvoie la liste complète. La déduplication est FAITE
+-- ICI et non dans le navigateur : deux machines qui poussent la même tenue en
+-- même temps ne doivent pas la stocker deux fois, et aucune des deux n'a de
+-- quoi s'en assurer toute seule.
+create or replace function debloquer_tenue(p_tenue text)
+returns text[] language sql security definer as $$
+  update profils
+     set tenues = case when tenues @> array[p_tenue] then tenues
+                       else tenues || p_tenue end
+   where id = auth.uid()
+  returning tenues;
+$$;
+
+-- La vue publique NE reprend PAS les tenues : ce que quelqu'un possède ne
+-- regarde que lui, et l'exposer donnerait la liste de ses achats à tout le
+-- monde. Elle est donc recréée à l'identique, sans cette colonne.
+drop view if exists profils_publics;
+create view profils_publics as
+  select id, pseudo, avatar, banniere, couleur1, couleur2,
+         statut, titre_actif, main, vu_le, texte_sombre, pieces,
+         (vu_le > now() - interval '2 minutes') as en_ligne,
+         matchs, victoires, defaites, points_marques, points_encaisses,
+         case when matchs > 0
+              then round(victoires::numeric / matchs * 100, 1)
+              else 0 end as taux_victoire,
+         persos, cree_le
+  from profils;

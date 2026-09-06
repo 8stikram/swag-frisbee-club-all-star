@@ -130,10 +130,19 @@ export function deconnecter() {
 }
 
 // --- Profil ----------------------------------------------------------------
+// Le profil chargé est annoncé par un événement plutôt que par un appel direct.
+// C'est data/skins-perso.js qui écoute, pour fusionner la liste des tenues du
+// compte avec la copie locale — et l'importer ici aurait fermé un cycle, ce
+// module étant déjà celui dont il dépend.
+function annoncerProfil() {
+  try { document.dispatchEvent(new CustomEvent('profilCharge')); } catch (e) { }
+}
+
 export async function chargerProfil() {
   if (!connecte()) return null;
   const r = await appel('/rest/v1/profils?id=eq.' + monId() + '&select=*', { headers: entetes() });
   Compte.profil = (r && r[0]) || null;
+  annoncerProfil();
   return Compte.profil;
 }
 
@@ -144,6 +153,7 @@ export async function creerProfil(pseudo) {
     body: JSON.stringify({ id: monId(), pseudo })
   });
   Compte.profil = (p && p[0]) || null;
+  annoncerProfil();
   return Compte.profil;
 }
 
@@ -323,6 +333,19 @@ export async function ajouterPieces(montant) {
 // Débite le coût d'une tenue. La base refuse (renvoie null) si le solde est
 // insuffisant : c'est elle qui tranche, jamais le calcul fait dans le
 // navigateur, qu'on pourrait trafiquer depuis la console.
+// Ajoute une tenue à la liste du compte et renvoie la liste complète. C'est le
+// serveur qui déduplique : deux machines qui poussent la même tenue en même
+// temps ne doivent pas la stocker deux fois, et le navigateur n'a pas de quoi
+// s'en assurer.
+export async function debloquerTenue(cle) {
+  if (!connecte()) return null;
+  const liste = await appel('/rest/v1/rpc/debloquer_tenue', {
+    method: 'POST', headers: entetes(), body: JSON.stringify({ p_tenue: cle })
+  });
+  if (Compte.profil && Array.isArray(liste)) Compte.profil.tenues = liste;
+  return liste;
+}
+
 export async function acheterSkin(cout) {
   if (!connecte()) throw new Error('connecte-toi pour acheter une tenue');
   const solde = await appel('/rest/v1/rpc/acheter_skin', {

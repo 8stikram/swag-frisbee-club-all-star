@@ -2,10 +2,10 @@
 // Case opening — on paie une caisse, une bande de tenues défile, elle s'arrête
 // sur celle qu'on gagne.
 //
-// Deux modes : aléatoire à 25 pièces, tirée dans tout le jeu, ou ciblée à 75,
-// tirée parmi les tenues d'un seul personnage. Le second coûte trois fois plus
-// parce qu'il retire tout le hasard sur le PERSONNAGE — il ne reste que celui
-// de la tenue.
+// Deux modes : aléatoire, tirée dans tout le jeu, ou ciblée, tirée parmi les
+// tenues d'un seul personnage. La seconde coûte plus cher parce qu'elle retire
+// tout le hasard sur le PERSONNAGE — il ne reste que celui de la tenue. Les
+// tarifs et leur raison sont plus bas, avec `PRIX`.
 //
 // Le tirage est fait avant la première image, comme à la roulette : la bande
 // est construite AUTOUR du résultat, elle ne le décide pas. Une bande qui
@@ -22,19 +22,17 @@ import { secousse, flash, emettre, boiteDe } from './effets.js';
 import { CHARS } from '../data/characters.js';
 import { SKINS, estDebloque, offrirSkin } from '../data/skins-perso.js';
 
-const PRIX = { alea: 25, perso: 75 };
-
 // --- Ce qu'on peut gagner ---------------------------------------------------
 // Les tenues d'origine sont exclues : elles sont déjà acquises par tout le
 // monde, et une caisse qui peut ne rien donner du tout n'est pas une caisse.
 const skinsDe = ck => (SKINS[ck] || []).filter(s => !s.defaut).map(s => ({ ck, skin: s }));
 const tousLesSkins = () => Object.keys(SKINS).flatMap(skinsDe);
 // Une tenue déjà prise ne peut pas ressortir. Payer une caisse pour recevoir ce
-// qu'on possède déjà, c'est payer pour rien — et à vingt-cinq ou soixante-quinze
-// pièces la fois, ça se remarque vite.
+// qu'on possède déjà, c'est payer pour rien — et au prix d'une caisse, ça se
+// remarque à la première fois.
 const nonPris = liste => liste.filter(e => !estDebloque(e.ck, e.skin.id));
 // Un personnage sans tenue à débloquer ne peut pas être choisi : sa caisse
-// ciblée serait soixante-quinze pièces pour un résultat connu d'avance.
+// ciblée serait plein tarif pour un résultat connu d'avance.
 const persosOuvrables = () => Object.keys(SKINS).filter(ck => skinsDe(ck).length > 0 && CHARS[ck]);
 
 // Ce qui peut tomber, et ce qui défile. Les deux diffèrent volontairement : la
@@ -42,6 +40,24 @@ const persosOuvrables = () => Object.keys(SKINS).filter(ck => skinsDe(ck).length
 // reste qu'une ferait défiler soixante fois la même carte.
 const bassinGagnant = () => nonPris(C.mode === 'perso' ? skinsDe(C.perso) : tousLesSkins());
 const bassinVisuel = () => (C.mode === 'perso' ? skinsDe(C.perso) : tousLesSkins());
+
+// Le prix d'une caisse se lit contre celui de la boutique : cent pièces pour un
+// chroma, deux cents pour une tenue complète. Une caisse doit revenir moins
+// cher que l'achat direct — c'est ce qu'on paie en renonçant à choisir.
+//
+// La caisse ciblée a DEUX prix, et ce n'est pas un raffinement gratuit. À prix
+// unique, elle devenait un piège chez Yoshi, Hollis et Flowser, qui n'ont que
+// des chromas : on aurait payé cent soixante pièces pour recevoir à coup sûr
+// quelque chose qui s'achète cent. Le prix suit donc ce qu'il reste vraiment à
+// gagner chez ce personnage.
+const PRIX = { alea: 90, perso: 160, persoChroma: 80 };
+
+// Ce que coûte une caisse ciblée sur `ck` : le tarif plein tant qu'une tenue
+// complète peut encore en sortir, le tarif chroma quand il n'en reste plus.
+const prixCiblee = ck =>
+  nonPris(skinsDe(ck)).some(e => !e.skin.chroma) ? PRIX.perso : PRIX.persoChroma;
+
+const prixCaisse = () => C.mode === 'perso' ? prixCiblee(C.perso) : PRIX.alea;
 
 const sprite = (ck, id) => {
   const c = CHARS[ck];
@@ -113,17 +129,19 @@ function construireGrille() {
     cv.getContext('2d').drawImage(src, 0, 0);
     d.appendChild(cv);
     const n = document.createElement('b');
-    // Le nombre de tenues encore à prendre : sans lui, on paie soixante-quinze
-    // pièces sans savoir s'il reste quoi que ce soit à gagner chez ce perso.
+    // Le nombre de tenues encore à prendre : sans lui, on paie sans savoir s'il
+    // reste quoi que ce soit à gagner chez ce personnage.
     const restant = nonPris(skinsDe(ck)).length;
-    n.innerHTML = `${p.short}<em>${restant ? restant + ' à prendre' : 'tout est pris'}</em>`;
+    // Le prix figure sur la vignette : il change d'un personnage à l'autre, et
+    // le découvrir seulement dans la confirmation serait une surprise.
+    n.innerHTML = `${p.short}<em>${restant ? restant + ' à prendre · ' + prixCiblee(ck) : 'tout est pris'}</em>`;
     d.appendChild(n);
     // Épuisé : on l'affiche quand même, éteint. Le retirer de la grille ferait
     // disparaître un personnage sans qu'on comprenne pourquoi.
     if (!restant) { d.classList.add('epuise'); d.disabled = true; }
     d.addEventListener('click', () => {
       sfx('select');
-      demander(`Ouvrir une caisse pour ${p.short} à ${PRIX.perso} pièces ?`, () => {
+      demander(`Ouvrir une caisse pour ${p.short} à ${prixCiblee(ck)} pièces ?`, () => {
         C.mode = 'perso'; C.perso = ck;
         lancerOuverture();
       });
@@ -221,7 +239,7 @@ const easeOut = t => 1 - Math.pow(1 - t, 4);
 
 function lancerOuverture() {
   fermerConfirme();
-  const prix = PRIX[C.mode];
+  const prix = prixCaisse();
   if (prix > C.solde) { sfx('deny'); messageCo('Pas assez de pièces.'); return; }
 
   // Le tirage se fait AVANT le débit. Une caisse qui n'a plus rien à donner ne
@@ -442,7 +460,7 @@ export function ouvrirCaisses() {
   $('coSkip').addEventListener('click', () => { if (C.anim) C.sauter = true; });
   $('coEncore').addEventListener('click', () => {
     sfx('select');
-    if (PRIX[C.mode] > C.solde) { messageCo('Pas assez de pièces.'); return; }
+    if (prixCaisse() > C.solde) { messageCo('Pas assez de pièces.'); return; }
     lancerOuverture();
   });
   $('coRetour').addEventListener('click', () => {
