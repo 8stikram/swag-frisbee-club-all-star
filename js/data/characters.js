@@ -123,7 +123,7 @@ const PAL_SKINS_J = {
   P: '#f2f0ea', p: '#c9c6bd',   // le plastron de chemise
   X: '#d4574c',                 // le rouge eclaire du gibus ecarlate
   T: '#3a4150', N: '#22262f', n: '#141720', w: '#08090d',
-  C: '#8a5a2e', c: '#5e3c1c', E: '#d9b56a',
+  E: '#e8cf9a', C: '#b8834a', c: '#7d5427', y: '#4a2f14',
   O: '#e0711f', o: '#a8480f', Q: '#3a2245', q: '#221328', Z: '#5c3563', F: '#3fae70'
 };
 
@@ -205,13 +205,37 @@ const SKINS_J = {
     ]
   },
   cowboy: {
-    tete: ["......CC........", ".....CEEc.......", ".....CCCc.......", "....CCCCcc......",
-           "....CCCCcE......", "...EEEEEEEEE....", "..CCCCCCCCCCCC..", ".cCCCCCCCCCCc...",
-           "..cCCCCCCCCc....", "..RrRrRrRrRr...."],
-    col: '....rRrRrR......',
-    buste: { S: 'C', V: 'E', v: 'c', R: 'E', l: 'E' },
-    poitrine: { l: 'E', S: 'E', s: 'c' },
-    bas: { l: 'E', S: 'C' }
+    // Le chapeau est BRUN sur un poncho CREME : deux matieres et deux valeurs
+    // differentes. C'est la lecon du ninja, ou une cagoule sombre au-dessus
+    // d'un gi sombre ne faisait qu'une seule masse grise.
+    //
+    // Le ruban est cale sur la largeur EXACTE de la calotte a sa ligne. Le
+    // premier haut-de-forme du smoking debordait d'un pixel de chaque cote.
+    tete: ["................", "......EC........", ".....ECCc.......", "....ECCCcc......",
+           "....ECCCcc......", "....rRRRrr......", "...ECCCCCcc.....", ".ECCCCCCCCccy...",
+           "..yccccccccy....", "..RrRrRrRrRr...."],
+    // L'OR SURVIT A TROIS ENDROITS, et le gabarit les designait deja tous les
+    // trois : la bandouliere (`l`) devient la ceinture a CARTOUCHES, le centre
+    // de la ceinture devient la BOUCLE, et le `G` au bord des bottes devient
+    // les EPERONS. C'est ce qui garde le lien avec la cloche doree — le ninja
+    // a montre qu'un skin qui perd l'or perd le personnage.
+    fixes: {
+      0: "....rRRRRr......",
+      4: "..cEEEEEEEEc....",
+      5: "..ccccGGcccc...."
+    },
+    // `l` est la bandouliere sur les lignes 1-3 et la ceinture sur les lignes
+    // 6+. Comme le buste et le bas ont chacun leur table, la meme lettre peut
+    // devenir les CARTOUCHES en haut et du simple cuir en bas.
+    buste: { S: 'C', V: 'E', v: 'c', R: 'E', l: 'G' },
+    poitrine: { l: 'G', S: 'E', s: 'c', r: 'c', R: 'C' },
+    bas: { l: 'c', S: 'C', s: 'c' },
+    // UNE bande de serape, pas deux. Un premier jet en peignait deux entieres :
+    // ca ne faisait plus un poncho creme raye de rouge, mais un poncho rouge
+    // avec un filet creme. Sur seize pixels de large, une bande suffit.
+    calque: [
+      [2, { 4: 'R', 5: 'R', 6: 'R', 7: 'R', 8: 'R', 9: 'R' }]
+    ]
   },
   halloween: {
     tete: ["......FO........", ".....OoOo.......", ".....OOOo.......", "....OKOOKo......",
