@@ -249,9 +249,19 @@ const SKINS_J = {
     //
     // Le pedoncule reprend le vert de Noel (V/v) : c'est le seul endroit du
     // skin ou il pouvait tenir.
-    tete: ["................", "......Vv........", ".....OOOo.......", "....OOOOoo......",
-           "...OWWOOWWo.....", "...OOOOOOOo.....", "....WOWWOW......", "..OOOOOOOOou....",
-           "..uoooooooou....", "..qZqZqZqZqZ...."],
+    // Citrouille dessinee a la main dans l'editeur du mockup. Ce qu'elle
+    // apporte par rapport a la mienne :
+    //   le PEDONCULE tient sur DEUX lignes, donc il se lit comme une tige et
+    //     non comme deux pixels verts poses sur le dessus ;
+    //   la citrouille est RONDE — trois lignes pleines a la meme largeur — au
+    //     lieu de continuer a s'evaser comme la cloche. Elle y perd un peu la
+    //     silhouette d'origine et y gagne d'etre une vraie citrouille ;
+    //   les entailles ont DEUX tons, la lueur pale (W) et le creme (E), donc
+    //     un degrade au lieu d'un aplat : la bougie eclaire plus fort au bord
+    //     de l'entaille qu'au fond.
+    tete: [".......vv.......", "......Vv........", ".....OOoo.......", "....OOOOoo......",
+           "...OWEOOEWo.....", "...OOEOOEoo.....", "..OOOOOOOOoo....", "..OOWOEEOWoo....",
+           "..OOOOOOOOoo....", "..qZqZqZqZqZ...."],
     // La robe est ENCADREE de plis plus clairs (Z) plutot que laissee en aplat.
     // C'est la lecon du cowboy : un grand aplat d'une seule valeur ne laisse
     // rien se detacher, et les bras disparaissent dans le torse.
