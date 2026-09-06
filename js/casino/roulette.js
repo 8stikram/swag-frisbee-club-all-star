@@ -350,12 +350,24 @@ function lancer() {
   const DUREE = 5600;
   const debut = performance.now();
   const roue0 = angleRoue;
-  const roueF = roue0 + Math.PI * 2 * 6;           // six tours dans le sens horaire
-  // La case gagnante doit finir sous le repère, en haut. Le secteur i est à
-  // l'angle i*PAS dans le repère de la roue ; on résout l'angle de la bille
-  // pour qu'elle s'y trouve, plutôt que d'espérer qu'elle y tombe.
-  const billeF = roueF + i * PAS - Math.PI / 2;
-  const bille0 = billeF + Math.PI * 2 * 11;        // onze tours en sens inverse
+
+  // Le repère, la bille et la case allumée doivent désigner le MÊME secteur.
+  // On résout donc les deux angles d'arrivée au lieu d'en laisser un au hasard :
+  //
+  //  - le secteur i a son centre à l'angle i*PAS dans le repère de la roue ;
+  //    pour qu'il finisse sous le repère (en haut, soit -π/2), la roue doit
+  //    s'arrêter à l'angle HAUT - i*PAS, modulo un tour ;
+  //  - la bille, elle, finit simplement en haut.
+  //
+  // Sans le modulo, la roue tournait d'un nombre entier de tours et revenait
+  // exactement où elle était partie : le haut montrait toujours la même case,
+  // et la bille se posait un quart de tour à côté du numéro annoncé.
+  const TOUR = Math.PI * 2, HAUT = -Math.PI / 2;
+  const vise = HAUT - i * PAS;
+  const ecart = ((vise - roue0) % TOUR + TOUR) % TOUR;
+  const roueF = roue0 + TOUR * 6 + ecart;          // six tours pleins, puis l'écart
+  const billeF = HAUT;
+  const bille0 = billeF + TOUR * 11;               // onze tours en sens inverse
   const rExt = () => taille * .43, rPoche = () => taille * .355;
 
   let dernierTic = 0;
