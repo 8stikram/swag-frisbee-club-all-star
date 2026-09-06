@@ -124,7 +124,8 @@ const PAL_SKINS_J = {
   X: '#d4574c',                 // le rouge eclaire du gibus ecarlate
   T: '#3a4150', N: '#22262f', n: '#141720', w: '#08090d',
   E: '#e8cf9a', C: '#b8834a', c: '#7d5427', y: '#4a2f14',
-  O: '#e0711f', o: '#a8480f', Q: '#3a2245', q: '#221328', Z: '#5c3563', F: '#3fae70'
+  O: '#f0913f', o: '#c9631a', u: '#8f3d0c',
+  Z: '#6b4278', Q: '#3f2650', q: '#26152f'
 };
 
 // Le col de chemise et le noeud de CRAVATE prennent exactement la place de
@@ -240,14 +241,35 @@ const SKINS_J = {
     ]
   },
   halloween: {
-    tete: ["......FO........", ".....OoOo.......", ".....OOOo.......", "....OKOOKo......",
-           "....OOOOOo......", "...OKOKOKOo.....", "...OOOOOOOOo....", "..oOOOOOOOOo....",
-           "..oOOOOOOOoo....", "..QqQqQqQqQq...."],
-    col: '....qQqQqQ......',
-    buste: { S: 'Q', V: 'Z', v: 'q', R: 'Q', l: 'Z' },
-    poitrine: { r: 'q', R: 'Q', l: 'Z', S: 'Q', s: 'q' },
-    bas: { R: 'Q', l: 'Z', S: 'Q', G: 'Q' }
+    // L'or de la cloche survit ici en LUMIERE et non en metal : la bougie
+    // eclaire les entailles, et cette lueur (W) est exactement le ton pale de
+    // la cloche, a la meme place sur la tete. C'est le rappel le plus naturel
+    // des quatre skins — et le ninja avait montre qu'un skin qui perd l'or
+    // perd le personnage.
+    //
+    // Le pedoncule reprend le vert de Noel (V/v) : c'est le seul endroit du
+    // skin ou il pouvait tenir.
+    tete: ["................", "......Vv........", ".....OOOo.......", "....OOOOoo......",
+           "...OWWOOWWo.....", "...OOOOOOOo.....", "....WOWWOW......", "..OOOOOOOOou....",
+           "..uoooooooou....", "..qZqZqZqZqZ...."],
+    // La robe est ENCADREE de plis plus clairs (Z) plutot que laissee en aplat.
+    // C'est la lecon du cowboy : un grand aplat d'une seule valeur ne laisse
+    // rien se detacher, et les bras disparaissent dans le torse.
+    fixes: {
+      0: "....qZqZqZ......",
+      4: "..qZQQQQQQZq....",
+      5: "..qZZQGGQZZq...."
+    },
+    buste: { S: 'Z', V: 'Q', v: 'q', R: 'Q', l: 'Z' },
+    poitrine: { l: 'Z', S: 'Q', s: 'q', r: 'q', R: 'Q' },
+    bas: { l: 'Z', S: 'Q', s: 'q', R: 'q' },
+    // L'ourlet effiloche : la robe se termine en dents et non en trait net.
+    // Une table de teinte ne peut pas creuser ca, seul un calque le peut.
+    calque: [
+      [9, { 2: 'q', 4: 'q', 9: 'q', 11: 'q' }]
+    ]
   }
+
 };
 
 // Construit les six poses d'un skin de Jingle.
