@@ -417,7 +417,7 @@ function lancer() {
   // Un éclair au départ : sans lui, la roue se met simplement à tourner, et
   // rien ne dit que c'est le clic qui l'a lancée.
   flash(ecranLance, 'or', 140);
-  secousse(ecranLance, 4, 200);
+  secousse(ecranLance, 2, 200);
 
   // Le tirage est fait MAINTENANT, avant la moindre image : l'animation ne
   // décide de rien, elle raconte. Faire tomber la bille « où elle arrive »
@@ -516,7 +516,7 @@ function regler(gagnant) {
     // reviendrait à ne rien souligner.
     const gros = meilleur >= 8;
     flash(ecran, 'or', gros ? 180 : 110);
-    secousse(ecran, gros ? 14 : 5, gros ? 420 : 240);
+    secousse(ecran, gros ? 5 : 3, gros ? 420 : 240);
     emettre(ecran, 'confetti', { x: 0, y: -30, l: ecran.clientWidth, h: 20 }, gros ? 40 : 16);
     // Les jetons gagnants remontent vers le compteur, un par case. Le tapis
     // revient à 1,5 s (voir plus bas), donc on part après : lancés pendant que
@@ -530,7 +530,7 @@ function regler(gagnant) {
     sfx(gros ? 'bjCaching' : 'bjDing');
   } else if (net < 0) {
     flash(ecran, 'rougeDoux', 120);
-    secousse(ecran, 4, 200);
+    secousse(ecran, 3, 200);
     sfx('bjBuzzer');
     // Les mises perdues partent en fumée et remontent vers la roue — c'est là
     // que se tient la maison. Grisées sur place, elles restaient posées comme un

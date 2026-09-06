@@ -408,7 +408,7 @@ function terminer(gagnant, cause, mj, mi) {
     // pièces et en rafler mille ne se célèbrent pas pareil.
     const gros = potGagne >= P.stackJoueur * .5;
     setTimeout(() => {
-      secousse(ecran, gros ? 8 : 4, gros ? 340 : 220);
+      secousse(ecran, gros ? 5 : 3, gros ? 340 : 220);
       flash(ecran, 'or', gros ? 150 : 100);
       const cible = $('pkJoueur');
       if (cible) emettre(ecran, 'confetti', boiteDe(ecran, cible), gros ? 34 : 16);

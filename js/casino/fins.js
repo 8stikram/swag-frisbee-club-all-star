@@ -147,7 +147,7 @@ function sequenceVictoire(hote, opts) {
       joueur.classList.add('gagne', 'pulseOr');
       flash(hote, 'or', 110);
       sfx('bjDing');
-      secousse(hote, 4, 260);
+      secousse(hote, 3, 260);
       q(hote, '#bjCroupier').classList.add('perd');
     }],
     // Phase 2 — l'annonce et les confettis. Ils tombent du haut de l'écran, pas
@@ -162,7 +162,7 @@ function sequenceVictoire(hote, opts) {
       // Le blackjack naturel n'est pas une victoire de plus : il secoue et il
       // pleut deux fois plus longtemps. Sans cet écart, la main la plus rare
       // du jeu se règle comme la plus banale.
-      if (opts.fort) secousse(hote, 9, 420);
+      if (opts.fort) secousse(hote, 5, 420);
     }],
     // Phase 3 — le règlement. La mise remonte vers le compteur.
     [280, () => {
@@ -190,11 +190,13 @@ function sequenceBust(hote, opts) {
       aberration(hote, 520);
       sfx('bjTension');
     }],
-    // Phase 2 — la déflagration. Secousse violente, éclair rouge, et les
-    // cartes du joueur prennent feu par le bas.
+    // Phase 2 — la déflagration : éclair rouge, secousse, et les cartes du
+    // joueur prennent feu par le bas. La secousse reste la plus forte du
+    // casino, mais elle plafonne à six pixels — au-delà on ne lit plus la
+    // table, on la subit, et le bust arrive assez souvent pour que ça pèse.
     [400, () => {
       vitesseNormale(hote);
-      secousse(hote, 18, 320);
+      secousse(hote, 6, 340);
       flash(hote, 'rouge', 150);
       annonce(hote, 'BUST !', 'finBust');
       joueur.classList.add('creve');
@@ -239,7 +241,7 @@ function sequenceDefaite(hote, opts) {
       croupier.classList.add('gagne', 'pulseRouge');
       joueur.classList.add('perd', 'terne');
       sfx('bjDingGrave');
-      secousse(hote, 6, 260);
+      secousse(hote, 3, 260);
     }],
     // Phase 2 — l'annonce arrive en fondu descendant, pas en fanfare.
     [380, () => {

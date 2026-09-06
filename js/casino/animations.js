@@ -161,7 +161,7 @@ export function transitionVersJeu(opts, arrivee) {
     // Phase 1 — la carte s'enflamme et l'écran encaisse le clic.
     [0, () => {
       sfx('casinoFeu');
-      secousse(hote, 3, 120);
+      secousse(hote, 2, 120);
       if (carte) {
         carte.classList.add('enFeu');
         emettre(hote, 'feu', { x: b.x, y: b.y + b.h * .5, l: b.l, h: b.h * .5 }, 26);
@@ -194,7 +194,7 @@ export function transitionVersJeu(opts, arrivee) {
     [600, () => {
       sfx('bjWhoosh');
       v.eclair.className = 'ctEclair passe ' + variante;
-      secousse(hote, 6, 300);
+      secousse(hote, 4, 300);
     }],
 
     // Phase 5 — on est de l'autre côté. C'est ici que l'écran change, sous le

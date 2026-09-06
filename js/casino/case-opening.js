@@ -247,7 +247,7 @@ function lancerOuverture() {
   if (ecran) {
     sfx('ctPoof');
     flash(ecran, 'or', 200);
-    secousse(ecran, 7, 300);
+    secousse(ecran, 4, 300);
     const centre = { x: ecran.clientWidth * .35, y: ecran.clientHeight * .35,
                      l: ecran.clientWidth * .3, h: ecran.clientHeight * .3 };
     emettre(ecran, 'fumee', centre, 26, '#3a1050');
@@ -319,7 +319,7 @@ function conclure(prix) {
 
   sfx('coGain');
   flash(ecran, 'or', 160);
-  secousse(ecran, 10, 340);
+  secousse(ecran, 5, 340);
   emettre(ecran, 'confetti', { x: 0, y: -30, l: ecran.clientWidth, h: 20 }, 34);
 
   // On débite d'abord : c'est le serveur qui décide si le solde suffit, jamais
