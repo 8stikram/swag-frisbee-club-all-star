@@ -2846,7 +2846,11 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
      sur un petit écran et la carte n'avait plus de cadre. */
   border:max(3px, .38cqh) solid #d4af37;border-radius:11px;
   transition:transform .12s, box-shadow .12s, filter .12s, border-color .12s;
-  animation:bjBtnRespire 2.6s ease-in-out infinite;
+  /* Ombre portée et creux intérieur, rien de plus. Le halo doré qui respirait
+     ici faisait clignoter cinq boutons en permanence au-dessus d'un tapis qui
+     vit déjà : toute la table palpitait, et plus rien n'attirait l'œil. La
+     lueur ne revient qu'au survol, où elle répond à un geste. */
+  box-shadow:0 .5cqh 1.2cqh rgba(0,0,0,.65), inset 0 0 20px rgba(0,0,0,.55);
 }
 /* Second filet à l'intérieur : c'est le double cadre qui fait la carte de
    tarot. Un simple rectangle bordé restait un bouton. */
@@ -2854,20 +2858,14 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   content:'';position:absolute;inset:3px;border-radius:6px;pointer-events:none;
   border:1px solid rgba(212,175,55,.42);
 }
-@keyframes bjBtnRespire{
-  0%,100%{box-shadow:0 0 12px rgba(212,175,55,.4), inset 0 0 20px rgba(0,0,0,.55);
-          border-color:#c9a233;transform:scale(1)}
-  50%{box-shadow:0 0 22px rgba(212,175,55,.75), inset 0 0 24px rgba(0,0,0,.55);
-      border-color:#f6e27a;transform:scale(1.02)}
-}
 .bjBtn:hover{
   filter:brightness(1.16);transform:scale(1.05);border-color:#f6e27a;
   box-shadow:0 0 30px var(--halo), inset 0 0 24px rgba(0,0,0,.45) !important;
 }
 /* Le bouton s'enfonce vraiment : il rétrécit ET son halo se resserre. */
 .bjBtn:active{transform:scale(.95);box-shadow:0 0 8px var(--halo) !important;filter:brightness(1.35)}
-.bjBtn:disabled{filter:grayscale(.85) brightness(.42);cursor:not-allowed;animation:none;
-                box-shadow:0 0 6px rgba(0,0,0,.6) !important}
+.bjBtn:disabled{filter:grayscale(.85) brightness(.42);cursor:not-allowed;
+                box-shadow:0 .3cqh .6cqh rgba(0,0,0,.5) !important}
 .bjBtn.vert{--teinte:#0f4a26;--halo:rgba(90,255,150,.75)}
 .bjBtn.rouge{--teinte:#5a1018;--halo:rgba(255,90,80,.75)}
 .bjBtn.bleu{--teinte:#132f5e;--halo:rgba(90,170,255,.75)}
@@ -3168,7 +3166,6 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
 .bjRalenti .bjPoussiere i{animation-duration:63s}
 .bjRalenti .bjBraises, .bjRalenti .bjBraises::after{animation-duration:50s}
 .bjRalenti .bjSpot{animation-duration:23s}
-.bjRalenti .bjBtn{animation-duration:8.6s}
 .bjTable{transition:transform .55s ease-out}
 .bjRalenti .bjTable{transform:scale(1.05);transition:transform .42s cubic-bezier(.2,.7,.3,1)}
 

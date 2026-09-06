@@ -509,7 +509,7 @@ export function rafraichirSolde() {
 }
 
 let effacer = null;
-function message(texte) {
+export function message(texte) {
   const el = $('casinoMsg');
   if (!el) return;
   el.textContent = texte;

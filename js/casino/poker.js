@@ -17,14 +17,15 @@
 import { $, showScreen } from '../core/dom.js';
 import { sfx } from '../audio/audio.js';
 import { Compte, connecte, ajouterPieces } from '../reseau/compte.js';
-import { sceau } from './casino.js';
+import { sceau, message as messageCasino } from './casino.js';
 import { ENSEIGNES, RANGS, carteDom } from './cartes.js';
 
 // --- Constantes de table ----------------------------------------------------
 const PETITE = 10, GROSSE = 20;
-// Filet anti-ruine demandé : on ne s'assoit jamais à moins de deux cents
-// pièces. C'est une avance de la maison, pas un gain — voir `asseoir()`.
-const FILET = 200;
+// La cave minimale : on s'assoit avec ses propres pièces ou on ne s'assoit pas.
+// La maison n'avance rien — de l'argent prêté à volonté vide le poker de son
+// enjeu, et rend gratuit tout ce qu'on gagne sur le terrain.
+const CAVE_MIN = 100;
 
 // ---------------------------------------------------------------------------
 // Le jeu de 52
@@ -263,7 +264,14 @@ const nom = qui => qui === 'joueur' ? 'Toi' : 'La maison';
 // ---------------------------------------------------------------------------
 export function nouvelleMain() {
   if (P.enCours) return;
-  if (P.stackJoueur < GROSSE || P.stackIA < GROSSE) { rasseoir(); return; }
+  // Plus de quoi payer la grosse blinde : la partie est finie, et on le dit
+  // plutôt que de distribuer une main qu'on ne peut pas jouer.
+  if (P.stackJoueur < GROSSE) {
+    message(`Il te faut ${GROSSE} pièces pour la grosse blinde. Retourne en gagner sur le terrain.`);
+    sfx('deny');
+    return;
+  }
+  if (P.stackIA < GROSSE) rasseoir();
 
   P.paquet = neufPaquet();
   P.joueur = [P.paquet.pop(), P.paquet.pop()];
@@ -343,11 +351,21 @@ function terminer(gagnant, cause, mj, mi) {
   // qu'une main interrompue emporte la mise sans contrepartie.
   const net = P.stackJoueur - P.soldeAvant;
   if (net !== 0 && connecte()) {
-    ajouterPieces(net).catch(() => { /* resynchronisé à la prochaine ouverture */ });
+    // C'est la réponse du serveur qui fait foi : le tapis affiché s'y aligne,
+    // sinon deux mains perdues d'affilée pourraient laisser miser des pièces
+    // que le compte n'a plus.
+    ajouterPieces(net).then(s => {
+      if (s !== null && s !== undefined) { P.stackJoueur = s; rendre(); }
+    }).catch(() => { /* resynchronisé à la prochaine ouverture */ });
   }
 
   P.phase = 'attente';
   rendre();
+  // La maison abat toujours, même quand elle emporte le coup sur un couchage.
+  // Une vraie table ne montrerait pas — mais ici il n'y a personne à qui cacher
+  // quoi que ce soit, et savoir si elle bluffait est tout le plaisir du poker
+  // en solitaire. Après `rendre()`, sinon la phase « attente » les recacherait.
+  devoilerMaison();
   annoncer(gagnant, cause, mj, mi);
 }
 
@@ -418,13 +436,16 @@ function decider() {
   const agressif = Lecture.actions >= 6 ? Lecture.relances / Lecture.actions : .25;
   const force = Math.min(.95, Math.max(.05, e + (agressif - .25) * .12));
 
-  // Filet anti-ruine : face à un joueur presque à sec, elle range ses bluffs.
+  // Face à un joueur presque à sec, elle range ses bluffs : l'achever au culot
+  // n'a aucun intérêt.
   const serre = P.stackJoueur < 100;
-  const chanceBluff = serre ? .05 : .18;
+  const chanceBluff = serre ? .08 : .22;
 
   if (du === 0) {
-    // Personne n'a misé. On mise avec un vrai jeu, ou on tente un coup.
-    if (force > .60 || (force < .38 && Math.random() < chanceBluff)) return miser(pot, force);
+    // Personne n'a misé. On mise avec un vrai jeu, ou on tente un coup. Le seuil
+    // est bas exprès : checker derrière avec une main correcte laisse voir la
+    // carte suivante gratuitement, et c'est le cadeau le plus cher du poker.
+    if (force > .55 || (force < .40 && Math.random() < chanceBluff)) return miser(pot, force);
     return agir('ia', 'checker');
   }
 
@@ -433,8 +454,11 @@ function decider() {
   // seule règle du poker qui ne se discute pas, et l'ancien seuil « un tiers du
   // tapis » l'ignorait complètement. D'où les couchages à répétition.
   const cote = du / (pot + du);
-  if (force > .72 && P.stackIA > du) return miser(pot, force);
-  if (force > cote + .03) return agir('ia', 'suivre');
+  if (force > .66 && P.stackIA > du) return miser(pot, force);
+  // Une marge d'un point seulement : suivre dès qu'on est favori de la cote,
+  // c'est mathématiquement juste, et l'ancienne marge de trois points laissait
+  // filer des mains gagnantes sur du bruit d'échantillonnage.
+  if (force > cote + .01) return agir('ia', 'suivre');
   // Une main faible mais pas ridicule, devant une petite mise : de temps en
   // temps, on relance dessus plutôt que de la jeter.
   if (!serre && force > cote - .10 && Math.random() < chanceBluff) return miser(pot, force);
@@ -444,9 +468,11 @@ function decider() {
 function miser(pot, force) {
   const plafond = Math.max(P.engageJoueur, P.engageIA);
   const mini = plafond + Math.max(P.derniereRelance, GROSSE);
-  // Six dixièmes de pot avec un vrai jeu, un tiers en bluff : un bluff qui mise
-  // comme une main forte se lit trop bien, et l'inverse laisse partir la valeur.
-  const vise = plafond + Math.round(pot * (force > .6 ? .6 : .35) / 10) * 10;
+  // Sept dixièmes de pot avec un vrai jeu, quatre en bluff : un bluff qui mise
+  // exactement comme une main forte se lit trop bien à la longue, et l'inverse
+  // laisse partir la valeur. L'écart est volontairement étroit — deux tailles
+  // trop différentes et le joueur lit la maison en trois mains.
+  const vise = plafond + Math.round(pot * (force > .6 ? .7 : .45) / 10) * 10;
   const total = Math.max(mini, vise);
   if (total >= P.stackIA + P.engageIA) return agir('ia', 'tapis');
   return agir('ia', 'relancer', total);
@@ -455,26 +481,21 @@ function miser(pot, force) {
 // ---------------------------------------------------------------------------
 // La caisse
 // ---------------------------------------------------------------------------
+// Le tapis du joueur EST son solde : ce qu'il pose sur la table, il l'a gagné
+// sur le terrain. Rien n'est avancé, rien n'est offert.
 function asseoir() {
-  const pieces = (connecte() && Compte.profil) ? (Compte.profil.pieces || 0) : 0;
-  P.stackJoueur = pieces;
-  // Le filet : la maison avance de quoi atteindre deux cents pièces. C'est une
-  // avance réelle, écrite au compte — pas un chiffre d'affichage, sinon le
-  // joueur miserait des pièces qui n'existent pas.
-  if (P.stackJoueur < FILET) {
-    const avance = FILET - P.stackJoueur;
-    P.stackJoueur = FILET;
-    if (connecte()) ajouterPieces(avance).catch(() => { });
-    message(`La maison t'avance ${avance} pièces.`);
-  }
+  P.stackJoueur = (connecte() && Compte.profil) ? (Compte.profil.pieces || 0) : 0;
   // La maison s'assoit avec autant que le joueur : un tête-à-tête où l'un des
   // deux a dix fois le tapis de l'autre n'est plus du poker, c'est une attente.
-  P.stackIA = Math.max(P.stackJoueur, FILET);
+  // Ce n'est pas une avance — ce tapis-là n'appartient à personne.
+  P.stackIA = P.stackJoueur;
 }
 
+// La maison, elle, recave sans limite : elle ne joue pas ses pièces, elle
+// représente le casino. Le joueur, non — quand il n'a plus de quoi payer la
+// grosse blinde, la partie s'arrête.
 function rasseoir() {
-  if (P.stackIA < GROSSE) { P.stackIA = Math.max(P.stackJoueur, FILET); message('La maison recave.'); }
-  if (P.stackJoueur < GROSSE) asseoir();
+  if (P.stackIA < GROSSE) { P.stackIA = P.stackJoueur; message('La maison recave.'); }
   rendre();
 }
 
@@ -519,6 +540,17 @@ function poser(zone, cartes, face) {
   }
 }
 
+// Les cartes de la maison se retournent une à une, avec un temps entre les
+// deux : retournées ensemble, on lit le résultat sans voir la révélation.
+function devoilerMaison() {
+  let retard = 120;
+  for (const c of $('pkIA').children) {
+    if (c.classList.contains('face')) continue;
+    setTimeout(() => { c.classList.add('face'); sfx('bjRevele'); }, retard);
+    retard += 260;
+  }
+}
+
 function rendre() {
   poser('pkJoueur', P.joueur, true);
   poser('pkIA', P.ia, P.phase === 'abattage');
@@ -560,7 +592,19 @@ function majBoutons() {
 // ---------------------------------------------------------------------------
 // Ouverture
 // ---------------------------------------------------------------------------
+// Renvoie faux si la table refuse le joueur : c'est le comptoir qui l'annonce,
+// puisque c'est encore lui qui est à l'écran. Ouvrir une table où l'on ne peut
+// pas s'asseoir, pour y lire le refus, serait un aller-retour pour rien.
 export function ouvrirPoker() {
+  if (!connecte()) {
+    messageCasino('Connecte-toi : les pièces vivent sur ton compte.');
+    return false;
+  }
+  const pieces = (Compte.profil && Compte.profil.pieces) || 0;
+  if (pieces < CAVE_MIN) {
+    messageCasino(`Cave minimum : ${CAVE_MIN} pièces. Tu en as ${pieces} — la maison n'avance rien.`);
+    return false;
+  }
   P.enCours = false;
   P.phase = 'attente';
   P.joueur = []; P.ia = []; P.board = [];
@@ -570,6 +614,7 @@ export function ouvrirPoker() {
   asseoir();
   rendre();
   showScreen('poker');
+  return true;
 }
 
 // ---------------------------------------------------------------------------
