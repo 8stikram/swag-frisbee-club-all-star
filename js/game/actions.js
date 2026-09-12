@@ -7,15 +7,15 @@ import {
   PERFECT_WINDOW, PERFECT_SPEED, DISC_RADIUS, DASH_THROW_WINDOW, METER_GAIN, DISC_SPEED,
   TIR_ANGLE_MIN
 } from '../core/constants.js';
-import { clamp, norm, gauss, pick, rand } from '../core/utils.js';
+import { clamp, norm, pick } from '../core/utils.js';
 import { gaussJeu, randJeu, aleaJeu } from '../core/alea.js';
 import { zoneByY } from '../data/maps.js';
 import { CHARS } from '../data/characters.js';
 import { sfx, setMuffled } from '../audio/audio.js';
-import { burst, dust, ring, confetti, starBurst, addPopup, ondeDeBut, confettiNumerique, effetDeBut } from './fx.js';
+import { burst, dust, ring, confetti, starBurst, addPopup, ondeDeBut, confettiNumerique, effetDeBut, effetDeReception, effetDeTirSuper } from './fx.js';
 import { $, cv, showScreen } from '../core/dom.js';
 import { signalerPerfectDive } from './moves.js';
-import { getSkinId, teinteDeCharge, chaufferCouleur } from '../data/skins.js';
+import { getSkinId } from '../data/skins.js';
 
 // Commentaire personnalisé : varié, et cite le pseudo en ligne plutôt qu'un
 // texte générique — en multi les deux joueurs sont de vraies personnes, pas
@@ -83,21 +83,12 @@ export function throwDisc(p, dir, speed, kind = 'normal') {
   p.throwCd = .32; p.throwPoseT = .28; p.stats.thrown++; p.holdTimer = 0;
   sfx(d.super ? 'superthrow' : 'throw');
   if (d.super) {
-    // Le recul : la gerbe part vers l'ARRIÈRE, comme le souffle d'une arme.
-    // Elle ne suit donc pas le disque et ne le masque jamais au moment précis
-    // où il faut commencer à le suivre. Teintée du disque, jamais en rouge fixe.
-    // `gauss`/`rand` de core/utils, jamais le tirage semé : les deux machines
-    // engendrent cette gerbe chacune de leur côté, et le semé se décalerait.
-    const chaud = chaufferCouleur(teinteDeCharge(skinDuJoueur(p)), .4);
-    const axe = Math.atan2(-dir.y, -dir.x);
-    for (let i = 0; i < 12; i++) {
-      const a = axe + gauss() * .7, v = rand(120, 260);
-      G.particles.push({
-        x: p.x + dir.x * 18, y: p.y + dir.y * 18,
-        vx: Math.cos(a) * v, vy: Math.sin(a) * v,
-        life: .45, c: i % 3 ? chaud : '#ffffff', s: 3, g: 0
-      });
-    }
+    // Le souffle du tir vit dans fx.js : l'invité ne fait tourner cette
+    // fonction-ci que pour SES propres tirs, et rejoue celui de l'adversaire
+    // à la vue du disque qui quitte sa main. `gauss`/`rand` de core/utils,
+    // jamais le tirage semé : les deux machines engendrent cette gerbe chacune
+    // de leur côté, et le semé se décalerait.
+    effetDeTirSuper(p.x, p.y, dir.x, dir.y, skinDuJoueur(p));
     G.shake = Math.max(G.shake, 4);
     commentNom(p, 'standard',
       ['QUELLE PUISSANCE !', 'IL Y VA À FOND !', 'CHARGE MAXIMALE !'],
@@ -287,7 +278,6 @@ export function onCatch(p, sp, dirx, diry) {
   const enDash = Math.hypot(p.dashV.x, p.dashV.y) > 130 || p.lunge > 0;
   const kb = clamp(sp * .22, 26, 260);
   p.dashV.x += (dirx || 0) * kb; p.dashV.y += (diry || 0) * kb * .4;
-  dust(p.x, p.y + 18, Math.min(10, 2 + sp / 200));
   d.heldBy = p; d.free = false; d.vx = 0; d.vy = 0; d.kind = 'normal'; d.big = false; d.super = false;
   G.trail.length = 0;
   p.holding = true; p.charge = 0; p.stats.catches++;
@@ -308,7 +298,10 @@ export function onCatch(p, sp, dirx, diry) {
   // court instant pour déclencher un Dash Throw, tir instantané à pleine
   // puissance. S'il ne clique pas, il garde simplement le disque en main.
   if (p.dashT > 0 || p.cancelCatchT > 0) p.dashThrowT = DASH_THROW_WINDOW;
-  sfx('catch'); ring(p.x, p.y, p.char.accent);
+  // La poussière et l'anneau passent par fx.js : l'invité les rejoue de son
+  // côté à la vue du changement de porteur, puisque cette fonction-ci ne
+  // tourne jamais chez lui (voir effetDeReception).
+  sfx('catch'); effetDeReception(p.x, p.y, p.char.accent, sp);
   // Captain : un bouclier apparaît un instant autour de celui qui attrape.
   // Attaché au joueur et pas au disque, parce que le disque vient de quitter
   // le terrain pour sa main — c'est lui qu'on regarde à cet instant.

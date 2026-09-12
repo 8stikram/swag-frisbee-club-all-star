@@ -5,7 +5,7 @@ import { setMapId, getMapId } from '../data/maps.js';
 import { activerEcho, viderEcho, marquerInvite, viderPopups } from './echo.js';
 import { construireTerminal } from '../data/hack-terminal.js';
 import { sfx, setMuffled } from '../audio/audio.js';
-import { effetDeBut, popupDistant } from '../game/fx.js';
+import { effetDeBut, effetDeReception, effetDeTirSuper, popupDistant } from '../game/fx.js';
 import { COURT, CX, DISC_RADIUS } from '../core/constants.js';
 import { clamp } from '../core/utils.js';
 import { semerAlea, graineNeuve } from '../core/alea.js';
@@ -130,6 +130,12 @@ function fichePourLeReseau(c) {
   };
 }
 
+// Les poses d'un personnage, dans l'ordre. Elles voyagent en numéro et non en
+// toute lettre : c'est le même mot répété soixante fois par seconde, et l'ordre
+// n'a besoin d'être stable qu'entre deux machines qui tournent la même version
+// — ce dont le test de longueur du décodeur se charge déjà.
+const POSES = ['idle', 'run1', 'run2', 'throw', 'dash', 'dive'];
+
 // L'hôte renvoie ce qu'il faut pour dessiner la scène, rien de plus : pas de
 // particules, pas de traînée — l'invité les recrée lui-même à l'affichage.
 function etatPourLeReseau() {
@@ -164,7 +170,18 @@ function etatPourLeReseau() {
     // bras) et la rémanence du lancer, qui fait tenir le bras tendu un tiers de
     // seconde après le tir. Elles ne changent rien au jeu, mais sans elles
     // l'hôte tirait sans jamais lever son arme.
-    +(p.viseT || 0).toFixed(2), +(p.throwPoseT || 0).toFixed(2)];
+    +(p.viseT || 0).toFixed(2), +(p.throwPoseT || 0).toFixed(2),
+    // Rémanence du dash. `dashT` ne dure que 0,17 s : c'est `dashGap` qui fait
+    // tenir la pose assez longtemps pour qu'on la voie (voir drawPlayer). Sans
+    // lui l'invité apercevait la pose d'élan deux images et l'adversaire
+    // revenait à la course en plein dash.
+    +(p.dashGap || 0).toFixed(2),
+    // Pose forcée, en numéro plutôt qu'en toute lettre. Elle ne sert qu'au
+    // rejeu, où c'est l'enregistrement qui dicte l'attitude de chaque
+    // personnage image par image — et l'invité, qui ne rejoue rien, montrait
+    // deux silhouettes en train de courir par-dessus un ralenti où l'un
+    // plongeait et l'autre tirait.
+    p.forceFr ? POSES.indexOf(p.forceFr) + 1 : 0];
   const d = G.disc;
   return {
     t: 'e', n: ++numeroEnvoi,
@@ -186,7 +203,18 @@ function etatPourLeReseau() {
     // millisecondes — soit, à neuf cents pixels par seconde, quarante pixels en
     // arrière à chaque paquet.
     d: [Math.round(d.x), Math.round(d.y), +d.spin.toFixed(2), d.kind, d.heldBy ? (d.heldBy === G.p1 ? 1 : 2) : 0,
-      Math.round(d.vx), Math.round(d.vy)],
+      Math.round(d.vx), Math.round(d.vy),
+      // Tir à pleine charge. Le drapeau est posé par throwDisc, que l'invité ne
+      // fait tourner que pour SES propres tirs : celui d'en face lui arrivait
+      // donc en disque ordinaire, sans sa traînée chauffée ni son halo. C'est
+      // pourtant le tir le plus dangereux du jeu, et le seul qu'on doive
+      // reconnaître au premier coup d'œil pour avoir le temps de plonger.
+      d.super ? 1 : 0,
+      // La taille se déduisait du genre — `kind === 'kurama'` — et ça tenait
+      // tant que le disque volait. Pendant un rejeu, l'hôte rejoue un genre
+      // « normal » et une taille enregistrée à part : le Rasengan du mode Six
+      // Paths y reprenait sa taille ordinaire chez l'invité seulement.
+      d.big ? 1 : 0],
     st: G.state,
     // Le vainqueur. Il ne se devine pas : l'invité ne compte pas les points,
     // donc son `G.winner` reste vide et sa fin de match n'arrivait jamais — il
@@ -199,6 +227,14 @@ function etatPourLeReseau() {
     // avant de se faire rappeler d'un coup. C'est exactement aux moments les
     // plus intenses du match que son déplacement n'avait plus rien à voir.
     ts: +G.timescale.toFixed(3),
+    // L'échange en cours et le camp au service. Les deux naissent dans du code
+    // d'arbitre — onCatch pour l'un, setupServe pour l'autre — donc l'invité
+    // restait à zéro et sur un service périmé tout le match : jamais le gros
+    // « ×4 » qui grandit au centre du HUD quand l'échange s'éternise, et la
+    // mention du service posée sur le mauvais camp dès le premier but.
+    ry: G.rally, sv: G.serveTo,
+    // Les compteurs de l'écran de fin, et eux seulement quand l'un d'eux bouge.
+    sd: statsNeuves(),
     // Les bruitages produits depuis le paquet précédent. L'invité s'arrête
     // avant toute la physique du match, donc aucun rebond, aucune réception,
     // aucun but ne faisait le moindre bruit chez lui : il jouait en silence.
@@ -230,6 +266,29 @@ function etatPourLeReseau() {
   };
 }
 
+// Les compteurs qui alimentent l'écran de fin de match : les réceptions et les
+// ultimes affichés sous le portrait, et le détail des six chiffres qu'on ouvre
+// en cliquant dessus. Ils ne bougent que sur un but, une réception ou un
+// ultime — quelques dizaines de fois par match — et ne servent qu'à la
+// dernière seconde. Les répéter dans chaque paquet reviendrait à envoyer douze
+// nombres identiques soixante fois par seconde ; on ne les envoie donc qu'au
+// changement, et le reste du temps ce champ vaut zéro.
+//
+// Sans eux, l'invité arrivait sur son écran de fin avec des zéros partout,
+// pour les deux joueurs : rien de ce qu'il venait de faire pendant le match
+// n'y figurait.
+const CLES_STATS = ['buts', 'catches', 'z5', 'z3', 'specials', 'dashCatches'];
+let statsEnvoyees = '';
+function statsNeuves() {
+  if (!G.p1 || !G.p2) return 0;
+  const l = p => CLES_STATS.map(k => (p.stats && p.stats[k]) | 0);
+  const v = [l(G.p1), l(G.p2)];
+  const signature = v.join('|');
+  if (signature === statsEnvoyees) return 0;
+  statsEnvoyees = signature;
+  return v;
+}
+
 // Les scènes en cours, sous forme compacte. Zéro quand il n'y en a aucune,
 // ce qui est le cas la plupart du temps : le paquet ne grossit que pendant
 // les quelques secondes où il se passe quelque chose.
@@ -251,7 +310,12 @@ function commentaireNeuf() {
 function scenesPourLeReseau() {
   const c = G.cine, b = G.bell, h = G.hack, l = G.leg, t = G.tempete, br = G.brume;
   const ba = G.banner, zo = G.zoom, ra = G.rafale, gr = G.grappin, ci = G.chien, ru = G.ruee, ti = G.tigre, ps = G.psycho;
-  if (!c && !b && !h && !l && !t && !br && !ba && !zo && !ra && !gr && !ci) return 0;
+  // La ruée, le tigre et la zone psychique manquaient à cette liste. Chacun
+  // est pourtant un ultime à lui seul : lancé sans qu'aucune autre scène ne
+  // tourne — le cas normal — la fonction rendait zéro et l'invité ne voyait
+  // strictement rien de l'ultime qui venait de le frapper. Il ne restait chez
+  // lui que l'effet subi, sans sa cause.
+  if (!c && !b && !h && !l && !t && !br && !ba && !zo && !ra && !gr && !ci && !ru && !ti && !ps) return 0;
   const q = p => (p === G.p1 ? 1 : (p === G.p2 ? 2 : 0));
   return {
     // Le bandeau qui annonce l'ultime, et le zoom du Perfect Dive. Ils vivent
@@ -744,6 +808,11 @@ function appliquerEtat(m) {
     || (gesteEnAttente >= 0 && !(m.na !== undefined && m.na >= gesteEnAttente));
   const poseInstant = (p, a, mien) => {
     if (!p || !a) return;
+    // Pose forcée : elle n'a cours que pendant un rejeu, et c'est le bloc de
+    // rejeu plus bas qui la pose. Ici on l'efface, pour les deux joueurs —
+    // sinon la dernière attitude du rejeu restait collée au personnage pendant
+    // tout le point suivant, et on servait en position de plongeon.
+    p.forceFr = null;
     p.meter = a[3]; p.score = a[4]; p.sixT = a[9];
     // Qui tient le disque est une décision de l'hôte — sauf pendant la fenêtre,
     // où l'hôte croit encore que je l'ai en main alors que je viens de tirer.
@@ -775,6 +844,7 @@ function appliquerEtat(m) {
       if (p.cmd) { p.cmd.visee.x = a[20]; p.cmd.visee.y = a[21]; }
       p.viseT = a[22]; p.throwPoseT = a[23];
     }
+    if (a.length > 24) p.dashGap = a[24];
   };
   // Score d'avant : c'est lui qui nous dira qu'un but vient d'être marqué, et
   // par qui. Rien d'autre dans le paquet ne le dit, et le déduire évite d'y
@@ -787,7 +857,25 @@ function appliquerEtat(m) {
   const avantMoi = G.p2 ? { diveT: G.p2.diveT, diveDown: G.p2.diveDown, feintT: G.p2.feintT } : null;
   poseInstant(G.p1, m.p1, false); poseInstant(G.p2, m.p2, true);
   const d = G.disc;
+  // Qui tenait le disque, et à quelle vitesse il volait, JUSTE AVANT que ce
+  // paquet ne passe dessus. C'est le changement de porteur qui dit qu'une
+  // réception ou un tir vient d'avoir lieu : rien d'autre dans le paquet ne
+  // l'annonce, et le déduire évite d'y ajouter un champ pour un événement que
+  // ces deux valeurs décrivent déjà.
+  const porteurAvant = d.heldBy;
+  // La vitesse se lit sur le paquet PRÉCÉDENT — `discAutorite` n'est remis à
+  // jour qu'à la toute fin de cette fonction — et non sur le disque local :
+  // celui-ci est recalé, lissé et épinglé à la main du porteur en cours de
+  // route, et il ne portait plus qu'un ou deux pixels par seconde au moment
+  // du relevé. La poussière se dosait donc au minimum à chaque réception,
+  // quatre grains là où l'hôte en levait sept.
+  const vitesseAvant = discAutorite.valide
+    ? Math.hypot(discAutorite.vx, discAutorite.vy)
+    : Math.hypot(d.vx, d.vy);
   d.spin = m.d[2]; d.kind = m.d[3];
+  // Tir à pleine charge : c'est ce drapeau qui donne au disque sa traînée
+  // chauffée et son halo. L'invité ne le posait que sur ses propres tirs.
+  if (m.d.length > 7) d.super = !!m.d[7];
   // Même règle que pour `holding` : pendant la fenêtre, l'hôte croit encore
   // que le disque est dans ma main. Le lui reprendre le ferait revenir en
   // arrière, puis repartir — un tir qui se joue deux fois.
@@ -795,14 +883,86 @@ function appliquerEtat(m) {
     d.heldBy = m.d[4] === 1 ? G.p1 : (m.d[4] === 2 ? G.p2 : null);
     d.free = !d.heldBy;
   }
-  d.big = d.kind === 'kurama';
+  d.big = m.d.length > 8 ? !!m.d[8] : d.kind === 'kurama';
+  // ---------------------------------------------------------------------
+  // Le disque vient de changer de main. On rejoue ici ce que l'invité ne
+  // peut pas produire lui-même, et rien de plus.
+  //
+  // `onCatch` s'arrête net chez lui — la prise est un arbitrage — et il
+  // emportait dans sa chute la poussière et l'anneau de la réception, qui
+  // n'arbitrent rien du tout. L'invité voyait donc le disque changer de main
+  // sans une étincelle, pour les DEUX joueurs, y compris lui-même : c'est le
+  // geste le plus fréquent du match, et c'était le plus muet.
+  //
+  // Le tir, lui, ne se rejoue que pour l'adversaire : mes propres tirs
+  // passent par throwDisc en local et ont déjà lancé leur gerbe. La rejouer
+  // la montrerait deux fois.
+  // ---------------------------------------------------------------------
+  if (porteurAvant !== d.heldBy && m.st === 'play') {
+    if (d.heldBy && !porteurAvant) {
+      effetDeReception(d.heldBy.x, d.heldBy.y, d.heldBy.char.accent, vitesseAvant);
+      // La traînée appartient au vol qui vient de finir. L'hôte la vide dans
+      // onCatch ; chez l'invité elle restait peinte en travers du terrain,
+      // figée, jusqu'au tir suivant — elle ne s'efface pas avec le temps mais
+      // en se faisant repousser par les points du vol d'après.
+      G.trail.length = 0;
+    } else if (porteurAvant && !d.heldBy && porteurAvant !== monJoueur() && d.super) {
+      // La direction se lit sur la vitesse que porte CE paquet, pas sur celle
+      // du disque local : celui-ci était encore en main il y a une image, donc
+      // à l'arrêt, et la gerbe serait partie dans le vide.
+      const vx = m.d[5], vy = m.d[6], v = Math.hypot(vx, vy) || 1;
+      effetDeTirSuper(porteurAvant.x, porteurAvant.y, vx / v, vy / v, skinDuJoueur(porteurAvant));
+    }
+  }
   G.state = m.st;
+  // L'échange en cours et le camp au service : deux décisions d'arbitre que
+  // l'invité ne prend pas. Le meilleur échange se recalcule ici plutôt que de
+  // voyager — c'est un maximum, il se tient tout seul.
+  if (m.ry !== undefined) { G.rally = m.ry; G.maxRally = Math.max(G.maxRally, G.rally); }
+  if (m.sv !== undefined) G.serveTo = m.sv;
+  // Les compteurs de l'écran de fin, quand l'hôte en signale un de neuf.
+  if (m.sd) {
+    const poser = (p, l) => { if (p && l) CLES_STATS.forEach((k, i) => { p.stats[k] = l[i]; }); };
+    poser(G.p1, m.sd[0]); poser(G.p2, m.sd[1]);
+  }
   // Rejeu : l'invité n'en monte plus aucun de son côté (voir startReplay). Il
   // ne tient qu'un drapeau d'affichage, mis et retiré PAR L'ÉTAT DE L'HÔTE.
   // C'est ce qui garantit qu'il ne peut pas lui survivre : dès que l'hôte
   // repasse à autre chose, le drapeau tombe dans la même image. Un G.replay
   // orphelin collait les bandes noires à l'écran et faisait avaler tous les
   // clics et la barre d'espace par input.js — le joueur ne contrôlait plus rien.
+  // -----------------------------------------------------------------------
+  // Pendant un rejeu, plus personne ne prédit quoi que ce soit.
+  //
+  // L'hôte y déplace les deux joueurs image par image depuis son
+  // enregistrement, avec la pose de chacun. Chez l'invité, l'adversaire était
+  // tiré par une vitesse qui n'a plus cours — celle de la balle en jeu, restée
+  // dans le paquet — et SON PROPRE personnage n'avait tout simplement personne
+  // pour le bouger : il regardait un ralenti où il restait planté là où le
+  // point s'était arrêté, pendant que l'autre rejouait l'action.
+  //
+  // On se pose donc sur ce que porte le paquet, pour les deux, exactement
+  // comme applySnap le fait chez l'hôte — animation de course comprise, sans
+  // quoi ils glisseraient raides d'un bout à l'autre du ralenti.
+  // -----------------------------------------------------------------------
+  if (m.st === 'replay') {
+    const anime = (p, a) => {
+      if (!p || !a) return;
+      p.moving = Math.hypot(a[0] - p.x, a[1] - p.y) > .6;
+      if (p.moving) p.walk += .35;
+      p.x = a[0]; p.y = a[1]; p.face = a[2];
+      p.charging = false; p.stun = 0;
+      if (a.length > 25) p.forceFr = POSES[a[25] - 1] || null;
+    };
+    anime(G.p1, m.p1); anime(G.p2, m.p2);
+    // Et la traînée du disque, qui est tout l'intérêt d'un rejeu : c'est elle
+    // qui montre la trajectoire du tir qu'on revient regarder.
+    // On la sème sur la position que porte CE paquet, et non sur celle du
+    // disque local : celle-ci ne sera recalée que plus tard dans l'image, par
+    // lisserAffichage, et la traînée traînerait alors d'une image derrière.
+    G.trail.push({ x: m.d[0], y: m.d[1], life: .32, spin: m.d[2] });
+    if (G.trail.length > 14) G.trail.shift();
+  }
   if (m.st === 'replay') {
     if (!G.replay) { G.replay = { distant: true, closing: 0 }; setMuffled(true); }
   } else if (G.replay) {
@@ -937,7 +1097,11 @@ export function lisserAffichage(dt) {
   // d'origine — en retard mais fluide, plutôt qu'un adversaire qui fait
   // l'élastique. Le seuil se lit sur le ping mesuré, pas sur une supposition.
   Partie.predictionAdversaire = p1Autorite.valide && (Reseau.ping || 999) < PING_LIMITE_PREDICTION;
-  if (G.p1) {
+  // Rien à prédire pendant un rejeu : les deux joueurs y sont posés image par
+  // image par le paquet lui-même (voir appliquerEtat). Extrapoler par-dessus
+  // les tirerait sur une vitesse qui date de la balle en jeu, et l'adversaire
+  // partirait en glissade à travers le ralenti.
+  if (G.p1 && !G.replay) {
     const ax = G.p1.x, ay = G.p1.y;
     if (Partie.predictionAdversaire) {
       const transit = Math.min(.06, (Reseau.ping || 0) / 2000);
@@ -960,6 +1124,30 @@ export function lisserAffichage(dt) {
     // terrain, raide.
     G.p1.moving = Math.hypot(G.p1.x - ax, G.p1.y - ay) > .35;
     G.p1.walk += G.p1.moving ? dt * 9 : 0;
+    // Images fantômes du dash, pour la même raison et au même endroit que
+    // l'animation de course : elles naissent dans integratePlayer, que cette
+    // machine ne fait pas tourner pour l'adversaire. L'hôte traversait donc le
+    // terrain sans la moindre traînée, alors que c'est elle qui rend le geste
+    // lisible — et le dash décide de qui attrape le disque.
+    //
+    // Le déclencheur est `dashT`, qui arrive dans chaque paquet, plutôt que la
+    // vitesse mesurée à l'écran : chez l'hôte la traînée dure exactement le
+    // temps du dash (à la fin, l'élan retombe d'un coup à 12 % et passe sous
+    // son seuil), et un seuil de vitesse reposé ici aurait dérivé au gré du
+    // lissage. Seul le petit recul d'une réception appuyée, qui pousse l'élan
+    // sans lancer de dash, laisse une image ou deux chez l'hôte et aucune ici.
+    G.p1.ghostT -= dt;
+    if (G.p1.dashT > 0 && G.p1.ghostT <= 0) {
+      G.p1.ghosts.push({
+        x: G.p1.x, y: G.p1.y, face: G.p1.face, life: .55,
+        fr: G.p1.moving ? ((Math.floor(G.p1.walk) % 2) ? 'run1' : 'run2') : 'idle'
+      });
+      G.p1.ghostT = .025;
+    }
+    for (let i = G.p1.ghosts.length - 1; i >= 0; i--) {
+      G.p1.ghosts[i].life -= dt;
+      if (G.p1.ghosts[i].life <= 0) G.p1.ghosts.splice(i, 1);
+    }
   }
   // Le disque n'est PLUS interpolé : l'invité le simule lui-même, image par
   // image, comme l'hôte. Il n'est donc plus affiché dans le passé — et dans un
@@ -1045,6 +1233,10 @@ export function demarrerPartieReseau(role) {
   Partie.voteAdversaire = null;
   oublierPrets();
   Partie.skipDemande = false; Partie.finDeMatch = false; dernierCommentaire = null;
+  // Les compteurs de fin de match repartent de zéro avec la partie : sans
+  // cette remise à neuf, la signature d'une revanche ressemblerait à celle de
+  // la partie d'avant et le premier envoi serait avalé comme un doublon.
+  statsEnvoyees = '';
   // Personne n'a encore choisi : l'hote doit attendre les deux presentations
   // avant de donner le coup d'envoi.
   attenteNouveauxChoix();

@@ -2142,10 +2142,16 @@ function drawHUD() {
 
   if (G.state === 'serve') {
     const server = G.serveTo === 1 ? G.p1 : G.p2;
+    // « À toi » se juge sur le joueur de CETTE machine, pas sur `human` : en
+    // ligne les deux le sont, et le message s'affichait donc aux deux bouts à
+    // chaque service — y compris à celui qui n'avait rien à faire, qui
+    // attendait un disque qu'on ne lui avait pas donné.
+    const txt = server === monJoueur() ? 'À toi de servir !'
+      : (server.human ? 'Service adverse...' : 'L\'IA va servir...');
     ctx.fillStyle = '#fff';
     ctx.font = '11px "Archivo Black", system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(server.human ? 'À toi de servir !' : 'L\'IA va servir...', CX, COURT.bottom - 14);
+    ctx.fillText(txt, CX, COURT.bottom - 14);
   }
 }
 

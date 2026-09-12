@@ -2,7 +2,7 @@ import { G } from './state.js';
 import { CY, CX, COURT } from '../core/constants.js';
 import { TAU, rand, gauss } from '../core/utils.js';
 import { W, H } from '../core/dom.js';
-import { getSkinId } from '../data/skins.js';
+import { getSkinId, teinteDeCharge, chaufferCouleur } from '../data/skins.js';
 import { Reglages } from '../data/disc-fx.js';
 // Seau sans dépendance : il ne peut fermer aucun cycle avec l'état du jeu.
 import { noterPopup, popupEtouffe } from '../reseau/echo.js';
@@ -46,6 +46,45 @@ export function confettiNumerique(x) {
     G.particles.push({
       x: x + gauss() * 120, y: rand(-40, 40), vx: gauss() * 22, vy: rand(40, 95),
       life: rand(2.4, 3.4), c: cols[(rand(5)) | 0], s: rand(2, 4), g: 8, doux: true
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Mise en scène d'une réception.
+//
+// Elle vit ici pour la même raison qu'effetDeBut juste au-dessus : deux
+// machines doivent la jouer. La prise, elle, est un arbitrage — `onCatch`
+// s'arrête net chez l'invité — mais la poussière et l'anneau qu'elle soulève
+// n'arbitrent rien du tout, et tombaient avec le reste. L'invité voyait donc
+// le disque changer de main sans une étincelle, y compris quand c'était lui
+// qui l'attrapait : le geste le plus fréquent du match était le plus muet.
+// ---------------------------------------------------------------------------
+export function effetDeReception(x, y, accent, vitesse) {
+  dust(x, y + 18, Math.min(10, 2 + vitesse / 200));
+  ring(x, y, accent);
+}
+
+// Le recul d'un tir à pleine charge : la gerbe part vers l'ARRIÈRE, comme le
+// souffle d'une arme. Elle ne suit donc pas le disque et ne le masque jamais à
+// l'instant précis où il faut commencer à le suivre.
+//
+// Sortie de throwDisc pour la même raison que les deux fonctions ci-dessus :
+// l'invité ne fait tourner throwDisc que pour SES tirs, et le tir chargé à
+// fond de l'adversaire lui arrivait sans son souffle.
+//
+// La teinte se passe en paramètre plutôt que de se résoudre ici : elle dépend
+// du skin de disque du lanceur, que seul `partie.js` sait désigner en ligne —
+// et fx.js ne doit rien lui devoir, sous peine de cycle d'imports.
+export function effetDeTirSuper(x, y, dirx, diry, skinId) {
+  const chaud = chaufferCouleur(teinteDeCharge(skinId), .4);
+  const axe = Math.atan2(-diry, -dirx);
+  for (let i = 0; i < 12; i++) {
+    const a = axe + gauss() * .7, v = rand(120, 260);
+    G.particles.push({
+      x: x + dirx * 18, y: y + diry * 18,
+      vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+      life: .45, c: i % 3 ? chaud : '#ffffff', s: 3, g: 0
     });
   }
 }
