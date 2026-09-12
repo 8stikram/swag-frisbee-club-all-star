@@ -1454,6 +1454,11 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   display:block;font-family:'Russo One',sans-serif;font-size:clamp(8px,1.3cqh,11px);
   color:var(--yellow);
 }
+/* Un chroma ne coûte que la moitié d'une tenue complète. Le chiffre le dit
+   déjà, mais on lit une grille de dix tuiles d'un coup d'œil sans lire les
+   chiffres : ce prix plus pâle sépare les deux familles avant même qu'on
+   compare. Le cadenas, lui, reste identique — c'est le même verrou. */
+.skinTileLock.chroma b{color:#9fd8ff}
 .skinsAstuce{
   display:block;margin-top:1.4cqh;font-size:clamp(7px,1.15cqh,10px);color:#7c8aa4;
 }
