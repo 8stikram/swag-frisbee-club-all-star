@@ -148,7 +148,23 @@ function etatPourLeReseau() {
     // trente fois par seconde — le coût est négligeable, l'écart ne l'était pas.
     +(p.stun || 0).toFixed(2), +(p.diveDown || 0).toFixed(2), +(p.dizzy || 0).toFixed(2),
     +(p.piratage || 0).toFixed(2), +(p.bouclierT || 0).toFixed(2),
-    +(p.feintT || 0).toFixed(2), +(p.lunge || 0).toFixed(2)];
+    +(p.feintT || 0).toFixed(2), +(p.lunge || 0).toFixed(2),
+    // L'anneau de charge et sa flèche. `charge` (a[6]) ne suffit pas : c'est
+    // une jauge, et elle reste à sa dernière valeur entre deux tirs. Le drapeau
+    // `charging` est ce qui dit qu'on est en train d'armer, et la direction
+    // vient de la souris d'en face — rien de tout ça ne se déduit du reste.
+    // L'hôte, lui, simule l'invité à partir de sa fiche : il a toujours eu les
+    // deux. L'invité, non — il voyait l'hôte armer son tir sans le moindre
+    // signe, et perdait le seul indice qui rend le dash et la feinte jouables.
+    p.charging ? 1 : 0,
+    +((p.cmd && p.cmd.visee.x) || 0).toFixed(2),
+    +((p.cmd && p.cmd.visee.y) || 0).toFixed(2),
+    // Deux poses de la même famille, invisibles chez l'invité pour la même
+    // raison : la mise en joue de la Matilda (avec son pistolet au bout du
+    // bras) et la rémanence du lancer, qui fait tenir le bras tendu un tiers de
+    // seconde après le tir. Elles ne changent rien au jeu, mais sans elles
+    // l'hôte tirait sans jamais lever son arme.
+    +(p.viseT || 0).toFixed(2), +(p.throwPoseT || 0).toFixed(2)];
   const d = G.disc;
   return {
     t: 'e', n: ++numeroEnvoi,
@@ -751,6 +767,14 @@ function appliquerEtat(m) {
     if (mien && enAttente) { p.diveT = avantMoi.diveT; p.diveDown = avantMoi.diveDown; p.feintT = avantMoi.feintT; }
     if (mien) return;
     p.face = a[2]; p.charge = a[6]; p.dashT = a[8];
+    // Le test de longueur, comme pour les effets subis plus haut : un pair qui
+    // tourne encore une version sans ces trois champs garde l'ancien affichage
+    // au lieu de casser la liaison.
+    if (a.length > 19) {
+      p.charging = !!a[19];
+      if (p.cmd) { p.cmd.visee.x = a[20]; p.cmd.visee.y = a[21]; }
+      p.viseT = a[22]; p.throwPoseT = a[23];
+    }
   };
   // Score d'avant : c'est lui qui nous dira qu'un but vient d'être marqué, et
   // par qui. Rien d'autre dans le paquet ne le dit, et le déduire évite d'y
