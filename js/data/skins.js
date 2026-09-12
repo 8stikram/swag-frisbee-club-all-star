@@ -11,6 +11,7 @@ export const DISC_SKINS = [
   { id: 'gelatine', name: 'Gélatine', colors: ['#ff5fa2', '#ffe14d', '#5ce1a0'] },
   { id: 'pegasus', name: 'Pegasus', colors: ['#1a2a5e', '#ffffff', '#ffd9f0'] },
   { id: 'vody', name: 'Vody', colors: ['#c00d14', '#d9ad55', '#141110'] },
+  { id: 'coaster', name: 'Coaster', colors: ['#f4f1ea', '#14131a', '#f0d98a'] },
   // Récompense du tutoriel. `verrou` nomme la condition à remplir : le sélecteur
   // l'affiche grisé et cadenassé tant qu'elle ne l'est pas, plutôt que de le
   // cacher — on ne convoite pas ce qu'on ignore.
@@ -225,6 +226,85 @@ export function tracerContour(ctx, cx, cy, r, deform) {
     i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
   }
   ctx.closePath();
+}
+
+/* ---------------------------------------------------------------------------
+   Coaster : le petit gars en tenue de cérémonie. Quatre formes, écrites une
+   fois et paramétrées en fractions de `r` — le disque fait 14 px de rayon en
+   match et 32 px dans le sélecteur, et les deux doivent tenir avec le même
+   code.
+   --------------------------------------------------------------------------- */
+const PAL_COASTER = {
+  blanc:    '#f4f1ea',   // la chemise
+  blancO:   '#d6d0c3',   // son ombre, pour le galbe du tissu
+  noir:     '#14131a',   // nœud papillon, bretelles, pantalon
+  peau:     '#f2c9a0',
+  peauO:    '#d69f74',
+  cheveux:  '#f0d98a',   // blond très clair
+  cheveuxO: '#cfae4e',
+  oeil:     '#2a3b4a'
+};
+
+// La bouille. À 28 px de disque elle fait une dizaine de pixels : il n'y a de
+// place que pour un crâne, une frange et deux yeux. Tout détail de plus — nez,
+// bouche, sourcils — devient du bruit qui grise le visage au lieu de le
+// préciser.
+function teteCoaster(ctx, r, P, cy, taille) {
+  const R = r * taille;
+  // Oreilles d'abord : elles passent derrière le crâne, sinon elles font deux
+  // boutons collés sur les joues.
+  ctx.fillStyle = P.peauO;
+  for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(s * R * .84, cy + R * .12, R * .2, 0, TAU); ctx.fill(); }
+  ctx.fillStyle = P.peau;
+  ctx.beginPath(); ctx.ellipse(0, cy, R * .84, R, 0, 0, TAU); ctx.fill();
+  // Le menton : un galbe dans le ton INTERMÉDIAIRE de la peau, jamais dans le
+  // plus foncé — celui-ci donnerait un cerne aussi dur qu'un contour noir.
+  ctx.fillStyle = P.peauO;
+  ctx.beginPath(); ctx.ellipse(0, cy + R * .62, R * .52, R * .22, 0, 0, Math.PI); ctx.fill();
+  // Les cheveux : une calotte en deux tons, puis la frange qui mord sur le front.
+  ctx.fillStyle = P.cheveuxO;
+  ctx.beginPath(); ctx.ellipse(0, cy - R * .16, R * .9, R * .78, 0, Math.PI, TAU); ctx.fill();
+  ctx.fillStyle = P.cheveux;
+  ctx.beginPath(); ctx.ellipse(0, cy - R * .22, R * .84, R * .7, 0, Math.PI, TAU); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-R * .84, cy - R * .22);
+  ctx.quadraticCurveTo(-R * .2, cy - R * .04, R * .84, cy - R * .3);
+  ctx.lineTo(R * .84, cy - R * .6); ctx.lineTo(-R * .84, cy - R * .6);
+  ctx.closePath(); ctx.fill();
+  // Les yeux, décalés d'un cheveu vers le bas : plus haut ils se perdent sous
+  // la frange dès que le disque rétrécit.
+  ctx.fillStyle = P.oeil;
+  for (const s of [-1, 1]) {
+    ctx.beginPath(); ctx.ellipse(s * R * .34, cy + R * .12, R * .13, R * .15, 0, 0, TAU); ctx.fill();
+  }
+}
+
+// Le nœud papillon : deux triangles pointe vers l'intérieur, plus le nœud.
+// C'est la seule forme franchement noire sur du blanc, donc la seule qui
+// survive vraiment à la vitesse.
+function noeudCoaster(ctx, r, P, cy, larg, haut) {
+  ctx.fillStyle = P.noir;
+  const w = r * larg, h = r * haut;
+  for (const s of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(s * w, cy - h); ctx.lineTo(s * w * .16, cy); ctx.lineTo(s * w, cy + h);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.beginPath(); ctx.ellipse(0, cy, w * .2, h * .6, 0, 0, TAU); ctx.fill();
+}
+
+// Les bretelles : deux sangles des épaules vers la ceinture. Elles se
+// resserrent en bas — parallèles, elles ressemblent à deux barreaux.
+function bretellesCoaster(ctx, r, P, ecart, haut, bas, epais) {
+  ctx.strokeStyle = P.noir;
+  ctx.lineWidth = Math.max(1, r * epais);
+  ctx.lineCap = 'butt';
+  for (const s of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(s * r * ecart, r * haut);
+    ctx.lineTo(s * r * (ecart * .5), r * bas);
+    ctx.stroke();
+  }
 }
 
 export function drawSkinDisc(ctx, x, y, r, skinId, spin) {
@@ -639,6 +719,29 @@ export function drawSkinDisc(ctx, x, y, r, skinId, spin) {
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillStyle = '#141110';
       ctx.fillText('Vody', 0, r * .04);
+      ctx.restore();
+      break;
+    }
+
+    /* ---------- Coaster : le petit gars en tenue de cérémonie ---------- */
+    case 'coaster': {
+      const P = PAL_COASTER;
+      // La chemise occupe tout le disque, le pantalon noir prend le bas. Les
+      // deux se lisent de loin, et la bande noire évite que Coaster ne devienne
+      // le troisième disque pâle du registre à côté d'Israël et du Pegasus.
+      ctx.fillStyle = P.blanc; ctx.fillRect(-r, -r, r * 2, r * 2);
+      ctx.fillStyle = P.noir; ctx.fillRect(-r, r * .46, r * 2, r * .54 + 2);
+      // Tout le personnage tourne avec le disque, comme une vraie impression.
+      // Il devient illisible sur un tir chargé, et c'est assumé : une tête qui
+      // refuserait de tourner trahirait une vignette collée par l'interface.
+      ctx.save();
+      ctx.rotate(spin);
+      teteCoaster(ctx, r, P, -r * .34, .46);
+      noeudCoaster(ctx, r, P, r * .06, .34, .16);
+      // Les bretelles passent APRÈS le nœud : elles démarrent plus à l'extérieur
+      // que lui, donc elles ne le recouvrent jamais, mais l'ordre compte si on
+      // les élargit un jour.
+      bretellesCoaster(ctx, r, P, .42, .08, .95, .2);
       ctx.restore();
       break;
     }

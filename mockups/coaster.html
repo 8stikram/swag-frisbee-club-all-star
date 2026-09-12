@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Coaster — mockup de disque</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --edge:#22344f; --ink:#e8f0ff; --accent:#35e0ff; --or:#ffd23e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:22px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  h2{font-size:14px;margin:30px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:960px;line-height:1.7;margin:0 0 14px}
+  .note code{color:#bcd4f5}
+
+  /* --- Deux colonnes : les cartes défilent, le rallye reste --- */
+  .page{display:flex;gap:16px;align-items:flex-start}
+  .gauche{flex:1 1 0;min-width:0}
+  .aside{flex:0 0 352px;position:sticky;top:14px}
+  @media (max-width:980px){ .page{display:block} .aside{position:static;width:100%} }
+
+  .row{display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(206px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;
+        cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d5c8a}
+  .card.on{border-color:var(--or);transform:translateY(-2px)}
+  .lbl{font-size:11px;color:#8fa4c4;margin-bottom:7px;line-height:1.45;min-height:58px}
+  .lbl b{display:block;font-size:13.5px;color:var(--or);letter-spacing:.6px;margin-bottom:2px}
+  canvas{display:block;width:100%;height:auto;border-radius:6px}
+  .reserve{display:none}
+  .reserve.ouverte{display:grid}
+  .plus{margin-top:9px;background:#132038;color:#9fb4dd;border:1px solid var(--edge);
+        border-radius:7px;padding:6px 13px;font-size:11.5px;cursor:pointer;letter-spacing:.4px}
+  .plus:hover{background:#1a2b48;color:var(--ink)}
+
+  .bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;margin-bottom:12px}
+  .bloc h3{margin:0 0 9px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .bloc canvas{width:100%;height:auto}
+  .compteur{font-family:Consolas,monospace;font-size:11px;color:#7f93b3;margin-top:7px;line-height:1.6}
+  .compteur i{color:var(--or);font-style:normal}
+  .compteur i.trop{color:#ff5340}
+  .choix{font-size:11.5px;color:#9fb4dd;margin-top:9px;font-family:Consolas,monospace;line-height:1.7}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 150px;min-width:0;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#1a2b48;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+             padding:8px 14px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#24395e}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+
+  .bande{display:flex;gap:7px;flex-wrap:wrap}
+  .une{text-align:center}
+  .une canvas{width:44px;height:44px;border-radius:5px;display:block}
+  .une span{display:block;font-size:9px;color:#7f93b3;margin-top:2px;max-width:50px;
+            overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .une.neuf span{color:var(--or)}
+  .une.neuf canvas{outline:1px solid var(--or)}
+
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 6px}
+  #retenu{font-size:12.5px;font-family:Consolas,monospace;color:var(--or);margin:0 0 14px}
+  #retenu:empty{display:none}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>COASTER</h1>
+<p class="note">
+  <b>Le petit gars en tenue de cérémonie, aplati en disque.</b> Chemise blanche, nœud papillon noir,
+  bretelles en V, bouille blonde. Le découpage épouse la tenue : la chemise, la tête, le nœud, les
+  bretelles, puis les trois pièces de jeu. Sept sections, dix variantes chacune (cinq visibles, cinq en
+  réserve) — réponds par des lettres, une par section : <code>1B 2A 3A 4A 5A 6B 7A</code>.
+  <br><br>
+  Chaque carte montre le disque <b>en vol sur un bout du vrai terrain, à l’échelle exacte du match</b>
+  (rayon 14 px, <code>DISC_RADIUS</code> dans <code>core/constants.js</code> — aucun facteur d’échelle
+  ne s’applique au disque, contrairement aux sprites). C’est petit, et c’est voulu : à 28 px de
+  diamètre, un visage n’a de place que pour deux yeux. <b>Regarde la bande de comparaison en bas à
+  droite</b> — Israël et Pegasus sont déjà très clairs, c’est là qu’on verra si une chemise blanche
+  fait doublon. Clique une carte pour la monter dans le rallye.
+</p>
+
+<div id="errs"></div>
+<div id="retenu"></div>
+
+<div class="page">
+  <div class="gauche">
+    <div id="sections"></div>
+  </div>
+
+  <div class="aside">
+    <div class="bloc">
+      <h3>Le rallye</h3>
+      <canvas id="cvRallye" width="326" height="236"></canvas>
+      <div class="compteur" id="compteur"></div>
+      <div class="choix" id="choix"></div>
+      <div class="copier">
+        <input class="codeChoix" id="codeChoix" readonly>
+        <button class="btnCopier" id="btnCopier">copier mes choix</button>
+      </div>
+    </div>
+    <div class="bloc">
+      <h3>À côté des disques en place</h3>
+      <div class="bande" id="bande"></div>
+      <p class="note" style="margin:9px 0 0;font-size:10.5px;line-height:1.6">
+        Les disques existants sont dessinés par le vrai <code>drawSkinDisc</code> de
+        <code>js/data/skins.js</code>, à l'échelle du match. Le nouveau est cerclé d'or. C'est ici qu'on
+        voit s'il fait doublon — trois disques dorés se ressemblent tous à 28 px.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// ---------------------------------------------------------------------------
+// Le registre réel est importé du jeu : la bande de comparaison montre donc
+// toujours les disques tels qu'ils sont aujourd'hui, sans copie à maintenir
+// ici. C'est le seul lien avec le code du jeu — tout le reste est autonome.
+//
+// `tracerContour` est repris tel quel, et non recopié : c'est lui qui découpe
+// la face ET qui trace le liseré dans render.js. Deux tracés différents et la
+// découpe cesserait de coïncider avec le contour, comme sur la Gélatine.
+// ---------------------------------------------------------------------------
+import { DISC_SKINS, drawSkinDisc, deformationDisque, tracerContour } from '../js/data/skins.js';
+
+const TAU = Math.PI * 2;
+
+// Le disque fait 14 px de rayon sur le canvas 960 × 600 du jeu, dessiné tel
+// quel. Cartes, rallye et bande de comparaison l'utilisent tous : ce qu'on
+// juge ici est exactement ce qu'on verra en match, jamais un agrandissement
+// flatteur.
+const R_JEU = 14;
+
+// Plafond de particules du jeu (MAX_PARTICULES dans data/disc-fx.js). Le
+// compteur du rallye l'affiche : un disque qui plafonne en permanence est un
+// disque qui étouffe tous les autres effets à l'écran.
+const MAX_PARTICULES = 50;
+
+// Horloge des animations de face, exactement celle de data/skins.js : les
+// faces écrites ici se recollent sans retouche.
+const horloge = () => performance.now() / 1000;
+
+/* --- Le hasard, débrayable ------------------------------------------------
+   Les cartes sont figées : elles doivent redonner la MÊME image à chaque
+   repeinte, sinon les particules sautent d'un clic à l'autre et on croit
+   comparer deux variantes alors qu'on compare deux tirages. On remplace donc
+   le hasard par une suite déterministe le temps de peindre une carte, et on
+   rend la main au vrai hasard pour le rallye. */
+let alea = Math.random;
+function semer(graine) { let s = graine >>> 0; alea = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+function relacher() { alea = Math.random; }
+
+// Les mêmes outils qu'en vrai, aux mêmes noms : ce qu'on écrit dans `vol` et
+// `rebond` se recolle tel quel dans data/disc-fx.js.
+const rand = (a = 1, b) => b === undefined ? alea() * a : a + alea() * (b - a);
+const gauss = () => (alea() + alea() + alea() - 1.5) * 0.8;
+const pick = a => a[(alea() * a.length) | 0];
+const p = (x, y, vx, vy, life, c, s, g, type) => ({ x, y, vx, vy, life, c, s, g: g || 0, type });
+function combien(n) { const e = Math.floor(n); return e + (alea() < n - e ? 1 : 0); }
+function couronne(out, x, y, cols, n, vitesse, taille, vie) {
+  for (let i = 0; i < combien(n); i++) {
+    const a = rand(TAU), v = rand(vitesse * .5, vitesse);
+    out.push(p(x, y, Math.cos(a) * v, Math.sin(a) * v, rand(vie * .6, vie),
+      pick(cols), rand(taille * .6, taille), 0));
+  }
+}
+function spirale(out, x, y, cols, n, rayon, vie) {
+  for (let i = 0; i < combien(n); i++) {
+    const a = (i / n) * TAU + rand(.4);
+    const v = rayon * rand(.6, 1.2);
+    out.push(p(x, y, Math.cos(a) * v, Math.sin(a) * v, rand(vie * .6, vie),
+      cols[i % cols.length], rand(2, 4), 0, 'star'));
+  }
+}
+
+// Fabrique une variante. `pieces` ne porte que ce que la variante remplace.
+// `contour: null` est une valeur pleine et entière (« ce disque est rond ») :
+// d'où le test sur la présence de la clé plus bas, et non sur sa valeur.
+function v(id, nom, desc, pieces) { return { id, nom, desc, pieces }; }
+
+/* ===========================================================================
+   ==== DÉBUT DU CONTENU — c'est ici, et seulement ici, qu'on écrit. ====
+
+   1. LE DISQUE.
+   =========================================================================== */
+const DISQUE = {
+  nom: 'COASTER',
+  // Les lettres validees le 12 septembre 2026. Le mockup ouvre dessus.
+  retenu: '1B 2A 3A 4B 5E 6A 7B',
+  id: 'coaster',
+  pitch: 'Le petit gars en chemise blanche, nœud papillon et bretelles, l’air parfaitement sûr de lui. Tout le disque est sa tenue de cérémonie.',
+  colors: ['#f4f1ea', '#14131a', '#f0d98a'],
+  pal: {
+    blanc:    '#f4f1ea',   // la chemise
+    blancO:   '#d6d0c3',   // son ombre, pour le galbe du tissu
+    noir:     '#14131a',   // nœud papillon, bretelles, pantalon
+    noirC:    '#33313d',   // ton intermédiaire : jamais l’ombre la plus foncée en liseré
+    peau:     '#f2c9a0',
+    peauO:    '#d69f74',
+    cheveux:  '#f0d98a',   // blond très clair
+    cheveuxO: '#cfae4e',
+    oeil:     '#2a3b4a',
+    rouge:    '#b0202c',   // pour les variantes d’accent
+    bois:     '#3b2a1e'    // fond de réserve
+  }
+};
+
+/* --- Outils de dessin propres à Coaster -----------------------------------
+   Quatre formes reviennent partout : la bouille, le nœud papillon, les
+   bretelles et la bande de pantalon. Écrites une fois et paramétrées, pour
+   que les variantes se lisent comme des partis pris et non comme des pavés
+   de canvas.
+
+   Tout est exprimé en fractions de `r`, jamais en pixels : le disque fait
+   14 px de rayon en match et 32 px dans le sélecteur, et les deux doivent
+   tenir avec le même code.
+   ------------------------------------------------------------------------- */
+
+// La bouille. À 28 px de disque elle fait une dizaine de pixels : il n’y a de
+// place que pour un crâne, une frange et deux yeux. Tout détail de plus —
+// nez, bouche, sourcils — devient du bruit qui grise le visage.
+function tete(g, r, P, cy, taille, opts) {
+  const o = opts || {};
+  const R = r * taille;
+  // Oreilles d’abord : elles passent derrière le crâne, sinon elles font
+  // deux boutons collés sur les joues.
+  g.fillStyle = P.peauO;
+  for (const s of [-1, 1]) { g.beginPath(); g.arc(s * R * .84, cy + R * .12, R * .2, 0, TAU); g.fill(); }
+  g.fillStyle = P.peau;
+  g.beginPath(); g.ellipse(0, cy, R * .84, R, 0, 0, TAU); g.fill();
+  // Menton : un galbe plus sombre en bas, dans le ton intermédiaire de la
+  // peau et non dans le plus foncé, sinon on obtient un cerne noir.
+  g.fillStyle = P.peauO;
+  g.beginPath(); g.ellipse(0, cy + R * .62, R * .52, R * .22, 0, 0, Math.PI); g.fill();
+  // Cheveux : une calotte, plus la frange qui mord sur le front.
+  g.fillStyle = P.cheveuxO;
+  g.beginPath(); g.ellipse(0, cy - R * .16, R * .9, R * .78, 0, Math.PI, TAU); g.fill();
+  g.fillStyle = P.cheveux;
+  g.beginPath(); g.ellipse(0, cy - R * .22, R * .84, R * .7, 0, Math.PI, TAU); g.fill();
+  if (o.frange !== false) {
+    g.beginPath();
+    g.moveTo(-R * .84, cy - R * .22);
+    g.quadraticCurveTo(-R * .2, cy - (o.frange === 'basse' ? -.05 : .04) * R, R * .84, cy - R * .3);
+    g.lineTo(R * .84, cy - R * .6); g.lineTo(-R * .84, cy - R * .6);
+    g.closePath(); g.fill();
+  }
+  // Les yeux. Décalés d’un cheveu vers le bas : plus haut, ils se perdent
+  // sous la frange dès que le disque rétrécit.
+  const ouvert = o.cligne ? (Math.sin(o.cligne * 2.6) > -.93 ? 1 : .12) : 1;
+  g.fillStyle = P.oeil;
+  for (const s of [-1, 1]) {
+    g.beginPath();
+    g.ellipse(s * R * .34, cy + R * .12, R * .13, R * .15 * ouvert, 0, 0, TAU);
+    g.fill();
+  }
+  if (o.sourire) {
+    g.strokeStyle = P.peauO; g.lineWidth = Math.max(1, R * .1); g.lineCap = 'round';
+    g.beginPath(); g.arc(R * .06, cy + R * .42, R * .26, .2, 1.5); g.stroke();
+  }
+}
+
+// Le nœud papillon : deux triangles pointe vers l’intérieur, plus le nœud.
+// C’est la pièce la plus reconnaissable du disque à petite taille, parce que
+// c’est la seule forme franchement noire sur du blanc.
+function noeudPap(g, r, P, cy, larg, haut, col, incline) {
+  g.save();
+  g.translate(0, cy);
+  if (incline) g.rotate(incline);
+  g.fillStyle = col || P.noir;
+  const w = r * larg, h = r * haut;
+  for (const s of [-1, 1]) {
+    g.beginPath();
+    g.moveTo(s * w, -h); g.lineTo(s * w * .16, 0); g.lineTo(s * w, h);
+    g.closePath(); g.fill();
+  }
+  g.beginPath(); g.ellipse(0, 0, w * .2, h * .6, 0, 0, TAU); g.fill();
+  g.restore();
+}
+
+// Les bretelles : deux sangles qui descendent des épaules vers la ceinture.
+// Elles se resserrent en bas — parallèles, elles ressemblent à deux barreaux.
+function bretelles(g, r, P, ecart, haut, bas, epais, col, croisees) {
+  g.strokeStyle = col || P.noir;
+  g.lineWidth = Math.max(1, r * epais);
+  g.lineCap = 'butt';
+  for (const s of [-1, 1]) {
+    g.beginPath();
+    g.moveTo(s * r * ecart, r * haut);
+    g.lineTo((croisees ? -s : s) * r * (ecart * .5), r * bas);
+    g.stroke();
+  }
+}
+
+// La bande de pantalon, en bas du disque. Découpée par le contour de toute
+// façon : on déborde volontairement pour qu’elle aille jusqu’au bord.
+function pantalon(g, r, P, haut, col) {
+  g.fillStyle = col || P.noir;
+  g.fillRect(-r, r * haut, r * 2, r * (1 - haut) + 2);
+}
+
+/* ===========================================================================
+   2. LES SECTIONS — le découpage épouse la tenue : la chemise, la tête, le
+   nœud papillon, les bretelles, puis les trois pièces de jeu.
+
+   Les calques s’empilent dans l’ordre : la chemise au fond, les bretelles
+   par-dessus tout.
+   =========================================================================== */
+const SECTIONS = [
+  {
+    id: 'chemise', titre: '1 · La chemise blanche',
+    note: 'Le calque du dessous : c’est lui qui donne la couleur qu’on voit de l’autre bout du terrain. Attention au doublon — Israël et Pegasus sont déjà très clairs, trois disques pâles se ressemblent tous à pleine vitesse.',
+    variantes: [
+      v('A', 'BLANC PLEIN', 'La chemise occupe tout le disque, sans pantalon. Le noir du nœud et des bretelles y ressort au maximum, c’est le contraste le plus fort possible ; mais c’est aussi le plus proche d’Israël et du Pegasus, déjà pâles.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = P.blanc; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('B', 'CHEMISE ET PANTALON', 'Blanc en haut, bande noire en bas : la vraie tenue de la photo. Le disque se distingue immédiatement des autres blancs du registre ; en contrepartie la moitié noire se fond dans le sol bleu nuit de l’arène.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = P.blanc; g.fillRect(-r, -r, r * 2, r * 2); pantalon(g, r, P, .46); } }),
+      v('C', 'CHEMISE BOMBÉE', 'Blanc clair au centre, ombré sur tout le pourtour. Le disque paraît épais et se décolle du sol sans avoir besoin d’ombre portée ; mais un dégradé radial, c’est le fond le plus attendu, la moitié du registre est bâtie comme ça.',
+        { calque: (g, r, s, T, P) => { const d = g.createRadialGradient(-r * .2, -r * .25, r * .05, 0, 0, r * 1.05); d.addColorStop(0, '#ffffff'); d.addColorStop(.6, P.blanc); d.addColorStop(1, P.blancO); g.fillStyle = d; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('D', 'CHEMISE FROISSÉE', 'Des plis légers courent sur le tissu. Le disque a de la matière au lieu d’être un aplat, et ça se voit même en vol ; en revanche les plis font moins de deux pixels à l’échelle du match et virent au grain sale.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = P.blanc; g.fillRect(-r, -r, r * 2, r * 2); g.strokeStyle = P.blancO; g.lineWidth = Math.max(1, r * .045); for (let i = -2; i <= 2; i++) { g.beginPath(); g.moveTo(i * r * .38, -r); g.quadraticCurveTo(i * r * .38 + r * .12, 0, i * r * .38, r); g.stroke(); } } }),
+      v('E', 'CHEMISE ET COL OUVERT', 'Un V de peau apparaît au col, sous le nœud papillon. On lit tout de suite qu’il y a quelqu’un dans la chemise, pas juste un tissu ; mais ce V mange la place du nœud, qui doit alors rétrécir.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = P.blanc; g.fillRect(-r, -r, r * 2, r * 2); g.fillStyle = P.peau; g.beginPath(); g.moveTo(-r * .3, -r * .1); g.lineTo(0, r * .34); g.lineTo(r * .3, -r * .1); g.closePath(); g.fill(); } }),
+      v('F', 'IVOIRE', 'Un blanc cassé, légèrement chaud, comme une vraie chemise de cérémonie. Il se démarque du blanc pur d’Israël et flatte le blond des cheveux ; en contrepartie il perd un peu de la claque du blanc franc.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = '#efe6d2'; g.fillRect(-r, -r, r * 2, r * 2); } }),
+      v('G', 'FAIRE-PART', 'Blanc, avec un liseré noir épais tout autour, comme un carton d’invitation. La silhouette du disque est cernée donc parfaitement lisible sur le sol ; mais le liseré vole de la surface au personnage, déjà à l’étroit.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = P.blanc; g.fillRect(-r, -r, r * 2, r * 2); g.strokeStyle = P.noir; g.lineWidth = r * .16; g.beginPath(); g.arc(0, 0, r * .93, 0, TAU); g.stroke(); } }),
+      v('H', 'RAYURES FINES', 'Une chemise à fines rayures verticales. Elle donne du grain et fait très habillé ; mais les rayures moirent désagréablement dès que le disque tourne vite, c’est le pire cas pour un motif régulier.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = P.blanc; g.fillRect(-r, -r, r * 2, r * 2); g.fillStyle = P.blancO; for (let x = -r; x < r; x += 5) g.fillRect(x, -r, 1.6, r * 2); } }),
+      v('I', 'CHEMISE SUR VELOURS', 'Le disque est rouge sombre et la chemise n’occupe que le centre. Le gars se détache comme sur un fond de studio, et le disque ne ressemble plus à aucun autre ; mais on s’éloigne de la photo, où le blanc domine tout.',
+        { calque: (g, r, s, T, P) => { const d = g.createRadialGradient(0, 0, r * .1, 0, 0, r); d.addColorStop(0, '#7d1d24'); d.addColorStop(1, '#3a0a10'); g.fillStyle = d; g.fillRect(-r, -r, r * 2, r * 2); g.fillStyle = P.blanc; g.beginPath(); g.ellipse(0, r * .12, r * .62, r * .78, 0, 0, TAU); g.fill(); } }),
+      v('J', 'CHEMISE SUR BOIS', 'Un comptoir de bar en bois sombre derrière la chemise. C’est le fond le plus chaleureux et il raconte une scène ; mais il charge le disque de détails qui disparaissent complètement à 28 px.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = P.bois; g.fillRect(-r, -r, r * 2, r * 2); g.strokeStyle = '#2a1c13'; g.lineWidth = Math.max(1, r * .05); for (let y = -r; y < r; y += 6) { g.beginPath(); g.moveTo(-r, y); g.lineTo(r, y); g.stroke(); } g.fillStyle = P.blanc; g.beginPath(); g.ellipse(0, r * .12, r * .6, r * .76, 0, 0, TAU); g.fill(); } })
+    ]
+  },
+  {
+    id: 'tete', titre: '2 · La tête blonde',
+    note: 'La bouille. À l’échelle du match elle fait une dizaine de pixels : il n’y a de place que pour un crâne, une frange et deux yeux. C’est la section où l’on décide combien de disque on lui donne — plus elle est grosse, moins il reste de tenue.',
+    variantes: [
+      v('A', 'BOUILLE CENTRÉE', 'La tête occupe la moitié haute, la tenue la moitié basse, comme sur la photo. C’est l’équilibre le plus fidèle et les deux se lisent ; mais à 28 px ni le visage ni le nœud n’ont vraiment la place de s’exprimer.',
+        { calque: (g, r, s, T, P) => tete(g, r, P, -r * .34, .46) }),
+      v('B', 'GROSSE TÊTE', 'Une tête surdimensionnée qui mange les deux tiers du disque. Le visage devient enfin lisible en match et le côté gamin saute aux yeux ; en contrepartie le nœud papillon et les bretelles sont écrasés en bas.',
+        { calque: (g, r, s, T, P) => tete(g, r, P, -r * .22, .66) }),
+      v('C', 'PETITE TÊTE, TENUE DOMINANTE', 'La tête rétrécit pour laisser toute la place au nœud et aux bretelles. La tenue se lit parfaitement et le disque devient très graphique ; mais on ne distingue plus qu’il s’agit d’un enfant, ce qui est tout le sel.',
+        { calque: (g, r, s, T, P) => tete(g, r, P, -r * .48, .32) }),
+      v('D', 'TÊTE QUI CLIGNE', 'Les yeux se ferment une fraction de seconde, à intervalle irrégulier. Le disque a l’air vivant même immobile dans la main ; en revanche un clignement de deux pixels passe complètement inaperçu en plein vol.',
+        { calque: (g, r, s, T, P) => tete(g, r, P, -r * .34, .46, { cligne: T }) }),
+      v('E', 'SOURIRE EN COIN', 'La bouille garde un demi-sourire, celui du gars sûr de lui. C’est ce qui donne son caractère au personnage ; mais un trait de bouche à cette taille tient sur un pixel et demi et grise le bas du visage.',
+        { calque: (g, r, s, T, P) => tete(g, r, P, -r * .34, .46, { sourire: true }) }),
+      v('F', 'FRANGE BASSE', 'Les cheveux descendent bas sur le front, presque sur les yeux. La silhouette blonde est plus massive donc plus reconnaissable de loin ; en contrepartie elle mange le front et rapproche les yeux du nœud.',
+        { calque: (g, r, s, T, P) => tete(g, r, P, -r * .34, .46, { frange: 'basse' }) }),
+      v('G', 'SANS FRANGE', 'Front dégagé, cheveux ramenés en arrière. Le visage respire et les yeux se placent plus haut, donc plus loin du nœud ; mais la masse blonde rétrécit, et c’est elle qu’on repère en premier à petite taille.',
+        { calque: (g, r, s, T, P) => tete(g, r, P, -r * .34, .46, { frange: false }) }),
+      v('H', 'TÊTE QUI FLOTTE', 'La tête monte et redescend d’un cheveu en continu, comme s’il se dandinait. Le disque paraît animé sans qu’aucun pixel ne change de couleur ; mais ce mouvement s’ajoute à la rotation et finit par brouiller la face.',
+        { calque: (g, r, s, T, P) => tete(g, r, P, -r * .34 + Math.sin(T * 3.2) * r * .05, .46) }),
+      v('I', 'TÊTE QUI RESTE DROITE', 'La tête contre-tourne pour rester à l’endroit pendant que le disque tourne. C’est la seule variante où on reconnaît le gars sur un tir chargé ; mais un visage qui refuse de tourner trahit qu’il est collé par l’interface.',
+        { calque: (g, r, s, T, P) => { g.save(); g.rotate(-s); tete(g, r, P, -r * .34, .46); g.restore(); } }),
+      v('J', 'SANS TÊTE', 'On supprime le visage : il ne reste que la tenue. C’est de très loin le plus lisible en match et ça marche comme un blason ; mais le disque ne raconte plus rien, c’est un smoking vide.',
+        { calque: () => { } })
+    ]
+  },
+  {
+    id: 'noeud', titre: '3 · Le nœud papillon',
+    note: 'La pièce signature. C’est la seule forme franchement noire sur du blanc, donc la seule qui survive vraiment à la vitesse : si une chose doit rester lisible à 28 px, c’est elle.',
+    variantes: [
+      v('A', 'NŒUD CLASSIQUE', 'Deux triangles et un nœud, à la bonne taille sous le menton. Fidèle à la photo et parfaitement lisible ; mais il reste sage, il ne fait pas rire tout seul.',
+        { calque: (g, r, s, T, P) => noeudPap(g, r, P, r * .06, .34, .16) }),
+      v('B', 'NŒUD GÉANT', 'Un nœud démesuré qui traverse presque tout le disque. Il se lit de l’autre bout du terrain et le côté gamin déguisé éclate ; en contrepartie il recouvre les bretelles et une partie du menton.',
+        { calque: (g, r, s, T, P) => noeudPap(g, r, P, r * .1, .62, .26) }),
+      v('C', 'NŒUD DE TRAVERS', 'Le nœud penche, comme après une heure de fête. C’est le détail qui donne toute sa personnalité au personnage ; mais une inclinaison de quelques degrés disparaît dès que le disque tourne.',
+        { calque: (g, r, s, T, P) => noeudPap(g, r, P, r * .06, .36, .17, null, .3) }),
+      v('D', 'NŒUD ROUGE', 'Un nœud rouge vif au lieu du noir. C’est la seule tache de couleur du disque, donc l’œil va droit dessus ; en contrepartie on perd le noir et blanc strict qui fait tout le chic de la tenue.',
+        { calque: (g, r, s, T, P) => noeudPap(g, r, P, r * .06, .36, .17, P.rouge) }),
+      v('E', 'NŒUD QUI TOURNE', 'Le nœud pivote lentement sur lui-même, comme une hélice. C’est drôle et ça donne la rotation du disque sans toucher au reste ; mais il cesse alors de ressembler à un nœud papillon la moitié du temps.',
+        { calque: (g, r, s, T, P) => noeudPap(g, r, P, r * .06, .36, .17, null, s * .5 + T) }),
+      v('F', 'NŒUD FIN', 'Un nœud discret, deux fois plus étroit. Il laisse toute la place au visage et aux bretelles ; mais c’est justement la pièce qui doit survivre à la vitesse, et fin, elle n’y survit pas.',
+        { calque: (g, r, s, T, P) => noeudPap(g, r, P, r * .06, .24, .1) }),
+      v('G', 'NŒUD QUI BAT', 'Le nœud enfle et se rétracte doucement, comme s’il respirait. Le mouvement attire l’œil sur la pièce la plus identifiable ; en revanche il donne au disque une pulsation qui peut se confondre avec la charge du tir.',
+        { calque: (g, r, s, T, P) => { const k = 1 + Math.sin(T * 4) * .16; noeudPap(g, r, P, r * .06, .36 * k, .17 * k); } }),
+      v('H', 'CRAVATE', 'Une cravate noire à la place du nœud, qui descend sur la chemise. Elle occupe la verticale, donc elle structure tout le disque ; mais elle transforme le gamin déguisé en petit cadre, et la blague tombe.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = P.noir; g.beginPath(); g.moveTo(-r * .1, -r * .06); g.lineTo(r * .1, -r * .06); g.lineTo(r * .14, r * .62); g.lineTo(0, r * .78); g.lineTo(-r * .14, r * .62); g.closePath(); g.fill(); } }),
+      v('I', 'NŒUD BLANC SUR COL NOIR', 'On inverse : un col noir avec un nœud blanc. Le contraste est le même mais le disque devient beaucoup plus sombre au centre, donc plus visible sur un fond clair ; en contrepartie ce n’est plus du tout la tenue de la photo.',
+        { calque: (g, r, s, T, P) => { g.fillStyle = P.noir; g.beginPath(); g.ellipse(0, r * .1, r * .5, r * .3, 0, 0, TAU); g.fill(); noeudPap(g, r, P, r * .06, .3, .15, P.blanc); } }),
+      v('J', 'PAS DE NŒUD', 'Col ouvert, rien au cou. Le visage et les bretelles respirent enfin ; mais on retire la pièce la plus reconnaissable du disque, celle qui le fait exister à petite taille.',
+        { calque: () => { } })
+    ]
+  },
+  {
+    id: 'bretelles', titre: '4 · Les bretelles',
+    note: 'Les deux sangles qui descendent des épaules. Elles structurent le bas du disque, là où la chemise serait sinon un grand vide blanc — mais chaque trait noir ajouté rogne sur la lisibilité du nœud papillon.',
+    variantes: [
+      v('A', 'DEUX SANGLES EN V', 'Les sangles descendent des épaules en se resserrant vers la ceinture. C’est la forme de la photo et elle remplit le bas du disque ; mais deux traits noirs de plus, ça commence à faire chargé sous un nœud.',
+        { calque: (g, r, s, T, P) => bretelles(g, r, P, .4, .1, .92, .1) }),
+      v('B', 'SANGLES ÉPAISSES', 'Des bretelles larges, presque des bandes. Elles survivent à la vitesse là où des traits fins deviennent invisibles ; en contrepartie elles avalent la moitié blanche de la chemise.',
+        { calque: (g, r, s, T, P) => bretelles(g, r, P, .42, .08, .95, .2) }),
+      v('C', 'SANGLES CROISÉES', 'Les bretelles se croisent en X sur le torse. La forme est plus riche et se lit comme un motif à part entière ; mais un X au centre entre en concurrence directe avec le nœud papillon juste au-dessus.',
+        { calque: (g, r, s, T, P) => bretelles(g, r, P, .42, .08, .9, .12, null, true) }),
+      v('D', 'UNE SANGLE QUI TOMBE', 'Une bretelle a glissé de l’épaule, l’autre tient. C’est le détail qui raconte la fin de soirée et il donne du mouvement ; mais l’asymétrie se perd complètement dès que le disque tourne.',
+        { calque: (g, r, s, T, P) => { g.strokeStyle = P.noir; g.lineWidth = Math.max(1, r * .11); g.beginPath(); g.moveTo(-r * .4, r * .1); g.lineTo(-r * .2, r * .92); g.stroke(); g.beginPath(); g.moveTo(r * .52, r * .3); g.quadraticCurveTo(r * .5, r * .6, r * .22, r * .92); g.stroke(); } }),
+      v('E', 'SANGLES À BOUTONS', 'Deux petits boutons clairs ponctuent chaque sangle. Le disque gagne un détail d’artisanat qui se voit dans le sélecteur ; mais un bouton fait moins d’un pixel en match, il ne reste qu’un pointillé sale.',
+        { calque: (g, r, s, T, P) => { bretelles(g, r, P, .4, .1, .92, .11); g.fillStyle = P.blancO; for (const s2 of [-1, 1]) for (const k of [.35, .7]) { g.beginPath(); g.arc(s2 * r * (.4 - .2 * k), r * (.1 + .82 * k), r * .045, 0, TAU); g.fill(); } } }),
+      v('F', 'SANGLES FINES', 'Des bretelles étroites, presque des lacets. Elles laissent la chemise respirer et le nœud domine sans partage ; mais à l’échelle du match elles tombent sous le pixel et disparaissent purement et simplement.',
+        { calque: (g, r, s, T, P) => bretelles(g, r, P, .38, .1, .92, .05) }),
+      v('G', 'SANGLES ROUGES', 'Les bretelles passent au rouge. Le disque gagne une troisième couleur et se distingue de tout le registre ; en contrepartie il perd le noir et blanc strict, et le rouge entre en conflit avec Vody.',
+        { calque: (g, r, s, T, P) => bretelles(g, r, P, .4, .1, .92, .12, P.rouge) }),
+      v('H', 'SANGLES ET CEINTURE', 'Les bretelles rejoignent une ceinture noire horizontale. Le bas du disque est franchement structuré et le personnage a une taille ; mais trois traits noirs sous le nœud, c’est le disque le plus chargé du lot.',
+        { calque: (g, r, s, T, P) => { bretelles(g, r, P, .4, .1, .72, .11); g.fillStyle = P.noir; g.fillRect(-r, r * .72, r * 2, r * .16); } }),
+      v('I', 'SANGLES JUSQU’AU BORD', 'Les bretelles filent jusqu’au bord du disque sans s’arrêter. Elles prolongent la silhouette et donnent une impression de hauteur ; mais elles touchent le liseré, et à petite taille on croit à deux entailles dans le disque.',
+        { calque: (g, r, s, T, P) => bretelles(g, r, P, .44, .06, 1.1, .12) }),
+      v('J', 'PAS DE BRETELLES', 'Chemise nue sous le nœud papillon. Le disque est le plus propre et le plus lisible du lot, tout repose sur le nœud ; mais le bas devient un grand vide blanc, et les bretelles sont la moitié de la tenue.',
+        { calque: () => { } })
+    ]
+  },
+  {
+    id: 'trainee', titre: '5 · La traînée',
+    note: 'Le sillage : 26 carrés qui grossissent vers le disque. La couleur change au fil de la rotation, donc plusieurs teintes donnent un dégradé le long du trait — c’est là que le noir et blanc de la tenue peut vivre en plein vol.',
+    variantes: [
+      v('A', 'NOIR ET BLANC', 'Le sillage alterne les deux couleurs de la tenue. Le contraste interne est le plus fort possible et on reconnaît le disque au seul trait ; mais un carré sur deux disparaît sur le sol bleu nuit, le sillage paraît haché.',
+        { trainee: ['#14131a', '#f4f1ea'] }),
+      v('B', 'BLANC SEUL', 'Un sillage blanc uni. C’est la teinte la plus visible du jeu sur le sol sombre, donc la trajectoire se lit comme un trait net ; en contrepartie Israël et Pegasus laissent déjà des sillages très clairs.',
+        { trainee: ['#f4f1ea'] }),
+      v('C', 'BLOND ET BLANC', 'Le blond des cheveux réchauffe le blanc de la chemise. Le sillage est doux et bien lisible, et il n’appartient qu’à ce disque ; mais de loin il se confond avec un sillage simplement crème.',
+        { trainee: ['#f0d98a', '#f4f1ea'] }),
+      v('D', 'LES TROIS COULEURS', 'Blanc, blond et noir se succèdent le long du trait. C’est toute la palette du personnage étalée derrière lui ; à trois teintes, en revanche, le sillage scintille et perd sa netteté.',
+        { trainee: ['#f4f1ea', '#f0d98a', '#14131a'] }),
+      v('E', 'NOIR SEUL', 'Un sillage entièrement noir. Aucun autre disque n’en a, donc on sait qui joue rien qu’au trait ; mais sur le sol bleu nuit de l’arène, un sillage noir est pratiquement invisible.',
+        { trainee: ['#14131a'] }),
+      v('F', 'IVOIRE', 'Un blanc cassé légèrement chaud, plus doux que le blanc pur. Il ne rentre en conflit avec aucun autre effet à l’écran, ce qui compte à quatre joueurs ; en contrepartie il ne dit rien de particulier du personnage.',
+        { trainee: ['#efe6d2'] }),
+      v('G', 'GRIS PERLE', 'Un gris moyen, entre le noir et le blanc de la tenue. Il reste lisible partout sans jamais agresser, bon compromis sur un long échange ; mais c’est aussi la teinte la plus neutre et la plus oubliable du lot.',
+        { trainee: ['#b9b6bd'] }),
+      v('H', 'BLANC ET ROUGE', 'Le blanc de la chemise ponctué de rouge. Le sillage claque et se repère de partout ; mais le rouge n’existe sur ce disque que si tu prends le nœud ou les bretelles rouges, sinon il sort de nulle part.',
+        { trainee: ['#f4f1ea', '#b0202c'] }),
+      v('I', 'BLOND SEUL', 'Un sillage blond uni, la couleur des cheveux. C’est la seule teinte qui vienne du personnage et pas de sa tenue ; en revanche l’or est déjà pris par Vody et par le disque 20/20.',
+        { trainee: ['#f0d98a'] }),
+      v('J', 'BLANC ET PEAU', 'Le blanc de la chemise alterne avec le ton de peau. Le sillage est chaud et étonnamment doux à l’œil ; mais deux teintes claires si proches ne font qu’un seul trait un peu terne à pleine vitesse.',
+        { trainee: ['#f4f1ea', '#f2c9a0'] })
+    ]
+  },
+  {
+    id: 'vol', titre: '6 · Ce qu’il sème en vol',
+    note: 'Les particules lâchées à chaque image de vol. Le compteur du rallye est le juge : au-dessus d’une trentaine en permanence, ce disque mange le budget de tous les autres effets et le téléphone décroche.',
+    variantes: [
+      v('A', 'FLASHS DE PHOTOGRAPHE', 'De brefs éclats blancs claquent autour du disque, comme une haie de photographes. C’est l’effet le plus juste pour un gamin en tenue de cérémonie, et il coûte très peu ; mais il se confond avec un simple scintillement sur un tir rapide.',
+        { vol: (d, out) => { if (combien(.3)) out.push(p(d.x + gauss() * 13, d.y + gauss() * 13, gauss() * 6, gauss() * 6, .18, '#ffffff', rand(3, 5), 0)); } }),
+      v('B', 'RIZ DE MARIAGE', 'De petits grains blancs tombent lentement derrière lui. On lit immédiatement la sortie d’église, et c’est l’effet le plus mémorable du lot ; en contrepartie les grains s’accumulent au sol et encombrent le terrain.',
+        { vol: (d, out) => { if (combien(.45)) out.push(p(d.x + gauss() * 9, d.y + gauss() * 9, gauss() * 12, rand(20, 55), .7, alea() < .8 ? '#f6f2e6' : '#e6dcc6', 2, 150)); } }),
+      v('C', 'PÉTALES BLANCS', 'Des pétales larges qui dérivent doucement. Ils donnent beaucoup de présence pour peu de particules, et leur lenteur les distingue de tout le reste ; mais ils traînent longtemps et brouillent la lecture du retour.',
+        { vol: (d, out) => { if (combien(.25)) out.push(p(d.x + gauss() * 12, d.y + gauss() * 10, gauss() * 22, rand(10, 35), 1.1, alea() < .7 ? '#ffffff' : '#f7e9d4', rand(3, 5), 40)); } }),
+      v('D', 'PAILLETTES DORÉES', 'De fines paillettes blondes projetées au hasard. Elles reprennent la couleur des cheveux et donnent un air de gala ; mais l’or est déjà la signature de Vody et du disque 20/20, ça fait trois.',
+        { vol: (d, out) => { if (combien(.4)) out.push(p(d.x + gauss() * 8, d.y + gauss() * 8, gauss() * 26, gauss() * 26, .4, alea() < .6 ? '#f0d98a' : '#fff3c4', 2, 0, 'star')); } }),
+      v('E', 'RIEN', 'Le disque ne sème rien, il n’a que sa traînée. Le plus lisible du lot et gratuit pour la machine, ce qui compte quand quatre effets se superposent ; mais le disque perd toute présence en plein vol.',
+        { vol: () => { } }),
+      v('F', 'BULLES DE SAVON', 'Des bulles claires montent lentement autour de lui. C’est enfantin, ce qui colle exactement au personnage, et c’est léger ; en revanche ça jure avec le côté cérémonie de la tenue.',
+        { vol: (d, out) => { if (combien(.35)) out.push(p(d.x + gauss() * 11, d.y + gauss() * 11, gauss() * 8, -rand(25, 60), .6, '#e9f4ff', rand(2, 4), -50)); } }),
+      v('G', 'PETITS NŒUDS', 'Des carrés noirs s’échappent, comme autant de nœuds papillon miniatures. Le clin d’œil est direct et personne d’autre ne fait ça ; mais du noir sur un sol bleu nuit, ça ne se voit quasiment pas.',
+        { vol: (d, out) => { if (combien(.3)) out.push(p(d.x + gauss() * 10, d.y + gauss() * 10, gauss() * 20, gauss() * 20, .5, alea() < .5 ? '#14131a' : '#33313d', 3, 40)); } }),
+      v('H', 'MIETTES DE GÂTEAU', 'De grosses miettes claires qui tombent lourdement. C’est drôle, ça a du poids, et chaque miette se remarque ; en contrepartie elles sont assez grosses pour qu’on les confonde un instant avec le disque.',
+        { vol: (d, out) => { if (combien(.18)) out.push(p(d.x + gauss() * 8, d.y + gauss() * 8, gauss() * 18, rand(20, 60), .7, alea() < .6 ? '#e8d9b4' : '#c9a877', rand(4, 6), 230)); } }),
+      v('I', 'FLASHS ET RIZ', 'Les deux à la fois : les flashs claquent, le riz retombe. C’est la lecture la plus complète de la scène de cérémonie ; c’est aussi deux fois le coût, et le compteur grimpe vite au-dessus de trente.',
+        { vol: (d, out) => { if (combien(.22)) out.push(p(d.x + gauss() * 13, d.y + gauss() * 13, gauss() * 6, gauss() * 6, .16, '#ffffff', rand(3, 5), 0)); if (combien(.3)) out.push(p(d.x + gauss() * 9, d.y + gauss() * 9, gauss() * 10, rand(20, 50), .65, '#f6f2e6', 2, 150)); } }),
+      v('J', 'POUSSIÈRE LENTE', 'Une poussière fine et presque immobile qui reste sur la trajectoire. Elle dessine le trajet comme un trait de craie, très lisible ; mais elle salit le terrain après quelques échanges et rappelle le disque 20/20.',
+        { vol: (d, out) => { if (combien(.5)) out.push(p(d.x + gauss() * 13, d.y + gauss() * 13, gauss() * 4, gauss() * 4, .8, '#efe6d2', 1.5, 0)); } })
+    ]
+  },
+  {
+    id: 'rebond', titre: '7 · L’éclat au rebond',
+    note: 'Ce que le disque projette en cognant un mur. C’est le seul moment où il a droit à une vraie gerbe : elle marque le rebond, que le joueur doit lire pour se replacer. Trop discrète elle ne sert à rien, trop grosse elle cache le disque au moment où il repart.',
+    variantes: [
+      v('A', 'SALVE DE FLASHS', 'Une volée d’éclats blancs très brefs, comme si toute la salle photographiait d’un coup. Le rebond claque et se repère du coin de l’œil sans jamais encombrer ; mais c’est si bref qu’un joueur concentré peut le rater.',
+        { rebond: (d, out) => { for (let i = 0; i < combien(12); i++) { const a = rand(TAU), dd = rand(10, 34); out.push(p(d.x + Math.cos(a) * dd, d.y + Math.sin(a) * dd, 0, 0, .2, '#ffffff', rand(3, 6), 0)); } } }),
+      v('B', 'PLUIE DE RIZ', 'Une poignée de grains jetée en l’air qui retombe. L’effet a un poids qu’aucune gerbe rapide ne donne, et il prolonge le thème du vol ; en contrepartie il s’étale au sol et encombre la zone du mur.',
+        { rebond: (d, out) => { for (let i = 0; i < combien(14); i++) out.push(p(d.x, d.y, gauss() * 70, -rand(60, 170), rand(.6, 1), alea() < .8 ? '#f6f2e6' : '#e6dcc6', 2, 320)); } }),
+      v('C', 'GERBE NOIR ET BLANC', 'Une couronne classique aux deux couleurs de la tenue. Le rebond se repère facilement et le disque reste identifiable ; mais c’est aussi l’effet le plus banal du registre, quatre disques en ont déjà un.',
+        { rebond: (d, out) => couronne(out, d.x, d.y, ['#f4f1ea', '#14131a', '#b9b6bd'], 11, 190, 4, .55) }),
+      v('D', 'LE NŒUD SE DÉFAIT', 'Deux rubans noirs partent en tournant, comme un nœud qui lâche. C’est l’effet le plus personnel du lot et personne d’autre ne l’a ; mais du noir sur fond sombre, on le devine plus qu’on ne le voit.',
+        { rebond: (d, out) => spirale(out, d.x, d.y, ['#14131a', '#33313d', '#f4f1ea'], 8, 150, .7) }),
+      v('E', 'BOUQUET LANCÉ', 'Des pétales projetés en cône vers le haut, qui redescendent en dérivant. Le rebond devient un petit événement et c’est très joli ; en contrepartie les pétales flottent longtemps et se mélangent au rebond suivant.',
+        { rebond: (d, out) => { for (let i = 0; i < combien(10); i++) out.push(p(d.x + gauss() * 6, d.y, gauss() * 55, -rand(90, 190), rand(.8, 1.3), alea() < .7 ? '#ffffff' : '#f7e9d4', rand(3, 5), 190)); } }),
+      v('F', 'FLASH SEC', 'Quatre éclats blancs très vifs et très courts, rien de plus. Le rebond se marque sans jamais encombrer l’écran, idéal quand ça s’échange vite ; mais l’effet est si discret qu’il peut passer inaperçu.',
+        { rebond: (d, out) => couronne(out, d.x, d.y, ['#ffffff'], 4, 300, 3, .2) }),
+      v('G', 'DOUBLE COURONNE', 'Deux gerbes concentriques, une blanche rapide et une noire lente. L’impact paraît deux fois plus violent et se lit de très loin ; mais ça double le nombre de particules pour un gain surtout décoratif.',
+        { rebond: (d, out) => { couronne(out, d.x, d.y, ['#ffffff'], 9, 270, 3, .35); couronne(out, d.x, d.y, ['#14131a', '#33313d'], 8, 110, 5, .7); } }),
+      v('H', 'APPLAUDISSEMENTS', 'Un anneau de petits éclats clairs s’ouvre d’un coup autour du point d’impact. On lit une salle qui applaudit, ce qui sert le thème ; mais un anneau qui s’ouvre ressemble beaucoup à l’onde de but du jeu.',
+        { rebond: (d, out) => { for (let i = 0; i < combien(16); i++) { const a = (i / 16) * TAU; out.push(p(d.x, d.y, Math.cos(a) * 240, Math.sin(a) * 240, .3, alea() < .7 ? '#f4f1ea' : '#f0d98a', 3, 0)); } } }),
+      v('I', 'GERBE DORÉE', 'Une couronne blonde, couleur cheveux. Elle réchauffe le disque et le distingue de sa propre traînée ; en contrepartie l’or au rebond est déjà la signature de Vody et du disque 20/20.',
+        { rebond: (d, out) => couronne(out, d.x, d.y, ['#f0d98a', '#fff3c4', '#cfae4e'], 10, 180, 4, .55) }),
+      v('J', 'RIEN', 'Aucun éclat : le disque rebondit et repart, point. Rien ne masque jamais le disque au moment où il faut le suivre, et c’est gratuit ; mais le mur perd tout impact et le rebond passe inaperçu.',
+        { rebond: () => { } })
+    ]
+  }
+];
+/* ==== FIN DU CONTENU ==== */
+
+/* ===========================================================================
+   LE MOTEUR — ne pas toucher en copiant.
+   =========================================================================== */
+
+/* --- L'état courant : une lettre retenue par section --- */
+const choix = {};
+// Les lettres validées, quand le disque est arrêté : le mockup doit s'ouvrir
+// sur le disque tel qu'il est en jeu, pas sur la première variante de chaque
+// section. Sans ça il finirait par mentir sur l'état réel du disque.
+const RETENU = (DISQUE.retenu || '').match(/[A-J]/g) || [];
+SECTIONS.forEach((s, i) => {
+  const lettre = RETENU[i];
+  choix[s.id] = s.variantes.some(x => x.id === lettre) ? lettre : s.variantes[0].id;
+});
+if (DISQUE.retenu) {
+  document.getElementById('retenu').textContent =
+    'Choix retenus : ' + DISQUE.retenu + ' — le mockup ouvre dessus, c’est l’état porté dans le jeu.';
+}
+
+// Assemble le disque tel que les choix actuels le décrivent. Les calques
+// s'empilent dans l'ordre des sections ; les autres pièces sont uniques, la
+// dernière déclarée l'emporte. `extra` permet à une carte de forcer SA
+// variante par-dessus l'état courant.
+function assembler(extra) {
+  const d = {
+    calques: [], sur: null, contour: null,
+    pal: { ...DISQUE.pal }, trainee: ['#ffd23e'], vol: () => {}, rebond: () => {}
+  };
+  const poser = pieces => {
+    if (!pieces) return;
+    if (pieces.calque) d.calques.push(pieces.calque);
+    if (pieces.sur) d.sur = pieces.sur;
+    if ('contour' in pieces) d.contour = pieces.contour;
+    if (pieces.pal) d.pal = { ...d.pal, ...pieces.pal };
+    if (pieces.trainee) d.trainee = pieces.trainee;
+    if (pieces.vol) d.vol = pieces.vol;
+    if (pieces.rebond) d.rebond = pieces.rebond;
+  };
+  for (const s of SECTIONS) {
+    const va = s.variantes.find(x => x.id === choix[s.id]);
+    if (va) poser(va.pieces);
+  }
+  // La carte force SA variante : son calque remplace celui de la même section
+  // au lieu de s'ajouter par-dessus, sinon on verrait les deux empilés.
+  if (extra) {
+    if (extra.calque) {
+      const sec = SECTIONS.find(s => s.variantes.some(x => x.pieces === extra));
+      if (sec) {
+        const rang = SECTIONS.indexOf(sec);
+        let n = 0;
+        for (let i = 0; i < rang; i++) {
+          const va = SECTIONS[i].variantes.find(x => x.id === choix[SECTIONS[i].id]);
+          if (va && va.pieces.calque) n++;
+        }
+        d.calques[n] = extra.calque;
+      }
+    }
+    const reste = { ...extra }; delete reste.calque;
+    poser(reste);
+  }
+  return d;
+}
+
+/* --- Le disque, dessiné comme le jeu le dessine --------------------------
+   Découpe au contour, calques empilés, puis les deux couches que drawSkinDisc
+   applique à TOUT LE MONDE (le reflet et l'ombre de bord) et le liseré que
+   render.js trace par-dessus. Les sauter donnerait un disque plus plat en
+   match que dans le mockup. */
+function dessinerDisque(g, d, r, T, piece) {
+  g.save();
+  // Gélatine : le disque s'étire sur un axe et s'écrase sur l'autre après un
+  // rebond, à volume constant.
+  if (d.wobble > 0) {
+    const k = 1 + Math.sin(d.wobble * 26) * d.wobble * .28;
+    g.translate(d.x, d.y); g.scale(k, 1 / k); g.translate(-d.x, -d.y);
+  }
+  g.save();
+  g.translate(d.x, d.y);
+  tracerContour(g, 0, 0, r, piece.contour);
+  g.clip();
+  for (const c of piece.calques) { g.save(); c(g, r, d.spin, T, piece.pal); g.restore(); }
+
+  const gloss = g.createRadialGradient(-r * .32, -r * .36, r * .05, -r * .1, -r * .1, r * .95);
+  gloss.addColorStop(0, 'rgba(255,255,255,0.45)');
+  gloss.addColorStop(.45, 'rgba(255,255,255,0.08)');
+  gloss.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gloss; g.fillRect(-r, -r, r * 2, r * 2);
+
+  const edge = g.createRadialGradient(0, 0, r * .72, 0, 0, r);
+  edge.addColorStop(0, 'rgba(0,0,0,0)');
+  edge.addColorStop(1, 'rgba(0,0,0,0.4)');
+  g.fillStyle = edge; g.fillRect(-r, -r, r * 2, r * 2);
+  g.restore();
+
+  g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = 1.5;
+  tracerContour(g, d.x, d.y, r, piece.contour);
+  g.stroke();
+  g.restore();
+  if (piece.sur) { g.save(); piece.sur(g, d.x, d.y, r, d.spin, T); g.restore(); }
+}
+
+// L'ombre portée, aux mêmes réglages que drawShadow dans render.js : elle
+// tombe 14 px sous le disque, ce qui le décolle du sol.
+function ombre(g, x, y, r) {
+  g.save();
+  g.fillStyle = 'rgba(0,0,20,.33)';
+  g.beginPath(); g.ellipse(x, y + 14, r, r * .36, 0, 0, TAU); g.fill();
+  g.restore();
+}
+
+/* --- Un bout du vrai terrain --------------------------------------------
+   Teintes du thème `arena` de data/maps.js : pont métallique, sol projeté,
+   lignes blanches. La lisibilité jugée ici est celle du match. */
+function terrain(g, w, h) {
+  g.fillStyle = '#0a1220'; g.fillRect(0, 0, w, h);
+  g.fillStyle = 'rgba(15,26,46,0.7)'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = '#1b2c48'; g.lineWidth = 1;
+  for (let x = 32; x < w; x += 34) { g.beginPath(); g.moveTo(x + .5, 0); g.lineTo(x + .5, h); g.stroke(); }
+  for (let y = 32; y < h; y += 34) { g.beginPath(); g.moveTo(0, y + .5); g.lineTo(w, y + .5); g.stroke(); }
+  g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 2;
+  g.strokeRect(3, 3, w - 6, h - 6);
+}
+
+/* --- La traînée et les particules, comme render.js les dessine --- */
+function couleurTrainee(cols, spin) { return cols[Math.abs(Math.floor(spin * 3)) % cols.length]; }
+function peindreTrainee(g, trail) {
+  const n = trail.length;
+  for (let i = 0; i < n; i++) {
+    const t = trail[i], k = (i + 1) / n;
+    g.globalAlpha = k * .5; g.fillStyle = t.c;
+    const s = 3 + k * 5;
+    g.fillRect(t.x - s / 2, t.y - s / 2, s, s);
+  }
+  g.globalAlpha = 1;
+}
+function peindreParticules(g, parts) {
+  for (const q of parts) {
+    g.globalAlpha = Math.max(0, Math.min(1, q.life * 2.5));
+    g.fillStyle = q.c;
+    g.fillRect(q.x - q.s / 2, q.y - q.s / 2, q.s, q.s);
+  }
+  g.globalAlpha = 1;
+}
+// Le plafond du jeu, appliqué ici aussi : sans lui le mockup promettrait une
+// gerbe que le match ne montrera jamais.
+function verser(sortie, parts) {
+  let place = MAX_PARTICULES - parts.length;
+  for (const q of sortie) { if (place <= 0) break; parts.push(q); place--; }
+}
+function majParticules(parts, dt) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const q = parts[i];
+    q.vy += q.g * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt;
+    if (q.life <= 0) parts.splice(i, 1);
+  }
+}
+
+/* --- Vérification du gabarit --------------------------------------------
+   Le découpage est libre, donc rien ne garantit tout seul qu'il décide bien
+   ce que le code réclame : une page de six belles sections peut n'avoir
+   jamais choisi la couleur du sillage. On vérifie donc les trois choses qu'un
+   découpage sur mesure peut oublier — le nombre de sections, les pièces
+   obligatoires, et l'explication écrite de chaque carte. */
+const bad = [];
+const MIN_DESC = 40;
+const OBLIGATOIRES = ['calque', 'trainee', 'vol', 'rebond'];
+
+if (SECTIONS.length < 6) bad.push('découpage : ' + SECTIONS.length + ' sections (six au minimum)');
+const vues = new Set();
+for (const s of SECTIONS) {
+  if (!s.note || s.note.trim().length < MIN_DESC) bad.push(s.id + ' : la section n\'explique pas ce qu\'on y juge');
+  if (s.variantes.length !== 10) bad.push(s.id + ' : ' + s.variantes.length + ' variantes (attendu 10, soit 5 visibles + 5 en réserve)');
+  for (const va of s.variantes) {
+    const ref = s.id + '-' + va.id;
+    if (!va.nom || !va.nom.trim()) bad.push(ref + ' : pas de nom');
+    // Une description doit dire ce que c'est ET ce que ça coûte : d'où la
+    // longueur minimale, qui écarte les « joli ».
+    if (!va.desc || va.desc.trim().length < MIN_DESC) {
+      bad.push(ref + ' : explication manquante ou trop courte — dire l\'allure ET l\'avantage/inconvénient');
+    }
+    const cles = Object.keys(va.pieces || {});
+    if (!cles.length) bad.push(ref + ' : ne remplace rien, la carte serait identique aux autres');
+    cles.forEach(c => vues.add(c));
+    if (va.pieces && va.pieces.trainee && !va.pieces.trainee.length) bad.push(ref + ' : traînée vide, le disque n\'aurait aucun sillage');
+  }
+}
+for (const c of OBLIGATOIRES) {
+  if (!vues.has(c)) bad.push('découpage : aucune section ne décide « ' + c + ' » — le code en a besoin');
+}
+const boite = document.getElementById('errs');
+boite.textContent = bad.length
+  ? bad.length + ' à corriger :\n' + bad.slice(0, 24).join('\n') + (bad.length > 24 ? '\n…' : '')
+  : 'OK — six sections au moins, les quatre pièces du code décidées, et chaque section comme chaque variante porte son explication.';
+if (bad.length) boite.className = 'bad';
+
+/* --- Bande de comparaison : les disques réels du jeu --- */
+(function bande() {
+  const hote = document.getElementById('bande');
+  const une = (id, nom, neuf) => {
+    const d = document.createElement('div'); d.className = 'une' + (neuf ? ' neuf' : '');
+    const cv = document.createElement('canvas');
+    cv.width = 44; cv.height = 44;
+    if (neuf) cv.id = 'cvNeuf';
+    else {
+      const g = cv.getContext('2d');
+      terrain(g, 44, 44);
+      drawSkinDisc(g, 22, 22, R_JEU, id, .7);
+      g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = 1.5;
+      tracerContour(g, 22, 22, R_JEU, deformationDisque(id)); g.stroke();
+    }
+    const s = document.createElement('span'); s.textContent = nom;
+    d.appendChild(cv); d.appendChild(s); hote.appendChild(d);
+  };
+  for (const sk of DISC_SKINS) une(sk.id, sk.name, false);
+  une(DISQUE.id, DISQUE.nom, true);
+})();
+
+function peindreNeuf() {
+  const cv = document.getElementById('cvNeuf');
+  const g = cv.getContext('2d');
+  terrain(g, cv.width, cv.height);
+  dessinerDisque(g, { x: 22, y: 22, spin: .7, wobble: 0 }, R_JEU, horloge(), assembler());
+}
+
+/* --- Les cartes : figées, avec un vol simulé de façon déterministe -------
+   Soixante-dix canvas animés en même temps rameraient pour rien, et on
+   compare mieux des images au calme. Le vol est simulé sur une demi-seconde
+   pour que la traînée et le semis soient ceux du match, pas une décoration
+   posée à la main. Une variante qui déclare `rebond` cogne le mur de droite :
+   sa carte montre l'éclat, sinon elle ne montrerait rien du tout. */
+function peindreCarte(cv, piece, avecRebond) {
+  const g = cv.getContext('2d');
+  const w = cv.width, h = cv.height;
+  terrain(g, w, h);
+  semer(20260901);
+
+  const mur = w - 6 - R_JEU;
+  const d = { x: 22, y: h * .5 + 6, vx: 330, vy: -34, spin: 0, wobble: 0 };
+  const trail = [], parts = [];
+  const dt = 1 / 60;
+  let cogne = false;
+  // Le vol s'arrête avant le bord droit : à 330 px/s et soixante images par
+  // seconde le disque avance 5,5 px par image, et quarante images le feraient
+  // sortir du cadre. La version qui rebondit court jusqu'au mur, puis onze
+  // images de plus pour que la gerbe soit encore fraîche.
+  const images = avecRebond ? 42 : 26;
+  for (let i = 0; i < images; i++) {
+    d.x += d.vx * dt; d.y += d.vy * dt;
+    d.spin += Math.hypot(d.vx, d.vy) * dt * .06;
+    if (d.wobble > 0) d.wobble = Math.max(0, d.wobble - dt * 2.6);
+    trail.push({ x: d.x, y: d.y, c: couleurTrainee(piece.trainee, d.spin) });
+    if (trail.length > 26) trail.shift();
+    const out = []; piece.vol(d, out); if (out.length) verser(out, parts);
+    if (avecRebond && !cogne && d.x >= mur) {
+      cogne = true; d.x = mur; d.vx = -d.vx * .92;
+      const gerbe = []; piece.rebond(d, gerbe); verser(gerbe, parts);
+    }
+    majParticules(parts, dt);
+  }
+
+  relacher();
+  peindreTrainee(g, trail);
+  ombre(g, d.x, d.y, R_JEU + 2);
+  // Instant figé choisi une fois pour toutes : deux cartes comparées doivent
+  // montrer le même moment de l'animation de face, sinon on compare des
+  // phases et non des partis pris.
+  dessinerDisque(g, d, R_JEU, .42, piece);
+  peindreParticules(g, parts);
+}
+
+const cartes = [];
+(function poserSections() {
+  const hote = document.getElementById('sections');
+  for (const s of SECTIONS) {
+    const h2 = document.createElement('h2'); h2.textContent = s.titre;
+    hote.appendChild(h2);
+    if (s.note) { const n = document.createElement('p'); n.className = 'note'; n.textContent = s.note; hote.appendChild(n); }
+
+    const rangee = document.createElement('div'); rangee.className = 'row';
+    const reserve = document.createElement('div'); reserve.className = 'row reserve';
+    hote.appendChild(rangee);
+
+    s.variantes.forEach((va, i) => {
+      const card = document.createElement('div');
+      card.className = 'card' + (i === 0 ? ' on' : '');
+      const lbl = document.createElement('div'); lbl.className = 'lbl';
+      lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + (va.desc || '');
+      const cv = document.createElement('canvas');
+      cv.width = 212; cv.height = 108;
+      card.appendChild(lbl); card.appendChild(cv);
+      (i < 5 ? rangee : reserve).appendChild(card);
+      cartes.push({ cv, s, va, card });
+      card.addEventListener('click', () => {
+        choix[s.id] = va.id;
+        cartes.filter(c => c.s === s).forEach(c => c.card.classList.toggle('on', c.va === va));
+        rafraichir();
+      });
+    });
+
+    const bouton = document.createElement('button');
+    bouton.className = 'plus'; bouton.textContent = '+ 5 autres choix';
+    bouton.addEventListener('click', () => {
+      reserve.classList.toggle('ouverte');
+      bouton.textContent = reserve.classList.contains('ouverte') ? '– replier la réserve' : '+ 5 autres choix';
+    });
+    hote.appendChild(bouton);
+    hote.appendChild(reserve);
+  }
+})();
+
+function peindreCartes() {
+  for (const { cv, va } of cartes) {
+    // La carte montre le disque ENTIER avec cette variante appliquée, le reste
+    // dans l'état courant : on juge un disque complet, jamais une pièce qui
+    // flotte sur fond noir.
+    peindreCarte(cv, assembler(va.pieces), !!(va.pieces && va.pieces.rebond));
+  }
+}
+
+/* --- Le rallye : le disque tel qu'on le verra vraiment --- */
+const cvR = document.getElementById('cvRallye');
+const gR = cvR.getContext('2d');
+const balle = { x: 60, y: 80, vx: 300, vy: 190, spin: 0, wobble: 0 };
+let trainee = [], parts = [];
+let piece = assembler();
+let dernier = 0, pointe = 0;
+
+function rallye(ms) {
+  const dt = Math.min(.05, (ms - dernier) / 1000 || 0); dernier = ms;
+  const T = ms / 1000;
+  const bord = 4 + R_JEU;
+
+  balle.x += balle.vx * dt; balle.y += balle.vy * dt;
+  balle.spin += Math.hypot(balle.vx, balle.vy) * dt * .06;
+  if (balle.wobble > 0) balle.wobble = Math.max(0, balle.wobble - dt * 2.6);
+
+  let choc = false;
+  if (balle.x < bord) { balle.x = bord; balle.vx = -balle.vx; choc = true; }
+  if (balle.x > cvR.width - bord) { balle.x = cvR.width - bord; balle.vx = -balle.vx; choc = true; }
+  if (balle.y < bord) { balle.y = bord; balle.vy = -balle.vy; choc = true; }
+  if (balle.y > cvR.height - bord) { balle.y = cvR.height - bord; balle.vy = -balle.vy; choc = true; }
+
+  trainee.push({ x: balle.x, y: balle.y, c: couleurTrainee(piece.trainee, balle.spin) });
+  if (trainee.length > 26) trainee.shift();
+  const out = []; piece.vol(balle, out); if (out.length) verser(out, parts);
+  if (choc) { const gerbe = []; piece.rebond(balle, gerbe); verser(gerbe, parts); }
+  majParticules(parts, dt);
+
+  terrain(gR, cvR.width, cvR.height);
+  peindreTrainee(gR, trainee);
+  ombre(gR, balle.x, balle.y, R_JEU + 2);
+  dessinerDisque(gR, balle, R_JEU, T, piece);
+  peindreParticules(gR, parts);
+
+  pointe = Math.max(pointe, parts.length);
+  document.getElementById('compteur').innerHTML =
+    'particules <i' + (parts.length >= MAX_PARTICULES ? ' class="trop"' : '') + '>' + parts.length + '</i>' +
+    ' · pointe <i' + (pointe >= MAX_PARTICULES ? ' class="trop"' : '') + '>' + pointe + '</i>' +
+    ' / plafond ' + MAX_PARTICULES;
+
+  requestAnimationFrame(rallye);
+}
+
+/* --- Le code compact à renvoyer : « 1A 2C 3B … » ------------------------
+   Posé dans un champ en lecture seule plutôt que dans une ligne de texte,
+   pour rester sélectionnable à la main si le presse-papiers est refusé. */
+function codeChoix() { return SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' '); }
+
+function rafraichir() {
+  piece = assembler();
+  pointe = 0; parts = []; trainee = [];
+  peindreCartes();
+  peindreNeuf();
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value = codeChoix();
+}
+
+(function brancherCopie() {
+  const btn = document.getElementById('btnCopier');
+  const champ = document.getElementById('codeChoix');
+  btn.addEventListener('click', async () => {
+    const texte = codeChoix();
+    let ok = false;
+    try { await navigator.clipboard.writeText(texte); ok = true; }
+    catch (e) {
+      champ.select(); champ.setSelectionRange(0, 999);
+      try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    }
+    btn.textContent = ok ? '✓ copié' : 'Ctrl+C pour copier';
+    btn.classList.toggle('ok', ok);
+    setTimeout(() => { btn.textContent = 'copier mes choix'; btn.classList.remove('ok'); }, 1800);
+  });
+})();
+
+document.querySelector('h1').textContent = DISQUE.nom;
+// Les faces qui écrivent du texte doivent attendre la police : un canvas
+// peint avant son chargement retombe sur la police système et ne montre pas
+// le vrai dessin.
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(rafraichir);
+rafraichir();
+requestAnimationFrame(rallye);
+</script>
+</body>
+</html>

@@ -215,6 +215,32 @@ export const FX_DISQUES = {
     }
   },
 
+  // Cérémonie : rien qu'un sillage noir, des flashs en vol, du riz au rebond.
+  coaster: {
+    // Le sillage est noir, comme la tenue. Choix assumé : sur le sol bleu nuit
+    // de l'arène il ne tranche presque pas, et la trajectoire se lit beaucoup
+    // moins bien qu'avec un sillage clair — mesuré au mockup, environ un quart
+    // de contraste en moins qu'un sillage blanc.
+    trainee: ['#14131a'],
+    vol(d, out) {
+      // Des flashs de photographe : de brefs éclats blancs presque immobiles,
+      // qui claquent autour du disque plutôt que derrière lui. Très courts
+      // (0,18 s), donc ils ne s'accumulent pas.
+      if (combien(.3)) {
+        out.push(p(d.x + gauss() * 13, d.y + gauss() * 13, gauss() * 6, gauss() * 6,
+          .18, '#ffffff', rand(3, 5), 0));
+      }
+    },
+    rebond(d, out) {
+      // Une poignée de riz jetée en l'air qui retombe. C'est la gravité qui
+      // fait tout l'effet : sans elle, ce ne serait qu'une couronne de plus.
+      for (let i = 0; i < combien(14); i++) {
+        out.push(p(d.x, d.y, gauss() * 70, -rand(60, 170), rand(.6, 1),
+          Math.random() < .8 ? '#f6f2e6' : '#e6dcc6', 2, 320));
+      }
+    }
+  },
+
   // Copie d'examen : poussière de craie, et la gomme qui rebondit avec.
   vingt: {
     trainee: ['#fdfaf0', '#d81f26'],
