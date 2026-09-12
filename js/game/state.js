@@ -115,7 +115,10 @@ export function makePlayer(ck, side, human, diffIdx) {
     ck, char: c, side, human,
     frames: (c.skins && c.skins[sk]) ? c.skins[sk] : c.frames,
     x: side === 1 ? COURT.left + 120 : COURT.right - 120, y: CY,
-    vx: 0, vy: 0, face: side === 1 ? 1 : -1,
+    // vx/vy : ce que la commande demande. mvx/mvy : ce qui a réellement
+    // déplacé le joueur à la dernière image, dash et sables compris. C'est
+    // cette seconde paire que le réseau transmet, voir integratePlayer.
+    vx: 0, vy: 0, mvx: 0, mvy: 0, face: side === 1 ? 1 : -1,
     holding: false, charging: false, wasCharging: false, charge: 0, fullFlash: false,
     throwCd: 0, throwPoseT: 0, lunge: 0, lungeCd: 0, dashCd: 0, dashV: { x: 0, y: 0 },
     walk: 0, moving: false, meter: 0, score: 0, speed: c.speed, stun: 0, ralenti: 0,

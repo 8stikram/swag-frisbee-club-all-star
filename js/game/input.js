@@ -419,6 +419,13 @@ export function integratePlayer(p, dt) {
   // fait qu'ils se contournent au lieu de se traverser.
   const boue = dansLesSables(p.x, p.y) ? RALENTI_SABLES : 1;
   const mvx = (p.vx * inv + p.dashV.x) * boue, mvy = (p.vy * inv + p.dashV.y) * boue;
+  // La vitesse RÉELLE de déplacement, celle qui vient de bouger le joueur.
+  // Elle est retenue parce que c'est la seule qui permette de prédire où il
+  // sera : `vx`/`vy` ne portent que la commande, sans l'élan du dash, sans
+  // l'inversion du piratage et sans les sables. Un adversaire prédit sur `vx`
+  // seul semblait donc s'arrêter net à chaque dash — précisément le geste le
+  // plus rapide du jeu, et celui qu'il faut lire pour savoir où il va.
+  p.mvx = mvx; p.mvy = mvy;
   p.x += mvx * dt; p.y += mvy * dt;
   const minX = p.side === 1 ? COURT.left + 16 : CX + 10;
   const maxX = p.side === 1 ? CX - 10 : COURT.right - 16;

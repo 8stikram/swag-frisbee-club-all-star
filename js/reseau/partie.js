@@ -121,13 +121,24 @@ export function signalerTirLocal() {
 // L'invité n'envoie que sa fiche d'intentions : cinq nombres et quatre
 // compteurs, déjà à jour — voir compterGeste ci-dessus.
 function fichePourLeReseau(c) {
-  return {
+  const f = {
     t: 'c', n: ++numeroEnvoi,
     dx: +c.dep.x.toFixed(2), dy: +c.dep.y.toFixed(2),
     vx: +c.visee.x.toFixed(3), vy: +c.visee.y.toFixed(3),
     tir: c.tir ? 1 : 0, dash: c.dash ? 1 : 0,
     pl: gestes.pl, fe: gestes.fe, sp: gestes.sp, ad: gestes.ad
   };
+  // La direction du dash n'est pas toujours celle du tir : l'option « dasher
+  // vers son déplacement » la décroche de la souris. L'hôte, qui ne recevait
+  // que la visée, faisait alors partir le dash de l'invité dans une TOUTE
+  // AUTRE direction que celle qu'il voyait chez lui — cent cinquante pixels
+  // d'écart en un sixième de seconde, puis un rappel sec. On ne l'ajoute que
+  // lorsqu'elle diffère : dans le réglage par défaut, les deux sont la même
+  // et le champ ne coûte rien.
+  if (Math.abs(c.viseeDash.x - c.visee.x) > .001 || Math.abs(c.viseeDash.y - c.visee.y) > .001) {
+    f.ddx = +c.viseeDash.x.toFixed(3); f.ddy = +c.viseeDash.y.toFixed(3);
+  }
+  return f;
 }
 
 // Les poses d'un personnage, dans l'ordre. Elles voyagent en numéro et non en
@@ -145,7 +156,13 @@ function etatPourLeReseau() {
     // Vitesse du joueur : utile surtout pour p1, que l'invité prédit désormais
     // au lieu de l'interpoler — voir extrapolerJoueur(). Envoyée pour les deux
     // par souci de forme unique, le coût est de deux nombres.
-    Math.round(p.vx), Math.round(p.vy),
+    //
+    // C'est la vitesse de DÉPLACEMENT (mvx/mvy) et non celle de la commande :
+    // elle seule contient l'élan du dash. Sur `vx` seul, la prédiction voyait
+    // l'adversaire courir à trois cents pixels par seconde pendant qu'il en
+    // parcourait neuf cents, et il se faisait rattraper d'un coup au paquet
+    // suivant — un élastique de plus de cent pixels à chaque dash.
+    Math.round(p.mvx || 0), Math.round(p.mvy || 0),
     // Tout ce qui modifie un déplacement doit voyager, sinon les deux machines
     // ne font pas bouger le même personnage. Sans ces sept champs, un
     // étourdissement ne figeait pas l'invité et l'ulti de Cyberleek ne lui
@@ -537,8 +554,30 @@ const p1Autorite = { x: 0, y: 0, vx: 0, vy: 0, t: 0, valide: false };
 // Au-delà, la liaison est trop capricieuse pour que prédire vaille mieux
 // qu'afficher un retard fixe et fluide. En dessous, sur votre cible réelle
 // (20-60 ms entre potes), la prédiction gagne largement.
-const PING_LIMITE_PREDICTION = 80;
+//
+// Le seuil était à 80 ms, hérité d'une prédiction qui ignorait le dash et
+// traînait derrière sa propre cible. Une fois ces deux défauts corrigés, elle
+// gagne encore largement bien plus haut : mesuré à 138 ms de ping, l'écart
+// moyen avec l'écran de l'hôte tombe de 40,6 px en interpolation à 16,0 px en
+// prédiction, sans élastique pour autant (2 % de demi-tours, soit le nombre de
+// vrais changements de direction du test). Le repli reste là pour les liaisons
+// franchement mauvaises, où extrapoler devient de l'invention.
+const PING_LIMITE_PREDICTION = 150;
 const ECART_SAUT_ADVERSAIRE = 140;
+
+// Jusqu'où l'on accepte d'extrapoler. `transit` compense le trajet du paquet
+// (un demi-aller-retour), `age` couvre en plus l'attente depuis son arrivée.
+// Les deux plafonds disent la même chose : au-delà, on n'extrapole plus, on
+// invente.
+//
+// Nommés plutôt qu'écrits en dur à deux endroits, parce qu'ils se règlent
+// ensemble — et parce qu'on est tenté de les monter. Essayé : à 138 ms de
+// ping, passer à 80/120 ms DÉGRADE l'écart moyen (16,0 → 18,5 px) au lieu de
+// l'améliorer. Extrapoler plus loin dépasse le virage plus qu'il ne rattrape
+// le retard, dès que l'adversaire change de direction — et dans ce jeu il ne
+// s'arrête jamais de tourner. Soixante et quatre-vingt-dix millisecondes sont
+// l'optimum mesuré, pas un chiffre rond choisi au hasard.
+const TRANSIT_MAX = .06, AGE_MAX = .09;
 
 // Bornée au terrain, pas réfléchie : un joueur ne rebondit pas sur les murs
 // comme le disque, il s'y arrête. Une extrapolation qui l'y collerait quand il
@@ -1104,13 +1143,33 @@ export function lisserAffichage(dt) {
   if (G.p1 && !G.replay) {
     const ax = G.p1.x, ay = G.p1.y;
     if (Partie.predictionAdversaire) {
-      const transit = Math.min(.06, (Reseau.ping || 0) / 2000);
-      const age = Math.min(.09, (performance.now() - p1Autorite.t) / 1000 + transit);
+      const transit = Math.min(TRANSIT_MAX, (Reseau.ping || 0) / 2000);
+      const age = Math.min(AGE_MAX, (performance.now() - p1Autorite.t) / 1000 + transit);
       const [cx, cy] = extrapolerJoueur(p1Autorite.x, p1Autorite.y, p1Autorite.vx, p1Autorite.vy, age, G.p1.side);
+      // Où l'on VISE, et où l'on EST. Deux erreurs distinctes se cachaient
+      // dans l'écart total, et les confondre menait à régler la mauvaise :
+      // celle de la prédiction (la cible est-elle au bon endroit ?) et celle
+      // du suivi (met-on du temps à l'atteindre ?). Le panneau admin les
+      // montre séparément.
       const ecart = Math.hypot(cx - G.p1.x, cy - G.p1.y);
+      Partie.diag.cible = [Math.round(cx), Math.round(cy)];
+      Partie.diag.suivi = +ecart.toFixed(1);
       if (ecart > ECART_SAUT_ADVERSAIRE) {
         G.p1.x = cx; G.p1.y = cy;
       } else {
+        // On AVANCE d'abord à la vitesse connue, et on ne résorbe qu'ensuite
+        // ce qui reste d'écart. Le filtre seul — `x += (cible - x) * k` —
+        // poursuit une cible qui fuit : il traîne en permanence d'une
+        // constante de temps entière, soit cinquante-cinq millisecondes, et
+        // ce retard-là ne dépend pas du réseau. Il s'ajoutait simplement à
+        // celui de la liaison, sans que rien ne le dise.
+        //
+        // Avancer à la vitesse annule ce retard : en régime établi, la
+        // position suit la cible sans décalage et le terme de correction n'a
+        // plus rien à faire. Il reste là pour ce à quoi il sert vraiment —
+        // refermer un désaccord réel, en douceur plutôt que d'un coup.
+        const [px, py] = extrapolerJoueur(G.p1.x, G.p1.y, p1Autorite.vx, p1Autorite.vy, dt, G.p1.side);
+        G.p1.x = px; G.p1.y = py;
         const k = 1 - Math.exp(-18 * dt);
         G.p1.x += (cx - G.p1.x) * k;
         G.p1.y += (cy - G.p1.y) * k;
@@ -1172,8 +1231,8 @@ export function lisserAffichage(dt) {
     // La fenêtre est courte, et volontairement : au-delà, ce n'est plus une
     // extrapolation entre deux paquets, c'est une invention. Avec l'état à
     // 60 Hz, l'écart réel entre deux paquets ne dépasse quasiment jamais 90 ms.
-    const transit = Math.min(.06, (Reseau.ping || 0) / 2000);
-    const age = Math.min(.09, (performance.now() - discAutorite.t) / 1000 + transit);
+    const transit = Math.min(TRANSIT_MAX, (Reseau.ping || 0) / 2000);
+    const age = Math.min(AGE_MAX, (performance.now() - discAutorite.t) / 1000 + transit);
     const [cx, cy] = extrapolerDisque(discAutorite.x, discAutorite.y, discAutorite.vx, discAutorite.vy, age);
     const ecart = Math.hypot(cx - d.x, cy - d.y);
     if (ecart > ECART_SAUT_DISQUE) {
@@ -1207,7 +1266,10 @@ function appliquerFiche(p, m) {
   const c = p.cmd;
   c.dep.x = m.dx; c.dep.y = m.dy;
   c.visee.x = m.vx; c.visee.y = m.vy;
-  c.viseeDash.x = m.vx; c.viseeDash.y = m.vy;
+  // `ddx` n'est là que quand le dash ne suit pas la visée ; sinon les deux se
+  // confondent et la visée fait office des deux, comme avant.
+  c.viseeDash.x = m.ddx !== undefined ? m.ddx : m.vx;
+  c.viseeDash.y = m.ddy !== undefined ? m.ddy : m.vy;
   c.tir = !!m.tir; c.dash = !!m.dash;
   // Gestes ponctuels : on ne regarde pas un drapeau, on regarde si le compteur
   // d'en face a avancé. Le premier paquet ne fait que caler les compteurs —
