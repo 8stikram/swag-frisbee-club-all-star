@@ -205,14 +205,14 @@ même attaque.
 
 ## 8. LE CHIFFRE QUI A BOUGÉ, ET COMMENT IL EST ÉCRIT
 
-Le drain a fait l'aller-retour : **2,5 → 7,5 → 12 → 60 → 120 %**. Et le passage
+Le drain a fait l'aller-retour : **2,5 → 7,5 → 12 → 60 → 120 → 240 %**. Et le passage
 à 60 n'a pas été qu'une valeur, c'est une **façon de l'écrire**.
 
 Il est désormais réglé comme une **part de la jauge**, pas comme une vitesse :
 
 ```js
-export const PS_PART  = 120;                   // % de sa jauge sur toute la zone
-export const PS_DRAIN = PS_PART / PS_DUREE;    // soit 17,1 %/s sur sept secondes
+export const PS_PART  = 240;                   // % de sa jauge sur toute la zone
+export const PS_DRAIN = PS_PART / PS_DUREE;    // soit 34,3 %/s sur sept secondes
 ```
 
 Ce qu'on veut régler, c'est « combien il perd s'il reste du début à la fin » —
@@ -230,17 +230,17 @@ parce que le disque est dedans, et le payer cher. C'est là que l'ultime est
 intéressant des deux côtés — celui qui le pose espère qu'on y entrera, celui
 qui le subit calcule si ça en vaut la peine.
 
-**Puis 120 %, après l'avoir joué.** 60 % ne se sentait pas en match, et la raison
+**Puis 120, puis 240 %, après l'avoir joué.** 60 % ne se sentait pas en match, et la raison
 est dans la formulation elle-même : « combien il perd s'il reste du début à la
 fin » décrit un cas qui n'arrive jamais. Personne ne reste sept secondes dans la
 zone ; on la traverse pour aller chercher le disque et on en ressort. Ce qui
 compte vraiment, c'est ce que coûte une **traversée** — une seconde dedans prenait
-8,6 points à 60 %, elle en prend 17 à 120 %. Au-dessus de 100 %, la part « sur
-toute la zone » n'est plus qu'une façon d'écrire la vitesse : la jauge est vide
-au bout de 5,8 s.
+8,6 points à 60 %, 17 à 120 %, et 34 à 240 % — près de quatre disques attrapés.
+Au-dessus de 100 %, la part « sur toute la zone » n'est plus qu'une façon d'écrire
+la vitesse : à 240 % la jauge est vide au bout de 2,9 s.
 
 Le risque est connu et il est au-dessus de nous : à 12 %/s on avait vu la zone se
-faire contourner. On est à 17. Si ça revient, c'est ce chiffre qu'on rebaisse.
+faire contourner. On est à 34, presque le triple. Si ça revient, c'est ce chiffre qu'on rebaisse.
 
 L'écart au cahier des charges, qui disait 1,5 à 2 %/s, est assumé. Le chiffre
 vit seul dans `PS_PART` — une ligne de `js/data/specials.js`.

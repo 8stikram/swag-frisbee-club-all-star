@@ -92,19 +92,24 @@ export const PS_SLOW = .25;     // ce qu'elle retire a la vitesse de l'adversair
 // Le drain est ecrit comme une PART DE LA JAUGE et non comme une vitesse : ce
 // qu'on regle, c'est « combien il perd s'il reste du debut a la fin », et c'est
 // la seule facon de le lire sans calculer. Il reste juste s'il change de duree.
-export const PS_PART = 120;                   // % de sa jauge sur toute la zone
-export const PS_DRAIN = PS_PART / PS_DUREE;   // soit 17,1 %/s sur sept secondes
-// Le chiffre a fait l'aller-retour : 2,5, 7,5, 12, 60 %, puis 120 %.
+export const PS_PART = 240;                   // % de sa jauge sur toute la zone
+export const PS_DRAIN = PS_PART / PS_DUREE;   // soit 34,3 %/s sur sept secondes
+// Le chiffre a fait l'aller-retour : 2,5, 7,5, 12, 60 %, 120 %, puis 240 %.
 //
-// Au-dessus de 100 %, rester dedans du debut a la fin n'a plus de sens : la
-// jauge est vide au bout de 5,8 s. Ce n'est pas le cas qu'on regle. En match personne
-// ne reste sept secondes dans la zone — on la traverse pour aller chercher le
-// disque et on en ressort — donc ce qui compte est ce qu'une TRAVERSEE coute.
-// A 60 % une traversee d'une seconde ne prenait que 8,6 points et la zone ne se
-// sentait pas ; a 120 % elle en prend 17.
+// Au-dessus de 100 %, rester dedans du debut a la fin n'a plus de sens : a
+// 240 % la jauge est vide au bout de 2,9 s. Ce n'est pas le cas qu'on regle.
+// En match personne ne reste sept secondes dans la zone — on la traverse pour
+// aller chercher le disque et on en ressort — donc ce qui compte est ce qu'une
+// TRAVERSEE coute : une seconde dedans prenait 8,6 points a 60 %, 17 a 120 %,
+// et en prend 34 ici. A ce prix, meme un passage court se paie.
+//
+// A titre d'echelle : la jauge ne remonte que de 1,1 point par seconde de jeu,
+// de 9 par disque attrape, et de 22 sur un plongeon parfait. Une seconde dans
+// la zone efface donc pres de quatre attrapes.
 //
 // Le risque connu : a 12 %/s on avait vu la zone se faire contourner plutot que
-// traverser. On est au-dessus. Si ca revient, c'est ce chiffre qu'on rebaisse.
+// traverser. On est presque trois fois au-dessus. Si ca revient, c'est ce
+// chiffre qu'on rebaisse.
 export const PS_RAY = .30;      // part de l'aire de la moitie adverse
 // Le rayon GRANDIT avec l'ecart entre les deux joueurs, jusqu'a moitie plus :
 // ca recompense de poser la zone au bon moment plutot que sur lui.
