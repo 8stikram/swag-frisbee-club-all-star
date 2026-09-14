@@ -92,17 +92,19 @@ export const PS_SLOW = .25;     // ce qu'elle retire a la vitesse de l'adversair
 // Le drain est ecrit comme une PART DE LA JAUGE et non comme une vitesse : ce
 // qu'on regle, c'est « combien il perd s'il reste du debut a la fin », et c'est
 // la seule facon de le lire sans calculer. Il reste juste s'il change de duree.
-export const PS_PART = 60;                    // % de sa jauge sur toute la zone
-export const PS_DRAIN = PS_PART / PS_DUREE;   // soit 8,57 %/s sur sept secondes
-// Le chiffre a fait l'aller-retour : 2,5, 7,5, 12, puis cale ici a 60 %.
+export const PS_PART = 120;                   // % de sa jauge sur toute la zone
+export const PS_DRAIN = PS_PART / PS_DUREE;   // soit 17,1 %/s sur sept secondes
+// Le chiffre a fait l'aller-retour : 2,5, 7,5, 12, 60 %, puis 120 %.
 //
-// A 12 %/s — 84 % de la jauge — la zone ne se jouait plus : on ne la traversait
-// plus, on en faisait le tour. Un ultime que l'adversaire contourne sans y
-// penser ne cree aucune situation, il deplace le jeu au lieu de le disputer.
+// Au-dessus de 100 %, rester dedans du debut a la fin n'a plus de sens : la
+// jauge est vide au bout de 5,8 s. Ce n'est pas le cas qu'on regle. En match personne
+// ne reste sept secondes dans la zone — on la traverse pour aller chercher le
+// disque et on en ressort — donc ce qui compte est ce qu'une TRAVERSEE coute.
+// A 60 % une traversee d'une seconde ne prenait que 8,6 points et la zone ne se
+// sentait pas ; a 120 % elle en prend 17.
 //
-// A 60 % la traversee redevient une DECISION : on peut choisir d'y aller parce
-// que le disque est dedans, et le payer cher. C'est la que l'ultime est
-// interessant des deux cotes.
+// Le risque connu : a 12 %/s on avait vu la zone se faire contourner plutot que
+// traverser. On est au-dessus. Si ca revient, c'est ce chiffre qu'on rebaisse.
 export const PS_RAY = .30;      // part de l'aire de la moitie adverse
 // Le rayon GRANDIT avec l'ecart entre les deux joueurs, jusqu'a moitie plus :
 // ca recompense de poser la zone au bon moment plutot que sur lui.
