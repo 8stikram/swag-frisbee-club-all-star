@@ -458,6 +458,14 @@ function motDe(c, profilId) {
   corps.className = 'murCorps';
   const qui = document.createElement('span');
   qui.className = 'murQui'; qui.textContent = auteur.pseudo || 'inconnu';
+  // La photo et le pseudo mènent au profil de l'auteur, pas le reste du mot :
+  // le texte et les actions restent cliquables pour lire/répondre, sans
+  // déclencher une navigation à chaque effleurement du commentaire.
+  if (c.auteur) {
+    const allerAuProfil = () => voirProfil(c.auteur);
+    ph.addEventListener('click', allerAuProfil);
+    qui.addEventListener('click', allerAuProfil);
+  }
   const txt = document.createElement('span');
   txt.className = 'murTexte'; txt.textContent = c.texte;
   const qd = document.createElement('span');
