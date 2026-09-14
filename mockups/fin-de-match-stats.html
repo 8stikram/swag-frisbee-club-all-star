@@ -1,0 +1,1640 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fin de match — Phases 2 et finale (v3)</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&family=Chakra+Petch:wght@600;700&family=DotGothic16&family=Great+Vibes&family=Russo+One&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070a12; --panel:#0e1626; --edge:#22344f; --ink:#111318; --txt:#e8f0ff; --accent:#35e0ff;
+    --or:#ffd23e; --yellow:#f5e63d; --green:#5df08a; --red:#e5384f; --gray:#9aa0ac; --pastel-red:#ff8f9a;
+    /* Une seule courbe pour presque tout : départ franc, arrivée très douce, aucun rebond. */
+    --doux:cubic-bezier(.22,1,.36,1);
+    --sortie:cubic-bezier(.45,0,.7,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:'Barlow',system-ui,sans-serif;padding:18px 16px 70px}
+  h1{font-size:19px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:1050px;line-height:1.6;margin:0 0 14px}
+  .note b{color:var(--or)}
+  code{background:#0a1220;border:1px solid var(--edge);border-radius:4px;padding:0 5px;font-size:11.5px;color:var(--or)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+
+  /* ===================== SCÈNE ===================== */
+  .sceneWrap{flex:1 1 660px;min-width:340px;position:sticky;top:10px}
+  .scene{position:relative;width:100%;aspect-ratio:16/10;border-radius:14px;overflow:hidden;
+    border:3px solid var(--ink);background:#0a0e1a;container-type:size;box-shadow:0 10px 0 rgba(0,0,0,.4);
+    user-select:none;
+    --f-titre:'Russo One',sans-serif; --w-titre:400; --c-titre:5px;
+    --f-pseudo:'Russo One',sans-serif; --w-pseudo:400; --c-pseudo:2px;
+    --f-role:'DotGothic16',monospace; --w-role:400;
+    --f-issue:'Russo One',sans-serif; --w-issue:400;
+    --f-label:'Barlow',sans-serif; --w-label:800;
+    --f-valeur:'Russo One',sans-serif; --w-valeur:400;
+    --f-centre:'Russo One',sans-serif; --w-centre:400;
+    --f-pieces:'DotGothic16',monospace; --w-pieces:400;
+    --f-boutons:'Russo One',sans-serif; --w-boutons:400;
+    --f-invite:'DotGothic16',monospace; --w-invite:400;
+  }
+  .scene.tremble{ animation:tremble var(--shakeDur,.22s) linear }
+  @keyframes tremble{
+    0%,100%{ transform:translate(0,0) }
+    10%{ transform:translate(calc(-1 * var(--shakeAmp,5px)), calc(var(--shakeAmp,5px) * .6)) }
+    25%{ transform:translate(var(--shakeAmp,5px), calc(-1 * var(--shakeAmp,5px))) }
+    40%{ transform:translate(calc(-1 * var(--shakeAmp,5px) * .7), calc(var(--shakeAmp,5px) * .7)) }
+    55%{ transform:translate(var(--shakeAmp,5px), var(--shakeAmp,5px)) }
+    70%{ transform:translate(calc(-1 * var(--shakeAmp,5px) * .4), calc(-1 * var(--shakeAmp,5px) * .4)) }
+    85%{ transform:translate(calc(var(--shakeAmp,5px) * .3), 0) }
+  }
+
+  /* --- Fond de la Phase 1, qui continue sans coupure --- */
+  .partieFond{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--partieOp,.85)}
+  .terrain,.matchSimule > *,#partieReelle{filter:blur(var(--partieFlou,3.5px))}
+  .scene.defaite .terrain,.scene.defaite .matchSimule > *,.scene.defaite #partieReelle{
+    filter:blur(var(--partieFlou,3.5px)) grayscale(.8) brightness(.6)}
+  .terrain{position:absolute;inset:-6%;
+    background:radial-gradient(ellipse at 50% 50%, #2a3a5c 0%, #172033 60%, #0a0e1a 100%),
+      repeating-linear-gradient(90deg, #ffffff14 0 2px, transparent 2px 60px)}
+  .terrain::before{content:'';position:absolute;left:50%;top:8%;bottom:8%;width:3px;background:#ffffff40;transform:translateX(-50%)}
+  .matchSimule{position:absolute;inset:0}
+  .matchSimule canvas{position:absolute;left:0;top:0;image-rendering:pixelated;height:22cqh;width:auto;will-change:transform}
+  .matchSimule .j1{animation:j1 3.2s ease-in-out infinite}
+  .matchSimule .j2{animation:j2 3.2s ease-in-out infinite}
+  @keyframes j1{ 0%,100%{ transform:translate(14cqw,30cqh) } 50%{ transform:translate(14cqw,52cqh) } }
+  @keyframes j2{ 0%,100%{ transform:translate(calc(86cqw - 17.6cqh),50cqh) scaleX(-1) }
+    50%{ transform:translate(calc(86cqw - 17.6cqh),28cqh) scaleX(-1) } }
+  .matchSimule .disque{position:absolute;left:0;top:0;width:3.4cqw;aspect-ratio:1;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,#fff 0%,#ffe27a 45%,#d69a10 100%);box-shadow:0 0 12px #ffd23e;
+    will-change:transform;animation:disque 3.2s linear infinite}
+  @keyframes disque{ 0%,100%{ transform:translate(22cqw,40cqh) } 50%{ transform:translate(74cqw,58cqh) } }
+  #partieReelle{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .8s}
+  #partieReelle.pret{opacity:1}
+  .scene[data-partie="simulee"] #partieReelle{display:none}
+
+  .overScrim{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:var(--fondOp,1)}
+  .scene[data-fond="violet"] .overScrim{
+    background:linear-gradient(160deg,rgba(255,168,90,.35) 0%,rgba(120,70,140,.4) 45%,rgba(10,8,18,.72) 100%)}
+  .scene.defaite[data-fond="violet"] .overScrim{
+    background:linear-gradient(160deg,rgba(90,92,104,.32) 0%,rgba(48,30,42,.5) 45%,rgba(6,6,10,.82) 100%)}
+  .scene[data-fond="arcenciel"] .overScrim{opacity:calc(var(--fondOp,1) * .62);overflow:hidden}
+  .overScrim::before{content:'';position:absolute;left:0;top:0;width:400%;height:100%;display:none;
+    background:linear-gradient(120deg,#ff5f6d,#ffc371,#5df08a,#35e0ff,#a06bff,#ff5f6d);
+    background-size:100% 400%;background-position:0 50%;
+    will-change:transform;animation:arcEnCiel 3s ease infinite alternate}
+  .scene[data-fond="arcenciel"] .overScrim::before{display:block}
+  @keyframes arcEnCiel{ to{ transform:translateX(-75%) } }
+  .scene.defaite[data-fond="arcenciel"] .overScrim::before{filter:saturate(.25) brightness(.55)}
+  .voileLisible{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;
+    background:linear-gradient(180deg,rgba(6,8,14,.12) 0%,rgba(6,8,14,.35) 60%,rgba(6,8,14,.6) 100%)}
+  .scene[data-fond="arcenciel"] .voileLisible{opacity:1}
+
+  .soleil{position:absolute;left:0;top:0;width:var(--soleilTaille,200cqh);height:var(--soleilTaille,200cqh);
+    translate:-50% -50%;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .4s}
+  .scene.victoire .soleil{opacity:var(--soleilOp,.3)}
+  .soleil::before{content:'';position:absolute;inset:0;border-radius:50%;
+    background:repeating-conic-gradient(from 0deg, rgba(255,214,70,.24) 0deg 5deg, transparent 5deg 15deg);
+    will-change:transform,opacity;
+    animation:tourneSoleil var(--soleilVitesse,30s) linear infinite, scintilleSoleil 2.8s ease-in-out infinite}
+  @keyframes tourneSoleil{ to{ rotate:360deg } }
+  @keyframes scintilleSoleil{
+    0%,100%{ opacity:1 } 30%{ opacity:calc(1 - var(--soleilClignote,.6)) }
+    48%{ opacity:1 } 72%{ opacity:calc(1 - var(--soleilClignote,.6) * .55) } }
+  .vignette{position:absolute;inset:0;z-index:2;pointer-events:none;
+    background:radial-gradient(115% 95% at 50% 50%, transparent 50%, rgba(0,0,0,.45) 100%)}
+  .confettis{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:3}
+  .conf{position:absolute;top:-5%;width:7px;height:12px;animation:tombe linear infinite}
+  @keyframes tombe{ 0%{ transform:translateY(0) rotate(0deg); opacity:1 } 100%{ transform:translateY(115cqh) rotate(540deg); opacity:.9 } }
+  .fumee{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
+  .fumeeBulle{position:absolute;bottom:-10%;border-radius:50%;background:rgba(120,128,140,.35);filter:blur(6px);
+    animation:monteFumee linear infinite}
+  @keyframes monteFumee{ from{ transform:translateY(0) scale(.8); opacity:.5 } to{ transform:translateY(-120cqh) scale(1.4); opacity:0 } }
+
+  /* ===================== COUPES (une par phase) =====================
+     Chaque phase vit dans une « coupe » : un cadre trois fois plus large que la
+     scène, qui masque ce qui dépasse, et un intérieur exactement à la taille de
+     la scène. Au repos, la coupe ne cache rien. Pendant le balayage, on glisse
+     la coupe dans un sens et son intérieur dans l'autre : le contenu ne bouge
+     pas, mais son bord visible avance pile sous le volet. Un vrai volet, tout
+     au GPU, sans repeindre l'écran. */
+  .coupe{position:absolute;top:0;bottom:0;left:-100%;width:300%;overflow:hidden;pointer-events:none}
+  .coupeInt{position:absolute;top:0;bottom:0;left:calc(100% / 3);width:calc(100% / 3);pointer-events:none}
+  .coupeInt .movable{pointer-events:auto}
+  #coupeP1{display:none}
+  .scene.voirP1 #coupeP1{display:block}
+  #coupeP3{display:none}
+  .scene.voirP3 #coupeP3{display:block}
+  .scene[data-phase="3"]:not(.sortieP2) #coupeP2{display:none}
+  .scene[data-phase="3"] [data-el="invite"]{display:none}
+
+  /* ===================== ÉLÉMENTS DÉPLAÇABLES ===================== */
+  .movable{position:absolute;left:calc(var(--x) * 1%);top:calc(var(--y) * 1%);
+    scale:var(--s,1);transform-origin:0 0;cursor:grab}
+  .movable.sel{outline:2px dashed var(--accent);outline-offset:6px}
+  .movable.sel::after{content:attr(data-el);position:absolute;left:0;top:-20px;
+    background:var(--accent);color:#001522;font:800 10px Consolas,monospace;padding:1px 6px;border-radius:4px;white-space:nowrap}
+  .movable.cache{display:none}
+  /* Ancré à droite : x est la position du bord DROIT. Le panneau adverse est
+     ainsi le miroir exact du tien, quelles que soient les proportions de l'écran
+     (les tailles sont en cqh, les positions en %). */
+  .movable[data-ancrage="droite"]{left:auto;right:calc((100 - var(--x)) * 1%);transform-origin:100% 0}
+  /* Ancre : le point (x, y) est le CENTRE de l'élément — utilisé pour ce qui doit
+     être pile au milieu (titre, centre, boutons), quelle que soit sa taille. */
+  .movable:has(> .ancre){width:0;height:0}
+  .movable:has(> .ancre).sel{outline:none}
+  .movable.sel > .ancre{outline:2px dashed var(--accent);outline-offset:8px}
+  .ancre{position:absolute;left:0;top:0;translate:-50% -50%}
+  .movable[data-el="soleil"]{width:0;height:0;cursor:default}
+  .movable[data-el="soleil"].sel{outline:none}
+  .movable[data-el="soleil"].sel::before{content:'';position:absolute;left:-14px;top:-14px;width:28px;height:28px;
+    border:2px dashed var(--accent);border-radius:50%}
+  .scene.lecture .movable{cursor:default}
+  .scene.lecture .movable.sel,.scene.lecture .movable.sel > .ancre{outline:none}
+  .scene.lecture .movable.sel::after,.scene.lecture .movable.sel::before{display:none}
+
+  /* ===================== PHASE 2 : STATS ===================== */
+  .titreStats{font-family:var(--f-titre);font-weight:var(--w-titre);font-size:6cqh;color:#fff;letter-spacing:.05em;
+    white-space:nowrap;-webkit-text-stroke:var(--c-titre) var(--ink);paint-order:stroke fill;
+    text-shadow:0 4px 0 rgba(0,0,0,.35);transform:skewX(-9deg) rotate(-2deg);transform-origin:50% 50%}
+  .titreStats.entree{ animation:titreEntre calc(var(--entreeDuree,.75s) * .9) var(--doux) both }
+  @keyframes titreEntre{ from{ opacity:0; transform:skewX(-9deg) rotate(-2deg) translateY(-6cqh) } }
+
+  .panneau{position:relative;width:58cqh;border:4px solid var(--ink);border-radius:16px;overflow:hidden;
+    --c1:var(--p1,#35e0ff); --c2:var(--p2,#7b2ff7);
+    background:linear-gradient(150deg,var(--c1),var(--c2));padding-bottom:1.5cqh;box-shadow:6px 6px 0 var(--ink)}
+  .panneau.gagnant{box-shadow:6px 6px 0 var(--ink),
+    0 0 calc(42px * var(--eclat,.6)) calc(6px * var(--eclat,.6)) color-mix(in srgb, var(--c1) 75%, transparent)}
+  .panneau.metal{background:linear-gradient(160deg,#6b7280 0%,#454a55 55%,#262a31 100%);--c1:#9df0ff;--c2:#35e0ff}
+  .pFondImage{position:absolute;inset:-12px;background-size:cover;background-position:center;pointer-events:none;
+    opacity:var(--banOp,.25);filter:blur(var(--banFlou,4px))}
+  .panneau.metal .pFondImage{display:none}
+  .pTechno{position:absolute;inset:0;pointer-events:none;opacity:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.09) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.09) 1px,transparent 1px),
+      radial-gradient(circle at 22% 32%, rgba(120,220,255,.35) 0 2px, transparent 3px),
+      radial-gradient(circle at 68% 64%, rgba(120,220,255,.28) 0 2px, transparent 3px);
+    background-size:2.4cqh 2.4cqh,2.4cqh 2.4cqh,9cqh 9cqh,13cqh 13cqh}
+  .panneau.metal .pTechno{opacity:var(--techno,.35)}
+  .panneau.perdant::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:rgba(38,42,50,calc(var(--terne,.6) * .38))}
+  .pBanniere{position:relative;height:8cqh;border-bottom:3px solid var(--ink);background-size:cover;background-position:center;
+    background-color:rgba(255,255,255,.18)}
+  .panneau.metal .pBanniere{background:repeating-linear-gradient(135deg,#3b4049 0 1.2cqh,#30343c 1.2cqh 2.4cqh)}
+  .pEntete{position:relative;display:flex;align-items:flex-end;gap:1.3cqh;padding:0 1.6cqh;margin-top:-4.6cqh}
+  .pAvatar{position:relative;width:9.5cqh;height:9.5cqh;border-radius:50%;border:4px solid #fff;flex-shrink:0;overflow:hidden;
+    background:linear-gradient(150deg,var(--c1),var(--c2));box-shadow:0 0 0 3px var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Archivo Black',sans-serif;font-size:4.2cqh;color:rgba(255,255,255,.92);text-shadow:0 2px 0 rgba(20,26,38,.45)}
+  .pAvatar img{width:100%;height:100%;object-fit:cover;display:block}
+  .pAvatar canvas{image-rendering:pixelated;display:block}
+  .panneau.metal .pAvatar{background:#9aa0ac;border-color:#d7dbe2}
+  .panneau.perdant .pAvatar img,.panneau.perdant .pAvatar canvas,.panneau.perdant .pSprite{filter:grayscale(var(--terne,.6))}
+  .pIdentite{display:flex;flex-direction:column;min-width:0;flex:1;padding-bottom:.5cqh}
+  .pRole{font-family:var(--f-role);font-weight:var(--w-role);font-size:1.5cqh;color:rgba(255,255,255,.88);
+    letter-spacing:.14em;text-shadow:0 2px 0 rgba(20,26,38,.5);white-space:nowrap}
+  .pPseudo{font-family:var(--f-pseudo);font-weight:var(--w-pseudo);font-size:3.7cqh;color:#fff;line-height:1.05;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    -webkit-text-stroke:var(--c-pseudo) var(--ink);paint-order:stroke fill;text-shadow:0 3px 0 rgba(20,26,38,.5)}
+  .pSprite{height:13cqh;width:auto;image-rendering:pixelated;display:block;margin-bottom:-.3cqh;
+    filter:drop-shadow(0 0 3px rgba(0,0,0,.85)) drop-shadow(0 0 9px rgba(0,0,0,.5))}
+  .cote-d .pSprite{transform:scaleX(-1)}
+  .pIssue{display:inline-block;margin:1cqh 0 0 1.6cqh;font-family:var(--f-issue);font-weight:var(--w-issue);font-size:1.6cqh;
+    letter-spacing:.12em;color:var(--ink);background:#ffd23e;border:2px solid var(--ink);border-radius:999px;padding:.2cqh 1.1cqh}
+  .panneau.perdant .pIssue{background:#c7ccd4}
+  .pStats{position:relative;display:flex;flex-direction:column;gap:.6cqh;margin:1cqh 1.6cqh 0}
+  .pLigne{display:grid;grid-template-columns:3.6cqh 1fr auto;align-items:center;column-gap:1cqh;row-gap:.35cqh;
+    background:rgba(255,255,255,.9);border:2px solid var(--ink);border-radius:9px;padding:.45cqh 1cqh .55cqh}
+  .pIcone{grid-row:1 / span 2;width:3.6cqh;height:3.6cqh;color:var(--ink)}
+  .pIcone svg,.cIcone svg{width:100%;height:100%;display:block}
+  .pLigne[data-stat="fautes"] .pIcone{color:var(--red)}
+  .panneau.perdant .pIcone{color:#6b7380}
+  /* interlignes fixés : toutes les lignes gardent la même hauteur quelle que soit la typo choisie */
+  .pLabel{font-family:var(--f-label);font-weight:var(--w-label);font-size:1.7cqh;line-height:1.2;color:#3a4252;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .pValeur{font-family:var(--f-valeur);font-weight:var(--w-valeur);font-size:2.6cqh;line-height:1.2;height:3.12cqh;color:var(--ink);
+    white-space:nowrap;display:flex;align-items:center;gap:.5cqh;justify-content:flex-end;font-variant-numeric:tabular-nums}
+  .panneau.perdant .pValeur{color:#5b6478}
+  .pMieux{display:inline-block;font-size:1.5cqh;color:#e0a100;opacity:0;text-shadow:0 1px 0 rgba(0,0,0,.35)}
+  .pLigne.meilleur .pMieux{opacity:1}
+  .scene.sansMeilleur .pMieux{display:none}
+  .pBarre{grid-column:2 / span 2;height:.9cqh;border-radius:999px;background:rgba(17,19,24,.13);overflow:hidden}
+  .pBarre i{display:block;height:100%;border-radius:999px;transform-origin:left center;transform:scaleX(var(--r,0));
+    background:linear-gradient(90deg,var(--c2),var(--c1))}
+  .panneau.perdant .pBarre i{background:#9aa0ac}
+  /* Pièces : une ligne des stats, au même niveau que les autres (plus de bloc dessous) */
+  .pLigne.pPieces{background:linear-gradient(90deg,rgba(255,238,170,.96),rgba(255,255,255,.92))}
+  .pLigne.pPieces .pIcone{perspective:140px}
+  .pLigne.pPieces .pBarre i,.panneau.perdant .pLigne.pPieces .pBarre i{background:linear-gradient(90deg,#c8891a,#ffd23e,#fff1a8)}
+  .panneau.metal .pLigne.pPieces .pBarre i{background:#9aa0ac}
+  .pieceMini{display:block;width:100%;height:100%;border-radius:50%;border:2px solid var(--ink);will-change:transform;
+    background:radial-gradient(circle at 35% 30%,#fff6c4 0%,#ffd23e 42%,#c8891a 100%);
+    animation:tournePiece var(--pieceVitesse,1.6s) linear infinite}
+  @keyframes tournePiece{ to{ transform:rotateY(360deg) } }
+  .pLigne.pPieces .pValeur{font-family:var(--f-pieces);font-weight:var(--w-pieces);color:#9a6400;
+    text-shadow:0 0 calc(12px * var(--piecesGlow,.6)) rgba(255,200,40,var(--piecesGlow,.6))}
+  .pLigne.pPieces.sansPieces{background:rgba(255,255,255,.9)}
+  .pLigne.pPieces.sansPieces .pieceMini{filter:grayscale(1);animation:none}
+  .pLigne.pPieces.sansPieces .pValeur{color:#8a93a3;text-shadow:none}
+
+  /* Arrivée des stats (au repos, sans transition) */
+  .cote-g.entree{ animation:glisseG var(--entreeDuree,.75s) var(--doux) both }
+  .cote-d.entree{ animation:glisseD var(--entreeDuree,.75s) var(--doux) both }
+  @keyframes glisseG{ from{ transform:translateX(-75cqw) } }
+  @keyframes glisseD{ from{ transform:translateX(75cqw) } }
+  .entree .pLigne{ animation:ligneEntre .5s var(--doux) both;
+    animation-delay:calc(var(--entreeDuree,.75s) + var(--i) * var(--decalage,.09s)) }
+  .cote-d.entree .pLigne{ animation-name:ligneEntreD }
+  @keyframes ligneEntre{ from{ opacity:0; transform:translateX(-12px) } }
+  @keyframes ligneEntreD{ from{ opacity:0; transform:translateX(12px) } }
+  .entree .pBarre i{ animation:remplit var(--barreDuree,1.1s) var(--doux) both;
+    animation-delay:calc(var(--entreeDuree,.75s) + var(--i) * var(--decalage,.09s) + .15s) }
+  @keyframes remplit{ from{ transform:scaleX(0) } }
+
+  .centre{display:flex;flex-direction:column;align-items:center;gap:1.4cqh;width:21cqh}
+  .vs{font-family:var(--f-centre);font-weight:var(--w-centre);font-size:6.5cqh;line-height:1;color:#fff;
+    -webkit-text-stroke:4px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 rgba(0,0,0,.35);transform:skewX(-9deg)}
+  .cStat{width:100%;background:rgba(255,255,255,.93);border:3px solid var(--ink);border-radius:12px;box-shadow:4px 4px 0 var(--ink);
+    padding:.9cqh .6cqh .8cqh;display:flex;flex-direction:column;align-items:center;gap:.15cqh}
+  .cIcone{width:3.4cqh;height:3.4cqh;color:var(--ink)}
+  .cValeur{font-family:var(--f-centre);font-weight:var(--w-centre);font-size:3.3cqh;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
+  .cLabel{font-family:var(--f-label);font-weight:var(--w-label);font-size:1.4cqh;color:#5b6478;letter-spacing:.08em;white-space:nowrap}
+  .centre.entree{ animation:centreEntre .6s var(--doux) both; animation-delay:calc(var(--entreeDuree,.75s) * .6) }
+  @keyframes centreEntre{ from{ opacity:0; transform:scale(.8) } }
+
+  .prompt{position:relative;font-family:var(--f-invite);font-weight:var(--w-invite);color:#fff;font-size:1.8cqh;
+    text-shadow:0 2px 0 var(--ink);animation:clignote 1.1s steps(2) infinite;white-space:nowrap;transition:opacity .3s}
+  @keyframes clignote{ 50%{ opacity:.25 } }
+
+  /* ===================== PHASE FINALE : SEULEMENT LES BOUTONS =====================
+     Les boutons du jeu, à l'identique (css/style.css) : .mbtn — Chakra Petch,
+     contour noir, ombre décalée, icône jumelle de chaque côté, inversion noire
+     au survol — au gabarit des boutons de lancement (.mapGoBtn.big / .fightBtn),
+     dont le dégradé qui défile de COMBATTRE et LANCER LE MATCH. */
+  .finaux{display:flex;flex-direction:column;gap:var(--btnEcart,1.6cqh);width:var(--btnLargeur,52cqh)}
+  .mbtn{
+    display:flex;align-items:center;gap:1cqw;justify-content:space-between;
+    font-family:var(--f-boutons);font-weight:var(--w-boutons);
+    font-size:clamp(13px,2.35cqh,23px);letter-spacing:.03em;
+    color:var(--ink);background:rgba(255,255,255,.96);
+    padding:1.15cqh 1.5cqw;border:4px solid var(--ink);border-radius:15px;
+    box-shadow:6px 6px 0 var(--ink);cursor:pointer;text-align:center;
+    transition:background .1s,color .1s,transform .1s,box-shadow .1s;
+  }
+  .mbtn .ico{
+    width:2.6cqh;height:2.6cqh;min-width:24px;min-height:24px;border-radius:50%;
+    border:3px solid currentColor;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .mbtn .ico svg{width:60%;height:60%}
+  .mbtn .lbl{flex:1;text-align:center;white-space:nowrap}
+  .scene.sansIcones .mbtn .ico{display:none}
+  .fbtn{width:100%;font-size:clamp(14px,2.6cqh,26px);padding:1.6cqh 3cqw;border-radius:18px}
+  .fbtn[data-habillage="lancement"]{
+    background:linear-gradient(100deg,#ffe259,#ffa751,#5df08a,#35e0ff,#ffe259);
+    background-size:320% 100%;animation:goSlide 5s linear infinite}
+  @keyframes goSlide{from{background-position:0% 50%}to{background-position:320% 50%}}
+  .fbtn[data-habillage="vert"]{background:var(--green)}
+  .fbtn[data-habillage="violet"]{background:#d9b8f5}
+  .fbtn[data-habillage="rouge"]{background:#e0574f;color:#2a0509}
+  .fbtn[data-habillage="jaune"]{background:var(--yellow)}
+  .fbtn[data-habillage="pastel"]{background:#aecbff}
+  /* après les habillages : le survol gagne toujours (même règle que dans le jeu) */
+  .mbtn:hover{background:var(--ink);color:#fff;transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--ink)}
+  /* L'arrivée est portée par une enveloppe : le bouton garde intactes ses propres
+     animations (dégradé) et son survol. */
+  .finaux.entree .arrivee{animation:arriveBtn var(--btnArrivee,.6s) var(--doux) backwards}
+  .finaux.entree .arrivee:nth-child(2){animation-delay:var(--btnDecalage,.1s)}
+  .finaux.entree .arrivee:nth-child(3){animation-delay:calc(var(--btnDecalage,.1s) * 2)}
+  @keyframes arriveBtn{ from{ opacity:0; translate:0 5cqh; scale:.92 } }
+
+  /* ===================== CALQUE PHASE 1 (aperçu des transitions) =====================
+     Valeurs figées de mockups/fin-de-match-resultat.reglages.json — sans les
+     boutons, retirés des phases 1 et 2. */
+  .phase1{position:absolute;inset:0}
+  .p1Pos{position:absolute;left:calc(var(--x) * 1%);top:calc(var(--y) * 1%);scale:var(--s,1);transform-origin:0 0}
+  .p1Bloc{position:relative;display:flex;align-items:flex-end;justify-content:center}
+  .p1Hero{position:relative;z-index:1;height:84cqh;width:auto;image-rendering:pixelated;display:block;
+    filter:drop-shadow(0 0 4.9px rgba(0,0,0,.85)) drop-shadow(0 0 14px rgba(0,0,0,.68)) drop-shadow(0 0 28px rgba(0,0,0,.42)) drop-shadow(6px 10px 0 rgba(0,0,0,.25))}
+  .p1Ring{position:absolute;z-index:0;left:calc(var(--x) * 1%);top:calc(var(--y) * 1%);scale:var(--s,1);transform-origin:0 0;width:66cqh;height:66cqh}
+  .p1Ring svg{width:100%;height:100%;overflow:visible;animation:tourneAnneau 20s linear infinite}
+  @keyframes tourneAnneau{ to{ transform:rotate(360deg) } }
+  .p1Ring text{font-family:'Archivo Black',sans-serif;font-size:4.4px;fill:var(--or);stroke:var(--ink);stroke-width:1.1;paint-order:stroke fill;opacity:.85}
+  .p1Ring .piste{fill:none;stroke:var(--or);stroke-width:.45;opacity:.35;stroke-dasharray:2 4}
+  .p1Nom{position:relative;width:56cqw}
+  .nomVol,.issueVol{display:inline-block;transform-origin:0 0}
+  .p1Nom .nomP1{display:inline-block;font-family:'Russo One',sans-serif;color:#fff;line-height:.9;font-size:7cqh;white-space:nowrap;
+    -webkit-text-stroke:6px var(--ink);paint-order:stroke fill;transform:skewX(-9deg) rotate(-6deg);transform-origin:left top;
+    filter:drop-shadow(0 0 10px rgba(0,0,0,.5))}
+  .p1Nom .issueP1{display:inline-grid;margin:3.4cqh 0 0 1.5cqw;font-family:'Russo One',sans-serif;font-size:9cqh;line-height:1.05;
+    letter-spacing:.06em;transform:skewX(-9deg) rotate(-6deg);transform-origin:left top}
+  .p1Nom .issueP1 > span{grid-area:1/1;white-space:nowrap}
+  .piecesVol{display:inline-block;transform-origin:0 0}
+  .p1Pieces{display:inline-block;margin:1cqh 0 0 1.5cqw;font-family:'DotGothic16',monospace;font-size:2.6cqh;color:var(--yellow);
+    text-shadow:0 2px 0 rgba(20,26,38,.7);letter-spacing:.05em;white-space:nowrap}
+  .p1Badge{position:relative;display:flex;align-items:center;justify-content:center;
+    width:26cqh;height:13cqh;padding:0 4cqh 1cqh 0;
+    clip-path:polygon(0 0,100% 0,74% 100%,0 100%);rotate:-4deg;transform-origin:top left;
+    font-family:'Archivo Black',sans-serif;font-size:7.5cqh;letter-spacing:.04em;
+    color:#fff;-webkit-text-stroke:5px var(--ink);paint-order:stroke fill;
+    border:5px solid var(--ink);box-shadow:7px 7px 0 var(--ink),0 0 28px rgba(229,56,79,.5);
+    background:linear-gradient(160deg,#ff6274 0%,var(--red) 55%,#8f1526 100%)}
+  .scene.defaite .p1Badge{background:linear-gradient(160deg,#7d8595 0%,#5d6472 55%,#2e333d 100%);box-shadow:7px 7px 0 var(--ink)}
+  .p1Badge::before{content:'';position:absolute;left:0;right:0;top:0;height:22%;
+    background:linear-gradient(180deg,rgba(255,255,255,.45),transparent)}
+  .p1Carte{position:relative;background:#fff;border:5px solid var(--ink);border-radius:10px;box-shadow:7px 7px 0 var(--ink);
+    padding:1.2cqh 1.8cqw 1.2cqh 1.2cqw;display:flex;align-items:center;gap:1.2cqw}
+  .p1PortraitCol{flex-shrink:0;min-width:13cqh;display:flex;justify-content:center}
+  .p1PortraitCol canvas{image-rendering:pixelated;display:block}
+  .p1Qui{display:flex;flex-direction:column;gap:.2cqh;padding-right:.6cqw}
+  .p1QuiRole{font-family:'DotGothic16',monospace;font-size:1.6cqh;color:#6b7686;letter-spacing:.1em;white-space:nowrap}
+  .p1QuiNom{font-family:'Archivo Black',sans-serif;font-size:3.2cqh;color:var(--ink);white-space:nowrap}
+  .p1Nom .lueurP1{color:transparent;text-shadow:0 0 8px rgba(255,214,70,.5),3px 4px 0 rgba(0,0,0,.45)}
+  .p1Nom .texteP1{background-image:linear-gradient(90deg,#ffc81f 0%,#fff6b8 25%,#ffc81f 50%,#fff6b8 75%,#ffc81f 100%);
+    background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+    -webkit-text-stroke:3px var(--ink);paint-order:stroke fill;animation:brilleP1 1.6s linear infinite}
+  @keyframes brilleP1{ from{ background-position:0% 50% } to{ background-position:200% 50% } }
+  .scene.defaite .p1Nom .texteP1{background-image:linear-gradient(90deg,#e5384f 0%,#ffc2cb 25%,#e5384f 50%,#ffc2cb 75%,#e5384f 100%)}
+  .scene.defaite .p1Ring text{fill:var(--pastel-red)}
+  .scene.defaite .p1Hero{filter:drop-shadow(0 0 4.9px rgba(0,0,0,.85)) drop-shadow(0 0 14px rgba(0,0,0,.68)) grayscale(.5) brightness(.78)}
+
+  /* ===================== TRANSITIONS ===================== */
+  .scene.cacheP2 .phase2el{opacity:0}
+  .scene.cacheP2.rev-g .phase2el[data-zone="g"],
+  .scene.cacheP2.rev-c .phase2el[data-zone="c"],
+  .scene.cacheP2.rev-d .phase2el[data-zone="d"]{opacity:1}
+  .scene.cache-hero .p1HeroPos{visibility:hidden}
+  .panneau.atterrit .pSprite{opacity:0}
+  /* aspiration : chaque panneau se déploie autour de la case où son perso atterrit
+     (origine posée en JS sur cette case) ; la ligne des pièces est là tout de
+     suite quand « +10 » vole s'y ranger */
+  .scene[data-entree="deploiement"] .panneau.entree{ animation-name:deploie }
+  @keyframes deploie{ from{ opacity:0; transform:scale(.92) } }
+  .scene.piecesVolent .cote-g.entree .pLigne.pPieces{ animation:none }
+  /* balayage : le volet dessine l'écran — panneaux et lignes déjà en place ; seules
+     les barres et les chiffres démarrent quand le volet passe sur leur zone. */
+  .scene[data-entree="balaye"] .panneau.entree,.scene[data-entree="balaye"] .entree .pLigne,
+  .scene[data-entree="balaye"] .titreStats.entree,.scene[data-entree="balaye"] .centre.entree{ animation:none }
+  .scene[data-entree="balaye"] .entree .pBarre i{ animation-delay:calc(var(--delaiZone,0s) + var(--i) * var(--decalage,.09s) + .05s) }
+  /* éjection : arrivée avec impact, sans rebond sec */
+  .scene[data-entree="impact"] .cote-g.entree{ animation-name:slamG }
+  .scene[data-entree="impact"] .cote-d.entree{ animation-name:slamD }
+  @keyframes slamG{ 0%{ transform:translateX(-80cqw) skewX(8deg) } 70%{ transform:translateX(.8cqw) skewX(-1.5deg) } 100%{ transform:none } }
+  @keyframes slamD{ 0%{ transform:translateX(80cqw) skewX(-8deg) } 70%{ transform:translateX(-.8cqw) skewX(1.5deg) } 100%{ transform:none } }
+  .scene[data-entree="impact"] .centre.entree{ animation-name:slamVS }
+  @keyframes slamVS{ from{ opacity:0; transform:scale(1.8) } }
+  /* passage à la phase finale : les stats repartent sur les côtés */
+  .scene.sortieP2 .coupeInt .panneau.cote-g{ animation:sortG var(--sortieDuree,.7s) var(--sortie) forwards }
+  .scene.sortieP2 .coupeInt .panneau.cote-d{ animation:sortD var(--sortieDuree,.7s) var(--sortie) forwards }
+  /* le centre part en premier : il a disparu quand les boutons arrivent à sa place */
+  .scene.sortieP2 .coupeInt .titreStats{ animation:sortHaut calc(var(--sortieDuree,.7s) * .6) var(--sortie) forwards }
+  .scene.sortieP2 .coupeInt .centre{ animation:sortCentre calc(var(--sortieDuree,.7s) * .4) var(--sortie) forwards }
+  @keyframes sortG{ 70%{ opacity:1 } to{ transform:translateX(-80cqw); opacity:0 } }
+  @keyframes sortD{ 70%{ opacity:1 } to{ transform:translateX(80cqw); opacity:0 } }
+  @keyframes sortHaut{ to{ transform:skewX(-9deg) rotate(-2deg) translateY(-12cqh); opacity:0 } }
+  @keyframes sortCentre{ to{ transform:scale(.75); opacity:0 } }
+  .scene.sortieP2 [data-el="invite"] .prompt{ animation:none; opacity:0 }
+  /* volet (balayage) : 36cqw de large, penché de 15° ; son cœur opaque (±11,5cqw)
+     couvre toujours le bord des coupes, qui reste vertical (décalage de la pente
+     en haut et en bas de l'écran : 8,4cqw). Traînée de vitesse derrière lui. */
+  .volet{position:absolute;left:0;top:-20%;width:36cqw;height:140%;z-index:9;pointer-events:none;opacity:0;will-change:transform;
+    background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.92) 10%,#fff 18%,#fff 82%,rgba(255,255,255,.92) 90%,rgba(255,255,255,0) 100%)}
+  .scene[data-volet="arcenciel"] .volet{
+    background:linear-gradient(90deg,rgba(255,95,109,0) 0%,#ff5f6d 10%,#ffc371 24%,#fff4d6 40%,#fff 50%,#e6fff4 60%,#5df08a 76%,#35e0ff 90%,rgba(53,224,255,0) 100%)}
+  .volet::before{content:'';position:absolute;top:0;bottom:0;right:100%;width:22cqw;opacity:.55;
+    background:repeating-linear-gradient(90deg,transparent 0 1.6cqw,rgba(255,255,255,.6) 1.6cqw 2cqw);
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000);mask-image:linear-gradient(90deg,transparent,#000)}
+  .volet::after{content:'';position:absolute;top:0;bottom:0;left:50%;width:.5cqw;translate:-50% 0;background:var(--ink);opacity:.8}
+  .flashT{position:absolute;inset:0;z-index:9;pointer-events:none;background:#fff;opacity:0}
+  .lignesVitesse{position:absolute;inset:-10% -30%;z-index:8;pointer-events:none;opacity:0;will-change:transform,opacity;
+    background:repeating-linear-gradient(176deg,transparent 0 2.2cqh,rgba(255,255,255,.5) 2.2cqh 2.5cqh,transparent 2.5cqh 5.4cqh)}
+
+  /* ===================== PANNEAU DE RÉGLAGES ===================== */
+  .cote{flex:1 1 340px;min-width:300px;display:flex;flex-direction:column;gap:10px}
+  details.bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px 12px}
+  details.bloc > summary{cursor:pointer;list-style:none;font-size:12px;color:var(--accent);text-transform:uppercase;
+    letter-spacing:1.2px;font-weight:700;display:flex;align-items:center;gap:7px}
+  details.bloc > summary::before{content:'▸';color:#6d80a0;transition:transform .15s}
+  details.bloc[open] > summary::before{transform:rotate(90deg)}
+  details.bloc[open] > summary{margin-bottom:9px}
+  .row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px}
+  .row:last-child{margin-bottom:0}
+  select,input[type=file]{background:#0a1220;color:var(--txt);border:1px solid var(--edge);border-radius:7px;padding:5px 7px;font-size:12px;width:100%}
+  input[type=color]{width:100%;height:28px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;padding:2px}
+  button{background:#1a2b48;color:var(--txt);border:1px solid var(--edge);border-radius:7px;
+    padding:7px 11px;font-size:11.5px;cursor:pointer;letter-spacing:.3px}
+  button:hover{background:#24395e}
+  button.on{background:#3a2c06;border-color:var(--or);color:var(--or)}
+  button.grand{flex:1 1 100%;padding:10px;font-size:13px}
+  button.vert{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .reg{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:center;font-size:12px;margin-bottom:7px}
+  .reg label{color:#8fa4c4}
+  .reg input[type=range]{grid-column:1/-1;width:100%}
+  .reg .n{font-family:Consolas,monospace;color:var(--or);text-align:right;font-size:11.5px}
+  .reg.regChoix{grid-template-columns:128px 1fr}
+  .sousTitre{font-size:10.5px;color:#6d80a0;text-transform:uppercase;letter-spacing:1px;margin:10px 0 5px;
+    border-top:1px solid var(--edge);padding-top:8px}
+  .sousTitre:first-child{border-top:0;padding-top:0;margin-top:0}
+  .legende{font-size:11px;color:#6d80a0;line-height:1.5;margin:2px 0 0}
+  .els{display:flex;flex-direction:column;gap:4px;max-height:240px;overflow:auto}
+  .el{display:flex;align-items:center;gap:8px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+    padding:6px 9px;cursor:pointer;font-size:12px}
+  .el:hover{border-color:#3d5c8a}
+  .el.on{border-color:var(--or);background:#171205}
+  .el .nom{flex:1}
+  .el .val{font-family:Consolas,monospace;font-size:10.5px;color:#7f93b3}
+  .el.on .val{color:var(--or)}
+  .el .oeil{opacity:.45;font-size:13px}
+  .el.masque{opacity:.42}
+  .el.masque .oeil{opacity:1}
+  .vide{font-size:12px;color:#6d80a0;line-height:1.6;margin:8px 0 0}
+  .sortie{width:100%;height:220px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+    color:var(--or);font-family:Consolas,monospace;font-size:11px;padding:9px;resize:vertical;line-height:1.5}
+  .etatCopie{font-size:11.5px;color:#8ef0b4;min-height:16px;margin-top:5px}
+  .etatCopie.erreur{color:var(--pastel-red)}
+  .prompt-liste{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:7px;font-size:12px;line-height:1.5}
+  .prompt-liste i{color:#8fa4c4}
+  .etat{display:inline-block;font-size:10px;font-weight:800;padding:0 6px;border-radius:5px;margin-left:4px;font-style:normal}
+  .etat.ok{background:#123a24;color:#8ef0b4}
+  .etat.choix{background:#0e2a3a;color:var(--accent)}
+  .etat.plustard{background:#2a1c06;color:#ffb84d}
+</style>
+</head>
+<body>
+
+<h1>Fin de match — Phase 2 et phase finale <span style="color:#6d80a0;font-size:13px">(v3)</span></h1>
+<p class="note">Même éditeur que la Phase 1 : clique un élément puis <b>glisse-le</b> et <b>règle sa taille</b>.
+<b>▶ Séquence complète</b> enchaîne Phase 1 → stats → boutons. Les boutons n'existent plus que dans la <b>phase finale</b>,
+seuls au centre. Les persos s'affichent à une échelle entière (tous leurs pixels de la même taille).
+Tout s'exporte dans <b>Tout copier / coller</b>.</p>
+
+<div class="haut">
+  <div class="sceneWrap">
+    <div class="scene victoire" id="scene" data-fond="arcenciel" data-partie="simulee" data-entree="glisse" data-volet="arcenciel" data-phase="2">
+
+      <div class="partieFond">
+        <div class="terrain"></div>
+        <div class="matchSimule">
+          <canvas class="j1" id="simJ1" width="16" height="20"></canvas>
+          <canvas class="j2" id="simJ2" width="16" height="20"></canvas>
+          <div class="disque"></div>
+        </div>
+        <iframe id="partieReelle" src="../index.html" tabindex="-1" aria-hidden="true" title="Partie en fond" allow="autoplay 'none'"></iframe>
+      </div>
+      <div class="overScrim"></div>
+      <div class="voileLisible"></div>
+      <div class="movable" data-el="soleil" style="--x:50;--y:50;--s:1;z-index:2"><div class="soleil"></div></div>
+      <div class="fumee" id="fumee"></div>
+      <div class="vignette"></div>
+      <div class="confettis" id="confettis"></div>
+
+      <!-- ============ PHASE 2 : STATS ============ -->
+      <div class="coupe" id="coupeP2" style="z-index:5"><div class="coupeInt" id="coupeP2Int">
+        <div class="movable phase2el" data-zone="c" data-el="titre" style="--x:50;--y:7.5;--s:1;z-index:5">
+          <div class="ancre"><div class="titreStats entree" id="titreStats">STATS DU MATCH</div></div>
+        </div>
+
+        <div class="movable phase2el" data-zone="g" data-el="panneauJoueur" style="--x:5;--y:14;--s:1;z-index:5">
+          <div class="panneau cote-g entree" id="panJoueur">
+            <div class="pFondImage" id="banFondJoueur"></div>
+            <div class="pTechno"></div>
+            <div class="pBanniere" id="banJoueur"></div>
+            <div class="pEntete">
+              <div class="pAvatar" id="avJoueur"></div>
+              <div class="pIdentite"><span class="pRole" id="roleJoueur">JOUEUR 1</span><span class="pPseudo" id="pseudoJoueur">8stikram</span></div>
+              <canvas class="pSprite" id="spriteJoueur" width="16" height="20"></canvas>
+            </div>
+            <span class="pIssue" id="issueJoueur">VICTOIRE</span>
+            <div class="pStats" id="statsJoueur"></div>
+          </div>
+        </div>
+
+        <div class="movable phase2el" data-zone="c" data-el="centre" style="--x:50;--y:49.5;--s:1;z-index:5">
+          <div class="ancre"><div class="centre entree" id="centre">
+            <div class="vs">VS</div>
+            <div id="statsCommunes" style="display:flex;flex-direction:column;gap:1.2cqh;width:100%"></div>
+          </div></div>
+        </div>
+
+        <div class="movable phase2el" data-zone="d" data-el="panneauAdversaire" data-ancrage="droite" style="--x:95;--y:14;--s:1;z-index:5">
+          <div class="panneau cote-d entree" id="panAdversaire">
+            <div class="pFondImage" id="banFondAdversaire"></div>
+            <div class="pTechno"></div>
+            <div class="pBanniere" id="banAdversaire"></div>
+            <div class="pEntete">
+              <div class="pAvatar" id="avAdversaire"></div>
+              <div class="pIdentite"><span class="pRole" id="roleAdversaire">ORDINATEUR</span><span class="pPseudo" id="pseudoAdversaire">CPU</span></div>
+              <canvas class="pSprite" id="spriteAdversaire" width="16" height="20"></canvas>
+            </div>
+            <span class="pIssue" id="issueAdversaire">DÉFAITE</span>
+            <div class="pStats" id="statsAdversaire"></div>
+          </div>
+        </div>
+      </div></div>
+
+      <!-- ============ PHASE 1 (pour les transitions) ============ -->
+      <div class="coupe" id="coupeP1" style="z-index:6"><div class="coupeInt" id="coupeP1Int">
+        <div class="phase1" id="phase1" aria-hidden="true">
+          <div class="p1Pos p1HeroPos" style="--x:59;--y:19;--s:0.84">
+            <div class="p1Bloc">
+              <div class="p1Ring" style="--x:-5.5;--y:-12;--s:0.93">
+                <svg viewBox="0 0 100 100">
+                  <path class="piste" d="M 50,50 m -44,0 a 44,44 0 1,1 88,0 a 44,44 0 1,1 -88,0" id="p1Piste"/>
+                  <text><textPath id="p1Texte" href="#p1Piste" startOffset="0"></textPath></text>
+                </svg>
+              </div>
+              <canvas class="p1Hero" id="p1Hero" width="16" height="20"></canvas>
+            </div>
+          </div>
+          <div class="p1Pos p1NomPos" style="--x:2;--y:23;--s:1.6">
+            <div class="p1Nom">
+              <div><span class="nomVol" id="nomVol"><span class="nomP1" id="p1Nom">MAMIE</span></span></div>
+              <div><span class="issueVol" id="issueVol"><span class="issueP1" id="issueP1"><span class="lueurP1" id="p1Lueur">VICTOIRE</span><span class="texteP1" id="p1Issue">VICTOIRE</span></span></span></div>
+              <div><span class="piecesVol" id="piecesVol"><span class="p1Pieces" id="p1Pieces">+10 🪙</span></span></div>
+            </div>
+          </div>
+          <div class="p1Pos p1CartePos" style="--x:1.5;--y:67.5;--s:1.44">
+            <div class="p1Carte">
+              <div class="p1PortraitCol"><canvas id="p1Encart" width="16" height="20"></canvas></div>
+              <div class="p1Qui"><span class="p1QuiRole" id="p1AdvRole">ORDINATEUR</span><span class="p1QuiNom" id="p1AdvNom">CPU</span></div>
+            </div>
+          </div>
+          <div class="p1Pos p1BadgePos" style="--x:-2;--y:-1;--s:1"><div class="p1Badge">P1</div></div>
+        </div>
+      </div></div>
+
+      <!-- ============ PHASE FINALE : SEULEMENT LES BOUTONS ============ -->
+      <div class="coupe" id="coupeP3" style="z-index:7"><div class="coupeInt">
+        <div class="movable" data-el="boutonsFinaux" style="--x:50;--y:50;--s:1;z-index:7">
+          <div class="ancre"><div class="finaux" id="finaux">
+            <div class="arrivee"><button class="mbtn fbtn" data-bouton="revanche" data-habillage="lancement">
+              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4.5v5h-5"/></svg></span>
+              REVANCHE
+            </button></div>
+            <div class="arrivee"><button class="mbtn fbtn" data-bouton="menu" data-habillage="blanc">
+              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11.5L12 4l8.5 7.5"/><path d="M6 10v10h12V10"/><path d="M10 20v-5.5h4V20"/></svg></span>
+              MENU
+            </button></div>
+            <div class="arrivee"><button class="mbtn fbtn" data-bouton="perso" data-habillage="vert">
+              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.5c.6-4 3.4-6.3 7.2-6.3s6.6 2.3 7.2 6.3"/></svg></span>
+              CHANGEZ DE PERSO
+            </button></div>
+          </div></div>
+        </div>
+      </div></div>
+
+      <div class="movable" data-el="invite" style="--x:35.5;--y:92.5;--s:1.56;z-index:8">
+        <div class="prompt">APPUYEZ SUR ESPACE POUR CONTINUER</div>
+      </div>
+
+      <div class="volet" id="volet"></div>
+      <div class="flashT" id="flashT"></div>
+      <div class="lignesVitesse" id="lignesVitesse"></div>
+    </div>
+  </div>
+
+  <div class="cote" id="cote">
+    <details class="bloc" open>
+      <summary>Voir</summary>
+      <div class="row">
+        <button class="grand vert" id="btnSequence">▶ Séquence complète : Phase 1 → stats → boutons</button>
+      </div>
+      <div class="row">
+        <button id="btnTransition">▶ Transition Phase 1 → stats</button>
+        <button id="btnVersFinale">▶ Passage stats → boutons</button>
+      </div>
+      <div class="row">
+        <button id="btnPhase2" class="on">Écran : stats</button>
+        <button id="btnPhase3">Écran : boutons</button>
+        <button id="btnRejouer">↻ Rejouer l'entrée</button>
+      </div>
+      <div class="row">
+        <button id="btnVictoire" class="on">VICTOIRE</button>
+        <button id="btnDefaite">DÉFAITE</button>
+        <button id="btnAleatoire">🎲 Stats au hasard</button>
+        <button id="btnLecture">Mode lecture</button>
+      </div>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Tout copier / coller</summary>
+      <textarea class="sortie" id="sortie" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:7px">
+        <button class="vert" id="btnCopier">📋 Tout copier</button>
+        <button id="btnAppliquer">Appliquer ce qui est collé</button>
+        <button id="btnDefauts">Tout remettre à zéro</button>
+      </div>
+      <div class="etatCopie" id="etatCopie"></div>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Placement — clique puis glisse</summary>
+      <div class="els" id="listeEls"></div>
+      <p class="vide" id="aucunEl">Aucun élément choisi. Clique dans la scène ou dans la liste.</p>
+      <div id="regBloc" style="display:none;margin-top:9px">
+        <div class="reg"><label>Taille</label><span class="n" id="vScale">1.00×</span>
+          <input type="range" id="rScale" min="0.2" max="3" value="1" step="0.02"></div>
+        <div class="reg"><label>X (gauche →)</label><span class="n" id="vX">0%</span>
+          <input type="range" id="rX" min="-60" max="120" value="0" step="0.5"></div>
+        <div class="reg"><label>Y (haut ↓)</label><span class="n" id="vY">0%</span>
+          <input type="range" id="rY" min="-60" max="120" value="0" step="0.5"></div>
+        <div class="row">
+          <button id="btnVisible">Masquer cet élément</button>
+          <button id="btnResetEl">Réinitialiser</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Personnages</summary>
+      <div class="reg regChoix"><label>Ton perso</label><select id="selHero"></select></div>
+      <div class="reg regChoix"><label>Perso adverse</label><select id="selEncart"></select></div>
+    </details>
+
+    <div id="blocsReglages"></div>
+
+    <details class="bloc">
+      <summary>Images de test (non exportées)</summary>
+      <div class="reg regChoix"><label>Ta photo</label><input type="file" accept="image/*" id="fAvJoueur"></div>
+      <div class="reg regChoix"><label>Ta bannière</label><input type="file" accept="image/*" id="fBanJoueur"></div>
+      <div class="reg regChoix"><label>Photo adversaire</label><input type="file" accept="image/*" id="fAvAdversaire"></div>
+      <div class="reg regChoix"><label>Bannière adversaire</label><input type="file" accept="image/*" id="fBanAdversaire"></div>
+      <p class="legende">Pour voir le rendu avec de vraies images de profil. Elles restent sur ton ordi et ne partent pas dans le copier-coller.</p>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Ce que dit le prompt — Phases 2 et finale</summary>
+      <ol class="prompt-liste">
+        <li><b>Côte à côte</b> — <i>« gauche : joueur, droite : adversaire »</i>. Deux panneaux façon Smash, titre centré pile au milieu. <span class="etat choix">choisi ensemble</span></li>
+        <li><b>Panneau façon profil en ligne</b> — <i>« photo en haut à gauche, bannière floutée 20-30 %, couleurs du profil, pseudo en Russo One »</i>. <span class="etat ok">fait</span></li>
+        <li><b>CPU</b> — <i>« gris métallique, icône robot, « CPU », motifs techno »</i>. J2 local et joueur sans compte : même style. <span class="etat ok">fait</span></li>
+        <li><b>Stats avec icônes</b> — durée et échange max une seule fois, au centre. <span class="etat choix">choisi ensemble</span></li>
+        <li><b>Gagnant vif, perdant terne</b> — compteurs + barres, ▲ sur la meilleure valeur. <span class="etat ok">fait</span></li>
+        <li><b>Pièces gagnées</b> — <i>« compteur qui défile, pièce qui tourne, halo doré »</i>, mais en <b>ligne des stats</b> (+10 / +5) au lieu d'un bloc dessous. <span class="etat choix">ta décision</span></li>
+        <li><b>Transition 1 → stats</b> — le fond reste, le perso s'efface ; aspiration, balayage ou éjection. <span class="etat choix">choisi ensemble</span></li>
+        <li><b>Boutons</b> — retirés des phases 1 et 2 ; <b>phase finale</b> avec seulement les 3 boutons, au centre, en colonne, arrivée un par un (<i>« 0,1 s d'écart »</i>). <span class="etat choix">ta décision</span></li>
+        <li><b>Habillage des boutons</b> — <b>les mêmes que dans les autres menus</b> : contour noir, ombre décalée, icônes rondes, dégradé qui défile de COMBATTRE / LANCER LE MATCH, inversion noire au survol. Remplace <i>« lueur + 1,05 au survol, 0,95 au clic, respiration »</i> du prompt. <span class="etat choix">ta décision</span></li>
+        <li><b>Passage stats → boutons</b> — les panneaux repartent sur les côtés, les boutons arrivent au centre. <span class="etat choix">ta décision</span></li>
+        <li><b>Fautes, possession, précision</b> — pas encore comptées dans le jeu : chiffres d'exemple. <span class="etat plustard">à l'intégration</span></li>
+      </ol>
+    </details>
+  </div>
+</div>
+
+<script type="module">
+  import { CHARS, ROSTER } from '../js/data/characters.js';
+
+  const $ = id => document.getElementById(id);
+  const scene = $('scene');
+
+  /* ================= TYPOS DU JEU ================= */
+  const POLICES = {
+    archivo:    { nom:'Archivo Black',       famille:"'Archivo Black',sans-serif",      poids:400 },
+    russo:      { nom:'Russo One',           famille:"'Russo One',sans-serif",          poids:400 },
+    barlow:     { nom:'Barlow ExtraBold',    famille:"'Barlow',sans-serif",             poids:800 },
+    chakra:     { nom:'Chakra Petch Bold',   famille:"'Chakra Petch',sans-serif",       poids:700 },
+    dotgothic:  { nom:'DotGothic16',         famille:"'DotGothic16',monospace",         poids:400 },
+    greatvibes: { nom:'Great Vibes',         famille:"'Great Vibes',cursive",           poids:400 },
+    georgia:    { nom:'Georgia (casino)',    famille:"Georgia,serif",                   poids:700 },
+    segoe:      { nom:'Segoe UI',            famille:"'Segoe UI',system-ui,sans-serif", poids:700 },
+  };
+
+  /* ================= SPRITES AU PIXEL PRÈS =================
+     Les canvas des persos gardent la résolution d'origine (16×20) et c'est le
+     navigateur qui les agrandit. Pour que chaque pixel ait exactement la même
+     taille à l'écran, l'agrandissement doit être ENTIER en pixels physiques —
+     échelles des parents et densité d'écran comprises. ajusterPixels() arrondit
+     chaque sprite au multiple entier le plus proche de sa taille voulue. */
+  function dessine(canvas, ck) {
+    canvas.width = 16; canvas.height = 20;
+    const g = canvas.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.clearRect(0, 0, 16, 20);
+    g.drawImage(CHARS[ck].frames.idle, 0, 0);
+  }
+  const ROBOT = {
+    rows: ['.....RR.....', '.....KK.....', '..KKKKKKKK..', '..KGGGGGGK..', '..KGCGGCGK..', '..KGCGGCGK..',
+           '..KGGGGGGK..', '..KGDDDDGK..', '..KGGGGGGK..', '..KKKKKKKK..', '...KGGGGK...', '..KKKKKKKK..'],
+    pal: { K:'#2b2f36', G:'#b9bfc9', C:'#35e0ff', D:'#4a505b', R:'#e5384f' }
+  };
+  function robotCanvas() {
+    const c = document.createElement('canvas');
+    c.width = 12; c.height = 12; c.dataset.pixel = '6.5:12:12';
+    const g = c.getContext('2d');
+    ROBOT.rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') { g.fillStyle = ROBOT.pal[ch]; g.fillRect(x, y, 1, 1); } }));
+    return c;
+  }
+  // hauteur voulue (cqh) : lignes : colonnes
+  const PIXELS = { p1Hero:'84:20:16', p1Encart:'16.25:20:16', spriteJoueur:'13:20:16', spriteAdversaire:'13:20:16', simJ1:'22:20:16', simJ2:'22:20:16' };
+  function echelleCumulee(el) {
+    let s = 1;
+    for (let n = el; n && n !== scene; n = n.parentElement) {
+      const v = parseFloat(getComputedStyle(n).scale);
+      if (!isNaN(v)) s *= v;
+    }
+    return s;
+  }
+  function ajusterPixels() {
+    const dpr = window.devicePixelRatio || 1, cqh = scene.clientHeight / 100;
+    const cibles = [...Object.entries(PIXELS).map(([id, def]) => [$(id), def]), ...[...scene.querySelectorAll('canvas[data-pixel]')].map(c => [c, c.dataset.pixel])];
+    for (const [el, def] of cibles) {
+      if (!el) continue;
+      const [hCqh, lignes, colonnes] = def.split(':').map(Number);
+      const A = echelleCumulee(el);
+      const n = Math.max(1, Math.round(hCqh * cqh * A * dpr / lignes));
+      el.style.height = (n * lignes / (A * dpr)) + 'px';
+      el.style.width = (n * colonnes / (A * dpr)) + 'px';
+    }
+  }
+  new ResizeObserver(() => ajusterPixels()).observe(scene);
+
+  function peuple(sel, defaut) {
+    for (const ck of ROSTER) {
+      const o = document.createElement('option');
+      o.value = ck; o.textContent = ck;
+      if (ck === defaut) o.selected = true;
+      sel.appendChild(o);
+    }
+  }
+  const selHero = $('selHero'), selEncart = $('selEncart');
+  const PERSO_HERO_DEF = ROSTER.includes('mamie') ? 'mamie' : ROSTER[0];
+  const PERSO_ADV_DEF = ROSTER.includes('naruto') ? 'naruto' : ROSTER[0];
+  peuple(selHero, PERSO_HERO_DEF); peuple(selEncart, PERSO_ADV_DEF);
+
+  /* ================= ICÔNES ================= */
+  const svg = inner => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+  const ICONES = {
+    trophee: svg('<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5.5a2.5 2.5 0 0 0 2.6 3.6M16 6h2.5a2.5 2.5 0 0 1-2.6 3.6"/><path d="M12 13v3.5M8.5 20h7M10 16.5h4"/>'),
+    chrono:  svg('<circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V10M10 2.5h4M18.4 7.1l1.4-1.4"/>'),
+    disque:  svg('<ellipse cx="12" cy="11" rx="9" ry="3.6"/><path d="M3 11v1.6c0 2 4 3.6 9 3.6s9-1.6 9-3.6V11"/>'),
+    eclair:  svg('<path d="M13 2.5L5.5 13.5h5.5l-1 8 7.5-11h-5.5z"/>'),
+    echange: svg('<path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5"/>'),
+    croix:   svg('<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>'),
+    sablier: svg('<path d="M6.5 3h11M6.5 21h11"/><path d="M8 3v2.5c0 2.8 4 4.2 4 6.5s-4 3.7-4 6.5V21M16 3v2.5c0 2.8-4 4.2-4 6.5s4 3.7 4 6.5V21"/>'),
+    cible:   svg('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>'),
+  };
+
+  /* ================= STATS ================= */
+  const STATS = [
+    { id:'score',      label:'Score final',       icone:'trophee', mieux:1 },
+    { id:'attrapes',   label:'Attrapes réussies', icone:'disque',  mieux:1 },
+    { id:'speciaux',   label:'Spéciaux utilisés', icone:'eclair',  mieux:1 },
+    { id:'fautes',     label:'Fautes',            icone:'croix',   mieux:-1 },
+    { id:'possession', label:'Possession',        icone:'sablier', mieux:1, temps:true },
+    { id:'precision',  label:'Précision',         icone:'cible',   mieux:1, pourcent:true },
+  ];
+  const COMMUNES = [
+    { id:'duree',   label:'DURÉE',       icone:'chrono', temps:true },
+    { id:'echange', label:'ÉCHANGE MAX', icone:'echange' },
+  ];
+  const PIECES = { victoire:10, defaite:5 };
+  const fmtTemps = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+  const fmt = (st, v) => st.temps ? fmtTemps(v) : st.pourcent ? Math.round(v) + '%' : st.pieces ? '+' + Math.round(v) : String(Math.round(v));
+  const GAGNANT = { score:35, attrapes:14, speciaux:3, fautes:1, possession:102, precision:64 };
+  const PERDANT = { score:28, attrapes:11, speciaux:2, fautes:3, possession:72,  precision:51 };
+  let donnees = { gagnant:{ ...GAGNANT }, perdant:{ ...PERDANT }, commun:{ duree:174, echange:8 } };
+  const victoire = () => scene.classList.contains('victoire');
+  const statsDe = cote => (cote === 'joueur') === victoire() ? donnees.gagnant : donnees.perdant;
+  // Pièces d'un côté : un nombre, ou null s'il n'y en a pas (CPU, J2, joueur sans compte)
+  function piecesDe(cote) {
+    const gagne = (cote === 'joueur') === victoire();
+    const avecCompte = cote === 'joueur' ? (valeurs.joueurMode || 'profil') === 'profil' : valeurs.adversaireMode === 'enligne';
+    return avecCompte ? (gagne ? PIECES.victoire : PIECES.defaite) : null;
+  }
+
+  function construireLignes() {
+    for (const hote of [$('statsJoueur'), $('statsAdversaire')]) {
+      hote.innerHTML = '';
+      STATS.forEach((st, i) => {
+        const l = document.createElement('div');
+        l.className = 'pLigne'; l.dataset.stat = st.id; l.style.setProperty('--i', i);
+        l.innerHTML = `<span class="pIcone">${ICONES[st.icone]}</span><span class="pLabel">${st.label}</span>`
+          + `<span class="pValeur"><span class="pMieux" title="meilleure valeur">▲</span><span class="pValeurTxt"></span></span>`
+          + `<span class="pBarre"><i></i></span>`;
+        hote.appendChild(l);
+      });
+      const p = document.createElement('div');
+      p.className = 'pLigne pPieces'; p.dataset.stat = 'pieces'; p.style.setProperty('--i', STATS.length);
+      p.innerHTML = `<span class="pIcone"><span class="pieceMini"></span></span><span class="pLabel">Pièces gagnées</span>`
+        + `<span class="pValeur"><span class="pValeurTxt"></span></span><span class="pBarre"><i></i></span>`;
+      hote.appendChild(p);
+    }
+    const hc = $('statsCommunes'); hc.innerHTML = '';
+    for (const st of COMMUNES) {
+      const c = document.createElement('div');
+      c.className = 'cStat'; c.dataset.stat = st.id;
+      c.innerHTML = `<span class="cIcone">${ICONES[st.icone]}</span><span class="cValeur"></span><span class="cLabel">${st.label}</span>`;
+      hc.appendChild(c);
+    }
+  }
+
+  function remplirStats() {
+    const j = statsDe('joueur'), a = statsDe('adversaire');
+    for (const st of STATS) {
+      const vj = j[st.id], va = a[st.id], max = Math.max(vj, va) || 1;
+      for (const [hote, v, autre] of [[$('statsJoueur'), vj, va], [$('statsAdversaire'), va, vj]]) {
+        const l = hote.querySelector(`[data-stat="${st.id}"]`);
+        l.querySelector('.pValeurTxt').textContent = fmt(st, v);
+        l.querySelector('.pBarre i').style.setProperty('--r', (v / max).toFixed(3));
+        l.classList.toggle('meilleur', v !== autre && (st.mieux > 0 ? v > autre : v < autre));
+      }
+    }
+    const maxPieces = Math.max(piecesDe('joueur') ?? 0, piecesDe('adversaire') ?? 0) || 1;
+    for (const [hote, cote] of [[$('statsJoueur'), 'joueur'], [$('statsAdversaire'), 'adversaire']]) {
+      const n = piecesDe(cote), l = hote.querySelector('[data-stat="pieces"]');
+      l.classList.toggle('sansPieces', n === null);
+      l.querySelector('.pValeurTxt').textContent = n === null ? '—' : '+' + n;
+      l.querySelector('.pBarre i').style.setProperty('--r', ((n ?? 0) / maxPieces).toFixed(3));
+    }
+    for (const st of COMMUNES) $('statsCommunes').querySelector(`[data-stat="${st.id}"] .cValeur`).textContent = fmt(st, donnees.commun[st.id]);
+  }
+
+  /* ================= IDENTITÉS ================= */
+  const images = { avJoueur:null, banJoueur:null, avAdversaire:null, banAdversaire:null };
+  function poserAvatar(hote, contenu) {
+    hote.innerHTML = '';
+    if (typeof contenu === 'string') hote.textContent = contenu; else hote.appendChild(contenu);
+  }
+  function majIdentites() {
+    const v = victoire();
+    const modeJ = valeurs.joueurMode || 'profil', modeA = valeurs.adversaireMode || 'cpu';
+    const pj = $('panJoueur');
+    pj.classList.toggle('metal', modeJ === 'sanscompte');
+    pj.classList.toggle('gagnant', v); pj.classList.toggle('perdant', !v);
+    $('pseudoJoueur').textContent = modeJ === 'sanscompte' ? 'P1' : '8stikram';
+    if (modeJ === 'profil' && images.avJoueur) { const im = new Image(); im.src = images.avJoueur; poserAvatar($('avJoueur'), im); }
+    else poserAvatar($('avJoueur'), modeJ === 'sanscompte' ? 'P1' : '8');
+    const banJ = modeJ === 'profil' && images.banJoueur ? `url(${images.banJoueur})` : 'none';
+    $('banJoueur').style.backgroundImage = banJ; $('banFondJoueur').style.backgroundImage = banJ;
+    dessine($('spriteJoueur'), selHero.value);
+    $('issueJoueur').textContent = v ? 'VICTOIRE' : 'DÉFAITE';
+
+    const pa = $('panAdversaire');
+    pa.classList.toggle('metal', modeA !== 'enligne');
+    pa.classList.toggle('gagnant', !v); pa.classList.toggle('perdant', v);
+    $('roleAdversaire').textContent = modeA === 'cpu' ? 'ORDINATEUR' : modeA === 'j2' ? 'JOUEUR 2' : 'ADVERSAIRE';
+    $('pseudoAdversaire').textContent = modeA === 'cpu' ? 'CPU' : modeA === 'j2' ? 'J2' : 'Ryzen92';
+    if (modeA === 'cpu') poserAvatar($('avAdversaire'), robotCanvas());
+    else if (modeA === 'enligne' && images.avAdversaire) { const im = new Image(); im.src = images.avAdversaire; poserAvatar($('avAdversaire'), im); }
+    else poserAvatar($('avAdversaire'), modeA === 'j2' ? 'J2' : 'R');
+    const banA = modeA === 'enligne' && images.banAdversaire ? `url(${images.banAdversaire})` : 'none';
+    $('banAdversaire').style.backgroundImage = banA; $('banFondAdversaire').style.backgroundImage = banA;
+    dessine($('spriteAdversaire'), selEncart.value);
+    $('issueAdversaire').textContent = v ? 'DÉFAITE' : 'VICTOIRE';
+
+    dessine($('simJ1'), selHero.value);
+    dessine($('simJ2'), selEncart.value);
+    // calque Phase 1 (aperçu des transitions)
+    dessine($('p1Hero'), selHero.value);
+    dessine($('p1Encart'), selEncart.value);
+    $('p1Nom').textContent = selHero.value.toUpperCase();
+    $('p1AdvRole').textContent = $('roleAdversaire').textContent;
+    $('p1AdvNom').textContent = $('pseudoAdversaire').textContent;
+    const piecesP1 = piecesDe('joueur');
+    $('p1Pieces').textContent = piecesP1 === null ? '' : '+' + piecesP1 + ' 🪙';
+    $('piecesVol').style.visibility = piecesP1 === null ? 'hidden' : '';
+    remplirStats();
+    ajusterPixels();
+  }
+  for (const [idInput, cle] of [['fAvJoueur','avJoueur'],['fBanJoueur','banJoueur'],['fAvAdversaire','avAdversaire'],['fBanAdversaire','banAdversaire']]) {
+    $(idInput).addEventListener('change', e => {
+      const f = e.target.files && e.target.files[0];
+      if (images[cle]) URL.revokeObjectURL(images[cle]);
+      images[cle] = f ? URL.createObjectURL(f) : null;
+      majIdentites();
+    });
+  }
+  selHero.addEventListener('change', () => { majIdentites(); majSortie(); });
+  selEncart.addEventListener('change', () => { majIdentites(); majSortie(); });
+
+  /* ================= COMPTEURS ================= */
+  let generation = 0;
+  // decal : retard (ms) de chaque zone. sansEntree : les panneaux sont déjà en
+  // place (balayage), les chiffres n'attendent donc pas leur arrivée.
+  // piecesDirect : « +10 » arrive en volant (aspiration), il ne compte pas.
+  function lancerCompteurs(decal = { g:0, c:0, d:0 }, opts = {}) {
+    const gen = ++generation;
+    const entree = opts.sansEntree ? 0 : (valeurs.entreeDuree ?? .75) * 1000;
+    const dec = (valeurs.decalage ?? .09) * 1000, duree = Math.max(50, (valeurs.compteDuree ?? 1.3) * 1000);
+    const items = [];
+    for (const [cote, hote, zone] of [['joueur', $('statsJoueur'), 'g'], ['adversaire', $('statsAdversaire'), 'd']]) {
+      const d = statsDe(cote);
+      STATS.forEach((st, i) => items.push({ el:hote.querySelector(`[data-stat="${st.id}"] .pValeurTxt`), cible:d[st.id], st, debut:decal[zone] + entree + i * dec + 150 }));
+      const n = piecesDe(cote), elPieces = hote.querySelector('[data-stat="pieces"] .pValeurTxt');
+      if (n !== null && opts.piecesDirect && cote === 'joueur') elPieces.textContent = '+' + n;
+      else if (n !== null) items.push({ el:elPieces, cible:n, st:{ pieces:true }, debut:decal[zone] + entree + STATS.length * dec + 250 });
+    }
+    for (const st of COMMUNES) items.push({ el:$('statsCommunes').querySelector(`[data-stat="${st.id}"] .cValeur`), cible:donnees.commun[st.id], st,
+      debut:decal.c + (opts.sansEntree ? 0 : entree * .6) + 200 });
+    for (const it of items) it.el.textContent = fmt(it.st, 0);
+    const t0 = performance.now();
+    const tick = now => {
+      if (gen !== generation) return;
+      let encore = false;
+      for (const it of items) {
+        const t = (now - t0 - it.debut) / duree;
+        if (t < 1) encore = true;
+        const k = t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, 3);
+        it.el.textContent = fmt(it.st, it.cible * k);
+      }
+      if (encore) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  /* ================= EFFETS ================= */
+  const COUL = ['#ffd23e','#5df08a','#2f6bff','#e5384f','#ffffff','#ff8c1a'];
+  function confettis(n) {
+    const h = $('confettis'); h.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const c = document.createElement('div'); c.className = 'conf';
+      c.style.left = Math.random() * 100 + '%';
+      c.style.background = COUL[i % COUL.length];
+      c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+      c.style.animationDelay = (Math.random() * -2) + 's';
+      h.appendChild(c);
+    }
+  }
+  (function fumee() {
+    const h = $('fumee');
+    for (let i = 0; i < 10; i++) {
+      const b = document.createElement('div'); b.className = 'fumeeBulle';
+      const s = 18 + Math.random() * 38;
+      b.style.width = s + 'px'; b.style.height = s + 'px'; b.style.left = Math.random() * 100 + '%';
+      b.style.animationDuration = (4 + Math.random() * 3) + 's';
+      b.style.animationDelay = (Math.random() * -5) + 's';
+      h.appendChild(b);
+    }
+  })();
+  function majAnneauP1() {
+    const tp = $('p1Texte');
+    tp.textContent = ((victoire() ? 'VICTOIRE' : 'DÉFAITE') + ' • ').repeat(6);
+    tp.setAttribute('textLength', (2 * Math.PI * 44).toFixed(2));   // cercle de rayon 44
+    tp.setAttribute('lengthAdjust', 'spacingAndGlyphs');
+  }
+
+  /* ================= RÉSULTAT ================= */
+  function setResultat(v) {
+    scene.classList.toggle('victoire', v);
+    scene.classList.toggle('defaite', !v);
+    $('btnVictoire').classList.toggle('on', v);
+    $('btnDefaite').classList.toggle('on', !v);
+    $('fumee').style.display = v ? 'none' : 'block';
+    $('confettis').style.display = v ? 'block' : 'none';
+    $('p1Issue').textContent = $('p1Lueur').textContent = v ? 'VICTOIRE' : 'DÉFAITE';
+    majAnneauP1();
+    majIdentites();
+  }
+
+  /* ================= PHASES, ENTRÉES ================= */
+  const ZONES = { g:['panneauJoueur'], c:['titre', 'centre'], d:['panneauAdversaire'] };
+  const racineDe = nom => scene.querySelector(`[data-el="${nom}"]`).querySelector('.titreStats, .panneau, .centre');
+  function entrerZone(zone) {
+    for (const nom of ZONES[zone]) {
+      const el = racineDe(nom);
+      el.classList.remove('entree'); void el.offsetWidth; el.classList.add('entree');
+    }
+  }
+  function majBoutonsPhase() {
+    const p3 = scene.dataset.phase === '3';
+    $('btnPhase2').classList.toggle('on', !p3); $('btnPhase3').classList.toggle('on', p3);
+  }
+  function allerPhase(n) {
+    finTransition();
+    scene.dataset.phase = String(n);
+    scene.classList.toggle('voirP3', n === 3);
+    majBoutonsPhase();
+  }
+  function entrerFinaux() {
+    const f = $('finaux');
+    f.classList.remove('entree'); void f.offsetWidth; f.classList.add('entree');
+  }
+  function rejouer(style) {
+    if (scene.dataset.phase === '3') { entrerFinaux(); return; }
+    scene.classList.remove('piecesVolent');
+    scene.dataset.entree = style || 'glisse';
+    for (const z of ['g', 'c', 'd']) entrerZone(z);
+    lancerCompteurs();
+  }
+
+  /* ================= TRANSITIONS ================= */
+  let minuteurs = [], animations = [];
+  const plus = (ms, fn) => minuteurs.push(setTimeout(fn, ms));
+  const anime = (el, images, options) => { const a = el.animate(images, options); animations.push(a); return a; };
+  const CLASSES_TRANSITION = ['voirP1', 'cacheP2', 'rev-g', 'rev-c', 'rev-d', 'cache-hero', 'sortieP2'];
+  const panneaux = () => [$('panJoueur'), $('panAdversaire')];
+  function finTransition() {
+    minuteurs.forEach(clearTimeout); minuteurs = [];
+    animations.forEach(a => a.cancel()); animations = [];
+    scene.classList.remove(...CLASSES_TRANSITION);
+    for (const p of panneaux()) { p.classList.remove('atterrit'); p.style.animationDuration = ''; p.style.transformOrigin = ''; }
+  }
+  function reveler(zone) { scene.classList.add('rev-' + zone); entrerZone(zone); }
+  /* Fin du relais : le calque Phase 1 disparaît. Rien ici ne relance une animation
+     CSS de la Phase 2 (ni durée ni nom d'animation modifiés), sinon elle
+     repartirait de zéro sous les yeux du joueur. */
+  function nettoyer(ms) {
+    plus(ms, () => {
+      animations.forEach(a => a.cancel()); animations = [];
+      scene.classList.remove('voirP1', 'cacheP2', 'rev-g', 'rev-c', 'rev-d', 'cache-hero');
+      for (const p of panneaux()) p.classList.remove('atterrit');
+    });
+  }
+  function secouer() { scene.classList.remove('tremble'); void scene.offsetWidth; scene.classList.add('tremble'); }
+  const msEntree = () => (valeurs.entreeDuree ?? .75) * 1000;
+  // durée entre la révélation d'un panneau et la fin de son dernier compteur
+  const msStats = () => msEntree() + STATS.length * (valeurs.decalage ?? .09) * 1000 + 250 + (valeurs.compteDuree ?? 1.3) * 1000;
+
+  /* Trajet d'un vol. `volant` porte l'animation (origine en haut à gauche) et
+     `repere`, l'une de ses parties, doit arriver pile sur `cible` : même point
+     d'alignement (ax : g/c/d, ay : h/c/b) et même taille — d'après les hauteurs,
+     ou d'après la taille de police pour un texte. L'inclinaison du repère est
+     ignorée à la mesure : elle est retirée pendant le vol. */
+  function trajet(volant, repere, cible, { police = false, ax = 'g', ay = 'h' } = {}) {
+    const avant = repere.style.transform;
+    repere.style.transform = 'none';
+    const V = volant.getBoundingClientRect(), R = repere.getBoundingClientRect(), C = cible.getBoundingClientRect();
+    repere.style.transform = avant;
+    const s = echelleCumulee(volant);
+    const taille = el => parseFloat(getComputedStyle(el).fontSize) * echelleCumulee(el);
+    const e = police ? taille(cible) / taille(repere) : C.height / R.height;
+    const point = r => [ax === 'g' ? r.left : ax === 'c' ? r.left + r.width / 2 : r.right,
+                        ay === 'h' ? r.top : ay === 'c' ? r.top + r.height / 2 : r.bottom];
+    const [rx, ry] = point(R), [cx, cy] = point(C);
+    return { tx:(cx - V.left) / s - e * (rx - V.left) / s, ty:(cy - V.top) / s - e * (ry - V.top) / s, e, w:V.width / s, h:V.height / s };
+  }
+  const COURBE_VOL = 'cubic-bezier(.65,0,.35,1)';
+  function voler(volant, repere, cible, duree, delai, opts = {}) {
+    const t = trajet(volant, repere, cible, opts);
+    const fin = `translate(${t.tx}px,${t.ty}px) scale(${t.e})`;
+    // élan : léger gonflement autour du centre avant de partir
+    const images = opts.elan
+      ? [{ transform:'translate(0px,0px) scale(1)' }, { transform:`translate(${-t.w * .015}px,${-t.h * .015}px) scale(1.03)`, offset:.1 }, { transform:fin }]
+      : [{ transform:'translate(0px,0px) scale(1)' }, { transform:fin }];
+    return anime(volant, images, { duration:duree, delay:delai, easing:COURBE_VOL, fill:'forwards' });
+  }
+
+  /* Aspiration : ton perso rétrécit et vole se ranger dans la case de son
+     panneau. Au moment exact où le vol se termine (promesse `finished`, pas une
+     minuterie), le vrai sprite apparaît à la même place et à la même taille —
+     le relais ne se voit pas. Le nom rejoint le pseudo, VICTOIRE la pastille et
+     « +10 » la ligne des pièces, en fondu enchaîné à la même taille de lettres. */
+  const aspiration = {
+    duree:k => 1080 * k + msStats(),
+    jouer(k) {
+      const VOL = 1000 * k, VOL_TEXTE = 900 * k;
+      // 1. tout mesurer au repos : aucune animation d'entrée ne doit décaler les cibles
+      for (const nom of Object.values(ZONES).flat()) racineDe(nom).classList.remove('entree');
+      scene.dataset.entree = 'deploiement';
+      ajusterPixels();
+      const panJ = $('panJoueur'), panA = $('panAdversaire');
+      const lignePieces = $('statsJoueur').querySelector('[data-stat="pieces"] .pValeurTxt');
+      const nPieces = piecesDe('joueur');
+      // chaque panneau se déploie autour de la case de son perso, qui ne bouge donc
+      // pas, et finit de se déployer bien avant l'atterrissage
+      for (const [pan, sprite] of [[panJ, $('spriteJoueur')], [panA, $('spriteAdversaire')]]) {
+        const rp = pan.getBoundingClientRect(), rs = sprite.getBoundingClientRect(), sp = echelleCumulee(pan);
+        pan.style.transformOrigin = `${(rs.left + rs.width / 2 - rp.left) / sp}px ${(rs.top + rs.height / 2 - rp.top) / sp}px`;
+        pan.style.animationDuration = Math.min(msEntree(), 700 * k) + 'ms';
+      }
+      panJ.classList.add('atterrit');
+      if (nPieces !== null) lignePieces.textContent = '+' + nPieces;
+      scene.classList.toggle('piecesVolent', nPieces !== null);
+
+      // 2. la Phase 1 se vide : auréole et badge s'effacent...
+      anime(scene.querySelector('.p1Ring'), [{ opacity:1 }, { opacity:0 }], { duration:350 * k, fill:'forwards' });
+      anime(scene.querySelector('.p1BadgePos'), [{ transform:'translate(0px,0px)', opacity:1 }, { transform:'translate(-5cqh,-7cqh)', opacity:0 }],
+        { duration:450 * k, easing:'cubic-bezier(.5,0,.75,0)', fill:'forwards' });
+      // ... ton perso s'envole vers son panneau...
+      voler(scene.querySelector('.p1HeroPos'), $('p1Hero'), $('spriteJoueur'), VOL, 0, { elan:true })
+        .finished.then(() => { panJ.classList.remove('atterrit'); scene.classList.add('cache-hero'); }).catch(() => {});
+      // ... et la carte adverse s'efface sur place : un seul perso traverse l'écran
+      // (deux vols croisés au milieu faisaient brouillon)
+      const DC = 120 * k;
+      anime(scene.querySelector('.p1CartePos'), [{ opacity:1, transform:'translate(0px,0px)' }, { opacity:0, transform:'translate(0px,2cqh)' }],
+        { duration:380 * k, easing:'cubic-bezier(.4,0,.7,.4)', fill:'forwards' });
+
+      // 3. les textes se redressent en volant et se fondent dans leur place
+      const textes = [
+        [$('nomVol'), $('p1Nom'), $('pseudoJoueur'), 90, { police:true, ax:'g', ay:'c' }, true],
+        [$('issueVol'), $('issueP1'), $('issueJoueur'), 150, { police:true, ax:'c', ay:'c' }, true],
+      ];
+      if (nPieces !== null) textes.push([$('piecesVol'), $('p1Pieces'), lignePieces, 210, { police:true, ax:'g', ay:'c' }, false]);
+      for (const [volant, repere, cible, delai, opts, penche] of textes) {
+        const dl = delai * k;
+        voler(volant, repere, cible, VOL_TEXTE, dl, opts);
+        if (penche) anime(repere, [{ transform:'skewX(-9deg) rotate(-6deg)' }, { transform:'skewX(0deg) rotate(0deg)' }],
+          { duration:VOL_TEXTE, delay:dl, easing:COURBE_VOL, fill:'forwards' });
+        anime(volant, [{ opacity:1 }, { opacity:1, offset:.6 }, { opacity:0 }], { duration:VOL_TEXTE, delay:dl, fill:'forwards' });
+        anime(cible, [{ opacity:0 }, { opacity:0, offset:.6 }, { opacity:1 }], { duration:VOL_TEXTE, delay:dl, fill:'both' });
+      }
+
+      // 4. révélations : les panneaux tout de suite (ils se déploient sous le vol), titre et centre ensuite
+      reveler('g');
+      plus(DC, () => reveler('d'));
+      plus(380 * k, () => reveler('c'));
+      lancerCompteurs({ g:0, c:380 * k, d:DC }, { piecesDirect:true });
+      nettoyer(VOL + 120 * k + 80);
+    }
+  };
+
+  /* Balayage : un vrai volet. Les deux coupes (Phase 1 et Phase 2) glissent en
+     sens inverse de leur intérieur : leur bord visible avance pile sous la bande,
+     la Phase 1 s'efface devant elle et la Phase 2 se dessine derrière, au même
+     pixel. Départ et arrivée hors de l'écran : tout le temps visible sert à la
+     traversée, à vitesse régulière. */
+  const COURBE_VOLET = [.3, .05, .7, .95];
+  const bezier = (a, b) => u => 3 * (1 - u) * (1 - u) * u * a + 3 * (1 - u) * u * u * b + u * u * u;
+  function instantVolet(q) {   // à quelle fraction du temps le volet a-t-il parcouru la fraction q du trajet ?
+    const bx = bezier(COURBE_VOLET[0], COURBE_VOLET[2]), by = bezier(COURBE_VOLET[1], COURBE_VOLET[3]);
+    let a = 0, b = 1;
+    for (let i = 0; i < 40; i++) { const m = (a + b) / 2; if (by(m) < q) a = m; else b = m; }
+    return bx((a + b) / 2);
+  }
+  const balayage = {
+    duree:k => 1250 * k + msStats(),
+    jouer(k) {
+      scene.dataset.entree = 'balaye';
+      const W = scene.clientWidth, H = scene.clientHeight, D = 1250 * k, INCL = 15;
+      const BANDE = .36 * W, TRAINE = .22 * W, pente = Math.tan(INCL * Math.PI / 180) * H / 2;
+      // p = milieu du volet : invisible au départ (bord droit ≤ 0) comme à l'arrivée (traînée ≥ W)
+      const P0 = -(BANDE / 2 + pente) - 2, P1 = W + BANDE / 2 + TRAINE + pente + 2;
+      // chaque zone lance barres et chiffres quand le volet atteint son bord gauche (mesuré au repos)
+      const origine = scene.getBoundingClientRect().left + scene.clientLeft;
+      const quand = nom => instantVolet(Math.min(1, Math.max(0, (racineDe(nom).getBoundingClientRect().left - origine - P0) / (P1 - P0)))) * D;
+      const tz = { g:quand('panneauJoueur'), c:Math.min(quand('titre'), quand('centre')), d:quand('panneauAdversaire') };
+      for (const [zone, noms] of Object.entries(ZONES)) for (const nom of noms) racineDe(nom).style.setProperty('--delaiZone', Math.round(tz[zone]) + 'ms');
+      const opts = { duration:D, easing:`cubic-bezier(${COURBE_VOLET.join(',')})`, fill:'both' };
+      const X = p => `translateX(${p}px)`;
+      anime($('coupeP1'), [{ transform:X(P0 + W) }, { transform:X(P1 + W) }], opts);
+      anime($('coupeP1Int'), [{ transform:X(-(P0 + W)) }, { transform:X(-(P1 + W)) }], opts);
+      anime($('coupeP2'), [{ transform:X(P0 - 2 * W) }, { transform:X(P1 - 2 * W) }], opts);
+      anime($('coupeP2Int'), [{ transform:X(-(P0 - 2 * W)) }, { transform:X(-(P1 - 2 * W)) }], opts);
+      const V = p => `translateX(${p - BANDE / 2}px) skewX(${-INCL}deg)`;
+      anime($('volet'), [{ transform:V(P0), opacity:1 }, { transform:V(P1), opacity:1 }], opts);
+      scene.classList.remove('cacheP2');
+      for (const z of ['g', 'c', 'd']) entrerZone(z);
+      lancerCompteurs(tz, { sansEntree:true });
+      nettoyer(D + 40);
+    }
+  };
+
+  /* Éjection : prise d'élan, puis tout ce qui compose la Phase 1 est projeté hors
+     de l'écran — ton perso à droite, le nom à gauche, la carte en bas, le badge
+     en haut. Flash léger et lignes de vitesse, puis les panneaux arrivent avec un
+     impact amorti (dépassement de 0,8cqw, sans rebond sec). */
+  const ejection = {
+    duree:k => 450 * k + msStats(),
+    jouer(k) {
+      scene.dataset.entree = 'impact';
+      const W = scene.clientWidth, H = scene.clientHeight;
+      // translate en pixels d'écran, converti dans l'échelle de l'élément
+      const T = (el, dx, dy) => { const s = echelleCumulee(el); return `translate(${dx / s}px,${dy / s}px)`; };
+      const ELAN = 'cubic-bezier(.3,0,.3,1)', PROJETE = 'cubic-bezier(.6,0,.9,.45)';
+      const projeter = (el, recul, loin, fin, duree, delai) => anime(el, [
+        { transform:`${T(el, 0, 0)} scale(1) skewX(0deg)`, easing:ELAN },
+        { transform:`${T(el, recul[0], recul[1])} scale(.98) skewX(0deg)`, offset:.3, easing:PROJETE },
+        { transform:`${T(el, loin[0], loin[1])} ${fin}` }], { duration:duree, delay:delai, fill:'forwards' });
+      projeter(scene.querySelector('.p1HeroPos'), [-.015 * W, 0], [.95 * W, -.03 * H], 'scale(1.12) skewX(-10deg)', 700 * k, 0);
+      projeter(scene.querySelector('.p1NomPos'), [.012 * W, 0], [-1.05 * W, 0], 'scale(1) skewX(14deg)', 650 * k, 60 * k);
+      projeter(scene.querySelector('.p1CartePos'), [.01 * W, 0], [-.6 * W, .12 * H], 'scale(1) skewX(10deg)', 600 * k, 100 * k);
+      projeter(scene.querySelector('.p1BadgePos'), [.01 * W, .01 * H], [-.35 * W, -.4 * H], 'scale(1) skewX(0deg)', 600 * k, 40 * k);
+      anime($('flashT'), [{ opacity:0 }, { opacity:.32, offset:.3 }, { opacity:0 }], { duration:460 * k, delay:250 * k });
+      anime($('lignesVitesse'), [{ opacity:0, transform:'translateX(8%)' }, { opacity:.85, offset:.3 }, { opacity:0, transform:'translateX(-8%)' }],
+        { duration:900 * k, delay:200 * k });
+      plus(450 * k, () => { for (const z of ['g', 'c', 'd']) reveler(z); lancerCompteurs(); });
+      plus(450 * k + msEntree() * .7, secouer);
+      nettoyer(820 * k);
+    }
+  };
+
+  const TRANSITIONS = { aspiration, balayage, ejection };
+  function transition12() {
+    allerPhase(2);
+    generation++;
+    scene.classList.remove('piecesVolent');
+    scene.classList.add('voirP1', 'cacheP2');
+    const k = 1 / (valeurs.transitionVitesse || 1);
+    const tr = TRANSITIONS[valeurs.transitionStyle] || aspiration;
+    const attente = (valeurs.transitionAttente ?? 1.6) * 1000;
+    plus(attente, () => tr.jouer(k));
+    return attente + tr.duree(k);
+  }
+
+  /* Passage à la phase finale : les stats repartent sur les côtés, et à
+     mi-chemin les trois boutons arrivent au centre, un par un. Les compteurs
+     ne sont pas coupés : ils finissent pendant le départ. */
+  function versFinale() {
+    finTransition();
+    const sortie = (valeurs.sortieDuree ?? .7) * 1000;
+    scene.classList.add('sortieP2');
+    plus(sortie * .5, () => { scene.classList.add('voirP3'); entrerFinaux(); });
+    plus(sortie + 50, () => { scene.dataset.phase = '3'; scene.classList.remove('sortieP2'); majBoutonsPhase(); });
+    return sortie + 50;
+  }
+
+  $('btnTransition').addEventListener('click', transition12);
+  $('btnVersFinale').addEventListener('click', () => {
+    if (scene.dataset.phase === '3') { allerPhase(2); rejouer(); plus(((valeurs.entreeDuree ?? .75) + 1.4) * 1000, versFinale); return; }
+    versFinale();
+  });
+  $('btnSequence').addEventListener('click', () => {
+    const total = transition12();
+    plus(total + (valeurs.lectureStats ?? 3.5) * 1000, versFinale);
+  });
+  $('btnPhase2').addEventListener('click', () => { allerPhase(2); rejouer(); });
+  $('btnPhase3').addEventListener('click', () => { allerPhase(3); entrerFinaux(); });
+  $('btnRejouer').addEventListener('click', () => { finTransition(); rejouer(); });
+  $('btnVictoire').addEventListener('click', () => { finTransition(); setResultat(true); rejouer(); majSortie(); });
+  $('btnDefaite').addEventListener('click', () => { finTransition(); setResultat(false); rejouer(); majSortie(); });
+  $('btnAleatoire').addEventListener('click', () => {
+    const r = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+    const duree = r(110, 260), part = r(38, 64) / 100;
+    donnees = {
+      gagnant:{ score:35, attrapes:r(8, 22), speciaux:r(1, 6), fautes:r(0, 3), possession:Math.round(duree * part), precision:r(48, 82) },
+      perdant:{ score:r(15, 33), attrapes:r(5, 18), speciaux:r(0, 5), fautes:r(0, 5), possession:Math.round(duree * (1 - part)), precision:r(30, 70) },
+      commun:{ duree, echange:r(3, 15) }
+    };
+    allerPhase(2); remplirStats(); rejouer();
+  });
+
+  /* ================= RÉGLAGES ================= */
+  const px = v => v + 'px', sec = v => v + 's', cqh = v => v + 'cqh';
+  const surScene = nom => v => scene.style.setProperty(nom, v);
+  // couleurs des boutons du jeu (css/style.css), nommées d'après le bouton qui les porte
+  const HABILLAGES = [
+    ['lancement', 'Dégradé qui défile (COMBATTRE, LANCER LE MATCH)'],
+    ['vert', 'Vert (MATCH VS IA)'],
+    ['blanc', 'Blanc (MATCH EN LIGNE)'],
+    ['violet', 'Violet (ENTRAÎNEMENT)'],
+    ['rouge', 'Rouge (CASINO)'],
+    ['jaune', 'Jaune (ancienne Revanche)'],
+    ['pastel', 'Bleu pastel (PAUSE)'],
+  ];
+  const habiller = bouton => v => { $('finaux').querySelector(`[data-bouton="${bouton}"]`).dataset.habillage = v; };
+  const SECTIONS = [
+    { titre:'Fond (repris de la Phase 1)', items:[
+      { id:'fond', label:'Couleur du fond', type:'choix', def:'arcenciel',
+        options:[['violet','Violet'],['arcenciel','Arc-en-ciel animé']], fn:v => { scene.dataset.fond = v; } },
+      { id:'fondOpacite', label:'Opacité du fond', min:0, max:1, pas:.05, def:1, fn:surScene('--fondOp') },
+      { sous:'Partie derrière' },
+      { id:'partie', label:'Partie', type:'choix', def:'simulee',
+        options:[['simulee','Partie simulée'],['reelle','Vraie partie (le jeu tourne)']], fn:v => { scene.dataset.partie = v; } },
+      { id:'partieOpacite', label:'Opacité', min:0, max:1, pas:.05, def:.85, fn:surScene('--partieOp') },
+      { id:'partieFlou', label:'Flou', min:0, max:8, pas:.5, def:3.5, unite:'px', fn:v => scene.style.setProperty('--partieFlou', px(v)) },
+      { sous:'Soleil et confettis' },
+      { id:'soleilIntensite', label:'Soleil — intensité', min:0, max:1, pas:.05, def:.3, fn:surScene('--soleilOp') },
+      { id:'soleilClignote', label:'Soleil — clignotement', min:0, max:.7, pas:.05, def:.6, fn:surScene('--soleilClignote') },
+      { id:'soleilVitesse', label:"Soleil — durée d'un tour", min:4, max:60, pas:1, def:30, unite:'s', fn:v => scene.style.setProperty('--soleilVitesse', sec(v)) },
+      { id:'confettis', label:'Nombre de confettis', min:0, max:90, pas:2, def:40, fn:v => confettis(+v) },
+    ]},
+    { titre:'Joueurs', items:[
+      { id:'joueurMode', label:'Toi', type:'choix', def:'profil',
+        options:[['profil','Profil en ligne'],['sanscompte','Sans compte (P1)']], fn:() => majIdentites() },
+      { id:'joueurC1', label:'Ta couleur 1', type:'couleur', def:'#35e0ff', fn:v => $('panJoueur').style.setProperty('--p1', v) },
+      { id:'joueurC2', label:'Ta couleur 2', type:'couleur', def:'#7b2ff7', fn:v => $('panJoueur').style.setProperty('--p2', v) },
+      { id:'adversaireMode', label:'Adversaire', type:'choix', def:'cpu',
+        options:[['cpu','CPU'],['j2','J2 (local)'],['enligne','Joueur en ligne']], fn:() => majIdentites() },
+      { id:'adversaireC1', label:'Sa couleur 1', type:'couleur', def:'#ff5f6d', fn:v => $('panAdversaire').style.setProperty('--p1', v) },
+      { id:'adversaireC2', label:'Sa couleur 2', type:'couleur', def:'#ffc371', fn:v => $('panAdversaire').style.setProperty('--p2', v) },
+      { sous:'Habillage' },
+      { id:'banOpacite', label:'Bannière en fond — opacité', min:0, max:.6, pas:.05, def:.25, fn:surScene('--banOp') },
+      { id:'banFlou', label:'Bannière en fond — flou', min:0, max:12, pas:.5, def:4, unite:'px', fn:v => scene.style.setProperty('--banFlou', px(v)) },
+      { id:'techno', label:'Motif techno (métal)', min:0, max:1, pas:.05, def:.35, fn:surScene('--techno') },
+      { id:'eclat', label:'Éclat du gagnant', min:0, max:1, pas:.05, def:.6, fn:surScene('--eclat') },
+      { id:'terne', label:'Ternissement du perdant', min:0, max:1, pas:.05, def:.6, fn:surScene('--terne') },
+      { id:'meilleur', label:'▲ meilleure valeur', type:'choix', def:'oui',
+        options:[['oui','Affichée'],['non','Masquée']], fn:v => scene.classList.toggle('sansMeilleur', v === 'non') },
+    ]},
+    { titre:'Animations des stats', items:[
+      { id:'entreeDuree', label:'Arrivée des panneaux', min:.3, max:1.8, pas:.05, def:.75, unite:'s', fn:v => scene.style.setProperty('--entreeDuree', sec(v)) },
+      { id:'decalage', label:'Décalage entre les lignes', min:0, max:.3, pas:.01, def:.09, unite:'s', fn:v => scene.style.setProperty('--decalage', sec(v)) },
+      { id:'barreDuree', label:'Remplissage des barres', min:.3, max:2.5, pas:.05, def:1.1, unite:'s', fn:v => scene.style.setProperty('--barreDuree', sec(v)) },
+      { id:'compteDuree', label:'Compteurs', min:.3, max:3, pas:.05, def:1.3, unite:'s' },
+      { id:'piecesGlow', label:'Pièces — halo doré', min:0, max:1, pas:.05, def:.6, fn:surScene('--piecesGlow') },
+      { id:'pieceVitesse', label:"Pièce — durée d'un tour", min:.4, max:5, pas:.1, def:1.6, unite:'s', fn:v => scene.style.setProperty('--pieceVitesse', sec(v)) },
+    ]},
+    { titre:'Transition Phase 1 → stats', items:[
+      { id:'transitionStyle', label:'Enchaînement', type:'choix', def:'aspiration',
+        options:[['aspiration','Aspiration — le perso rejoint son panneau'],['balayage','Balayage — volet façon NUNS4'],['ejection','Éjection — impact façon Smash']] },
+      { id:'transitionAttente', label:'Phase 1 affichée avant', min:.3, max:4, pas:.1, def:1.6, unite:'s' },
+      { id:'transitionVitesse', label:'Vitesse', min:.5, max:2, pas:.05, def:1, unite:'×' },
+      { id:'volet', label:'Volet (balayage)', type:'choix', def:'arcenciel',
+        options:[['arcenciel','Arc-en-ciel'],['blanc','Blanc']], fn:v => { scene.dataset.volet = v; } },
+      { id:'tremblement', label:"Tremblement à l'impact", min:0, max:14, pas:1, def:5, unite:'px', fn:v => scene.style.setProperty('--shakeAmp', px(v)) },
+      { id:'tremblementDuree', label:'Tremblement — durée', min:.1, max:.6, pas:.02, def:.22, unite:'s', fn:v => scene.style.setProperty('--shakeDur', sec(v)) },
+    ]},
+    { titre:'Phase finale (boutons)', items:[
+      { id:'lectureStats', label:'Temps de lecture des stats (séquence)', min:.5, max:10, pas:.5, def:3.5, unite:'s' },
+      { id:'sortieDuree', label:'Départ des stats', min:.3, max:1.5, pas:.05, def:.7, unite:'s', fn:v => scene.style.setProperty('--sortieDuree', sec(v)) },
+      { id:'btnArrivee', label:'Arrivée de chaque bouton', min:.2, max:1.5, pas:.05, def:.6, unite:'s', fn:v => scene.style.setProperty('--btnArrivee', sec(v)) },
+      { id:'btnDecalage', label:'Écart entre les boutons', min:0, max:.4, pas:.01, def:.1, unite:'s', fn:v => scene.style.setProperty('--btnDecalage', sec(v)) },
+      { sous:'Couleurs — celles des boutons du jeu' },
+      { id:'habillageRevanche', label:'Revanche', type:'choix', def:'lancement', options:HABILLAGES, fn:habiller('revanche') },
+      { id:'habillageMenu', label:'Menu', type:'choix', def:'blanc', options:HABILLAGES, fn:habiller('menu') },
+      { id:'habillagePerso', label:'Changez de perso', type:'choix', def:'vert', options:HABILLAGES, fn:habiller('perso') },
+      { id:'icones', label:'Icônes rondes', type:'choix', def:'oui',
+        options:[['oui','Oui, de chaque côté (menu principal)'],['non','Non (comme COMBATTRE)']], fn:v => scene.classList.toggle('sansIcones', v === 'non') },
+      { sous:'Allure' },
+      { id:'btnLargeur', label:'Largeur', min:30, max:80, pas:1, def:52, unite:'cqh', fn:v => scene.style.setProperty('--btnLargeur', cqh(v)) },
+      { id:'btnEcart', label:'Espace entre les boutons', min:0, max:6, pas:.1, def:1.6, unite:'cqh', fn:v => scene.style.setProperty('--btnEcart', cqh(v)) },
+    ]},
+    { titre:'Typos', items:[
+      { id:'police_titre', cible:'titre', label:'Titre', type:'police', def:'russo' },
+      { id:'contour_titre', label:'Titre — contour', min:0, max:10, pas:.5, def:5, unite:'px', fn:v => scene.style.setProperty('--c-titre', px(v)) },
+      { id:'police_pseudo', cible:'pseudo', label:'Pseudos', type:'police', def:'russo' },
+      { id:'contour_pseudo', label:'Pseudos — contour', min:0, max:6, pas:.5, def:2, unite:'px', fn:v => scene.style.setProperty('--c-pseudo', px(v)) },
+      { id:'police_role', cible:'role', label:'JOUEUR 1 / CPU', type:'police', def:'dotgothic' },
+      { id:'police_issue', cible:'issue', label:'Pastille victoire', type:'police', def:'russo' },
+      { id:'police_label', cible:'label', label:'Noms des stats', type:'police', def:'barlow' },
+      { id:'police_valeur', cible:'valeur', label:'Chiffres des stats', type:'police', def:'russo' },
+      { id:'police_centre', cible:'centre', label:'VS + centre', type:'police', def:'russo' },
+      { id:'police_pieces', cible:'pieces', label:'Pièces', type:'police', def:'dotgothic' },
+      { id:'police_boutons', cible:'boutons', label:'Boutons', type:'police', def:'chakra' },
+      { id:'police_invite', cible:'invite', label:'Appuyez sur espace', type:'police', def:'dotgothic' },
+    ]},
+  ];
+  const ITEMS = SECTIONS.flatMap(s => s.items).filter(it => it.id);
+  const PAR_ID = Object.fromEntries(ITEMS.map(it => [it.id, it]));
+  const valeurs = {};
+
+  function formate(it, v) {
+    const n = +v;
+    const dec = it.pas < .01 ? 3 : it.pas < .1 ? 2 : 1;
+    return (Number.isInteger(n) ? String(n) : n.toFixed(dec)) + (it.unite || '');
+  }
+  function regler(id, v, silencieux) {
+    const it = PAR_ID[id];
+    if (!it) return;
+    if (!it.type) v = +v;
+    valeurs[id] = v;
+    if (it._input && String(it._input.value) !== String(v)) it._input.value = v;
+    if (it._n) it._n.textContent = formate(it, v);
+    if (it.type === 'police') {
+      const p = POLICES[v] || POLICES.archivo;
+      scene.style.setProperty('--f-' + it.cible, p.famille);
+      scene.style.setProperty('--w-' + it.cible, p.poids);
+    } else if (it.fn) it.fn(v);
+    if (!silencieux) majSortie();
+  }
+  (function construirePanneau() {
+    const hote = $('blocsReglages');
+    for (const s of SECTIONS) {
+      const bloc = document.createElement('details');
+      bloc.className = 'bloc'; bloc.open = true;
+      const sum = document.createElement('summary'); sum.textContent = s.titre;
+      bloc.appendChild(sum);
+      for (const it of s.items) {
+        if (it.sous) { const t = document.createElement('div'); t.className = 'sousTitre'; t.textContent = it.sous; bloc.appendChild(t); continue; }
+        const ligne = document.createElement('div'); ligne.className = 'reg';
+        const lab = document.createElement('label'); lab.textContent = it.label; lab.htmlFor = 'ctl_' + it.id;
+        let input;
+        if (it.type === 'choix' || it.type === 'police') {
+          input = document.createElement('select');
+          const opts = it.type === 'police' ? Object.entries(POLICES).map(([k, p]) => [k, p.nom]) : it.options;
+          for (const [val, texte] of opts) {
+            const o = document.createElement('option'); o.value = val; o.textContent = texte;
+            if (it.type === 'police') { o.style.fontFamily = POLICES[val].famille; o.style.fontWeight = POLICES[val].poids; }
+            input.appendChild(o);
+          }
+          ligne.classList.add('regChoix'); ligne.append(lab, input);
+          input.addEventListener('change', () => regler(it.id, input.value));
+        } else if (it.type === 'couleur') {
+          input = document.createElement('input'); input.type = 'color';
+          ligne.classList.add('regChoix'); ligne.append(lab, input);
+          input.addEventListener('input', () => regler(it.id, input.value));
+        } else {
+          input = document.createElement('input');
+          Object.assign(input, { type:'range', min:it.min, max:it.max, step:it.pas });
+          const n = document.createElement('span'); n.className = 'n';
+          ligne.append(lab, n, input); it._n = n;
+          input.addEventListener('input', () => regler(it.id, input.value));
+        }
+        input.id = 'ctl_' + it.id; it._input = input;
+        bloc.appendChild(ligne);
+      }
+      hote.appendChild(bloc);
+    }
+  })();
+
+  /* ================= ÉDITEUR DE PLACEMENT ================= */
+  const NOMS = { soleil:'Soleil (rayons)', titre:'Titre (centré)', panneauJoueur:'Ton panneau', centre:'Centre (VS + communes)',
+    panneauAdversaire:'Panneau adversaire', boutonsFinaux:'Boutons — phase finale', invite:'Appuyez sur espace' };
+  const movables = [...scene.querySelectorAll('.movable')];
+  const lire = m => ({ x:+m.style.getPropertyValue('--x'), y:+m.style.getPropertyValue('--y'), s:+m.style.getPropertyValue('--s') });
+  const DEFAUTS_PLACEMENT = Object.fromEntries(movables.map(m => [m.dataset.el, { ...lire(m), masque:m.classList.contains('cache') }]));
+  let choisi = null;
+  const liste = $('listeEls');
+  for (const m of movables) {
+    const d = document.createElement('div');
+    d.className = 'el'; d.dataset.el = m.dataset.el;
+    d.innerHTML = `<span class="oeil" title="Masquer / afficher">👁</span><span class="nom">${NOMS[m.dataset.el] || m.dataset.el}</span><span class="val"></span>`;
+    d.addEventListener('click', e => { if (e.target.classList.contains('oeil')) { basculeVisible(m); return; } choisir(m); });
+    liste.appendChild(d);
+  }
+  function majSoleil() {
+    const m = movables.find(x => x.dataset.el === 'soleil');
+    const { x, y, s } = lire(m), cx = x / 100 * 160, cy = y / 100 * 100;
+    const rayon = Math.max(...[[0, 0], [160, 0], [0, 100], [160, 100]].map(([a, b]) => Math.hypot(a - cx, b - cy)));
+    m.style.setProperty('--soleilTaille', (2 * rayon / Math.max(s, .05) + 10).toFixed(1) + 'cqh');
+  }
+  let pixelsEnAttente = false;
+  function ecrire(m, v) {
+    m.style.setProperty('--x', v.x); m.style.setProperty('--y', v.y); m.style.setProperty('--s', v.s);
+    if (m.dataset.el === 'soleil') majSoleil();
+    if (!pixelsEnAttente) { pixelsEnAttente = true; requestAnimationFrame(() => { pixelsEnAttente = false; ajusterPixels(); }); }
+    majListe(); majSortie();
+  }
+  function majCurseursEl() {
+    if (!choisi) return;
+    const v = lire(choisi);
+    $('rScale').value = v.s; $('rX').value = v.x; $('rY').value = v.y;
+    $('vScale').textContent = v.s.toFixed(2) + '×'; $('vX').textContent = v.x + '%'; $('vY').textContent = v.y + '%';
+    $('btnVisible').textContent = choisi.classList.contains('cache') ? 'Réafficher cet élément' : 'Masquer cet élément';
+  }
+  function choisir(m) {
+    choisi = m;
+    // Choisir un élément d'une autre phase affiche cette phase.
+    if (m.closest('#coupeP3') && scene.dataset.phase !== '3') { allerPhase(3); entrerFinaux(); }
+    if (m.closest('#coupeP2') && scene.dataset.phase === '3') { allerPhase(2); rejouer(); }
+    for (const x of movables) x.classList.toggle('sel', x === m);
+    for (const d of liste.children) d.classList.toggle('on', d.dataset.el === m.dataset.el);
+    $('aucunEl').style.display = 'none'; $('regBloc').style.display = 'block';
+    majCurseursEl();
+  }
+  function basculeVisible(m) { m.classList.toggle('cache'); majListe(); majCurseursEl(); majSortie(); }
+  function majListe() {
+    for (const d of liste.children) {
+      const m = movables.find(x => x.dataset.el === d.dataset.el), v = lire(m);
+      d.querySelector('.val').textContent = `${v.x}/${v.y} ·${v.s.toFixed(2)}×`;
+      d.classList.toggle('masque', m.classList.contains('cache'));
+    }
+  }
+  for (const [idR, cle] of [['rScale','s'],['rX','x'],['rY','y']]) {
+    $(idR).addEventListener('input', () => { if (!choisi) return; const v = lire(choisi); v[cle] = +$(idR).value; ecrire(choisi, v); majCurseursEl(); });
+  }
+  $('btnVisible').addEventListener('click', () => { if (choisi) basculeVisible(choisi); });
+  $('btnResetEl').addEventListener('click', () => {
+    if (!choisi) return;
+    const d = DEFAUTS_PLACEMENT[choisi.dataset.el];
+    choisi.classList.toggle('cache', d.masque); ecrire(choisi, d); majCurseursEl();
+  });
+  let drag = null;
+  scene.addEventListener('pointerdown', e => {
+    if (scene.classList.contains('lecture')) return;
+    let m = e.target.closest('.movable');
+    if (!m && choisi && choisi.dataset.el === 'soleil') m = choisi;
+    if (!m) return;
+    e.preventDefault(); choisir(m);
+    const parent = m.offsetParent || scene, r = parent.getBoundingClientRect(), v = lire(m);
+    drag = { m, parent, sx:r.width / (parent.offsetWidth || r.width), sy:r.height / (parent.offsetHeight || r.height),
+             x0:v.x, y0:v.y, px0:e.clientX, py0:e.clientY };
+    scene.setPointerCapture(e.pointerId);
+  });
+  scene.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dx = (e.clientX - drag.px0) / drag.sx / drag.parent.offsetWidth * 100;
+    const dy = (e.clientY - drag.py0) / drag.sy / drag.parent.offsetHeight * 100;
+    const v = lire(drag.m);
+    v.x = Math.round((drag.x0 + dx) * 2) / 2; v.y = Math.round((drag.y0 + dy) * 2) / 2;
+    ecrire(drag.m, v); majCurseursEl();
+  });
+  scene.addEventListener('pointerup', () => { drag = null; });
+  scene.addEventListener('pointercancel', () => { drag = null; });
+  $('btnLecture').addEventListener('click', e => {
+    const on = scene.classList.toggle('lecture');
+    e.target.classList.toggle('on', on);
+    e.target.textContent = on ? 'Mode édition' : 'Mode lecture';
+  });
+
+  /* ================= TOUT COPIER / COLLER ================= */
+  const sortie = $('sortie');
+  function etat() {
+    const placement = {};
+    for (const m of movables) { const v = lire(m); placement[m.dataset.el] = { x:v.x, y:v.y, s:+v.s.toFixed(2), masque:m.classList.contains('cache') }; }
+    return {
+      mockup:'fin-de-match — phase 2 (stats) + phase finale (boutons)', version:3,
+      resultat: victoire() ? 'victoire' : 'defaite',
+      persos:{ toi:selHero.value, adversaire:selEncart.value },
+      reglages:{ ...valeurs },
+      placement
+    };
+  }
+  let sortieEnAttente = false;
+  function majSortie(forcer) {
+    if (forcer) { sortie.value = JSON.stringify(etat(), null, 2); return; }
+    if (document.activeElement === sortie || sortieEnAttente) return;
+    sortieEnAttente = true;
+    requestAnimationFrame(() => { sortieEnAttente = false; if (document.activeElement !== sortie) sortie.value = JSON.stringify(etat(), null, 2); });
+  }
+  function message(txt, erreur) {
+    const e = $('etatCopie'); e.textContent = txt; e.classList.toggle('erreur', !!erreur);
+    clearTimeout(message.t); message.t = setTimeout(() => { e.textContent = ''; }, 3500);
+  }
+  function appliquer(texte) {
+    let d;
+    try { d = JSON.parse(texte.trim()); } catch { message('Format pas reconnu : colle le bloc JSON exporté.', true); return; }
+    finTransition();
+    if (d.reglages) for (const [id, v] of Object.entries(d.reglages)) regler(id, v, true);
+    if (d.placement) for (const [el, p] of Object.entries(d.placement)) {
+      const m = movables.find(x => x.dataset.el === el);
+      if (!m) continue;
+      m.style.setProperty('--x', p.x); m.style.setProperty('--y', p.y); m.style.setProperty('--s', p.s);
+      m.classList.toggle('cache', !!p.masque);
+    }
+    const persos = d.persos || {};
+    if (ROSTER.includes(persos.toi || persos.vainqueur)) selHero.value = persos.toi || persos.vainqueur;
+    if (ROSTER.includes(persos.adversaire)) selEncart.value = persos.adversaire;
+    majSoleil();
+    setResultat(d.resultat ? d.resultat !== 'defaite' : victoire());
+    allerPhase(2); majListe(); majCurseursEl(); rejouer();
+    sortie.blur(); majSortie(true);
+    message('Appliqué ✔');
+  }
+  $('btnCopier').addEventListener('click', async () => {
+    majSortie(true);
+    try { await navigator.clipboard.writeText(sortie.value); message('Copié dans le presse-papiers ✔'); }
+    catch {
+      sortie.focus(); sortie.select();
+      const ok = document.execCommand && document.execCommand('copy');
+      message(ok ? 'Copié ✔' : 'Sélectionné : fais Ctrl+C', !ok);
+    }
+  });
+  $('btnAppliquer').addEventListener('click', () => appliquer(sortie.value));
+  $('btnDefauts').addEventListener('click', () => {
+    finTransition();
+    for (const it of ITEMS) regler(it.id, it.def, true);
+    for (const m of movables) {
+      const d = DEFAUTS_PLACEMENT[m.dataset.el];
+      m.style.setProperty('--x', d.x); m.style.setProperty('--y', d.y); m.style.setProperty('--s', d.s);
+      m.classList.toggle('cache', d.masque);
+    }
+    selHero.value = PERSO_HERO_DEF; selEncart.value = PERSO_ADV_DEF;
+    donnees = { gagnant:{ ...GAGNANT }, perdant:{ ...PERDANT }, commun:{ duree:174, echange:8 } };
+    majSoleil(); setResultat(true); allerPhase(2); majListe(); majCurseursEl(); rejouer(); majSortie(true);
+    message('Tout est revenu aux valeurs par défaut.');
+  });
+
+  /* ================= VRAIE PARTIE EN FOND (même montage que la Phase 1) ================= */
+  const CSS_CADRE = `
+    html,body{margin:0!important;padding:0!important;overflow:hidden!important;background:#0a0e1a!important;
+      height:100%!important;min-height:0!important;display:block!important}
+    body>*:not(#stage){display:none!important}
+    #stage{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;
+      border:0!important;border-radius:0!important;box-shadow:none!important;margin:0!important;aspect-ratio:auto!important}
+    #stage>*:not(#game){display:none!important}
+    #game{width:100%!important;height:100%!important}`;
+  const cadre = $('partieReelle');
+  cadre.addEventListener('load', () => {
+    try {
+      const w = cadre.contentWindow, d = cadre.contentDocument;
+      if (!d.getElementById('game')) throw new Error('pas de jeu');
+      w.HTMLMediaElement.prototype.play = function () { return Promise.resolve(); };
+      const AC = w.AudioContext || w.webkitAudioContext;
+      if (AC) {
+        AC.prototype.resume = function () { return Promise.resolve(); };
+        w.AudioContext = function (...a) { const c = new AC(...a); c.suspend(); return c; };
+        w.AudioContext.prototype = AC.prototype;
+      }
+      for (const f of ['setItem', 'removeItem', 'clear']) w.Storage.prototype[f] = function () {};
+      const st = d.createElement('style'); st.textContent = CSS_CADRE; d.head.appendChild(st);
+      let essais = 0;
+      const avancer = () => {
+        const intro = d.getElementById('scr-intro');
+        if (intro && !intro.classList.contains('done')) intro.click();
+        const premier = d.getElementById('scr-firstrun');
+        if (premier && !premier.classList.contains('hidden')) d.querySelector('[data-act="skipTuto"]')?.click();
+        if (++essais < 30) setTimeout(avancer, 300);
+      };
+      avancer();
+      cadre.classList.add('pret');
+    } catch (err) {
+      if (valeurs.partie === 'reelle') regler('partie', 'simulee');
+    }
+  });
+
+  /* ================= BOUTONS : ICÔNES JUMELLES =================
+     Même principe que mirrorButtonIcons() du jeu (js/ui/menus.js) : chaque
+     bouton reçoit une copie de son icône à droite, et son texte se retrouve
+     centré entre les deux quelle que soit sa longueur. */
+  for (const b of $('finaux').querySelectorAll('.mbtn')) {
+    const ico = b.querySelector(':scope > .ico');
+    if (!ico || b.querySelectorAll(':scope > .ico').length > 1) continue;
+    const lbl = document.createElement('span');
+    lbl.className = 'lbl';
+    [...b.childNodes].forEach(n => { if (n !== ico) lbl.appendChild(n); });
+    lbl.textContent = lbl.textContent.trim();
+    b.appendChild(lbl);
+    b.appendChild(ico.cloneNode(true));
+  }
+
+  /* ================= DÉMARRAGE ================= */
+  construireLignes();
+  for (const it of ITEMS) regler(it.id, it.def, true);
+  majSoleil();
+  setResultat(true);
+  allerPhase(2);
+  majListe();
+  rejouer();
+  majSortie(true);
+</script>
+</body>
+</html>

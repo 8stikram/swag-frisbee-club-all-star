@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fin de match — Phase 1 : Résultat (v4)</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&family=Chakra+Petch:wght@600;700&family=DotGothic16&family=Great+Vibes&family=Russo+One&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070a12; --panel:#0e1626; --edge:#22344f; --ink:#111318; --txt:#e8f0ff; --accent:#35e0ff;
+    --or:#ffd23e; --yellow:#f5e63d; --green:#5df08a; --red:#e5384f; --gray:#9aa0ac; --pastel-red:#ff8f9a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:'Barlow',system-ui,sans-serif;padding:18px 16px 70px}
+  h1{font-size:19px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:1050px;line-height:1.6;margin:0 0 14px}
+  .note b{color:var(--or)}
+  code{background:#0a1220;border:1px solid var(--edge);border-radius:4px;padding:0 5px;font-size:11.5px;color:var(--or)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+
+  /* ===================== SCÈNE ===================== */
+  .sceneWrap{flex:1 1 660px;min-width:340px;position:sticky;top:10px}
+  .scene{position:relative;width:100%;aspect-ratio:16/10;border-radius:14px;overflow:hidden;
+    border:3px solid var(--ink);background:#0a0e1a;container-type:size;box-shadow:0 10px 0 rgba(0,0,0,.4);
+    user-select:none;
+    /* typos et contours : pilotés par le panneau */
+    --f-badge:'Archivo Black',sans-serif; --w-badge:400; --c-badge:5px;
+    --f-nom:'Archivo Black',sans-serif; --w-nom:400; --c-nom:6px;
+    --f-resultat:'Archivo Black',sans-serif; --w-resultat:400; --c-resultat:2.5px;
+    --f-pieces:'Russo One',sans-serif; --w-pieces:400;
+    --f-adversaire:'Archivo Black',sans-serif; --w-adversaire:400;
+    --f-boutons:'Russo One',sans-serif; --w-boutons:400;
+    --f-invite:'DotGothic16',monospace; --w-invite:400;
+    --f-aureole:'Archivo Black',sans-serif; --w-aureole:400; --c-aureole:1.4;
+    --f-bulle:'Barlow',sans-serif; --w-bulle:800;
+    --f-rang:'Archivo Black',sans-serif; --w-rang:400;
+  }
+  .scene.tremble{ animation:tremble var(--shakeDur,.22s) linear }
+  @keyframes tremble{
+    0%,100%{ transform:translate(0,0) }
+    10%{ transform:translate(calc(-1 * var(--shakeAmp,5px)), calc(var(--shakeAmp,5px) * .6)) }
+    25%{ transform:translate(var(--shakeAmp,5px), calc(-1 * var(--shakeAmp,5px))) }
+    40%{ transform:translate(calc(-1 * var(--shakeAmp,5px) * .7), calc(var(--shakeAmp,5px) * .7)) }
+    55%{ transform:translate(var(--shakeAmp,5px), var(--shakeAmp,5px)) }
+    70%{ transform:translate(calc(-1 * var(--shakeAmp,5px) * .4), calc(-1 * var(--shakeAmp,5px) * .4)) }
+    85%{ transform:translate(calc(var(--shakeAmp,5px) * .3), 0) }
+  }
+
+  /* --- 0. La partie qui continue derrière ---
+     « Vraie partie » : le jeu lui-même tourne dans un cadre caché (la démo IA
+     contre IA des menus), comme dans le vrai écran où le match reste sous le
+     calque. « Simulée » : repli dessiné à la main si le jeu ne charge pas. */
+  /* PERF : le flou n'est plus posé sur tout le conteneur. Un filtre sur un
+     parent dont un enfant bouge oblige à recalculer le flou de toute la scène
+     à chaque image. Posé sur chaque morceau, le flou d'un sprite qui se
+     déplace reste en cache et n'est plus que glissé par le GPU. */
+  .partieFond{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--partieOp,.35)}
+  .terrain,.matchSimule > *,#partieReelle{filter:blur(var(--partieFlou,1.5px))}
+  .scene.defaite .terrain,.scene.defaite .matchSimule > *,.scene.defaite #partieReelle{
+    filter:blur(var(--partieFlou,1.5px)) grayscale(.8) brightness(.6)}
+  .terrain{position:absolute;inset:-6%;
+    background:radial-gradient(ellipse at 50% 50%, #2a3a5c 0%, #172033 60%, #0a0e1a 100%),
+      repeating-linear-gradient(90deg, #ffffff14 0 2px, transparent 2px 60px)}
+  .terrain::before{content:'';position:absolute;left:50%;top:8%;bottom:8%;width:3px;background:#ffffff40;transform:translateX(-50%)}
+  /* PERF : les joueurs et le disque bougent en `transform`, plus en top/left
+     (qui recalculaient la mise en page et repeignaient à chaque image). */
+  .matchSimule{position:absolute;inset:0}
+  .matchSimule canvas{position:absolute;left:0;top:0;image-rendering:pixelated;height:22cqh;width:auto;will-change:transform}
+  .matchSimule .j1{animation:j1 3.2s ease-in-out infinite}
+  .matchSimule .j2{animation:j2 3.2s ease-in-out infinite}
+  @keyframes j1{ 0%,100%{ transform:translate(14cqw,30cqh) } 50%{ transform:translate(14cqw,52cqh) } }
+  @keyframes j2{ 0%,100%{ transform:translate(calc(86cqw - 17.6cqh),50cqh) scaleX(-1) }
+    50%{ transform:translate(calc(86cqw - 17.6cqh),28cqh) scaleX(-1) } }
+  .matchSimule .disque{position:absolute;left:0;top:0;width:3.4cqw;aspect-ratio:1;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,#fff 0%,#ffe27a 45%,#d69a10 100%);box-shadow:0 0 12px #ffd23e;
+    will-change:transform;animation:disque 3.2s linear infinite}
+  @keyframes disque{ 0%,100%{ transform:translate(22cqw,40cqh) } 50%{ transform:translate(74cqw,58cqh) } }
+  #partieReelle{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .8s}
+  #partieReelle.pret{opacity:1}
+  .scene[data-partie="simulee"] #partieReelle{display:none}
+
+  /* --- Couleur du fond : violet (actuel) ou arc-en-ciel animé (celui de l'intro / des boutons de lancement) --- */
+  .overScrim{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:var(--fondOp,1)}
+  .scene[data-fond="violet"] .overScrim{
+    background:linear-gradient(160deg,rgba(255,168,90,.35) 0%,rgba(120,70,140,.4) 45%,rgba(10,8,18,.72) 100%)}
+  .scene.defaite[data-fond="violet"] .overScrim{
+    background:linear-gradient(160deg,rgba(90,92,104,.32) 0%,rgba(48,30,42,.5) 45%,rgba(6,6,10,.82) 100%)}
+  /* PERF : l'arc-en-ciel animait background-position, ce qui repeint toute la
+     scène à chaque image. Ici le dégradé est peint UNE fois sur une bande 4×
+     plus large, et c'est la bande qui glisse (transform, pris en charge par le
+     GPU). Même image que l'original : image 4L×4H vue par sa tranche du milieu,
+     décalée de 3 largeurs en 3 s aller puis 3 s retour. */
+  .scene[data-fond="arcenciel"] .overScrim{opacity:calc(var(--fondOp,1) * .62);overflow:hidden}
+  .overScrim::before{content:'';position:absolute;left:0;top:0;width:400%;height:100%;display:none;
+    background:linear-gradient(120deg,#ff5f6d,#ffc371,#5df08a,#35e0ff,#a06bff,#ff5f6d);
+    background-size:100% 400%;background-position:0 50%;
+    will-change:transform;animation:arcEnCiel 3s ease infinite alternate}
+  .scene[data-fond="arcenciel"] .overScrim::before{display:block}
+  @keyframes arcEnCiel{ to{ transform:translateX(-75%) } }
+  .scene.defaite[data-fond="arcenciel"] .overScrim::before{filter:saturate(.25) brightness(.55)}
+  /* voile sombre sous l'arc-en-ciel : sans lui le texte blanc se noyait dans le jaune */
+  .voileLisible{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;
+    background:linear-gradient(180deg,rgba(6,8,14,.12) 0%,rgba(6,8,14,.35) 60%,rgba(6,8,14,.6) 100%)}
+  .scene[data-fond="arcenciel"] .voileLisible{opacity:1}
+
+  /* --- Soleil : rayons derrière, dont le bord ne doit jamais se voir.
+     PERF : il faisait 400cqh de côté en permanence, avec un masque en plus
+     (deux énormes textures GPU qui tournent). Sa taille est maintenant
+     calculée (majSoleil) pour tout juste couvrir le coin le plus éloigné de
+     son centre, et le masque est retiré : son bord tombe hors du cadre. --- */
+  .soleil{position:absolute;left:0;top:0;width:var(--soleilTaille,200cqh);height:var(--soleilTaille,200cqh);
+    translate:-50% -50%;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .4s}
+  .scene.victoire .soleil{opacity:var(--soleilOp,.65)}
+  .soleil::before{content:'';position:absolute;inset:0;border-radius:50%;
+    background:repeating-conic-gradient(from 0deg, rgba(255,214,70,.24) 0deg 5deg, transparent 5deg 15deg);
+    will-change:transform,opacity;
+    animation:tourneSoleil var(--soleilVitesse,18s) linear infinite, scintilleSoleil 2.8s ease-in-out infinite}
+  @keyframes tourneSoleil{ to{ rotate:360deg } }
+  @keyframes scintilleSoleil{
+    0%,100%{ opacity:1 }
+    30%{ opacity:calc(1 - var(--soleilClignote,.3)) }
+    48%{ opacity:1 }
+    72%{ opacity:calc(1 - var(--soleilClignote,.3) * .55) }
+  }
+
+  .vignette{position:absolute;inset:0;z-index:2;pointer-events:none;
+    background:radial-gradient(115% 95% at 68% 55%, transparent 45%, rgba(0,0,0,.45) 100%)}
+
+  /* ===================== ÉLÉMENTS DÉPLAÇABLES ===================== */
+  /* `scale` (propriété individuelle) plutôt que transform : les animations
+     d'entrée animent `transform` et se composent avec l'échelle choisie au lieu
+     de l'écraser — sinon chaque élément sautait de taille à la fin de l'entrée. */
+  .movable{position:absolute;left:calc(var(--x) * 1%);top:calc(var(--y) * 1%);
+    scale:var(--s,1);transform-origin:0 0;cursor:grab}
+  .movable.sel{outline:2px dashed var(--accent);outline-offset:6px}
+  .movable.sel::after{content:attr(data-el);position:absolute;left:0;top:-20px;
+    background:var(--accent);color:#001522;font:800 10px Consolas,monospace;padding:1px 6px;border-radius:4px;white-space:nowrap}
+  .movable.cache{display:none}
+  .movable[data-el="soleil"]{width:0;height:0;cursor:default}
+  .movable[data-el="soleil"].sel{outline:none}
+  .movable[data-el="soleil"].sel::before{content:'';position:absolute;left:-14px;top:-14px;width:28px;height:28px;
+    border:2px dashed var(--accent);border-radius:50%}
+  .scene.lecture .movable{cursor:default}
+  .scene.lecture .movable.sel{outline:none}
+  .scene.lecture .movable.sel::after,.scene.lecture .movable.sel::before{display:none}
+
+  /* --- Rang : laurier + place --- */
+  .rang{position:relative;display:flex;align-items:center;justify-content:center;width:26cqh;height:22cqh}
+  .rang svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .rang .chiffre{position:relative;font-family:var(--f-rang);font-weight:var(--w-rang);font-size:13cqh;line-height:1;
+    background:linear-gradient(180deg,#fff6c4 0%,#ffd23e 45%,#c8891a 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    -webkit-text-stroke:5px var(--ink);paint-order:stroke fill;
+    filter:drop-shadow(0 4px 0 rgba(0,0,0,.45)) drop-shadow(0 0 14px rgba(255,210,62,.7))}
+  .scene.defaite .rang .chiffre{background:linear-gradient(180deg,#e8ecf2 0%,#aab3c2 45%,#6b7380 100%);
+    -webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 4px 0 rgba(0,0,0,.45))}
+  .rang .feuille{fill:#3f8f4e;stroke:var(--ink);stroke-width:1.4}
+  .scene.defaite .rang .feuille{fill:#5c6470}
+  .rang .brindille{fill:none;stroke:var(--ink);stroke-width:2.4;stroke-linecap:round}
+
+  /* --- Badge joueur --- */
+  .bigFlag{position:relative;display:flex;align-items:center;justify-content:center;
+    width:26cqh;height:13cqh;padding:0 4cqh 1cqh 0;
+    clip-path:polygon(0 0,100% 0,74% 100%,0 100%);rotate:-4deg;transform-origin:top left;
+    font-family:var(--f-badge);font-weight:var(--w-badge);font-size:7.5cqh;letter-spacing:.04em;
+    color:#fff;-webkit-text-stroke:var(--c-badge) var(--ink);paint-order:stroke fill;
+    border:5px solid var(--ink);box-shadow:7px 7px 0 var(--ink),0 0 28px rgba(229,56,79,.5)}
+  .bigFlag.red{background:linear-gradient(160deg,#ff6274 0%,var(--red) 55%,#8f1526 100%)}
+  .scene.defaite .bigFlag.red{background:linear-gradient(160deg,#7d8595 0%,#5d6472 55%,#2e333d 100%);box-shadow:7px 7px 0 var(--ink)}
+  .bigFlag::before{content:'';position:absolute;left:0;right:0;top:0;height:22%;
+    background:linear-gradient(180deg,rgba(255,255,255,.45),transparent)}
+
+  /* --- Nom + résultat --- */
+  .winnerNameWrap{position:relative;width:56cqw;pointer-events:none}
+  .winnerName{display:flex;align-items:baseline;white-space:nowrap;
+    transform:skewX(-9deg) rotate(-6deg);transform-origin:left top;
+    filter:drop-shadow(0 0 10px rgba(0,0,0,.5)) drop-shadow(0 0 24px rgba(0,0,0,.35)) drop-shadow(0 0 46px rgba(0,0,0,.22))}
+  .winnerName span{font-family:var(--f-nom);font-weight:var(--w-nom);color:#fff;line-height:.9;font-size:7cqh;
+    -webkit-text-stroke:var(--c-nom) var(--ink);paint-order:stroke fill}
+  /* VICTOIRE : contour allégé et dégradé jaune ↔ jaune pâle qui défile en boucle.
+     background-size 200 % + position 0 → 200 % = exactement une période : la
+     boucle ne saute jamais.
+     PERF : le halo était un `filter` sur le texte animé, donc refait (flou
+     compris) à chaque image. Le texte est maintenant en deux couches superposées :
+     la lueur (text-shadow, immobile, peinte une fois) et le dégradé, isolé sur
+     sa propre couche pour que son repeint ne touche rien d'autre. */
+  .outcome{margin:3.4cqh 0 0 1.5cqw;display:inline-grid;font-family:var(--f-resultat);font-weight:var(--w-resultat);
+    font-size:9cqh;line-height:1.05;letter-spacing:.06em;
+    transform:skewX(-9deg) rotate(-6deg);transform-origin:left top}
+  .outcome > span{grid-area:1/1;white-space:nowrap}
+  .outcomeLueur{color:transparent;
+    text-shadow:0 0 calc(16px * var(--brilleGlow,.7)) rgba(255,214,70,var(--brilleGlow,.7)),3px 4px 0 rgba(0,0,0,.45)}
+  .outcomeTexte{
+    background-image:linear-gradient(90deg,#ffc81f 0%,#fff6b8 25%,#ffc81f 50%,#fff6b8 75%,#ffc81f 100%);
+    background-size:200% 100%;
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    -webkit-text-stroke:var(--c-resultat) var(--ink);paint-order:stroke fill;
+    will-change:transform;
+    animation:brilleResultat var(--brilleVitesse,2.6s) linear infinite}
+  @keyframes brilleResultat{ from{ background-position:0% 50% } to{ background-position:200% 50% } }
+  .scene.defaite .outcomeLueur{
+    text-shadow:0 0 calc(10px * var(--brilleGlow,.7)) rgba(229,56,79,calc(var(--brilleGlow,.7) * .6)),3px 4px 0 rgba(0,0,0,.45)}
+  .scene.defaite .outcomeTexte{
+    background-image:linear-gradient(90deg,#e5384f 0%,#ffc2cb 25%,#e5384f 50%,#ffc2cb 75%,#e5384f 100%)}
+  .vicPieces{margin:1cqh 0 0 1.5cqw;font-family:var(--f-pieces);font-weight:var(--w-pieces);font-size:2.6cqh;color:var(--yellow);
+    text-shadow:0 2px 0 rgba(20,26,38,.7);letter-spacing:.05em}
+
+  /* Entrées (4 lectures) — animent `transform`, qui se compose avec `scale` */
+  .style-smash .slamCible.entree{ animation:slamSmash .55s cubic-bezier(.16,1.6,.3,1) backwards }
+  @keyframes slamSmash{ 0%{ transform:scale(2.6); opacity:0 } 60%{ transform:scale(.93) } 80%{ transform:scale(1.05) } 100%{ transform:none; opacity:1 } }
+  .style-nuns4 .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:20}
+  .style-nuns4.entree .flash{ animation:flashBlanc .35s ease-out backwards }
+  @keyframes flashBlanc{ 0%{ opacity:.85 } 100%{ opacity:0 } }
+  .style-nuns4 .slamCible.entree{ animation:slamNuns .6s cubic-bezier(.2,.8,.2,1) backwards }
+  @keyframes slamNuns{ 0%{ transform:translateX(-55cqw) scale(1.25); opacity:0 } 100%{ transform:none; opacity:1 } }
+  .style-xeno .slamCible.entree{ animation:slamXeno .5s ease-out backwards }
+  @keyframes slamXeno{ 0%{ transform:scale(2.1); opacity:0 } 100%{ transform:none; opacity:1 } }
+  /* halo en text-shadow (immobile) plutôt qu'en filter sur tout le bloc, qui
+     contient le dégradé animé et aurait donc été refait à chaque image */
+  .style-xeno .winnerName span{ text-shadow:0 0 18px rgba(255,210,62,.6) }
+  .style-2xko .slamCible.entree{ animation:slam2xko .5s steps(6,end) backwards }
+  @keyframes slam2xko{ 0%{ transform:scale(2.2) translateY(-26%); opacity:0 } 100%{ transform:none; opacity:1 } }
+
+  /* --- Héros : lueur NOIRE qui épouse la silhouette, pour le détacher du fond --- */
+  .heroBloc{position:relative;display:flex;align-items:flex-end;justify-content:center}
+  /* will-change : le perso garde sa propre couche, et ses 4 ombres floues ne
+     sont plus refaites quand l'auréole tourne juste derrière lui. */
+  .heroPortrait{position:relative;z-index:1;height:84cqh;width:auto;image-rendering:pixelated;display:block;will-change:transform;
+    filter:drop-shadow(0 0 calc(var(--lueurT,14px) * .35) rgba(0,0,0,var(--lueurA,.85)))
+           drop-shadow(0 0 var(--lueurT,14px) rgba(0,0,0,calc(var(--lueurA,.85) * .8)))
+           drop-shadow(0 0 calc(var(--lueurT,14px) * 2) rgba(0,0,0,calc(var(--lueurA,.85) * .5)))
+           drop-shadow(6px 10px 0 rgba(0,0,0,.25))}
+  .scene.defaite .heroPortrait{
+    filter:drop-shadow(0 0 calc(var(--lueurT,14px) * .35) rgba(0,0,0,var(--lueurA,.85)))
+           drop-shadow(0 0 var(--lueurT,14px) rgba(0,0,0,calc(var(--lueurA,.85) * .8)))
+           drop-shadow(0 0 calc(var(--lueurT,14px) * 2) rgba(0,0,0,calc(var(--lueurA,.85) * .5)))
+           drop-shadow(8px 12px 0 rgba(0,0,0,.35)) grayscale(.5) brightness(.78)}
+  .heroBloc.entree .heroPortrait{ animation:popHero .5s cubic-bezier(.2,1.4,.4,1) backwards }
+  @keyframes popHero{ 0%{ transform:scale(0) } 65%{ transform:scale(1.1) } 100%{ transform:scale(1) } }
+
+  /* --- Auréole : cercle PLAT derrière la tête, comme tu l'avais placé. Elle vit
+     dans le bloc du héros : elle le suit donc toujours, où qu'il soit. --- */
+  .heroRing{position:relative;width:66cqh;height:66cqh}
+  .heroRing svg{width:100%;height:100%;overflow:visible;will-change:transform;
+    animation:tourneAnneau var(--aureoleVitesse,20s) linear infinite;transform-origin:50% 50%}
+  @keyframes tourneAnneau{ to{ transform:rotate(360deg) } }
+  .heroRing text{font-family:var(--f-aureole);font-weight:var(--w-aureole);font-size:4.4px;fill:var(--or);
+    stroke:var(--ink);stroke-width:var(--c-aureole,1.4);paint-order:stroke fill;opacity:.85}
+  .scene.defaite .heroRing text{fill:var(--pastel-red)}
+  .heroRing .piste{fill:none;stroke:var(--or);stroke-width:.45;opacity:.35;stroke-dasharray:2 4}
+  .scene.defaite .heroRing .piste{stroke:var(--pastel-red)}
+
+  /* --- Carte adversaire : juste qui c'est --- */
+  .loserCard{position:relative;background:#fff;border:5px solid var(--ink);border-radius:10px;
+    box-shadow:7px 7px 0 var(--ink);padding:1.2cqh 1.8cqw 1.2cqh 1.2cqw;display:flex;align-items:center;gap:1.2cqw}
+  .loserCard .portraitCol{flex-shrink:0;width:13cqh;display:flex;justify-content:center}
+  .loserCard .portraitCol canvas{width:100%;height:auto;image-rendering:pixelated}
+  .loserCard .qui{display:flex;flex-direction:column;gap:.2cqh;padding-right:.6cqw}
+  .loserCard .quiRole{font-family:'DotGothic16',monospace;font-size:1.6cqh;color:#6b7686;letter-spacing:.1em}
+  .loserCard .quiNom{font-family:var(--f-adversaire);font-weight:var(--w-adversaire);font-size:3.2cqh;color:var(--ink);white-space:nowrap}
+  .loserCard.entree{ animation:entreCarte .4s ease-out .3s backwards }
+  @keyframes entreCarte{ from{ transform:translateY(10cqh); opacity:0 } to{ transform:none; opacity:1 } }
+
+  /* --- Boutons --- */
+  .actions{position:relative;display:flex;flex-direction:column;gap:.8cqh;align-items:stretch}
+  .actionsRow{display:flex;gap:.6cqw}
+  .mbtn{font-family:var(--f-boutons);font-weight:var(--w-boutons);border:3px solid var(--ink);border-radius:6px;cursor:pointer;
+    font-size:1.6cqh;padding:.9cqh 1.4cqw;box-shadow:3px 3px 0 var(--ink);background:#fff;color:var(--ink);
+    transition:transform .12s,box-shadow .12s;white-space:nowrap}
+  .mbtn:hover{box-shadow:5px 5px 0 var(--ink);transform:scale(1.05)}
+  .mbtn.c-yellow{background:var(--yellow)}
+  .actions.entree .mbtn{ animation:boutonEntre .35s ease-out backwards }
+  .actions.entree .actionsRow .mbtn:nth-child(1){animation-delay:.45s}
+  .actions.entree .actionsRow .mbtn:nth-child(2){animation-delay:.55s}
+  .actions.entree .changeChar{animation-delay:.65s}
+  @keyframes boutonEntre{ from{ opacity:0; transform:translateX(16px) } to{ opacity:1; transform:none } }
+
+  .bulle{position:relative;background:rgba(15,15,20,.78);border:2px solid var(--or);border-radius:8px;
+    padding:.5cqh 1cqw;color:#fff;font-family:var(--f-bulle);font-weight:var(--w-bulle);font-size:1.5cqh;white-space:nowrap}
+  .scene.defaite .bulle{border-color:var(--pastel-red)}
+
+  .prompt{position:relative;font-family:var(--f-invite);font-weight:var(--w-invite);color:#fff;font-size:1.8cqh;
+    text-shadow:0 2px 0 var(--ink);animation:clignote 1.1s steps(2) infinite;white-space:nowrap}
+  @keyframes clignote{ 50%{ opacity:.25 } }
+
+  /* --- Confettis / étincelles / fumée --- */
+  .confettis{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+  .conf{position:absolute;top:-5%;width:7px;height:12px;animation:tombe linear infinite}
+  @keyframes tombe{ 0%{ transform:translateY(0) rotate(0deg); opacity:1 } 100%{ transform:translateY(115cqh) rotate(540deg); opacity:.9 } }
+  .etincelles{position:absolute;inset:0;z-index:5;pointer-events:none}
+  .etoile{position:absolute;width:5px;height:5px;background:#fff;border-radius:50%;
+    box-shadow:0 0 7px 2px var(--or);animation:scintille 1.4s ease-in-out infinite}
+  @keyframes scintille{ 0%,100%{ opacity:0; transform:scale(.4) } 50%{ opacity:1; transform:scale(1.2) } }
+  .fumee{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
+  .fumeeBulle{position:absolute;bottom:-10%;border-radius:50%;background:rgba(120,128,140,.35);filter:blur(6px);
+    animation:monteFumee linear infinite}
+  @keyframes monteFumee{ from{ transform:translateY(0) scale(.8); opacity:.5 } to{ transform:translateY(-120cqh) scale(1.4); opacity:0 } }
+
+  /* ===================== PANNEAU ===================== */
+  .cote{flex:1 1 340px;min-width:300px;display:flex;flex-direction:column;gap:10px}
+  details.bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px 12px}
+  details.bloc > summary{cursor:pointer;list-style:none;font-size:12px;color:var(--accent);text-transform:uppercase;
+    letter-spacing:1.2px;font-weight:700;display:flex;align-items:center;gap:7px}
+  details.bloc > summary::before{content:'▸';color:#6d80a0;transition:transform .15s}
+  details.bloc[open] > summary::before{transform:rotate(90deg)}
+  details.bloc[open] > summary{margin-bottom:9px}
+  .row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px}
+  .row:last-child{margin-bottom:0}
+  select{background:#0a1220;color:var(--txt);border:1px solid var(--edge);border-radius:7px;padding:5px 7px;font-size:12px;width:100%}
+  button{background:#1a2b48;color:var(--txt);border:1px solid var(--edge);border-radius:7px;
+    padding:7px 11px;font-size:11.5px;cursor:pointer;letter-spacing:.3px}
+  button:hover{background:#24395e}
+  button.on{background:#3a2c06;border-color:var(--or);color:var(--or)}
+  button.grand{flex:1 1 100%;padding:10px;font-size:13px}
+  button.vert{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .reg{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:center;font-size:12px;margin-bottom:7px}
+  .reg label{color:#8fa4c4}
+  .reg input[type=range]{grid-column:1/-1;width:100%}
+  .reg .n{font-family:Consolas,monospace;color:var(--or);text-align:right;font-size:11.5px}
+  .reg.regChoix{grid-template-columns:128px 1fr}
+  .sousTitre{font-size:10.5px;color:#6d80a0;text-transform:uppercase;letter-spacing:1px;margin:10px 0 5px;
+    border-top:1px solid var(--edge);padding-top:8px}
+  .sousTitre:first-child{border-top:0;padding-top:0;margin-top:0}
+  .legende{font-size:11px;color:#6d80a0;line-height:1.5;margin:2px 0 0}
+
+  .els{display:flex;flex-direction:column;gap:4px;max-height:240px;overflow:auto}
+  .el{display:flex;align-items:center;gap:8px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+    padding:6px 9px;cursor:pointer;font-size:12px}
+  .el:hover{border-color:#3d5c8a}
+  .el.on{border-color:var(--or);background:#171205}
+  .el .nom{flex:1}
+  .el .val{font-family:Consolas,monospace;font-size:10.5px;color:#7f93b3}
+  .el.on .val{color:var(--or)}
+  .el .oeil{opacity:.45;font-size:13px}
+  .el.masque{opacity:.42}
+  .el.masque .oeil{opacity:1}
+  .vide{font-size:12px;color:#6d80a0;line-height:1.6;margin:8px 0 0}
+  .sortie{width:100%;height:220px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+    color:var(--or);font-family:Consolas,monospace;font-size:11px;padding:9px;resize:vertical;line-height:1.5}
+  .etatCopie{font-size:11.5px;color:#8ef0b4;min-height:16px;margin-top:5px}
+  .etatCopie.erreur{color:var(--pastel-red)}
+</style>
+</head>
+<body>
+
+<h1>Fin de match — Phase 1 : RÉSULTAT <span style="color:#6d80a0;font-size:13px">(v4)</span></h1>
+<p class="note">Clique un élément dans la scène (ou dans la liste) puis <b>glisse-le</b> et <b>règle sa taille</b>.
+Le <b>soleil</b> se choisit dans la liste, puis se déplace en glissant n'importe où sur le fond. Tout le panneau
+(fond, soleil, lueur, typos, contours, placement…) s'exporte d'un bloc dans la zone <b>Tout copier / coller</b>
+— et un réglage recollé là s'applique d'un clic.</p>
+
+<div class="haut">
+  <div class="sceneWrap">
+    <div class="scene victoire style-nuns4" id="scene" data-fond="arcenciel" data-partie="reelle">
+
+      <div class="partieFond">
+        <div class="terrain"></div>
+        <div class="matchSimule" id="matchSimule">
+          <canvas class="j1" id="simJ1" width="16" height="20"></canvas>
+          <canvas class="j2" id="simJ2" width="16" height="20"></canvas>
+          <div class="disque"></div>
+        </div>
+        <iframe id="partieReelle" src="../index.html" tabindex="-1" aria-hidden="true" title="Partie en fond" allow="autoplay 'none'"></iframe>
+      </div>
+
+      <div class="overScrim"></div>
+      <div class="voileLisible"></div>
+
+      <div class="movable" data-el="soleil" style="--x:50;--y:50;--s:1;z-index:2"><div class="soleil"></div></div>
+      <div class="fumee" id="fumee"></div>
+      <div class="vignette"></div>
+
+      <div class="movable" data-el="hero" style="--x:59;--y:19;--s:0.84;z-index:3">
+        <div class="heroBloc entree" id="heroBloc">
+          <div class="movable" data-el="aureole" style="--x:-5.5;--y:-12;--s:0.93;z-index:0">
+            <div class="heroRing">
+              <svg viewBox="0 0 100 100">
+                <path class="piste" id="anneauPiste" d="M 50,50 m -44,0 a 44,44 0 1,1 88,0 a 44,44 0 1,1 -88,0"/>
+                <text><textPath id="anneauTexte" href="#anneauPiste" startOffset="0"></textPath></text>
+              </svg>
+            </div>
+          </div>
+          <canvas class="heroPortrait" id="heroCanvas"></canvas>
+        </div>
+      </div>
+
+      <div class="confettis" id="confettis"></div>
+      <div class="etincelles" id="etincelles"></div>
+
+      <div class="movable slamCible entree cache" data-el="rang" style="--x:3;--y:3;--s:1;z-index:9">
+        <div class="rang">
+          <svg viewBox="0 0 100 100" id="laurierSvg"></svg>
+          <span class="chiffre" id="rangChiffre">1</span>
+        </div>
+      </div>
+
+      <div class="movable slamCible entree" data-el="badge" style="--x:-2;--y:-1;--s:1;z-index:9">
+        <div class="bigFlag red" id="bigFlag">P1</div>
+      </div>
+
+      <div class="movable slamCible entree" data-el="nom" style="--x:2;--y:23;--s:1.6;z-index:4">
+        <div class="winnerNameWrap">
+          <div class="winnerName"><span id="nomTxt">2HOLLIS</span></div>
+          <div class="outcome"><span class="outcomeLueur" id="outcomeLueur" aria-hidden="true">VICTOIRE</span><span class="outcomeTexte" id="outcomeTxt">VICTOIRE</span></div>
+          <div class="vicPieces" id="vicPieces">+10 🪙</div>
+        </div>
+      </div>
+
+      <div class="movable cache" data-el="bulle" style="--x:44;--y:4;--s:1;z-index:7">
+        <div class="bulle" id="bulle">QUELLE PUISSANCE !</div>
+      </div>
+
+      <div class="movable" data-el="adversaire" style="--x:1.5;--y:67.5;--s:1.44;z-index:7">
+        <div class="loserCard entree">
+          <div class="portraitCol"><canvas id="encartCanvas" width="16" height="20"></canvas></div>
+          <div class="qui">
+            <span class="quiRole" id="advRole">ORDINATEUR</span>
+            <span class="quiNom" id="advNom">CPU</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="movable" data-el="boutons" style="--x:83;--y:4;--s:1;z-index:8">
+        <div class="actions entree" id="actions">
+          <div class="actionsRow">
+            <button class="mbtn c-yellow">Revanche</button>
+            <button class="mbtn">Menu</button>
+          </div>
+          <button class="mbtn changeChar">Changez de perso</button>
+        </div>
+      </div>
+
+      <div class="movable" data-el="invite" style="--x:35.5;--y:92.5;--s:1.56;z-index:8">
+        <div class="prompt">APPUYEZ SUR ESPACE POUR CONTINUER</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cote" id="cote">
+    <details class="bloc" open>
+      <summary>Résultat</summary>
+      <div class="row">
+        <button id="btnVictoire" class="on">VICTOIRE</button>
+        <button id="btnDefaite">DÉFAITE</button>
+        <button id="btnLecture">Mode lecture</button>
+      </div>
+      <div class="row"><button class="grand vert" id="btnRejouer">↻ Rejouer l'entrée</button></div>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Tout copier / coller</summary>
+      <textarea class="sortie" id="sortie" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:7px">
+        <button class="vert" id="btnCopier">📋 Tout copier</button>
+        <button id="btnAppliquer">Appliquer ce qui est collé</button>
+        <button id="btnDefauts">Tout remettre à zéro</button>
+      </div>
+      <div class="etatCopie" id="etatCopie"></div>
+      <p class="legende">Accepte ce bloc JSON, et aussi les anciennes lignes <code>[data-el="…"] { --x… }</code>.</p>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Placement — clique puis glisse</summary>
+      <div class="els" id="listeEls"></div>
+      <p class="vide" id="aucunEl">Aucun élément choisi. Clique dans la scène ou dans la liste.</p>
+      <div id="regBloc" style="display:none;margin-top:9px">
+        <div class="reg"><label>Taille</label><span class="n" id="vScale">1.00×</span>
+          <input type="range" id="rScale" min="0.2" max="3" value="1" step="0.02"></div>
+        <div class="reg"><label>X (gauche →)</label><span class="n" id="vX">0%</span>
+          <input type="range" id="rX" min="-60" max="120" value="0" step="0.5"></div>
+        <div class="reg"><label>Y (haut ↓)</label><span class="n" id="vY">0%</span>
+          <input type="range" id="rY" min="-60" max="120" value="0" step="0.5"></div>
+        <div class="row">
+          <button id="btnVisible">Masquer cet élément</button>
+          <button id="btnResetEl">Réinitialiser</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Personnages</summary>
+      <div class="reg regChoix"><label>Vainqueur</label><select id="selHero"></select></div>
+      <div class="reg regChoix"><label>Adversaire</label><select id="selEncart"></select></div>
+      <div class="row">
+        <button id="btnCpu" class="on">Adversaire : CPU</button>
+        <button id="btnEnLigne">Adversaire : en ligne</button>
+      </div>
+    </details>
+
+    <div id="blocsReglages"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { CHARS, ROSTER } from '../js/data/characters.js';
+
+  const $ = id => document.getElementById(id);
+  const scene = $('scene');
+
+  /* ================= TYPOS DU JEU ================= */
+  // Toutes celles qu'on trouve dans index.html, style.css et les canvas du jeu.
+  const POLICES = {
+    archivo:    { nom:'Archivo Black',       famille:"'Archivo Black',sans-serif",      poids:400 },
+    russo:      { nom:'Russo One',           famille:"'Russo One',sans-serif",          poids:400 },
+    barlow:     { nom:'Barlow ExtraBold',    famille:"'Barlow',sans-serif",             poids:800 },
+    chakra:     { nom:'Chakra Petch Bold',   famille:"'Chakra Petch',sans-serif",       poids:700 },
+    dotgothic:  { nom:'DotGothic16',         famille:"'DotGothic16',monospace",         poids:400 },
+    greatvibes: { nom:'Great Vibes',         famille:"'Great Vibes',cursive",           poids:400 },
+    georgia:    { nom:'Georgia (casino)',    famille:"Georgia,serif",                   poids:700 },
+    segoe:      { nom:'Segoe UI',            famille:"'Segoe UI',system-ui,sans-serif", poids:700 },
+  };
+
+  /* ================= SPRITES ================= */
+  function dessine(canvas, ck, w, h) {
+    canvas.width = w; canvas.height = h;
+    const g = canvas.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.clearRect(0, 0, w, h);
+    g.drawImage(CHARS[ck].frames.idle, 0, 0, 16, 20, 0, 0, w, h);
+  }
+  function peuple(sel, defaut) {
+    for (const ck of ROSTER) {
+      const o = document.createElement('option');
+      o.value = ck; o.textContent = ck;
+      if (ck === defaut) o.selected = true;
+      sel.appendChild(o);
+    }
+  }
+  const selHero = $('selHero'), selEncart = $('selEncart');
+  const PERSO_HERO_DEF = ROSTER.includes('mamie') ? 'mamie' : ROSTER[0];
+  const PERSO_ADV_DEF = ROSTER.includes('naruto') ? 'naruto' : ROSTER[0];
+  peuple(selHero, PERSO_HERO_DEF); peuple(selEncart, PERSO_ADV_DEF);
+  let advEnLigne = false;
+
+  function majAdversaire() {
+    $('advRole').textContent = advEnLigne ? 'ADVERSAIRE' : 'ORDINATEUR';
+    $('advNom').textContent = advEnLigne ? 'Ryzen92' : 'CPU';
+    $('btnCpu').classList.toggle('on', !advEnLigne);
+    $('btnEnLigne').classList.toggle('on', advEnLigne);
+  }
+  function redessine() {
+    dessine($('heroCanvas'), selHero.value, 160, 200);
+    $('nomTxt').textContent = selHero.value.toUpperCase();
+    dessine($('encartCanvas'), selEncart.value, 64, 80);
+    dessine($('simJ1'), selHero.value, 16, 20);
+    dessine($('simJ2'), selEncart.value, 16, 20);
+  }
+  selHero.addEventListener('change', () => { redessine(); majSortie(); });
+  selEncart.addEventListener('change', () => { redessine(); majSortie(); });
+  $('btnCpu').addEventListener('click', () => { advEnLigne = false; majAdversaire(); majSortie(); });
+  $('btnEnLigne').addEventListener('click', () => { advEnLigne = true; majAdversaire(); majSortie(); });
+  redessine(); majAdversaire();
+
+  /* ================= LAURIER ================= */
+  (function laurier() {
+    const svg = $('laurierSvg'), ns = 'http://www.w3.org/2000/svg';
+    const CX = 50, CY = 54, R = 33, rad = a => a * Math.PI / 180;
+    for (const cote of [-1, 1]) {
+      const a0 = cote < 0 ? 100 : 80, a1 = cote < 0 ? 218 : -38;
+      const pts = [];
+      for (let i = 0; i <= 24; i++) {
+        const a = rad(a0 + (a1 - a0) * i / 24);
+        pts.push([(CX + R * Math.cos(a)).toFixed(2), (CY + R * Math.sin(a)).toFixed(2)]);
+      }
+      const tige = document.createElementNS(ns, 'path');
+      tige.setAttribute('d', 'M ' + pts.map(p => p.join(',')).join(' L '));
+      tige.setAttribute('class', 'brindille');
+      svg.appendChild(tige);
+      for (let i = 0; i < 8; i++) {
+        const t = i / 7, a = rad(a0 + (a1 - a0) * t), rr = R + 3.5;
+        const px = CX + rr * Math.cos(a), py = CY + rr * Math.sin(a);
+        const f = document.createElementNS(ns, 'ellipse');
+        f.setAttribute('cx', px.toFixed(2)); f.setAttribute('cy', py.toFixed(2));
+        f.setAttribute('rx', (8.6 - 2.6 * t).toFixed(2)); f.setAttribute('ry', (4.1 - .9 * t).toFixed(2));
+        f.setAttribute('class', 'feuille');
+        f.setAttribute('transform', `rotate(${(a * 180 / Math.PI + cote * 28).toFixed(1)} ${px.toFixed(2)} ${py.toFixed(2)})`);
+        svg.appendChild(f);
+      }
+    }
+  })();
+
+  /* ================= AURÉOLE : texte sur le tour complet ================= */
+  function majAnneau(victoire) {
+    const piste = $('anneauPiste'), tp = $('anneauTexte');
+    tp.textContent = ((victoire ? 'VICTOIRE' : 'DÉFAITE') + ' • ').repeat(6);
+    // textLength = circonférence exacte : ni trou ni chevauchement au raccord.
+    tp.setAttribute('textLength', piste.getTotalLength());
+    tp.setAttribute('lengthAdjust', 'spacingAndGlyphs');
+  }
+
+  /* ================= EFFETS ================= */
+  const COUL = ['#ffd23e','#5df08a','#2f6bff','#e5384f','#ffffff','#ff8c1a'];
+  function confettis(n) {
+    const h = $('confettis'); h.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const c = document.createElement('div'); c.className = 'conf';
+      c.style.left = Math.random() * 100 + '%';
+      c.style.background = COUL[i % COUL.length];
+      c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+      c.style.animationDelay = (Math.random() * -2) + 's';
+      h.appendChild(c);
+    }
+  }
+  (function fumee() {
+    const h = $('fumee');
+    for (let i = 0; i < 10; i++) {
+      const b = document.createElement('div'); b.className = 'fumeeBulle';
+      const s = 18 + Math.random() * 38;
+      b.style.width = s + 'px'; b.style.height = s + 'px'; b.style.left = Math.random() * 100 + '%';
+      b.style.animationDuration = (4 + Math.random() * 3) + 's';
+      b.style.animationDelay = (Math.random() * -5) + 's';
+      h.appendChild(b);
+    }
+  })();
+  (function etincelles() {
+    const h = $('etincelles');
+    for (let i = 0; i < 16; i++) {
+      const e = document.createElement('div'); e.className = 'etoile';
+      e.style.left = (40 + Math.random() * 55) + '%'; e.style.top = Math.random() * 100 + '%';
+      e.style.animationDelay = (Math.random() * -1.4) + 's';
+      h.appendChild(e);
+    }
+  })();
+
+  /* ================= VICTOIRE / DÉFAITE ================= */
+  const BULLES_V = ['QUELLE PUISSANCE !', 'DANS LA ZONE !', 'IMPARABLE !'];
+  const BULLES_D = ['OH LA FAUTE !', 'ÇA PIQUE...', 'PRESQUE !'];
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  function setResultat(victoire) {
+    scene.classList.toggle('victoire', victoire);
+    scene.classList.toggle('defaite', !victoire);
+    $('outcomeTxt').textContent = $('outcomeLueur').textContent = victoire ? 'VICTOIRE' : 'DÉFAITE';
+    $('rangChiffre').textContent = victoire ? '1' : '2';
+    $('vicPieces').textContent = victoire ? '+10 🪙' : '+5 🪙';
+    $('btnVictoire').classList.toggle('on', victoire);
+    $('btnDefaite').classList.toggle('on', !victoire);
+    $('fumee').style.display = victoire ? 'none' : 'block';
+    $('confettis').style.display = victoire ? 'block' : 'none';
+    $('etincelles').style.display = victoire ? 'block' : 'none';
+    $('bulle').textContent = pick(victoire ? BULLES_V : BULLES_D);
+    majAnneau(victoire);
+  }
+  $('btnVictoire').addEventListener('click', () => { setResultat(true); rejouer(); majSortie(); });
+  $('btnDefaite').addEventListener('click', () => { setResultat(false); rejouer(); majSortie(); });
+
+  function rejouer() {
+    for (const el of scene.querySelectorAll('.slamCible, .heroBloc, .loserCard, .actions')) {
+      el.classList.remove('entree'); void el.offsetWidth; el.classList.add('entree');
+    }
+    scene.classList.remove('entree', 'tremble'); void scene.offsetWidth; scene.classList.add('entree', 'tremble');
+  }
+  $('btnRejouer').addEventListener('click', rejouer);
+
+  const STYLES = { 'style-smash':'Smash', 'style-nuns4':'NUNS4', 'style-xeno':'Xenoverse', 'style-2xko':'2XKO' };
+  function setStyle(v) {
+    for (const s of Object.keys(STYLES)) scene.classList.remove(s);
+    scene.classList.add(v);
+    scene.querySelectorAll('.flash').forEach(e => e.remove());
+    if (v === 'style-nuns4') { const f = document.createElement('div'); f.className = 'flash'; scene.appendChild(f); }
+    rejouer();
+  }
+
+  /* ================= RÉGLAGES (déclaratifs : panneau + export générés d'ici) ================= */
+  const px = v => v + 'px', sec = v => v + 's', cssVar = nom => (v, u) => scene.style.setProperty(nom, u ? u(v) : v);
+  const SECTIONS = [
+    { titre:'Fond', items:[
+      { id:'fond', label:'Couleur du fond', type:'choix', def:'arcenciel',
+        options:[['violet','Violet (actuel)'],['arcenciel','Arc-en-ciel animé']], fn:v => { scene.dataset.fond = v; } },
+      { id:'fondOpacite', label:'Opacité du fond', min:0, max:1, pas:.05, def:1, fn:v => scene.style.setProperty('--fondOp', v) },
+      { sous:'Partie derrière' },
+      { id:'partie', label:'Partie', type:'choix', def:'reelle',
+        options:[['reelle','Vraie partie (le jeu tourne)'],['simulee','Partie simulée']], fn:v => { scene.dataset.partie = v; } },
+      { id:'partieOpacite', label:'Opacité', min:0, max:1, pas:.05, def:.85, fn:v => scene.style.setProperty('--partieOp', v) },
+      { id:'partieFlou', label:'Flou', min:0, max:8, pas:.5, def:3.5, unite:'px', fn:v => scene.style.setProperty('--partieFlou', px(v)) },
+    ]},
+    { titre:'Soleil (rayons derrière)', items:[
+      { id:'soleilIntensite', label:'Intensité', min:0, max:1, pas:.05, def:.3, fn:v => scene.style.setProperty('--soleilOp', v) },
+      { id:'soleilClignote', label:'Clignotement léger', min:0, max:.7, pas:.05, def:.6, fn:v => scene.style.setProperty('--soleilClignote', v) },
+      { id:'soleilVitesse', label:"Durée d'un tour", min:4, max:60, pas:1, def:30, unite:'s', fn:v => scene.style.setProperty('--soleilVitesse', sec(v)) },
+    ]},
+    { titre:'Personnage', items:[
+      { id:'lueurTaille', label:'Lueur noire — taille', min:0, max:40, pas:1, def:14, unite:'px', fn:v => scene.style.setProperty('--lueurT', px(v)) },
+      { id:'lueurIntensite', label:'Lueur noire — intensité', min:0, max:1, pas:.05, def:.85, fn:v => scene.style.setProperty('--lueurA', v) },
+      { sous:'Auréole' },
+      { id:'aureoleVitesse', label:"Durée d'un tour", min:4, max:60, pas:1, def:20, unite:'s', fn:v => scene.style.setProperty('--aureoleVitesse', sec(v)) },
+      { id:'police_aureole', cible:'aureole', label:'Typo', type:'police', def:'archivo' },
+      { id:'contour_aureole', label:'Contour noir', min:0, max:3, pas:.1, def:1.1, fn:v => scene.style.setProperty('--c-aureole', v) },
+    ]},
+    { titre:'VICTOIRE / DÉFAITE', items:[
+      { id:'police_resultat', cible:'resultat', label:'Typo', type:'police', def:'russo' },
+      { id:'contour_resultat', label:'Contour noir', min:0, max:8, pas:.5, def:3, unite:'px', fn:v => scene.style.setProperty('--c-resultat', px(v)) },
+      { id:'brilleVitesse', label:'Dégradé animé — durée', min:.6, max:8, pas:.1, def:1.6, unite:'s', fn:v => scene.style.setProperty('--brilleVitesse', sec(v)) },
+      { id:'brilleGlow', label:'Brillance', min:0, max:1, pas:.05, def:.5, fn:v => scene.style.setProperty('--brilleGlow', v) },
+    ]},
+    { titre:'Typos des autres textes', items:[
+      { sous:'Nom du vainqueur' },
+      { id:'police_nom', cible:'nom', label:'Typo', type:'police', def:'russo' },
+      { id:'contour_nom', label:'Contour noir', min:0, max:10, pas:.5, def:6, unite:'px', fn:v => scene.style.setProperty('--c-nom', px(v)) },
+      { sous:'Badge P1' },
+      { id:'police_badge', cible:'badge', label:'Typo', type:'police', def:'archivo' },
+      { id:'contour_badge', label:'Contour noir', min:0, max:10, pas:.5, def:5, unite:'px', fn:v => scene.style.setProperty('--c-badge', px(v)) },
+      { sous:'Autres' },
+      { id:'police_pieces', cible:'pieces', label:'Pièces (+10)', type:'police', def:'dotgothic' },
+      { id:'police_adversaire', cible:'adversaire', label:'Nom adversaire', type:'police', def:'archivo' },
+      { id:'police_boutons', cible:'boutons', label:'Boutons', type:'police', def:'russo' },
+      { id:'police_invite', cible:'invite', label:'Appuyez sur espace', type:'police', def:'dotgothic' },
+      { id:'police_bulle', cible:'bulle', label:'Bulle', type:'police', def:'barlow' },
+      { id:'police_rang', cible:'rang', label:'Chiffre du rang', type:'police', def:'archivo' },
+    ]},
+    { titre:'Entrée & effets', items:[
+      { id:'style', label:"Style d'entrée", type:'choix', def:'style-nuns4', options:Object.entries(STYLES), fn:setStyle },
+      { id:'tremblement', label:'Tremblement — amplitude', min:0, max:14, pas:1, def:5, unite:'px', fn:v => scene.style.setProperty('--shakeAmp', px(v)) },
+      { id:'tremblementDuree', label:'Tremblement — durée', min:.1, max:.6, pas:.02, def:.22, unite:'s', fn:v => scene.style.setProperty('--shakeDur', sec(v)) },
+      { id:'confettis', label:'Nombre de confettis', min:0, max:90, pas:2, def:40, fn:v => confettis(+v) },
+    ]},
+  ];
+  const ITEMS = SECTIONS.flatMap(s => s.items).filter(it => it.id);
+  const PAR_ID = Object.fromEntries(ITEMS.map(it => [it.id, it]));
+  const valeurs = {};
+
+  function formate(it, v) {
+    const n = +v;
+    const txt = Number.isInteger(n) ? String(n) : n.toFixed(it.pas < .1 ? 2 : 1);
+    return txt + (it.unite || '');
+  }
+  function appliquerItem(it, v) {
+    if (it.type === 'police') {
+      const p = POLICES[v] || POLICES.archivo;
+      scene.style.setProperty('--f-' + it.cible, p.famille);
+      scene.style.setProperty('--w-' + it.cible, p.poids);
+    } else if (it.fn) it.fn(v);
+  }
+  function regler(id, v, silencieux) {
+    const it = PAR_ID[id];
+    if (!it) return;
+    if (!it.type || it.type === 'curseur') v = +v;
+    valeurs[id] = v;
+    if (it._input && String(it._input.value) !== String(v)) it._input.value = v;
+    if (it._n) it._n.textContent = formate(it, v);
+    appliquerItem(it, v);
+    if (!silencieux) majSortie();
+  }
+
+  (function construirePanneau() {
+    const hote = $('blocsReglages');
+    for (const s of SECTIONS) {
+      const bloc = document.createElement('details');
+      bloc.className = 'bloc'; bloc.open = true;
+      const sum = document.createElement('summary'); sum.textContent = s.titre;
+      bloc.appendChild(sum);
+      for (const it of s.items) {
+        if (it.sous) {
+          const t = document.createElement('div'); t.className = 'sousTitre'; t.textContent = it.sous;
+          bloc.appendChild(t); continue;
+        }
+        const ligne = document.createElement('div');
+        ligne.className = 'reg';
+        const lab = document.createElement('label'); lab.textContent = it.label; lab.htmlFor = 'ctl_' + it.id;
+        let input;
+        if (it.type === 'choix' || it.type === 'police') {
+          input = document.createElement('select');
+          const opts = it.type === 'police' ? Object.entries(POLICES).map(([k, p]) => [k, p.nom]) : it.options;
+          for (const [val, texte] of opts) {
+            const o = document.createElement('option'); o.value = val; o.textContent = texte;
+            if (it.type === 'police') { o.style.fontFamily = POLICES[val].famille; o.style.fontWeight = POLICES[val].poids; }
+            input.appendChild(o);
+          }
+          ligne.classList.add('regChoix');
+          ligne.append(lab, input);
+          input.addEventListener('change', () => regler(it.id, input.value));
+        } else {
+          input = document.createElement('input');
+          Object.assign(input, { type:'range', min:it.min, max:it.max, step:it.pas });
+          const n = document.createElement('span'); n.className = 'n';
+          ligne.append(lab, n, input);
+          it._n = n;
+          input.addEventListener('input', () => regler(it.id, input.value));
+        }
+        input.id = 'ctl_' + it.id;
+        it._input = input;
+        bloc.appendChild(ligne);
+      }
+      hote.appendChild(bloc);
+    }
+  })();
+
+  /* ================= ÉDITEUR DE PLACEMENT ================= */
+  const NOMS = {
+    soleil:'Soleil (rayons)', hero:'Personnage', aureole:'Auréole (suit la tête)', rang:'Rang + laurier',
+    badge:'Badge P1', nom:'Nom + résultat', bulle:'Bulle commentateur', adversaire:'Carte adversaire',
+    boutons:'Boutons', invite:'Appuyez sur espace'
+  };
+  const movables = [...scene.querySelectorAll('.movable')];
+  const lire = m => ({ x:+m.style.getPropertyValue('--x'), y:+m.style.getPropertyValue('--y'), s:+m.style.getPropertyValue('--s') });
+  const DEFAUTS_PLACEMENT = Object.fromEntries(movables.map(m => [m.dataset.el, { ...lire(m), masque:m.classList.contains('cache') }]));
+  let choisi = null;
+  const liste = $('listeEls');
+
+  for (const m of movables) {
+    const d = document.createElement('div');
+    d.className = 'el'; d.dataset.el = m.dataset.el;
+    d.innerHTML = `<span class="oeil" title="Masquer / afficher">👁</span><span class="nom">${NOMS[m.dataset.el] || m.dataset.el}</span><span class="val"></span>`;
+    d.addEventListener('click', e => {
+      if (e.target.classList.contains('oeil')) { basculeVisible(m); return; }
+      choisir(m);
+    });
+    liste.appendChild(d);
+  }
+  function ecrire(m, v) {
+    m.style.setProperty('--x', v.x); m.style.setProperty('--y', v.y); m.style.setProperty('--s', v.s);
+    if (m.dataset.el === 'soleil') majSoleil();
+    majListe(); majSortie();
+  }
+  // Taille du soleil = juste de quoi couvrir le coin de la scène le plus éloigné
+  // de son centre (scène en 16/10 : 160cqh × 100cqh), compensée par son échelle.
+  // Posée sur le soleil lui-même, pas sur la scène : changer une variable sur
+  // la scène ferait recalculer le style de tout ce qu'elle contient.
+  function majSoleil() {
+    const m = movables.find(x => x.dataset.el === 'soleil');
+    if (!m) return;
+    const { x, y, s } = lire(m);
+    const cx = x / 100 * 160, cy = y / 100 * 100;
+    const rayon = Math.max(...[[0, 0], [160, 0], [0, 100], [160, 100]].map(([a, b]) => Math.hypot(a - cx, b - cy)));
+    m.style.setProperty('--soleilTaille', (2 * rayon / Math.max(s, .05) + 10).toFixed(1) + 'cqh');
+  }
+  function majCurseursEl() {
+    if (!choisi) return;
+    const v = lire(choisi);
+    $('rScale').value = v.s; $('rX').value = v.x; $('rY').value = v.y;
+    $('vScale').textContent = v.s.toFixed(2) + '×'; $('vX').textContent = v.x + '%'; $('vY').textContent = v.y + '%';
+    $('btnVisible').textContent = choisi.classList.contains('cache') ? 'Réafficher cet élément' : 'Masquer cet élément';
+  }
+  function choisir(m) {
+    choisi = m;
+    for (const x of movables) x.classList.toggle('sel', x === m);
+    for (const d of liste.children) d.classList.toggle('on', d.dataset.el === m.dataset.el);
+    $('aucunEl').style.display = 'none';
+    $('regBloc').style.display = 'block';
+    majCurseursEl();
+  }
+  function basculeVisible(m) {
+    m.classList.toggle('cache');
+    majListe(); majCurseursEl(); majSortie();
+  }
+  function majListe() {
+    for (const d of liste.children) {
+      const m = movables.find(x => x.dataset.el === d.dataset.el), v = lire(m);
+      d.querySelector('.val').textContent = `${v.x}/${v.y} ·${v.s.toFixed(2)}×`;
+      d.classList.toggle('masque', m.classList.contains('cache'));
+    }
+  }
+  for (const [idR, cle] of [['rScale','s'],['rX','x'],['rY','y']]) {
+    $(idR).addEventListener('input', () => {
+      if (!choisi) return;
+      const v = lire(choisi); v[cle] = +$(idR).value; ecrire(choisi, v); majCurseursEl();
+    });
+  }
+  $('btnVisible').addEventListener('click', () => { if (choisi) basculeVisible(choisi); });
+  $('btnResetEl').addEventListener('click', () => {
+    if (!choisi) return;
+    const d = DEFAUTS_PLACEMENT[choisi.dataset.el];
+    choisi.classList.toggle('cache', d.masque);
+    ecrire(choisi, d); majCurseursEl();
+  });
+
+  /* Glisser : les % se calculent contre le parent positionné (la scène, ou le
+     bloc du héros pour l'auréole), en corrigeant l'échelle de ce parent pour
+     que l'élément suive exactement la souris. Le soleil, une fois choisi, se
+     glisse depuis n'importe quel point libre du fond. */
+  let drag = null;
+  scene.addEventListener('pointerdown', e => {
+    if (scene.classList.contains('lecture')) return;
+    let m = e.target.closest('.movable');
+    if (!m && choisi && choisi.dataset.el === 'soleil') m = choisi;
+    if (!m) return;
+    e.preventDefault();
+    choisir(m);
+    const parent = m.offsetParent || scene, r = parent.getBoundingClientRect(), v = lire(m);
+    drag = { m, parent, sx:r.width / (parent.offsetWidth || r.width), sy:r.height / (parent.offsetHeight || r.height),
+             x0:v.x, y0:v.y, px0:e.clientX, py0:e.clientY };
+    scene.setPointerCapture(e.pointerId);
+  });
+  scene.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dx = (e.clientX - drag.px0) / drag.sx / drag.parent.offsetWidth * 100;
+    const dy = (e.clientY - drag.py0) / drag.sy / drag.parent.offsetHeight * 100;
+    const v = lire(drag.m);
+    v.x = Math.round((drag.x0 + dx) * 2) / 2; v.y = Math.round((drag.y0 + dy) * 2) / 2;
+    ecrire(drag.m, v); majCurseursEl();
+  });
+  const finDrag = () => { drag = null; };
+  scene.addEventListener('pointerup', finDrag);
+  scene.addEventListener('pointercancel', finDrag);
+
+  $('btnLecture').addEventListener('click', e => {
+    const on = scene.classList.toggle('lecture');
+    e.target.classList.toggle('on', on);
+    e.target.textContent = on ? 'Mode édition' : 'Mode lecture';
+  });
+
+  /* ================= TOUT COPIER / COLLER ================= */
+  const sortie = $('sortie');
+  function etat() {
+    const placement = {};
+    for (const m of movables) { const v = lire(m); placement[m.dataset.el] = { x:v.x, y:v.y, s:+v.s.toFixed(2), masque:m.classList.contains('cache') }; }
+    return {
+      mockup:'fin-de-match — phase 1 (résultat)', version:4,
+      resultat: scene.classList.contains('victoire') ? 'victoire' : 'defaite',
+      persos:{ vainqueur:selHero.value, adversaire:selEncart.value, adversaireEnLigne:advEnLigne },
+      reglages:{ ...valeurs },
+      placement
+    };
+  }
+  // PERF : pendant un glisser, chaque mouvement de souris réécrivait tout le
+  // bloc JSON dans la zone de texte. On regroupe : au plus une écriture par image.
+  let sortieEnAttente = false;
+  function majSortie(forcer) {
+    if (forcer) { sortie.value = JSON.stringify(etat(), null, 2); return; }
+    if (document.activeElement === sortie || sortieEnAttente) return;   // ne pas écraser un collage en cours
+    sortieEnAttente = true;
+    requestAnimationFrame(() => {
+      sortieEnAttente = false;
+      if (document.activeElement !== sortie) sortie.value = JSON.stringify(etat(), null, 2);
+    });
+  }
+  function message(txt, erreur) {
+    const e = $('etatCopie'); e.textContent = txt; e.classList.toggle('erreur', !!erreur);
+    clearTimeout(message.t); message.t = setTimeout(() => { e.textContent = ''; }, 3500);
+  }
+  function appliquer(texte) {
+    texte = texte.trim();
+    if (!texte) { message('Rien à appliquer.', true); return; }
+    let d = null;
+    try { d = JSON.parse(texte); } catch { d = null; }
+    if (!d) {
+      // Ancien format : lignes [data-el="x"] { --x:..; --y:..; --s:..; }  /* masqué */
+      const re = /\[data-el="([\w-]+)"\]\s*\{\s*--x:\s*([-\d.]+);\s*--y:\s*([-\d.]+);\s*--s:\s*([-\d.]+);?\s*\}\s*(\/\*\s*masqué\s*\*\/)?/g;
+      const placement = {}; let mm, trouve = false;
+      while ((mm = re.exec(texte))) { trouve = true; placement[mm[1] === 'anneau' ? 'aureole' : mm[1]] = { x:+mm[2], y:+mm[3], s:+mm[4], masque:!!mm[5] }; }
+      if (!trouve) { message("Format pas reconnu : colle le bloc JSON exporté ici.", true); return; }
+      delete placement.aureole;   // l'ancien anneau était placé sur la scène, pas sur la tête
+      d = { placement };
+    }
+    if (d.reglages) for (const [id, v] of Object.entries(d.reglages)) regler(id, v, true);
+    if (d.placement) for (const [el, p] of Object.entries(d.placement)) {
+      const m = movables.find(x => x.dataset.el === el);
+      if (!m) continue;
+      m.style.setProperty('--x', p.x); m.style.setProperty('--y', p.y); m.style.setProperty('--s', p.s);
+      m.classList.toggle('cache', !!p.masque);
+    }
+    majSoleil();
+    if (d.persos) {
+      if (ROSTER.includes(d.persos.vainqueur)) selHero.value = d.persos.vainqueur;
+      if (ROSTER.includes(d.persos.adversaire)) selEncart.value = d.persos.adversaire;
+      advEnLigne = !!d.persos.adversaireEnLigne;
+      redessine(); majAdversaire();
+    }
+    if (d.resultat) setResultat(d.resultat !== 'defaite');
+    majListe(); majCurseursEl(); rejouer();
+    sortie.blur(); majSortie(true);
+    message('Appliqué ✔');
+  }
+  $('btnCopier').addEventListener('click', async () => {
+    majSortie(true);
+    try { await navigator.clipboard.writeText(sortie.value); message('Copié dans le presse-papiers ✔'); }
+    catch {
+      sortie.focus(); sortie.select();
+      const ok = document.execCommand && document.execCommand('copy');
+      message(ok ? 'Copié ✔' : 'Sélectionné : fais Ctrl+C', !ok);
+    }
+  });
+  $('btnAppliquer').addEventListener('click', () => appliquer(sortie.value));
+  $('btnDefauts').addEventListener('click', () => {
+    for (const it of ITEMS) regler(it.id, it.def, true);
+    for (const m of movables) {
+      const d = DEFAUTS_PLACEMENT[m.dataset.el];
+      m.style.setProperty('--x', d.x); m.style.setProperty('--y', d.y); m.style.setProperty('--s', d.s);
+      m.classList.toggle('cache', d.masque);
+    }
+    majSoleil();
+    selHero.value = PERSO_HERO_DEF; selEncart.value = PERSO_ADV_DEF; advEnLigne = false;
+    redessine(); majAdversaire(); setResultat(true);
+    majListe(); majCurseursEl(); rejouer(); majSortie(true);
+    message('Tout est revenu aux valeurs par défaut.');
+  });
+
+  /* ================= VRAIE PARTIE EN FOND ================= */
+  // Le jeu tourne dans le cadre, réduit à son seul canvas : intro, menus et
+  // barre du haut masqués. Il est muet — sinon la musique du menu partirait
+  // au premier clic dans le mockup, le cadre héritant de l'activation.
+  const CSS_CADRE = `
+    html,body{margin:0!important;padding:0!important;overflow:hidden!important;background:#0a0e1a!important;
+      height:100%!important;min-height:0!important;display:block!important}
+    body>*:not(#stage){display:none!important}
+    #stage{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;
+      border:0!important;border-radius:0!important;box-shadow:none!important;margin:0!important;aspect-ratio:auto!important}
+    #stage>*:not(#game){display:none!important}
+    #game{width:100%!important;height:100%!important}`;
+  const cadre = $('partieReelle');
+  cadre.addEventListener('load', () => {
+    try {
+      const w = cadre.contentWindow, d = cadre.contentDocument;
+      w.HTMLMediaElement.prototype.play = function () { return Promise.resolve(); };
+      const AC = w.AudioContext || w.webkitAudioContext;
+      if (AC) {
+        AC.prototype.resume = function () { return Promise.resolve(); };
+        w.AudioContext = function (...a) { const c = new AC(...a); c.suspend(); return c; };
+        w.AudioContext.prototype = AC.prototype;
+      }
+      // La fausse partie ne doit rien écrire dans la sauvegarde du jeu : passer la
+      // popup « Première partie » marquerait sinon le tuto comme déjà proposé.
+      for (const f of ['setItem', 'removeItem', 'clear']) w.Storage.prototype[f] = function () {};
+      const st = d.createElement('style'); st.textContent = CSS_CADRE; d.head.appendChild(st);
+      // La démo IA contre IA ne joue que sur l'écran titre (loop.js, demoBehind) :
+      // on passe l'intro puis la popup du premier lancement jusqu'à y arriver.
+      // La popup arrive avec un léger décalage après l'intro : on surveille
+      // quelques secondes plutôt que de s'arrêter au premier écran titre vu.
+      let essais = 0;
+      const avancer = () => {
+        const intro = d.getElementById('scr-intro');
+        if (intro && !intro.classList.contains('done')) intro.click();
+        const premier = d.getElementById('scr-firstrun');
+        if (premier && !premier.classList.contains('hidden')) d.querySelector('[data-act="skipTuto"]')?.click();
+        if (++essais < 30) setTimeout(avancer, 300);
+      };
+      avancer();
+      cadre.classList.add('pret');
+      // Si le jeu n'a rien peint au bout de 4 s, on retombe sur la partie simulée.
+      setTimeout(() => {
+        try {
+          const g = d.getElementById('game');
+          const px = g.getContext('2d').getImageData(0, 0, g.width, g.height).data;
+          let differents = 0;
+          for (let i = 0; i < px.length; i += 4 * 997) if (px[i] !== px[0] || px[i + 1] !== px[1] || px[i + 2] !== px[2]) differents++;
+          if (differents < 3 && valeurs.partie === 'reelle') { regler('partie', 'simulee'); message('Le jeu ne tourne pas ici : partie simulée à la place.', true); }
+        } catch { /* canvas protégé : il peint donc bien quelque chose */ }
+      }, 4000);
+    } catch (err) {
+      console.warn('Partie réelle indisponible', err);
+      regler('partie', 'simulee');
+    }
+  });
+
+  /* ================= DÉMARRAGE ================= */
+  for (const it of ITEMS) regler(it.id, it.def, true);
+  majSoleil();
+  setResultat(true);
+  majListe();
+  majSortie(true);
+</script>
+</body>
+</html>
