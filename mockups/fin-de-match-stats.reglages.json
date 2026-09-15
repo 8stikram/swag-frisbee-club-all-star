@@ -1,0 +1,114 @@
+{
+  "mockup": "fin-de-match — phase 2 (stats) + phase finale (boutons)",
+  "version": 3,
+  "resultat": "victoire",
+  "persos": {
+    "toi": "mamie",
+    "adversaire": "naruto"
+  },
+  "reglages": {
+    "fond": "arcenciel",
+    "fondOpacite": 1,
+    "partie": "simulee",
+    "partieOpacite": 0.85,
+    "partieFlou": 3.5,
+    "soleilIntensite": 0.3,
+    "soleilClignote": 0.6,
+    "soleilVitesse": 30,
+    "confettis": 40,
+    "joueurMode": "profil",
+    "joueurC1": "#35e0ff",
+    "joueurC2": "#7b2ff7",
+    "adversaireMode": "enligne",
+    "adversaireC1": "#ff5f6d",
+    "adversaireC2": "#ffc371",
+    "banOpacite": 0.25,
+    "banFlou": 4,
+    "techno": 0.35,
+    "eclat": 0.6,
+    "terne": 0.6,
+    "meilleur": "oui",
+    "entreeDuree": 0.75,
+    "decalage": 0.09,
+    "barreDuree": 1.1,
+    "compteDuree": 1.3,
+    "piecesGlow": 0.6,
+    "pieceVitesse": 1.6,
+    "transitionStyle": "aspiration",
+    "transitionAttente": 1.6,
+    "transitionVitesse": 1,
+    "volet": "arcenciel",
+    "tremblement": 5,
+    "tremblementDuree": 0.22,
+    "lectureStats": 3.5,
+    "sortieDuree": 0.7,
+    "btnArrivee": 0.6,
+    "btnDecalage": 0.1,
+    "habillageRevanche": "lancement",
+    "habillageMenu": "blanc",
+    "habillagePerso": "vert",
+    "icones": "oui",
+    "btnLargeur": 52,
+    "btnEcart": 1.6,
+    "voteSuspense": 0.9,
+    "voteVerdict": 1.4,
+    "voteAccord": 0.9,
+    "voteAnnonce": 1.4,
+    "police_titre": "russo",
+    "contour_titre": 5,
+    "police_pseudo": "russo",
+    "contour_pseudo": 2,
+    "police_role": "dotgothic",
+    "police_issue": "russo",
+    "police_label": "barlow",
+    "police_valeur": "russo",
+    "police_centre": "russo",
+    "police_pieces": "dotgothic",
+    "police_boutons": "chakra",
+    "police_invite": "dotgothic"
+  },
+  "placement": {
+    "soleil": {
+      "x": 50,
+      "y": 50,
+      "s": 1,
+      "masque": false
+    },
+    "titre": {
+      "x": 51,
+      "y": 7.5,
+      "s": 1,
+      "masque": false
+    },
+    "panneauJoueur": {
+      "x": 5,
+      "y": 14,
+      "s": 1,
+      "masque": false
+    },
+    "centre": {
+      "x": 50,
+      "y": 49.5,
+      "s": 1,
+      "masque": false
+    },
+    "panneauAdversaire": {
+      "x": 95,
+      "y": 14,
+      "s": 1,
+      "masque": false
+    },
+    "boutonsFinaux": {
+      "x": 50,
+      "y": 50,
+      "s": 1,
+      "masque": false
+    },
+    "invite": {
+      "x": 35.5,
+      "y": 92.5,
+      "s": 1.56,
+      "masque": false
+    }
+  }
+}

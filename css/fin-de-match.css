@@ -1,0 +1,378 @@
+/* ================= FIN DE MATCH =================
+   Trois phases, pilotées par js/ui/fin-de-match.js : le résultat, les stats des
+   deux joueurs, puis les boutons seuls. Tout ce qui se règle ici l'a été dans
+   les mockups, et les valeurs sont reprises à l'identique :
+     mockups/fin-de-match-resultat.reglages.json  (phase 1)
+     mockups/fin-de-match-stats.reglages.json     (phase 2 et boutons)
+   Les positions sont en % de l'écran, les tailles en cqh : #stage garde ses
+   proportions 16:10, comme la scène des mockups. */
+.scr-over{
+  --doux:cubic-bezier(.22,1,.36,1);
+  --sortie:cubic-bezier(.45,0,.7,.35);
+  --or:#ffd23e;
+  --entreeDuree:.75s; --decalage:.09s; --barreDuree:1.1s;
+  --sortieDuree:.7s; --btnArrivee:.6s; --btnDecalage:.1s;
+  user-select:none; cursor:pointer;
+}
+.scr-over[data-phase="3"]{cursor:default}
+
+/* Le match reste derrière, flouté : c'est le vrai terrain, figé sur le point final. */
+#stage:has(> .scr-over:not(.hidden)) canvas#game{filter:blur(3.5px);opacity:.85}
+#stage:has(> .scr-over.defaite:not(.hidden)) canvas#game{filter:blur(3.5px) grayscale(.8) brightness(.6)}
+
+/* Tremblement à l'arrivée du résultat (5 px, 0,22 s). */
+.scr-over.tremble{animation:finTremble .22s linear}
+@keyframes finTremble{
+  0%,100%{transform:translate(0,0)}
+  10%{transform:translate(-5px,3px)} 25%{transform:translate(5px,-5px)} 40%{transform:translate(-3.5px,3.5px)}
+  55%{transform:translate(5px,5px)} 70%{transform:translate(-2px,-2px)} 85%{transform:translate(1.5px,0)}
+}
+
+/* ---------- Fond : arc-en-ciel animé ----------
+   Le dégradé est peint une fois sur une bande quatre fois plus large, et c'est
+   la bande qui glisse : un transform, pas un background-position qui
+   repeindrait tout l'écran à chaque image. */
+.scr-over .finFond{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.62;overflow:hidden}
+.scr-over .finFond::before{content:'';position:absolute;left:0;top:0;width:400%;height:100%;
+  background:linear-gradient(120deg,#ff5f6d,#ffc371,#5df08a,#35e0ff,#a06bff,#ff5f6d);
+  background-size:100% 400%;background-position:0 50%;
+  will-change:transform;animation:finArcEnCiel 3s ease infinite alternate}
+@keyframes finArcEnCiel{to{transform:translateX(-75%)}}
+.scr-over.defaite .finFond::before{filter:saturate(.25) brightness(.55)}
+/* voile sombre sous l'arc-en-ciel : sans lui le texte blanc se noyait dans le jaune */
+.scr-over .finVoile{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(6,8,14,.12) 0%,rgba(6,8,14,.35) 60%,rgba(6,8,14,.6) 100%)}
+
+/* Soleil : juste assez grand pour couvrir le coin le plus éloigné de son centre. */
+.scr-over .finSoleil{position:absolute;left:50%;top:50%;z-index:2;width:199cqh;height:199cqh;translate:-50% -50%;
+  border-radius:50%;pointer-events:none;opacity:0;transition:opacity .4s}
+.scr-over.victoire .finSoleil{opacity:.3}
+.scr-over .finSoleil::before{content:'';position:absolute;inset:0;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,rgba(255,214,70,.24) 0deg 5deg,transparent 5deg 15deg);
+  will-change:transform,opacity;animation:finTourneSoleil 30s linear infinite,finScintille 2.8s ease-in-out infinite}
+@keyframes finTourneSoleil{to{rotate:360deg}}
+@keyframes finScintille{0%,100%{opacity:1} 30%{opacity:.4} 48%{opacity:1} 72%{opacity:.67}}
+
+.scr-over .finFumee{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.scr-over .fumeeBulle{position:absolute;bottom:-10%;border-radius:50%;background:rgba(120,128,140,.35);filter:blur(6px);
+  animation:finMonteFumee linear infinite}
+@keyframes finMonteFumee{from{transform:translateY(0) scale(.8);opacity:.5} to{transform:translateY(-120cqh) scale(1.4);opacity:0}}
+.scr-over.victoire .finFumee{display:none}
+
+/* La vignette du résultat est décentrée vers le perso ; celle des stats, centrée. */
+.scr-over .finVignette{position:absolute;inset:0;z-index:2;pointer-events:none;transition:opacity .8s}
+.scr-over .finVignette.p1{background:radial-gradient(115% 95% at 68% 55%,transparent 45%,rgba(0,0,0,.45) 100%)}
+.scr-over .finVignette.p2{background:radial-gradient(115% 95% at 50% 50%,transparent 50%,rgba(0,0,0,.45) 100%);opacity:0}
+.scr-over:not([data-phase="1"]) .finVignette.p1{opacity:0}
+.scr-over:not([data-phase="1"]) .finVignette.p2{opacity:1}
+
+/* Confettis devant le perso au résultat, derrière les panneaux ensuite. */
+.scr-over .finConfettis{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+.scr-over:not([data-phase="1"]) .finConfettis{z-index:3}
+.scr-over.defaite .finConfettis{display:none}
+.scr-over .conf{position:absolute;top:-5%;width:7px;height:12px;animation:finTombe linear infinite}
+@keyframes finTombe{0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(115cqh) rotate(540deg);opacity:.9}}
+
+/* ---------- Phases ---------- */
+.scr-over .finP1,.scr-over .finP2,.scr-over .finP3{position:absolute;inset:0;display:none;pointer-events:none}
+.scr-over[data-phase="1"] .finP1,.scr-over.voirP1 .finP1{display:block}
+.scr-over[data-phase="2"] .finP2,.scr-over.sortieP2 .finP2{display:block}
+.scr-over[data-phase="3"] .finP3{display:block}
+.scr-over .finP2{z-index:4}
+.scr-over .finP3{z-index:7}
+.scr-over .finP3 .finAncre{pointer-events:auto}
+
+.scr-over .finPos{position:absolute;left:var(--x);top:var(--y);scale:var(--s,1);transform-origin:0 0}
+/* ancré au centre : pour ce qui doit tomber pile au milieu quelle que soit sa taille */
+.scr-over .finAncre{width:0;height:0}
+.scr-over .finAncreInt{position:absolute;left:0;top:0;translate:-50% -50%}
+
+/* ================= PHASE 1 : RÉSULTAT ================= */
+.scr-over .finHeroPos{--x:59%;--y:19%;--s:.84;z-index:4}
+/* pendant l'aspiration, le perso et ses textes volent par-dessus les panneaux */
+.scr-over.voirP1 .finHeroPos,.scr-over.voirP1 .finNomPos{z-index:6}
+.scr-over .finHeroBloc{position:relative;display:flex;align-items:flex-end;justify-content:center}
+.scr-over .finHero{position:relative;z-index:1;height:84cqh;width:auto;image-rendering:pixelated;display:block;will-change:transform;
+  filter:drop-shadow(0 0 4.9px rgba(0,0,0,.85)) drop-shadow(0 0 14px rgba(0,0,0,.68))
+         drop-shadow(0 0 28px rgba(0,0,0,.425)) drop-shadow(6px 10px 0 rgba(0,0,0,.25))}
+.scr-over.defaite .finHero{
+  filter:drop-shadow(0 0 4.9px rgba(0,0,0,.85)) drop-shadow(0 0 14px rgba(0,0,0,.68))
+         drop-shadow(0 0 28px rgba(0,0,0,.425)) drop-shadow(8px 12px 0 rgba(0,0,0,.35)) grayscale(.5) brightness(.78)}
+.scr-over .finHeroBloc.entree .finHero{animation:finPopHero .5s cubic-bezier(.2,1.4,.4,1) backwards}
+@keyframes finPopHero{0%{transform:scale(0)} 65%{transform:scale(1.1)} 100%{transform:scale(1)}}
+
+/* Auréole : cercle plat derrière la tête, le texte en fait le tour complet. */
+.scr-over .finAureole{position:absolute;z-index:0;left:-5.5%;top:-12%;scale:.93;transform-origin:0 0;width:66cqh;height:66cqh}
+.scr-over .finAureole svg{width:100%;height:100%;overflow:visible;will-change:transform;
+  animation:finTourneAnneau 20s linear infinite;transform-origin:50% 50%}
+@keyframes finTourneAnneau{to{transform:rotate(360deg)}}
+.scr-over .finAureole text{font-family:'Archivo Black',sans-serif;font-size:4.4px;fill:var(--or);
+  stroke:var(--ink);stroke-width:1.1;paint-order:stroke fill;opacity:.85}
+.scr-over .finAureole .piste{fill:none;stroke:var(--or);stroke-width:.45;opacity:.35;stroke-dasharray:2 4}
+.scr-over.defaite .finAureole text{fill:var(--pastel-red)}
+.scr-over.defaite .finAureole .piste{stroke:var(--pastel-red)}
+
+.scr-over .finEtincelles{position:absolute;inset:0;z-index:5;pointer-events:none}
+.scr-over.defaite .finEtincelles{display:none}
+.scr-over .etoile{position:absolute;width:5px;height:5px;background:#fff;border-radius:50%;
+  box-shadow:0 0 7px 2px var(--or);animation:finScintilleEtoile 1.4s ease-in-out infinite}
+@keyframes finScintilleEtoile{0%,100%{opacity:0;transform:scale(.4)} 50%{opacity:1;transform:scale(1.2)}}
+
+/* Badge du joueur */
+.scr-over .finBadgePos{--x:-2%;--y:-1%;z-index:9}
+.scr-over .finBadge{position:relative;display:flex;align-items:center;justify-content:center;
+  width:26cqh;height:13cqh;padding:0 4cqh 1cqh 0;
+  clip-path:polygon(0 0,100% 0,74% 100%,0 100%);rotate:-4deg;transform-origin:top left;
+  font-family:'Archivo Black',sans-serif;font-weight:400;font-size:7.5cqh;letter-spacing:.04em;
+  color:#fff;-webkit-text-stroke:5px var(--ink);paint-order:stroke fill;
+  border:5px solid var(--ink);box-shadow:7px 7px 0 var(--ink),0 0 28px rgba(229,56,79,.5);
+  background:linear-gradient(160deg,#ff6274 0%,var(--red) 55%,#8f1526 100%)}
+.scr-over.defaite .finBadge{background:linear-gradient(160deg,#7d8595 0%,#5d6472 55%,#2e333d 100%);box-shadow:7px 7px 0 var(--ink)}
+.scr-over .finBadge::before{content:'';position:absolute;left:0;right:0;top:0;height:22%;
+  background:linear-gradient(180deg,rgba(255,255,255,.45),transparent)}
+
+/* Nom du perso, VICTOIRE / DÉFAITE et pièces */
+.scr-over .finNomPos{--x:2%;--y:23%;--s:1.6;z-index:4}
+.scr-over .finNomBloc{position:relative;width:56cqw}
+.scr-over .finVol{display:inline-block;transform-origin:0 0}
+.scr-over .finNom{display:inline-block;font-family:'Russo One',sans-serif;font-weight:400;color:#fff;line-height:.9;
+  font-size:7cqh;white-space:nowrap;-webkit-text-stroke:6px var(--ink);paint-order:stroke fill;
+  transform:skewX(-9deg) rotate(-6deg);transform-origin:left top;
+  filter:drop-shadow(0 0 10px rgba(0,0,0,.5)) drop-shadow(0 0 24px rgba(0,0,0,.35)) drop-shadow(0 0 46px rgba(0,0,0,.22))}
+/* VICTOIRE en deux couches : la lueur, immobile et peinte une fois, et le
+   dégradé qui défile, isolé pour que son repeint ne touche rien d'autre. */
+.scr-over .finIssue{display:inline-grid;margin:3.4cqh 0 0 1.5cqw;font-family:'Russo One',sans-serif;font-weight:400;
+  font-size:9cqh;line-height:1.05;letter-spacing:.06em;transform:skewX(-9deg) rotate(-6deg);transform-origin:left top}
+.scr-over .finIssue > span{grid-area:1/1;white-space:nowrap}
+.scr-over .finIssueLueur{color:transparent;text-shadow:0 0 8px rgba(255,214,70,.5),3px 4px 0 rgba(0,0,0,.45)}
+.scr-over .finIssueTexte{
+  background-image:linear-gradient(90deg,#ffc81f 0%,#fff6b8 25%,#ffc81f 50%,#fff6b8 75%,#ffc81f 100%);
+  background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  -webkit-text-stroke:3px var(--ink);paint-order:stroke fill;will-change:transform;
+  animation:finBrille 1.6s linear infinite}
+@keyframes finBrille{from{background-position:0% 50%} to{background-position:200% 50%}}
+.scr-over.defaite .finIssueLueur{text-shadow:0 0 5px rgba(229,56,79,.3),3px 4px 0 rgba(0,0,0,.45)}
+.scr-over.defaite .finIssueTexte{
+  background-image:linear-gradient(90deg,#e5384f 0%,#ffc2cb 25%,#e5384f 50%,#ffc2cb 75%,#e5384f 100%)}
+.scr-over .finPieces{display:inline-block;margin:1cqh 0 0 1.5cqw;font-family:'DotGothic16',monospace;font-size:2.6cqh;
+  color:var(--yellow);text-shadow:0 2px 0 rgba(20,26,38,.7);letter-spacing:.05em;white-space:nowrap}
+
+/* Carte de l'adversaire : juste qui c'est */
+.scr-over .finCartePos{--x:1.5%;--y:67.5%;--s:1.44;z-index:7}
+.scr-over .finCarte{position:relative;background:#fff;border:5px solid var(--ink);border-radius:10px;box-shadow:7px 7px 0 var(--ink);
+  padding:1.2cqh 1.8cqw 1.2cqh 1.2cqw;display:flex;align-items:center;gap:1.2cqw}
+.scr-over .finCartePortrait{flex-shrink:0;min-width:13cqh;display:flex;justify-content:center}
+.scr-over .finCartePortrait canvas{image-rendering:pixelated;display:block}
+.scr-over .finCarteQui{display:flex;flex-direction:column;gap:.2cqh;padding-right:.6cqw}
+.scr-over .finCarteRole{font-family:'DotGothic16',monospace;font-size:1.6cqh;color:#6b7686;letter-spacing:.1em;white-space:nowrap}
+.scr-over .finCarteNom{font-family:'Archivo Black',sans-serif;font-size:3.2cqh;color:var(--ink);white-space:nowrap}
+.scr-over .finCarte.entree{animation:finEntreCarte .4s ease-out .3s backwards}
+@keyframes finEntreCarte{from{transform:translateY(10cqh);opacity:0} to{transform:none;opacity:1}}
+
+/* Entrée façon NUNS4 : flash blanc, puis badge et nom qui arrivent de la gauche. */
+.scr-over .finFlash{position:absolute;inset:0;z-index:20;background:#fff;opacity:0;pointer-events:none}
+.scr-over.entree .finFlash{animation:finFlashBlanc .35s ease-out backwards}
+@keyframes finFlashBlanc{0%{opacity:.85} 100%{opacity:0}}
+.scr-over .slam.entree{animation:finSlamNuns .6s cubic-bezier(.2,.8,.2,1) backwards}
+@keyframes finSlamNuns{0%{transform:translateX(-55cqw) scale(1.25);opacity:0} 100%{transform:none;opacity:1}}
+
+.scr-over .finInvitePos{--x:35.5%;--y:92.5%;--s:1.56;z-index:8}
+.scr-over .finInvite{font-family:'DotGothic16',monospace;color:#fff;font-size:1.8cqh;text-shadow:0 2px 0 var(--ink);
+  white-space:nowrap;animation:finClignote 1.1s steps(2) infinite;transition:opacity .3s}
+@keyframes finClignote{50%{opacity:.25}}
+.scr-over[data-phase="3"] .finInvitePos{display:none}
+.scr-over.sortieP2 .finInvite{animation:none;opacity:0}
+
+/* ================= PHASE 2 : STATS ================= */
+.scr-over .finTitrePos{--x:51%;--y:7.5%}
+.scr-over .finTitre{font-family:'Russo One',sans-serif;font-size:6cqh;color:#fff;letter-spacing:.05em;white-space:nowrap;
+  -webkit-text-stroke:5px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 rgba(0,0,0,.35);
+  transform:skewX(-9deg) rotate(-2deg);transform-origin:50% 50%}
+.scr-over .finTitre.entree{animation:finTitreEntre calc(var(--entreeDuree) * .9) var(--doux) both}
+@keyframes finTitreEntre{from{opacity:0;transform:skewX(-9deg) rotate(-2deg) translateY(-6cqh)}}
+
+.scr-over .finPanneauJoueurPos{--x:5%;--y:14%}
+/* Ancré par son bord droit : le panneau adverse est le miroir exact du tien. */
+.scr-over .finPanneauAdvPos{left:auto;right:5%;--y:14%;transform-origin:100% 0}
+.scr-over .finCentrePos{--x:50%;--y:49.5%}
+
+.scr-over .panneau{position:relative;width:58cqh;border:4px solid var(--ink);border-radius:16px;overflow:hidden;
+  --c1:var(--p1,#35e0ff);--c2:var(--p2,#7b2ff7);
+  background:linear-gradient(150deg,var(--c1),var(--c2));padding-bottom:1.5cqh;box-shadow:6px 6px 0 var(--ink)}
+.scr-over .panneau.gagnant{box-shadow:6px 6px 0 var(--ink),0 0 25.2px 3.6px color-mix(in srgb,var(--c1) 75%,transparent)}
+.scr-over .panneau.metal{background:linear-gradient(160deg,#6b7280 0%,#454a55 55%,#262a31 100%);--c1:#9df0ff;--c2:#35e0ff}
+.scr-over .pFondImage{position:absolute;inset:-12px;background-size:cover;background-position:center;pointer-events:none;
+  opacity:.25;filter:blur(4px)}
+.scr-over .panneau.metal .pFondImage{display:none}
+.scr-over .pTechno{position:absolute;inset:0;pointer-events:none;opacity:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.09) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.09) 1px,transparent 1px),
+    radial-gradient(circle at 22% 32%,rgba(120,220,255,.35) 0 2px,transparent 3px),
+    radial-gradient(circle at 68% 64%,rgba(120,220,255,.28) 0 2px,transparent 3px);
+  background-size:2.4cqh 2.4cqh,2.4cqh 2.4cqh,9cqh 9cqh,13cqh 13cqh}
+.scr-over .panneau.metal .pTechno{opacity:.35}
+.scr-over .panneau.perdant::after{content:'';position:absolute;inset:0;pointer-events:none;background:rgba(38,42,50,.228)}
+.scr-over .pBanniere{position:relative;height:8cqh;border-bottom:3px solid var(--ink);background-size:cover;background-position:center;
+  background-color:rgba(255,255,255,.18)}
+.scr-over .panneau.metal .pBanniere{background:repeating-linear-gradient(135deg,#3b4049 0 1.2cqh,#30343c 1.2cqh 2.4cqh)}
+.scr-over .pEntete{position:relative;display:flex;align-items:flex-end;gap:1.3cqh;padding:0 1.6cqh;margin-top:-4.6cqh}
+.scr-over .pAvatar{position:relative;width:9.5cqh;height:9.5cqh;border-radius:50%;border:4px solid #fff;flex-shrink:0;overflow:hidden;
+  background:linear-gradient(150deg,var(--c1),var(--c2));box-shadow:0 0 0 3px var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Archivo Black',sans-serif;font-size:4.2cqh;color:rgba(255,255,255,.92);text-shadow:0 2px 0 rgba(20,26,38,.45)}
+.scr-over .pAvatar img{width:100%;height:100%;object-fit:cover;display:block}
+.scr-over .pAvatar canvas{image-rendering:pixelated;display:block}
+.scr-over .panneau.metal .pAvatar{background:#9aa0ac;border-color:#d7dbe2}
+.scr-over .panneau.perdant .pAvatar img,.scr-over .panneau.perdant .pAvatar canvas,.scr-over .panneau.perdant .pSprite{filter:grayscale(.6)}
+.scr-over .pIdentite{display:flex;flex-direction:column;min-width:0;flex:1;padding-bottom:.5cqh}
+.scr-over .pRole{font-family:'DotGothic16',monospace;font-size:1.5cqh;color:rgba(255,255,255,.88);
+  letter-spacing:.14em;text-shadow:0 2px 0 rgba(20,26,38,.5);white-space:nowrap}
+.scr-over .pPseudo{font-family:'Russo One',sans-serif;font-size:3.7cqh;color:#fff;line-height:1.05;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  -webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 3px 0 rgba(20,26,38,.5)}
+.scr-over .pSprite{height:13cqh;width:auto;image-rendering:pixelated;display:block;margin-bottom:-.3cqh;
+  filter:drop-shadow(0 0 3px rgba(0,0,0,.85)) drop-shadow(0 0 9px rgba(0,0,0,.5))}
+.scr-over .finPanneauAdvPos .pSprite{transform:scaleX(-1)}
+.scr-over .pIssue{display:inline-block;margin:1cqh 0 0 1.6cqh;font-family:'Russo One',sans-serif;font-size:1.6cqh;
+  letter-spacing:.12em;color:var(--ink);background:#ffd23e;border:2px solid var(--ink);border-radius:999px;padding:.2cqh 1.1cqh}
+.scr-over .panneau.perdant .pIssue{background:#c7ccd4}
+.scr-over .pStats{position:relative;display:flex;flex-direction:column;gap:.6cqh;margin:1cqh 1.6cqh 0}
+.scr-over .pLigne{display:grid;grid-template-columns:3.6cqh 1fr auto;align-items:center;column-gap:1cqh;row-gap:.35cqh;
+  background:rgba(255,255,255,.9);border:2px solid var(--ink);border-radius:9px;padding:.45cqh 1cqh .55cqh}
+.scr-over .pIcone{grid-row:1 / span 2;width:3.6cqh;height:3.6cqh;color:var(--ink)}
+.scr-over .pIcone svg,.scr-over .cIcone svg{width:100%;height:100%;display:block}
+.scr-over .pLigne[data-stat="fautes"] .pIcone{color:var(--red)}
+.scr-over .panneau.perdant .pIcone{color:#6b7380}
+/* interlignes fixés : toutes les lignes gardent la même hauteur */
+.scr-over .pLabel{font-family:'Barlow',sans-serif;font-weight:800;font-size:1.7cqh;line-height:1.2;color:#3a4252;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;min-width:0}
+.scr-over .pValeur{font-family:'Russo One',sans-serif;font-size:2.6cqh;line-height:1.2;height:3.12cqh;color:var(--ink);
+  white-space:nowrap;display:flex;align-items:center;gap:.5cqh;justify-content:flex-end;font-variant-numeric:tabular-nums}
+.scr-over .panneau.perdant .pValeur{color:#5b6478}
+.scr-over .pMieux{display:inline-block;font-size:1.5cqh;color:#e0a100;opacity:0;text-shadow:0 1px 0 rgba(0,0,0,.35)}
+.scr-over .pLigne.meilleur .pMieux{opacity:1}
+.scr-over .pBarre{grid-column:2 / span 2;height:.9cqh;border-radius:999px;background:rgba(17,19,24,.13);overflow:hidden}
+.scr-over .pBarre i{display:block;height:100%;border-radius:999px;transform-origin:left center;transform:scaleX(var(--r,0));
+  background:linear-gradient(90deg,var(--c2),var(--c1))}
+.scr-over .panneau.perdant .pBarre i{background:#9aa0ac}
+/* Pièces : une ligne des stats, au même niveau que les autres */
+.scr-over .pLigne.pPieces{background:linear-gradient(90deg,rgba(255,238,170,.96),rgba(255,255,255,.92))}
+.scr-over .pLigne.pPieces .pIcone{perspective:140px}
+.scr-over .pieceMini{display:block;width:100%;height:100%;border-radius:50%;border:2px solid var(--ink);will-change:transform;
+  background:radial-gradient(circle at 35% 30%,#fff6c4 0%,#ffd23e 42%,#c8891a 100%);
+  animation:finTournePiece 1.6s linear infinite}
+@keyframes finTournePiece{to{transform:rotateY(360deg)}}
+.scr-over .pLigne.pPieces .pValeur{font-family:'DotGothic16',monospace;color:#9a6400;text-shadow:0 0 7.2px rgba(255,200,40,.6)}
+.scr-over .pLigne.pPieces .pBarre i,.scr-over .panneau.perdant .pLigne.pPieces .pBarre i{background:linear-gradient(90deg,#c8891a,#ffd23e,#fff1a8)}
+.scr-over .panneau.metal .pLigne.pPieces .pBarre i{background:#9aa0ac}
+.scr-over .pLigne.pPieces.sansPieces{background:rgba(255,255,255,.9)}
+.scr-over .pLigne.pPieces.sansPieces .pieceMini{filter:grayscale(1);animation:none}
+.scr-over .pLigne.pPieces.sansPieces .pValeur{color:#8a93a3;text-shadow:none}
+
+/* Arrivée des stats */
+.scr-over .cote-g.entree{animation:finGlisseG var(--entreeDuree) var(--doux) both}
+.scr-over .cote-d.entree{animation:finGlisseD var(--entreeDuree) var(--doux) both}
+@keyframes finGlisseG{from{transform:translateX(-75cqw)}}
+@keyframes finGlisseD{from{transform:translateX(75cqw)}}
+.scr-over .entree .pLigne{animation:finLigneEntre .5s var(--doux) both;
+  animation-delay:calc(var(--entreeDuree) + var(--i) * var(--decalage))}
+.scr-over .cote-d.entree .pLigne{animation-name:finLigneEntreD}
+@keyframes finLigneEntre{from{opacity:0;transform:translateX(-12px)}}
+@keyframes finLigneEntreD{from{opacity:0;transform:translateX(12px)}}
+.scr-over .entree .pBarre i{animation:finRemplit var(--barreDuree) var(--doux) both;
+  animation-delay:calc(var(--entreeDuree) + var(--i) * var(--decalage) + .15s)}
+@keyframes finRemplit{from{transform:scaleX(0)}}
+
+.scr-over .centre{display:flex;flex-direction:column;align-items:center;gap:1.4cqh;width:21cqh}
+.scr-over .vs{font-family:'Russo One',sans-serif;font-size:6.5cqh;line-height:1;color:#fff;
+  -webkit-text-stroke:4px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 rgba(0,0,0,.35);transform:skewX(-9deg)}
+.scr-over .cStats{display:flex;flex-direction:column;gap:1.2cqh;width:100%}
+.scr-over .cStat{width:100%;background:rgba(255,255,255,.93);border:3px solid var(--ink);border-radius:12px;box-shadow:4px 4px 0 var(--ink);
+  padding:.9cqh .6cqh .8cqh;display:flex;flex-direction:column;align-items:center;gap:.15cqh}
+.scr-over .cIcone{width:3.4cqh;height:3.4cqh;color:var(--ink)}
+.scr-over .cValeur{font-family:'Russo One',sans-serif;font-size:3.3cqh;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
+.scr-over .cLabel{font-family:'Barlow',sans-serif;font-weight:800;font-size:1.4cqh;color:#5b6478;letter-spacing:.08em;white-space:nowrap}
+.scr-over .centre.entree{animation:finCentreEntre .6s var(--doux) both;animation-delay:calc(var(--entreeDuree) * .6)}
+@keyframes finCentreEntre{from{opacity:0;transform:scale(.8)}}
+
+/* ---------- Passage du résultat aux stats : l'aspiration ----------
+   Le perso vole se ranger dans la case de son panneau ; les zones des stats
+   restent cachées jusqu'à ce qu'on les révèle, une à une. */
+.scr-over.cacheP2 .finZone{opacity:0}
+.scr-over.cacheP2.rev-g .finZone[data-zone="g"],
+.scr-over.cacheP2.rev-c .finZone[data-zone="c"],
+.scr-over.cacheP2.rev-d .finZone[data-zone="d"]{opacity:1}
+.scr-over.cache-hero .finHeroPos{visibility:hidden}
+.scr-over .panneau.atterrit .pSprite{opacity:0}
+.scr-over[data-entree="deploiement"] .panneau.entree{animation-name:finDeploie}
+@keyframes finDeploie{from{opacity:0;transform:scale(.92)}}
+.scr-over.piecesVolent .cote-g.entree .pLigne.pPieces{animation:none}
+
+/* ---------- Passage des stats aux boutons : les stats repartent sur les côtés ---------- */
+.scr-over.sortieP2 .panneau.cote-g{animation:finSortG var(--sortieDuree) var(--sortie) forwards}
+.scr-over.sortieP2 .panneau.cote-d{animation:finSortD var(--sortieDuree) var(--sortie) forwards}
+.scr-over.sortieP2 .finTitre{animation:finSortHaut calc(var(--sortieDuree) * .6) var(--sortie) forwards}
+.scr-over.sortieP2 .centre{animation:finSortCentre calc(var(--sortieDuree) * .4) var(--sortie) forwards}
+@keyframes finSortG{70%{opacity:1} to{transform:translateX(-80cqw);opacity:0}}
+@keyframes finSortD{70%{opacity:1} to{transform:translateX(80cqw);opacity:0}}
+@keyframes finSortHaut{to{transform:skewX(-9deg) rotate(-2deg) translateY(-12cqh);opacity:0}}
+@keyframes finSortCentre{to{transform:scale(.75);opacity:0}}
+
+/* ================= PHASE FINALE : SEULEMENT LES BOUTONS =================
+   Les boutons du jeu (.mbtn, style.css), au gabarit des boutons de lancement :
+   REVANCHE porte le dégradé qui défile de COMBATTRE et LANCER LE MATCH. */
+.scr-over .finBoutonsPos{--x:50%;--y:50%}
+.scr-over .finaux{display:flex;flex-direction:column;gap:1.6cqh;width:52cqh}
+.scr-over .arrivee{position:relative}
+.scr-over .fbtn{position:relative;width:100%;justify-content:space-between;
+  font-size:clamp(14px,2.6cqh,26px);padding:1.6cqh 3cqw;border-radius:18px}
+.scr-over .fbtn .lbl{white-space:nowrap}
+.scr-over .fbtn[data-fin="revanche"]{
+  background:linear-gradient(100deg,#ffe259,#ffa751,#5df08a,#35e0ff,#ffe259);
+  background-size:320% 100%;animation:goSlide 5s linear infinite}
+.scr-over .fbtn[data-fin="perso"]{background:var(--green)}
+/* après les couleurs : le survol et la sélection clavier gagnent toujours */
+.scr-over .fbtn:hover,.scr-over .fbtn.sel{background:var(--ink);color:#fff;transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--ink)}
+/* L'arrivée est portée par une enveloppe : le bouton garde son dégradé et son survol. */
+.scr-over .finaux.entree .arrivee{animation:finArriveBtn var(--btnArrivee) var(--doux) backwards}
+.scr-over .finaux.entree .arrivee:nth-child(2){animation-delay:var(--btnDecalage)}
+.scr-over .finaux.entree .arrivee:nth-child(3){animation-delay:calc(var(--btnDecalage) * 2)}
+@keyframes finArriveBtn{from{opacity:0;translate:0 5cqh;scale:.92}}
+
+/* ---------- En ligne : chacun choisit son bouton, comme le terrain ----------
+   Badges, compteur et face-à-face repris du vote de terrain : ton badge en
+   vert, le sien en jaune, toi à gauche et lui à droite comme les panneaux. */
+.scr-over .badgeVote{position:absolute;top:50%;left:0;z-index:2;width:4.4cqh;height:4.4cqh;min-width:22px;min-height:22px;
+  translate:-50% -50%;border-radius:50%;border:2px solid var(--ink);overflow:hidden;background:var(--green);
+  display:flex;align-items:center;justify-content:center;font-family:'Archivo Black',sans-serif;font-size:2.1cqh;color:var(--ink);
+  box-shadow:2px 2px 0 rgba(0,0,0,.4);pointer-events:none;animation:finBadgePose .32s var(--doux) both}
+.scr-over .badgeVote.sien{left:100%;background:var(--yellow)}
+.scr-over .badgeVote img{width:100%;height:100%;object-fit:cover}
+@keyframes finBadgePose{from{scale:0} 60%{scale:1.15}}
+/* ton choix reste enfoncé ; clic définitif : les deux autres s'éteignent */
+.scr-over .fbtn.choisi{background:var(--ink);color:#fff;transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--ink)}
+.scr-over .finaux.aVote .fbtn:not(.choisi){filter:saturate(.35) brightness(.78);opacity:.75;pointer-events:none;cursor:default}
+.scr-over .fbtn.accord{outline:4px solid var(--green);outline-offset:3px;scale:1.06;transition:scale .25s var(--doux)}
+.scr-over .attenteVote{position:absolute;left:50%;top:calc(100% + 2.4cqh);translate:-50% 0;white-space:nowrap;
+  font-family:'Chakra Petch','Archivo Black',sans-serif;font-weight:700;font-size:clamp(11px,1.9cqh,18px);letter-spacing:.03em;
+  padding:.8cqh 1.6cqw;border:3px solid var(--ink);border-radius:12px;box-shadow:4px 4px 0 var(--ink);
+  background:#cfd8e8;color:#43506b;animation:attentePouls 1.5s ease-in-out infinite}
+.scr-over .attenteVote.pret{background:var(--green);color:var(--ink);animation:none}
+.scr-over .annonceVote{position:absolute;left:50%;top:14%;z-index:10;translate:-50% 0;white-space:nowrap;
+  font-family:'Archivo Black',sans-serif;font-size:3.4cqh;letter-spacing:.04em;color:var(--ink);background:var(--yellow);
+  border:4px solid var(--ink);border-radius:12px;box-shadow:6px 6px 0 var(--ink);padding:1cqh 2.4cqw;
+  animation:finAnnonceIn .35s var(--doux) both}
+@keyframes finAnnonceIn{from{opacity:0;translate:-50% -3cqh}}
+.scr-over .faceAFace{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4cqh;
+  background:rgba(3,5,10,.86);animation:voteResultIn .25s ease both}
+.scr-over .faceTitre{font-family:'Archivo Black',sans-serif;font-size:4.6cqh;color:var(--yellow);letter-spacing:.08em;
+  text-shadow:3px 3px 0 var(--ink);text-align:center;line-height:1.1}
+.scr-over .faceSous{display:block;font-family:'DotGothic16',monospace;font-size:2.2cqh;color:#fff;letter-spacing:.06em;
+  text-shadow:0 2px 0 var(--ink);margin-top:1cqh;min-height:1.2em}
+.scr-over .faceRangee{display:flex;align-items:center;gap:4cqw}
+.scr-over .faceVs{font-family:'Archivo Black',sans-serif;font-size:3.4cqh;color:var(--gray)}
+.scr-over .faceCase{position:relative;filter:brightness(.55);transition:transform .2s var(--doux),filter .2s}
+.scr-over .faceCase .fbtn{pointer-events:none;width:auto;min-width:36cqh}
+.scr-over .faceCase.gagnant{filter:none;transform:scale(1.08)}
+.scr-over .faceCase.gagnant .fbtn{outline:4px solid var(--green);outline-offset:3px}

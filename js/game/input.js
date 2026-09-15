@@ -22,6 +22,7 @@ import {
   resetEntrainement, quitterEntrainement, demanderSortie, sortieOuverte, annulerSortie
 } from '../ui/training.js';
 import { enTutoriel, quitterTutoriel } from './../ui/tutoriel.js';
+import { toucheFinDeMatch } from '../ui/fin-de-match.js';
 import { toucheActionJ2, monJoueur, jeSimule, demanderGeste } from './commandes.js';
 
 export const keys = new Set();
@@ -152,7 +153,10 @@ window.addEventListener('keydown', e => {
     skipReplay(); return;
   }
   if (curScreen) {
-    if (['title', 'options', 'pause', 'over'].includes(curScreen)) {
+    // L'écran de fin a son propre clavier : ESPACE y fait défiler les phases,
+    // et ne doit pas valider un bouton par la même occasion.
+    if (curScreen === 'over') { toucheFinDeMatch(e.code); return; }
+    if (['title', 'options', 'pause'].includes(curScreen)) {
       const up = getKey('moveUp'), down = getKey('moveDown');
       if (e.code === up || e.code === 'ArrowUp') moveMenu(curScreen, -1);
       else if (e.code === down || e.code === 'ArrowDown') moveMenu(curScreen, 1);

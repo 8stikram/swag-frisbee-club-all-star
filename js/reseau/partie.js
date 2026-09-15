@@ -43,7 +43,11 @@ export const Partie = {
   // sa boucle peut donner suite ; elle consomme le drapeau et le rabaisse.
   skipDemande: false,
   // L'hôte a annoncé la fin du match : la boucle doit monter l'écran final.
-  finDeMatch: false
+  finDeMatch: false,
+  // Le bouton de fin de match choisi en face (revanche, menu ou perso). Gardé
+  // ici parce qu'il peut arriver pendant qu'on lit encore les stats : l'écran
+  // de fin le reprend dès que ses boutons s'affichent.
+  choixFinAdversaire: null
 };
 
 // Le canal est volontairement non ordonné et sans retransmission : une
@@ -283,18 +287,19 @@ function etatPourLeReseau() {
   };
 }
 
-// Les compteurs qui alimentent l'écran de fin de match : les réceptions et les
-// ultimes affichés sous le portrait, et le détail des six chiffres qu'on ouvre
-// en cliquant dessus. Ils ne bougent que sur un but, une réception ou un
-// ultime — quelques dizaines de fois par match — et ne servent qu'à la
-// dernière seconde. Les répéter dans chaque paquet reviendrait à envoyer douze
-// nombres identiques soixante fois par seconde ; on ne les envoie donc qu'au
-// changement, et le reste du temps ce champ vaut zéro.
+// Les compteurs qui alimentent l'écran de fin de match : attrapes, ultimes,
+// fautes, et buts et tirs pour la précision. Ils ne bougent que sur un but, un
+// tir, une réception, une faute ou un ultime — quelques dizaines de fois par
+// match — et ne servent qu'à la dernière seconde. Les répéter dans chaque
+// paquet reviendrait à envoyer les mêmes nombres soixante fois par seconde ;
+// on ne les envoie donc qu'au changement, et le reste du temps ce champ vaut
+// zéro. La possession n'y est pas : elle se compte des deux côtés, à partir de
+// qui tient le disque, déjà synchronisé (voir loop.js).
 //
 // Sans eux, l'invité arrivait sur son écran de fin avec des zéros partout,
 // pour les deux joueurs : rien de ce qu'il venait de faire pendant le match
 // n'y figurait.
-const CLES_STATS = ['buts', 'catches', 'z5', 'z3', 'specials', 'dashCatches'];
+const CLES_STATS = ['buts', 'catches', 'z5', 'z3', 'specials', 'dashCatches', 'fautes', 'thrown'];
 let statsEnvoyees = '';
 function statsNeuves() {
   if (!G.p1 || !G.p2) return 0;
@@ -1295,6 +1300,7 @@ export function demarrerPartieReseau(role) {
   Partie.voteAdversaire = null;
   oublierPrets();
   Partie.skipDemande = false; Partie.finDeMatch = false; dernierCommentaire = null;
+  Partie.choixFinAdversaire = null;
   // Les compteurs de fin de match repartent de zéro avec la partie : sans
   // cette remise à neuf, la signature d'une revanche ressemblerait à celle de
   // la partie d'avant et le premier envoi serait avalé comme un doublon.
@@ -1340,7 +1346,13 @@ export function demarrerPartieReseau(role) {
       if (surChangementPerso) surChangementPerso();
       return;
     }
+    if (m.t === 'fin') {
+      Partie.choixFinAdversaire = m.choix;
+      if (surChoixFin) surChoixFin(m.choix);
+      return;
+    }
     if (m.t === 'go') {
+      Partie.choixFinAdversaire = null;
       setMapId(m.terrain);
       if (auCoupDEnvoi) auCoupDEnvoi(m.p1, m.p2, m.terrain, m.graine);
       return;
@@ -1438,6 +1450,7 @@ export function arreterPartieReseau() {
   if (G.replay && G.replay.distant) { G.replay = null; setMuffled(false); }
   Partie.active = false; Partie.role = null; Partie.adversaire = null;
   Partie.skipDemande = false; Partie.finDeMatch = false; dernierCommentaire = null;
+  Partie.choixFinAdversaire = null;
   activerEcho(false);
   // Sans quoi le solo qui suit se jouerait en sourdine : l'étouffement ne vaut
   // que pour un invité en train de recevoir l'écho de quelqu'un.
@@ -1541,15 +1554,20 @@ export function annoncerIdentite(perso) {
   Partie.monTerrain = getMapId();
   Partie.monPerso = perso;
   choixFrais.moi = true;
+  const p = Compte.profil || {};
   envoyer({
     t: 'moi',
     id: monId() || null,
-    pseudo: (Compte.profil && Compte.profil.pseudo) || null,
+    pseudo: p.pseudo || null,
     perso: perso || null,
     terrain: Partie.monTerrain,
     // Le disque qu'on a choisi. C'est celui du lanceur qui s'affiche, donc
     // chacun a besoin de connaître celui d'en face pour dessiner le même objet.
-    skin: getSkinId()
+    skin: getSkinId(),
+    // De quoi habiller son panneau de stats en fin de match comme sa fiche
+    // profil : photo, bannière et couleurs, sans aller les rechercher en ligne.
+    avatar: p.avatar || null, banniere: p.banniere || null,
+    couleur1: p.couleur1 || null, couleur2: p.couleur2 || null
   });
 }
 
@@ -1557,7 +1575,9 @@ function recevoirIdentite(m) {
   Partie.adversaire = {
     id: m.id || null, pseudo: m.pseudo || null,
     perso: m.perso || null, terrain: m.terrain || null,
-    skin: m.skin || null
+    skin: m.skin || null,
+    avatar: m.avatar || null, banniere: m.banniere || null,
+    couleur1: m.couleur1 || null, couleur2: m.couleur2 || null
   };
   choixFrais.lui = true;
   // L'hôte seul tranche, puis donne le coup d'envoi avec les deux personnages
@@ -1706,6 +1726,22 @@ export function demanderChangementPerso() {
 let choixFrais = { moi: false, lui: false };
 function attenteNouveauxChoix() { choixFrais = { moi: false, lui: false }; }
 function peutRelancer() { return choixFrais.moi && choixFrais.lui; }
+// Même attente, quand c'est le vote de fin de match qui renvoie les deux au
+// choix des personnages : chacun le sait déjà, rien à s'envoyer.
+export function preparerNouveauxChoix() { attenteNouveauxChoix(); }
+
+// ---------------------------------------------------------------------------
+// Vote de fin de match : REVANCHE, MENU ou CHANGEZ DE PERSO. Chacun annonce son
+// bouton ; l'écran de fin (js/ui/fin-de-match.js) affiche celui d'en face et
+// tranche un désaccord. Message urgent, comme la pause : un choix perdu
+// laisserait l'autre attendre indéfiniment.
+// ---------------------------------------------------------------------------
+export function annoncerChoixFin(choix) {
+  if (!Partie.active) return;
+  envoyer({ t: 'fin', choix }, true);
+}
+let surChoixFin = null;
+export function quandChoixFinAdversaire(fn) { surChoixFin = fn; }
 
 // Passer le rejeu. Message urgent, comme la pause et l'abandon : un état de
 // plus ou de moins n'a aucune importance, une demande perdue laisserait
@@ -1739,6 +1775,7 @@ export function annoncerCoupDEnvoi(persoHote, persoInvite, terrain) {
   // pour que le solo ne rejoue jamais deux fois la même partie, et il
   // écraserait celle-ci. On la transporte donc jusqu'au bout de la chaîne.
   const graine = graineNeuve();
+  Partie.choixFinAdversaire = null;
   envoyer({ t: 'go', p1: persoHote, p2: persoInvite, terrain, graine });
   if (auCoupDEnvoi) auCoupDEnvoi(persoHote, persoInvite, terrain, graine);
 }

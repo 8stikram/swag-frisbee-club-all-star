@@ -10,12 +10,12 @@ import {
 import { clamp, norm, pick } from '../core/utils.js';
 import { gaussJeu, randJeu, aleaJeu } from '../core/alea.js';
 import { zoneByY } from '../data/maps.js';
-import { CHARS } from '../data/characters.js';
 import { sfx, setMuffled } from '../audio/audio.js';
 import { burst, dust, ring, confetti, starBurst, addPopup, ondeDeBut, confettiNumerique, effetDeBut, effetDeReception, effetDeTirSuper } from './fx.js';
-import { $, cv, showScreen } from '../core/dom.js';
+import { cv } from '../core/dom.js';
 import { signalerPerfectDive } from './moves.js';
 import { getSkinId } from '../data/skins.js';
+import { afficherFinDeMatch } from '../ui/fin-de-match.js';
 
 // Commentaire personnalisé : varié, et cite le pseudo en ligne plutôt qu'un
 // texte générique — en multi les deux joueurs sont de vraies personnes, pas
@@ -340,6 +340,7 @@ export function ownFoul(p) {
   // Aucune sanction pendant l'apprentissage : on y vient pour essayer.
   if (G.training || G.tuto) { setupServe(p.foe.side); return; }
   p.score = Math.max(0, p.score - 1);
+  p.stats.fautes++;
   G.shake = 10; sfx('whistle');
   addPopup('FAUTE ! −1 POINT', '#ff5340', 20, 1.5);
   commentNom(p, 'standard',
@@ -475,98 +476,39 @@ export function skipReplay() {
   endReplay();
 }
 
-function drawOverSprite(canvasEl, ck, scale) {
-  const src = CHARS[ck].frames.idle;
-  canvasEl.width = src.width * scale;
-  canvasEl.height = src.height * scale;
-  const c = canvasEl.getContext('2d');
-  c.imageSmoothingEnabled = false;
-  c.drawImage(src, 0, 0, canvasEl.width, canvasEl.height);
-}
-
-// Titre en perspective dégressive : une lettre par span, taille décroissante.
-function buildPerspectiveTitle(el, text) {
-  el.innerHTML = '';
-  const n = text.length, maxSize = 31, minSize = 9;
-  for (let i = 0; i < n; i++) {
-    const t = n > 1 ? i / (n - 1) : 0;
-    const span = document.createElement('span');
-    span.textContent = text[i];
-    span.style.fontSize = (maxSize - (maxSize - minSize) * t).toFixed(2) + 'cqh';
-    el.appendChild(span);
-  }
-}
-
-function spawnConfetti() {
-  const wrap = $('confettiWrap');
-  if (wrap.childElementCount) return; // déjà généré
-  const cols = ['#ff8c1f', '#f5e63d', '#5df08a', '#35e0ff', '#ff3b5c', '#c86bff'];
-  for (let i = 0; i < 40; i++) {
-    const el = document.createElement('div');
-    el.className = 'confetti';
-    el.style.left = Math.random() * 100 + '%';
-    el.style.background = cols[(Math.random() * cols.length) | 0];
-    el.style.animationDelay = (Math.random() * 3.4) + 's';
-    wrap.appendChild(el);
-  }
-}
-
-// Stats détaillées par joueur, ouvertes au clic sur un portrait.
-let overDetail = {};
-function openOverDetail(who) {
-  const s = overDetail[who];
-  if (!s) return;
-  $('vicDetailName').textContent = CHARS[s.ck].short + ' — ' + s.tag;
-  $('dButs').textContent = s.buts;
-  $('dAttrapes').textContent = s.catches;
-  $('d5pt').textContent = s.z5;
-  $('d3pt').textContent = s.z3;
-  $('dUltimes').textContent = s.specials;
-  $('dDash').textContent = s.dashCatches;
-  $('vicDetailScrim').classList.add('open');
-}
-$('vicPortrait').addEventListener('click', () => openOverDetail('winner'));
-$('vicLoserCol').addEventListener('click', () => openOverDetail('loser'));
-$('vicDetailClose').addEventListener('click', () => $('vicDetailScrim').classList.remove('open'));
-$('vicDetailScrim').addEventListener('click', e => {
-  if (e.target.id === 'vicDetailScrim') e.currentTarget.classList.remove('open');
-});
-
 const COINS_VICTOIRE = 10, COINS_DEFAITE = 5;
 
 // Crédite les pièces gagnées à la fin d'un vrai match, contre un bot ou en
 // ligne. Le JcJ local n'en rapporte pas — deux personnes sur un canapé
 // s'offriraient des pièces à volonté. Une victoire en ligne compte comme une
-// victoire solo.
+// victoire solo. L'écran de fin affiche le même montant (voir piecesDe dans
+// js/ui/fin-de-match.js).
 function recompenserMatch(aGagne) {
   // Celui qui regarde l'écran, pas le joueur de gauche : côté invité, le
   // gain se juge sur SA partie, pas sur celle de son adversaire.
   const p = monJoueur();
   if (!p || !p.human || (G.isJ2J && !Partie.active)) return;
-  const montant = aGagne ? COINS_VICTOIRE : COINS_DEFAITE;
-  const vp = $('vicPieces');
-  if (vp) vp.classList.add('hidden');
   // Rien ne se passe si le compte n'est pas connecté : les pièces vivent côté
   // serveur, il n'y a pas de solde local à faire semblant d'avoir.
-  ajouterPieces(montant).then(solde => {
-    if (solde === null || !vp) return;
-    vp.textContent = '+' + montant + ' 🪙';
-    vp.classList.remove('hidden');
-  }).catch(() => { });
+  ajouterPieces(aGagne ? COINS_VICTOIRE : COINS_DEFAITE).catch(() => { });
 }
 
 export function gameOver() {
   G.state = 'over';
   if (G.demo) { initMatch(true); return; }
   if (document.pointerLockElement === cv) document.exitPointerLock();
-  const winner = G.winner, loser = winner.foe;
-  const winnerIsP1 = winner === G.p1;
-  // Ai-je gagné, MOI qui regarde cet écran ? Ce n'est pas « le joueur de
-  // gauche a-t-il gagné » : en ligne, l'invité tient celui de droite, et il
-  // s'entendait donc jouer la fanfare de la victoire en ayant perdu.
-  const jaiGagne = Partie.active ? winner === monJoueur() : winnerIsP1;
-  sfx(jaiGagne ? 'win' : 'lose');
-  recompenserMatch(jaiGagne);
+  const winner = G.winner;
+  const j2j = G.isJ2J && !Partie.active;
+  // Le premier rôle revient à CELUI QUI REGARDE l'écran : en ligne, l'invité
+  // tient le joueur de droite, et il s'entendait jouer la fanfare de la
+  // victoire en ayant perdu. En JcJ local, l'écran est partagé : c'est alors le
+  // vainqueur qui le prend, sinon l'un des deux joueurs du canapé fêterait la
+  // victoire de l'autre sous un « DÉFAITE ».
+  const heros = j2j ? winner : monJoueur();
+  const victoire = heros === winner;
+  sfx(victoire ? 'win' : 'lose');
+  recompenserMatch(victoire);
+  const duree = G.debutMatch ? (performance.now() - G.debutMatch) / 1000 : null;
   // Match en ligne : chacun enregistre le sien, de son point de vue. Seuls les
   // matchs en ligne comptent au classement — sinon il suffirait de battre l'IA
   // en très facile en boucle pour trôner en tête.
@@ -578,41 +520,12 @@ export function gameOver() {
       score: moi.score, scoreAdv: moi.foe.score,
       perso: moi.ck, persoAdv: moi.foe.ck, mode: 'en_ligne',
       // Duree reelle du match, pour la moyenne affichee sur le profil.
-      duree: G.debutMatch ? (performance.now() - G.debutMatch) / 1000 : null
+      duree
     }).catch(() => { /* le classement peut attendre, pas la fin de match */ });
   }
-
-  buildPerspectiveTitle($('vicName'), winner.char.short);
-  // L'écran met en scène le vainqueur — son nom, son portrait en grand — mais
-  // le verdict s'énonce du point de vue de CELUI QUI REGARDE. Il affichait
-  // « VICTOIRE » à tout le monde, y compris au perdant, qui se retrouvait à
-  // fêter la victoire de l'autre sans qu'on lui dise jamais qu'il avait perdu.
-  $('vicOutcome').textContent = jaiGagne ? 'VICTOIRE' : 'DÉFAITE';
-  drawOverSprite($('vicPortrait'), winner.ck, 18);
-  drawOverSprite($('vicLoserPortrait'), loser.ck, 8);
-
-  const flag = $('vicFlag'), loserTag = $('vicLoserTag');
-  flag.textContent = etiquetteJoueur(winner);
-  loserTag.textContent = etiquetteJoueur(loser);
-  // La couleur vive marque le camp de celui qui regarde l'écran — même
-  // question que plus haut, donc même réponse : `jaiGagne`, calculé une fois.
-  flag.className = 'bigFlag ' + (jaiGagne ? 'red' : 'gray');
-  loserTag.className = 'flag ' + (jaiGagne ? 'gray' : 'red');
-
-  // Les chiffres du bas sont CEUX DE CELUI QUI REGARDE. En dur sur G.p1, ils
-  // affichaient à l'invité les réceptions et les ultimes de son adversaire.
-  const moiStats = monJoueur();
-  $('vicCatch').textContent = moiStats.stats.catches;
-  $('vicSpec').textContent = moiStats.stats.specials;
-  $('vicRally').textContent = G.maxRally;
-
-  overDetail = {
-    winner: { ck: winner.ck, tag: flag.textContent, ...winner.stats },
-    loser: { ck: loser.ck, tag: loserTag.textContent, ...loser.stats }
-  };
-
-  spawnConfetti();
-  $('confettiWrap').style.display = jaiGagne ? 'block' : 'none';
-  $('vicDetailScrim').classList.remove('open');
-  showScreen('over');
+  afficherFinDeMatch({
+    mode: Partie.active ? 'enligne' : j2j ? 'j2j' : 'cpu',
+    heros, adversaire: heros.foe, victoire,
+    duree, echangeMax: G.maxRally
+  });
 }

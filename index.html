@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Chakra+Petch:wght@600;700&family=Great+Vibes&family=Barlow:wght@600;700;800&family=DotGothic16&family=Russo+One&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/fin-de-match.css">
 </head>
 <body>
 <h1 class="brand" id="adminTitle">Swag Frisbee Club All Star</h1>
@@ -1272,57 +1273,120 @@
     </div>
   </div>
 
-  <!-- ============ VICTOIRE / DÉFAITE ============ -->
-  <div class="screen scr-over hidden" id="scr-over">
-    <div class="overScrim"></div>
-    <div id="confettiWrap"></div>
+  <!-- ============ FIN DE MATCH ============
+       Trois phases, pilotées par js/ui/fin-de-match.js : le résultat, les
+       stats des deux joueurs, puis les boutons seuls. Styles et réglages dans
+       css/fin-de-match.css. -->
+  <div class="screen scr-over hidden" id="scr-over" data-phase="1">
+    <div class="finFond"></div>
+    <div class="finVoile"></div>
+    <div class="finSoleil"></div>
+    <div class="finFumee" id="finFumee"></div>
+    <div class="finVignette p1"></div>
+    <div class="finVignette p2"></div>
+    <div class="finConfettis" id="finConfettis"></div>
 
-    <div class="bigFlag red" id="vicFlag">P1</div>
-
-    <div class="winnerNameWrap">
-      <div class="winnerName" id="vicName"></div>
-      <div class="outcome" id="vicOutcome">VICTOIRE</div>
-      <div class="vicPieces hidden" id="vicPieces"></div>
+    <!-- Phase 1 : le résultat -->
+    <div class="finP1">
+      <div class="finPos finHeroPos" id="finHeroPos">
+        <div class="finHeroBloc" id="finHeroBloc">
+          <div class="finAureole" id="finAureole">
+            <svg viewBox="0 0 100 100">
+              <path class="piste" id="finAureolePiste" d="M 50,50 m -44,0 a 44,44 0 1,1 88,0 a 44,44 0 1,1 -88,0"/>
+              <text><textPath id="finAureoleTexte" href="#finAureolePiste" startOffset="0"></textPath></text>
+            </svg>
+          </div>
+          <canvas class="finHero" id="finHero" width="16" height="20"></canvas>
+        </div>
+      </div>
+      <div class="finEtincelles" id="finEtincelles"></div>
+      <div class="finPos finNomPos slam" id="finNomPos">
+        <div class="finNomBloc">
+          <div><span class="finVol" id="finNomVol"><span class="finNom" id="finNom"></span></span></div>
+          <div><span class="finVol" id="finIssueVol"><span class="finIssue" id="finIssue"><span class="finIssueLueur" id="finIssueLueur"></span><span class="finIssueTexte" id="finIssueTexte"></span></span></span></div>
+          <div><span class="finVol" id="finPiecesVol"><span class="finPieces" id="finPieces"></span></span></div>
+        </div>
+      </div>
+      <div class="finPos finCartePos" id="finCartePos">
+        <div class="finCarte" id="finCarte">
+          <div class="finCartePortrait"><canvas id="finCarteSprite" width="16" height="20"></canvas></div>
+          <div class="finCarteQui"><span class="finCarteRole" id="finCarteRole"></span><span class="finCarteNom" id="finCarteNom"></span></div>
+        </div>
+      </div>
+      <div class="finPos finBadgePos slam" id="finBadgePos"><div class="finBadge" id="finBadge">P1</div></div>
     </div>
 
-    <canvas class="heroPortrait" id="vicPortrait" title="Voir les stats"></canvas>
-
-    <div class="loserCard">
-      <div class="flag gray" id="vicLoserTag">CPU</div>
-      <div class="portraitCol" id="vicLoserCol" title="Voir les stats">
-        <canvas id="vicLoserPortrait"></canvas>
+    <!-- Phase 2 : les stats -->
+    <div class="finP2">
+      <div class="finPos finAncre finTitrePos finZone" data-zone="c">
+        <div class="finAncreInt"><div class="finTitre" id="finTitre">STATS DU MATCH</div></div>
       </div>
-      <div class="statBar">
-        <span>Attrapes <b id="vicCatch">0</b></span>
-        <span class="sep"></span>
-        <span>Spéciales <b id="vicSpec">0</b></span>
-        <span class="sep"></span>
-        <span>Échange max <b id="vicRally">0</b></span>
-      </div>
-    </div>
 
-    <div class="actions">
-      <div class="actionsRow">
-        <button class="mbtn c-yellow" data-act="rematch">Revanche</button>
-        <button class="mbtn" data-act="menu">Menu</button>
+      <div class="finPos finPanneauJoueurPos finZone" data-zone="g">
+        <div class="panneau cote-g" id="finPanJoueur">
+          <div class="pFondImage" id="finBanFondJoueur"></div>
+          <div class="pTechno"></div>
+          <div class="pBanniere" id="finBanJoueur"></div>
+          <div class="pEntete">
+            <div class="pAvatar" id="finAvJoueur"></div>
+            <div class="pIdentite"><span class="pRole" id="finRoleJoueur"></span><span class="pPseudo" id="finPseudoJoueur"></span></div>
+            <canvas class="pSprite" id="finSpriteJoueur" width="16" height="20"></canvas>
+          </div>
+          <span class="pIssue" id="finIssueJoueur"></span>
+          <div class="pStats" id="finStatsJoueur"></div>
+        </div>
       </div>
-      <button class="mbtn changeChar" data-act="changeChar">Changez de perso</button>
-    </div>
 
-    <div class="detailScrim" id="vicDetailScrim">
-      <div class="detailCard">
-        <div class="close" id="vicDetailClose">✕</div>
-        <h3 id="vicDetailName">—</h3>
-        <div class="detailGrid">
-          <div class="cell"><span class="lbl">Buts</span><span class="val" id="dButs">—</span></div>
-          <div class="cell"><span class="lbl">Attrapes</span><span class="val" id="dAttrapes">—</span></div>
-          <div class="cell"><span class="lbl">Zone 5 pts</span><span class="val" id="d5pt">—</span></div>
-          <div class="cell"><span class="lbl">Zone 3 pts</span><span class="val" id="d3pt">—</span></div>
-          <div class="cell"><span class="lbl">Ultimes</span><span class="val" id="dUltimes">—</span></div>
-          <div class="cell"><span class="lbl">Attrapes en dash</span><span class="val" id="dDash">—</span></div>
+      <div class="finPos finAncre finCentrePos finZone" data-zone="c">
+        <div class="finAncreInt">
+          <div class="centre" id="finCentre">
+            <div class="vs">VS</div>
+            <div class="cStats" id="finStatsCommunes"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="finPos finPanneauAdvPos finZone" data-zone="d">
+        <div class="panneau cote-d" id="finPanAdversaire">
+          <div class="pFondImage" id="finBanFondAdversaire"></div>
+          <div class="pTechno"></div>
+          <div class="pBanniere" id="finBanAdversaire"></div>
+          <div class="pEntete">
+            <div class="pAvatar" id="finAvAdversaire"></div>
+            <div class="pIdentite"><span class="pRole" id="finRoleAdversaire"></span><span class="pPseudo" id="finPseudoAdversaire"></span></div>
+            <canvas class="pSprite" id="finSpriteAdversaire" width="16" height="20"></canvas>
+          </div>
+          <span class="pIssue" id="finIssueAdversaire"></span>
+          <div class="pStats" id="finStatsAdversaire"></div>
         </div>
       </div>
     </div>
+
+    <!-- Phase finale : seulement les boutons -->
+    <div class="finP3">
+      <div class="finPos finAncre finBoutonsPos">
+        <div class="finAncreInt">
+          <div class="finaux" id="finaux">
+            <div class="arrivee"><button class="mbtn fbtn" data-fin="revanche">
+              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4.5v5h-5"/></svg></span>
+              REVANCHE
+            </button></div>
+            <div class="arrivee"><button class="mbtn fbtn" data-fin="menu">
+              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11.5L12 4l8.5 7.5"/><path d="M6 10v10h12V10"/><path d="M10 20v-5.5h4V20"/></svg></span>
+              MENU
+            </button></div>
+            <div class="arrivee"><button class="mbtn fbtn" data-fin="perso">
+              <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.5c.6-4 3.4-6.3 7.2-6.3s6.6 2.3 7.2 6.3"/></svg></span>
+              CHANGEZ DE PERSO
+            </button></div>
+          </div>
+          <div class="attenteVote hidden" id="finAttente"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="finPos finInvitePos"><div class="finInvite">APPUYEZ SUR ESPACE POUR CONTINUER</div></div>
+    <div class="finFlash"></div>
   </div>
 
   <div class="crt"></div>

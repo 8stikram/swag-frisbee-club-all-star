@@ -123,9 +123,10 @@ export function makePlayer(ck, side, human, diffIdx) {
     throwCd: 0, throwPoseT: 0, lunge: 0, lungeCd: 0, dashCd: 0, dashV: { x: 0, y: 0 },
     walk: 0, moving: false, meter: 0, score: 0, speed: c.speed, stun: 0, ralenti: 0,
     ghosts: [], ghostT: 0, forceFr: null,
-    // buts / z5 / z3 / dashCatches alimentent l'écran de fin de match.
-    // perfects et dashThrows servent aux conditions de déblocage des skins.
-    stats: { catches: 0, specials: 0, thrown: 0, buts: 0, z5: 0, z3: 0, dashCatches: 0, perfects: 0, dashThrows: 0 },
+    // catches, specials, fautes et possession (en secondes) alimentent l'écran
+    // de fin de match, et buts / thrown sa précision. perfects et dashThrows
+    // servent aux conditions de déblocage des skins.
+    stats: { catches: 0, specials: 0, thrown: 0, buts: 0, z5: 0, z3: 0, dashCatches: 0, perfects: 0, dashThrows: 0, fautes: 0, possession: 0 },
     ai: null, foe: null,
     home: { x: side === 1 ? COURT.left + 120 : COURT.right - 120, y: CY },
     holdTimer: 0,

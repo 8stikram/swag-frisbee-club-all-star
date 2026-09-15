@@ -205,6 +205,9 @@ export function update(dt) {
         if (porteur !== G.possessionDe) { G.possessionDe = porteur; G.possessionT = 0; G.possessionCdN = 0; }
         if (porteur) {
           G.possessionT += wdt;
+          // Le temps de possession de l'écran de fin : cumulé ici, des deux
+          // côtés, pour la même raison que le chronomètre juste au-dessus.
+          porteur.stats.possession += wdt;
           const restant = Math.ceil(POSSESSION_MAX - G.possessionT);
           if (restant <= POSSESSION_COMPTE_A_REBOURS && restant >= 1 && restant !== G.possessionCdN) {
             G.possessionCdN = restant;

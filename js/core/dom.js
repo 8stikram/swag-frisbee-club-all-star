@@ -35,14 +35,15 @@ export function showScreen(name) {
   for (const k in SCREENS) $(SCREENS[k]).classList.toggle('hidden', k !== name);
   curScreen = name;
   // La barre du haut n'appartient à aucun écran : elle suit simplement le fait
-  // qu'on soit dans un menu ou en plein match.
+  // qu'on soit dans un menu ou en plein match. L'écran de fin la cache aussi :
+  // le retour y couperait le vote en ligne, et elle recouvrait le badge.
   for (const id of ['topBar', 'topBarG']) {
     const tb = document.getElementById(id);
-    if (tb) tb.classList.toggle('hidden', name === null);
+    if (tb) tb.classList.toggle('hidden', name === null || name === 'over');
   }
   // Pas de retour sur l'ecran titre : il n'y a rien au-dessus.
   const g = document.getElementById('topBarG');
-  if (g && name !== null) g.classList.toggle('hidden', name === 'title');
+  if (g && name !== null && name !== 'over') g.classList.toggle('hidden', name === 'title');
   kbNav = false;
   if (name) { selIdx[name] = selIdx[name] || 0; refreshMenu(name); }
 }

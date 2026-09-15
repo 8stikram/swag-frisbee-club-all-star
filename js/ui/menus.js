@@ -23,10 +23,12 @@ import {
   demanderRevanche, demanderChangementPerso, quandRevanche, quandChangementPerso,
   Partie, annoncerIdentite, remplacerInviteParIA, quandDeconnexionEnMatch,
   annoncerVoteTerrain, quandVoteTerrain, quandResultatVote,
-  Pret, annoncerPret, quandPretAdversaire, oublierPrets
+  Pret, annoncerPret, quandPretAdversaire, oublierPrets,
+  relancerMemeMatch, preparerNouveauxChoix
 } from '../reseau/partie.js';
 import { fermer as fermerLiaison } from '../reseau/connexion.js';
 import { Compte } from '../reseau/compte.js';
+import { quandChoixFinal, adversairePartiEnFin } from './fin-de-match.js';
 
 let selCharPlayer = 'naruto', selCharCPU = 'leon', diffIdx = 1;
 let modeJ2J = false;
@@ -1021,6 +1023,9 @@ function reglerBoutonsDeconnexion(revele, hote) {
 }
 
 export function alerterDeconnexion() {
+  // Le match est fini : il n'y a plus de partie à suspendre. Le départ se
+  // lit sur l'écran de fin, comme un MENU choisi en face.
+  if (curScreen === 'over') { adversairePartiEnFin(); return; }
   // Idempotent, et c'est indispensable : une même coupure fait traverser
   // plusieurs états de connexion l'un après l'autre (« disconnected » puis
   // « failed » puis « closed »), et chacun déclenche son propre signal
@@ -1089,6 +1094,35 @@ function retourChoixEnLigne() {
   showScreen('select'); refreshSelect();
   $('admin-panel').classList.remove('visible');
 }
+
+// MENU en ligne, décidé par le vote de fin : chacun rentre au menu. On lâche la
+// partie tout de suite, pour que plus rien ne réagisse à la liaison, mais on ne
+// la ferme qu'un instant plus tard : le choix vient de partir vers l'autre, il
+// doit avoir le temps d'arriver.
+function quitterFinEnLigne() {
+  modeEnLigne = false; roleEnLigne = null; terrainValide = false;
+  oublierPrets();
+  arreterPartieReseau();
+  setTimeout(fermerLiaison, 400);
+  duckMusic(false);
+  initMatch(true);
+  showScreen('title'); renderTitleHero();
+  $('admin-panel').classList.remove('visible');
+}
+
+// Les boutons de l'écran de fin (js/ui/fin-de-match.js). Hors ligne, un clic
+// décide seul. En ligne, le choix a déjà été voté et tranché des deux côtés :
+// il ne reste qu'à l'exécuter. La revanche, elle, reste lancée par l'hôte seul
+// — deux relances indépendantes donneraient deux matchs différents.
+quandChoixFinal(choix => {
+  if (!Partie.active) {
+    doAct(choix === 'revanche' ? 'rematch' : choix === 'perso' ? 'changeChar' : 'menu');
+    return;
+  }
+  if (choix === 'revanche') { if (Partie.role === 'hote') relancerMemeMatch(); return; }
+  if (choix === 'perso') { preparerNouveauxChoix(); retourChoixEnLigne(); return; }
+  quitterFinEnLigne();
+});
 
 // Branchements réseau : la pause, l'abandon et le changement de personnage
 // d'en face nous concernent.
