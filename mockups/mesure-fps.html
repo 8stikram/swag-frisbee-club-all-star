@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesure FPS — Swag Frisbee Club</title>
+<!--
+  Banc de mesure des images par seconde, sur la vraie machine du joueur.
+
+  Le jeu tourne dans un cadre plein écran, le vrai index.html, sans une ligne
+  de code du jeu modifiée. Cette page le pilote de l'extérieur : elle ouvre
+  chaque menu, change la map qui tourne derrière, lance un match de démo, et
+  relève à chaque fois l'intervalle réel entre deux images affichées.
+
+  Pourquoi pas une mesure faite dans l'app de développement : son navigateur
+  intégré est plus petit que l'écran de jeu, et il ralentit la page à une image
+  par seconde dès qu'on regarde ailleurs. Ici on mesure dans le navigateur où
+  l'on joue, à la taille où l'on joue.
+
+  Rien n'est envoyé nulle part : les résultats restent à l'écran, et le bouton
+  « Copier » les met dans le presse-papiers pour qu'on les recolle à la main.
+-->
+<style>
+  :root{color-scheme:dark}
+  html,body{margin:0;height:100%;background:#05070d;color:#e8eef8;
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+  #jeu{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
+
+  /* Le panneau reste petit et immobile pendant la mesure : un élément animé
+     par-dessus le jeu fausserait justement ce qu'on mesure. */
+  #panneau{position:fixed;top:12px;right:12px;z-index:2;width:min(360px,calc(100% - 24px));
+    background:rgba(8,11,20,.94);border:1px solid #243049;border-radius:10px;padding:14px 16px}
+  #panneau h1{margin:0 0 4px;font-size:15px;letter-spacing:.02em}
+  #panneau p{margin:6px 0;color:#9fb0cc;font-size:12.5px}
+  .boutons{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  button{font:inherit;font-weight:600;border:0;border-radius:7px;padding:8px 12px;cursor:pointer;
+    background:#2f6bff;color:#fff}
+  button.second{background:#1a2338;color:#cfd9ec;border:1px solid #2c3a57}
+  button:disabled{opacity:.45;cursor:default}
+  #etat{font-variant-numeric:tabular-nums;color:#ffd23e}
+  #panneau.discret{width:auto;padding:6px 10px}
+  #panneau.discret h1,#panneau.discret p:not(#etat),#panneau.discret .boutons{display:none}
+
+  /* Résultats : par-dessus tout, une fois la mesure finie. */
+  #resultats{position:fixed;inset:0;z-index:3;background:rgba(5,7,13,.97);overflow:auto;padding:28px}
+  #resultats h2{margin:0 0 6px;font-size:18px}
+  .machine{color:#9fb0cc;font-size:12.5px;margin:0 0 16px}
+  .cadreTable{overflow-x:auto}
+  table{border-collapse:collapse;min-width:720px;font-variant-numeric:tabular-nums}
+  th,td{padding:6px 12px;text-align:right;border-bottom:1px solid #1b2436;white-space:nowrap}
+  th{color:#9fb0cc;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  td:first-child,th:first-child,td:nth-child(2),th:nth-child(2){text-align:left}
+  tr.groupe td{color:#7f8fb0;font-size:12px;padding-top:16px;border-bottom:0;text-align:left}
+  .bon{color:#5df08a}.moyen{color:#ffd23e}.mauvais{color:#ff5f6d}
+  .note{color:#9fb0cc;font-size:12.5px;max-width:760px}
+  #alerte{color:#ff5f6d;font-weight:600}
+</style>
+</head>
+<body>
+<iframe id="jeu" src="../index.html" title="Swag Frisbee Club All Star"></iframe>
+
+<div id="panneau">
+  <h1>Mesure des FPS</h1>
+  <p>Environ une minute. Le jeu va changer d'écran tout seul : <b>ne touche à rien et reste sur cet onglet</b>, sinon le navigateur ralentit la page et la mesure ne vaut plus rien.</p>
+  <p id="etat">Chargement du jeu…</p>
+  <div class="boutons">
+    <button id="lancer" disabled>Plein écran et lancer</button>
+    <button id="lancerFenetre" class="second" disabled>Lancer sans plein écran</button>
+  </div>
+</div>
+
+<div id="resultats" hidden></div>
+
+<script type="module">
+const cadre = document.getElementById('jeu');
+const etat = document.getElementById('etat');
+const panneau = document.getElementById('panneau');
+const boutons = [document.getElementById('lancer'), document.getElementById('lancerFenetre')];
+const attendre = ms => new Promise(r => setTimeout(r, ms));
+
+// Les étapes. Le décor qui tourne derrière les menus est celui de la dernière
+// map jouée : on passe donc le menu titre sur chaque map, puis les autres
+// menus sur l'arène, puis un vrai match sur les maps les plus lourdes.
+const ETAPES = [
+  ...['arena', 'dojo', 'stadium', 'dune', 'polenord', 'raccoon'].map(map => ({ groupe: 'Menu titre, selon la map derrière', ecran: 'title', map })),
+  ...[['select', 'Sélection des persos'], ['options', 'Options'], ['online', 'En ligne'], ['maps', 'Choix de la map'], ['casino', 'Casino']]
+    .map(([ecran, nom]) => ({ groupe: 'Autres menus', ecran, nom, map: 'arena' })),
+  ...['arena', 'stadium', 'polenord', 'raccoon'].map(map => ({ groupe: 'En match', ecran: null, nom: 'Match', map }))
+];
+const NOMS_MAPS = { arena: 'Arène', dojo: 'Dojo', stadium: 'Stade', dune: 'Dune de Râ', polenord: 'Pôle Nord', raccoon: 'Raccoon City' };
+const SECONDES = 3, POSE_MS = 900;
+
+let M = null, invalide = false;
+
+cadre.addEventListener('load', async () => {
+  const w = cadre.contentWindow;
+  // Les modules du jeu, chargés DANS le cadre : ce sont les mêmes instances que
+  // celles que le jeu utilise déjà, puisque même adresse dans la même page.
+  // L'adresse est rendue absolue d'après celle du cadre : un chemin relatif se
+  // résoudrait depuis cette page-ci, dans /mockups/, où le jeu n'est pas.
+  const charger = chemin => w.eval(`import(${JSON.stringify(new URL(chemin, w.location.href).href)})`);
+  try {
+    const [dm, mp, cst, st, lp, cas] = await Promise.all([
+      charger('./js/core/dom.js'), charger('./js/data/maps.js'), charger('./js/core/constants.js'),
+      charger('./js/game/state.js'), charger('./js/game/loop.js'), charger('./js/casino/casino.js')
+    ]);
+    M = { w, dm, mp, cst, st, lp, cas };
+    etat.textContent = 'Prêt.';
+    boutons.forEach(b => b.disabled = false);
+  } catch (e) {
+    etat.textContent = 'Le jeu ne s’est pas chargé : ' + e.message;
+  }
+});
+
+// Quitter l'onglet pendant la mesure la fausse : on le détecte au lieu
+// d'afficher des chiffres faux.
+document.addEventListener('visibilitychange', () => { if (document.hidden) invalide = true; });
+
+function placer(e) {
+  const { dm, mp, cst, st, cas, w } = M;
+  const intro = w.document.getElementById('scr-intro');
+  if (intro) intro.hidden = true;
+  mp.setMapId(e.map); cst.applyMap();
+  if (e.ecran === null) {
+    st.initMatch(true, 'naruto', 'leon', 2, false);
+    st.G.cdT = -1;
+    dm.showScreen(null);
+  } else if (e.ecran === 'casino') {
+    cas.ouvrirCasino();
+  } else {
+    dm.showScreen(e.ecran);
+  }
+}
+
+// Une mesure : les intervalles entre images réellement affichées dans le cadre,
+// les tâches longues du fil principal, et les rendus du jeu émis pendant ce temps.
+async function mesurer() {
+  const { w, lp } = M;
+  const longues = [];
+  let obs = null;
+  try {
+    obs = new w.PerformanceObserver(l => { for (const x of l.getEntries()) longues.push(x.duration); });
+    obs.observe({ type: 'longtask', buffered: false });
+  } catch (e) { obs = null; }
+  const d = [];
+  const r0 = lp.rendusEffectues;
+  await new Promise(res => {
+    let prec = 0, t0 = 0, fini = false;
+    const finir = () => { if (!fini) { fini = true; res(); } };
+    const image = t => {
+      if (fini) return;
+      if (!t0) t0 = t;
+      if (prec) d.push(t - prec);
+      prec = t;
+      if (t - t0 < SECONDES * 1000) w.requestAnimationFrame(image); else finir();
+    };
+    w.requestAnimationFrame(image);
+    // Un onglet en arrière-plan ne reçoit plus d'images du tout : sans cette
+    // limite, la mesure attendrait indéfiniment.
+    setTimeout(finir, SECONDES * 1000 + 2500);
+  });
+  if (obs) obs.disconnect();
+  // Moins de vingt images par seconde reçues : la page a été mise en veille par
+  // le navigateur, les chiffres ne décrivent plus le jeu.
+  if (d.length < SECONDES * 20) invalide = true;
+  if (!d.length) d.push(SECONDES * 1000);
+  const tri = d.slice().sort((a, b) => a - b);
+  const moyenne = d.reduce((s, x) => s + x, 0) / d.length;
+  const nominale = tri[tri.length >> 1];
+  return {
+    fps: 1000 / moyenne,
+    nominale,
+    p99: tri[Math.floor(tri.length * .99)],
+    max: tri[tri.length - 1],
+    ratees: d.filter(x => x > nominale * 1.5).length,
+    images: d.length,
+    rendusParS: (lp.rendusEffectues - r0) / SECONDES,
+    longues: longues.length,
+    longueMax: longues.length ? Math.max(...longues) : 0
+  };
+}
+
+async function lancer(pleinEcran) {
+  if (!M) return;
+  if (pleinEcran && document.documentElement.requestFullscreen) {
+    try { await document.documentElement.requestFullscreen(); } catch (e) { }
+    await attendre(1200);   // le temps que la page reprenne sa taille
+  }
+  invalide = false;
+  boutons.forEach(b => b.disabled = true);
+  panneau.classList.add('discret');
+  const mapAvant = M.mp.getMapId();
+  const lignes = [];
+  for (let i = 0; i < ETAPES.length; i++) {
+    const e = ETAPES[i];
+    etat.textContent = `${i + 1}/${ETAPES.length} — ${e.nom || 'Menu titre'} · ${NOMS_MAPS[e.map]}`;
+    placer(e);
+    await attendre(POSE_MS);
+    lignes.push({ ...e, ...(await mesurer()) });
+  }
+  // On rend le jeu tel qu'on l'a trouvé.
+  M.mp.setMapId(mapAvant); M.cst.applyMap(); M.dm.showScreen('title');
+  panneau.classList.remove('discret');
+  etat.textContent = 'Terminé.';
+  if (document.fullscreenElement) { try { await document.exitFullscreen(); } catch (e) { } }
+  afficher(lignes);
+}
+boutons[0].addEventListener('click', () => lancer(true));
+boutons[1].addEventListener('click', () => lancer(false));
+
+function machine() {
+  let gpu = 'inconnue';
+  try {
+    const gl = document.createElement('canvas').getContext('webgl');
+    const ext = gl && gl.getExtension('WEBGL_debug_renderer_info');
+    if (ext) gpu = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL);
+  } catch (e) { }
+  const cv = M.dm.cv.getBoundingClientRect();
+  return {
+    gpu,
+    ecran: `${screen.width}×${screen.height} · zoom ${devicePixelRatio}`,
+    fenetre: `${innerWidth}×${innerHeight}`,
+    canevas: `${Math.round(cv.width)}×${Math.round(cv.height)}`,
+    // Dans cet ordre : l'identifiant de Chrome contient aussi « Safari », et
+    // ceux d'Edge et d'Opera contiennent aussi « Chrome ».
+    navigateur: (() => {
+      const ua = navigator.userAgent;
+      for (const [cle, nom] of [['Edg', 'Edge'], ['OPR', 'Opera'], ['Firefox', 'Firefox'], ['Chrome', 'Chrome'], ['Safari', 'Safari']]) {
+        const m = ua.match(new RegExp(cle + '\\/(\\d+)'));
+        if (m) return nom + ' ' + m[1];
+      }
+      return ua;
+    })()
+  };
+}
+
+// Couleurs : on juge chaque ligne par rapport à la fréquence de l'écran lui-même
+// (l'image nominale), puisqu'un 60 Hz et un 180 Hz n'ont pas le même plafond.
+function classe(v, bon, moyen) { return v <= bon ? 'bon' : v <= moyen ? 'moyen' : 'mauvais'; }
+
+function afficher(lignes) {
+  const m = machine();
+  const hz = Math.round(1000 / lignes[0].nominale);
+  const fmt = (x, n = 1) => x.toFixed(n).replace('.', ',');
+  let html = `<h2>Résultats</h2>
+    <p class="machine">Écran rafraîchi à <b>${hz} Hz</b> · carte graphique : ${m.gpu}<br>
+    Écran ${m.ecran} · fenêtre ${m.fenetre} · jeu affiché en ${m.canevas} · ${m.navigateur}</p>`;
+  if (invalide) html += `<p id="alerte">Le navigateur a ralenti la page pendant la mesure (onglet quitté ou fenêtre masquée) : les chiffres sont faussés. Relance-la sans changer de fenêtre.</p>`;
+  html += `<div class="boutons" style="margin-bottom:16px"><button id="copier">Copier les résultats</button>
+    <button class="second" id="relancer">Relancer</button></div>
+    <div class="cadreTable"><table><thead><tr>
+    <th>Écran</th><th>Map</th><th>FPS moyen</th><th>Pire 1 % (ms)</th><th>Pire image (ms)</th>
+    <th>Images ratées</th><th>Blocages ≥ 50 ms</th></tr></thead><tbody>`;
+  let groupe = '';
+  for (const l of lignes) {
+    if (l.groupe !== groupe) { groupe = l.groupe; html += `<tr class="groupe"><td colspan="7">${groupe}</td></tr>`; }
+    const partRatees = l.ratees / l.images;
+    html += `<tr><td>${l.nom || 'Menu titre'}</td><td>${NOMS_MAPS[l.map]}</td>
+      <td class="${classe(hz - l.fps, hz * .05, hz * .2)}">${Math.round(l.fps)}</td>
+      <td class="${classe(l.p99 / l.nominale, 1.6, 3)}">${fmt(l.p99)}</td>
+      <td class="${classe(l.max / l.nominale, 2.5, 6)}">${fmt(l.max)}</td>
+      <td class="${classe(partRatees, .01, .05)}">${l.ratees} / ${l.images}</td>
+      <td class="${l.longues ? 'mauvais' : 'bon'}">${l.longues ? l.longues + ' (max ' + Math.round(l.longueMax) + ' ms)' : '0'}</td></tr>`;
+  }
+  html += `</tbody></table></div>
+    <p class="note">Une image « ratée » a mis plus d’une fois et demie le temps normal d’une image sur cet écran : c’est la saccade qu’on sent. Un blocage est un moment où le navigateur n’a rien pu afficher pendant au moins 50 ms.</p>`;
+  const zone = document.getElementById('resultats');
+  zone.innerHTML = html;
+  zone.hidden = false;
+
+  // Le texte copié est volontairement brut : il se recolle tel quel dans une
+  // conversation et reste lisible sans tableau.
+  const texte = [`Mesure FPS — ${hz} Hz — ${m.gpu} — fenêtre ${m.fenetre}, jeu ${m.canevas}, ${m.navigateur}${invalide ? ' — INVALIDE (page ralentie par le navigateur)' : ''}`,
+    'écran | map | fps | pire1%ms | pireMs | ratées | blocages≥50ms',
+    ...lignes.map(l => `${l.nom || 'Menu titre'} | ${NOMS_MAPS[l.map]} | ${Math.round(l.fps)} | ${fmt(l.p99)} | ${fmt(l.max)} | ${l.ratees}/${l.images} | ${l.longues}${l.longues ? ' (max ' + Math.round(l.longueMax) + ')' : ''}`)
+  ].join('\n');
+  document.getElementById('copier').addEventListener('click', async ev => {
+    try { await navigator.clipboard.writeText(texte); ev.target.textContent = 'Copié ✓'; }
+    catch (e) { ev.target.textContent = 'Copie refusée — fais une capture'; }
+  });
+  document.getElementById('relancer').addEventListener('click', () => { zone.hidden = true; boutons.forEach(b => b.disabled = false); });
+}
+</script>
+</body>
+</html>
