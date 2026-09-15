@@ -13,6 +13,7 @@
     --sortie:cubic-bezier(.45,0,.7,.35);
   }
   *{box-sizing:border-box}
+  [hidden]{display:none!important}
   body{margin:0;background:var(--bg);color:var(--txt);font-family:'Barlow',system-ui,sans-serif;padding:18px 16px 70px}
   h1{font-size:19px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
   .note{font-size:12.5px;color:#8fa4c4;max-width:1050px;line-height:1.6;margin:0 0 14px}
@@ -306,6 +307,55 @@
   .finaux.entree .arrivee:nth-child(3){animation-delay:calc(var(--btnDecalage,.1s) * 2)}
   @keyframes arriveBtn{ from{ opacity:0; translate:0 5cqh; scale:.92 } }
 
+  /* ---- En ligne : chacun choisit son bouton, comme le terrain ----
+     Badges, compteur et face-à-face repris du vote de terrain du jeu
+     (.voteBadge, .mbtn.enAttente, .voteResultOverlay) : ton badge en vert, le
+     sien en jaune. Toi à gauche, lui à droite, comme les panneaux de stats. */
+  .arrivee{position:relative}
+  .fbtn{position:relative}
+  .badgeVote{position:absolute;top:50%;left:0;z-index:2;width:4.4cqh;height:4.4cqh;min-width:22px;min-height:22px;
+    translate:-50% -50%;border-radius:50%;border:2px solid var(--ink);overflow:hidden;background:var(--green);
+    display:flex;align-items:center;justify-content:center;font-family:'Archivo Black',sans-serif;font-size:2.1cqh;color:var(--ink);
+    box-shadow:2px 2px 0 rgba(0,0,0,.4);pointer-events:none;animation:badgePose .32s var(--doux) both}
+  .badgeVote.sien{left:100%;background:var(--yellow)}
+  .badgeVote img{width:100%;height:100%;object-fit:cover}
+  @keyframes badgePose{ from{ scale:0 } 60%{ scale:1.15 } }
+  /* ton choix reste enfoncé (le rendu du survol du jeu) ; clic définitif : les deux autres s'éteignent */
+  .fbtn.choisi{background:var(--ink);color:#fff;transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--ink)}
+  #finaux.aVote .fbtn:not(.choisi){filter:saturate(.35) brightness(.78);opacity:.75;pointer-events:none;cursor:default}
+  .fbtn.accord{outline:4px solid var(--green);outline-offset:3px;scale:1.06;transition:scale .25s var(--doux)}
+  .attenteVote{position:absolute;left:50%;top:calc(100% + 2.4cqh);translate:-50% 0;white-space:nowrap;
+    font-family:var(--f-boutons);font-weight:var(--w-boutons);font-size:clamp(11px,1.9cqh,18px);letter-spacing:.03em;
+    padding:.8cqh 1.6cqw;border:3px solid var(--ink);border-radius:12px;box-shadow:4px 4px 0 var(--ink);
+    background:#cfd8e8;color:#43506b;animation:attentePouls 1.5s ease-in-out infinite}
+  .attenteVote.pret{background:var(--green);color:var(--ink);animation:none}
+  @keyframes attentePouls{0%,100%{opacity:.72}50%{opacity:1}}
+  .annonceVote{position:absolute;left:50%;top:14%;z-index:10;translate:-50% 0;white-space:nowrap;
+    font-family:'Archivo Black',sans-serif;font-size:3.4cqh;letter-spacing:.04em;color:var(--ink);background:var(--yellow);
+    border:4px solid var(--ink);border-radius:12px;box-shadow:6px 6px 0 var(--ink);padding:1cqh 2.4cqw;
+    animation:annonceIn .35s var(--doux) both}
+  @keyframes annonceIn{ from{ opacity:0; translate:-50% -3cqh } }
+  .faceAFace{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4cqh;
+    background:rgba(3,5,10,.86);animation:voteIn .25s ease both}
+  .faceAFace.sortie,.depart.sortie{animation:voteOut .4s ease both}
+  @keyframes voteIn{ from{ opacity:0 } }
+  @keyframes voteOut{ to{ opacity:0 } }
+  .faceTitre{font-family:'Archivo Black',sans-serif;font-size:4.6cqh;color:var(--yellow);letter-spacing:.08em;
+    text-shadow:3px 3px 0 var(--ink);text-align:center;line-height:1.1}
+  .faceSous{display:block;font-family:'DotGothic16',monospace;font-size:2.2cqh;color:#fff;letter-spacing:.06em;
+    text-shadow:0 2px 0 var(--ink);margin-top:1cqh;min-height:1.2em}
+  .faceRangee{display:flex;align-items:center;gap:4cqw}
+  .faceVs{font-family:'Archivo Black',sans-serif;font-size:3.4cqh;color:var(--gray)}
+  .faceCase{position:relative;filter:brightness(.55);transition:transform .2s var(--doux),filter .2s}
+  .faceCase .fbtn{pointer-events:none;width:auto;min-width:36cqh}
+  .faceCase.gagnant{filter:none;transform:scale(1.08)}
+  .faceCase.gagnant .fbtn{outline:4px solid var(--green);outline-offset:3px}
+  .depart{position:absolute;inset:0;z-index:11;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2cqh;
+    background:rgba(3,5,10,.92);animation:voteIn .35s ease both;cursor:pointer}
+  .depart b{font-family:'Archivo Black',sans-serif;font-weight:400;font-size:6.4cqh;color:#fff;letter-spacing:.06em;
+    -webkit-text-stroke:5px var(--ink);paint-order:stroke fill}
+  .depart i{font-style:normal;font-family:'DotGothic16',monospace;font-size:1.9cqh;color:#8fa4c4}
+
   /* ===================== CALQUE PHASE 1 (aperçu des transitions) =====================
      Valeurs figées de mockups/fin-de-match-resultat.reglages.json — sans les
      boutons, retirés des phases 1 et 2. */
@@ -577,7 +627,7 @@ Tout s'exporte dans <b>Tout copier / coller</b>.</p>
               <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.5c.6-4 3.4-6.3 7.2-6.3s6.6 2.3 7.2 6.3"/></svg></span>
               CHANGEZ DE PERSO
             </button></div>
-          </div></div>
+          </div><div class="attenteVote" id="attenteVote" hidden></div></div>
         </div>
       </div></div>
 
@@ -611,6 +661,22 @@ Tout s'exporte dans <b>Tout copier / coller</b>.</p>
         <button id="btnDefaite">DÉFAITE</button>
         <button id="btnAleatoire">🎲 Stats au hasard</button>
         <button id="btnLecture">Mode lecture</button>
+      </div>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Vote en ligne (adversaire simulé)</summary>
+      <p class="legende" id="voteInfo" style="margin:0 0 8px"></p>
+      <div class="row" id="voteHorsLigne">
+        <button class="grand" id="btnPasserEnLigne">Passer l'adversaire en « Joueur en ligne » et voir les boutons</button>
+      </div>
+      <div id="voteEnLigne">
+        <div class="row">
+          <button data-vote-adv="revanche">Il choisit REVANCHE</button>
+          <button data-vote-adv="perso">Il choisit CHANGEZ DE PERSO</button>
+          <button data-vote-adv="menu">Il choisit MENU</button>
+        </div>
+        <div class="row"><button id="btnVoteReset">↺ Recommencer le vote</button></div>
       </div>
     </details>
 
@@ -672,6 +738,7 @@ Tout s'exporte dans <b>Tout copier / coller</b>.</p>
         <li><b>Transition 1 → stats</b> — le fond reste, le perso s'efface ; aspiration, balayage ou éjection. <span class="etat choix">choisi ensemble</span></li>
         <li><b>Boutons</b> — retirés des phases 1 et 2 ; <b>phase finale</b> avec seulement les 3 boutons, au centre, en colonne, arrivée un par un (<i>« 0,1 s d'écart »</i>). <span class="etat choix">ta décision</span></li>
         <li><b>Habillage des boutons</b> — <b>les mêmes que dans les autres menus</b> : contour noir, ombre décalée, icônes rondes, dégradé qui défile de COMBATTRE / LANCER LE MATCH, inversion noire au survol. Remplace <i>« lueur + 1,05 au survol, 0,95 au clic, respiration »</i> du prompt. <span class="etat choix">ta décision</span></li>
+        <li><b>En ligne : vote comme pour la map</b> — ton avatar se pose sur le bouton cliqué et l'autre le voit ; clic définitif ; compteur « EN ATTENTE… 1/2 ». Désaccord : face-à-face puis <b>MENU &gt; CHANGEZ DE PERSO &gt; REVANCHE</b>, sans hasard. MENU part tout de suite. Pas de minuteur. <span class="etat choix">ta décision</span></li>
         <li><b>Passage stats → boutons</b> — les panneaux repartent sur les côtés, les boutons arrivent au centre. <span class="etat choix">ta décision</span></li>
         <li><b>Fautes, possession, précision</b> — pas encore comptées dans le jeu : chiffres d'exemple. <span class="etat plustard">à l'intégration</span></li>
       </ol>
@@ -893,6 +960,7 @@ Tout s'exporte dans <b>Tout copier / coller</b>.</p>
     $('piecesVol').style.visibility = piecesP1 === null ? 'hidden' : '';
     remplirStats();
     ajusterPixels();
+    majBlocVote();
   }
   for (const [idInput, cle] of [['fAvJoueur','avJoueur'],['fBanJoueur','banJoueur'],['fAvAdversaire','avAdversaire'],['fBanAdversaire','banAdversaire']]) {
     $(idInput).addEventListener('change', e => {
@@ -999,11 +1067,13 @@ Tout s'exporte dans <b>Tout copier / coller</b>.</p>
   }
   function allerPhase(n) {
     finTransition();
+    reinitVote();
     scene.dataset.phase = String(n);
     scene.classList.toggle('voirP3', n === 3);
     majBoutonsPhase();
   }
   function entrerFinaux() {
+    reinitVote();
     const f = $('finaux');
     f.classList.remove('entree'); void f.offsetWidth; f.classList.add('entree');
   }
@@ -1336,6 +1406,11 @@ Tout s'exporte dans <b>Tout copier / coller</b>.</p>
       { sous:'Allure' },
       { id:'btnLargeur', label:'Largeur', min:30, max:80, pas:1, def:52, unite:'cqh', fn:v => scene.style.setProperty('--btnLargeur', cqh(v)) },
       { id:'btnEcart', label:'Espace entre les boutons', min:0, max:6, pas:.1, def:1.6, unite:'cqh', fn:v => scene.style.setProperty('--btnEcart', cqh(v)) },
+      { sous:'En ligne — vote' },
+      { id:'voteSuspense', label:'Face-à-face — avant le verdict', min:.3, max:2.5, pas:.1, def:.9, unite:'s' },
+      { id:'voteVerdict', label:'Face-à-face — verdict affiché', min:.5, max:3, pas:.1, def:1.4, unite:'s' },
+      { id:'voteAccord', label:'Même choix — avant de partir', min:.3, max:2, pas:.1, def:.9, unite:'s' },
+      { id:'voteAnnonce', label:'« X a choisi MENU » affiché', min:.5, max:3, pas:.1, def:1.4, unite:'s' },
     ]},
     { titre:'Typos', items:[
       { id:'police_titre', cible:'titre', label:'Titre', type:'police', def:'russo' },
@@ -1480,6 +1555,8 @@ Tout s'exporte dans <b>Tout copier / coller</b>.</p>
   let drag = null;
   scene.addEventListener('pointerdown', e => {
     if (scene.classList.contains('lecture')) return;
+    // en ligne, les boutons finaux se cliquent pour voter (placement toujours possible par la liste)
+    if (enLigne() && e.target.closest('#finaux .fbtn')) return;
     let m = e.target.closest('.movable');
     if (!m && choisi && choisi.dataset.el === 'soleil') m = choisi;
     if (!m) return;
@@ -1610,6 +1687,137 @@ Tout s'exporte dans <b>Tout copier / coller</b>.</p>
       if (valeurs.partie === 'reelle') regler('partie', 'simulee');
     }
   });
+
+  /* ================= EN LIGNE : VOTE POUR LE BOUTON FINAL =================
+     Comme le choix du terrain : chacun clique un bouton, son avatar s'y pose et
+     l'autre le voit aussitôt. Le clic est définitif. Si les deux choix
+     diffèrent, l'ordre tranche — MENU passe avant CHANGEZ DE PERSO, qui passe
+     avant REVANCHE : face-à-face puis verdict, sans hasard, donc sans roulette.
+     MENU n'attend personne : il gagne quoi que l'autre choisisse. Pas de
+     minuteur : personne ne peut bloquer l'autre, MENU restant toujours possible. */
+  const PRIORITE = ['menu', 'perso', 'revanche'];
+  const NOM_BOUTON = { revanche:'REVANCHE', menu:'MENU', perso:'CHANGEZ DE PERSO' };
+  const DESTINATION = { revanche:'REVANCHE !', menu:'RETOUR AU MENU', perso:'CHOIX DES PERSOS' };
+  const vote = { moi:null, lui:null, fini:false, minuteurs:[] };
+  const enLigne = () => valeurs.adversaireMode === 'enligne';
+  const apres = (ms, fn) => vote.minuteurs.push(setTimeout(fn, ms));
+  const msReglage = (id, def) => (valeurs[id] ?? def) * 1000;
+  const boutonFinal = choix => $('finaux').querySelector(`[data-bouton="${choix}"]`);
+  const pseudoDe = qui => $(qui === 'moi' ? 'pseudoJoueur' : 'pseudoAdversaire').textContent;
+
+  // Même badge que le vote de terrain : la photo si le profil en a une, sinon l'initiale.
+  function badgeVote(qui) {
+    const b = document.createElement('div');
+    b.className = 'badgeVote' + (qui === 'lui' ? ' sien' : '');
+    const photo = qui === 'moi' ? ((valeurs.joueurMode || 'profil') === 'profil' && images.avJoueur) : images.avAdversaire;
+    if (photo) { const im = new Image(); im.src = photo; im.alt = ''; b.appendChild(im); }
+    else b.textContent = (pseudoDe(qui)[0] || '?').toUpperCase();
+    b.title = pseudoDe(qui);
+    return b;
+  }
+
+  function reinitVote() {
+    vote.minuteurs.forEach(clearTimeout); vote.minuteurs = [];
+    vote.moi = vote.lui = null; vote.fini = false;
+    scene.querySelectorAll('.badgeVote, .annonceVote, .faceAFace, .depart').forEach(e => e.remove());
+    $('finaux').classList.remove('aVote');
+    $('finaux').querySelectorAll('.fbtn').forEach(b => b.classList.remove('choisi', 'accord'));
+    $('attenteVote').hidden = true;
+    $('attenteVote').classList.remove('pret');
+  }
+
+  function majVote() {
+    for (const qui of ['moi', 'lui']) {
+      const deja = $('finaux').querySelector(qui === 'lui' ? '.badgeVote.sien' : '.badgeVote:not(.sien)');
+      if (vote[qui] && !deja) boutonFinal(vote[qui]).parentElement.appendChild(badgeVote(qui));
+    }
+    if (vote.moi) { boutonFinal(vote.moi).classList.add('choisi'); $('finaux').classList.add('aVote'); }
+    const n = (vote.moi ? 1 : 0) + (vote.lui ? 1 : 0), p = $('attenteVote');
+    p.hidden = n === 0;
+    p.classList.toggle('pret', n === 2);
+    p.textContent = n === 2 ? 'PRÊTS 2/2' : vote.moi ? 'EN ATTENTE… 1/2' : `${pseudoDe('lui').toUpperCase()} A CHOISI · 1/2`;
+  }
+
+  function voter(qui, choix) {
+    if (!enLigne() || vote.fini || vote[qui] || scene.dataset.phase !== '3') return;   // clic définitif
+    vote[qui] = choix;
+    majVote();
+    if (choix === 'menu') { menuTransmis(qui); return; }
+    if (vote.moi && vote.lui) trancher();
+  }
+
+  // MENU gagne d'office : celui qui le choisit part aussitôt, l'autre est prévenu et suit.
+  function menuTransmis(qui) {
+    vote.fini = true;
+    if (qui === 'moi') { partir('menu'); return; }
+    const a = document.createElement('div');
+    a.className = 'annonceVote';
+    a.textContent = `${pseudoDe('lui').toUpperCase()} A CHOISI MENU`;
+    scene.appendChild(a);
+    apres(msReglage('voteAnnonce', 1.4), () => partir('menu'));
+  }
+
+  function trancher() {
+    vote.fini = true;
+    if (vote.moi === vote.lui) {
+      boutonFinal(vote.moi).classList.add('accord');
+      apres(msReglage('voteAccord', .9), () => partir(vote.moi));
+      return;
+    }
+    const gagnant = PRIORITE.indexOf(vote.moi) < PRIORITE.indexOf(vote.lui) ? vote.moi : vote.lui;
+    const perdant = gagnant === vote.moi ? vote.lui : vote.moi;
+    const f = document.createElement('div');
+    f.className = 'faceAFace';
+    f.innerHTML = '<div class="faceTitre">CHOIX…<span class="faceSous"></span></div><div class="faceRangee"></div>';
+    const caseDe = qui => {
+      const c = document.createElement('div');
+      c.className = 'faceCase'; c.dataset.choix = vote[qui];
+      const b = boutonFinal(vote[qui]).cloneNode(true);
+      b.classList.remove('choisi', 'accord');
+      c.append(b, badgeVote(qui));
+      return c;
+    };
+    const vs = document.createElement('div');
+    vs.className = 'faceVs'; vs.textContent = 'VS';
+    f.querySelector('.faceRangee').append(caseDe('moi'), vs, caseDe('lui'));
+    scene.appendChild(f);
+    apres(msReglage('voteSuspense', .9), () => {
+      f.querySelector(`.faceCase[data-choix="${gagnant}"]`).classList.add('gagnant');
+      f.querySelector('.faceTitre').firstChild.textContent = NOM_BOUTON[gagnant];
+      f.querySelector('.faceSous').textContent = `passe avant ${NOM_BOUTON[perdant]}`;
+      apres(msReglage('voteVerdict', 1.4), () => { f.classList.add('sortie'); partir(gagnant); });
+    });
+  }
+
+  // Dans le jeu, l'écran change ici. Le mockup montre où l'on part, puis se remet à zéro au clic.
+  function partir(choix) {
+    const d = document.createElement('div');
+    d.className = 'depart';
+    d.innerHTML = `<b>${DESTINATION[choix]}</b><i>mockup : clique pour recommencer le vote</i>`;
+    d.addEventListener('click', reinitVote);
+    scene.appendChild(d);
+  }
+
+  function majBlocVote() {
+    const on = enLigne();
+    $('voteInfo').textContent = on
+      ? "Clique un bouton dans la scène pour faire ton choix (définitif), puis fais choisir l'adversaire ici, avant ou après toi. En cas de désaccord : MENU > CHANGEZ DE PERSO > REVANCHE."
+      : "Le vote ne sert qu'en ligne. Contre le CPU ou en J2 local, un clic décide seul, comme aujourd'hui.";
+    $('voteHorsLigne').hidden = on;
+    $('voteEnLigne').hidden = !on;
+    if (!on) reinitVote();
+  }
+
+  $('finaux').addEventListener('click', e => {
+    const b = e.target.closest('.fbtn');
+    if (b) voter('moi', b.dataset.bouton);
+  });
+  document.querySelectorAll('[data-vote-adv]').forEach(b => b.addEventListener('click', () => {
+    if (scene.dataset.phase !== '3') { allerPhase(3); entrerFinaux(); }
+    voter('lui', b.dataset.voteAdv);
+  }));
+  $('btnVoteReset').addEventListener('click', reinitVote);
+  $('btnPasserEnLigne').addEventListener('click', () => { regler('adversaireMode', 'enligne'); allerPhase(3); entrerFinaux(); });
 
   /* ================= BOUTONS : ICÔNES JUMELLES =================
      Même principe que mirrorButtonIcons() du jeu (js/ui/menus.js) : chaque
