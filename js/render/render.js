@@ -7,6 +7,7 @@ import { centreDunk, centrePanier, ZONES } from '../game/zones.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap, getMapId, setMapId } from '../data/maps.js';
 import { drawCourtRaccoon, drawBrumeRaccoon } from './terrains/raccoon.js';
+import { copieExacte, peindreHorsEcran } from './calques.js';
 import { getSkinId, drawSkinDisc, deformationDisque, tracerContour, teinteDeCharge, chaufferCouleur, avecAlpha } from '../data/skins.js';
 import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE, CHIEN_VIDEO, CHIEN_DUREE, RUEE_N, TIGRE_SPRITE, WT_CHANT, WT_SORTIE, WT_STUN,
          PS_CHANT, PS_CHUTE, PS_IMPACT, PS_DUREE } from '../data/specials.js';
@@ -34,12 +35,39 @@ function texteMonde(txt, x, y) {
 const LEG_W = LEG_SPRITE.width * LEG_SPRITE_SCALE;
 const LEG_H = LEG_SPRITE.height * LEG_SPRITE_SCALE;
 
+// Trois cents étoiles, et pour chacune un changement d'opacité, un changement
+// de couleur et un rectangle : neuf cents opérations par image, dans l'arène
+// qui tourne derrière chaque menu. On les range par couleur et par opacité, et
+// chaque paquet ne règle son style qu'une fois avant d'enchaîner ses
+// rectangles. La carte graphique fusionne alors les rectangles consécutifs de
+// même style en un seul envoi — ce qu'elle ne pouvait pas faire tant qu'ils
+// alternaient d'une étoile à l'autre.
+//
+// Pourquoi pas un seul tracé par paquet, qui ferait encore moins d'appels :
+// essayé, et mesuré au pixel. Un tracé de trois cents rectangles ne passe pas
+// par le même lissage qu'un rectangle seul, et les bords des étoiles
+// changeaient jusqu'à 62 niveaux sur 255. Ici, le dessin est le même.
+//
+// L'opacité est arrondie au 255e, la précision sur laquelle le canevas écrit
+// ses pixels. Les paquets vivent d'une image à l'autre et ne sont que vidés :
+// on ne veut pas remplacer des appels par autant d'allocations.
+const couleursEtoiles = [], indexCouleurEtoile = new Map(), lotsEtoiles = new Map();
 function drawStars() {
+  for (const l of lotsEtoiles.values()) l.length = 0;
   for (const s of G.stars) {
-    const bright = 0.5 + 0.5 * Math.sin(s.twinkle);
-    ctx.globalAlpha = bright;
-    ctx.fillStyle = s.color || '#ffffff';
-    ctx.fillRect(s.x - s.size / 2, s.y - s.size / 2, s.size, s.size);
+    const col = s.color || '#ffffff';
+    let ci = indexCouleurEtoile.get(col);
+    if (ci === undefined) { ci = couleursEtoiles.length; couleursEtoiles.push(col); indexCouleurEtoile.set(col, ci); }
+    const cle = ci * 256 + Math.round((0.5 + 0.5 * Math.sin(s.twinkle)) * 255);
+    let l = lotsEtoiles.get(cle);
+    if (!l) { l = []; lotsEtoiles.set(cle, l); }
+    l.push(s);
+  }
+  for (const [cle, l] of lotsEtoiles) {
+    if (!l.length) continue;
+    ctx.globalAlpha = (cle & 255) / 255;
+    ctx.fillStyle = couleursEtoiles[cle >> 8];
+    for (const s of l) ctx.fillRect(s.x - s.size / 2, s.y - s.size / 2, s.size, s.size);
   }
   ctx.globalAlpha = 1;
 }
@@ -126,10 +154,16 @@ function drawDrones() {
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(toCourt);
-    const beam = ctx.createLinearGradient(0, 0, s * 7, 0);
-    beam.addColorStop(0, 'rgba(53,224,255,.22)');
-    beam.addColorStop(1, 'rgba(53,224,255,0)');
-    ctx.fillStyle = beam;
+    // Le dégradé est tracé dans le repère du drone, que la rotation fait
+    // tourner : il ne dépend donc que de sa taille, et se crée une fois. Le
+    // recréer à chaque image faisait vingt-six objets de plus à ramasser par
+    // image, soit mille cinq cents par minute derrière les menus.
+    if (!d.faisceau) {
+      d.faisceau = ctx.createLinearGradient(0, 0, s * 7, 0);
+      d.faisceau.addColorStop(0, 'rgba(53,224,255,.22)');
+      d.faisceau.addColorStop(1, 'rgba(53,224,255,0)');
+    }
+    ctx.fillStyle = d.faisceau;
     ctx.beginPath();
     ctx.moveTo(0, 0); ctx.lineTo(s * 7, -s * 1.6); ctx.lineTo(s * 7, s * 1.6);
     ctx.closePath(); ctx.fill();
@@ -277,26 +311,57 @@ function drawMarches(y0, hauteur, versLeBas) {
 /* Le public, en rangs serrés : buste et tête, comme une vraie tribune pleine.
    Il applaudit en rythme, se lève au but et lève les bras sur un Perfect Dive
    — toute l'ambiance passe par lui, sans un son de plus. */
+// La foule du stade : sept cent quarante spectateurs, et pour chacun un
+// changement d'opacité, un changement de couleur, un corps et une tête — plus
+// de deux mille opérations par image, le premier poste de dépense de la map.
+//
+// Chaque spectateur a sa couleur, tirée une fois pour toutes ; seul son saut
+// bouge. On range donc les spectateurs de chaque rang par couleur (une seule
+// fois, le rangement ne change jamais), et le style ne se règle plus qu'une
+// fois par couleur. Les corps partent d'affilée, puis les têtes : la carte
+// graphique fusionne ce qui se suit à l'identique.
+//
+// Les formes elles-mêmes ne changent pas — un rectangle par corps, un cercle
+// par tête. Les regrouper dans un seul tracé aurait fait moins d'appels, mais
+// un tracé de cent cercles ne se lisse pas comme un cercle seul : mesuré, les
+// bords bougeaient jusqu'à 45 niveaux sur 255. Entre spectateurs, rien ne se
+// touche — treize pixels de pas pour dix de large, bras compris — donc l'ordre
+// des couleurs ne change rien à l'image.
+let rangementFoule = null;
 function drawRangs(y0, hauteur, calme, leve) {
   const cols = getMap().theme.crowdColors;
   const RANGS = 5;
+  if (!rangementFoule || rangementFoule.cols !== cols) {
+    rangementFoule = { cols, rangs: [] };
+    for (let r = 0; r < RANGS; r++) {
+      const parCouleur = cols.map(() => []);
+      for (let x = 6; x < W; x += 13) {
+        parCouleur[(graine(r * 991 + x + 7) * cols.length) | 0].push(x);
+      }
+      rangementFoule.rangs.push(parCouleur);
+    }
+  }
+  const debout = leve * 5, bras = leve > .25;
   for (let r = 0; r < RANGS; r++) {
     const y = y0 + hauteur * (.14 + r * .19);
-    for (let x = 6; x < W; x += 13) {
-      const i = r * 991 + x;
-      const saut = Math.sin(G.now * 3 + i) * 1.6 * calme;
-      const debout = leve * 5;
-      // Assez présent pour faire une foule, assez transparent pour laisser
-      // deviner les marches derrière : à pleine opacité, les gradins
-      // disparaissaient complètement sous les spectateurs.
-      ctx.globalAlpha = .34 + r * .07;
-      ctx.fillStyle = cols[(graine(i + 7) * cols.length) | 0];
-      ctx.fillRect(x, y + saut - debout, 7, 9);
-      ctx.beginPath(); ctx.arc(x + 3.5, y - 3 + saut - debout, 3.2, 0, TAU); ctx.fill();
-      // Bras levés quand la salle s'enflamme.
-      if (leve > .25) {
-        ctx.fillRect(x - 1.5, y - 8 + saut - debout, 1.5, 6);
-        ctx.fillRect(x + 7, y - 8 + saut - debout, 1.5, 6);
+    // Assez présent pour faire une foule, assez transparent pour laisser
+    // deviner les marches derrière : à pleine opacité, les gradins
+    // disparaissaient complètement sous les spectateurs.
+    ctx.globalAlpha = .34 + r * .07;
+    const parCouleur = rangementFoule.rangs[r];
+    for (let c = 0; c < parCouleur.length; c++) {
+      const xs = parCouleur[c];
+      if (!xs.length) continue;
+      ctx.fillStyle = cols[c];
+      for (const x of xs) {
+        const sy = y + Math.sin(G.now * 3 + r * 991 + x) * 1.6 * calme - debout;
+        ctx.fillRect(x, sy, 7, 9);
+        // Bras levés quand la salle s'enflamme.
+        if (bras) { ctx.fillRect(x - 1.5, sy - 8, 1.5, 6); ctx.fillRect(x + 7, sy - 8, 1.5, 6); }
+      }
+      for (const x of xs) {
+        const sy = y + Math.sin(G.now * 3 + r * 991 + x) * 1.6 * calme - debout;
+        ctx.beginPath(); ctx.arc(x + 3.5, sy - 3, 3.2, 0, TAU); ctx.fill();
       }
     }
   }
@@ -1050,19 +1115,9 @@ function drawCourtNoel() {
   // une deuxième aurore et le ciel devenait bavard.
   nappeAurore(th.aurore2, NOEL.discipline ? .12 : .32, horizon * .44, 40, 17, .5);
 
-  // 2. La neige autour du terrain, nettement plus sombre que celle de l'aire de
-  // jeu : c'est ce contraste qui dit où l'on joue.
-  const dehors = ctx.createLinearGradient(0, horizon, 0, H);
-  dehors.addColorStop(0, melangeNoel(th.dehorsHaut, '#0c1526', NOEL.nuit));
-  dehors.addColorStop(1, melangeNoel(th.dehorsBas, '#060b14', NOEL.nuit));
-  ctx.fillStyle = dehors;
-  ctx.fillRect(0, horizon, W, H - horizon);
-  ctx.globalAlpha = .3;
-  for (let i = 0; i < 130; i++) {
-    ctx.fillStyle = graine(i + 600) > .5 ? 'rgba(200,220,250,.5)' : 'rgba(60,84,120,.6)';
-    ctx.fillRect(graine(i + 400) * W, horizon + graine(i + 500) * (H - horizon), 2, 2);
-  }
-  ctx.globalAlpha = 1;
+  // 2. La neige autour du terrain — figée, donc recopiée d'un calque.
+  if (copieExacte()) { preparerCouchesNoel(th, horizon, cw, chh); ctx.drawImage(couchesNoel.dehors, 0, 0); }
+  else peindreDehorsNoel(th, horizon);
 
   // 3. La forêt de sapins, décorée. En hiérarchie de couleur les boules passent
   // toutes à l'or et au rouge : le cyan et le vert restent au ciel.
@@ -1108,6 +1163,59 @@ function drawCourtNoel() {
     ctx.restore();
   });
 
+  // 5 à 7. La glace, son givre, son marquage et sa nappe chaude — figés eux
+  // aussi, donc recopiés d'un second calque.
+  if (copieExacte()) { preparerCouchesNoel(th, horizon, cw, chh); ctx.drawImage(couchesNoel.glace, 0, 0); }
+  else peindreGlaceNoel(th, cw, chh);
+
+  drawCageNoel(1);
+  drawCageNoel(2);
+  lampionsEtVignetteNoel(th, t, cw, chh);
+}
+
+// ---------------------------------------------------------------------------
+// Les calques figés de Pôle Nord.
+//
+// C'était la map la plus chère après Raccoon City : près de trois mille appels
+// de dessin par image. Or une bonne part ne bouge jamais — la neige du pourtour
+// et ses cent trente grains, la glace et ses fougères de givre (des centaines
+// de traits), le marquage creusé, la nappe chaude. On les peint une fois dans
+// deux calques hors écran, puis on les recopie : deux appels au lieu de six
+// cents.
+//
+// DEUX calques et pas un, pour respecter l'ordre du dessin : la neige passe
+// sous les sapins et les lutins, la glace passe au-dessus d'eux. Les réunir
+// aurait mis la glace sous le pied des sapins qui débordent sur le terrain.
+//
+// On ne recopie que si la copie est exacte au pixel près (voir copieExacte) :
+// sous le zoom du replay ou pendant une secousse, on repeint en direct.
+// ---------------------------------------------------------------------------
+const couchesNoel = { cle: '', dehors: null, glace: null };
+function preparerCouchesNoel(th, horizon, cw, chh) {
+  const cle = getMapId() + '|' + COURT.left + ',' + COURT.top + ',' + COURT.right + ',' + COURT.bottom;
+  if (couchesNoel.cle === cle) return;
+  couchesNoel.cle = cle;
+  couchesNoel.dehors = peindreHorsEcran(() => peindreDehorsNoel(th, horizon));
+  couchesNoel.glace = peindreHorsEcran(() => peindreGlaceNoel(th, cw, chh));
+}
+
+// 2. La neige autour du terrain, nettement plus sombre que celle de l'aire de
+// jeu : c'est ce contraste qui dit où l'on joue.
+function peindreDehorsNoel(th, horizon) {
+  const dehors = ctx.createLinearGradient(0, horizon, 0, H);
+  dehors.addColorStop(0, melangeNoel(th.dehorsHaut, '#0c1526', NOEL.nuit));
+  dehors.addColorStop(1, melangeNoel(th.dehorsBas, '#060b14', NOEL.nuit));
+  ctx.fillStyle = dehors;
+  ctx.fillRect(0, horizon, W, H - horizon);
+  ctx.globalAlpha = .3;
+  for (let i = 0; i < 130; i++) {
+    ctx.fillStyle = graine(i + 600) > .5 ? 'rgba(200,220,250,.5)' : 'rgba(60,84,120,.6)';
+    ctx.fillRect(graine(i + 400) * W, horizon + graine(i + 500) * (H - horizon), 2, 2);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function peindreGlaceNoel(th, cw, chh) {
   // 5. La glace givrée. `givre` ne coupe pas les fougères au hasard : il les
   // rend plus grandes et plus rares, pour qu'on lise un motif au lieu d'un
   // grouillement — et surtout pour qu'elles ne se confondent plus avec les
@@ -1169,10 +1277,9 @@ function drawCourtNoel() {
   ctx.fillStyle = nappe;
   ctx.fillRect(COURT.left, COURT.top, cw, chh);
   ctx.restore();
+}
 
-  drawCageNoel(1);
-  drawCageNoel(2);
-
+function lampionsEtVignetteNoel(th, t, cw, chh) {
   // 8. Les lampions. Leurs halos sont coupés au bord du terrain : sans ça, huit
   // taches chaudes débordent sur la glace et lui font perdre son contraste
   // exactement là où le disque doit rester lisible.
@@ -2974,6 +3081,19 @@ function drawPsycho() {
   }
 }
 
+// La vidéo ne se charge que si Yuki est dans le match, et ne tourne que
+// pendant l'ultime. Appelé à chaque rendu : deux lectures de propriétés, rien
+// de plus, tant qu'il n'y a rien à changer.
+function piloterVideoChien() {
+  const v = CHIEN_VIDEO;
+  if (v.preload !== 'auto' && ((G.p1 && G.p1.ck === 'yuki') || (G.p2 && G.p2.ck === 'yuki'))) {
+    v.preload = 'auto';
+    v.load();
+  }
+  if (G.chien) { if (v.paused && v.readyState >= 2) v.play().catch(() => { }); }
+  else if (!v.paused) v.pause();
+}
+
 function drawChien() {
   const c = G.chien;
   if (!c) return;
@@ -3259,6 +3379,7 @@ function drawDebug() {
 }
 
 export function render() {
+  piloterVideoChien();
   ctx.save();
   if (G.shake > 0.3) ctx.translate(gauss() * G.shake, gauss() * G.shake);
   // Caméra du replay : serrée sur le lanceur avant le tir, elle suit ensuite le

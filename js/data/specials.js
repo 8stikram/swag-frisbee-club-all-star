@@ -178,15 +178,20 @@ export const RUEE_LARGEUR = 46;     // demi-épaisseur du front, en unités de t
 // le disque pendant trois secondes revient à ne pas pouvoir l'attraper. Le
 // réglage est assumé tel quel pour l'instant, à revoir en jouant.
 export const CHIEN_DUREE = 3;
-// La vidéo du chien, détourée à la volée. Elle se charge en arrière-plan dès
-// le démarrage : la décoder au moment du cast aurait fait apparaître le chien
-// une demi-seconde trop tard. Muette et en boucle — on ne la « joue » jamais
-// vraiment, on lui prend juste son image courante.
+// La vidéo du chien, détourée à la volée. Muette et en boucle — on lui prend
+// son image courante à chaque rendu.
+//
+// Elle était téléchargée ET lue en boucle dès l'ouverture du site : deux
+// mégaoctets et demi à l'arrivée sur la page, puis un décodage vidéo continu,
+// invisible, pendant toute la session — menus, casino, matchs sans Yuki
+// compris. C'est render.js qui la pilote désormais (voir piloterVideoChien) :
+// préparée dès qu'un match avec Yuki commence, lue le temps de l'ultime, en
+// pause le reste du temps. Préparée à l'avance et non au moment du cast, pour
+// que le chien ne surgisse pas une demi-seconde trop tard.
 export const CHIEN_VIDEO = document.createElement('video');
-CHIEN_VIDEO.src = 'assets/video/yuki-chien.mp4';
 CHIEN_VIDEO.muted = true; CHIEN_VIDEO.loop = true;
-CHIEN_VIDEO.playsInline = true; CHIEN_VIDEO.preload = 'auto';
-CHIEN_VIDEO.addEventListener('loadeddata', () => { CHIEN_VIDEO.play().catch(() => { }); });
+CHIEN_VIDEO.playsInline = true; CHIEN_VIDEO.preload = 'none';
+CHIEN_VIDEO.src = 'assets/video/yuki-chien.mp4';
 
 
 export const SPECIALS = {

@@ -1,8 +1,8 @@
-import { G, comment } from './state.js';
+import { G, comment, Mouse } from './state.js';
 import { W, curScreen } from '../core/dom.js';
 import { CX, METER_GAIN, POSSESSION_MAX, POSSESSION_COMPTE_A_REBOURS } from '../core/constants.js';
 import { lerp, gauss, rand, pick, clamp } from '../core/utils.js';
-import { getMap } from '../data/maps.js';
+import { getMap, getMapId } from '../data/maps.js';
 import { updatePlayerHuman, updatePlayer2, integratePlayer } from './input.js';
 import { doThrowHuman } from './actions.js';
 import { majCommandes, appliquerActions } from './commandes.js';
@@ -345,6 +345,34 @@ const RETARD_MAX = .25;
 const PAS_MAX = 5;
 
 let lastT = 0, accu = 0;
+
+// ---------------------------------------------------------------------------
+// Ne redessiner que ce qui a changé.
+//
+// Le rendu partait à CHAQUE rafraîchissement de l'écran, qu'il y ait quelque
+// chose de neuf à montrer ou non. Deux cas le payaient cher sans rien montrer :
+//
+//   - Tous les écrans où la démo ne tourne pas — casino, maps, profil, pause,
+//     fin de match. Le jeu y est figé, et on repeignait soixante fois par
+//     seconde exactement la même image, jusqu'à cinq mille appels de dessin
+//     chacune sur Raccoon City, sous un écran qui la cache presque entière.
+//   - Les écrans à 120 ou 144 Hz. La simulation avance à 60 pas par seconde
+//     quoi qu'il arrive : sur les images sans pas de simulation, l'état est le
+//     même qu'à l'image d'avant, donc le dessin aussi. On le refaisait quand
+//     même — deux fois et demie le travail pour le même résultat.
+//
+// On ne redessine donc que si la simulation a avancé, si l'écran ou la map
+// ont changé, ou si la souris a bougé en match (le viseur la suit hors de la
+// simulation). Et un battement de sécurité à quatre images par seconde
+// rattrape tout ce qui changerait l'état hors de ces chemins — un choix de
+// menu qui retouche G, par exemple — sans qu'on ait à le prévoir.
+// ---------------------------------------------------------------------------
+const BATTEMENT_MS = 250;
+let ecranDessine, mapDessinee, sourisDessinee = '', dernierRendu = 0;
+// Nombre de rendus réellement émis : c'est ce compteur qui dit, rapporté au
+// temps, combien d'images le jeu dessine vraiment sur un écran donné.
+export let rendusEffectues = 0;
+
 export function frame(t) {
   requestAnimationFrame(frame);
   let ecoule = (t - lastT) / 1000;
@@ -365,5 +393,14 @@ export function frame(t) {
     if (jouer) update(PAS);
   }
   if (n >= PAS_MAX) accu = 0;
+  const souris = playing ? Mouse.x + ',' + Mouse.y : '';
+  const neuf = (jouer && n > 0)
+    || curScreen !== ecranDessine
+    || getMapId() !== mapDessinee
+    || souris !== sourisDessinee
+    || t - dernierRendu >= BATTEMENT_MS;
+  if (!neuf) return;
   render();
+  rendusEffectues++;
+  ecranDessine = curScreen; mapDessinee = getMapId(); sourisDessinee = souris; dernierRendu = t;
 }

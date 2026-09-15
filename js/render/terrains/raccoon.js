@@ -29,6 +29,36 @@ import { TAU } from '../../core/utils.js';
 import { G } from '../../game/state.js';
 import { getMap } from '../../data/maps.js';
 import { densiteBrume } from '../../game/brume.js';
+import { memoiserSprite } from '../calques.js';
+
+// ---------------------------------------------------------------------------
+// Les pièces figées, recopiées au lieu d'être repeintes.
+//
+// Raccoon City coûtait cinq mille appels de dessin par image, la map la plus
+// chère du jeu de très loin. Près des deux tiers venaient de ces huit
+// sous-peintres : chaque pierre du mur, chaque fenêtre, chaque balustre et
+// chaque barrière, redessinés trait par trait soixante fois par seconde alors
+// qu'ils ne bougent jamais.
+//
+// Ils ont en commun d'être PURS : ni le temps, ni l'état laissé sur le
+// contexte, ni mode de fusion — ce qu'ils peignent ne dépend que de leurs
+// arguments. On peut donc garder chaque appel exactement à sa place dans
+// l'ordre du dessin, et n'en changer que l'exécution : la première fois il
+// peint, les suivantes il recopie (voir render/calques.js). Les lueurs qui
+// pulsent par-dessus, elles, restent peintes en direct.
+//
+// Ne PAS ajouter à cette liste un peintre qui lit `t`, qui utilise un mode de
+// fusion ('screen', 'lighter'…) ou dont le rendu dépend d'un style réglé par
+// l'appelant : la recopie figerait l'animation ou fausserait la fusion.
+// ---------------------------------------------------------------------------
+const mur = memoiserSprite('mur', murDirect);
+const fenetre = memoiserSprite('fenetre', fenetreDirect);
+const planches = memoiserSprite('planches', planchesDirect);
+const vitreBrisee = memoiserSprite('vitreBrisee', vitreBriseeDirect);
+const balustrade = memoiserSprite('balustrade', balustradeDirect);
+const barriere = memoiserSprite('barriere', barriereDirect);
+const marquageSol = memoiserSprite('marquageSol', marquageSolDirect);
+const corpsSousBache = memoiserSprite('corpsSousBache', corpsSousBacheDirect);
 
 // Le dosage du sol retenu au banc : macadam, humide sans les grandes traînées
 // verticales — elles étaient superbes en image fixe et bougeaient en
@@ -70,7 +100,7 @@ function tt(col,a){
 
 /* Un pan de mur appareillé : assises décalées, joints visibles, et un grain
    qui change d'un bloc à l'autre. Sans ça, la pierre est un aplat. */
-function mur(c, x, y, l, h, ht, i0){
+function murDirect(c, x, y, l, h, ht, i0){
   c.fillStyle = mel(M.pierre, M.pierreOmbre, .2);
   c.fillRect(x, y, l, h);
   const hb = Math.max(2, ht*.055);
@@ -91,7 +121,7 @@ function mur(c, x, y, l, h, ht, i0){
 /* Une fenêtre. `cintree` pour le rez-de-chaussée, rectangulaire à l'étage.
    Le verre n'est jamais noir : il renvoie le teal du ciel, et parfois une
    lueur chaude quand la pièce derrière est encore éclairée. */
-function fenetre(c, x, y, l, h, cintree, ht, i, allumee){
+function fenetreDirect(c, x, y, l, h, cintree, ht, i, allumee){
   c.save();
   c.beginPath();
   if (cintree){
@@ -130,7 +160,7 @@ function fenetre(c, x, y, l, h, cintree, ht, i, allumee){
 
 /* Des planches clouées en travers d'une fenêtre. Jamais parallèles : c'est
    fait à la hâte, avec ce qui traînait. Le poste tient encore, mais de peu. */
-function planches(c, x, y, l, h, ht, i){
+function planchesDirect(c, x, y, l, h, ht, i){
   for (let k = 0; k < 3; k++){
     const g = graine(i*7 + k);
     c.save();
@@ -149,7 +179,7 @@ function planches(c, x, y, l, h, ht, i){
 }
 
 /* Une vitre explosée : le trou noir, et les éclats restés dans le châssis. */
-function vitreBrisee(c, x, y, l, h, ht, i){
+function vitreBriseeDirect(c, x, y, l, h, ht, i){
   c.fillStyle = tt('#050a0b', .92);
   c.fillRect(x + l*.08, y + h*.18, l*.84, h*.7);
   c.fillStyle = tt(M.vitreFroide, .75);
@@ -166,7 +196,7 @@ function vitreBrisee(c, x, y, l, h, ht, i){
 
 /* La balustrade du toit : une main courante, une plinthe, et des balustres.
    C'est elle qui donne au bâtiment sa ligne de toit civique. */
-function balustrade(c, x, y, l, ht){
+function balustradeDirect(c, x, y, l, ht){
   const h = ht*.09;
   c.fillStyle = mel(M.pierre, M.pierreOmbre, .3);
   c.fillRect(x, y + h - Math.max(1.5, ht*.018), l, Math.max(1.5, ht*.018));
@@ -181,7 +211,7 @@ function balustrade(c, x, y, l, ht){
 
 /* Une barrière de police : la lisse jaune et noire, ses deux pieds, et son
    ombre au sol. Jamais parfaitement alignée avec la suivante. */
-function barriere(c, x, y, ht, i){
+function barriereDirect(c, x, y, ht, i){
   const l = ht*.55, h = ht*.1, g = graine(i);
   c.save(); c.translate(x, y); c.rotate((g - .5)*.14);
   c.fillStyle = tt(M.bitumeOmbre, .55);
@@ -754,7 +784,7 @@ function parvis(c, t, R){
   c.restore();
 }
 
-function marquageSol(c){
+function marquageSolDirect(c){
   const cw = COURT.right - COURT.left, ch = COURT.bottom - COURT.top;
   c.save();
   c.beginPath(); c.rect(COURT.left, COURT.top, cw, ch); c.clip();
@@ -901,7 +931,7 @@ function voitureRue(c, x, y, ang, col, brulee, porte, t, i){
   c.restore();
 }
 
-function corpsSousBache(c, x, y, i){
+function corpsSousBacheDirect(c, x, y, i){
   c.save(); c.translate(x, y); c.rotate(alea(i, -.22, .22));
   c.fillStyle = tt(M.bitumeOmbre, .55); c.fillRect(-20, -5, 42, 14);
   c.fillStyle = tt('#c9ccd2', .68);

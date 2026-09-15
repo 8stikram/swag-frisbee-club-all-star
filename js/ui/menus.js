@@ -518,8 +518,10 @@ export function refreshSelect() {
   // vire au gris neutre : sa couleur d'ambiance le désignait aussi sûrement.
   const NEUTRE = '#6b7280';
   const c1 = cacheP1 ? NEUTRE : p1.color, c2 = cacheP2 ? NEUTRE : p2.color;
-  $('selGlow1').style.background = c1;
-  $('selGlow2').style.background = c2;
+  // Par la variable et non par `background` : le halo est un dégradé qui
+  // imite un flou (voir .charglow dans style.css), c'est sa teinte qu'on règle.
+  $('selGlow1').style.setProperty('--halo', c1);
+  $('selGlow2').style.setProperty('--halo', c2);
   document.querySelector('.bg-select').style.background =
     `linear-gradient(100deg, ${pale(c1, .55)} 0%, ${pale(c1, .44)} 26%, ` +
     `${pale(c2, .44)} 74%, ${pale(c2, .55)} 100%)`;

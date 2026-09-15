@@ -85,25 +85,85 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 }
 .bg-options .arc{border-color:rgba(255,255,255,.1)}
 
-/* Projecteurs de stade (écran sélection). */
+/* Projecteurs de stade (écran sélection).
+
+   Ils étaient flous par un `filter:blur(26px)`. Sur un élément qui tourne en
+   permanence, le navigateur refait ce flou à CHAQUE image — sur deux bandes de
+   plus de mille pixels de haut, fusionnées en soft-light par-dessus un canevas
+   qui bouge lui aussi. C'était l'un des coûts qui faisaient chuter les images
+   par seconde de cet écran.
+
+   Le flou d'une bande verticale ne touche que ses deux bords, et il suit une
+   courbe connue : celle d'une gaussienne. On la dessine donc une fois pour
+   toutes dans un masque — les paliers ci-dessous sont les valeurs de cette
+   courbe tous les demi écarts-types, de -3 à +3, un écart-type valant les
+   26 px du flou d'origine. Comparé au pixel à une vraie bande floutée, l'écart
+   d'opacité reste sous quelques 255e. La bande est élargie de trois écarts-types de chaque
+   côté (156 px en tout) pour que la traîne tienne dedans, et recentrée par la
+   marge : l'axe de rotation reste exactement au même endroit. */
 .beam{
-  position:absolute;top:-40%;height:180%;width:26cqh;
+  position:absolute;top:-40%;height:180%;width:calc(26cqh + 156px);margin-left:-78px;
   background:linear-gradient(to bottom,rgba(255,255,255,.55),rgba(255,255,255,.05));
-  filter:blur(26px);transform-origin:50% 0;mix-blend-mode:soft-light;
+  --bords-flous:linear-gradient(to right,
+    rgba(0,0,0,0) 0, rgba(0,0,0,.006) 13px, rgba(0,0,0,.023) 26px, rgba(0,0,0,.067) 39px,
+    rgba(0,0,0,.159) 52px, rgba(0,0,0,.309) 65px, rgba(0,0,0,.5) 78px, rgba(0,0,0,.691) 91px,
+    rgba(0,0,0,.841) 104px, rgba(0,0,0,.933) 117px, rgba(0,0,0,.977) 130px, rgba(0,0,0,.994) 143px,
+    #000 156px, #000 calc(100% - 156px),
+    rgba(0,0,0,.994) calc(100% - 143px), rgba(0,0,0,.977) calc(100% - 130px), rgba(0,0,0,.933) calc(100% - 117px),
+    rgba(0,0,0,.841) calc(100% - 104px), rgba(0,0,0,.691) calc(100% - 91px), rgba(0,0,0,.5) calc(100% - 78px),
+    rgba(0,0,0,.309) calc(100% - 65px), rgba(0,0,0,.159) calc(100% - 52px), rgba(0,0,0,.067) calc(100% - 39px),
+    rgba(0,0,0,.023) calc(100% - 26px), rgba(0,0,0,.006) calc(100% - 13px), rgba(0,0,0,0) 100%);
+  -webkit-mask-image:var(--bords-flous);mask-image:var(--bords-flous);
+  transform-origin:50% 0;mix-blend-mode:soft-light;
 }
 .beam.b-a{left:22%;animation:sweepA 13s ease-in-out infinite}
 .beam.b-b{left:64%;animation:sweepB 17s ease-in-out infinite}
 @keyframes sweepA{0%,100%{transform:rotate(-13deg)}50%{transform:rotate(11deg)}}
 @keyframes sweepB{0%,100%{transform:rotate(12deg)}50%{transform:rotate(-10deg)}}
 
-/* Halo teinté derrière chaque combattant. */
+/* Halo teinté derrière chaque combattant.
+
+   Même histoire que les projecteurs : un disque plein flou de 46 px, qui
+   pulse, donc refloué à chaque image — le flou le plus large du jeu.
+
+   Le bord flou d'un disque suit la même courbe gaussienne. Le dégradé radial
+   ci-dessous la reproduit palier par palier, tous les demi écarts-types (23 px)
+   autour du bord d'origine, placé à 26cqh du centre ; le halo est agrandi de
+   trois écarts-types de chaque côté pour que la traîne tienne dedans. Le rayon
+   du disque suit la taille de l'écran (cqh) mais le flou restait fixe en
+   pixels : les paliers le respectent en mêlant les deux unités.
+
+   Tous les paliers sont avancés de 6 px vers le centre. Un disque flou est un
+   peu moins lumineux sur son bord qu'une bande droite — la courbure lui
+   retire de la lumière — et sans ce décalage le halo débordait. Mesuré en
+   comparant au pixel un vrai disque flouté à ce dégradé, pour un écran de jeu
+   de 600 à 1000 px de haut : l'opacité s'écarte au plus de 5 à 8 sur 255,
+   avant même que l'opacité du halo (0,36 à 0,58) ne la divise encore.
+
+   La couleur passe par --halo, que menus.js règle à chaque changement de
+   personnage. Déclarée avec @property, elle glisse en 0,35 s comme le fondu de
+   l'ancien `background` — un dégradé, lui, ne sait pas s'animer seul. */
+@property --halo{syntax:'<color>';inherits:false;initial-value:#ff8c1a}
 .charglow{
-  position:absolute;top:46%;width:52cqh;height:52cqh;border-radius:50%;
-  transform:translate(-50%,-50%);filter:blur(46px);opacity:.5;
-  animation:pulse 3.4s ease-in-out infinite;transition:background .35s;
+  position:absolute;top:46%;width:calc(52cqh + 276px);height:calc(52cqh + 276px);
+  transform:translate(-50%,-50%);opacity:.5;
+  background:radial-gradient(circle closest-side,
+    var(--halo) calc(26cqh - 144px),
+    color-mix(in srgb,var(--halo) 97.7%,transparent) calc(26cqh - 98px),
+    color-mix(in srgb,var(--halo) 93.3%,transparent) calc(26cqh - 75px),
+    color-mix(in srgb,var(--halo) 84.1%,transparent) calc(26cqh - 52px),
+    color-mix(in srgb,var(--halo) 69.1%,transparent) calc(26cqh - 29px),
+    color-mix(in srgb,var(--halo) 50%,transparent) calc(26cqh - 6px),
+    color-mix(in srgb,var(--halo) 30.9%,transparent) calc(26cqh + 17px),
+    color-mix(in srgb,var(--halo) 15.9%,transparent) calc(26cqh + 40px),
+    color-mix(in srgb,var(--halo) 6.7%,transparent) calc(26cqh + 63px),
+    color-mix(in srgb,var(--halo) 2.3%,transparent) calc(26cqh + 86px),
+    color-mix(in srgb,var(--halo) .6%,transparent) calc(26cqh + 109px),
+    transparent calc(26cqh + 132px));
+  animation:pulse 3.4s ease-in-out infinite;transition:--halo .35s;
 }
-.charglow.g1{left:22%;background:#ff8c1a}
-.charglow.g2{left:78%;background:#3f8fe0;animation-delay:1.7s}
+.charglow.g1{left:22%;--halo:#ff8c1a}
+.charglow.g2{left:78%;--halo:#3f8fe0;animation-delay:1.7s}
 @keyframes pulse{0%,100%{opacity:.36;transform:translate(-50%,-50%) scale(.94)}50%{opacity:.58;transform:translate(-50%,-50%) scale(1.06)}}
 
 /* Chevrons défilants (écran options). */
