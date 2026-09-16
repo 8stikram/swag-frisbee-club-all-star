@@ -83,6 +83,23 @@ const contient = (rows, lettre, jusqua) =>
   rows.slice(0, jusqua === undefined ? rows.length : jusqua).some(l => l.includes(lettre));
 
 export const TRAITS = {
+  fricadelle: [
+    { nom: 'le torque de fricadelles au cou',
+      pourquoi: 'c’est la relique, et la seule couleur chaude du perso : sans elle il ne reste qu’un chevalier blanc et noir',
+      test: r => r.slice(9, 11).some(l => l.includes('F') || l.includes('f')) },
+    { nom: 'les épaulières de fricadelle',
+      pourquoi: 'elles portent la relique jusque dans la silhouette, donc elle se voit même de dos et en course',
+      test: r => r.slice(10, 12).some(l => l.includes('F') || l.includes('f')) },
+    { nom: 'le blanc de Moon Knight sur la tête',
+      pourquoi: 'c’est le rapport clair-sur-sombre qui fait tenir tout le roster : une tête sombre sur un corps sombre ne fait qu’une masse',
+      test: r => r.slice(0, 9).some(l => l.includes('W') || l.includes('S')) },
+    { nom: 'les yeux roses',
+      pourquoi: 'c’est la couleur du Susanoo, posée sur lui en permanence : elle annonce l’ultime avant qu’il parte',
+      test: r => r.slice(4, 9).some(l => l.includes('R')) },
+    { nom: 'le noir sur au moins trois valeurs',
+      pourquoi: 'en dessous le drapé devient un aplat où aucun pli ne se lit — la même erreur que le poncho crème du cowboy, à l’envers',
+      test: r => ['N', 'n', 'w', 'd'].filter(c => r.some(l => l.includes(c))).length >= 3 }
+  ],
   flowser: [
     { nom: 'la crete rouge',
       pourquoi: 'c’est la seule couleur chaude du perso et ce qui se voit de plus loin',

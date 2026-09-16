@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Gardien Éternel de la Fricadelle — chara-design</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0a0a0f; --panel:#14141c; --edge:#2e2e3d; --ink:#eef0f6;
+         --accent:#e8a94a; --or:#f4f6fa; --rose:#ff7fd0; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:23px;margin:0 0 6px;font-family:'Archivo Black',sans-serif;letter-spacing:.5px}
+  h1 em{font-style:normal;color:var(--accent)}
+  h2{font-size:14px;margin:34px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#a3a6b8;max-width:1000px;line-height:1.75;margin:0 0 14px}
+  .note b{color:var(--ink)}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px;
+        flex:1 1 206px;min-width:206px;max-width:268px;cursor:pointer;
+        transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#4a4a63}
+  .card.on{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 0 0 1px var(--accent) inset}
+  .lbl{font-size:11px;color:#a3a6b8;margin-bottom:8px;line-height:1.5;min-height:96px}
+  .lbl b{display:block;font-size:13px;color:var(--accent);letter-spacing:.5px;margin-bottom:3px}
+  .duo{display:flex;gap:8px;align-items:flex-end;justify-content:center}
+  .duo canvas{background:#0e0e15;border-radius:8px;display:block;image-rendering:pixelated;flex:0 0 auto}
+  .duo .zoom{border:1px solid #3d3d52}
+  .duo .plein{opacity:.85}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 420px;
+          display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+  .apercu canvas{background:#0e0e15;border-radius:10px;image-rendering:pixelated;display:block}
+  .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 300px}
+  .fiche h3{margin:0 0 10px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .choix{font-size:11.5px;color:#b9bcce;margin-top:10px;font-family:Consolas,monospace;line-height:1.8}
+  .choix b{color:var(--accent)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0e0e15;border:1px solid var(--edge);border-radius:8px;
+             padding:7px 10px;color:var(--accent);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#22223a;color:var(--ink);border:1px solid var(--edge);border-radius:8px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#2f2f4d}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .rosterRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .rosterOne{text-align:center;font-size:9px;color:#8a8da0;font-family:Consolas,monospace}
+  .rosterOne canvas{display:block;border-radius:6px;image-rendering:pixelated;border:1px solid var(--edge)}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>GARDIEN ÉTERNEL DE LA <em>FRICADELLE</em></h1>
+<p class="note">
+  <b>Trois références, et chacune tient une partie du personnage.</b>
+  <b>Moon Knight</b> donne le rapport de valeurs — une pièce très claire sur un corps très
+  sombre, ce qui est exactement ce qui fait tenir le reste du roster.
+  <b>Rick Owens et Dune</b> donnent le bas du corps, la seule partie où personne n'a encore
+  de drapé. <b>La fricadelle</b> est la relique : dorée-brune, c'est la seule couleur chaude
+  du perso, donc celle qu'on verra de loin.
+  <br><br>
+  <b>Déjà tranché :</b> il est <b>de face</b>, et la fricadelle occupe trois endroits —
+  le <b>torque</b> au cou, les <b>épaulières</b>, et le <b>cimier</b>.
+  Restent la tête et le bas du corps, qui ont cinq propositions chacun.
+  <br><br>
+  <b>Et un détail qui n'est pas un détail :</b> ses yeux sont <b>roses</b>. C'est la couleur
+  du Susanoo de l'ultime, posée sur le personnage en permanence — pour qu'on comprenne avant
+  même de le voir se transformer que quelque chose d'autre habite ce corps.
+</p>
+
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvGrand" width="304" height="380"></canvas>
+    <div>
+      <canvas id="cvPetit" width="230" height="120"></canvas>
+      <div class="choix" id="choix"></div>
+      <div class="copier">
+        <input class="codeChoix" id="codeChoix" readonly>
+        <button class="btnCopier" id="btnCopier">copier mes choix</button>
+      </div>
+    </div>
+  </div>
+  <div class="fiche">
+    <h3>À côté du roster, à l'échelle du match</h3>
+    <div class="rosterRow" id="rosterRow"></div>
+  </div>
+</div>
+
+<div class="apercu" id="editeur" style="margin-top:14px;display:block"></div>
+
+<div id="sections"></div>
+
+<script type="module">
+import { MAPS } from '../js/data/maps.js';
+import { CHARS, ROSTER } from '../js/data/characters.js';
+import { verifier, afficher } from './_verif.js';
+import { editeur, styleEditeur } from './_pixel.js';
+
+const PAL = {'W':'#f4f6fa','S':'#cbd3e0','s':'#8d95a5','d':'#4d5464','N':'#23252e','n':'#15161c','w':'#090a0e','F':'#e8a94a','f':'#b06f22','b':'#6d3f12','P':'#f0c8a0','p':'#c1926a','B':'#4a3222','R':'#ff7fd0'};
+const BASE = { tete: ['.....bFFb.......','....WWWWWW......','...WWSSSSWW.....','..WWSnnnnSWW....','..WSnnnnnnSW....','..WSnPPPPnSW....','..WSnRPPRnSW....','..WSnnPPnnSW....','..WWSnnnnSWW....','..FfFfFfFfFf....'], corps: ['.FfWWWWWWWWfF...','.FfSNNNNNNSfF...','.WSNNNNNNNNSW...','..SNNNNNNNNS....','..SNNNNNNNNS....','..NNNNNNNNNN....','..wdNNNNNNdw....','.wwdNNNNNNdww...','.wdNNNNNNNNdw...','..wWW.ww.WWw....'] };
+const SECTIONS = [{'id':'tete','titre':'1 · LA TÊTE','zoom':[1,0,14,9],'note':'C\'est la piece qui decide de tout : elle porte le BLANC de Moon Knight, et le blanc sur un corps sombre est exactement ce qui fait tenir le reste du roster — la cloche doree de Jingle, la tete de Yoshi. Une tete sombre et le perso devient une seule masse, le defaut qu\'on a corrige sur le ninja de Jingle. Le torque de fricadelles est le meme partout : il appartient au COU, pas au couvre-chef.','variantes':[{'id':'A','nom':'CAPUCHE BLANCHE A CIMIER','desc':'La capuche pointue de Moon Knight, visage dans l\'ombre, et une fricadelle plantee au sommet en guise de cimier. C\'est la version qui dit le plus \'avatar d\'un dieu\', et le blanc sur le noir du corps donne le contraste le plus fort du roster ; en contrepartie on ne voit du visage que les deux yeux roses.','tete':['.....bFFb.......','....WWWWWW......','...WWSSSSWW.....','..WWSnnnnSWW....','..WSnnnnnnSW....','..WSnPPPPnSW....','..WSnRPPRnSW....','..WSnnPPnnSW....','..WWSnnnnSWW....','..FfFfFfFfFf....']},{'id':'B','nom':'HEAUME FERME A CIMIER','desc':'Un heaume d\'acier sans visage, fente horizontale, cimier de fricadelle. Le plus solennel des cinq et le plus \'gardien eternel\' ; mais le roster a deja Jingle et Chopper sans visage, et de loin un heaume blanc peut se confondre avec la capuche.','tete':['.....bFFb.......','....WWWWWW......','...WWSSSSWW.....','..WSSSSSSSSW....','..WSSSSSSSSW....','..WSnnnnnnSW....','..WSnRnnRnSW....','..WSSSSSSSSW....','..WsSSSSSSsW....','..FfFfFfFfFf....']},{'id':'C','nom':'TETE NUE','desc':'Cheveux bruns et visage decouvert, comme sur ta reference. C\'est la seule des cinq ou on voit un vrai visage, donc celle qui l\'humanise — un homme qui porte la relique plutot qu\'une apparition. En revanche elle perd le blanc sur la tete, et c\'est ce blanc qui le rendait lisible de loin.','tete':['................','....BBBBBB......','...BBBBBBBB.....','..BBBBBBBBBB....','..BBPPPPPPBB....','..BPPPPPPPPB....','..pPPRPPRPPp....','..pPPPPPPPPp....','...pPPPPPPp.....','..FfFfFfFfFf....']},{'id':'D','nom':'CAPUCHE DE MOINE','desc':'Une capuche large et basse qui retombe sur les epaules — le cote Dune et Rick Owens porte jusque sur la tete. C\'est la silhouette la plus reconnaissable et la plus monastique des cinq ; en contrepartie elle elargit beaucoup le haut du corps, et elle n\'a pas de place pour le cimier.','tete':['................','................','....WWWWWW......','..WWWWWWWWWW....','.WWSddddddSWW...','.WSddPPPPddSW...','.WSddRPPRddSW...','.WSdddPPdddSW...','.WWSdddddddSW...','..FfFfFfFfFf....']},{'id':'E','nom':'HEAUME A CROISSANT','desc':'Le heaume, mais avec une fricadelle COURBEE posee en travers du front — le croissant de Khonshu, en fricadelle. C\'est le clin d\'oeil le plus direct a Moon Knight et ca met la couleur chaude sur la tete ; en revanche le croissant mange la place ou le cimier aurait du aller.','tete':['................','....WWWWWW......','..WWSSSSSSWW....','.WSFffffffFSW...','..WSSSSSSSSW....','..WSnnnnnnSW....','..WSnRnnRnSW....','..WSSSSSSSSW....','...WsSSSSsW.....','..FfFfFfFfFf....']}]},{'id':'buste','titre':'2 · LE BUSTE','zoom':[0,10,15,15],'note':'Les epaulieres de fricadelle sont acquises, elles ne bougent pas. Ce qui se joue ici, c\'est la quantite de blanc : trop peu et le buste se fond dans le fond des cartes sombres, trop et il devient un aplat ou ni les bras ni la ceinture ne se detachent — c\'est le defaut exact du poncho creme du cowboy.','variantes':[{'id':'A','nom':'ARMURE SEGMENTEE','desc':'Le plastron de ta reference : des plaques blanches qui encadrent un torse noir, avec les deux epaulieres de fricadelle posees dessus. Le blanc n\'est qu\'un CADRE et pas un aplat, donc les bras se detachent du torse — c\'est la lecon du poncho du cowboy. La plus lisible des cinq.','lignes':{0:'.FfWWWWWWWWfF...',1:'.FfSNNNNNNSfF...',2:'.WSNNNNNNNNSW...',3:'..SNNNNNNNNS....',4:'..SNNNNNNNNS....',5:'..NNNNNNNNNN....'},'corps':['.FfWWWWWWWWfF...','.FfSNNNNNNSfF...','.WSNNNNNNNNSW...','..SNNNNNNNNS....','..SNNNNNNNNS....','..NNNNNNNNNN....','..wdNNNNNNdw....','.wwdNNNNNNdww...','.wdNNNNNNNNdw...','..wWW.ww.WWw....']},{'id':'B','nom':'PLASTRON PLEIN','desc':'Le torse entier passe au blanc : une cuirasse d\'un seul tenant. C\'est le plus imposant et le plus \'armure sacree\' ; en contrepartie c\'est un grand aplat clair ou ni les bras ni la ceinture ne se detachent, exactement le defaut qu\'on a corrige sur le poncho du cowboy.','lignes':{0:'.FfWWWWWWWWfF...',1:'.FfSSSSSSSSfF...',2:'.WSSSSSSSSSSW...',3:'..SSSSSSSSSS....',4:'..SSSSSSSSSS....',5:'..NNNNNNNNNN....'},'corps':['.FfWWWWWWWWfF...','.FfSSSSSSSSfF...','.WSSSSSSSSSSW...','..SSSSSSSSSS....','..SSSSSSSSSS....','..NNNNNNNNNN....','..wdNNNNNNdw....','.wwdNNNNNNdww...','.wdNNNNNNNNdw...','..wWW.ww.WWw....']},{'id':'C','nom':'DRAPE SUR UNE EPAULE','desc':'Un pan de tissu sombre barre le torse en diagonale et ne couvre qu\'une epaule — l\'asymetrie de Rick Owens. C\'est la seule silhouette asymetrique du roster et elle raconte quelque chose ; en revanche elle deseqilibre le sprite, et le miroir la renverra de l\'autre cote quand il se retourne.','lignes':{0:'.FfWWWWwwwwfF...',1:'.FfSNNwwwwwW....',2:'.WSNNNNwwwww....',3:'..SNNNNNNwww....',4:'..SNNNNNNNNw....',5:'..NNNNNNNNNN....'},'corps':['.FfWWWWwwwwfF...','.FfSNNwwwwwW....','.WSNNNNwwwww....','..SNNNNNNwww....','..SNNNNNNNNw....','..NNNNNNNNNN....','..wdNNNNNNdw....','.wwdNNNNNNdww...','.wdNNNNNNNNdw...','..wWW.ww.WWw....']},{'id':'D','nom':'TORSE NOIR, ARMURE MINIMALE','desc':'Plus de plastron : seules les epaulieres et une fine bordure blanche restent. Le plus proche du drape monastique et le plus sobre ; mais le buste devient sombre sur sombre, donc c\'est celui qui se lit le moins bien sur la Stellar Orbital Station.','lignes':{0:'.FfWNNNNNNWfF...',1:'.FfNNNNNNNNfF...',2:'.WNNNNNNNNNNW...',3:'..NNNNNNNNNN....',4:'..NNNNNNNNNN....',5:'..NNNNNNNNNN....'},'corps':['.FfWNNNNNNWfF...','.FfNNNNNNNNfF...','.WNNNNNNNNNNW...','..NNNNNNNNNN....','..NNNNNNNNNN....','..NNNNNNNNNN....','..wdNNNNNNdw....','.wwdNNNNNNdww...','.wdNNNNNNNNdw...','..wWW.ww.WWw....']},{'id':'E','nom':'CUIRASSE A COTES','desc':'Des cotes d\'acier horizontales traversent le torse, comme les segments de ta reference pousses plus loin. Ca donne de la matiere au buste sans en faire un aplat, et c\'est le plus riche des cinq ; en revanche trois lignes de rayures peuvent se lire comme un motif plutot que comme une armure.','lignes':{0:'.FfWWWWWWWWfF...',1:'.FfSSSSSSSSfF...',2:'.WSNNNNNNNNSW...',3:'..SSSSSSSSSS....',4:'..SNNNNNNNNS....',5:'..SSSSSSSSSS....'},'corps':['.FfWWWWWWWWfF...','.FfSSSSSSSSfF...','.WSNNNNNNNNSW...','..SSSSSSSSSS....','..SNNNNNNNNS....','..SSSSSSSSSS....','..wdNNNNNNdw....','.wwdNNNNNNdww...','.wdNNNNNNNNdw...','..wWW.ww.WWw....']}]},{'id':'bas','titre':'3 · LE BAS DU CORPS','zoom':[0,15,15,19],'note':'C\'est la que se joue le cote Rick Owens et Dune, et c\'est la seule partie du roster ou personne n\'a encore de drape. La question est le troc : un drape long donne une silhouette unique mais cache les jambes, donc la course devra se lire sur les bras et sur le tissu qui bat. Des jambes armurees courent mieux mais ne racontent rien.','variantes':[{'id':'A','nom':'DRAPE LONG ET EFFILOCHE','desc':'Une jupe-manteau noire qui tombe jusqu\'aux chevilles, l\'ourlet dechiquete, et seules les bottes blanches depassent. C\'est la signature Rick Owens et aucun autre perso du roster n\'a cette silhouette ; en contrepartie les jambes sont cachees, donc la course se lira sur les bras et sur le drape.','lignes':{6:'..wdNNNNNNdw....',7:'.wwdNNNNNNdww...',8:'.wdNNNNNNNNdw...',9:'..wWW.ww.WWw....'},'corps':['.FfWWWWWWWWfF...','.FfSNNNNNNSfF...','.WSNNNNNNNNSW...','..SNNNNNNNNS....','..SNNNNNNNNS....','..NNNNNNNNNN....','..wdNNNNNNdw....','.wwdNNNNNNdww...','.wdNNNNNNNNdw...','..wWW.ww.WWw....']},{'id':'B','nom':'JAMBES ARMUREES','desc':'L\'armure blanche continue en bas : cuissards et greves, dans la continuite du buste. La course se lit parfaitement, c\'est le plus simple a animer et le plus \'chevalier\' ; mais on perd tout le cote drape, qui est justement ce qui distingue ce perso.','lignes':{6:'...NNNNNNNN.....',7:'...SS....SS.....',8:'...SS....SS.....',9:'..WSS....SSW....'},'corps':['.FfWWWWWWWWfF...','.FfSNNNNNNSfF...','.WSNNNNNNNNSW...','..SNNNNNNNNS....','..SNNNNNNNNS....','..NNNNNNNNNN....','...NNNNNNNN.....','...SS....SS.....','...SS....SS.....','..WSS....SSW....']},{'id':'C','nom':'COMBINAISON NOIRE, BOTTES BLANCHES','desc':'Jambes noires moulantes et grosses bottes blanches. C\'est le contraste le plus net des cinq et le plus lisible en mouvement, parce que seules les bottes bougent visiblement ; en revanche c\'est aussi le plus banal, et le plus proche de Leon.','lignes':{6:'...NNNNNNNN.....',7:'...NN....NN.....',8:'...NN....NN.....',9:'..WWW....WWW....'},'corps':['.FfWWWWWWWWfF...','.FfSNNNNNNSfF...','.WSNNNNNNNNSW...','..SNNNNNNNNS....','..SNNNNNNNNS....','..NNNNNNNNNN....','...NNNNNNNN.....','...NN....NN.....','...NN....NN.....','..WWW....WWW....']},{'id':'D','nom':'DRAPE COURT ET FENDU','desc':'Le drape s\'arrete aux genoux et s\'ouvre au milieu : on voit les jambes passer dedans. C\'est le compromis — la silhouette drapee ET des jambes qui se suivent en course ; en contrepartie il est moins imposant que le drape long, et la fente est difficile a dessiner proprement a cette taille.','lignes':{6:'..wNNNNNNNNw....',7:'.wwNNN..NNNww...',8:'..w.NN..NN.w....',9:'...WW....WW.....'},'corps':['.FfWWWWWWWWfF...','.FfSNNNNNNSfF...','.WSNNNNNNNNSW...','..SNNNNNNNNS....','..SNNNNNNNNS....','..NNNNNNNNNN....','..wNNNNNNNNw....','.wwNNN..NNNww...','..w.NN..NN.w....','...WW....WW.....']},{'id':'E','nom':'ROBE INTEGRALE','desc':'Aucune jambe : le drape descend d\'un bloc jusqu\'au sol, comme une robe de moine. C\'est de loin la silhouette la plus etrange et la plus memorable du roster ; mais un perso qui glisse sans jambes se lit mal dans un jeu ou tout le monde court, et il n\'aura pas de vraie pose de course.','lignes':{6:'..wwNNNNNNww....',7:'.wwNNNNNNNNww...',8:'.wNNNNNNNNNNw...',9:'..wNwNwNwNwN....'},'corps':['.FfWWWWWWWWfF...','.FfSNNNNNNSfF...','.WSNNNNNNNNSW...','..SNNNNNNNNS....','..SNNNNNNNNS....','..NNNNNNNNNN....','..wwNNNNNNww....','.wwNNNNNNNNww...','.wNNNNNNNNNNw...','..wNwNwNwNwN....']}]}];
+
+
+/* ===================== LE DESSIN ===================== */
+function peindre(g, rows, pal, ech, ox, oy, zone) {
+  const [x0, y0, x1, y1] = zone || [0, 0, 15, 19];
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const ch = rows[y][x];
+      if (ch === '.' || !pal[ch]) continue;
+      g.fillStyle = pal[ch];
+      g.fillRect(ox + (x - x0) * ech, oy + (y - y0) * ech, ech, ech);
+    }
+  }
+}
+
+function fond(g, W, H) {
+  const d = g.createLinearGradient(0, 0, 0, H);
+  d.addColorStop(0, '#1b1b26'); d.addColorStop(1, '#0b0b11');
+  g.fillStyle = d; g.fillRect(0, 0, W, H);
+}
+
+/* ===================== L'ÉTAT ===================== */
+const choix = {};
+SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+const actuel = id => SECTIONS.find(s => s.id === id).variantes.find(x => x.id === choix[id]);
+
+// Chaque section ne RETOUCHE que ses lignes. Une section qui remplacerait tout
+// le corps écraserait l'autre : le buste et le bas ne seraient plus choisissables
+// séparément, et c'est justement ce qu'on veut pouvoir faire ici.
+function batir(remplace) {
+  let tete = [...BASE.tete];
+  const corps = [...BASE.corps];
+  for (const s of SECTIONS) {
+    const va = (remplace && remplace.sec === s.id) ? remplace.va : actuel(s.id);
+    if (va.tete) tete = va.tete;
+    if (va.lignes) for (const [i, l] of Object.entries(va.lignes)) corps[+i] = l;
+  }
+  let rows = [...tete, ...corps];
+  if (!remplace && ed && ed.actif()) rows = ed.rows();
+  return { rows, pal: PAL };
+}
+
+let ed = null;
+
+/* ===================== L'ÉDITEUR ===================== */
+styleEditeur();
+ed = editeur({
+  hote: document.getElementById('editeur'),
+  cle: 'fricadelle',
+  rows: () => batir().rows,
+  pal: () => PAL,
+  change: () => rafraichir()
+});
+
+/* ===================== L'APERÇU ===================== */
+const gG = document.getElementById('cvGrand').getContext('2d');
+const gP = document.getElementById('cvPetit').getContext('2d');
+const ARENE = MAPS[0], TH = ARENE.theme;
+
+function majApercu() {
+  const { rows, pal } = batir();
+  const cv = gG.canvas;
+  fond(gG, cv.width, cv.height);
+  const ech = 19;
+  peindre(gG, rows, pal, ech, (cv.width - 16 * ech) / 2, (cv.height - 20 * ech) / 2);
+
+  const c2 = gP.canvas;
+  gP.fillStyle = TH.floor; gP.fillRect(0, 0, c2.width, c2.height);
+  gP.strokeStyle = TH.line; gP.lineWidth = 1;
+  gP.beginPath(); gP.moveTo(0, c2.height - 14); gP.lineTo(c2.width, c2.height - 14); gP.stroke();
+  for (let i = 0; i < 3; i++) peindre(gP, rows, pal, 4.8, 14 + i * 74, c2.height - 14 - 20 * 4.8);
+
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value =
+    SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+}
+
+/* ===================== LES CARTES ===================== */
+const cartes = [];
+function dessinerCarte(o) {
+  const { rows, pal } = batir({ sec: o.sec.id, va: o.va });
+  const gc = o.plein.getContext('2d');
+  fond(gc, o.plein.width, o.plein.height);
+  peindre(gc, rows, pal, 4, 0, 0);
+  const gz = o.zoom.getContext('2d');
+  fond(gz, o.zoom.width, o.zoom.height);
+  const z = o.sec.zoom;
+  peindre(gz, rows, pal, o.zoom.width / (z[2] - z[0] + 1), 0, 0, z);
+}
+
+const boite = document.getElementById('sections');
+SECTIONS.forEach(sec => {
+  const h2 = document.createElement('h2');
+  h2.textContent = sec.titre;
+  const note = document.createElement('p');
+  note.className = 'note'; note.textContent = sec.note;
+  const row = document.createElement('div');
+  row.className = 'row';
+  sec.variantes.forEach(va => {
+    const card = document.createElement('div');
+    card.className = 'card' + (choix[sec.id] === va.id ? ' on' : '');
+    card.dataset.sec = sec.id; card.dataset.va = va.id;
+    const lbl = document.createElement('div');
+    lbl.className = 'lbl';
+    lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + va.desc;
+    // LE GROS PLAN EST LE DESSIN PRINCIPAL, le perso entier n'est qu'une
+    // vignette à côté : ce qui change dans une section tient souvent en
+    // quelques lignes de pixels, invisibles au milieu de tout le personnage.
+    const duo = document.createElement('div'); duo.className = 'duo';
+    const z = sec.zoom, zw = z[2] - z[0] + 1, zh = z[3] - z[1] + 1;
+    const ez = Math.min(16, Math.floor(170 / zw), Math.floor(170 / zh));
+    const zoom = document.createElement('canvas');
+    zoom.className = 'zoom'; zoom.width = zw * ez; zoom.height = zh * ez;
+    const plein = document.createElement('canvas');
+    plein.className = 'plein'; plein.width = 16 * 4; plein.height = 20 * 4;
+    duo.append(zoom, plein);
+    card.append(lbl, duo);
+    card.onclick = () => {
+      choix[sec.id] = va.id;
+      document.querySelectorAll('.card[data-sec="' + sec.id + '"]')
+        .forEach(c => c.classList.toggle('on', c.dataset.va === va.id));
+      rafraichir();
+    };
+    row.append(card);
+    cartes.push({ plein, zoom, sec, va });
+  });
+  boite.append(h2, note, row);
+});
+
+function rafraichir() {
+  majApercu();
+  if (ed) ed.maj();
+  cartes.forEach(o => dessinerCarte(o));
+}
+
+document.getElementById('btnCopier').onclick = async () => {
+  const b = document.getElementById('btnCopier');
+  try { await navigator.clipboard.writeText(document.getElementById('codeChoix').value);
+        b.textContent = 'copié !'; b.classList.add('ok');
+        setTimeout(() => { b.textContent = 'copier mes choix'; b.classList.remove('ok'); }, 1400); }
+  catch (e) { document.getElementById('codeChoix').select(); }
+};
+
+/* --- La bande du roster, à l'échelle du match --- */
+(function bande() {
+  const hote = document.getElementById('rosterRow');
+  const ajoute = (dessine, nom) => {
+    const d = document.createElement('div'); d.className = 'rosterOne';
+    const cv = document.createElement('canvas');
+    cv.width = 16 * 4.2; cv.height = 20 * 4.2;
+    const g = cv.getContext('2d');
+    g.fillStyle = TH.floor; g.fillRect(0, 0, cv.width, cv.height);
+    dessine(g, cv);
+    const e = document.createElement('em'); e.style.fontStyle = 'normal'; e.textContent = nom;
+    d.append(cv, e); hote.append(d);
+  };
+  const moi = batir();
+  ajoute(g => peindre(g, moi.rows, moi.pal, 4.2, 0, 0), 'GARDIEN');
+  for (const ck of ROSTER) {
+    const c = CHARS[ck];
+    ajoute((g, cv) => { g.imageSmoothingEnabled = false; g.drawImage(c.frames.idle, 0, 0, cv.width, cv.height); },
+           c.short || c.name);
+  }
+})();
+
+afficher(verifier({ id: 'fricadelle', PERSO: { pal: PAL, tete: BASE.tete, corps: BASE.corps },
+                    SECTIONS, options: { variantesAttendues: 5 } }),
+         document.getElementById('errs'));
+
+rafraichir();
+</script>
+</body>
+</html>
