@@ -84,21 +84,21 @@ const contient = (rows, lettre, jusqua) =>
 
 export const TRAITS = {
   fricadelle: [
-    { nom: 'le torque de fricadelles au cou',
-      pourquoi: 'c’est la relique, et la seule couleur chaude du perso : sans elle il ne reste qu’un chevalier blanc et noir',
-      test: r => r.slice(9, 11).some(l => l.includes('F') || l.includes('f')) },
-    { nom: 'les épaulières de fricadelle',
-      pourquoi: 'elles portent la relique jusque dans la silhouette, donc elle se voit même de dos et en course',
-      test: r => r.slice(10, 12).some(l => l.includes('F') || l.includes('f')) },
-    { nom: 'le blanc de Moon Knight sur la tête',
-      pourquoi: 'c’est le rapport clair-sur-sombre qui fait tenir tout le roster : une tête sombre sur un corps sombre ne fait qu’une masse',
-      test: r => r.slice(0, 9).some(l => l.includes('W') || l.includes('S')) },
-    { nom: 'les yeux roses',
-      pourquoi: 'c’est la couleur du Susanoo, posée sur lui en permanence : elle annonce l’ultime avant qu’il parte',
-      test: r => r.slice(4, 9).some(l => l.includes('R')) },
-    { nom: 'le noir sur au moins trois valeurs',
-      pourquoi: 'en dessous le drapé devient un aplat où aucun pli ne se lit — la même erreur que le poncho crème du cowboy, à l’envers',
-      test: r => ['N', 'n', 'w', 'd'].filter(c => r.some(l => l.includes(c))).length >= 3 }
+    { nom: 'les saucisses posées en plaques sur le torse',
+      pourquoi: 'c’est toute la tenue de la photo, et la seule couleur chaude du perso : sans elles il ne reste qu’un super-héros noir et blanc',
+      test: r => r[12].includes('F') && r[14].includes('F') },
+    { nom: 'une saucisse sur chaque épaulière',
+      pourquoi: 'elles portent la relique jusqu’aux bords de la silhouette, donc elle se voit même quand les bras balancent',
+      test: r => r[10][2] === 'F' && r[10][11] === 'F' },
+    { nom: 'des épaulières blanches épaisses',
+      pourquoi: 'ce sont elles qui font le super-héros de la photo ; sur un seul pixel elles ne se lisaient pas du tout',
+      test: r => [11, 12].every(y => r[y][1] === 'W' && r[y][12] === 'W') },
+    { nom: 'un pixel par œil, décalé à droite, comme Naruto et Leon',
+      pourquoi: 'c’est ce qui le range dans le roster humain, et sans le décalage le miroir ne se lit pas',
+      test: r => r.slice(4, 9).some(l => l[5] === 'E' && l[10] === 'E') },
+    { nom: 'les jambes aux colonnes 3-4 et 9-10',
+      pourquoi: 'c’est le gabarit de Naruto et Leon, celui qui permettra de reprendre leurs poses de course',
+      test: r => r.slice(16, 18).every(l => l[3] !== '.' && l[4] !== '.' && l[9] !== '.' && l[10] !== '.') }
   ],
   flowser: [
     { nom: 'la crete rouge',
