@@ -93,9 +93,9 @@ export const TRAITS = {
     { nom: 'des épaulières blanches épaisses',
       pourquoi: 'ce sont elles qui font le super-héros de la photo ; sur un seul pixel elles ne se lisaient pas du tout',
       test: r => [11, 12].every(y => r[y][1] === 'W' && r[y][12] === 'W') },
-    { nom: 'un pixel par œil, décalé à droite, comme Naruto et Leon',
-      pourquoi: 'c’est ce qui le range dans le roster humain, et sans le décalage le miroir ne se lit pas',
-      test: r => r.slice(4, 9).some(l => l[5] === 'E' && l[10] === 'E') },
+    { nom: 'les yeux roses, un pixel chacun, décalés à droite comme Naruto et Leon',
+      pourquoi: 'le rose est la couleur du Susanoo posée sur lui en permanence, et sans le décalage le miroir ne se lit pas',
+      test: r => r.slice(4, 9).some(l => 'rR'.includes(l[5]) && 'rR'.includes(l[10])) },
     { nom: 'les jambes aux colonnes 3-4 et 9-10',
       pourquoi: 'c’est le gabarit de Naruto et Leon, celui qui permettra de reprendre leurs poses de course',
       test: r => r.slice(16, 18).every(l => l[3] !== '.' && l[4] !== '.' && l[9] !== '.' && l[10] !== '.') }
