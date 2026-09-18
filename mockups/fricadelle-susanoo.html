@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Susanoo de la Fricadelle — le design</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b0a10; --panel:#16131d; --edge:#35293f; --ink:#f3edf6; --rose:#ff7fd0; --or:#e8a94a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:23px;margin:0 0 6px;font-family:'Archivo Black',sans-serif;letter-spacing:.5px}
+  h1 em{font-style:normal;color:var(--rose)}
+  h2{font-size:14px;margin:34px 0 6px;color:var(--rose);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#b3a7bd;max-width:1060px;line-height:1.75;margin:0 0 14px}
+  .note b{color:var(--ink)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 560px;min-width:0}
+  .apercu canvas{width:100%;height:auto;display:block;border-radius:10px;background:#000}
+  .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 280px}
+  .fiche h3{margin:0 0 10px;font-size:12px;color:var(--rose);text-transform:uppercase;letter-spacing:1.2px}
+  .fiche canvas{width:100%;height:auto;display:block;border-radius:10px}
+  .choix{font-size:11.5px;color:#c9bdd3;margin-top:10px;font-family:Consolas,monospace;line-height:1.9}
+  .choix b{color:var(--rose)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 170px;background:#0e0c13;border:1px solid var(--edge);border-radius:8px;
+             padding:7px 10px;color:var(--rose);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#2a1f33;color:var(--ink);border:1px solid var(--edge);border-radius:8px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;white-space:nowrap}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px;
+        flex:1 1 200px;min-width:200px;max-width:260px;cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#5b4470}
+  .card.on{border-color:var(--rose);transform:translateY(-2px);box-shadow:0 0 0 1px var(--rose) inset}
+  .lbl{font-size:11px;color:#b3a7bd;margin-bottom:8px;line-height:1.5;min-height:112px}
+  .lbl b{display:block;font-size:13px;color:var(--rose);letter-spacing:.5px;margin-bottom:3px}
+  .lbl i{display:block;font-style:normal;font-size:10px;color:#8f829b;font-family:Consolas,monospace;margin-bottom:4px}
+  .duo{display:flex;gap:8px;align-items:flex-end;justify-content:center}
+  .duo canvas{border-radius:8px;display:block;flex:0 0 auto}
+  .duo .zoom{border:1px solid #4a3a58}
+</style>
+</head>
+<body>
+
+<h1>SUSANOO DE LA <em>FRICADELLE</em> — LE DESIGN</h1>
+<p class="note">
+  <b>L'effet est tranché : la Lame du dragon.</b> Pendant six secondes, chaque disque qu'il attrape
+  est relancé aussitôt par un coup d'épée du Susanoo, en tir parfait — c'est ce que joue l'aperçu.
+  <br><br>
+  <b>Reste son allure.</b> Il est découpé en cinq pièces, et chacune a cinq propositions qui partent
+  d'une idée <b>différente</b>, pas d'une variation de la même : un crâne n'est pas un casque moins
+  rond, une cage thoracique n'est pas une cuirasse plus fine. Les références sont données sous
+  chaque nom — le Susanoo de Sasuke dans ses quatre stades, Goku Black en Super Saiyan Rosé, le
+  guerrier rose de ta photo, et un peu de samouraï.
+  <br><br>
+  Chaque carte montre la pièce <b>en gros plan</b>, et le Susanoo entier à côté. Tout se combine :
+  un clic change la pièce dans l'aperçu, qui continue de jouer l'ultime.
+</p>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvScene" width="960" height="540"></canvas>
+  </div>
+  <div class="fiche">
+    <h3>Le Susanoo seul, en grand</h3>
+    <canvas id="cvSeul" width="420" height="460"></canvas>
+    <div class="choix" id="choix"></div>
+    <div class="copier">
+      <input class="codeChoix" id="codeChoix" readonly>
+      <button class="btnCopier" id="btnCopier">copier mes choix</button>
+    </div>
+  </div>
+</div>
+
+<div id="sections"></div>
+
+<script type="module">
+import { CHARS } from '../js/data/characters.js';
+import { TAU, CT, CW, CH, CYY, GOAL_H, terrain, perso, disque,
+         easeOut, easeIn, easeInOut, easeBack, alea, lueur, anneau } from './_ulti.js';
+
+/* =====================================================================
+   LE REPERE DU SUSANOO
+   Tout se dessine dans un repere local : les pieds en (0, 0), le haut vers
+   les y negatifs, une unite = la taille d'un pixel du terrain. Chaque piece
+   s'ancre sur les memes points, ce qui garantit que n'importe quelle tete
+   tient sur n'importe quel corps.
+   ===================================================================== */
+const TETE_C = { x: 4, y: -222 };      // le centre de la tete
+const EPAULE_G = { x: -80, y: -176 }, EPAULE_D = { x: 80, y: -176 };
+const BRAS_D = { x: 70, y: -150 };     // l'epaule qui porte l'epee
+
+const R = a => 'rgba(255,150,220,' + a + ')';     // le corps d'energie
+const BORD = 'rgba(255,218,246,.92)';              // son contour
+const CREUX = a => 'rgba(255,70,180,' + a + ')';   // ses creux
+
+function forme(g, chemin, a = .5, bord = BORD, lw = 1.8) {
+  g.fillStyle = R(a); g.fill(chemin);
+  g.strokeStyle = bord; g.lineWidth = lw; g.stroke(chemin);
+}
+const path = f => { const p = new Path2D(); f(p); return p; };
+function oeil(g, x, y, r = 5) { lueur(g, x, y, r * 1.8, 'rgba(255,250,255,1)', .95); }
+
+// La fricadelle elle-meme : une capsule doree aux stries de cuisson. Elle sert
+// a l'epee, aux epaulieres et au plastron — c'est la meme partout, sinon elle
+// ne se reconnait plus d'une piece a l'autre.
+function fricadelle(g, x0, x1, lar, stries = 5) {
+  g.save();
+  g.globalCompositeOperation = 'source-over';
+  const p = path(q => {
+    q.moveTo(x0 + lar, -lar); q.lineTo(x1 - lar, -lar);
+    q.arc(x1 - lar, 0, lar, -Math.PI / 2, Math.PI / 2);
+    q.lineTo(x0 + lar, lar); q.arc(x0 + lar, 0, lar, Math.PI / 2, Math.PI * 1.5);
+  });
+  const lg = g.createLinearGradient(0, -lar, 0, lar);
+  lg.addColorStop(0, '#f6cc7a'); lg.addColorStop(.45, '#e8a94a'); lg.addColorStop(1, '#8a4f18');
+  g.globalAlpha *= .95; g.fillStyle = lg; g.fill(p);
+  g.strokeStyle = 'rgba(105,55,18,.6)'; g.lineWidth = Math.max(.8, lar * .16);
+  for (let i = 1; i <= stries; i++) {
+    const xx = x0 + i * (x1 - x0) / (stries + 1);
+    g.beginPath(); g.moveTo(xx, -lar * .78); g.quadraticCurveTo(xx + lar * .35, 0, xx, lar * .78); g.stroke();
+  }
+  g.globalCompositeOperation = 'lighter';
+  g.strokeStyle = 'rgba(255,140,215,.9)'; g.lineWidth = Math.max(1, lar * .18); g.stroke(p);
+  g.restore();
+}
+
+/* =====================================================================
+   1 · LES TETES
+   ===================================================================== */
+const TETES = {
+  A: { nom: 'CASQUE ROND', ref: 'Susanoo de Sasuke, deuxième stade',
+    desc: "Un casque lisse et ovale, deux yeux blancs. C'est la version actuelle : sobre et lisible de loin, mais c'est aussi la plus neutre des cinq — rien n'y dit la fricadelle ni le dieu.",
+    f(g, t) {
+      const c = TETE_C;
+      forme(g, path(p => p.ellipse(c.x, c.y, 26, 30, 0, 0, TAU)), .5);
+      oeil(g, c.x - 7, c.y + 2); oeil(g, c.x + 13, c.y + 2);
+    } },
+  B: { nom: 'MASQUE DE TENGU', ref: 'Susanoo de Sasuke, stade complet',
+    desc: "Le masque au long nez pointé vers l'avant, les arcades plissées et une petite corne au front : c'est la tête emblématique du Susanoo. Elle lui donne un regard et un profil ; en revanche le nez pointe d'un seul côté, donc le miroir le retournera.",
+    f(g, t) {
+      const c = TETE_C;
+      forme(g, path(p => {
+        p.moveTo(c.x - 26, c.y - 20); p.lineTo(c.x + 22, c.y - 26); p.lineTo(c.x + 30, c.y - 6);
+        p.lineTo(c.x + 62, c.y + 10); p.lineTo(c.x + 26, c.y + 14); p.lineTo(c.x + 12, c.y + 32);
+        p.lineTo(c.x - 16, c.y + 28); p.lineTo(c.x - 30, c.y + 2); p.closePath();
+      }), .55);
+      forme(g, path(p => { p.moveTo(c.x - 2, c.y - 24); p.lineTo(c.x + 8, c.y - 50); p.lineTo(c.x + 14, c.y - 25); p.closePath(); }), .45);
+      g.strokeStyle = 'rgba(255,250,255,.95)'; g.lineWidth = 3.4; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(c.x - 14, c.y - 8); g.lineTo(c.x - 2, c.y - 2); g.stroke();
+      g.beginPath(); g.moveTo(c.x + 8, c.y - 6); g.lineTo(c.x + 22, c.y - 12); g.stroke();
+      oeil(g, c.x - 7, c.y - 4, 3.5); oeil(g, c.x + 15, c.y - 8, 3.5);
+    } },
+  C: { nom: 'VISAGE DE GOKU BLACK', ref: 'Goku Black, Super Saiyan Rosé',
+    desc: "Un vrai visage humain — mâchoire, arcades, oreilles, bouche — et des yeux en amande froncés. C'est le guerrier rose de ta photo : on voit que quelqu'un habite le Susanoo. Le plus expressif des cinq, le moins « armure ».",
+    f(g, t) {
+      const c = TETE_C;
+      forme(g, path(p => {
+        p.moveTo(c.x - 22, c.y - 24); p.quadraticCurveTo(c.x, c.y - 34, c.x + 22, c.y - 24);
+        p.lineTo(c.x + 25, c.y + 2); p.quadraticCurveTo(c.x + 20, c.y + 24, c.x + 4, c.y + 32);
+        p.quadraticCurveTo(c.x - 14, c.y + 26, c.x - 24, c.y + 4); p.closePath();
+      }), .5);
+      for (const sx of [-1, 1]) forme(g, path(p => p.ellipse(c.x + sx * 27, c.y + 2, 5, 9, 0, 0, TAU)), .45);
+      g.strokeStyle = BORD; g.lineWidth = 2.4; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(c.x - 16, c.y - 10); g.lineTo(c.x - 3, c.y - 5); g.stroke();
+      g.beginPath(); g.moveTo(c.x + 22, c.y - 10); g.lineTo(c.x + 9, c.y - 5); g.stroke();
+      g.beginPath(); g.moveTo(c.x - 4, c.y + 18); g.quadraticCurveTo(c.x + 4, c.y + 15, c.x + 12, c.y + 18); g.stroke();
+      for (const x of [c.x - 9, c.x + 15]) {
+        g.fillStyle = 'rgba(255,250,255,.95)';
+        g.beginPath(); g.moveTo(x - 5, c.y); g.lineTo(x + 5, c.y - 2); g.lineTo(x + 3, c.y + 3); g.lineTo(x - 4, c.y + 3); g.fill();
+        oeil(g, x, c.y + 1, 2.5);
+      }
+    } },
+  D: { nom: 'KABUTO A CORNES', ref: 'Samouraï — et un croissant de lune, pour Moon Knight',
+    desc: "Un casque de samouraï avec deux immenses cornes recourbées vers le haut, qui dessinent un croissant de lune — le clin d'œil à Khonshu, le dieu de Moon Knight. C'est la silhouette qu'on identifie de plus loin ; en revanche les cornes rivalisent avec les cheveux pour le haut de l'image.",
+    f(g, t) {
+      const c = TETE_C;
+      for (const sx of [-1, 1]) forme(g, path(p => {
+        p.moveTo(c.x + sx * 18, c.y - 16);
+        p.bezierCurveTo(c.x + sx * 60, c.y - 30, c.x + sx * 70, c.y - 70, c.x + sx * 44, c.y - 96);
+        p.bezierCurveTo(c.x + sx * 54, c.y - 64, c.x + sx * 42, c.y - 36, c.x + sx * 14, c.y - 6);
+        p.closePath();
+      }), .6);
+      forme(g, path(p => { p.moveTo(c.x - 26, c.y + 4); p.quadraticCurveTo(c.x, c.y - 52, c.x + 26, c.y + 4); p.closePath(); }), .55);
+      forme(g, path(p => {
+        p.moveTo(c.x - 30, c.y + 2); p.lineTo(c.x + 30, c.y + 2); p.lineTo(c.x + 22, c.y + 30);
+        p.lineTo(c.x - 22, c.y + 30); p.closePath();
+      }), .4);
+      g.fillStyle = CREUX(.7); g.fillRect(c.x - 20, c.y + 8, 40, 7);
+      oeil(g, c.x - 8, c.y + 11, 3); oeil(g, c.x + 14, c.y + 11, 3);
+    } },
+  E: { nom: 'CRANE', ref: 'Susanoo de Sasuke, premier stade — le squelette',
+    desc: "Un crâne : orbites vides où brille un point, mâchoire à dents. C'est le premier stade du Susanoo, celui qui fait peur. Le plus fort en contraste — le rose ne remplit que l'os, le vide des orbites se lit en creux ; mais il tire le perso vers le macabre plus que vers le dieu.",
+    f(g, t) {
+      const c = TETE_C;
+      const crane = path(p => {
+        p.ellipse(c.x, c.y - 6, 27, 26, 0, 0, TAU);
+        p.moveTo(c.x - 3, c.y - 2); p.ellipse(c.x - 9, c.y - 2, 8, 9, 0, 0, TAU);
+        p.moveTo(c.x + 25, c.y - 2); p.ellipse(c.x + 17, c.y - 2, 8, 9, 0, 0, TAU);
+      });
+      g.fillStyle = R(.55); g.fill(crane, 'evenodd');
+      g.strokeStyle = BORD; g.lineWidth = 1.8; g.stroke(crane);
+      forme(g, path(p => { p.moveTo(c.x - 15, c.y + 14); p.lineTo(c.x + 21, c.y + 14); p.lineTo(c.x + 17, c.y + 32); p.lineTo(c.x - 11, c.y + 32); p.closePath(); }), .45);
+      g.strokeStyle = BORD; g.lineWidth = 1.4;
+      for (let i = 0; i < 5; i++) { const x = c.x - 9 + i * 7; g.beginPath(); g.moveTo(x, c.y + 16); g.lineTo(x, c.y + 26); g.stroke(); }
+      oeil(g, c.x - 9, c.y - 1, 2.6); oeil(g, c.x + 17, c.y - 1, 2.6);
+    } },
+};
+
+/* =====================================================================
+   2 · LES CHEVEUX
+   `derriere` : la meche passe dans le dos, donc se peint AVANT le corps.
+   ===================================================================== */
+function pic(g, bx, by, a, L, lar) {
+  const n = { x: -Math.sin(a) * lar, y: Math.cos(a) * lar };
+  forme(g, path(p => {
+    p.moveTo(bx - n.x, by - n.y); p.lineTo(bx + Math.cos(a) * L, by + Math.sin(a) * L);
+    p.lineTo(bx + n.x, by + n.y); p.closePath();
+  }), .68, 'rgba(255,228,250,.88)', 1.4);
+}
+const CHEVEUX = {
+  A: { nom: 'EN ETOILE', ref: 'Super Saiyan classique',
+    desc: "Neuf pics qui partent tous vers le haut en éventail. C'est le Super Saiyan tel qu'on l'imagine, instantanément reconnaissable ; en revanche c'est symétrique et statique, il ne dit pas le mouvement.",
+    f(g, t) {
+      const c = TETE_C;
+      for (let i = 0; i < 9; i++) {
+        const a = -Math.PI / 2 + (i - 4) * .3;
+        pic(g, c.x + Math.cos(a) * 18, c.y - 16 + Math.sin(a) * 10, a,
+            (48 + alea(i + 3) * 30) * (1 + Math.sin(t * 7 + i) * .04), 9);
+      }
+    } },
+  B: { nom: 'BALAYES EN ARRIERE', ref: 'Goku Black en Rosé — exactement',
+    desc: "De grandes mèches rabattues vers l'arrière, comme sous un vent violent, plus deux mèches qui retombent sur le front. C'est la coiffure exacte de Goku Black et de ta photo, et elle donne une direction : il regarde vers l'avant, tout part derrière lui.",
+    f(g, t) {
+      const c = TETE_C;
+      for (let i = 0; i < 7; i++) {
+        const a = -2.55 + i * .2;
+        pic(g, c.x + 6 - i * 3, c.y - 22 + i * 2, a, (70 + alea(i + 9) * 40) * (1 + Math.sin(t * 5 + i) * .03), 11);
+      }
+      pic(g, c.x + 6, c.y - 22, .95, 26, 5);
+      pic(g, c.x + 16, c.y - 20, .7, 22, 4);
+    } },
+  C: { nom: 'EN FLAMMES', ref: 'Aura de ki, feu vivant',
+    desc: "Les cheveux ne sont plus des pics mais des flammes : des langues ondulées qui se tordent et montent en permanence. C'est la seule version animée pour de bon — elle bouge même quand il est immobile ; en contrepartie elle se lit moins comme des cheveux et plus comme une tête qui brûle.",
+    f(g, t) {
+      const c = TETE_C;
+      for (let i = 0; i < 7; i++) {
+        const bx = c.x - 24 + i * 8, by = c.y - 20 + Math.abs(i - 3) * 3;
+        const L = 50 + (3 - Math.abs(i - 3)) * 16 + Math.sin(t * 6 + i * 1.7) * 8;
+        const sw = Math.sin(t * 4 + i) * 10;
+        forme(g, path(p => {
+          p.moveTo(bx - 7, by);
+          p.bezierCurveTo(bx - 10 + sw * .3, by - L * .4, bx + sw, by - L * .7, bx + sw * 1.2, by - L);
+          p.bezierCurveTo(bx + 4 + sw * .6, by - L * .6, bx + 12, by - L * .35, bx + 7, by);
+          p.closePath();
+        }), .6, 'rgba(255,228,250,.85)', 1.3);
+      }
+    } },
+  D: { nom: 'CRINIERE JUSQU AUX REINS', ref: 'Super Saiyan 3',
+    desc: "Une crinière de pics qui descend tout le long du dos, jusqu'à la taille. C'est la version la plus imposante : le Susanoo paraît deux fois plus grand de dos. En revanche elle passe DERRIÈRE le corps et en cache le contour, donc elle alourdit la silhouette.",
+    derriere: true,
+    f(g, t) {
+      const c = TETE_C;
+      for (let i = 0; i < 10; i++) {
+        const a = -1.75 - i * .19;
+        const L = 60 + i * 13 + alea(i + 20) * 14;
+        pic(g, c.x - 4 - i * 2, c.y - 18 + i * 3, a + Math.sin(t * 3 + i) * .03, L, 12);
+      }
+      for (let i = 0; i < 5; i++) pic(g, c.x + 4, c.y - 22, -1.55 + i * .22, 40 + alea(i) * 16, 8);
+    } },
+  E: { nom: 'CRETE UNIQUE', ref: 'Mohawk — une nageoire de pics',
+    desc: "Une seule rangée de pics au sommet du crâne, la plus haute au milieu, comme une crête ou une nageoire dorsale. C'est la silhouette la plus nette et la plus graphique ; mais elle perd le volume ébouriffé qui fait « Super Saiyan ».",
+    f(g, t) {
+      const c = TETE_C;
+      for (let i = 0; i < 7; i++) {
+        const k = 1 - Math.abs(i - 3) / 3.6;
+        pic(g, c.x - 18 + i * 6, c.y - 26, -Math.PI / 2 - (i - 3) * .06, 30 + k * 62, 5);
+      }
+    } },
+};
+
+/* =====================================================================
+   3 · LES EPAULES
+   ===================================================================== */
+const EPAULES = {
+  A: { nom: 'OVALES', ref: 'Version actuelle',
+    desc: "Deux coques ovales, lisses. Elles répondent aux épaulières blanches du Gardien sans les recopier. Sobres, lisibles, mais sans caractère — c'est la version de base.",
+    f(g, t) {
+      for (const [e, sx] of [[EPAULE_G, -1], [EPAULE_D, 1]])
+        forme(g, path(p => p.ellipse(e.x, e.y, 28, 16, sx * .35, 0, TAU)), .45);
+    } },
+  B: { nom: 'A PICS', ref: 'Armure de Vegeta, Susanoo de Madara',
+    desc: "Une coque surmontée de trois pointes qui partent vers l'extérieur. Ça élargit la silhouette et ça la rend menaçante ; c'est la plus agressive des cinq, et les pics répondent à ceux des cheveux.",
+    f(g, t) {
+      for (const [e, sx] of [[EPAULE_G, -1], [EPAULE_D, 1]]) {
+        for (let i = 0; i < 3; i++) {
+          const a = sx > 0 ? -.9 + i * .45 : Math.PI + .9 - i * .45;
+          pic(g, e.x, e.y - 4, a, 34 + (i === 1 ? 12 : 0), 7);
+        }
+        forme(g, path(p => p.ellipse(e.x, e.y, 26, 15, sx * .3, 0, TAU)), .5);
+      }
+    } },
+  C: { nom: 'EN FRICADELLES', ref: 'Les épaulières du Gardien, en géant',
+    desc: "Chaque épaule est une pile de trois fricadelles dorées, comme les épaulières du Gardien mais à l'échelle du dieu. C'est le lien le plus direct entre les deux — on voit d'où vient le Susanoo. En revanche l'or plein tranche avec le rose translucide du reste.",
+    f(g, t) {
+      for (const [e, sx] of [[EPAULE_G, -1], [EPAULE_D, 1]]) {
+        for (let i = 0; i < 3; i++) {
+          g.save(); g.translate(e.x + sx * (i * 7 - 4), e.y - 8 + i * 9); g.rotate(sx * (.25 + i * .12));
+          fricadelle(g, -22, 22, 6.5, 4); g.restore();
+        }
+      }
+    } },
+  D: { nom: 'EN EVENTAIL', ref: 'Sode de samouraï',
+    desc: "Trois lames d'armure superposées qui descendent en éventail sur le haut du bras. C'est la plus travaillée et la plus élégante, et elle couvre l'attache du bras qui sinon se voit mal ; en contrepartie elle alourdit un peu les épaules.",
+    f(g, t) {
+      for (const [e, sx] of [[EPAULE_G, -1], [EPAULE_D, 1]]) {
+        for (let i = 2; i >= 0; i--) {
+          forme(g, path(p => {
+            const y0 = e.y - 10 + i * 13, x0 = e.x - sx * 14;
+            p.moveTo(x0, y0); p.quadraticCurveTo(e.x + sx * 18, y0 - 8, e.x + sx * 36, y0 + 4);
+            p.lineTo(e.x + sx * 32, y0 + 16); p.quadraticCurveTo(e.x + sx * 12, y0 + 6, x0 + sx * 2, y0 + 12);
+            p.closePath();
+          }), .42 + i * .06);
+        }
+      }
+    } },
+  E: { nom: 'NUES ET MUSCLEES', ref: 'Goku Black — le torse du guerrier',
+    desc: "Pas d'épaulière : des deltoïdes ronds et musclés, avec la ligne du muscle. Le Susanoo devient un corps plutôt qu'une armure — c'est ta photo telle quelle. Le plus naturel des cinq ; mais sans pièce ajoutée, la silhouette est aussi la plus étroite.",
+    f(g, t) {
+      for (const [e, sx] of [[EPAULE_G, -1], [EPAULE_D, 1]]) {
+        forme(g, path(p => p.ellipse(e.x + sx * 2, e.y + 6, 20, 20, 0, 0, TAU)), .4);
+        g.strokeStyle = BORD; g.lineWidth = 1.4;
+        g.beginPath(); g.moveTo(e.x + sx * -6, e.y - 4); g.quadraticCurveTo(e.x + sx * 14, e.y + 4, e.x + sx * 8, e.y + 22); g.stroke();
+      }
+    } },
+};
+
+/* =====================================================================
+   4 · LES CORPS
+   ===================================================================== */
+// Le contour commun a tous les corps. Le premier avait des flancs droits et
+// evases : un seau renverse, qui ne se lisait pas comme un torse. Celui-ci a
+// une poitrine large, une TAILLE marquee, et un leger evasement aux hanches.
+const SILHOUETTE = path(p => {
+  p.moveTo(-34, -40);
+  p.bezierCurveTo(-36, -60, -32, -70, -30, -85);
+  p.bezierCurveTo(-28, -105, -50, -115, -56, -132);
+  p.bezierCurveTo(-64, -150, -86, -160, -84, -182);
+  p.bezierCurveTo(-60, -192, -30, -196, -22, -196);
+  p.lineTo(22, -196);
+  p.bezierCurveTo(30, -196, 60, -192, 84, -182);
+  p.bezierCurveTo(86, -160, 64, -150, 56, -132);
+  p.bezierCurveTo(50, -115, 28, -105, 30, -85);
+  p.bezierCurveTo(32, -70, 36, -60, 34, -40);
+  p.bezierCurveTo(12, -32, -12, -32, -34, -40);
+  p.closePath();
+});
+const CORPS = {
+  A: { nom: 'CUIRASSE EN V', ref: 'Susanoo de Sasuke — le plus proche de l\'actuel',
+    desc: "Une cuirasse lisse à larges épaules et taille fine, rayée des côtes de l'armure. La version précédente avait des flancs droits — un seau renversé qui ne se lisait pas comme un torse ; celle-ci a une vraie taille. La plus sûre des cinq, et la plus sage.",
+    f(g, t) {
+      forme(g, SILHOUETTE, .42);
+      g.strokeStyle = 'rgba(255,195,238,.55)'; g.lineWidth = 1.5;
+      for (const [y, w] of [[-165, 70], [-143, 58], [-121, 46], [-99, 34]]) {
+        g.beginPath(); g.moveTo(-w, y); g.quadraticCurveTo(0, y + 14, w, y); g.stroke();
+      }
+    } },
+  B: { nom: 'CAGE THORACIQUE', ref: 'Susanoo de Sasuke, premier stade',
+    desc: "Pas de peau : une colonne vertébrale et des côtes courbes, tout en trait, qu'on voit à travers. C'est de loin le plus impressionnant et le plus « Susanoo » des cinq ; en revanche il laisse voir le terrain à travers le corps, donc il pèse moins à l'écran.",
+    f(g, t) {
+      g.strokeStyle = BORD; g.lineWidth = 3; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(0, -192); g.lineTo(0, -40); g.stroke();
+      for (let i = 0; i < 6; i++) {
+        const y = -176 + i * 22, w = 70 - i * 7;
+        for (const sx of [-1, 1]) {
+          g.lineWidth = 3.2 - i * .25;
+          g.beginPath(); g.moveTo(0, y);
+          g.bezierCurveTo(sx * w * .6, y - 10, sx * w, y + 4, sx * w * .82, y + 22); g.stroke();
+          lueur(g, sx * w * .82, y + 22, 5, 'rgba(255,190,235,1)', .4);
+        }
+      }
+      forme(g, path(p => p.ellipse(0, -36, 30, 12, 0, 0, TAU)), .35);
+      lueur(g, 0, -120, 60, 'rgba(255,90,190,1)', .25);
+    } },
+  C: { nom: 'TORSE MUSCLE', ref: 'Goku Black, le guerrier de ta photo',
+    desc: "Un vrai torse : pectoraux, abdominaux, obliques. Le Susanoo devient une personne plutôt qu'une armure, et c'est le plus proche du guerrier rose de ta photo. Le plus vivant des cinq ; le moins « divin ».",
+    f(g, t) {
+      forme(g, SILHOUETTE, .5);
+      g.strokeStyle = BORD; g.lineWidth = 1.6;
+      for (const sx of [-1, 1]) {
+        g.beginPath(); g.moveTo(0, -176); g.quadraticCurveTo(sx * 40, -182, sx * 58, -150);
+        g.quadraticCurveTo(sx * 30, -130, 0, -140); g.stroke();
+        for (let i = 0; i < 3; i++) {
+          g.beginPath(); g.roundRect(sx > 0 ? 3 : -21, -126 + i * 22, 18, 18, 6); g.stroke();
+        }
+        g.beginPath(); g.moveTo(sx * 30, -130); g.quadraticCurveTo(sx * 40, -90, sx * 30, -50); g.stroke();
+      }
+    } },
+  D: { nom: 'ARMURE DE SAMOURAI', ref: 'Armure lamellaire, Susanoo de Madara',
+    desc: "Cinq bandes d'armure horizontales qui se recouvrent, une ceinture, et une jupe de plaques sous la taille qui descend jusqu'au sol. C'est la silhouette la plus complète — il a un bas du corps, les autres s'arrêtent à la taille ; en contrepartie elle est très chargée.",
+    f(g, t) {
+      forme(g, SILHOUETTE, .38);
+      for (const [i, w] of [[0, 80], [1, 64], [2, 50], [3, 36], [4, 32]]) {
+        const y = -172 + i * 24;
+        forme(g, path(p => { p.moveTo(-w, y); p.quadraticCurveTo(0, y + 10, w, y); p.lineTo(w - 4, y + 18); p.quadraticCurveTo(0, y + 28, -w + 4, y + 18); p.closePath(); }), .32);
+      }
+      forme(g, path(p => p.rect(-40, -48, 80, 10)), .6);
+      for (let i = 0; i < 4; i++) {
+        const x = -44 + i * 22;
+        forme(g, path(p => { p.moveTo(x, -38); p.lineTo(x + 22, -38); p.lineTo(x + 24 + (i - 1.5) * 3, 0); p.lineTo(x - 2 + (i - 1.5) * 3, 0); p.closePath(); }), .34);
+      }
+    } },
+  E: { nom: 'PLASTRON FRICADELLE', ref: 'La tenue du Gardien, portée par le dieu',
+    desc: "Le torse reprend la tenue du Gardien : un plastron central clair, deux fricadelles en travers de la poitrine et deux en travers des abdos. Le Susanoo devient la version géante du Gardien, ce qui les relie au premier coup d'œil ; en revanche l'or plein sur le rose charge beaucoup le buste.",
+    f(g, t) {
+      forme(g, SILHOUETTE, .42);
+      forme(g, path(p => { p.moveTo(-20, -186); p.lineTo(20, -186); p.lineTo(16, -60); p.lineTo(-16, -60); p.closePath(); }), .75, 'rgba(255,245,255,.95)');
+      for (const sx of [-1, 1]) { g.save(); g.translate(sx * 44, -152); fricadelle(g, -20, 20, 8, 3); g.restore(); }
+      for (const sx of [-1, 1]) { g.save(); g.translate(sx * 34, -114); fricadelle(g, -12, 12, 6.5, 2); g.restore(); }
+    } },
+};
+
+/* =====================================================================
+   5 · LES EPEES — dessinees le long de +x a partir de la main
+   ===================================================================== */
+const EPEES = {
+  A: { nom: 'LAME FRICADELLE', ref: 'Version actuelle',
+    desc: "La lame EST une fricadelle : droite, arrondie au bout, rayée de cuisson, cernée de rose. C'est la plus lisible — on comprend la blague au premier coup d'œil — mais c'est aussi une épée émoussée, sans tranchant.",
+    long: 170,
+    f(g, t) {
+      forme(g, path(p => p.ellipse(6, 0, 5, 20, 0, 0, TAU)), .8);
+      fricadelle(g, 10, 170, 13, 6);
+      lueur(g, 95, 0, 42, 'rgba(255,110,200,1)', .22);
+    } },
+  B: { nom: 'KATANA FRICADELLE', ref: 'Katana de Sasuke — la Kusanagi',
+    desc: "Une lame fine et courbe de katana, couleur fricadelle et rayée, avec une garde ronde et une poignée tressée. Elle garde la matière de la fricadelle mais prend la forme d'une vraie arme tranchante — le compromis entre la blague et le sérieux.",
+    long: 180,
+    f(g, t) {
+      g.fillStyle = 'rgba(255,200,240,.9)'; g.beginPath(); g.ellipse(4, 0, 4, 13, 0, 0, TAU); g.fill();
+      g.save(); g.globalCompositeOperation = 'source-over';
+      const lame = path(p => { p.moveTo(8, -5); p.quadraticCurveTo(100, -22, 182, -30); p.quadraticCurveTo(110, -10, 8, 5); p.closePath(); });
+      const lg = g.createLinearGradient(0, -20, 0, 6);
+      lg.addColorStop(0, '#f6cc7a'); lg.addColorStop(1, '#9a5a1c');
+      g.fillStyle = lg; g.fill(lame);
+      g.strokeStyle = 'rgba(105,55,18,.55)'; g.lineWidth = 1.4;
+      for (let i = 1; i < 7; i++) { const x = 8 + i * 24; const y = -5 - (x / 182) * 20; g.beginPath(); g.moveTo(x, y - 3); g.lineTo(x + 4, y + 5); g.stroke(); }
+      g.globalCompositeOperation = 'lighter';
+      g.strokeStyle = 'rgba(255,150,220,.95)'; g.lineWidth = 2; g.stroke(lame);
+      g.restore();
+      g.strokeStyle = 'rgba(255,190,235,.8)'; g.lineWidth = 5;
+      g.beginPath(); g.moveTo(0, 0); g.lineTo(-26, 3); g.stroke();
+    } },
+  C: { nom: 'ESPADON', ref: 'Épée à deux mains, lame large',
+    desc: "Une lame énorme et large, pointue, avec une grande garde en croix : une épée de géant, rayée de fricadelle. C'est la plus lourde et la plus impressionnante à l'impact ; en revanche elle est tellement large qu'elle masque le disque au moment du coup.",
+    long: 190,
+    f(g, t) {
+      forme(g, path(p => p.rect(-2, -34, 12, 68)), .8);
+      g.save(); g.globalCompositeOperation = 'source-over';
+      const lame = path(p => { p.moveTo(12, -22); p.lineTo(160, -22); p.lineTo(194, 0); p.lineTo(160, 22); p.lineTo(12, 22); p.closePath(); });
+      const lg = g.createLinearGradient(0, -22, 0, 22);
+      lg.addColorStop(0, '#f6cc7a'); lg.addColorStop(.5, '#e8a94a'); lg.addColorStop(1, '#8a4f18');
+      g.fillStyle = lg; g.fill(lame);
+      g.strokeStyle = 'rgba(105,55,18,.5)'; g.lineWidth = 2.4;
+      for (let i = 1; i < 7; i++) { const x = 12 + i * 22; g.beginPath(); g.moveTo(x, -18); g.quadraticCurveTo(x + 8, 0, x, 18); g.stroke(); }
+      g.globalCompositeOperation = 'lighter';
+      g.strokeStyle = 'rgba(255,140,215,.95)'; g.lineWidth = 2.6; g.stroke(lame);
+      g.restore();
+    } },
+  D: { nom: 'BROCHETTE', ref: 'Trois fricadelles sur une pique',
+    desc: "Une longue pique d'acier rose, et trois fricadelles enfilées dessus comme une brochette géante. C'est la plus drôle et la plus originale — personne n'a jamais combattu avec ça ; en revanche elle assume franchement le gag, et le Susanoo perd en solennité.",
+    long: 200,
+    f(g, t) {
+      g.strokeStyle = 'rgba(255,215,245,.95)'; g.lineWidth = 4; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(-18, 0); g.lineTo(200, 0); g.stroke();
+      forme(g, path(p => p.ellipse(4, 0, 4, 12, 0, 0, TAU)), .8);
+      for (let i = 0; i < 3; i++) fricadelle(g, 22 + i * 54, 70 + i * 54, 12, 3);
+      lueur(g, 200, 0, 10, 'rgba(255,240,255,1)', .8);
+    } },
+  E: { nom: 'LAME D ENERGIE', ref: 'Sabre de lumière — la fricadelle est la poignée',
+    desc: "La lame est de l'énergie rose pure, cœur blanc et bords flous — et c'est la POIGNÉE qui est une fricadelle. Le Susanoo tient la fricadelle comme on tient un sabre laser. La plus spectaculaire en mouvement et la plus « divine » ; la blague devient un détail qu'on découvre.",
+    long: 185,
+    f(g, t) {
+      g.save(); g.translate(-30, 0); fricadelle(g, -4, 30, 8, 3); g.restore();
+      forme(g, path(p => p.ellipse(4, 0, 4, 14, 0, 0, TAU)), .9);
+      const pulse = 1 + Math.sin(t * 20) * .06;
+      for (let i = 0; i < 12; i++) {
+        const x = 16 + i * 14;
+        lueur(g, x, 0, 22 * pulse, 'rgba(255,90,200,1)', .32);
+      }
+      g.strokeStyle = 'rgba(255,255,255,.95)'; g.lineWidth = 5; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(12, 0); g.lineTo(180, 0); g.stroke();
+      g.strokeStyle = 'rgba(255,150,225,.8)'; g.lineWidth = 11;
+      g.beginPath(); g.moveTo(12, 0); g.lineTo(182, 0); g.stroke();
+    } },
+};
+
+const SECTIONS = [
+  { id: 'tete', titre: '1 · LA TÊTE', parts: TETES, zoom: [-80, -330, 90, -170],
+    note: "C'est elle qui donne son caractère au Susanoo, parce que c'est là que l'œil se pose. Les cinq propositions ne sont pas cinq casques : un masque, un visage, un casque à cornes, un crâne. Toutes gardent les yeux blancs — c'est la seule lumière franche du Susanoo, et elle doit rester." },
+  { id: 'cheveux', titre: '2 · LES CHEVEUX', parts: CHEVEUX, zoom: [-180, -360, 120, -40],
+    note: "Les cheveux du Super Saiyan Rosé sont ce qui distingue CE Susanoo de celui de Sasuke. La question est leur direction : vers le haut ils disent la puissance, vers l'arrière ils disent la vitesse, en crinière ils disent la taille. Certaines versions passent derrière le corps." },
+  { id: 'epaules', titre: '3 · LES ÉPAULES', parts: EPAULES, zoom: [-140, -240, 140, -110],
+    note: "Les épaules font la CARRURE, et c'est la carrure qu'on lit à l'échelle du match, où le Susanoo ne fait que trois fois le perso. Le Gardien porte déjà des épaulières blanches : le Susanoo peut leur répondre, les recopier en géant, ou s'en débarrasser." },
+  { id: 'corps', titre: '4 · LE CORPS', parts: CORPS, zoom: [-130, -210, 130, 6],
+    note: "La plus grande surface du Susanoo, donc celle qui fixe son poids à l'écran. Le piège est la version actuelle : un grand aplat rose en forme de seau renversé, qui ne se lisait pas comme un torse. Ici une cage d'os qu'on voit à travers, un vrai torse, une armure, et la tenue du Gardien en géant." },
+  { id: 'epee', titre: '5 · L\'ÉPÉE', parts: EPEES, zoom: null,
+    note: "C'est elle qui frappe le disque pendant la Lame du dragon, donc elle sera vue à chaque renvoi. La question est la dose de fricadelle : une lame qui EST une fricadelle, une vraie arme couleur fricadelle, ou une lame d'énergie dont seule la poignée est une fricadelle." },
+];
+
+const choix = {};
+SECTIONS.forEach(s => { choix[s.id] = 'A'; });
+
+/* =====================================================================
+   L'ASSEMBLAGE
+   ===================================================================== */
+function susanoo(g, ox, oy, s, t, ch, sabre, trace, force = 1) {
+  if (force <= 0) return;
+  const cheveux = CHEVEUX[ch.cheveux];
+  g.save();
+  g.translate(ox, oy); g.scale(s, s);
+  g.globalCompositeOperation = 'lighter';
+  g.globalAlpha = Math.min(1, force);
+
+  lueur(g, 0, -120, 170, 'rgba(255,110,200,1)', .2);
+  lueur(g, 0, 0, 90, 'rgba(255,90,190,1)', .28);
+
+  if (cheveux.derriere) cheveux.f(g, t);
+  // Le bras gauche, qui pend.
+  g.strokeStyle = R(.55); g.lineWidth = 15; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(-74, -164); g.quadraticCurveTo(-96, -120, -92, -74); g.stroke();
+  lueur(g, -92, -70, 12, 'rgba(255,200,240,1)', .6);
+
+  CORPS[ch.corps].f(g, t);
+  if (!cheveux.derriere) cheveux.f(g, t);
+  TETES[ch.tete].f(g, t);
+  EPAULES[ch.epaules].f(g, t);
+
+  // Le bras qui porte l'epee, puis l'epee.
+  const mx = BRAS_D.x + Math.cos(sabre) * 58, my = BRAS_D.y + Math.sin(sabre) * 58;
+  g.strokeStyle = R(.7); g.lineWidth = 15; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(BRAS_D.x, BRAS_D.y); g.lineTo(mx, my); g.stroke();
+  if (trace > 0) {
+    const L = EPEES[ch.epee].long;
+    for (let i = 0; i < 14; i++) {
+      const aa = sabre - (i / 14) * 1.5;
+      lueur(g, mx + Math.cos(aa) * L * .85, my + Math.sin(aa) * L * .85, 26, 'rgba(255,120,210,1)', .35 * (1 - i / 14) * trace);
+    }
+  }
+  g.save(); g.translate(mx, my); g.rotate(sabre); EPEES[ch.epee].f(g, t); g.restore();
+
+  for (let i = 0; i < 16; i++) {
+    const cyc = (t * .6 + alea(i)) % 1;
+    lueur(g, (alea(i + 40) - .5) * 170, -cyc * 260, 3.5, 'rgba(255,200,240,1)', .7 * (1 - cyc));
+  }
+  g.restore();
+}
+
+/* =====================================================================
+   L'APERCU : la Lame du dragon, en boucle
+   ===================================================================== */
+const PAL = { H:'#2b2631', h:'#15121a', j:'#4f4858', S:'#f0c090', s:'#cf9660', E:'#2c2a26',
+  K:'#1b1d24', k:'#343845', W:'#f2f4f8', A:'#c4cbd6', a:'#858d9b',
+  F:'#e8a94a', f:'#b06f22', b:'#6d3f12', R:'#ff7fd0', r:'#c24f9a' };
+const GARDIEN = ["....jHHHHh......","...jHHHHHHh.....","..jHHHHHHHHh....","..HHHHKKHHHH....",
+  "..HHSSKSSSHH....","..HSSSSSSSSH....","..SSSrSSSSrS....","..SSSSSSSSSS....","...sSSSSSSs.....",
+  "....WKKKKW......",".bFKKAAAAKKFb...",".WAKAWWWWAKAW...",".WbFFbWWbFFbW...",".SAKKAWWAKKAS...",
+  "..bFFbAAbFFb....","..KKKKKKKKKK....","...KK....KK.....","...KK....KK.....","...FA....AF.....",
+  "..WWb....bWW...."];
+function sprite(rows, pal) {
+  const c = document.createElement('canvas'); c.width = 16; c.height = 20;
+  const g = c.getContext('2d');
+  rows.forEach((l, y) => { for (let x = 0; x < 16; x++) if (l[x] !== '.' && pal[l[x]]) { g.fillStyle = pal[l[x]]; g.fillRect(x, y, 1, 1); } });
+  return c;
+}
+const SPR_G = sprite(GARDIEN, PAL), SPR_ADV = CHARS.naruto.frames.idle;
+const POS_G = { x: CT.left + CW * .2, y: CYY + CH * .2 }, POS_A = { x: CT.right - CW * .2, y: CYY + CH * .2 };
+const MAIN_G = { x: POS_G.x + 26, y: POS_G.y - 6 }, MAIN_A = { x: POS_A.x - 26, y: POS_A.y - 6 };
+const lerp = (a, b, k) => a + (b - a) * k;
+
+// Chaque coup est date par son IMPACT : la lame touche le disque a l'instant
+// ou il repart (lecon du premier mockup, ou elle tombait 0,13 s trop tard).
+//
+// Au repos, l'epee est levee sur le COTE DROIT. Dressee en arriere comme dans
+// le premier mockup, elle passait en travers de la tete : sur un mockup dont
+// deux sections sur cinq jugent la tete et les cheveux, elle cachait
+// exactement ce qu'on regarde.
+const REPOS = -1.15, FRAPPE = 1.76, ARME = .12, TOMBE = .13, REMONTE = .47;
+function epee(t, coups) {
+  let a = REPOS, trace = 0;
+  for (const c of coups) {
+    const d = t - c;
+    if (d < -(ARME + TOMBE) || d > REMONTE) continue;
+    if (d < -TOMBE) a = lerp(REPOS, REPOS - .35, easeOut((d + ARME + TOMBE) / ARME));
+    else if (d < 0) { const k = (d + TOMBE) / TOMBE; a = lerp(REPOS - .35, FRAPPE, easeIn(k)); trace = k; }
+    else { a = lerp(FRAPPE, REPOS, easeInOut(d / REMONTE)); trace = Math.max(0, 1 - d / .25); }
+  }
+  return { a, trace };
+}
+const DUREE = 6, COUPS = [1.62, 3.17, 4.72];
+const TRAJETS = [
+  { de: MAIN_A, a: MAIN_G, t0: .95, d: .55, parfait: false },
+  { de: MAIN_G, a: { x: CT.right, y: CYY - GOAL_H * .38 }, t0: 1.62, d: .3, parfait: true },
+  { de: MAIN_A, a: MAIN_G, t0: 2.5, d: .55, parfait: false },
+  { de: MAIN_G, a: { x: CT.right, y: CYY + GOAL_H * .38 }, t0: 3.17, d: .3, parfait: true },
+  { de: MAIN_A, a: MAIN_G, t0: 4.05, d: .55, parfait: false },
+  { de: MAIN_G, a: { x: CT.right, y: CYY }, t0: 4.72, d: .3, parfait: true },
+];
+function posDisque(t) {
+  for (const j of TRAJETS) if (t >= j.t0 && t <= j.t0 + j.d) {
+    const k = (t - j.t0) / j.d; return { x: lerp(j.de.x, j.a.x, k), y: lerp(j.de.y, j.a.y, k), j, k };
+  }
+  let p = MAIN_A;
+  for (const j of TRAJETS) if (j.t0 + j.d <= t) p = j.a;
+  return { x: p.x, y: p.y, j: null };
+}
+
+const gS = document.getElementById('cvScene').getContext('2d');
+function scene(t) {
+  const W = gS.canvas.width, H = gS.canvas.height;
+  const v = terrain(gS, W, H), { X, Y, e } = v;
+  const { a, trace } = epee(t, COUPS);
+  susanoo(gS, X(POS_G.x) - 18 * e, Y(POS_G.y) + 6 * e, e, t, choix, a, trace);
+  perso(gS, SPR_ADV, POS_A.x, POS_A.y, v, -1);
+  perso(gS, SPR_G, POS_G.x, POS_G.y, v, 1);
+  const d = posDisque(t);
+  if (d.j && d.j.parfait) for (let i = 1; i <= 10; i++) {
+    const kk = d.k - i * .035; if (kk < 0) break;
+    lueur(gS, X(lerp(d.j.de.x, d.j.a.x, kk)), Y(lerp(d.j.de.y, d.j.a.y, kk)), 13 * e, 'rgb(255,170,90)', .5 * (1 - i / 10));
+  }
+  disque(gS, d.x, d.y, v);
+  for (const c of COUPS) {
+    const dd = t - c;
+    if (dd >= 0 && dd < .25) {
+      lueur(gS, X(MAIN_G.x), Y(MAIN_G.y), (20 + dd * 200) * e, 'rgb(255,210,240)', (1 - dd / .25) * .9);
+      anneau(gS, X(MAIN_G.x), Y(MAIN_G.y), (10 + dd * 260) * e, (10 + dd * 260) * e * .5, 1 - dd / .25, 'rgb(255,150,220)', 2 * e);
+    }
+  }
+}
+
+/* --- Le Susanoo seul, en grand, qui se balance doucement --- */
+const gU = document.getElementById('cvSeul').getContext('2d');
+function fond(g, W, H) {
+  const d = g.createLinearGradient(0, 0, 0, H);
+  d.addColorStop(0, '#1d1426'); d.addColorStop(1, '#0a070e');
+  g.fillStyle = d; g.fillRect(0, 0, W, H);
+}
+function seul(t) {
+  const W = gU.canvas.width, H = gU.canvas.height;
+  fond(gU, W, H);
+  const s = H / 420;
+  susanoo(gU, W / 2 - 10 * s, H - 30 * s, s, t, choix, REPOS + Math.sin(t * 1.3) * .12, 0);
+}
+
+/* =====================================================================
+   LES CARTES
+   ===================================================================== */
+const cartes = [];
+function dessinerCarte(o, t) {
+  const ch = { ...choix, [o.sec.id]: o.id };
+  const gz = o.zoom.getContext('2d');
+  fond(gz, o.zoom.width, o.zoom.height);
+  if (o.sec.zoom) {
+    const [x0, y0, x1, y1] = o.sec.zoom;
+    const s = Math.min(o.zoom.width / (x1 - x0), o.zoom.height / (y1 - y0));
+    susanoo(gz, -x0 * s + (o.zoom.width - (x1 - x0) * s) / 2, -y0 * s, s, t, ch, REPOS, 0);
+  } else {
+    const L = EPEES[o.id].long + 50, s = o.zoom.width / L;
+    gz.save(); gz.translate(34 * s, o.zoom.height / 2); gz.scale(s, s);
+    gz.globalCompositeOperation = 'lighter';
+    EPEES[o.id].f(gz, t); gz.restore();
+  }
+  const gp = o.plein.getContext('2d');
+  fond(gp, o.plein.width, o.plein.height);
+  const sp = o.plein.height / 440;
+  susanoo(gp, o.plein.width / 2 - 8 * sp, o.plein.height - 18 * sp, sp, t, ch, REPOS, 0);
+}
+
+const boite = document.getElementById('sections');
+for (const sec of SECTIONS) {
+  const h2 = document.createElement('h2'); h2.textContent = sec.titre;
+  const note = document.createElement('p'); note.className = 'note'; note.textContent = sec.note;
+  const row = document.createElement('div'); row.className = 'row';
+  for (const [id, part] of Object.entries(sec.parts)) {
+    const card = document.createElement('div');
+    card.className = 'card' + (choix[sec.id] === id ? ' on' : '');
+    card.dataset.sec = sec.id; card.dataset.id = id;
+    card.innerHTML = '<div class="lbl"><b>' + id + ' · ' + part.nom + '</b><i>' + part.ref + '</i>' + part.desc + '</div>';
+    const duo = document.createElement('div'); duo.className = 'duo';
+    const zoom = document.createElement('canvas'); zoom.className = 'zoom';
+    if (sec.zoom) {
+      const [x0, y0, x1, y1] = sec.zoom, ratio = (y1 - y0) / (x1 - x0);
+      zoom.width = 150; zoom.height = Math.round(Math.min(190, 150 * ratio));
+    } else { zoom.width = 150; zoom.height = 70; }
+    const plein = document.createElement('canvas'); plein.width = 64; plein.height = 88;
+    duo.append(zoom, plein); card.append(duo);
+    card.onclick = () => {
+      choix[sec.id] = id;
+      document.querySelectorAll('.card[data-sec="' + sec.id + '"]').forEach(c => c.classList.toggle('on', c.dataset.id === id));
+      majChoix();
+    };
+    row.append(card);
+    cartes.push({ zoom, plein, sec, id });
+  }
+  boite.append(h2, note, row);
+}
+
+function majChoix() {
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value = SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+}
+majChoix();
+
+document.getElementById('btnCopier').onclick = async () => {
+  const b = document.getElementById('btnCopier');
+  try { await navigator.clipboard.writeText(document.getElementById('codeChoix').value);
+        b.textContent = 'copié !'; b.classList.add('ok');
+        setTimeout(() => { b.textContent = 'copier mes choix'; b.classList.remove('ok'); }, 1400); }
+  catch (e) { document.getElementById('codeChoix').select(); }
+};
+
+/* --- la boucle : la scene tourne, les cartes suivent au ralenti --- */
+let debut = performance.now(), derniereCarte = 0;
+function boucle(now) {
+  const t = (now - debut) / 1000;
+  scene(t % DUREE);
+  seul(t);
+  // Les cartes n'ont pas besoin de soixante images par seconde : quinze
+  // suffisent a faire vivre les flammes et les pics, sans alourdir la page.
+  if (now - derniereCarte > 66) { cartes.forEach(o => dessinerCarte(o, t)); derniereCarte = now; }
+  requestAnimationFrame(boucle);
+}
+requestAnimationFrame(boucle);
+</script>
+</body>
+</html>
