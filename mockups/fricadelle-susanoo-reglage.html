@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Susanoo de la Fricadelle — réglage</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b0a10; --panel:#16131d; --edge:#35293f; --ink:#f3edf6; --rose:#ff7fd0; --or:#e8a94a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:23px;margin:0 0 6px;font-family:'Archivo Black',sans-serif;letter-spacing:.5px}
+  h1 em{font-style:normal;color:var(--rose)}
+  h2{font-size:14px;margin:30px 0 6px;color:var(--rose);text-transform:uppercase;letter-spacing:1.4px;
+     border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#b3a7bd;max-width:1060px;line-height:1.75;margin:0 0 14px}
+  .note b{color:var(--ink)} .note code{color:var(--rose)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .atelier{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:12px;flex:1 1 520px;min-width:0}
+  #cvEdit{width:100%;height:auto;display:block;border-radius:10px;cursor:default;touch-action:none}
+  .panneau{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:0 1 330px;
+           min-width:280px;max-height:calc(100vh - 40px);overflow:auto;position:sticky;top:12px}
+  .panneau h3{margin:12px 0 6px;font-size:11px;color:var(--rose);text-transform:uppercase;letter-spacing:1.2px}
+  .panneau h3:first-child{margin-top:0}
+  .liste{display:flex;flex-wrap:wrap;gap:4px}
+  .liste button{background:#221a2b;color:#d8cde0;border:1px solid var(--edge);border-radius:6px;
+                padding:4px 8px;font-size:11px;cursor:pointer}
+  .liste button.mod{border-color:#8a5b7a}
+  .liste button.on{background:var(--rose);color:#1a0d16;border-color:var(--rose);font-weight:600}
+  .curseur{display:grid;grid-template-columns:78px 1fr 48px;gap:8px;align-items:center;font-size:11px;
+           color:#c9bdd3;margin:6px 0;font-family:Consolas,monospace}
+  .curseur input[type=range]{width:100%}
+  .curseur span{text-align:right;color:var(--rose)}
+  .lie{font-size:11px;color:#c9bdd3;display:flex;gap:6px;align-items:center;margin:4px 0 8px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .btns button{background:#2a1f33;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+               padding:6px 11px;font-size:11px;cursor:pointer}
+  .btns button:hover{background:#3a2a47}
+  .btns button.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .sel-nom{font-size:13px;color:var(--ink);font-weight:600;margin-bottom:4px}
+  .vide{font-size:11.5px;color:#8f829b;line-height:1.6}
+  textarea{width:100%;min-height:140px;background:#0e0c13;color:var(--rose);border:1px solid var(--edge);
+           border-radius:8px;font-family:Consolas,monospace;font-size:11px;padding:8px}
+  .scene{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:12px;margin-top:14px}
+  .scene canvas{width:100%;height:auto;display:block;border-radius:10px;background:#000}
+</style>
+</head>
+<body>
+
+<h1>SUSANOO DE LA <em>FRICADELLE</em> — RÉGLAGE</h1>
+<p class="note">
+  <b>Ton choix : <code>1D 2C 3D 4C 5A</code></b> — kabuto à cornes, cheveux en flammes, épaules en
+  éventail, torse musclé, lame-fricadelle. Les flammes sont <b>ralenties</b>, et <b>trois d'entre elles
+  retombent vers le bas</b> sur les côtés de la tête, comme les mèches arrière de Goku Black.
+  <br><br>
+  <b>Chaque petit élément se déplace, comme sur le diable.</b> Clique dessus et fais-le glisser. Une fois
+  sélectionné, il porte trois poignées : <b>le coin</b> l'agrandit, <b>les côtés</b> l'étirent en
+  largeur ou en hauteur, et <b>le rond du dessus</b> le fait tourner (<code>Maj</code> pour tourner par
+  crans de 15°). Au clavier : les <b>flèches</b> le déplacent d'une unité, <code>Maj</code>+flèche de
+  cinq. La liste à droite sert à attraper ceux qui sont cachés sous les autres — l'aura et les
+  étincelles ne s'attrapent que par elle.
+  <br><br>
+  Tes retouches sont gardées si tu recharges la page. Quand c'est bon, <b>copie les réglages</b> en bas à
+  droite et envoie-les-moi : je les intègre directement dans le dessin.
+</p>
+
+<div class="haut">
+  <div class="atelier">
+    <canvas id="cvEdit" width="760" height="800"></canvas>
+  </div>
+  <div class="panneau">
+    <h3>Les éléments</h3>
+    <div id="liste"></div>
+    <h3>L'élément choisi</h3>
+    <div id="reglage"></div>
+    <h3>Réglages à m'envoyer</h3>
+    <textarea id="sortie" readonly></textarea>
+    <div class="btns">
+      <button id="bCopier">copier les réglages</button>
+      <button id="bToutRaz">tout réinitialiser</button>
+    </div>
+  </div>
+</div>
+
+<div class="scene">
+  <h2 style="margin-top:0">En match — la Lame du dragon, avec tes réglages</h2>
+  <canvas id="cvScene" width="960" height="540"></canvas>
+</div>
+
+<script type="module">
+import { CHARS } from '../js/data/characters.js';
+import { TAU, CT, CW, CH, CYY, GOAL_H, terrain, perso, disque,
+         easeOut, easeIn, easeInOut, alea, lueur, anneau } from './_ulti.js';
+
+/* =====================================================================
+   LE REPERE : les pieds en (0, 0), le haut vers les y negatifs.
+   ===================================================================== */
+const TETE_C = { x: 4, y: -222 };
+const EPAULE_G = { x: -80, y: -176 }, EPAULE_D = { x: 80, y: -176 };
+const BRAS_D = { x: 70, y: -150 };
+
+const R = a => 'rgba(255,150,220,' + a + ')';
+const BORD = 'rgba(255,218,246,.92)';
+const CREUX = a => 'rgba(255,70,180,' + a + ')';
+function forme(g, chemin, a = .5, bord = BORD, lw = 1.8) {
+  g.fillStyle = R(a); g.fill(chemin);
+  g.strokeStyle = bord; g.lineWidth = lw; g.stroke(chemin);
+}
+const path = f => { const p = new Path2D(); f(p); return p; };
+function oeil(g, x, y, r = 5) { lueur(g, x, y, r * 1.8, 'rgba(255,250,255,1)', .95); }
+
+function fricadelle(g, x0, x1, lar, stries = 5) {
+  g.save();
+  g.globalCompositeOperation = 'source-over';
+  const p = path(q => {
+    q.moveTo(x0 + lar, -lar); q.lineTo(x1 - lar, -lar);
+    q.arc(x1 - lar, 0, lar, -Math.PI / 2, Math.PI / 2);
+    q.lineTo(x0 + lar, lar); q.arc(x0 + lar, 0, lar, Math.PI / 2, Math.PI * 1.5);
+  });
+  const lg = g.createLinearGradient(0, -lar, 0, lar);
+  lg.addColorStop(0, '#f6cc7a'); lg.addColorStop(.45, '#e8a94a'); lg.addColorStop(1, '#8a4f18');
+  g.globalAlpha *= .95; g.fillStyle = lg; g.fill(p);
+  g.strokeStyle = 'rgba(105,55,18,.6)'; g.lineWidth = Math.max(.8, lar * .16);
+  for (let i = 1; i <= stries; i++) {
+    const xx = x0 + i * (x1 - x0) / (stries + 1);
+    g.beginPath(); g.moveTo(xx, -lar * .78); g.quadraticCurveTo(xx + lar * .35, 0, xx, lar * .78); g.stroke();
+  }
+  g.globalCompositeOperation = 'lighter';
+  g.strokeStyle = 'rgba(255,140,215,.9)'; g.lineWidth = Math.max(1, lar * .18); g.stroke(p);
+  g.restore();
+}
+
+/* =====================================================================
+   LES FLAMMES — une langue de feu dans une direction quelconque.
+   Elles sont RALENTIES : le battement passe de 6 a 2,2 par seconde et le
+   balancement de 4 a 1,5. A la vitesse d'avant elles crepitaient comme une
+   etincelle ; une chevelure de dieu doit onduler, pas trembler.
+   ===================================================================== */
+function flamme(g, t, bx, by, a, L, w, ph) {
+  const bal = Math.sin(t * 1.5 + ph) * .16;
+  const Lt = L * (1 + Math.sin(t * 2.2 + ph * 1.7) * .07);
+  const a2 = a + bal;
+  const ux = Math.cos(a), uy = Math.sin(a), nx = -uy, ny = ux;
+  const vx = Math.cos(a2), vy = Math.sin(a2);
+  const tx = bx + vx * Lt, ty = by + vy * Lt;
+  const langue = (larg, alpha, bord, lw) => forme(g, path(p => {
+    p.moveTo(bx - nx * larg, by - ny * larg);
+    p.bezierCurveTo(bx - nx * larg * 1.3 + ux * Lt * .4, by - ny * larg * 1.3 + uy * Lt * .4,
+                    tx - nx * larg * .4 - vx * Lt * .25, ty - ny * larg * .4 - vy * Lt * .25, tx, ty);
+    p.bezierCurveTo(tx + nx * larg * .5 - vx * Lt * .3, ty + ny * larg * .5 - vy * Lt * .3,
+                    bx + nx * larg * 1.2 + ux * Lt * .35, by + ny * larg * 1.2 + uy * Lt * .35,
+                    bx + nx * larg, by + ny * larg);
+    p.closePath();
+  }), alpha, bord, lw);
+  langue(w, .55, 'rgba(255,228,250,.85)', 1.3);
+  // Un coeur plus clair, plus court : c'est lui qui fait lire du FEU et non
+  // une forme pleine.
+  g.save(); g.translate(bx, by); g.scale(.55, .7); g.translate(-bx, -by);
+  langue(w * .8, .5, 'rgba(255,245,255,.5)', 1);
+  g.restore();
+}
+// La boite d'une flamme, pour l'attraper : sa base, sa pointe au repos, et une
+// marge pour le balancement.
+function boiteFlamme(bx, by, a, L, w) {
+  const tx = bx + Math.cos(a) * L, ty = by + Math.sin(a) * L, m = w + 6 + L * .18;
+  return [Math.min(bx, tx) - m, Math.min(by, ty) - m, Math.max(bx, tx) + m, Math.max(by, ty) + m];
+}
+
+/* =====================================================================
+   LES ELEMENTS, dans l'ordre ou ils se peignent (du fond vers l'avant).
+   Chacun a sa boite dans le repere : c'est elle qui sert a l'attraper, et
+   son centre est le point autour duquel il grandit et tourne.
+   ===================================================================== */
+const c = TETE_C;
+const FL_HAUT = [0, 1, 2, 3, 4, 5, 6].map(i => ({
+  bx: c.x - 24 + i * 8, by: c.y - 14 + Math.abs(i - 3) * 3,
+  a: -Math.PI / 2 + (i - 3) * .12, L: 46 + (3 - Math.abs(i - 3)) * 15, w: 7, ph: i * 1.3,
+}));
+// Les flammes qui RETOMBENT : elles partent des cotes de la tete et
+// descendent derriere les epaules, comme les meches arriere de Goku Black.
+// Elles passent derriere le corps, d'ou leur place en tete de liste.
+const FL_BAS = [
+  { bx: c.x - 22, by: c.y + 2, a: Math.PI * .62, L: 58, w: 8, ph: .4 },
+  { bx: c.x + 26, by: c.y + 2, a: Math.PI * .38, L: 52, w: 8, ph: 2.1 },
+  { bx: c.x - 30, by: c.y - 8, a: Math.PI * .74, L: 64, w: 7, ph: 3.3 },
+];
+
+const ELEMENTS = [
+  { id: 'aura', nom: 'aura', groupe: 'Effets', pick: false, box: [-170, -290, 170, 90],
+    f(g, t) { lueur(g, 0, -120, 170, 'rgba(255,110,200,1)', .2); lueur(g, 0, 0, 90, 'rgba(255,90,190,1)', .28); } },
+
+  ...FL_BAS.map((fl, i) => ({ id: 'flammeBas' + (i + 1), nom: 'flamme basse ' + (i + 1), groupe: 'Cheveux',
+    box: boiteFlamme(fl.bx, fl.by, fl.a, fl.L, fl.w), f(g, t) { flamme(g, t, fl.bx, fl.by, fl.a, fl.L, fl.w, fl.ph); } })),
+
+  { id: 'brasG', nom: 'bras gauche', groupe: 'Bras et épée', box: [-102, -172, -64, -58],
+    f(g, t) {
+      g.strokeStyle = R(.55); g.lineWidth = 15; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(-74, -164); g.quadraticCurveTo(-96, -120, -92, -74); g.stroke();
+      lueur(g, -92, -70, 12, 'rgba(255,200,240,1)', .6);
+    } },
+
+  { id: 'torse', nom: 'torse', groupe: 'Corps', box: [-86, -198, 86, -32],
+    f(g, t) {
+      forme(g, path(p => {
+        p.moveTo(-34, -40);
+        p.bezierCurveTo(-36, -60, -32, -70, -30, -85);
+        p.bezierCurveTo(-28, -105, -50, -115, -56, -132);
+        p.bezierCurveTo(-64, -150, -86, -160, -84, -182);
+        p.bezierCurveTo(-60, -192, -30, -196, -22, -196);
+        p.lineTo(22, -196);
+        p.bezierCurveTo(30, -196, 60, -192, 84, -182);
+        p.bezierCurveTo(86, -160, 64, -150, 56, -132);
+        p.bezierCurveTo(50, -115, 28, -105, 30, -85);
+        p.bezierCurveTo(32, -70, 36, -60, 34, -40);
+        p.bezierCurveTo(12, -32, -12, -32, -34, -40);
+        p.closePath();
+      }), .5);
+    } },
+  ...[-1, 1].map(sx => ({ id: sx < 0 ? 'pecG' : 'pecD', nom: sx < 0 ? 'pectoral gauche' : 'pectoral droit',
+    groupe: 'Corps', box: sx < 0 ? [-60, -184, 0, -134] : [0, -184, 60, -134],
+    f(g, t) {
+      g.strokeStyle = BORD; g.lineWidth = 1.6;
+      g.beginPath(); g.moveTo(0, -176); g.quadraticCurveTo(sx * 40, -182, sx * 58, -150);
+      g.quadraticCurveTo(sx * 30, -130, 0, -140); g.stroke();
+    } })),
+  { id: 'abdos', nom: 'abdos', groupe: 'Corps', box: [-23, -128, 23, -66],
+    f(g, t) {
+      g.strokeStyle = BORD; g.lineWidth = 1.6;
+      for (const x0 of [-21, 3]) for (let i = 0; i < 3; i++) { g.beginPath(); g.roundRect(x0, -126 + i * 22, 18, 18, 6); g.stroke(); }
+    } },
+  ...[-1, 1].map(sx => ({ id: sx < 0 ? 'obliqueG' : 'obliqueD', nom: sx < 0 ? 'oblique gauche' : 'oblique droit',
+    groupe: 'Corps', box: sx < 0 ? [-42, -132, -26, -48] : [26, -132, 42, -48],
+    f(g, t) {
+      g.strokeStyle = BORD; g.lineWidth = 1.6;
+      g.beginPath(); g.moveTo(sx * 30, -130); g.quadraticCurveTo(sx * 40, -90, sx * 30, -50); g.stroke();
+    } })),
+
+  ...FL_HAUT.map((fl, i) => ({ id: 'flamme' + (i + 1), nom: 'flamme ' + (i + 1), groupe: 'Cheveux',
+    box: boiteFlamme(fl.bx, fl.by, fl.a, fl.L, fl.w), f(g, t) { flamme(g, t, fl.bx, fl.by, fl.a, fl.L, fl.w, fl.ph); } })),
+
+  ...[-1, 1].map(sx => ({ id: sx < 0 ? 'corneG' : 'corneD', nom: sx < 0 ? 'corne gauche' : 'corne droite',
+    groupe: 'Tête', box: sx < 0 ? [c.x - 72, c.y - 98, c.x - 12, c.y - 4] : [c.x + 12, c.y - 98, c.x + 72, c.y - 4],
+    f(g, t) {
+      forme(g, path(p => {
+        p.moveTo(c.x + sx * 18, c.y - 16);
+        p.bezierCurveTo(c.x + sx * 60, c.y - 30, c.x + sx * 70, c.y - 70, c.x + sx * 44, c.y - 96);
+        p.bezierCurveTo(c.x + sx * 54, c.y - 64, c.x + sx * 42, c.y - 36, c.x + sx * 14, c.y - 6);
+        p.closePath();
+      }), .6);
+    } })),
+  { id: 'dome', nom: 'dôme du casque', groupe: 'Tête', box: [c.x - 28, c.y - 26, c.x + 28, c.y + 6],
+    f(g, t) { forme(g, path(p => { p.moveTo(c.x - 26, c.y + 4); p.quadraticCurveTo(c.x, c.y - 52, c.x + 26, c.y + 4); p.closePath(); }), .55); } },
+  { id: 'garde', nom: 'visière', groupe: 'Tête', box: [c.x - 32, c.y, c.x + 32, c.y + 32],
+    f(g, t) {
+      forme(g, path(p => { p.moveTo(c.x - 30, c.y + 2); p.lineTo(c.x + 30, c.y + 2); p.lineTo(c.x + 22, c.y + 30); p.lineTo(c.x - 22, c.y + 30); p.closePath(); }), .4);
+      g.fillStyle = CREUX(.7); g.fillRect(c.x - 20, c.y + 8, 40, 7);
+    } },
+  ...[-1, 1].map(sx => {
+    const x = sx < 0 ? c.x - 8 : c.x + 14, y = c.y + 11;
+    return { id: sx < 0 ? 'oeilG' : 'oeilD', nom: sx < 0 ? 'œil gauche' : 'œil droit', groupe: 'Tête',
+      box: [x - 6, y - 6, x + 6, y + 6], f(g, t) { oeil(g, x, y, 3); } };
+  }),
+
+  ...[-1, 1].map(sx => {
+    const e = sx < 0 ? EPAULE_G : EPAULE_D;
+    const x0 = Math.min(e.x - sx * 14, e.x + sx * 36), x1 = Math.max(e.x - sx * 14, e.x + sx * 36);
+    return { id: sx < 0 ? 'epauleG' : 'epauleD', nom: sx < 0 ? 'épaulière gauche' : 'épaulière droite',
+      groupe: 'Épaules', box: [x0, e.y - 20, x1, e.y + 34],
+      f(g, t) {
+        for (let i = 2; i >= 0; i--) {
+          forme(g, path(p => {
+            const y0 = e.y - 10 + i * 13, xa = e.x - sx * 14;
+            p.moveTo(xa, y0); p.quadraticCurveTo(e.x + sx * 18, y0 - 8, e.x + sx * 36, y0 + 4);
+            p.lineTo(e.x + sx * 32, y0 + 16); p.quadraticCurveTo(e.x + sx * 12, y0 + 6, xa + sx * 2, y0 + 12);
+            p.closePath();
+          }), .42 + i * .06);
+        }
+      } };
+  }),
+
+  { id: 'brasD', nom: 'bras de l\'épée', groupe: 'Bras et épée', special: 'bras' },
+  { id: 'epee', nom: 'épée', groupe: 'Bras et épée', special: 'epee' },
+
+  { id: 'etincelles', nom: 'étincelles', groupe: 'Effets', pick: false, box: [-90, -270, 90, 0],
+    f(g, t) {
+      for (let i = 0; i < 16; i++) {
+        const cyc = (t * .35 + alea(i)) % 1;
+        lueur(g, (alea(i + 40) - .5) * 170, -cyc * 260, 3.5, 'rgba(255,200,240,1)', .7 * (1 - cyc));
+      }
+    } },
+];
+const PAR_ID = Object.fromEntries(ELEMENTS.map(e => [e.id, e]));
+
+/* =====================================================================
+   LES REGLAGES : un decalage, une echelle en largeur et en hauteur, et une
+   rotation par element. Gardes dans le navigateur, et exportes en texte.
+   ===================================================================== */
+const CLE = 'susanooFricadelle:reglages';
+const neutre = () => ({ dx: 0, dy: 0, ex: 1, ey: 1, rot: 0 });
+const etat = {};
+ELEMENTS.forEach(e => { etat[e.id] = neutre(); });
+try {
+  const gard = JSON.parse(localStorage.getItem(CLE) || '{}');
+  for (const [id, v] of Object.entries(gard)) if (etat[id]) Object.assign(etat[id], v);
+} catch (e) { /* navigation privee : on s'en passe */ }
+function garder() { try { localStorage.setItem(CLE, JSON.stringify(modifies())); } catch (e) { } }
+const estNeutre = v => !v.dx && !v.dy && v.ex === 1 && v.ey === 1 && !v.rot;
+function modifies() {
+  const o = {};
+  for (const [id, v] of Object.entries(etat)) if (!estNeutre(v)) {
+    o[id] = { dx: v.dx, dy: v.dy, ex: +v.ex.toFixed(2), ey: +v.ey.toFixed(2), rot: Math.round(v.rot * 180 / Math.PI) };
+  }
+  return o;
+}
+
+/* =====================================================================
+   LA GEOMETRIE : ou est chaque element, une fois regle.
+   Un element regle se peint ainsi : on se place au centre de sa boite
+   (deplace), on tourne, on met a l'echelle, et on revient. L'epee et son
+   bras font exception : ils suivent le coup d'epee de l'ultime.
+   ===================================================================== */
+const REPOS = -1.15, FRAPPE = 1.76;
+const LAME = [0, -21, 172, 21];               // la boite de l'epee, dans son propre repere
+
+function pose(sabre) {
+  const b = etat.brasD, ep = etat.epee;
+  const epaule = { x: BRAS_D.x + b.dx, y: BRAS_D.y + b.dy };
+  const main = { x: epaule.x + Math.cos(sabre) * 58 * b.ex + ep.dx, y: epaule.y + Math.sin(sabre) * 58 * b.ex + ep.dy };
+  return { epaule, main, angle: sabre + ep.rot };
+}
+
+// Le repere d'un element : centre C, rotation, echelles, et sa boite.
+// Un point u de la boite va en C + R(rot) * ((u - centreBoite) * echelle).
+function repere(el, sabre) {
+  const v = etat[el.id];
+  if (el.special === 'epee') {
+    const p = pose(sabre), bc = { x: (LAME[0] + LAME[2]) / 2, y: 0 };
+    return { C: { x: p.main.x + Math.cos(p.angle) * bc.x * v.ex, y: p.main.y + Math.sin(p.angle) * bc.x * v.ex },
+             rot: p.angle, ex: v.ex, ey: v.ey, box: LAME, pivot: p.main };
+  }
+  if (el.special === 'bras') {
+    const p = pose(sabre);
+    const x0 = Math.min(p.epaule.x, p.main.x) - 9, x1 = Math.max(p.epaule.x, p.main.x) + 9;
+    const y0 = Math.min(p.epaule.y, p.main.y) - 9, y1 = Math.max(p.epaule.y, p.main.y) + 9;
+    return { C: { x: (x0 + x1) / 2, y: (y0 + y1) / 2 }, rot: 0, ex: 1, ey: 1, box: [x0, y0, x1, y1], bras: true };
+  }
+  const [x0, y0, x1, y1] = el.box;
+  return { C: { x: (x0 + x1) / 2 + v.dx, y: (y0 + y1) / 2 + v.dy }, rot: v.rot, ex: v.ex, ey: v.ey, box: el.box };
+}
+const versBoite = (r, p) => {
+  const bc = { x: (r.box[0] + r.box[2]) / 2, y: (r.box[1] + r.box[3]) / 2 };
+  const dx = p.x - r.C.x, dy = p.y - r.C.y, co = Math.cos(-r.rot), si = Math.sin(-r.rot);
+  return { x: bc.x + (dx * co - dy * si) / r.ex, y: bc.y + (dx * si + dy * co) / r.ey };
+};
+const depuisBoite = (r, u) => {
+  const bc = { x: (r.box[0] + r.box[2]) / 2, y: (r.box[1] + r.box[3]) / 2 };
+  const x = (u.x - bc.x) * r.ex, y = (u.y - bc.y) * r.ey, co = Math.cos(r.rot), si = Math.sin(r.rot);
+  return { x: r.C.x + x * co - y * si, y: r.C.y + x * si + y * co };
+};
+
+/* =====================================================================
+   LE DESSIN DU SUSANOO REGLE
+   ===================================================================== */
+function susanoo(g, ox, oy, s, t, sabre, trace = 0, force = 1) {
+  g.save();
+  g.translate(ox, oy); g.scale(s, s);
+  g.globalCompositeOperation = 'lighter';
+  g.globalAlpha = Math.min(1, force);
+  const p = pose(sabre);
+  for (const el of ELEMENTS) {
+    const v = etat[el.id];
+    if (el.special === 'bras') {
+      g.strokeStyle = R(.7); g.lineWidth = 15 * v.ey; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(p.epaule.x, p.epaule.y); g.lineTo(p.main.x, p.main.y); g.stroke();
+      continue;
+    }
+    if (el.special === 'epee') {
+      if (trace > 0) for (let i = 0; i < 14; i++) {
+        const aa = p.angle - (i / 14) * 1.5;
+        lueur(g, p.main.x + Math.cos(aa) * 145 * v.ex, p.main.y + Math.sin(aa) * 145 * v.ex, 26,
+              'rgba(255,120,210,1)', .35 * (1 - i / 14) * trace);
+      }
+      g.save(); g.translate(p.main.x, p.main.y); g.rotate(p.angle); g.scale(v.ex, v.ey);
+      forme(g, path(q => q.ellipse(6, 0, 5, 20, 0, 0, TAU)), .8);
+      fricadelle(g, 10, 170, 13, 6);
+      lueur(g, 95, 0, 42, 'rgba(255,110,200,1)', .22);
+      g.restore();
+      continue;
+    }
+    const r = repere(el, sabre), bc = { x: (el.box[0] + el.box[2]) / 2, y: (el.box[1] + el.box[3]) / 2 };
+    g.save();
+    g.translate(r.C.x, r.C.y); g.rotate(r.rot); g.scale(r.ex, r.ey); g.translate(-bc.x, -bc.y);
+    el.f(g, t);
+    g.restore();
+  }
+  g.restore();
+}
+
+/* =====================================================================
+   L'ATELIER
+   ===================================================================== */
+const cv = document.getElementById('cvEdit'), gE = cv.getContext('2d');
+const S = 2.2, OX = 390, OY = 772;         // ou et a quelle taille le Susanoo est peint
+const aEcran = p => ({ x: OX + p.x * S, y: OY + p.y * S });
+let choisi = null, lier = true;
+
+function fondAtelier() {
+  const d = gE.createLinearGradient(0, 0, 0, cv.height);
+  d.addColorStop(0, '#1d1426'); d.addColorStop(1, '#0a070e');
+  gE.fillStyle = d; gE.fillRect(0, 0, cv.width, cv.height);
+  // Une grille legere : elle aide a juger un deplacement d'une ou deux unites.
+  gE.strokeStyle = 'rgba(255,255,255,.035)'; gE.lineWidth = 1;
+  for (let x = OX % (20 * S); x < cv.width; x += 20 * S) { gE.beginPath(); gE.moveTo(x, 0); gE.lineTo(x, cv.height); gE.stroke(); }
+  for (let y = OY % (20 * S); y < cv.height; y += 20 * S) { gE.beginPath(); gE.moveTo(0, y); gE.lineTo(cv.width, y); gE.stroke(); }
+}
+
+// Les quatre coins et les poignees d'un element, en pixels de l'atelier.
+function poignees(el) {
+  const r = repere(el, REPOS), [x0, y0, x1, y1] = r.box;
+  const coins = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([x, y]) => aEcran(depuisBoite(r, { x, y })));
+  const mh = aEcran(depuisBoite(r, { x: (x0 + x1) / 2, y: y0 }));
+  const haut = aEcran(depuisBoite(r, { x: (x0 + x1) / 2, y: y0 - 18 / S / Math.max(.3, r.ey) }));
+  return {
+    coins,
+    lh: coins[2],
+    l: aEcran(depuisBoite(r, { x: x1, y: (y0 + y1) / 2 })),
+    h: aEcran(depuisBoite(r, { x: (x0 + x1) / 2, y: y1 })),
+    rot: haut, attache: mh,
+  };
+}
+
+function dessinerAtelier(t) {
+  fondAtelier();
+  susanoo(gE, OX, OY, S, t, REPOS);
+  if (!choisi) return;
+  const el = PAR_ID[choisi], p = poignees(el);
+  gE.save();
+  gE.strokeStyle = '#ffe08a'; gE.lineWidth = 1.5; gE.setLineDash([5, 4]);
+  gE.beginPath(); p.coins.forEach((q, i) => i ? gE.lineTo(q.x, q.y) : gE.moveTo(q.x, q.y)); gE.closePath(); gE.stroke();
+  gE.setLineDash([]);
+  if (el.special !== 'bras') {
+    gE.beginPath(); gE.moveTo(p.attache.x, p.attache.y); gE.lineTo(p.rot.x, p.rot.y); gE.stroke();
+    gE.fillStyle = '#ffe08a';
+    for (const k of ['lh', 'l', 'h']) { gE.fillRect(p[k].x - 5, p[k].y - 5, 10, 10); }
+    gE.beginPath(); gE.arc(p.rot.x, p.rot.y, 6, 0, TAU); gE.fill();
+  }
+  gE.restore();
+}
+
+// Du pointeur au repere du Susanoo.
+function versRepere(ev) {
+  const b = cv.getBoundingClientRect();
+  const px = (ev.clientX - b.left) * cv.width / b.width, py = (ev.clientY - b.top) * cv.height / b.height;
+  return { ecran: { x: px, y: py }, loc: { x: (px - OX) / S, y: (py - OY) / S } };
+}
+function attraper(loc) {
+  for (let i = ELEMENTS.length - 1; i >= 0; i--) {
+    const el = ELEMENTS[i];
+    if (el.pick === false) continue;
+    const r = repere(el, REPOS), u = versBoite(r, loc), [x0, y0, x1, y1] = r.box;
+    if (u.x >= x0 - 2 && u.x <= x1 + 2 && u.y >= y0 - 2 && u.y <= y1 + 2) return el.id;
+  }
+  return null;
+}
+
+let glisse = null;
+cv.addEventListener('pointerdown', ev => {
+  const { ecran, loc } = versRepere(ev);
+  if (choisi && PAR_ID[choisi].special !== 'bras') {
+    const p = poignees(PAR_ID[choisi]);
+    for (const k of ['rot', 'lh', 'l', 'h']) {
+      if (Math.hypot(ecran.x - p[k].x, ecran.y - p[k].y) < 10) {
+        const v = etat[choisi], r = repere(PAR_ID[choisi], REPOS);
+        glisse = { mode: k, v0: { ...v }, C: r.pivot || r.C, a0: Math.atan2(loc.y - r.C.y, loc.x - r.C.x), r,
+                   depart: ecran, actif: false };
+        cv.setPointerCapture(ev.pointerId); return;
+      }
+    }
+  }
+  const id = attraper(loc);
+  choisir(id);
+  if (!id) return;
+  const v = etat[id];
+  glisse = { mode: 'deplacer', x0: loc.x - v.dx, y0: loc.y - v.dy, depart: ecran, actif: false };
+  cv.setPointerCapture(ev.pointerId);
+});
+const SEUIL = 4;                 // pixels a parcourir avant que le glisser commence
+cv.addEventListener('pointermove', ev => {
+  const { loc, ecran } = versRepere(ev);
+  if (!glisse) {
+    const id = attraper(loc);
+    cv.style.cursor = id ? 'move' : 'default';
+    return;
+  }
+  if (!glisse.actif) {
+    if (Math.hypot(ecran.x - glisse.depart.x, ecran.y - glisse.depart.y) < SEUIL) return;
+    glisse.actif = true;
+  }
+  const v = etat[choisi], el = PAR_ID[choisi];
+  if (glisse.mode === 'deplacer') {
+    v.dx = Math.round(loc.x - glisse.x0); v.dy = Math.round(loc.y - glisse.y0);
+  } else if (glisse.mode === 'rot') {
+    const r = repere(el, REPOS);
+    let a = glisse.v0.rot + Math.atan2(loc.y - r.C.y, loc.x - r.C.x) - glisse.a0;
+    if (ev.shiftKey) a = Math.round(a / (Math.PI / 12)) * (Math.PI / 12);
+    v.rot = a;
+  } else {
+    // L'echelle se mesure dans le repere TOURNE de l'element, depuis son
+    // centre — ou depuis la main pour l'epee, qui grandit a partir de la garde.
+    const r = glisse.r, piv = r.pivot || r.C;
+    const dx = loc.x - piv.x, dy = loc.y - piv.y, co = Math.cos(-r.rot), si = Math.sin(-r.rot);
+    const lx = Math.abs(dx * co - dy * si), ly = Math.abs(dx * si + dy * co);
+    const w = r.box[2] - r.box[0], h = r.box[3] - r.box[1];
+    const bx = r.pivot ? lx / w : lx * 2 / w, by = ly * 2 / h;
+    const borne = x => Math.min(3, Math.max(.3, Math.round(x * 50) / 50));
+    if (glisse.mode === 'l' || (glisse.mode === 'lh' && !lier)) v.ex = borne(bx);
+    if (glisse.mode === 'h' || (glisse.mode === 'lh' && !lier)) v.ey = borne(by);
+    if (glisse.mode === 'lh' && lier) { const k = borne(Math.max(bx, by)); v.ex = k; v.ey = k; }
+  }
+  majPanneau(); garder();
+});
+cv.addEventListener('pointerup', ev => { if (glisse) { glisse = null; cv.releasePointerCapture(ev.pointerId); } });
+
+window.addEventListener('keydown', ev => {
+  if (!choisi || ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA') return;
+  const pas = ev.shiftKey ? 5 : 1, v = etat[choisi];
+  if (ev.key === 'ArrowLeft') v.dx -= pas;
+  else if (ev.key === 'ArrowRight') v.dx += pas;
+  else if (ev.key === 'ArrowUp') v.dy -= pas;
+  else if (ev.key === 'ArrowDown') v.dy += pas;
+  else if (ev.key === 'Escape') { choisir(null); return; }
+  else return;
+  ev.preventDefault(); majPanneau(); garder();
+});
+
+/* --- le panneau --- */
+function choisir(id) { choisi = id; construireListe(); majPanneau(); }
+function construireListe() {
+  const h = document.getElementById('liste'); h.innerHTML = '';
+  const groupes = {};
+  for (const el of ELEMENTS) (groupes[el.groupe] ||= []).push(el);
+  for (const [nom, els] of Object.entries(groupes)) {
+    const t = document.createElement('div'); t.style.cssText = 'font-size:10px;color:#8f829b;margin:8px 0 4px;font-family:Consolas,monospace';
+    t.textContent = nom.toUpperCase(); h.append(t);
+    const l = document.createElement('div'); l.className = 'liste';
+    for (const el of els) {
+      const b = document.createElement('button');
+      b.textContent = el.nom;
+      b.className = (el.id === choisi ? 'on ' : '') + (estNeutre(etat[el.id]) ? '' : 'mod');
+      b.onclick = () => choisir(el.id);
+      l.append(b);
+    }
+    h.append(l);
+  }
+}
+function curseur(lib, cle, min, max, pas, aff, versVal, depuisVal) {
+  const v = etat[choisi];
+  const d = document.createElement('div'); d.className = 'curseur';
+  d.innerHTML = '<label>' + lib + '</label><input type="range" min="' + min + '" max="' + max + '" step="' + pas + '"><span></span>';
+  const inp = d.querySelector('input'), sp = d.querySelector('span');
+  const maj = () => { inp.value = depuisVal(v[cle]); sp.textContent = aff(v[cle]); };
+  inp.oninput = () => {
+    v[cle] = versVal(+inp.value);
+    if (lier && (cle === 'ex' || cle === 'ey')) { v.ex = v[cle]; v.ey = v[cle]; }
+    majPanneau(true); garder();
+  };
+  maj(); d._maj = maj;
+  return d;
+}
+let curseurs = [];
+function majPanneau(depuisCurseur) {
+  const h = document.getElementById('reglage');
+  if (!depuisCurseur) {
+    h.innerHTML = ''; curseurs = [];
+    if (!choisi) {
+      h.innerHTML = '<div class="vide">Clique un élément sur le Susanoo, ou choisis-le dans la liste au-dessus.</div>';
+    } else {
+      const el = PAR_ID[choisi];
+      const n = document.createElement('div'); n.className = 'sel-nom'; n.textContent = el.nom; h.append(n);
+      const id = x => x;
+      curseurs.push(curseur('gauche/droite', 'dx', -80, 80, 1, x => x, id, id));
+      curseurs.push(curseur('haut/bas', 'dy', -80, 80, 1, x => x, id, id));
+      if (el.special !== 'bras') {
+        curseurs.push(curseur('largeur', 'ex', .3, 3, .02, x => '×' + x.toFixed(2), id, id));
+        curseurs.push(curseur('hauteur', 'ey', .3, 3, .02, x => '×' + x.toFixed(2), id, id));
+        curseurs.push(curseur('rotation', 'rot', -180, 180, 1, x => Math.round(x * 180 / Math.PI) + '°',
+                              x => x * Math.PI / 180, x => x * 180 / Math.PI));
+      } else {
+        curseurs.push(curseur('épaisseur', 'ey', .3, 3, .02, x => '×' + x.toFixed(2), id, id));
+        curseurs.push(curseur('longueur', 'ex', .3, 3, .02, x => '×' + x.toFixed(2), id, id));
+      }
+      curseurs.forEach(c => h.append(c));
+      const lie = document.createElement('label'); lie.className = 'lie';
+      lie.innerHTML = '<input type="checkbox"' + (lier ? ' checked' : '') + '> garder les proportions';
+      lie.querySelector('input').onchange = e => { lier = e.target.checked; };
+      h.append(lie);
+      const btns = document.createElement('div'); btns.className = 'btns';
+      const raz = document.createElement('button'); raz.textContent = 'réinitialiser cet élément';
+      raz.onclick = () => { etat[choisi] = neutre(); majPanneau(); garder(); };
+      btns.append(raz); h.append(btns);
+    }
+  } else curseurs.forEach(c => c._maj());
+  if (!depuisCurseur) construireListe();
+  else document.querySelectorAll('#liste button').forEach(b => {
+    const el = ELEMENTS.find(e => e.nom === b.textContent);
+    if (el) b.classList.toggle('mod', !estNeutre(etat[el.id]));
+  });
+  document.getElementById('sortie').value = JSON.stringify(modifies(), null, 1) || '{}';
+}
+document.getElementById('bCopier').onclick = async ev => {
+  const b = ev.currentTarget;
+  try { await navigator.clipboard.writeText(document.getElementById('sortie').value);
+        b.textContent = 'copié !'; b.classList.add('ok');
+        setTimeout(() => { b.textContent = 'copier les réglages'; b.classList.remove('ok'); }, 1400); }
+  catch (e) { document.getElementById('sortie').select(); }
+};
+document.getElementById('bToutRaz').onclick = () => {
+  if (!confirm('Remettre tous les éléments à leur place d\'origine ?')) return;
+  ELEMENTS.forEach(e => { etat[e.id] = neutre(); }); garder(); majPanneau();
+};
+
+/* =====================================================================
+   LE MATCH : la Lame du dragon, avec les reglages
+   ===================================================================== */
+const PAL = { H:'#2b2631', h:'#15121a', j:'#4f4858', S:'#f0c090', s:'#cf9660', E:'#2c2a26',
+  K:'#1b1d24', k:'#343845', W:'#f2f4f8', A:'#c4cbd6', a:'#858d9b',
+  F:'#e8a94a', f:'#b06f22', b:'#6d3f12', R:'#ff7fd0', r:'#c24f9a' };
+const GARDIEN = ["....jHHHHh......","...jHHHHHHh.....","..jHHHHHHHHh....","..HHHHKKHHHH....",
+  "..HHSSKSSSHH....","..HSSSSSSSSH....","..SSSrSSSSrS....","..SSSSSSSSSS....","...sSSSSSSs.....",
+  "....WKKKKW......",".bFKKAAAAKKFb...",".WAKAWWWWAKAW...",".WbFFbWWbFFbW...",".SAKKAWWAKKAS...",
+  "..bFFbAAbFFb....","..KKKKKKKKKK....","...KK....KK.....","...KK....KK.....","...FA....AF.....",
+  "..WWb....bWW...."];
+function sprite(rows, pal) {
+  const k = document.createElement('canvas'); k.width = 16; k.height = 20;
+  const g = k.getContext('2d');
+  rows.forEach((l, y) => { for (let x = 0; x < 16; x++) if (l[x] !== '.' && pal[l[x]]) { g.fillStyle = pal[l[x]]; g.fillRect(x, y, 1, 1); } });
+  return k;
+}
+const SPR_G = sprite(GARDIEN, PAL), SPR_ADV = CHARS.naruto.frames.idle;
+const POS_G = { x: CT.left + CW * .2, y: CYY + CH * .2 }, POS_A = { x: CT.right - CW * .2, y: CYY + CH * .2 };
+const MAIN_G = { x: POS_G.x + 26, y: POS_G.y - 6 }, MAIN_A = { x: POS_A.x - 26, y: POS_A.y - 6 };
+const lerp = (a, b, k) => a + (b - a) * k;
+const ARME = .12, TOMBE = .13, REMONTE = .47;
+function epee(t, coups) {
+  let a = REPOS, trace = 0;
+  for (const cp of coups) {
+    const d = t - cp;
+    if (d < -(ARME + TOMBE) || d > REMONTE) continue;
+    if (d < -TOMBE) a = lerp(REPOS, REPOS - .35, easeOut((d + ARME + TOMBE) / ARME));
+    else if (d < 0) { const k = (d + TOMBE) / TOMBE; a = lerp(REPOS - .35, FRAPPE, easeIn(k)); trace = k; }
+    else { a = lerp(FRAPPE, REPOS, easeInOut(d / REMONTE)); trace = Math.max(0, 1 - d / .25); }
+  }
+  return { a, trace };
+}
+const DUREE = 6, COUPS = [1.62, 3.17, 4.72];
+const TRAJETS = [
+  { de: MAIN_A, a: MAIN_G, t0: .95, d: .55, p: false },
+  { de: MAIN_G, a: { x: CT.right, y: CYY - GOAL_H * .38 }, t0: 1.62, d: .3, p: true },
+  { de: MAIN_A, a: MAIN_G, t0: 2.5, d: .55, p: false },
+  { de: MAIN_G, a: { x: CT.right, y: CYY + GOAL_H * .38 }, t0: 3.17, d: .3, p: true },
+  { de: MAIN_A, a: MAIN_G, t0: 4.05, d: .55, p: false },
+  { de: MAIN_G, a: { x: CT.right, y: CYY }, t0: 4.72, d: .3, p: true },
+];
+function posDisque(t) {
+  for (const j of TRAJETS) if (t >= j.t0 && t <= j.t0 + j.d) {
+    const k = (t - j.t0) / j.d; return { x: lerp(j.de.x, j.a.x, k), y: lerp(j.de.y, j.a.y, k), j, k };
+  }
+  let q = MAIN_A; for (const j of TRAJETS) if (j.t0 + j.d <= t) q = j.a;
+  return { x: q.x, y: q.y, j: null };
+}
+const gS = document.getElementById('cvScene').getContext('2d');
+function scene(t) {
+  const v = terrain(gS, gS.canvas.width, gS.canvas.height), { X, Y, e } = v;
+  const { a, trace } = epee(t, COUPS);
+  susanoo(gS, X(POS_G.x) - 18 * e, Y(POS_G.y) + 6 * e, e, t, a, trace);
+  perso(gS, SPR_ADV, POS_A.x, POS_A.y, v, -1);
+  perso(gS, SPR_G, POS_G.x, POS_G.y, v, 1);
+  const d = posDisque(t);
+  if (d.j && d.j.p) for (let i = 1; i <= 10; i++) {
+    const kk = d.k - i * .035; if (kk < 0) break;
+    lueur(gS, X(lerp(d.j.de.x, d.j.a.x, kk)), Y(lerp(d.j.de.y, d.j.a.y, kk)), 13 * e, 'rgb(255,170,90)', .5 * (1 - i / 10));
+  }
+  disque(gS, d.x, d.y, v);
+  for (const cp of COUPS) {
+    const dd = t - cp;
+    if (dd >= 0 && dd < .25) {
+      lueur(gS, X(MAIN_G.x), Y(MAIN_G.y), (20 + dd * 200) * e, 'rgb(255,210,240)', (1 - dd / .25) * .9);
+      anneau(gS, X(MAIN_G.x), Y(MAIN_G.y), (10 + dd * 260) * e, (10 + dd * 260) * e * .5, 1 - dd / .25, 'rgb(255,150,220)', 2 * e);
+    }
+  }
+}
+
+choisir(null);
+const debut = performance.now();
+function boucle(now) {
+  const t = (now - debut) / 1000;
+  dessinerAtelier(t);
+  scene(t % DUREE);
+  requestAnimationFrame(boucle);
+}
+requestAnimationFrame(boucle);
+</script>
+</body>
+</html>
