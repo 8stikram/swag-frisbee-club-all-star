@@ -202,7 +202,11 @@ function etatPourLeReseau() {
     // personnage image par image — et l'invité, qui ne rejoue rien, montrait
     // deux silhouettes en train de courir par-dessus un ralenti où l'un
     // plongeait et l'autre tirait.
-    p.forceFr ? POSES.indexOf(p.forceFr) + 1 : 0];
+    p.forceFr ? POSES.indexOf(p.forceFr) + 1 : 0,
+    // La Lame du dragon du Gardien : l'invité doit voir le Susanoo, et son
+    // épée tomber au moment où le disque repart. Le coup est décidé ici, chez
+    // l'hôte ; l'invité ne fait que le montrer.
+    +(p.lameT || 0).toFixed(2), +(p.lameCoupT ?? 9).toFixed(3)];
   const d = G.disc;
   return {
     t: 'e', n: ++numeroEnvoi,
@@ -858,6 +862,9 @@ function appliquerEtat(m) {
     // tout le point suivant, et on servait en position de plongeon.
     p.forceFr = null;
     p.meter = a[3]; p.score = a[4]; p.sixT = a[9];
+    // Test de longueur, comme pour les autres ajouts : un pair plus ancien
+    // n'envoie pas ces deux champs, et la liaison doit tenir quand même.
+    if (a.length > 27) { p.lameT = a[26]; p.lameCoupT = a[27]; }
     // Qui tient le disque est une décision de l'hôte — sauf pendant la fenêtre,
     // où l'hôte croit encore que je l'ai en main alors que je viens de tirer.
     if (!(mien && enAttente)) p.holding = !!a[5];

@@ -12,6 +12,7 @@ import { getSkinId, drawSkinDisc, deformationDisque, tracerContour, teinteDeChar
 import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE, CHIEN_VIDEO, CHIEN_DUREE, RUEE_N, TIGRE_SPRITE, WT_CHANT, WT_SORTIE, WT_STUN,
          PS_CHANT, PS_CHUTE, PS_IMPACT, PS_DUREE } from '../data/specials.js';
 import { CHARS } from '../data/characters.js';
+import { dessinerSusanoo } from './susanoo.js';
 import { Reglages } from '../data/disc-fx.js';
 import { rayonSables, centreSables, densiteTempete } from '../game/desert.js';
 import { etiquetteJoueur, Partie, monJoueur, enMiroir, skinDuDisque } from '../reseau/partie.js';
@@ -3418,6 +3419,10 @@ export function render() {
   for (const p of [G.p1, G.p2]) if (p && p.piratage > 0) drawPluieHack(p);
   if (G.leg && G.leg.phase === 'shadow') drawLeg();
   drawDecoys();
+  // Le Susanoo de la Fricadelle passe avant les joueurs ET le disque : il est
+  // trois fois plus grand qu'eux, et devant, il masquerait justement ce qu'on
+  // doit suivre. Il se tient dans le dos du Gardien, derrière tout le reste.
+  for (const p of [G.p1, G.p2]) if (p && p.lameT > 0) dessinerSusanoo(ctx, p, performance.now() / 1000);
   if (G.p1) {
     const ps = [G.p1, G.p2].sort((a, b) => a.y - b.y);
     let drewDisc = false;

@@ -922,7 +922,7 @@ const GF_DIVE_B = [GF_HAUT, "..AKAWWWWAKAWW..", "..bFFbWWbFFbWS..", "..AKKAWWAKK
 const GF_DASH_B = [GF_HAUT, "WWAKAWWWWAKA....", "SWbFFbWWbFFb....", "..AKKAWWAKKA....", ...GF_BAS,
   "..KK..KK........", ".KK..KK.........", "FA..FA..........", "WW..WW.........."];
 
-export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper', 'yuki', 'yoshi', 'hollis', 'flowser'];
+export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper', 'yuki', 'yoshi', 'hollis', 'flowser', 'fricadelle'];
 
 export const CHARS = {
   naruto: {

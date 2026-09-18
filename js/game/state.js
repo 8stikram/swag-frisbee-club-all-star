@@ -158,7 +158,11 @@ export function makePlayer(ck, side, human, diffIdx) {
     // Bouclier du disque Captain : bref halo autour de celui qui attrape.
     bouclierT: 0,
     // Piraté par Cyberleek : ses déplacements partent à l'envers.
-    piratage: 0
+    piratage: 0,
+    // Lame du dragon du Gardien : temps restant, instant du coup d'épée par
+    // rapport à son impact (négatif pendant qu'elle tombe), et nombre
+    // d'attrapés déjà frappés — c'est ainsi qu'on repère un nouvel attrapé.
+    lameT: 0, lameCoupT: 9, lameVu: 0
   };
   if (!human) {
     p.ai = {

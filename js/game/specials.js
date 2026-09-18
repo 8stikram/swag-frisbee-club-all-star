@@ -1,14 +1,14 @@
-import { G, comment } from './state.js';
+import { G, comment, Mouse } from './state.js';
 import { SPECIALS, RUEE_DISQUE, RUEE_POUSSEE, RUEE_CTRL, RUEE_LARGEUR,
          WT_CHANT, WT_VITESSE, WT_RAYON, WT_BANDE, WT_STUN, WT_ATTIRE, WT_SORTIE,
-         PS_CHANT, PS_CHUTE, PS_IMPACT, PS_DUREE, PS_SLOW, PS_DRAIN }
+         PS_CHANT, PS_CHUTE, PS_IMPACT, PS_DUREE, PS_SLOW, PS_DRAIN, LD_DELAI }
   from '../data/specials.js';
-import { COURT } from '../core/constants.js';
+import { COURT, CY, GOAL_TOP, GOAL_BOTTOM, TIR_ANGLE_MIN, throwSpeed } from '../core/constants.js';
 import { sfx } from '../audio/audio.js';
 import { addPopup, burst, dust } from './fx.js';
-import { dropDisc, onCatch } from './actions.js';
-import { gauss, rand, pick } from '../core/utils.js';
-import { gaussJeu, randJeu } from '../core/alea.js';
+import { dropDisc, onCatch, throwDisc, viseVersAvant } from './actions.js';
+import { gauss, rand, pick, norm } from '../core/utils.js';
+import { gaussJeu, randJeu, pickJeu } from '../core/alea.js';
 import { jeSimule, Partie, etiquetteJoueur } from '../reseau/partie.js';
 
 export function trySpecial(p) {
@@ -359,6 +359,71 @@ export function updatePsycho(dt) {
     if (foe.ai) foe.ai.hesT = Math.max(foe.ai.hesT || 0, .25);
     if (Math.random() < .5) dust(foe.x, foe.y + 16, 1);
   }
+}
+
+// ---------------------------------------------------------------------------
+// LAME DU DRAGON (Gardien Éternel de la Fricadelle). Tourne sur les deux
+// machines : le compte à rebours et le Susanoo qui suit sont de l'affichage.
+// Le coup d'épée, lui, lance le disque — c'est de l'arbitrage, réservé à celui
+// qui simule.
+export function updateLame(dt) {
+  for (const p of [G.p1, G.p2]) {
+    if (!p || !(p.lameT > 0)) continue;
+    // Comme le mode Six Paths, il ne s'écoule que balle en jeu : un but et sa
+    // remise en jeu ne doivent pas dévorer l'ultime.
+    if (G.state === 'play' || G.state === 'serve') p.lameT = Math.max(0, p.lameT - dt);
+    // Le Susanoo le suit avec un temps de retard : il flotte derrière lui au
+    // lieu d'y être vissé.
+    const k = 1 - Math.exp(-7 * dt);
+    p.susX = (p.susX ?? p.x) + (p.x - (p.susX ?? p.x)) * k;
+    p.susY = (p.susY ?? p.y) + (p.y - (p.susY ?? p.y)) * k;
+    if (!jeSimule()) { p.lameCoupT = (p.lameCoupT ?? 9) + dt; continue; }
+    // Un nouvel attrapé : l'épée s'arme. Repéré au compteur d'attrapés plutôt
+    // qu'à `holding`, sinon le service — le disque posé dans sa main — serait
+    // frappé lui aussi.
+    if (p.stats.catches !== p.lameVu) {
+      p.lameVu = p.stats.catches;
+      if (p.holding) p.lameCoupT = -LD_DELAI;
+    }
+    const avant = p.lameCoupT ?? 9;
+    p.lameCoupT = avant + dt;
+    // L'impact. S'il a déjà tiré de lui-même entre-temps, il n'y a plus rien
+    // à frapper : l'épée tombe dans le vide, sans conséquence.
+    if (avant < 0 && p.lameCoupT >= 0 && p.holding) frapperLame(p);
+  }
+}
+
+// Le renvoi : un tir PARFAIT — charge pleine, sans l'avoir chargé — vers là
+// où il vise.
+function frapperLame(p) {
+  const versAdv = p.side === 1 ? 1 : -1;
+  let dir;
+  if (p.ai) {
+    // L'IA n'a pas de souris : chaque coup part vers un coin du but ou son
+    // centre, comme dans le mockup. Semé : ça décide de l'issue du point.
+    const zy = pickJeu([GOAL_TOP + 34, GOAL_BOTTOM - 34, CY]);
+    const tx = p.side === 1 ? COURT.right : COURT.left;
+    dir = norm(tx - p.x, zy + gaussJeu() * 40 - p.y);
+  } else {
+    // La visée vient de la fiche d'intentions, comme pour un tir ordinaire :
+    // un joueur distant n'a pas de curseur sur cette machine.
+    const c = p.cmd;
+    dir = (c && (c.visee.x || c.visee.y)) ? norm(c.visee.x, c.visee.y) : norm(Mouse.x - p.x, Mouse.y - p.y);
+  }
+  // Le coup est déjà parti, on ne peut pas le refuser comme un tir : une visée
+  // vers l'arrière est retournée, et un tir presque vertical est redressé,
+  // sinon il resterait piégé dans son propre camp (voir TIR_ANGLE_MIN).
+  if (!viseVersAvant(p, dir)) dir = norm(-dir.x, dir.y);
+  if (Math.abs(dir.x) < TIR_ANGLE_MIN + .05) {
+    dir = norm(versAdv * (TIR_ANGLE_MIN + .05), Math.sign(dir.y || 1) * Math.sqrt(1 - (TIR_ANGLE_MIN + .05) ** 2));
+  }
+  p.face = dir.x >= 0 ? 1 : -1;
+  p.charge = 1;
+  throwDisc(p, dir, throwSpeed(1, p.char.power));
+  burst(p.x + dir.x * 26, p.y + dir.y * 26, '#ff7fd0', 18);
+  G.shake = Math.max(G.shake, 9);
+  sfx('swish');
+  addPopup('LAME DU DRAGON !', '#ff7fd0', 14, .7, p.y - 60);
 }
 
 // ---------------------------------------------------------------------------

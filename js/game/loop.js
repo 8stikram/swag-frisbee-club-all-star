@@ -9,7 +9,7 @@ import { doThrowHuman } from './actions.js';
 import { majCommandes, appliquerActions } from './commandes.js';
 import { updateAI } from './ai.js';
 import { updateDisc, updateDecoys } from './disc.js';
-import { updateLeg, updateBell, updateHack, updateRafale, updateGrappin, updateChien, updateRuee, updateTigre, updatePsycho, launchCine } from './specials.js';
+import { updateLeg, updateBell, updateHack, updateRafale, updateGrappin, updateChien, updateRuee, updateTigre, updatePsycho, updateLame, launchCine } from './specials.js';
 import { updateDesert } from './desert.js';
 import { updateBrume } from './brume.js';
 import { SIX_ORBES } from '../data/specials.js';
@@ -153,6 +153,7 @@ export function update(dt) {
   updateRuee(wdt);
   updateTigre(wdt);
   updatePsycho(wdt);
+  updateLame(wdt);
   updateDesert(wdt);
   updateBrume(wdt);
   for (const p of [G.p1, G.p2]) {

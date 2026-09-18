@@ -115,6 +115,22 @@ export const PS_RAY = .30;      // part de l'aire de la moitie adverse
 // ca recompense de poser la zone au bon moment plutot que sur lui.
 export const PS_RAY_ECART = .5;
 
+// ---------------------------------------------------------------------------
+// LAME DU DRAGON, l'ultime du Gardien Éternel de la Fricadelle. Modèle : l'ultime
+// de Genji dans Overwatch. Choisi contre la Riposte dans
+// mockups/fricadelle-ulti.html ; le Susanoo qui porte l'épée est dessiné dans
+// render/susanoo.js.
+//
+// Pendant LD_DUREE, chaque disque qu'il ATTRAPE repart aussitôt d'un coup
+// d'épée du Susanoo, en tir parfait et sans temps de charge, là où il vise. Il
+// faut quand même attraper : un disque raté reste un but encaissé.
+export const LD_DUREE = 6;
+export const LD_INVOC = .8;     // le Susanoo monte derrière lui
+// Entre l'attrapé et l'impact de l'épée. Assez court pour que le renvoi se
+// vive comme instantané, assez long pour qu'on voie la lame tomber sur le
+// disque : à zéro, le disque repartait avant que l'épée ait bougé.
+export const LD_DELAI = .14;
+
 // Registre des attaques spéciales. Pour ajouter une spéciale : une entrée ici,
 // puis `ult:'<clé>'` sur le personnage dans data/characters.js.
 //   needsDisc : refuse le cast si le perso n'a pas le disque
@@ -355,6 +371,29 @@ export const SPECIALS = {
       // ce qui compte n'est pas le point de chute mais l'etendue de ce qui
       // vient d'etre pose.
       sfx('psycho'); comment('LA CARAPACE TOMBE !!', undefined, 'ultimate');
+    }
+  },
+
+  lamedragon: {
+    name: 'LAME DU DRAGON',
+    desc: 'Le Susanoo de la Fricadelle se dresse : 6 s durant, chaque disque attrapé repart en tir parfait d\'un coup d\'épée.',
+    // Il part les mains vides aussi : c'est une posture qui dure, pas un tir.
+    needsDisc: false,
+    cast(p) {
+      p.meter = 0; p.stats.specials++;
+      p.lameT = LD_DUREE;
+      p.susX = p.x; p.susY = p.y;
+      // Les attrapés se repèrent au compteur : seul ce qui est pris APRÈS
+      // l'invocation déclenche un coup.
+      p.lameVu = p.stats.catches;
+      // Disque déjà en main : l'épée le frappe dès que le Susanoo est à moitié
+      // levé, plutôt que de gâcher la première seconde de l'ultime.
+      p.lameCoupT = p.holding ? -(LD_DELAI + LD_INVOC * .5) : 9;
+      G.banner = { text: 'LAME DU DRAGON !!', color: '#ff7fd0', t: 0, dur: 1.3 };
+      G.shake = 8; G.flash = .7;
+      sfx('special'); commentUlti(p,
+        ['LE SUSANOO DE LA FRICADELLE !!', 'GOÛTE LA LAME DU DRAGON !', 'LE DIEU DE LA FRICADELLE SE LÈVE !'],
+        n => [`${n} INVOQUE LE SUSANOO !!`, `LA LAME DU DRAGON DE ${n} !`, `${n} RÉVEILLE LE DIEU DE LA FRICADELLE !`]);
     }
   },
 
