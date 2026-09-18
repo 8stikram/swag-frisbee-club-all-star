@@ -9,6 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Chakra+Petch:wght@600;700&family=Great+Vibes&family=Barlow:wght@600;700;800&family=DotGothic16&family=Russo+One&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/fin-de-match.css">
+<link rel="stylesheet" href="css/intro.css">
+<link rel="stylesheet" href="css/menu-titre.css">
 </head>
 <body>
 <h1 class="brand" id="adminTitle">Swag Frisbee Club All Star</h1>
@@ -39,24 +41,16 @@
   </div>
 
   <!-- ============ INTRODUCTION ============
-       Séquence jouée une fois au lancement, avant le menu. Elle se saute d'un
-       clic ou d'une touche à n'importe quel moment. -->
-  <div class="screen scr-intro" id="scr-intro">
-    <div class="introBg" id="introBg"></div>
-    <div class="introBeams" id="introBeams"></div>
-    <div class="introParts" id="introParts"></div>
-    <img class="introLogo" id="introLogo" src="assets/logo.png" alt="">
-    <div class="introFlash" id="introFlash"></div>
-    <div class="introHeroWrap" id="introHeroWrap">
-      <div class="introRing" id="introRing"></div>
-      <canvas id="introHero"></canvas>
-    </div>
-    <div class="introPrompt" id="introPrompt">APPUYEZ POUR COMMENCER</div>
-    <div class="introSkip">Cliquez pour passer</div>
-  </div>
+       « La passe du roster » : construite et jouée par js/ui/intro.js, posée
+       par-dessus l'écran titre sur lequel elle se termine. Un clic ou une
+       touche la passe à tout moment. -->
+  <div class="screen introPasse" id="scr-intro"></div>
 
-  <!-- ============ ÉCRAN TITRE ============ -->
-  <div class="screen scr-title" id="scr-title">
+  <!-- ============ ÉCRAN TITRE ============
+       Menu en tuiles (version D). Réglages validés : mockups/menu-d.reglages.json.
+       Les tuiles portent leur data-act comme les anciens boutons ; HISTOIRE et
+       JCJ, pas encore jouables, sont verrouillés. -->
+  <div class="screen scr-title menuD" id="scr-title">
     <div class="bg bg-title">
       <div class="watermark" data-wm="SWAG FRISBEE CLUB"></div>
       <div class="streaks"></div>
@@ -66,43 +60,27 @@
           <text><textPath href="#ring-title" startOffset="0%">MENU PRINCIPAL • MENU PRINCIPAL • MENU PRINCIPAL • MENU PRINCIPAL • </textPath></text></svg>
       </div>
     </div>
+    <div class="degradeBas"></div>
 
-    <div class="titleLeft">
-      <img class="logo" src="assets/logo.png" alt="Swag Frisbee Club All Star">
-      <div class="menu">
-        <button class="mbtn c-green" data-act="play">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18"/></svg></span>
-          MATCH VS IA
-        </button>
-        <button class="mbtn c-green" data-act="j2j">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 19c0-3 2.7-5 6-5M22 19c0-3-2.7-5-6-5"/></svg></span>
-          MATCH JCJ
-        </button>
-        <button class="mbtn c-online" data-act="online">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15 0 18M12 3c-2.5 2.7-2.5 15 0 18"/></svg></span>
-          MATCH EN LIGNE
-        </button>
-        <button class="mbtn c-learn" data-act="learn">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5c3-1.6 6-1.6 9 0v13c-3-1.6-6-1.6-9 0z"/><path d="M21 6.5c-3-1.6-6-1.6-9 0v13c3-1.6 6-1.6 9 0z"/></svg></span>
-          ENTRAÎNEMENT
-        </button>
-        <button class="mbtn c-casino" data-act="casino">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10c0-3 3.5-6 8-6s8 3 8 6"/><path d="M6 7l-1.5-4M18 7l1.5-4"/><circle cx="9" cy="13" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="13" r="1.4" fill="currentColor" stroke="none"/><path d="M8 18c1.4 1.6 6.6 1.6 8 0"/></svg></span>
-          CASINO
-        </button>
-        <button class="mbtn" data-act="options">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></span>
-          OPTIONS
-        </button>
+    <div class="mv mvPerso" style="--x:54.65;--y:21.65"><div class="halo"></div><canvas id="titleHero"></canvas></div>
+    <div class="mv mvLogo" style="--x:.6;--y:.6">
+      <div class="logoCadre"><img class="logoImg" src="assets/logo.png" alt="Swag Frisbee Club All Star"></div>
+    </div>
+    <div class="mv mvTuiles" style="--x:3.4;--y:39">
+      <div class="rangModes">
+        <button class="tuile c-green" data-act="play"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18"/></svg></span><span class="lbl">VS IA</span><span class="eclat"></span></button>
+        <button class="tuile c-enligne" data-act="online"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15 0 18M12 3c-2.5 2.7-2.5 15 0 18"/></svg></span><span class="lbl">EN LIGNE</span><span class="eclat"></span></button>
+        <button class="tuile verrou" data-bientot="histoire"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg></span><span class="lbl">HISTOIRE</span><span class="bientot">BIENTÔT</span><span class="eclat"></span></button>
+        <button class="tuile verrou" data-bientot="jcj"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg></span><span class="lbl">JCJ</span><span class="bientot">BIENTÔT</span><span class="eclat"></span></button>
+      </div>
+      <div class="rangPetites">
+        <button class="tuile c-learn" data-act="learn"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5c3-1.6 6-1.6 9 0v13c-3-1.6-6-1.6-9 0z"/><path d="M21 6.5c-3-1.6-6-1.6-9 0v13c3-1.6 6-1.6 9 0z"/></svg></span><span class="lbl">ENTRAÎNEMENT</span><span class="eclat"></span></button>
+        <button class="tuile c-casino" data-act="casino"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10c0-3 3.5-6 8-6s8 3 8 6"/><path d="M6 7l-1.5-4M18 7l1.5-4"/><circle cx="9" cy="13" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="13" r="1.4" fill="currentColor" stroke="none"/><path d="M8 18c1.4 1.6 6.6 1.6 8 0"/></svg></span><span class="lbl">CASINO</span><span class="eclat"></span></button>
+        <button class="tuile" data-act="options"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></span><span class="lbl">OPTIONS</span><span class="eclat"></span></button>
       </div>
       <div class="hint"><kbd>M</kbd> musique</div>
     </div>
-
-    <div class="titleRight">
-      <div class="heroGlow"></div>
-      <canvas id="titleHero"></canvas>
-    </div>
-    <div class="banner"><span>MONTRE AU MONDE<br>QUI EST LE MEILLEUR !</span></div>
+    <div class="mv mvBandeau"><div class="texteBandeau" id="phraseTitre">MONTRE AU MONDE<br>QUI EST LE MEILLEUR !</div></div>
   </div>
 
   <!-- ============ SURCOUCHE DE L'ENTRAÎNEMENT ============

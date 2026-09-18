@@ -47,7 +47,8 @@ export function showScreen(name) {
   kbNav = false;
   if (name) { selIdx[name] = selIdx[name] || 0; refreshMenu(name); }
 }
-export function menuButtons(name) { return [...$(SCREENS[name]).querySelectorAll('.mbtn')]; }
+// Les tuiles de l'écran titre se parcourent au clavier comme des boutons.
+export function menuButtons(name) { return [...$(SCREENS[name]).querySelectorAll('.mbtn, .tuile')]; }
 export function refreshMenu(name) {
   menuButtons(name).forEach((b, i) => b.classList.toggle('sel', kbNav && i === selIdx[name]));
 }

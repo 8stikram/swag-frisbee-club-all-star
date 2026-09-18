@@ -1,0 +1,81 @@
+/* ================= ÉCRAN TITRE : MENU EN TUILES =================
+   Version D, réglages validés dans mockups/menu-d.reglages.json (le mockup
+   est mockups/menu-d.html). Même D.A. que l'ancien menu : fond cyan,
+   filigrane et anneau (règles de style.css), contour encre de 4 px, ombre dure.
+   Animations d'arrivée et de clic : js/ui/menu-titre.js.
+
+   Les anciennes règles .titleLeft / .logo / .banner de style.css ne servent
+   plus à cet écran. */
+#scr-title.menuD{--ombreTuile:6px}
+
+/* Blocs placés en % de l'écran. La taille passe par `scale` et les animations
+   par `transform` : les deux se composent au lieu de s'écraser. */
+.menuD .mv{position:absolute;left:calc(var(--x) * 1%);top:calc(var(--y) * 1%);transform-origin:0 0}
+.menuD .mvPerso{z-index:4;height:74cqh}
+.menuD .mvLogo{z-index:6;width:56cqw}
+.menuD .mvTuiles{z-index:7;width:43cqw}
+/* La phrase s'accroche par son coin bas-droit, là où était l'ancien bandeau. */
+.menuD .mvBandeau{z-index:8;left:auto;top:auto;right:2.4%;bottom:1.9%;transform-origin:100% 100%;text-align:right;white-space:nowrap}
+
+/* Perso : même taille et même place que l'ancien menu, halo agrandi de 15 %. */
+#scr-title #titleHero{position:relative;z-index:1;display:block;height:100%;width:auto;margin:0}
+#scr-title.sansFlottement #titleHero{animation:none}
+.menuD .halo{position:absolute;left:50%;bottom:-3.1%;width:calc(76.5% * 1.15);aspect-ratio:1;translate:-50% 0;
+  border-radius:50%;background:rgba(255,255,255,.28);filter:blur(2px)}
+
+/* Logo : on ne garde que la bande du PNG où il y a quelque chose. */
+.menuD .logoCadre{position:relative;width:100%;aspect-ratio:1254/500;overflow:hidden}
+.menuD .logoImg{display:block;width:100%;aspect-ratio:1;margin-top:-29%;filter:drop-shadow(0 6px 0 rgba(0,0,0,.28))}
+
+.menuD .degradeBas{position:absolute;left:0;right:0;bottom:0;height:19%;z-index:5;pointer-events:none;
+  background:linear-gradient(to top,rgba(0,0,0,.62) 0%,rgba(0,0,0,.38) 40%,rgba(0,0,0,0) 100%)}
+/* Phrase du bas : style de l'ancien bandeau, 30 % plus grande, avec une lueur. */
+.menuD .texteBandeau{font-family:'Archivo Black',sans-serif;font-size:calc(clamp(13px,2cqw,26px) * 1.3);color:#fff;
+  -webkit-text-stroke:5px var(--ink);paint-order:stroke fill;line-height:1.2;
+  filter:drop-shadow(0 0 .72cqh rgba(159,244,255,.85)) drop-shadow(0 0 1.6cqh rgba(159,244,255,.6))}
+
+/* --- Tuiles --- */
+.menuD .rangModes{display:grid;grid-template-columns:1fr 1fr;gap:1.4cqh}
+.menuD .rangPetites{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4cqh;margin-top:1.4cqh}
+.menuD .tuile{position:relative;display:flex;align-items:center;justify-content:flex-start;gap:1.2cqw;padding:0 0 0 1.4cqw;
+  aspect-ratio:2.5;font-family:'Chakra Petch','Archivo Black',sans-serif;font-weight:700;font-size:2.7cqh;letter-spacing:.05em;
+  color:var(--ink);background:rgba(255,255,255,.96);border:4px solid var(--ink);border-radius:18px;
+  box-shadow:var(--ombreTuile) var(--ombreTuile) 0 var(--ink);cursor:pointer;white-space:nowrap;
+  transition:background .1s,color .1s,transform .1s,box-shadow .1s}
+.menuD .tuile .ico{position:relative;flex-shrink:0;width:6cqh;height:6cqh;border-radius:50%;
+  border:.5cqh solid currentColor;display:flex;align-items:center;justify-content:center}
+.menuD .tuile .ico svg{width:58%;height:58%}
+.menuD .rangPetites .tuile{aspect-ratio:auto;height:6.4cqh;justify-content:center;gap:.7cqw;padding:0 .6cqw;
+  font-size:calc(2.7cqh * .7);border-radius:14.4px}
+.menuD .rangPetites .tuile .ico{width:2.8cqh;height:2.8cqh;border-width:3px}
+.menuD .tuile.c-green{background:var(--green)}
+.menuD .tuile.c-learn{background:var(--learn)}
+.menuD .tuile.c-casino{background:#e0574f;color:#2a0509}
+/* Survol et sélection au clavier partagent le même rendu, comme les .mbtn. */
+.menuD .tuile:not(.verrou):hover,.menuD .tuile:not(.verrou).sel{background:var(--ink);color:#fff;transform:translate(-2px,-2px);
+  box-shadow:calc(var(--ombreTuile) + 2px) calc(var(--ombreTuile) + 2px) 0 var(--ink)}
+.menuD .tuile.verrou.sel{outline:3px dashed var(--ink);outline-offset:3px}
+.menuD .tuile .eclat{position:absolute;inset:0;border-radius:inherit;background:#fff;opacity:0;pointer-events:none;z-index:4}
+.menuD .anneauClic{position:absolute;inset:-5px;border-radius:inherit;border:.5cqh solid var(--ink);pointer-events:none;z-index:5}
+.menuD .etincelle{position:absolute;left:50%;top:50%;width:1.3cqh;height:1.3cqh;margin:-.65cqh 0 0 -.65cqh;background:var(--yellow);
+  border:2px solid var(--ink);pointer-events:none;z-index:6}
+
+/* EN LIGNE aux couleurs de l'écran en ligne : bleu pétrole étoilé, rose. */
+.menuD .tuile.c-enligne{color:#fff;
+  background:radial-gradient(1.5px 1.5px at 18% 26%,#fff 50%,transparent 51%),radial-gradient(1.5px 1.5px at 84% 20%,#bff3ff 50%,transparent 51%),
+    radial-gradient(1.5px 1.5px at 72% 78%,#9df0c0 50%,transparent 51%),radial-gradient(1.5px 1.5px at 40% 84%,#fff 50%,transparent 51%),
+    radial-gradient(130% 150% at 30% 20%,#1b86ab 0%,#0d5a76 58%,#073b52 100%)}
+.menuD .tuile.c-enligne .ico{color:#f2698c}
+.menuD .tuile.c-enligne .lbl{text-shadow:0 3px 0 var(--ink)}
+.menuD .tuile.c-enligne::after{content:'';position:absolute;left:0;right:0;bottom:14%;height:9%;background:#f2698c;opacity:.85;z-index:0}
+.menuD .tuile.c-enligne > *{position:relative;z-index:1}
+.menuD .tuile.c-enligne:hover::after,.menuD .tuile.c-enligne.sel::after{opacity:.4}
+
+/* Modes à venir : grisés, cadenas, étiquette BIENTÔT. */
+.menuD .tuile.verrou{cursor:not-allowed;background:#c5cad3;color:rgba(17,19,24,.55)}
+.menuD .bientot{position:absolute;top:-1.3cqh;right:-.8cqw;z-index:7;rotate:8deg;
+  font-family:'Archivo Black',sans-serif;font-size:1.45cqh;letter-spacing:.06em;line-height:1;
+  color:var(--ink);background:#f5e63d;border:3px solid var(--ink);border-radius:8px;padding:.35cqh .6cqw .25cqh;
+  box-shadow:3px 3px 0 var(--ink);white-space:nowrap;pointer-events:none}
+
+.menuD .mvTuiles .hint{margin-top:1.6cqh;padding-left:.3cqw;white-space:nowrap}

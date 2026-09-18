@@ -1,0 +1,96 @@
+/* ================= INTRO « PASSE DU ROSTER » =================
+   Réglages validés : mockups/intro-roster.reglages.json (le mockup est
+   mockups/intro-roster.html). Chorégraphie dans js/ui/intro.js.
+
+   Tout ce qui bouge le fait en translate / scale / opacity : rien n'est
+   repeint pendant l'intro. Les unités cqh / cqw se mesurent sur #stage.
+
+   L'écran d'intro est posé par-dessus l'écran titre, déjà affiché dessous. Au
+   flash, son propre fond s'efface et le vrai menu apparaît : ce sont alors
+   le logo et le perso volants de l'intro qui vont se garer sur ceux du menu. */
+#scr-intro.introPasse{z-index:60;overflow:hidden;background:none;animation:none;user-select:none;
+  --f-nom:'Archivo Black',sans-serif; --c-nom:.7cqh; --o-nom:.6cqh;
+  --contourBande:1cqh; --lisere:.6cqh; --joint:1.2cqh; --biseau:-18deg;
+  --motifOp:.16; --tailleDisque:8.5cqh}
+#scr-intro.introPasse.done{display:none}
+#scr-intro .introFond{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 50%,#17233f 0%,#0b1020 62%,#05070d 100%)}
+
+/* Rayures du fond, parallèles aux bandes (donc immobiles), et le filigrane du
+   menu : au flash, il ne bouge pas d'un pixel, seul le fond change. */
+#scr-intro .fondRayures{position:absolute;inset:-14cqh;pointer-events:none;opacity:.07;
+  background:repeating-linear-gradient(-14deg,#fff 0 .45cqh,transparent .45cqh 9cqh)}
+#scr-intro .fondFiligrane{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:.06;will-change:translate}
+#scr-intro .vignette{position:absolute;inset:0;pointer-events:none;z-index:25;
+  background:radial-gradient(110% 85% at 50% 50%,transparent 55%,rgba(0,0,0,.45) 100%)}
+#scr-intro .secousse,#scr-intro .camera,#scr-intro .cameraZoom{position:absolute;inset:0}
+#scr-intro .secousse,#scr-intro .camera{will-change:translate}
+#scr-intro .cameraZoom{will-change:scale,opacity}
+
+/* --- Une bande par perso --- */
+#scr-intro .plan{position:absolute;inset:0;pointer-events:none}
+#scr-intro .axe{position:absolute;left:0;top:0;width:0;height:0}
+#scr-intro .bande{position:absolute;left:calc(var(--L) * -.5);top:calc(var(--T) * -.5);width:var(--L);height:var(--T);
+  transform:skewX(var(--biseau));will-change:translate;overflow:hidden;
+  background:linear-gradient(180deg,var(--cClair) 0%,var(--c1) 46%,var(--cSombre) 100%);
+  border-block:var(--contourBande) solid var(--ink)}
+#scr-intro .bande::before,#scr-intro .bande::after{content:'';position:absolute;left:0;right:0;height:var(--lisere);background:var(--c2);z-index:2}
+#scr-intro .bande::before{top:.7cqh}
+#scr-intro .bande::after{bottom:.7cqh}
+#scr-intro .joint{position:absolute;top:0;bottom:0;width:var(--joint);background:var(--ink);z-index:3}
+#scr-intro .joint.g{left:0;box-shadow:.4cqh 0 0 rgba(255,255,255,.85)}
+#scr-intro .joint.d{right:0;box-shadow:-.4cqh 0 0 rgba(255,255,255,.85)}
+/* Le nom de l'univers en filigrane, qui défile dans la bande. */
+#scr-intro .filigrane{position:absolute;left:0;top:50%;translate:0 -50%;z-index:1;white-space:nowrap;font-family:'Archivo Black',sans-serif;
+  font-size:calc(var(--T) * .52);line-height:1;color:#fff;opacity:var(--motifOp);letter-spacing:.04em;
+  will-change:transform;animation:introDefile 14s linear infinite}
+#scr-intro .filigrane span{padding-right:.4em}
+@keyframes introDefile{to{transform:translateX(-50%)}}
+
+/* Ligne blanche qui ouvre la première bande, traits de vitesse des glissements. */
+#scr-intro .ligne{position:absolute;left:calc(var(--L) * -.5);top:-.35cqh;width:var(--L);height:.7cqh;background:#fff;
+  box-shadow:0 0 2.2cqh rgba(255,255,255,.9);scale:0 1;opacity:0;will-change:scale,opacity}
+#scr-intro .traits{position:absolute;left:calc(var(--L) * -.5);top:calc(var(--T) * -.5);width:var(--L);height:var(--T);
+  opacity:0;pointer-events:none;will-change:opacity,translate;
+  background:
+    repeating-linear-gradient(180deg,transparent 0 3.1cqh,rgba(255,255,255,.9) 3.1cqh 3.4cqh,transparent 3.4cqh 7.3cqh),
+    repeating-linear-gradient(180deg,transparent 0 5.3cqh,rgba(255,255,255,.7) 5.3cqh 5.5cqh,transparent 5.5cqh 11.9cqh);
+  -webkit-mask:repeating-linear-gradient(90deg,#000 0 23cqh,transparent 23cqh 31cqh,#000 31cqh 38cqh,transparent 38cqh 52cqh);
+  mask:repeating-linear-gradient(90deg,#000 0 23cqh,transparent 23cqh 31cqh,#000 31cqh 38cqh,transparent 38cqh 52cqh)}
+
+/* --- Perso : sprite agrandi d'un nombre entier de pixels écran, contour et
+   ombre cuits dans le canvas. --- */
+#scr-intro .perso,#scr-intro .nom{position:absolute;left:0;top:0}
+#scr-intro .persoGlisse,#scr-intro .nomGlisse{will-change:translate,opacity}
+#scr-intro .persoPose{position:relative;will-change:translate}
+#scr-intro .persoPose canvas{position:absolute;left:0;top:0;image-rendering:pixelated;opacity:0;will-change:opacity}
+#scr-intro .persoPose canvas[data-frame="idle"]{position:relative;display:block}
+
+/* --- Nom + univers --- */
+#scr-intro .nomSlam{will-change:scale,opacity}
+#scr-intro .nomBloc{display:flex;flex-direction:column;align-items:flex-start;gap:1.1cqh;rotate:-14deg;transform-origin:50% 50%}
+#scr-intro .plan.miroir .nomBloc{align-items:flex-end}
+#scr-intro .nomTexte{font-family:var(--f-nom);font-size:7cqh;line-height:.95;letter-spacing:.02em;
+  white-space:nowrap;color:#fff;-webkit-text-stroke:var(--c-nom) var(--ink);paint-order:stroke fill;
+  text-shadow:var(--o-nom) var(--o-nom) 0 var(--ink)}
+#scr-intro .univers{display:inline-block;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:2.6cqh;line-height:1.1;
+  letter-spacing:.14em;white-space:nowrap;color:var(--ink);background:#fff;border:.45cqh solid var(--ink);border-radius:.8cqh;
+  padding:.35cqh 1.2cqh;box-shadow:.5cqh .5cqh 0 var(--ink);transform-origin:0 50%;will-change:scale}
+#scr-intro .plan.miroir .univers{transform-origin:100% 50%}
+
+/* --- Disque et traînée --- */
+#scr-intro .disqueCouche{position:absolute;inset:0;pointer-events:none;z-index:20;will-change:opacity}
+#scr-intro .disque,#scr-intro .reflet{position:absolute;left:0;top:0;width:var(--tailleDisque);height:var(--tailleDisque);
+  margin:calc(var(--tailleDisque) * -.5) 0 0 calc(var(--tailleDisque) * -.5);will-change:translate,scale}
+#scr-intro .disqueTour{width:100%;height:100%;animation:introTourne .9s linear infinite}
+@keyframes introTourne{to{rotate:360deg}}
+#scr-intro .disque canvas{display:block;width:100%;height:100%}
+#scr-intro .reflet{border-radius:50%;background:#fff;opacity:0}
+
+/* --- Impact, et copies du logo et du perso qui vont se garer sur le menu --- */
+#scr-intro .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:30;will-change:opacity}
+#scr-intro .onde{position:absolute;left:50%;top:50%;width:24cqh;height:24cqh;margin:-12cqh 0 0 -12cqh;border-radius:50%;
+  border:1.1cqh solid #fff;opacity:0;z-index:16;pointer-events:none;will-change:scale,opacity}
+#scr-intro .logoVol{position:absolute;left:0;top:0;z-index:15;aspect-ratio:1;opacity:0;pointer-events:none;
+  filter:drop-shadow(0 6px 0 rgba(0,0,0,.28));will-change:translate,scale,opacity}
+#scr-intro .heroVol{position:absolute;left:0;top:0;z-index:14;opacity:0;pointer-events:none;image-rendering:pixelated;
+  filter:drop-shadow(0 8px 0 rgba(0,0,0,.16));will-change:translate,scale,opacity}

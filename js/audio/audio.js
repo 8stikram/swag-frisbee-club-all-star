@@ -95,7 +95,14 @@ export function duckMusic(on) {
 export function setSolo(kind) { solo = kind; applyMusicVol(); applySfxVol(); }
 
 export function initAudio() {
-  if (AC) return;
+  if (AC) {
+    // L'intro crée le son dès l'ouverture : si le navigateur l'a laissé en
+    // pause faute de geste, le premier clic ou la première touche le relance,
+    // musique comprise.
+    if (AC.state === 'suspended') AC.resume().catch(() => { });
+    if (bgmEl && musicOn && bgmEl.paused) bgmEl.play().catch(() => { });
+    return;
+  }
   try {
     AC = new (window.AudioContext || window.webkitAudioContext)();
     masterG = AC.createGain(); masterG.gain.value = 0.9;
@@ -167,14 +174,19 @@ function noise(dur, vol, freq = 2000, delay = 0) {
 // que cette machine vient de produire. Sans cette distinction, l'étouffement
 // ci-dessous se serait appliqué à l'écho lui-même et l'invité n'aurait plus
 // rien entendu du tout.
-export function sfx(n, venuDuReseau) {
+// `horsDemo` : son voulu par un écran (l'intro) alors que la démo du menu,
+// qui tourne derrière, coupe d'habitude tout ce qui n'est pas un son d'interface.
+export function sfx(n, venuDuReseau, horsDemo) {
   // On note avant toute condition de sortie : que cette machine ait ou non son
   // audio prêt ne dit rien de celle d'en face, et l'hôte doit renvoyer ce que
   // le match produit même s'il joue lui-même en sourdine.
   noterSon(n);
   if (!venuDuReseau && sonEtouffe(n)) return;
   if (!AC) return;
-  if (demoMuted && !UI_SFX.has(n)) return;
+  // Contexte en pause (pas encore de geste) : ces sons partiraient tous d'un
+  // coup à la reprise.
+  if (AC.state === 'suspended') return;
+  if (demoMuted && !UI_SFX.has(n) && !horsDemo) return;
   switch (n) {
     case 'move': beep(760, 760, .05, 'square', .06); break;
     case 'select': beep(620, 990, .12, 'square', .12); beep(990, 1320, .1, 'square', .08, .06); break;
