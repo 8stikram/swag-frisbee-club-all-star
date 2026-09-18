@@ -59,8 +59,12 @@
   cinq. La liste à droite sert à attraper ceux qui sont cachés sous les autres — l'aura et les
   étincelles ne s'attrapent que par elle.
   <br><br>
+  <b>Tes réglages sont intégrés</b> et sont désormais la base : « revenir au réglage validé » y ramène,
+  et les éléments marqués dans la liste sont ceux que tu as retouchés <b>depuis</b>. Le bras gauche
+  bouge maintenant tout seul, légèrement, et les cheveux ondulent moins.
+  <br><br>
   Tes retouches sont gardées si tu recharges la page. Quand c'est bon, <b>copie les réglages</b> en bas à
-  droite et envoie-les-moi : je les intègre directement dans le dessin.
+  droite et envoie-les-moi : l'export reste complet, pas seulement ce qui a changé.
 </p>
 
 <div class="haut">
@@ -76,7 +80,7 @@
     <textarea id="sortie" readonly></textarea>
     <div class="btns">
       <button id="bCopier">copier les réglages</button>
-      <button id="bToutRaz">tout réinitialiser</button>
+      <button id="bToutRaz">tout revenir au validé</button>
     </div>
   </div>
 </div>
@@ -135,9 +139,13 @@ function fricadelle(g, x0, x1, lar, stries = 5) {
    balancement de 4 a 1,5. A la vitesse d'avant elles crepitaient comme une
    etincelle ; une chevelure de dieu doit onduler, pas trembler.
    ===================================================================== */
+// Mouvement reduit a la demande, pour un rendu plus naturel : balancement
+// .16 -> .10 rad, battement de longueur 7 -> 4,5 %, et un peu plus lent
+// (1,5 -> 1,25 et 2,2 -> 1,8). Des cheveux qui s'agitent autant que des
+// flammes fatiguent l'oeil sur les six secondes de l'ultime.
 function flamme(g, t, bx, by, a, L, w, ph) {
-  const bal = Math.sin(t * 1.5 + ph) * .16;
-  const Lt = L * (1 + Math.sin(t * 2.2 + ph * 1.7) * .07);
+  const bal = Math.sin(t * 1.25 + ph) * .10;
+  const Lt = L * (1 + Math.sin(t * 1.8 + ph * 1.7) * .045);
   const a2 = a + bal;
   const ux = Math.cos(a), uy = Math.sin(a), nx = -uy, ny = ux;
   const vx = Math.cos(a2), vy = Math.sin(a2);
@@ -193,9 +201,19 @@ const ELEMENTS = [
 
   { id: 'brasG', nom: 'bras gauche', groupe: 'Bras et épée', box: [-102, -172, -64, -58],
     f(g, t) {
+      // Le bras libre bouge TOUT SEUL, legerement : il pivote a l'epaule et le
+      // coude se plie un peu. Trois sinus lents aux periodes sans rapport entre
+      // elles (5,7 s, 11,9 s et 7,2 s) : le geste ne se repete jamais a
+      // l'identique. Un balancement regulier ferait metronome, pas vivant.
+      const pivot = Math.sin(t * 1.1) * .045 + Math.sin(t * .53 + 1.2) * .03;
+      const coude = Math.sin(t * .87 + .6) * 4;
+      g.save();
+      g.translate(-74, -164); g.rotate(pivot); g.translate(74, 164);
       g.strokeStyle = R(.55); g.lineWidth = 15; g.lineCap = 'round';
-      g.beginPath(); g.moveTo(-74, -164); g.quadraticCurveTo(-96, -120, -92, -74); g.stroke();
-      lueur(g, -92, -70, 12, 'rgba(255,200,240,1)', .6);
+      g.beginPath(); g.moveTo(-74, -164);
+      g.quadraticCurveTo(-96 - coude, -120, -92 + coude * .5, -74); g.stroke();
+      lueur(g, -92 + coude * .5, -70, 12, 'rgba(255,200,240,1)', .6);
+      g.restore();
     } },
 
   { id: 'torse', nom: 'torse', groupe: 'Corps', box: [-86, -198, 86, -32],
@@ -294,16 +312,36 @@ const PAR_ID = Object.fromEntries(ELEMENTS.map(e => [e.id, e]));
    LES REGLAGES : un decalage, une echelle en largeur et en hauteur, et une
    rotation par element. Gardes dans le navigateur, et exportes en texte.
    ===================================================================== */
-const CLE = 'susanooFricadelle:reglages';
+// Nouvelle cle : l'ancienne gardait les rotations EN DEGRES (le format de
+// l'export) mais les relisait comme des radians, donc un rechargement tordait
+// tout ce qui etait tourne (-13 degres relus -13 rad). Ce qu'elle contenait est
+// de toute facon dans VALIDES, puisque tu me l'as envoye.
+const CLE = 'susanooFricadelle:reglages:v2';
 const neutre = () => ({ dx: 0, dy: 0, ex: 1, ey: 1, rot: 0 });
+// Les reglages VALIDES, envoyes tels quels et gardes aussi dans
+// fricadelle-susanoo-reglage.reglages.json. Ils sont la base du dessin :
+// « revenir au valide » y ramene, et non plus a la position d'origine — sinon
+// un clic de trop effacerait un travail deja valide.
+const VALIDES = {"aura":{"dx":2,"dy":-21,"ex":1.32,"ey":1.02,"rot":0},"flammeBas1":{"dx":17,"dy":-24,"ex":0.66,"ey":0.66,"rot":-20},"flammeBas2":{"dx":-12,"dy":-19,"ex":0.72,"ey":0.72,"rot":-10},"flammeBas3":{"dx":52,"dy":-14,"ex":0.54,"ey":0.54,"rot":-51},"brasG":{"dx":21,"dy":7,"ex":1,"ey":1.22,"rot":-13},"torse":{"dx":2,"dy":4,"ex":1,"ey":1,"rot":0},"pecG":{"dx":-2,"dy":-3,"ex":1,"ey":1,"rot":0},"pecD":{"dx":5,"dy":-3,"ex":1,"ey":1,"rot":0},"abdos":{"dx":2,"dy":0,"ex":1,"ey":1,"rot":0},"obliqueG":{"dx":5,"dy":0,"ex":1,"ey":1,"rot":0},"obliqueD":{"dx":-1,"dy":0,"ex":1,"ey":1,"rot":0},"flamme1":{"dx":0,"dy":3,"ex":1,"ey":1,"rot":0},"flamme6":{"dx":1,"dy":0,"ex":1,"ey":1,"rot":0},"flamme7":{"dx":0,"dy":5,"ex":1,"ey":1,"rot":0},"corneG":{"dx":-5,"dy":25,"ex":0.84,"ey":0.7,"rot":-13},"corneD":{"dx":5,"dy":25,"ex":0.84,"ey":0.7,"rot":13},"dome":{"dx":-1,"dy":5,"ex":1.08,"ey":0.52,"rot":0},"garde":{"dx":0,"dy":1,"ex":1,"ey":1,"rot":0},"oeilG":{"dx":2,"dy":1,"ex":1,"ey":1,"rot":0},"oeilD":{"dx":1,"dy":1,"ex":1,"ey":1,"rot":0},"epauleG":{"dx":10,"dy":-3,"ex":1,"ey":1,"rot":0},"epauleD":{"dx":-8,"dy":-2,"ex":1,"ey":1,"rot":0},"brasD":{"dx":4,"dy":-11,"ex":1,"ey":1,"rot":0},"epee":{"dx":1,"dy":0,"ex":1.08,"ey":1.08,"rot":0}};
+const valide = id => {
+  const v = VALIDES[id];
+  return v ? { dx: v.dx, dy: v.dy, ex: v.ex, ey: v.ey, rot: v.rot * Math.PI / 180 } : neutre();
+};
 const etat = {};
-ELEMENTS.forEach(e => { etat[e.id] = neutre(); });
+ELEMENTS.forEach(e => { etat[e.id] = valide(e.id); });
 try {
   const gard = JSON.parse(localStorage.getItem(CLE) || '{}');
   for (const [id, v] of Object.entries(gard)) if (etat[id]) Object.assign(etat[id], v);
 } catch (e) { /* navigation privee : on s'en passe */ }
-function garder() { try { localStorage.setItem(CLE, JSON.stringify(modifies())); } catch (e) { } }
+// On garde TOUT l'etat, en radians : un element remis a son origine expres doit
+// le rester au rechargement, et ne pas revenir a sa valeur validee.
+function garder() { try { localStorage.setItem(CLE, JSON.stringify(etat)); } catch (e) { } }
 const estNeutre = v => !v.dx && !v.dy && v.ex === 1 && v.ey === 1 && !v.rot;
+// Un element « retouche » l'est par rapport aux reglages valides, pas par
+// rapport a l'origine : c'est ce qui dit ce qui a change depuis le dernier envoi.
+const vaut = (a, b) => a.dx === b.dx && a.dy === b.dy && Math.abs(a.ex - b.ex) < .005
+                    && Math.abs(a.ey - b.ey) < .005 && Math.abs(a.rot - b.rot) < .005;
+const retouche = id => !vaut(etat[id], valide(id));
 function modifies() {
   const o = {};
   for (const [id, v] of Object.entries(etat)) if (!estNeutre(v)) {
@@ -545,7 +583,7 @@ function construireListe() {
     for (const el of els) {
       const b = document.createElement('button');
       b.textContent = el.nom;
-      b.className = (el.id === choisi ? 'on ' : '') + (estNeutre(etat[el.id]) ? '' : 'mod');
+      b.className = (el.id === choisi ? 'on ' : '') + (retouche(el.id) ? 'mod' : '');
       b.onclick = () => choisir(el.id);
       l.append(b);
     }
@@ -594,15 +632,15 @@ function majPanneau(depuisCurseur) {
       lie.querySelector('input').onchange = e => { lier = e.target.checked; };
       h.append(lie);
       const btns = document.createElement('div'); btns.className = 'btns';
-      const raz = document.createElement('button'); raz.textContent = 'réinitialiser cet élément';
-      raz.onclick = () => { etat[choisi] = neutre(); majPanneau(); garder(); };
+      const raz = document.createElement('button'); raz.textContent = 'revenir au réglage validé';
+      raz.onclick = () => { etat[choisi] = valide(choisi); majPanneau(); garder(); };
       btns.append(raz); h.append(btns);
     }
   } else curseurs.forEach(c => c._maj());
   if (!depuisCurseur) construireListe();
   else document.querySelectorAll('#liste button').forEach(b => {
     const el = ELEMENTS.find(e => e.nom === b.textContent);
-    if (el) b.classList.toggle('mod', !estNeutre(etat[el.id]));
+    if (el) b.classList.toggle('mod', retouche(el.id));
   });
   document.getElementById('sortie').value = JSON.stringify(modifies(), null, 1) || '{}';
 }
@@ -614,8 +652,8 @@ document.getElementById('bCopier').onclick = async ev => {
   catch (e) { document.getElementById('sortie').select(); }
 };
 document.getElementById('bToutRaz').onclick = () => {
-  if (!confirm('Remettre tous les éléments à leur place d\'origine ?')) return;
-  ELEMENTS.forEach(e => { etat[e.id] = neutre(); }); garder(); majPanneau();
+  if (!confirm('Revenir aux réglages validés pour tous les éléments ?')) return;
+  ELEMENTS.forEach(e => { etat[e.id] = valide(e.id); }); garder(); majPanneau();
 };
 
 /* =====================================================================
