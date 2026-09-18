@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Susanoo de la Fricadelle — l'ultime</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b0a10; --panel:#16131d; --edge:#35293f; --ink:#f3edf6; --rose:#ff7fd0; --or:#e8a94a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:23px;margin:0 0 6px;font-family:'Archivo Black',sans-serif;letter-spacing:.5px}
+  h1 em{font-style:normal;color:var(--rose)}
+  .note{font-size:12.5px;color:#b3a7bd;max-width:1060px;line-height:1.75;margin:0 0 14px}
+  .note b{color:var(--ink)}
+  .duo{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px}
+  .choix{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 520px;min-width:0}
+  .choix h2{margin:0 0 4px;font-size:15px;letter-spacing:1px;color:var(--rose);font-family:'Archivo Black',sans-serif}
+  .choix .src{font-size:11px;color:#8f829b;font-family:Consolas,monospace;margin-bottom:10px}
+  .choix canvas{width:100%;height:auto;display:block;border-radius:10px;background:#000}
+  .choix p{font-size:12px;color:#b3a7bd;line-height:1.7;margin:10px 0 0}
+  .choix p b{color:var(--ink)}
+  .pour{color:#8ef0b4}.contre{color:#ff8a8a}
+</style>
+</head>
+<body>
+
+<h1>SUSANOO DE LA <em>FRICADELLE</em></h1>
+<p class="note">
+  <b>Déjà tranché :</b> le Susanoo se tient <b>dans son dos et le suit</b>, comme sur ta photo ;
+  il est <b>dessiné en courbes</b>, comme le diable du casino, et pas en pixels — c'est le seul
+  rendu qui tient à trois fois la taille du perso ; il a les <b>cheveux en pics du Super Saiyan
+  Rosé</b> et une <b>épée-fricadelle</b>.
+  <br><br>
+  <b>Reste à choisir ce qu'il fait.</b> Tu as retenu deux ultimes, et ils viennent tous les deux de
+  Genji dans Overwatch. Dans un jeu de disque ils se ressemblent beaucoup, donc la différence est
+  mise en avant : la <b>Riposte</b> renvoie le disque <b>tout seul, par où il est arrivé</b> ; la
+  <b>Lame du dragon</b> le laisse <b>attraper, puis viser</b> — ses renvois partent chacun vers un
+  coin différent du but. Les deux animations tournent en même temps : la barre d'espace les met
+  en pause ensemble, pour comparer le même instant.
+</p>
+
+<div class="duo">
+  <div class="choix">
+    <h2>A · LAME DU DRAGON</h2>
+    <div class="src">Genji, Overwatch — « Ryūjin no ken wo kurae ! »</div>
+    <canvas id="cvA" width="960" height="540"></canvas>
+    <div id="lecA"></div>
+    <p>
+      Pendant <b>6 secondes</b>, chaque disque qu'il attrape est relancé <b>aussitôt</b> par un coup
+      d'épée du Susanoo, en <b>tir parfait</b> et sans temps de charge. Il vise toujours : ses renvois
+      partent là où il veut.
+      <br><span class="pour">+ Il reste aux commandes, et c'est six secondes de pression continue.</span>
+      <br><span class="contre">− Il faut quand même attraper : un disque raté reste un but encaissé.</span>
+    </p>
+  </div>
+  <div class="choix">
+    <h2>B · RIPOSTE</h2>
+    <div class="src">Genji, Overwatch — « Dévier »</div>
+    <canvas id="cvB" width="960" height="540"></canvas>
+    <div id="lecB"></div>
+    <p>
+      Pendant <b>3 secondes</b>, tout disque qui arrive sur lui est renvoyé <b>tout seul</b>, à pleine
+      vitesse, d'un revers d'épée — il n'a même pas besoin d'attraper. Mais il ne choisit pas : le
+      disque repart <b>par où il est venu</b>.
+      <br><span class="pour">+ Impossible de lui marquer dessus pendant la fenêtre, et l'adversaire qui tire se prend son propre tir.</span>
+      <br><span class="contre">− Trois secondes seulement, et aucun contrôle sur la direction : un adversaire patient attend que ça passe.</span>
+    </p>
+  </div>
+</div>
+
+<script type="module">
+import { CHARS } from '../js/data/characters.js';
+import { TAU, CT, CW, CH, CXX, CYY, GOAL_H, terrain, perso, disque,
+         easeOut, easeIn, easeInOut, easeBack, alea, lueur, anneau,
+         visionneuse, styleVisionneuse } from './_ulti.js';
+
+/* ===================== LE GARDIEN, tel qu'il a ete dessine ===================== */
+const PAL = { H:'#2b2631', h:'#15121a', j:'#4f4858', S:'#f0c090', s:'#cf9660', E:'#2c2a26',
+  K:'#1b1d24', k:'#343845', W:'#f2f4f8', A:'#c4cbd6', a:'#858d9b',
+  F:'#e8a94a', f:'#b06f22', b:'#6d3f12', R:'#ff7fd0', r:'#c24f9a' };
+const GARDIEN = ["....jHHHHh......","...jHHHHHHh.....","..jHHHHHHHHh....","..HHHHKKHHHH....",
+  "..HHSSKSSSHH....","..HSSSSSSSSH....","..SSSrSSSSrS....","..SSSSSSSSSS....","...sSSSSSSs.....",
+  "....WKKKKW......",".bFKKAAAAKKFb...",".WAKAWWWWAKAW...",".WbFFbWWbFFbW...",".SAKKAWWAKKAS...",
+  "..bFFbAAbFFb....","..KKKKKKKKKK....","...KK....KK.....","...KK....KK.....","...FA....AF.....",
+  "..WWb....bWW...."];
+function sprite(rows, pal) {
+  const c = document.createElement('canvas'); c.width = 16; c.height = 20;
+  const g = c.getContext('2d');
+  rows.forEach((l, y) => { for (let x = 0; x < 16; x++) {
+    if (l[x] !== '.' && pal[l[x]]) { g.fillStyle = pal[l[x]]; g.fillRect(x, y, 1, 1); } } });
+  return c;
+}
+const SPR_G = sprite(GARDIEN, PAL);
+const SPR_ADV = CHARS.naruto.frames.idle;
+
+/* ===================== LA SCENE ===================== */
+const POS_G = { x: CT.left + CW * .2, y: CYY + CH * .2 };
+const POS_A = { x: CT.right - CW * .2, y: CYY + CH * .2 };
+const COIN_H = { x: CT.right, y: CYY - GOAL_H * .38 };
+const COIN_B = { x: CT.right, y: CYY + GOAL_H * .38 };
+const MAIN_G = { x: POS_G.x + 26, y: POS_G.y - 6 };
+const MAIN_A = { x: POS_A.x - 26, y: POS_A.y - 6 };
+const lerp = (a, b, k) => a + (b - a) * k;
+
+/* ===================== LE SUSANOO, en courbes ===================== */
+// Il est peint APRES le terrain et AVANT le Gardien : il se tient dans son dos.
+// Tout est en 'lighter' : un spectre d'energie ne cache pas ce qu'il y a
+// derriere lui, il l'eclaire — le terrain reste lisible au travers.
+function susanoo(g, v, t, force, sabre, trace) {
+  if (force <= 0) return;
+  const { e, X, Y } = v;
+  const gx = X(POS_G.x), gy = Y(POS_G.y);
+  const k = easeBack(Math.min(1, force));        // il surgit un peu trop grand, puis se pose
+  const s = e * (0.72 + 0.28 * k);
+  const respire = 1 + Math.sin(t * 3.1) * .015;
+  const ox = gx - 18 * s, oy = gy + 6 * s;      // ses pieds, un peu derriere lui
+
+  g.save();
+  g.globalCompositeOperation = 'lighter';
+  const fo = Math.min(1, force);
+  g.globalAlpha = fo;
+  // lueur() impose son propre globalAlpha : chacune recoit donc la force en plus.
+  const L_ = (x, y, r, c, al) => lueur(g, x, y, r, c, al * fo);
+
+  // L'aura au sol et le halo general.
+  L_(ox, oy - 120 * s, 170 * s, 'rgb(255,110,200)', .22);
+  L_(ox, oy, 90 * s, 'rgb(255,90,190)', .28);
+
+  // Le corps : une cuirasse translucide, large aux epaules, prise a la taille.
+  g.save();
+  g.translate(ox, oy); g.scale(respire, respire);
+  const corps = new Path2D();
+  corps.moveTo(-40 * s, -40 * s);
+  corps.bezierCurveTo(-58 * s, -95 * s, -92 * s, -140 * s, -84 * s, -178 * s);
+  corps.bezierCurveTo(-40 * s, -196 * s, 40 * s, -196 * s, 84 * s, -178 * s);
+  corps.bezierCurveTo(92 * s, -140 * s, 58 * s, -95 * s, 40 * s, -40 * s);
+  corps.bezierCurveTo(14 * s, -28 * s, -14 * s, -28 * s, -40 * s, -40 * s);
+  const dg = g.createLinearGradient(0, -196 * s, 0, -30 * s);
+  dg.addColorStop(0, 'rgba(255,150,220,.55)'); dg.addColorStop(1, 'rgba(255,70,180,.12)');
+  g.fillStyle = dg; g.fill(corps);
+  g.strokeStyle = 'rgba(255,205,240,.9)'; g.lineWidth = 2.2 * e; g.stroke(corps);
+
+  // Les cotes de l'armure, comme le squelette du Susanoo de Sasuke.
+  g.strokeStyle = 'rgba(255,190,235,.55)'; g.lineWidth = 1.6 * e;
+  for (let i = 0; i < 4; i++) {
+    const yy = (-160 + i * 26) * s, w = (70 - i * 9) * s;
+    g.beginPath(); g.moveTo(-w, yy); g.quadraticCurveTo(0, yy + 16 * s, w, yy); g.stroke();
+  }
+  // Les epaulieres, qui repondent a celles du Gardien.
+  for (const sx of [-1, 1]) {
+    g.beginPath();
+    g.ellipse(sx * 80 * s, -176 * s, 26 * s, 15 * s, sx * .35, 0, TAU);
+    g.fillStyle = 'rgba(255,170,225,.45)'; g.fill();
+    g.strokeStyle = 'rgba(255,220,245,.9)'; g.stroke();
+  }
+
+  // La tete, casquee, et ses deux yeux.
+  const tx = 4 * s, ty = -222 * s;
+  g.beginPath(); g.ellipse(tx, ty, 26 * s, 30 * s, 0, 0, TAU);
+  g.fillStyle = 'rgba(255,150,220,.5)'; g.fill();
+  g.strokeStyle = 'rgba(255,215,245,.95)'; g.stroke();
+  for (const sx of [-1, 1]) L_(tx + sx * 10 * s + 3 * s, ty + 2 * s, 6 * s, 'rgb(255,245,255)', .95);
+
+  // LES CHEVEUX DU SUPER SAIYAN ROSE : des pics qui partent vers le haut et
+  // vers l'arriere, chacun avec son propre battement.
+  for (let i = 0; i < 9; i++) {
+    const a = -Math.PI / 2 + (i - 4) * .3 - .25;
+    const L = (48 + alea(i + 3) * 30) * s * (1 + Math.sin(t * 7 + i) * .05);
+    const bx = tx + Math.cos(a) * 20 * s, by = ty - 14 * s + Math.sin(a) * 12 * s;
+    const px = bx + Math.cos(a) * L, py = by + Math.sin(a) * L;
+    const n = { x: -Math.sin(a) * 9 * s, y: Math.cos(a) * 9 * s };
+    g.beginPath(); g.moveTo(bx - n.x, by - n.y); g.lineTo(px, py); g.lineTo(bx + n.x, by + n.y);
+    g.closePath();
+    g.fillStyle = 'rgba(255,120,210,.7)'; g.fill();
+    g.strokeStyle = 'rgba(255,225,248,.85)'; g.lineWidth = 1.4 * e; g.stroke();
+  }
+  g.restore();
+
+  // Le bras qui porte l'epee, et L'EPEE-FRICADELLE.
+  const epx = ox + 70 * s, epy = oy - 150 * s;          // l'epaule droite
+  const mx = epx + Math.cos(sabre) * 58 * s, my = epy + Math.sin(sabre) * 58 * s;  // la main
+  g.strokeStyle = 'rgba(255,170,225,.75)'; g.lineWidth = 16 * s; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(epx, epy); g.lineTo(mx, my); g.stroke();
+
+  // La trainee du coup, AVANT la lame pour passer sous elle.
+  if (trace > 0) {
+    g.globalAlpha = Math.min(1, force) * trace;
+    for (let i = 0; i < 14; i++) {
+      const aa = sabre - (i / 14) * 1.5;
+      L_(mx + Math.cos(aa) * 150 * s, my + Math.sin(aa) * 150 * s, 26 * s, 'rgb(255,120,210)', .35 * (1 - i / 14));
+    }
+    g.globalAlpha = Math.min(1, force);
+  }
+
+  g.save(); g.translate(mx, my); g.rotate(sabre);
+  // La garde, rose.
+  g.fillStyle = 'rgba(255,190,235,.9)';
+  g.beginPath(); g.ellipse(6 * s, 0, 5 * s, 20 * s, 0, 0, TAU); g.fill();
+  // La lame : une fricadelle de 170 unites, doree, arrondie au bout, cernee de rose.
+  const L = 170 * s, lar = 13 * s;
+  g.globalCompositeOperation = 'source-over';
+  const lame = new Path2D();
+  lame.moveTo(12 * s, -lar); lame.lineTo(L - lar, -lar);
+  lame.arc(L - lar, 0, lar, -Math.PI / 2, Math.PI / 2); lame.lineTo(12 * s, lar); lame.closePath();
+  const lg = g.createLinearGradient(0, -lar, 0, lar);
+  lg.addColorStop(0, '#f3c36b'); lg.addColorStop(.45, '#e8a94a'); lg.addColorStop(1, '#8a4f18');
+  g.globalAlpha = Math.min(1, force) * .92;
+  g.fillStyle = lg; g.fill(lame);
+  // Les stries de cuisson, en travers : c'est elles qui disent « fricadelle ».
+  g.strokeStyle = 'rgba(110,60,20,.55)'; g.lineWidth = 2 * e;
+  for (let i = 1; i < 6; i++) {
+    const xx = 12 * s + i * (L - 30 * s) / 6;
+    g.beginPath(); g.moveTo(xx, -lar * .8); g.quadraticCurveTo(xx + 5 * s, 0, xx, lar * .8); g.stroke();
+  }
+  g.globalCompositeOperation = 'lighter';
+  g.strokeStyle = 'rgba(255,140,215,.95)'; g.lineWidth = 3 * e; g.stroke(lame);
+  L_(L * .55, 0, 40 * s, 'rgb(255,110,200)', .25);
+  g.restore();
+
+  // Les etincelles qui montent de lui.
+  for (let i = 0; i < 18; i++) {
+    const cyc = (t * .6 + alea(i)) % 1;
+    const px = ox + (alea(i + 40) - .5) * 170 * s;
+    const py = oy - cyc * 260 * s;
+    L_(px, py, 3.5 * s, 'rgb(255,200,240)', .7 * (1 - cyc));
+  }
+  g.restore();
+}
+
+// L'angle de l'epee. Au repos elle est dressee derriere lui ; un coup la fait
+// passer devant, sous lui, en une fraction de seconde, puis elle remonte.
+//
+// Chaque coup est date par son IMPACT : la lame touche le disque a l'instant
+// exact ou il repart. Une premiere version datait le coup par son depart, et
+// la lame tombait 0,13 s apres que le disque etait deja loin.
+const REPOS = -2.1, FRAPPE = 1.76;
+const ARME = .12, TOMBE = .13, REMONTE = .47;
+function epee(t, coups) {
+  let a = REPOS, trace = 0;
+  for (const c of coups) {
+    const d = t - c;                                  // 0 = l'impact
+    if (d < -(ARME + TOMBE) || d > REMONTE) continue;
+    if (d < -TOMBE) a = lerp(REPOS, REPOS - .35, easeOut((d + ARME + TOMBE) / ARME));
+    else if (d < 0) { const k = (d + TOMBE) / TOMBE; a = lerp(REPOS - .35, FRAPPE, easeIn(k)); trace = k; }
+    else { a = lerp(FRAPPE, REPOS, easeInOut(d / REMONTE)); trace = Math.max(0, 1 - d / .25); }
+  }
+  return { a, trace };
+}
+
+/* ===================== LE DISQUE ===================== */
+// Un trajet est [depart, arrivee, t0, duree, style]. Hors trajet, le disque
+// est tenu dans la main de celui qui l'a.
+function disqueSur(trajets, t) {
+  for (const j of trajets) {
+    if (t >= j.t0 && t <= j.t0 + j.d) {
+      const k = (t - j.t0) / j.d;
+      return { x: lerp(j.de.x, j.a.x, k), y: lerp(j.de.y, j.a.y, k), style: j.style, k, j };
+    }
+  }
+  let dernier = null;
+  for (const j of trajets) if (j.t0 + j.d <= t) dernier = j;
+  const p = dernier ? dernier.a : MAIN_A;
+  return { x: p.x, y: p.y, style: 'tenu', k: 1, j: dernier };
+}
+
+function trainee(g, v, pos, couleur) {
+  if (!pos.j || pos.style === 'tenu') return;
+  const { X, Y, e } = v;
+  for (let i = 1; i <= 10; i++) {
+    const kk = pos.k - i * .035;
+    if (kk < 0) break;
+    const x = lerp(pos.j.de.x, pos.j.a.x, kk), y = lerp(pos.j.de.y, pos.j.a.y, kk);
+    lueur(g, X(x), Y(y), 13 * e, couleur, .5 * (1 - i / 10));
+  }
+}
+
+/* ===================== LES DEUX SCENARIOS ===================== */
+const T_INVOC = .8;
+
+// A : il ATTRAPE, puis le Susanoo relance aussitot — chaque fois vers un coin.
+const A = {
+  duree: 7.2, fin: 6.8,
+  coups: [1.62, 3.17, 4.72],
+  trajets: [
+    { de: MAIN_A, a: MAIN_G, t0: .95, d: .55, style: 'normal' },
+    { de: MAIN_G, a: COIN_H, t0: 1.62, d: .3, style: 'parfait' },
+    { de: MAIN_A, a: MAIN_G, t0: 2.5, d: .55, style: 'normal' },
+    { de: MAIN_G, a: COIN_B, t0: 3.17, d: .3, style: 'parfait' },
+    { de: MAIN_A, a: MAIN_G, t0: 4.05, d: .55, style: 'normal' },
+    { de: MAIN_G, a: { x: CT.right, y: CYY }, t0: 4.72, d: .3, style: 'parfait' },
+  ],
+  phases: [
+    { nom: 'INVOCATION', detail: '0 – 0,8 s' }, { nom: '1er COUP', detail: 'coin haut' },
+    { nom: '2e COUP', detail: 'coin bas' }, { nom: '3e COUP', detail: 'plein centre' },
+    { nom: 'DISSIPATION', detail: 'après 6 s' },
+  ],
+  depart: [0, .9, 2.45, 4.0, 6.2],
+};
+
+// B : il n'attrape pas — le disque est devie au contact, par ou il est venu.
+const B = {
+  duree: 7.2, fin: 3.8,
+  coups: [1.5, 2.7],
+  trajets: [
+    { de: MAIN_A, a: MAIN_G, t0: .95, d: .55, style: 'normal' },
+    { de: MAIN_G, a: MAIN_A, t0: 1.5, d: .32, style: 'devie' },
+    { de: MAIN_A, a: MAIN_G, t0: 2.15, d: .55, style: 'normal' },
+    { de: MAIN_G, a: MAIN_A, t0: 2.7, d: .32, style: 'devie' },
+    { de: MAIN_A, a: MAIN_G, t0: 4.6, d: .55, style: 'normal' },
+    { de: MAIN_G, a: COIN_H, t0: 5.75, d: .55, style: 'normal' },
+  ],
+  phases: [
+    { nom: 'INVOCATION', detail: '0 – 0,8 s' }, { nom: '1re RIPOSTE', detail: 'sans attraper' },
+    { nom: '2e RIPOSTE', detail: 'il panique' }, { nom: 'FERMETURE', detail: 'après 3 s' },
+    { nom: 'RETOUR', detail: 'il attrape normalement' },
+  ],
+  depart: [0, .9, 2.1, 3.8, 4.5],
+};
+
+function scene(sc) {
+  return (g, t, W, H) => {
+    const v = terrain(g, W, H);
+    const { X, Y, e } = v;
+
+    // La force du Susanoo : il monte, tient, puis se dissout.
+    let force = 0;
+    if (t < T_INVOC) force = t / T_INVOC;
+    else if (t < sc.fin) force = 1;
+    else force = Math.max(0, 1 - (t - sc.fin) / .5);
+
+    // L'appel : un anneau rose qui s'ouvre sous ses pieds.
+    if (t < T_INVOC + .3) {
+      const k = Math.min(1, t / (T_INVOC + .3));
+      anneau(g, X(POS_G.x), Y(POS_G.y) + 6 * e, 30 * e + k * 150 * e, (30 * e + k * 150 * e) * .4,
+             (1 - k) * .9, 'rgb(255,120,210)', 3 * e);
+    }
+
+    const { a, trace } = epee(t, sc.coups);
+    susanoo(g, v, t, force, a, trace);
+
+    perso(g, SPR_ADV, POS_A.x, POS_A.y, v, -1);
+    perso(g, SPR_G, POS_G.x, POS_G.y, v, 1);
+
+    const pos = disqueSur(sc.trajets, t);
+    if (pos.style === 'parfait') trainee(g, v, pos, 'rgb(255,170,90)');
+    if (pos.style === 'devie') trainee(g, v, pos, 'rgb(255,110,210)');
+    disque(g, pos.x, pos.y, v);
+
+    // L'eclat au moment du coup.
+    for (const c of sc.coups) {
+      const d = t - c;
+      if (d >= 0 && d < .25) {
+        g.save(); g.globalCompositeOperation = 'lighter';
+        lueur(g, X(MAIN_G.x), Y(MAIN_G.y), (20 + d * 200) * e, 'rgb(255,210,240)', (1 - d / .25) * .9);
+        anneau(g, X(MAIN_G.x), Y(MAIN_G.y), (10 + d * 260) * e, (10 + d * 260) * e * .5,
+               (1 - d / .25), 'rgb(255,150,220)', 2 * e);
+        g.restore();
+      }
+    }
+
+    let ph = 0;
+    sc.depart.forEach((d, i) => { if (t >= d) ph = i; });
+    return ph;
+  };
+}
+
+styleVisionneuse();
+for (const [id, sc] of [['A', A], ['B', B]]) {
+  visionneuse({
+    hote: document.getElementById('lec' + id),
+    cv: document.getElementById('cv' + id),
+    phases: sc.phases,
+    duree: () => sc.duree,
+    depart: () => sc.depart,
+    jouer: scene(sc),
+  });
+}
+</script>
+</body>
+</html>
