@@ -3,6 +3,7 @@ import { W, curScreen } from '../core/dom.js';
 import { CX, METER_GAIN, POSSESSION_MAX, POSSESSION_COMPTE_A_REBOURS } from '../core/constants.js';
 import { lerp, gauss, rand, pick, clamp } from '../core/utils.js';
 import { getMap, getMapId } from '../data/maps.js';
+import { Rendu } from '../core/rendu.js';
 import { updatePlayerHuman, updatePlayer2, integratePlayer } from './input.js';
 import { doThrowHuman } from './actions.js';
 import { majCommandes, appliquerActions } from './commandes.js';
@@ -383,7 +384,10 @@ export function frame(t) {
   const playing = curScreen === null;
   // L'ecran en ligne laisse voir le match : le fond y est translucide, autant
   // que ce soit le jeu qui l'anime plutot qu'un decor invente.
-  const demoBehind = ['title', 'select', 'options', 'online'].includes(curScreen);
+  // Sauf en mode allégé (voir core/rendu.js) : sans carte graphique, chaque
+  // image de la démo oblige à recombiner toutes les couches translucides du
+  // menu posées dessus. La démo s'y fige sur sa dernière image.
+  const demoBehind = !Rendu.leger && ['title', 'select', 'options', 'online'].includes(curScreen);
   const jouer = playing || demoBehind;
   // On vide l'accumulateur même quand rien ne tourne : sinon le temps passé
   // dans les menus s'y entasserait et le match repartirait par une rafale.

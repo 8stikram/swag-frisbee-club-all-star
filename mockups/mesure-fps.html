@@ -78,14 +78,17 @@ const panneau = document.getElementById('panneau');
 const boutons = [document.getElementById('lancer'), document.getElementById('lancerFenetre')];
 const attendre = ms => new Promise(r => setTimeout(r, ms));
 
-// Les étapes. Le décor qui tourne derrière les menus est celui de la dernière
-// map jouée : on passe donc le menu titre sur chaque map, puis les autres
-// menus sur l'arène, puis un vrai match sur les maps les plus lourdes.
+// Les étapes. Chaque menu passe deux fois : en rendu normal, puis en mode allégé (voir
+// js/core/rendu.js), forcé pour l'occasion. Sur une machine qui dessine sans
+// carte graphique, c'est la comparaison qui dit ce que le mode allégé
+// rapporte ; sur une machine normale, qu'il ne casse rien. Le match ne passe
+// qu'une fois : le mode allégé n'y change rien.
+const MENUS = [['title', 'Menu titre'], ['select', 'Sélection des persos'], ['options', 'Options'],
+  ['online', 'En ligne'], ['maps', 'Choix de la map'], ['casino', 'Casino']];
 const ETAPES = [
-  ...['arena', 'dojo', 'stadium', 'dune', 'polenord', 'raccoon'].map(map => ({ groupe: 'Menu titre, selon la map derrière', ecran: 'title', map })),
-  ...[['select', 'Sélection des persos'], ['options', 'Options'], ['online', 'En ligne'], ['maps', 'Choix de la map'], ['casino', 'Casino']]
-    .map(([ecran, nom]) => ({ groupe: 'Autres menus', ecran, nom, map: 'arena' })),
-  ...['arena', 'stadium', 'polenord', 'raccoon'].map(map => ({ groupe: 'En match', ecran: null, nom: 'Match', map }))
+  ...MENUS.map(([ecran, nom]) => ({ groupe: 'Menus — rendu normal', court: 'normal', leger: false, ecran, nom, map: 'arena' })),
+  ...MENUS.map(([ecran, nom]) => ({ groupe: 'Menus — mode allégé', court: 'allégé', leger: true, ecran, nom, map: 'arena' })),
+  ...['arena', 'raccoon'].map(map => ({ groupe: 'En match', court: 'match', leger: false, ecran: null, nom: 'Match', map }))
 ];
 const NOMS_MAPS = { arena: 'Arène', dojo: 'Dojo', stadium: 'Stade', dune: 'Dune de Râ', polenord: 'Pôle Nord', raccoon: 'Raccoon City' };
 const SECONDES = 3, POSE_MS = 900;
@@ -100,11 +103,12 @@ cadre.addEventListener('load', async () => {
   // résoudrait depuis cette page-ci, dans /mockups/, où le jeu n'est pas.
   const charger = chemin => w.eval(`import(${JSON.stringify(new URL(chemin, w.location.href).href)})`);
   try {
-    const [dm, mp, cst, st, lp, cas] = await Promise.all([
+    const [dm, mp, cst, st, lp, cas, rd] = await Promise.all([
       charger('./js/core/dom.js'), charger('./js/data/maps.js'), charger('./js/core/constants.js'),
-      charger('./js/game/state.js'), charger('./js/game/loop.js'), charger('./js/casino/casino.js')
+      charger('./js/game/state.js'), charger('./js/game/loop.js'), charger('./js/casino/casino.js'),
+      charger('./js/core/rendu.js')
     ]);
-    M = { w, dm, mp, cst, st, lp, cas };
+    M = { w, dm, mp, cst, st, lp, cas, rd, legerDetecte: rd.Rendu.leger, raisonDetectee: rd.Rendu.raison };
     etat.textContent = 'Prêt.';
     boutons.forEach(b => b.disabled = false);
   } catch (e) {
@@ -124,6 +128,7 @@ function placer(e) {
   const { dm, mp, cst, st, cas, w } = M;
   const intro = w.document.getElementById('scr-intro');
   if (intro) intro.hidden = true;
+  M.rd.appliquerRenduLeger(e.leger);
   mp.setMapId(e.map); cst.applyMap();
   if (e.ecran === null) {
     st.initMatch(true, 'naruto', 'leon', 2, false);
@@ -200,12 +205,14 @@ async function lancer(pleinEcran) {
   const lignes = [];
   for (let i = 0; i < ETAPES.length; i++) {
     const e = ETAPES[i];
-    etat.textContent = `${i + 1}/${ETAPES.length} — ${e.nom || 'Menu titre'} · ${NOMS_MAPS[e.map]}`;
+    etat.textContent = `${i + 1}/${ETAPES.length} — ${e.nom || 'Menu titre'} · ${e.court === 'match' ? NOMS_MAPS[e.map] : e.court}`;
     placer(e);
     await attendre(POSE_MS);
     lignes.push({ ...e, ...(await mesurer()) });
   }
-  // On rend le jeu tel qu'on l'a trouvé.
+  // On rend le jeu tel qu'on l'a trouvé, mode allégé compris : il était forcé
+  // pendant la mesure, il reprend ce que la détection avait décidé.
+  M.rd.appliquerRenduLeger(M.legerDetecte, M.raisonDetectee);
   M.mp.setMapId(mapAvant); M.cst.applyMap(); M.dm.showScreen('title');
   enCours = false;
   panneau.classList.remove('discret');
@@ -266,23 +273,24 @@ function afficher(lignes) {
   const fmt = (x, n = 1) => x.toFixed(n).replace('.', ',');
   let html = `<h2>Résultats</h2>
     <p class="machine">Écran rafraîchi à <b>${hz} Hz</b> · carte graphique : ${m.gpu}<br>
-    Écran ${m.ecran} · fenêtre ${m.fenetre} · jeu affiché en ${m.canevas} · ${m.navigateur}</p>`;
+    Écran ${m.ecran} · fenêtre ${m.fenetre} · jeu affiché en ${m.canevas} · ${m.navigateur}<br>
+    Mode allégé choisi par le jeu sur cette machine : <b>${M.legerDetecte ? 'oui' : 'non'}</b></p>`;
   if (sansCarte) html += `<p class="alerte">⚠ Ce navigateur dessine SANS la carte graphique (moteur logiciel). Tous les effets des menus sont alors calculés par le processeur. Active l’accélération matérielle dans les réglages du navigateur, redémarre-le, puis relance la mesure.</p>`;
   if (invalide) html += `<p class="alerte">Le navigateur a mis la page en veille pendant la mesure (onglet quitté ou fenêtre masquée) : les étapes marquées « en veille » ne comptent pas. Relance sans changer de fenêtre.</p>`;
   html += `<div class="boutons" style="margin-bottom:16px"><button id="copier">Copier les résultats</button>
     <button class="second" id="relancer">Relancer</button></div>
     <div class="cadreTable"><table><thead><tr>
-    <th>Écran</th><th>Map</th><th>FPS moyen</th><th>Pire 1 % (ms)</th><th>Pire image (ms)</th>
+    <th>Écran</th><th>Mode / map</th><th>FPS moyen</th><th>Pire 1 % (ms)</th><th>Pire image (ms)</th>
     <th>Images ratées</th><th>Blocages ≥ 50 ms</th></tr></thead><tbody>`;
   let groupe = '';
   for (const l of lignes) {
     if (l.groupe !== groupe) { groupe = l.groupe; html += `<tr class="groupe"><td colspan="7">${groupe}</td></tr>`; }
     if (l.enVeille) {
-      html += `<tr><td>${l.nom || 'Menu titre'}</td><td>${NOMS_MAPS[l.map]}</td><td class="mauvais" colspan="5" style="text-align:left">page en veille — ne compte pas</td></tr>`;
+      html += `<tr><td>${l.nom || 'Menu titre'}</td><td>${l.court === 'match' ? NOMS_MAPS[l.map] : l.court}</td><td class="mauvais" colspan="5" style="text-align:left">page en veille — ne compte pas</td></tr>`;
       continue;
     }
     const partRatees = l.ratees / l.images;
-    html += `<tr><td>${l.nom || 'Menu titre'}</td><td>${NOMS_MAPS[l.map]}</td>
+    html += `<tr><td>${l.nom || 'Menu titre'}</td><td>${l.court === 'match' ? NOMS_MAPS[l.map] : l.court}</td>
       <td class="${classe(hz - l.fps, hz * .05, hz * .2)}">${Math.round(l.fps)}</td>
       <td class="${classe(l.p99 / nominale, 1.6, 3)}">${fmt(l.p99)}</td>
       <td class="${classe(l.max / nominale, 2.5, 6)}">${fmt(l.max)}</td>
@@ -297,11 +305,11 @@ function afficher(lignes) {
 
   // Le texte copié est volontairement brut : il se recolle tel quel dans une
   // conversation et reste lisible sans tableau.
-  const texte = [`Mesure FPS — ${hz} Hz — ${m.gpu}${sansCarte ? ' (SANS CARTE GRAPHIQUE)' : ''} — fenêtre ${m.fenetre}, jeu ${m.canevas}, ${m.navigateur}${invalide ? ' — étapes en veille présentes' : ''}`,
-    'écran | map | fps | pire1%ms | pireMs | ratées | blocages≥50ms',
+  const texte = [`Mesure FPS — ${hz} Hz — ${m.gpu}${sansCarte ? ' (SANS CARTE GRAPHIQUE)' : ''} — fenêtre ${m.fenetre}, jeu ${m.canevas}, ${m.navigateur} — mode allégé auto : ${M.legerDetecte ? 'oui' : 'non'}${invalide ? ' — étapes en veille présentes' : ''}`,
+    'écran | mode/map | fps | pire1%ms | pireMs | ratées | blocages≥50ms',
     ...lignes.map(l => l.enVeille
-      ? `${l.nom || 'Menu titre'} | ${NOMS_MAPS[l.map]} | EN VEILLE`
-      : `${l.nom || 'Menu titre'} | ${NOMS_MAPS[l.map]} | ${Math.round(l.fps)} | ${fmt(l.p99)} | ${fmt(l.max)} | ${l.ratees}/${l.images} | ${l.longues}${l.longues ? ' (max ' + Math.round(l.longueMax) + ')' : ''}`)
+      ? `${l.nom || 'Menu titre'} | ${l.court === 'match' ? NOMS_MAPS[l.map] : l.court} | EN VEILLE`
+      : `${l.nom || 'Menu titre'} | ${l.court === 'match' ? NOMS_MAPS[l.map] : l.court} | ${Math.round(l.fps)} | ${fmt(l.p99)} | ${fmt(l.max)} | ${l.ratees}/${l.images} | ${l.longues}${l.longues ? ' (max ' + Math.round(l.longueMax) + ')' : ''}`)
   ].join('\n');
   document.getElementById('copier').addEventListener('click', async ev => {
     try { await navigator.clipboard.writeText(texte); ev.target.textContent = 'Copié ✓'; }

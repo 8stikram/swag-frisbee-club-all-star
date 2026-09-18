@@ -12,6 +12,7 @@
 import { $, showScreen } from '../core/dom.js';
 import { sfx } from '../audio/audio.js';
 import { Compte, connecte } from '../reseau/compte.js';
+import { Rendu } from '../core/rendu.js';
 
 const alea = (a, b) => a + Math.random() * (b - a);
 
@@ -324,6 +325,10 @@ function image(t) {
   const dt = Math.min((t - derniere) / 1000, .05);
   derniere = t;
   dessiner(dt);
+  // En mode allégé (voir core/rendu.js), une image suffit : les pièces et les
+  // braises restent posées là où elles étaient, et le canevas plein écran
+  // cesse d'obliger le processeur à tout recombiner soixante fois par seconde.
+  if (Rendu.leger) { boucle = null; return; }
   boucle = requestAnimationFrame(image);
 }
 

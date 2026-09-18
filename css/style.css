@@ -3796,6 +3796,68 @@ body.adminOn #stage{ width:min(98vw - 2*var(--apane-w) - 24px, 1200px) }
   box-shadow:0 0 1.4cqh var(--rune,#f6e27a);
 }
 
+/* ================= MODE ALLÉGÉ =================
+   Posé automatiquement sur <html> quand le navigateur dessine sans la carte
+   graphique (voir js/core/rendu.js). Mesuré dans ce cas : 180 images par
+   seconde en match, mais 13 sur la sélection des persos et 15 au casino. Le
+   jeu n'y est pour rien : ce sont ces grands décors animés, translucides,
+   flous ou fusionnés, que le processeur doit recombiner à chaque image.
+
+   On les MET EN PAUSE plutôt que de couper leur animation : une animation
+   coupée ramène l'élément à son style de départ — des volutes soudain opaques,
+   des flammes à pleine hauteur — alors qu'une pause le fige tel qu'il était,
+   et ne coûte plus rien. Ce qui informe continue de bouger : boutons, fondus
+   d'écran, cartes, scores, et le match lui-même, qui n'en avait pas besoin. */
+.renduLeger .watermark,
+.renduLeger .streaks,
+.renduLeger .ringwrap,
+.renduLeger .arc,
+.renduLeger .beam,
+.renduLeger .charglow,
+.renduLeger .chevrons,
+.renduLeger .blueprint,
+.renduLeger .radarSweep,
+.renduLeger .ping,
+.renduLeger .onEtoiles,
+.renduLeger .onArc,
+.renduLeger .onGlobe,
+.renduLeger .casFondCouleur,
+.renduLeger .casAnneau,
+.renduLeger .casAnneauInterne,
+.renduLeger .casSceau,
+.renduLeger .casSceau .lueur,
+.renduLeger .casFumee i,
+.renduLeger .casFumeeCigare i,
+.renduLeger .casFlammes i,
+.renduLeger .casFlammesFace i,
+.renduLeger .casGrain,
+.renduLeger .casSpots i,
+.renduLeger .casReflets,
+.renduLeger .casRunes span,
+.renduLeger .casPiece3d,
+.renduLeger .devilSvg,
+.renduLeger .devilTete,
+.renduLeger .devilEye,
+.renduLeger .devilCartes,
+/* La carte en feu, elle, garde son animation : elle dit que le jeu choisi est
+   en train de se charger. */
+.renduLeger .casinoCard:not(.enFeu),
+.renduLeger .bjBraises,
+.renduLeger .bjBraises::after,
+.renduLeger .bjPoussiere i,
+.renduLeger .bjSceauTapis,
+.renduLeger .bjSpot,
+.renduLeger .bjLustre,
+.renduLeger .casScanlines,
+.renduLeger .coGyro,
+.renduLeger .bjJeton::before,
+.renduLeger .bjJeton::after,
+.renduLeger .rlJeton::before,
+.renduLeger .bjPiece,
+.renduLeger .bjSolde{
+  animation-play-state:paused !important;
+}
+
 /* ================= ANIMATIONS RÉDUITES =================
    Le réglage vit dans data/settings.js, qui pose la classe sur <html>. Il coupe
    ce qui décore et garde ce qui informe : les cartes se retournent toujours,

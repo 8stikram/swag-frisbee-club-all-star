@@ -28,6 +28,7 @@ import {
 } from '../reseau/partie.js';
 import { fermer as fermerLiaison } from '../reseau/connexion.js';
 import { Compte } from '../reseau/compte.js';
+import { Rendu } from '../core/rendu.js';
 import { quandChoixFinal, adversairePartiEnFin } from './fin-de-match.js';
 
 let selCharPlayer = 'naruto', selCharCPU = 'leon', diffIdx = 1;
@@ -277,7 +278,8 @@ function quitterChoixEnLigne() {
   // le menu n'a aucune raison de faire tourner onze canevas en fond.
   (function animerPanneau() {
     requestAnimationFrame(animerPanneau);
-    if (panel.classList.contains('hidden') || !toilesPanneau.length) return;
+    // En mode allégé, les vignettes gardent le dessin fait à leur construction.
+    if (Rendu.leger || panel.classList.contains('hidden') || !toilesPanneau.length) return;
     for (const t of toilesPanneau) {
       t.g.clearRect(0, 0, 72, 72);
       drawSkinDisc(t.g, 36, 36, 32, t.id, 0);
@@ -582,7 +584,8 @@ function paintDiscSlot(el, choice, size) {
 (function animerCarrousel() {
   requestAnimationFrame(animerCarrousel);
   const scr = $('scr-select');
-  if (!scr || scr.classList.contains('hidden') || !toilesCarrousel.length) return;
+  // Même règle que le panneau : en mode allégé, le premier dessin suffit.
+  if (Rendu.leger || !scr || scr.classList.contains('hidden') || !toilesCarrousel.length) return;
   for (const t of toilesCarrousel) {
     t.g.clearRect(0, 0, t.size, t.size);
     drawSkinDisc(t.g, t.size / 2, t.size / 2, t.size / 2 - 2, t.id, 0);
