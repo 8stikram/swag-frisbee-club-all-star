@@ -881,6 +881,47 @@ function construireSkinFL(teinte) {
   return out;
 }
 
+// ================= GARDIEN ÉTERNEL DE LA FRICADELLE =================
+// Super-héros saucisse (mockups/fricadelle.html) : combinaison noire, armure
+// blanche, et les fricadelles DORÉES posées comme des plaques d'armure — l'or
+// est la seule couleur chaude du perso, donc ce qu'on voit de loin. Tête et
+// pose debout dessinées à la main par l'utilisateur ; les yeux roses annoncent
+// le Susanoo de son ultime.
+// Même gabarit que Leon, ligne pour ligne : bras aux colonnes 1 et 12, jambes
+// aux colonnes 3-4 et 9-10. Les cinq autres poses reprennent donc exactement
+// les mouvements de bras et de jambes de Leon, sans rien redessiner.
+const PAL_GF = {
+  H: '#2b2631', h: '#15121a', j: '#4f4858',          // cheveux noirs
+  S: '#f0c090', s: '#cf9660',                        // peau
+  K: '#1b1d24',                                      // la combinaison
+  W: '#f2f4f8', A: '#c4cbd6',                        // l'armure blanche
+  F: '#e8a94a', b: '#6d3f12',                        // la fricadelle
+  r: '#c24f9a'                                       // les yeux roses du dieu
+};
+const GF_HEAD = ["....jHHHHh......", "...jHHHHHHh.....", "..jHHHHHHHHh....", "..HHHHKKHHHH....",
+  "..HHSSKSSSHH....", "..HSSSSSSSSH....", "..SSSrSSSSrS....", "..SSSSSSSSSS....",
+  "...sSSSSSSs.....", "....WKKKKW......"];
+// Lignes 0, 4 et 5 : communes à toutes les poses (épaulières, ceinture).
+const GF_HAUT = ".bFKKAAAAKKFb...";
+const GF_BAS = ["..bFFbAAbFFb....", "..KKKKKKKKKK...."];
+const GF_JAMBES = ["...KK....KK.....", "...KK....KK.....", "...FA....AF.....", "..WWb....bWW...."];
+const GF_IDLE_B = [GF_HAUT, ".WAKAWWWWAKAW...", ".WbFFbWWbFFbW...", ".SAKKAWWAKKAS...", ...GF_BAS, ...GF_JAMBES];
+// Course : un bras monte pendant que l'autre descend, puis l'inverse ; les
+// jambes s'écartent sur la première image et reviennent sous le corps sur la
+// seconde, comme Leon.
+const GF_RUN1_B = [GF_HAUT, ".WAKAWWWWAKA....", "..bFFbWWbFFbW...", "..AKKAWWAKKAS...", ...GF_BAS,
+  "..KK......KK....", "..KK......KK....", ".FA........AF...", "WWb........bWW.."];
+const GF_RUN2_B = [GF_HAUT, "..AKAWWWWAKAW...", ".WbFFbWWbFFb....", "..AKKAWWAKKAS...", ...GF_BAS, ...GF_JAMBES];
+// Lancer : le bras part devant, jusqu'à la colonne 13, main ouverte.
+const GF_THROW_B = [GF_HAUT, "..AKAWWWWAKAWW..", "..bFFbWWbFFbWS..", "..AKKAWWAKKA....", ...GF_BAS,
+  "..KK.....KK.....", "..KK.....KK.....", ".FAA......AAF...", ".WWb......bWW..."];
+// Plongeon : même bras tendu, jambes à l'horizontale.
+const GF_DIVE_B = [GF_HAUT, "..AKAWWWWAKAWW..", "..bFFbWWbFFbWS..", "..AKKAWWAKKA....", ...GF_BAS,
+  ".KKKK...KKKK....", "FAA......AAF....", "WW........WW....", "................"];
+// Dash : les bras filent en arrière, les jambes traînent derrière lui.
+const GF_DASH_B = [GF_HAUT, "WWAKAWWWWAKA....", "SWbFFbWWbFFb....", "..AKKAWWAKKA....", ...GF_BAS,
+  "..KK..KK........", ".KK..KK.........", "FA..FA..........", "WW..WW.........."];
+
 export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper', 'yuki', 'yoshi', 'hollis', 'flowser'];
 
 export const CHARS = {
@@ -1141,6 +1182,30 @@ export const CHARS = {
       abysse: construireSkinFL('abysse'),
       venin: construireSkinFL('venin'),
       albinos: construireSkinFL('albinos')
+    }
+  },
+
+  fricadelle: {
+    // Nom complet dans le HUD aussi, à sa demande : vérifié, il tient partout
+    // (étiquette du match, annonce de but, sélection, fin de match qui réduit
+    // sa police toute seule).
+    name: 'GARDIEN ÉTERNEL DE LA FRICADELLE', short: 'GARDIEN ÉTERNEL DE LA FRICADELLE',
+    icon: '\u{1F32D}', universe: "LE CH'NORD",
+    // Profil équilibré : aucun point fort, aucun point faible. C'est l'ultime
+    // qui fait sa différence.
+    speed: 325, power: 1.0, catchR: 30, chargeT: .8,
+    // L'or des fricadelles, sa couleur vue de loin ; le rose du Susanoo en
+    // accent.
+    color: '#e8a94a', accent: '#ff7fd0',
+    stats: { spd: 3, pow: 3, ctl: 3 },
+    ult: 'lamedragon',
+    frames: {
+      idle: buildSprite([...GF_HEAD, ...GF_IDLE_B], PAL_GF),
+      run1: buildSprite([...GF_HEAD, ...GF_RUN1_B], PAL_GF),
+      run2: buildSprite([...GF_HEAD, ...GF_RUN2_B], PAL_GF),
+      throw: buildSprite([...GF_HEAD, ...GF_THROW_B], PAL_GF),
+      dive: buildSprite([...GF_HEAD, ...GF_DIVE_B], PAL_GF),
+      dash: buildSprite([...GF_HEAD, ...GF_DASH_B], PAL_GF)
     }
   }
 };

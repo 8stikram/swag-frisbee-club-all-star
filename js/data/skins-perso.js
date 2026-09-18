@@ -91,6 +91,9 @@ export const SKINS = {
     { id: 'albinos', nom: 'ALBINOS', chroma: true, cond: 'victoiresDifficile', seuil: 3,
       texte: 'Gagner 3 matchs en difficulté Difficile' }
   ],
+  fricadelle: [
+    { id: 'gardien', nom: 'GARDIEN', defaut: true }
+  ],
   hollis: [
     { id: 'platine', nom: 'PLATINE', defaut: true },
     { id: 'corbeau', nom: 'CORBEAU', chroma: true },
