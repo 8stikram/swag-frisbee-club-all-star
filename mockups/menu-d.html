@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menu D — tuiles</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&family=Chakra+Petch:wght@600;700&family=DotGothic16&family=Great+Vibes&family=Russo+One&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#070a12;--panel:#0e1626;--edge:#22344f;--ink:#111318;--txt:#e8f0ff;--accent:#35e0ff;--or:#ffd23e;--pastel-red:#ff8f9a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:'Barlow',system-ui,sans-serif;padding:18px 16px 70px}
+  h1{font-size:19px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:1100px;line-height:1.6;margin:0 0 14px}
+  .note b{color:var(--or)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .sceneWrap{flex:1 1 660px;min-width:300px;position:sticky;top:10px}
+  /* Même cadre que #stage : 16/10, bordure de 8 px (les cqh se mesurent dedans). */
+  .scene{position:relative;width:100%;aspect-ratio:16/10;border:8px solid #1b2a52;border-radius:14px;overflow:hidden;
+    background:#0a0e1a;container-type:size;user-select:none;box-shadow:0 10px 0 rgba(0,0,0,.4)}
+  .partieFond{position:absolute;inset:0;pointer-events:none}
+  .terrain{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,#23345a 0%,#141d31 62%,#0a0e1a 100%)}
+  .terrain::before{content:'';position:absolute;left:50%;top:9%;bottom:9%;width:3px;background:#ffffff40;transform:translateX(-50%)}
+  .terrain::after{content:'';position:absolute;left:50%;top:50%;width:22cqh;height:22cqh;border:3px solid #35e0ff55;border-radius:50%;transform:translate(-50%,-50%)}
+  #partieReelle{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .8s}
+  #partieReelle.pret{opacity:1}
+  .scene[data-partie="simulee"] #partieReelle{display:none}
+  #menu{z-index:2}
+
+  /* Édition */
+  .scene .mv{cursor:grab}
+  .scene .mv.sel{outline:2px dashed var(--accent);outline-offset:5px}
+  .scene.test .mv{cursor:default}
+  .scene.test .mv.sel{outline:none}
+
+  /* Panneau */
+  .cote{flex:1 1 340px;min-width:300px;display:flex;flex-direction:column;gap:10px}
+  details.bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px 12px}
+  details.bloc > summary{cursor:pointer;list-style:none;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;display:flex;align-items:center;gap:7px}
+  details.bloc > summary::before{content:'▸';color:#6d80a0;transition:transform .15s}
+  details.bloc[open] > summary::before{transform:rotate(90deg)}
+  details.bloc[open] > summary{margin-bottom:9px}
+  .row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px;align-items:center}
+  .row:last-child{margin-bottom:0}
+  select{background:#0a1220;color:var(--txt);border:1px solid var(--edge);border-radius:7px;padding:5px 7px;font-size:12px;width:100%}
+  button{background:#1a2b48;color:var(--txt);border:1px solid var(--edge);border-radius:7px;padding:7px 11px;font-size:11.5px;cursor:pointer;letter-spacing:.3px}
+  button:hover{background:#24395e}
+  button.on{background:#3a2c06;border-color:var(--or);color:var(--or)}
+  button.grand{flex:1 1 100%;padding:10px;font-size:13px}
+  button.vert{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .reg{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:center;font-size:12px;margin-bottom:7px}
+  .reg label{color:#8fa4c4}
+  .reg input[type=range]{grid-column:1/-1;width:100%}
+  .reg .n{font-family:Consolas,monospace;color:var(--or);text-align:right;font-size:11.5px}
+  .reg.regChoix{grid-template-columns:128px 1fr}
+  .sousTitre{font-size:10.5px;color:#6d80a0;text-transform:uppercase;letter-spacing:1px;margin:10px 0 5px;border-top:1px solid var(--edge);padding-top:8px}
+  .sousTitre:first-child{border-top:0;padding-top:0;margin-top:0}
+  .legende{font-size:11px;color:#6d80a0;line-height:1.5;margin:2px 0 0}
+  .els{display:flex;flex-direction:column;gap:4px}
+  .el{display:flex;align-items:center;gap:8px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;padding:6px 9px;cursor:pointer;font-size:12px}
+  .el:hover{border-color:#3d5c8a}
+  .el.on{border-color:var(--or);background:#171205}
+  .el .nomEl{flex:1}
+  .el .val{font-family:Consolas,monospace;font-size:10.5px;color:#7f93b3}
+  .ordre{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+  .ligneOrdre{display:flex;align-items:center;gap:6px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;padding:4px 6px 4px 9px;font-size:12px}
+  .ligneOrdre span{flex:1}
+  .ligneOrdre button{padding:2px 7px;font-size:11px}
+  .vide{font-size:12px;color:#6d80a0;line-height:1.6;margin:8px 0 0}
+  textarea{width:100%;background:#0a1220;border:1px solid var(--edge);border-radius:7px;color:var(--or);font-family:Consolas,monospace;font-size:11px;padding:9px;resize:vertical;line-height:1.5}
+  .sortie{height:200px}
+  .phrases{height:180px;color:var(--txt)}
+  .etatCopie{font-size:11.5px;color:#8ef0b4;min-height:16px;margin-top:5px}
+  .etatCopie.erreur{color:var(--pastel-red)}
+</style>
+</head>
+<body>
+
+<h1>Menu D — TUILES <span style="color:#6d80a0;font-size:13px">(v1)</span></h1>
+<p class="note">La version D, calée au pixel : logo agrandi, tuiles moins hautes, perso à sa place actuelle avec un halo un peu plus grand,
+<b>EN LIGNE aux couleurs de l'écran en ligne</b>, phrase du bas avec une lueur et <b>tirée au hasard</b>.
+<b>▶ Rejouer l'arrivée</b> montre l'entrée des boutons, la même que celle qui conclut l'intro. En <b>mode test</b>, les tuiles
+se cliquent pour de vrai (appui, rebond, éclats ; les modes BIENTÔT refusent). En édition, clique un bloc pour le glisser.
+Tout s'exporte dans <b>Tout copier / coller</b>.</p>
+
+<div class="haut">
+  <div class="sceneWrap">
+    <div class="scene" id="scene" data-partie="reelle">
+      <div class="partieFond">
+        <div class="terrain"></div>
+        <iframe id="partieReelle" src="../index.html" tabindex="-1" aria-hidden="true" title="Partie en fond"></iframe>
+      </div>
+      <div id="menu"></div>
+    </div>
+  </div>
+
+  <div class="cote">
+    <details class="bloc" open>
+      <summary>Lecture</summary>
+      <div class="row"><button class="grand vert" id="btnArrivee">▶ Rejouer l'arrivée</button></div>
+      <div class="row">
+        <button id="btnTest">Mode test (cliquer les tuiles)</button>
+        <button id="btnPerso">🎲 Autre perso</button>
+        <button id="btnPhrase">🎲 Autre phrase</button>
+      </div>
+      <div class="reg regChoix"><label>Vitesse</label>
+        <select id="selVitesse"><option value="1">1×</option><option value="0.5">0,5×</option><option value="0.25">0,25×</option></select></div>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Tout copier / coller</summary>
+      <textarea class="sortie" id="sortie" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:7px">
+        <button class="vert" id="btnCopier">📋 Tout copier</button>
+        <button id="btnAppliquer">Appliquer ce qui est collé</button>
+        <button id="btnDefauts">Tout remettre à zéro</button>
+      </div>
+      <div class="etatCopie" id="etatCopie"></div>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Placement — clique puis glisse</summary>
+      <div class="els" id="listeEls"></div>
+      <p class="vide" id="aucunEl">Aucun élément choisi. Clique dans la scène ou dans la liste.</p>
+      <div id="regBloc" style="display:none;margin-top:9px">
+        <div class="reg"><label>Taille</label><span class="n" id="vScale">1.00×</span>
+          <input type="range" id="rScale" min="0.4" max="1.8" value="1" step="0.01"></div>
+        <div class="reg"><label>X (gauche →)</label><span class="n" id="vX">0%</span>
+          <input type="range" id="rX" min="-20" max="110" value="0" step="0.5"></div>
+        <div class="reg"><label>Y (haut ↓)</label><span class="n" id="vY">0%</span>
+          <input type="range" id="rY" min="-20" max="100" value="0" step="0.5"></div>
+        <div class="row"><button id="btnResetEl">Réinitialiser</button></div>
+      </div>
+      <p class="legende">Perso et phrase sont posés exactement comme dans le menu actuel. La phrase s'accroche par son coin bas-droit : l'agrandir la fait monter, jamais sortir du cadre.</p>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Ordre des tuiles</summary>
+      <div id="ordres"></div>
+    </details>
+
+    <div id="blocsReglages"></div>
+
+    <details class="bloc" open>
+      <summary>Phrases du bas (une tirée à chaque lancement)</summary>
+      <textarea class="phrases" id="phrases" spellcheck="false"></textarea>
+      <p class="legende">Une phrase par ligne ; « / » coupe entre les deux lignes du bandeau.</p>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Partie derrière</summary>
+      <div class="row">
+        <button id="btnReelle" class="on">Vraie partie (le jeu tourne)</button>
+        <button id="btnSimulee">Terrain dessiné</button>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script type="module">
+  import { CHARS, ROSTER } from '../js/data/characters.js';
+  import { POLICES, DEF, PLACEMENT_DEF, NOMS_EL, ORDRE_DEF, PHRASES_DEF, BOUTONS,
+    construireMenuD, appliquerReglages, arriveeMenuD, presser, relacher, animerClic, animerRefus } from './_menu-d.js';
+
+  const $ = id => document.getElementById(id);
+  const scene = $('scene'), hote = $('menu');
+  const LOGO = '../assets/logo.png';
+
+  /* ================= SONS (copies de js/audio/audio.js) ================= */
+  let AC = null, gain = null;
+  window.addEventListener('pointerdown', () => {
+    if (AC) return;
+    try { AC = new (window.AudioContext || window.webkitAudioContext)(); gain = AC.createGain(); gain.gain.value = .18; gain.connect(AC.destination); } catch { AC = null; }
+  }, { capture:true });
+  function beep(f0, f1, dur, type = 'square', vol = .15, delay = 0) {
+    if (!AC) return;
+    const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(f1, 1), t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(gain); o.start(t); o.stop(t + dur + .02);
+  }
+  const SONS = {
+    move: () => beep(760, 760, .05, 'square', .06),
+    select: () => { beep(620, 990, .12, 'square', .12); beep(990, 1320, .1, 'square', .08, .06); },
+    deny: () => beep(220, 150, .18, 'square', .12),
+  };
+  const son = n => { if (AC) SONS[n]?.(); };
+
+  /* ================= ÉTAT ================= */
+  const valeurs = { ...DEF };
+  let placement = JSON.parse(JSON.stringify(PLACEMENT_DEF));
+  let ordre = JSON.parse(JSON.stringify(ORDRE_DEF));
+  let phrases = PHRASES_DEF.map(p => p.slice());
+  let perso = ROSTER[(Math.random() * ROSTER.length) | 0];
+  let numPhrase = (Math.random() * phrases.length) | 0;
+  let h = null, vitesse = 1, arrivees = [];
+
+  function rendre() {
+    const phrase = phrases[numPhrase % phrases.length] || ['', ''];
+    h = construireMenuD(hote, { R: valeurs, placement, ordre, perso, phrase, CHARS, logo: LOGO });
+    majSelection();
+  }
+  function jouerArrivee() {
+    for (const a of arrivees) a.cancel();
+    arrivees = [];
+    const A = arriveeMenuD(h, valeurs);
+    const decal = .2;   // l'entrée du logo commence un peu avant les tuiles
+    for (const d of A) {
+      const a = d.el.animate(d.kf, { delay:(d.depart + decal) * 1000, duration:d.duree * 1000, easing:d.easing, fill:'backwards' });
+      a.playbackRate = vitesse;
+      arrivees.push(a);
+    }
+  }
+  $('btnArrivee').addEventListener('click', () => { rendre(); jouerArrivee(); });
+  $('selVitesse').addEventListener('change', e => { vitesse = +e.target.value; });
+  $('btnPerso').addEventListener('click', () => {
+    let ck = perso; while (ck === perso) ck = ROSTER[(Math.random() * ROSTER.length) | 0];
+    perso = ck; rendre(); majSortie();
+  });
+  $('btnPhrase').addEventListener('click', () => {
+    if (phrases.length > 1) { let n = numPhrase; while (n === numPhrase) n = (Math.random() * phrases.length) | 0; numPhrase = n; }
+    rendre(); majSortie();
+  });
+  $('btnTest').addEventListener('click', e => {
+    const on = scene.classList.toggle('test');
+    e.target.classList.toggle('on', on);
+    e.target.textContent = on ? 'Mode édition (déplacer les blocs)' : 'Mode test (cliquer les tuiles)';
+  });
+
+  /* ================= RÉGLAGES ================= */
+  const SECTIONS = [
+    { titre:'Tuiles', items:[
+      { id:'police_tuile', label:'Typo', type:'police' },
+      { id:'dispoIcone', label:'Icône des grandes tuiles', type:'choix', options:[['gauche','À gauche du nom'],['dessus','Au-dessus du nom']] },
+      { id:'tuileRatio', label:'Proportions (plus = moins haut)', min:1.2, max:3.6, pas:.05 },
+      { id:'tuileIcone', label:'Icône', min:3, max:10, pas:.1 },
+      { id:'tuileTexte', label:'Texte', min:1.6, max:4, pas:.05 },
+      { id:'ecartTuiles', label:'Écart', min:.4, max:3, pas:.05 },
+      { id:'rayon', label:'Arrondi', min:0, max:30, pas:1, unite:'px' },
+      { id:'ombre', label:'Ombre dure', min:0, max:12, pas:1, unite:'px' },
+      { id:'petiteHauteur', label:'Hauteur des petites tuiles', min:4, max:10, pas:.1 },
+      { id:'aideTaille', label:'Taille de l’aide « M musique » (1 = actuel)', min:.8, max:2.6, pas:.05, unite:'×' },
+    ]},
+    { titre:'EN LIGNE', items:[
+      { id:'styleEnLigne', label:'Couleurs', type:'choix',
+        options:[['petrole','Bleu pétrole étoilé + rose (écran en ligne)'],['rose','Rose de l’écran en ligne'],['blanc','Blanc (comme avant)']] },
+    ]},
+    { titre:'Modes bientôt disponibles', items:[
+      { id:'verrouiller', label:'HISTOIRE et JCJ', type:'choix', options:[['oui','Verrouillés, BIENTÔT'],['non','Ouverts (pour voir)']] },
+      { id:'styleVerrou', label:'Aspect', type:'choix', options:[['gris','Gris'],['attenue','Leur couleur, atténuée']] },
+      { id:'police_bientot', label:'Typo de l’étiquette', type:'police' },
+      { id:'bientotTaille', label:'Taille de l’étiquette', min:.8, max:2.6, pas:.05 },
+      { id:'bientotAngle', label:'Inclinaison', min:-20, max:20, pas:1, unite:'°' },
+      { id:'bientotCouleur', label:'Couleur', type:'choix', options:[['#f5e63d','Jaune'],['#ffffff','Blanche'],['#f2698c','Rose'],['#35e0ff','Cyan']] },
+    ]},
+    { titre:'Perso', items:[
+      { id:'haloTaille', label:'Taille du halo (1 = actuel)', min:.6, max:1.8, pas:.01, unite:'×' },
+      { id:'haloOpacite', label:'Opacité du halo', min:0, max:.7, pas:.01 },
+    ]},
+    { titre:'Phrase du bas', items:[
+      { id:'bandeauTaille', label:'Taille du texte (1 = actuel)', min:.7, max:1.6, pas:.01, unite:'×' },
+      { id:'lueurCouleur', label:'Couleur de la lueur', type:'choix', options:[['#9ff4ff','Cyan clair'],['#ffffff','Blanche'],['#ffd23e','Or'],['#f2698c','Rose']] },
+      { id:'lueurTaille', label:'Taille de la lueur', min:0, max:4, pas:.05 },
+      { id:'lueurForce', label:'Intensité de la lueur', min:0, max:1.2, pas:.05 },
+    ]},
+    { titre:'Arrivée des boutons', items:[
+      { id:'styleArrivee', label:'Entrée des tuiles', type:'choix', options:[['pop','Pop (jaillissent et rebondissent)'],['glisse','Glissent depuis la gauche'],['retourne','Se retournent comme des cartes']] },
+      { id:'debutTuiles', label:'Départ', min:0, max:.8, pas:.01, unite:'s' },
+      { id:'decalageTuiles', label:'Décalage d’une tuile à l’autre', min:0, max:.25, pas:.01, unite:'s' },
+      { id:'dureeTuile', label:'Durée d’une entrée', min:.2, max:1, pas:.01, unite:'s' },
+      { id:'rebondArrivee', label:'Rebond', min:0, max:2, pas:.05, unite:'×' },
+    ]},
+    { titre:'Clic sur une tuile', items:[
+      { id:'styleClic', label:'Animation', type:'choix', options:[['eclats','Enfoncement, rebond, anneau et éclats'],['rebond','Enfoncement, rebond et anneau'],['sobre','Enfoncement seul']] },
+      { id:'forceClic', label:'Intensité', min:.3, max:2, pas:.05, unite:'×' },
+    ]},
+  ];
+  const ITEMS = SECTIONS.flatMap(s => s.items);
+  const PAR_ID = Object.fromEntries(ITEMS.map(it => [it.id, it]));
+  const REFAIRE = new Set(['verrouiller']);   // change le contenu des tuiles, pas seulement leur style
+  const formate = (it, v) => { const n = +v; return (Number.isInteger(n) ? String(n) : n.toFixed(it.pas < .1 ? 2 : 1)) + (it.unite || ''); };
+  function regler(id, v, silencieux) {
+    const it = PAR_ID[id];
+    if (!it) return;
+    if (!it.type) v = +v;
+    valeurs[id] = v;
+    if (it._input && String(it._input.value) !== String(v)) it._input.value = v;
+    if (it._n) it._n.textContent = formate(it, v);
+    if (silencieux) return;
+    if (REFAIRE.has(id)) rendre(); else appliquerReglages(hote, valeurs);
+    majSortie();
+  }
+  (function construirePanneau() {
+    const racine = $('blocsReglages');
+    for (const s of SECTIONS) {
+      const bloc = document.createElement('details'); bloc.className = 'bloc'; bloc.open = true;
+      const sum = document.createElement('summary'); sum.textContent = s.titre; bloc.appendChild(sum);
+      for (const it of s.items) {
+        const ligne = document.createElement('div'); ligne.className = 'reg';
+        const lab = document.createElement('label'); lab.textContent = it.label; lab.htmlFor = 'ctl_' + it.id;
+        let input;
+        if (it.type) {
+          input = document.createElement('select');
+          const opts = it.type === 'police' ? Object.entries(POLICES).map(([k, p]) => [k, p.nom]) : it.options;
+          for (const [val, texte] of opts) {
+            const o = document.createElement('option'); o.value = val; o.textContent = texte;
+            if (it.type === 'police') { o.style.fontFamily = POLICES[val].famille; o.style.fontWeight = POLICES[val].poids; }
+            input.appendChild(o);
+          }
+          ligne.classList.add('regChoix'); ligne.append(lab, input);
+          input.addEventListener('change', () => regler(it.id, input.value));
+        } else {
+          input = document.createElement('input');
+          Object.assign(input, { type:'range', min:it.min, max:it.max, step:it.pas });
+          const n = document.createElement('span'); n.className = 'n';
+          ligne.append(lab, n, input); it._n = n;
+          input.addEventListener('input', () => regler(it.id, input.value));
+        }
+        input.id = 'ctl_' + it.id; it._input = input;
+        bloc.appendChild(ligne);
+      }
+      racine.appendChild(bloc);
+    }
+  })();
+
+  /* ================= PHRASES ================= */
+  const zonePhrases = $('phrases');
+  const phrasesEnTexte = () => phrases.map(p => p.join(' / ')).join('\n');
+  zonePhrases.addEventListener('input', () => {
+    const lignes = zonePhrases.value.split('\n').map(l => l.trim()).filter(Boolean);
+    phrases = lignes.map(l => { const [a, ...b] = l.split('/'); return [a.trim(), b.join('/').trim()]; });
+    if (!phrases.length) phrases = [['', '']];
+    numPhrase = Math.min(numPhrase, phrases.length - 1);
+    rendre(); majSortie();
+  });
+
+  /* ================= ORDRE ================= */
+  const NOMS_RANGS = { modes:'Grandes tuiles (lues de gauche à droite, ligne par ligne)', petites:'Petites tuiles' };
+  function majOrdres() {
+    const racine = $('ordres'); racine.innerHTML = '';
+    for (const [cle, liste] of Object.entries(ordre)) {
+      const t = document.createElement('div'); t.className = 'sousTitre'; t.textContent = NOMS_RANGS[cle]; racine.appendChild(t);
+      const bloc = document.createElement('div'); bloc.className = 'ordre';
+      liste.forEach((id, i) => {
+        const l = document.createElement('div'); l.className = 'ligneOrdre';
+        l.innerHTML = `<span>${BOUTONS[id].label}${BOUTONS[id].verrou ? ' 🔒' : ''}</span>`;
+        for (const [txt, d] of [['↑', -1], ['↓', 1]]) {
+          const b = document.createElement('button'); b.textContent = txt; b.disabled = i + d < 0 || i + d >= liste.length;
+          b.addEventListener('click', () => { [liste[i], liste[i + d]] = [liste[i + d], liste[i]]; majOrdres(); rendre(); majSortie(); });
+          l.appendChild(b);
+        }
+        bloc.appendChild(l);
+      });
+      racine.appendChild(bloc);
+    }
+  }
+
+  /* ================= PLACEMENT ================= */
+  let choisi = null;
+  const liste = $('listeEls');
+  for (const el of Object.keys(NOMS_EL)) {
+    const d = document.createElement('div'); d.className = 'el'; d.dataset.el = el;
+    d.innerHTML = `<span class="nomEl">${NOMS_EL[el]}</span><span class="val"></span>`;
+    d.addEventListener('click', () => choisir(el));
+    liste.appendChild(d);
+  }
+  function majListe() {
+    for (const d of liste.children) {
+      const p = placement[d.dataset.el];
+      d.querySelector('.val').textContent = `${p.x}/${p.y} ·${p.s.toFixed(2)}×`;
+      d.classList.toggle('on', d.dataset.el === choisi);
+    }
+  }
+  function majSelection() { for (const m of hote.querySelectorAll('.mv')) m.classList.toggle('sel', m.dataset.el === choisi); }
+  function majCurseurs() {
+    if (!choisi) return;
+    const p = placement[choisi];
+    $('rScale').value = p.s; $('rX').value = p.x; $('rY').value = p.y;
+    $('vScale').textContent = p.s.toFixed(2) + '×'; $('vX').textContent = p.x + '%'; $('vY').textContent = p.y + '%';
+  }
+  function choisir(el) {
+    choisi = el; $('aucunEl').style.display = 'none'; $('regBloc').style.display = 'block';
+    majSelection(); majListe(); majCurseurs();
+  }
+  function ecrire(el) {
+    const m = hote.querySelector(`.mv[data-el="${el}"]`), p = placement[el];
+    if (m) { m.style.setProperty('--x', p.x); m.style.setProperty('--y', p.y); m.style.setProperty('--s', p.s); }
+    majListe(); majCurseurs(); majSortie();
+  }
+  for (const [idR, k] of [['rScale','s'],['rX','x'],['rY','y']]) {
+    $(idR).addEventListener('input', () => { if (!choisi) return; placement[choisi][k] = +$(idR).value; ecrire(choisi); });
+  }
+  $('btnResetEl').addEventListener('click', () => { if (!choisi) return; placement[choisi] = { ...PLACEMENT_DEF[choisi] }; ecrire(choisi); });
+
+  /* ================= SOURIS : glisser (édition) ou cliquer (test) ================= */
+  const cliquer = t => {
+    if (!t) return;
+    if (t.classList.contains('verrou')) { son('deny'); animerRefus(t); }
+    else { son('select'); animerClic(t, valeurs); }
+  };
+  let drag = null, appuye = null, survol = null;
+  scene.addEventListener('pointerdown', e => {
+    const tuile = e.target.closest('.menuD .tuile');
+    if (scene.classList.contains('test')) {
+      if (tuile) { e.preventDefault(); appuye = tuile; presser(tuile, valeurs); }
+      return;
+    }
+    const m = e.target.closest('.menuD .mv');
+    if (!m) return;
+    e.preventDefault();
+    const el = m.dataset.el, r = hote.getBoundingClientRect(), p = placement[el];
+    choisir(el);
+    drag = { el, x0:p.x, y0:p.y, px0:e.clientX, py0:e.clientY, w:r.width, h:r.height, bouge:false, tuile };
+    scene.setPointerCapture(e.pointerId);
+  });
+  scene.addEventListener('pointermove', e => {
+    if (scene.classList.contains('test')) {
+      const t = e.target.closest('.menuD .tuile');
+      if (t !== survol) { survol = t; if (t && !t.classList.contains('verrou')) son('move'); }
+      return;
+    }
+    if (!drag) return;
+    const dx = e.clientX - drag.px0, dy = e.clientY - drag.py0;
+    if (!drag.bouge && Math.hypot(dx, dy) < 4) return;
+    drag.bouge = true;
+    const p = placement[drag.el];
+    p.x = Math.round((drag.x0 + dx / drag.w * 100) * 2) / 2;
+    p.y = Math.round((drag.y0 + dy / drag.h * 100) * 2) / 2;
+    ecrire(drag.el);
+  });
+  const fin = e => {
+    if (appuye) {
+      const t = appuye; appuye = null;
+      const sous = document.elementFromPoint(e.clientX, e.clientY)?.closest('.tuile');
+      if (e.type === 'pointerup' && sous === t) cliquer(t); else relacher(t, valeurs);
+      return;
+    }
+    if (!drag) return;
+    const d = drag; drag = null;
+    // Un clic sans glisser sur une tuile la teste aussi en édition.
+    if (!d.bouge && e.type === 'pointerup' && d.tuile) cliquer(d.tuile);
+  };
+  scene.addEventListener('pointerup', fin);
+  scene.addEventListener('pointercancel', fin);
+  scene.addEventListener('pointerleave', e => { if (appuye) { relacher(appuye, valeurs); appuye = null; } });
+
+  /* ================= TOUT COPIER / COLLER ================= */
+  const sortie = $('sortie');
+  const etat = () => ({ mockup:'menu D — tuiles', version:1, reglages:{ ...valeurs }, placement, ordre, phrases });
+  let prevue = false;
+  function majSortie(forcer) {
+    if (forcer) { sortie.value = JSON.stringify(etat(), null, 2); return; }
+    if (document.activeElement === sortie || prevue) return;
+    prevue = true;
+    const faire = () => { if (!prevue) return; prevue = false; if (document.activeElement !== sortie) sortie.value = JSON.stringify(etat(), null, 2); };
+    requestAnimationFrame(faire); setTimeout(faire, 200);
+  }
+  function message(txt, erreur) {
+    const e = $('etatCopie'); e.textContent = txt; e.classList.toggle('erreur', !!erreur);
+    clearTimeout(message.t); message.t = setTimeout(() => { e.textContent = ''; }, 3500);
+  }
+  function toutAppliquer() {
+    for (const it of ITEMS) regler(it.id, valeurs[it.id], true);
+    zonePhrases.value = phrasesEnTexte();
+    majOrdres(); majListe(); majCurseurs(); rendre();
+  }
+  $('btnAppliquer').addEventListener('click', () => {
+    let d;
+    try { d = JSON.parse(sortie.value.trim()); } catch { message('Format pas reconnu : colle le bloc JSON exporté ici.', true); return; }
+    if (d.reglages) for (const [k, v] of Object.entries(d.reglages)) if (k in DEF) valeurs[k] = v;
+    if (d.placement) for (const el of Object.keys(PLACEMENT_DEF)) if (d.placement[el]) placement[el] = { ...d.placement[el] };
+    if (d.ordre?.modes && d.ordre?.petites) ordre = JSON.parse(JSON.stringify(d.ordre));
+    if (Array.isArray(d.phrases) && d.phrases.length) { phrases = d.phrases.map(p => [String(p[0] ?? ''), String(p[1] ?? '')]); numPhrase = 0; }
+    toutAppliquer(); jouerArrivee();
+    sortie.blur(); majSortie(true); message('Appliqué ✔');
+  });
+  $('btnCopier').addEventListener('click', async () => {
+    majSortie(true);
+    try { await navigator.clipboard.writeText(sortie.value); message('Copié dans le presse-papiers ✔'); }
+    catch { sortie.focus(); sortie.select(); const ok = document.execCommand && document.execCommand('copy'); message(ok ? 'Copié ✔' : 'Sélectionné : fais Ctrl+C', !ok); }
+  });
+  $('btnDefauts').addEventListener('click', () => {
+    Object.assign(valeurs, DEF);
+    placement = JSON.parse(JSON.stringify(PLACEMENT_DEF));
+    ordre = JSON.parse(JSON.stringify(ORDRE_DEF));
+    phrases = PHRASES_DEF.map(p => p.slice());
+    toutAppliquer(); jouerArrivee(); majSortie(true);
+    message('Tout est revenu aux valeurs par défaut.');
+  });
+
+  /* ================= VRAIE PARTIE EN FOND ================= */
+  // Le jeu tourne dans le cadre, réduit à son canvas. Muet, et rien n'est écrit
+  // dans sa sauvegarde.
+  const CSS_CADRE = `
+    html,body{margin:0!important;padding:0!important;overflow:hidden!important;background:#0a0e1a!important;
+      height:100%!important;min-height:0!important;display:block!important}
+    body>*:not(#stage){display:none!important}
+    #stage{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;
+      border:0!important;border-radius:0!important;box-shadow:none!important;margin:0!important;aspect-ratio:auto!important}
+    #stage>*:not(#game){display:none!important}
+    #game{width:100%!important;height:100%!important}`;
+  const cadre = $('partieReelle');
+  const partie = mode => {
+    scene.dataset.partie = mode;
+    $('btnReelle').classList.toggle('on', mode === 'reelle'); $('btnSimulee').classList.toggle('on', mode === 'simulee');
+  };
+  $('btnReelle').addEventListener('click', () => partie('reelle'));
+  $('btnSimulee').addEventListener('click', () => partie('simulee'));
+  if (cadre) cadre.addEventListener('load', () => {
+    try {
+      const w = cadre.contentWindow, d = cadre.contentDocument;
+      w.HTMLMediaElement.prototype.play = function () { return Promise.resolve(); };
+      const ACc = w.AudioContext || w.webkitAudioContext;
+      if (ACc) {
+        ACc.prototype.resume = function () { return Promise.resolve(); };
+        w.AudioContext = function (...a) { const c = new ACc(...a); c.suspend(); return c; };
+        w.AudioContext.prototype = ACc.prototype;
+      }
+      for (const f of ['setItem', 'removeItem', 'clear']) w.Storage.prototype[f] = function () {};
+      const st = d.createElement('style'); st.textContent = CSS_CADRE; d.head.appendChild(st);
+      let essais = 0;
+      const avancer = () => {
+        const intro = d.getElementById('scr-intro');
+        if (intro && !intro.classList.contains('done')) intro.click();
+        const premier = d.getElementById('scr-firstrun');
+        if (premier && !premier.classList.contains('hidden')) d.querySelector('[data-act="skipTuto"]')?.click();
+        if (++essais < 30) setTimeout(avancer, 300);
+      };
+      avancer();
+      cadre.classList.add('pret');
+    } catch (err) { console.warn('Partie réelle indisponible', err); partie('simulee'); }
+  });
+
+  /* ================= DÉMARRAGE ================= */
+  toutAppliquer();
+  majSortie(true);
+  document.fonts.ready.then(() => jouerArrivee());
+</script>
+</body>
+</html>

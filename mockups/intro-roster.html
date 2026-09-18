@@ -1,0 +1,1294 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intro — la passe du roster, jusqu'au menu</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&family=Chakra+Petch:wght@600;700&family=DotGothic16&family=Great+Vibes&family=Russo+One&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070a12; --panel:#0e1626; --edge:#22344f; --ink:#111318; --txt:#e8f0ff; --accent:#35e0ff;
+    --or:#ffd23e; --pastel-red:#ff8f9a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:'Barlow',system-ui,sans-serif;padding:18px 16px 70px}
+  h1{font-size:19px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:1050px;line-height:1.6;margin:0 0 14px}
+  .note b{color:var(--or)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+
+  /* ===================== SCÈNE =====================
+     Même format que #stage dans le jeu (16/10, unités cqh/cqw) : tout ce qui
+     est réglé ici se reprend tel quel dans l'intro du jeu. */
+  .sceneWrap{flex:1 1 660px;min-width:300px;position:sticky;top:10px}
+  /* Bordure de 8 px comme #stage dans le jeu : les unités cqh se mesurent sur
+     l'intérieur du cadre, donc une bordure différente décalerait tout. */
+  .scene{position:relative;width:100%;aspect-ratio:16/10;border-radius:14px;overflow:hidden;
+    border:8px solid #1b2a52;container-type:size;user-select:none;touch-action:none;
+    box-shadow:0 10px 0 rgba(0,0,0,.4);
+    --f-nom:'Archivo Black',sans-serif; --w-nom:400; --c-nom:.7cqh; --o-nom:.6cqh;
+    --f-univers:'Chakra Petch',sans-serif; --w-univers:700;
+    --contourBande:1cqh; --lisere:.6cqh; --joint:1.2cqh; --biseau:-18deg;
+    --motifOp:.16; --filigraneVitesse:14s; --rayuresOp:.07; --tailleDisque:7cqh; --rotationDisque:.9s}
+  .scene[data-fond="nuit"]{background:radial-gradient(120% 90% at 50% 50%,#17233f 0%,#0b1020 62%,#05070d 100%)}
+  .scene[data-fond="noir"]{background:#050608}
+  .scene[data-fond="encre"]{background:#111318}
+
+  /* Rayures du fond : le même motif que l'écran titre (style.css, .streaks), en
+     blanc très léger. Elles sont parallèles aux bandes : les glisser le long de
+     l'axe ne changerait rien à l'image, donc elles ne bougent pas et la couche
+     reste petite. C'est le filigrane, lui, qui suit la caméra. */
+  .fondRayures{position:absolute;inset:-14cqh;pointer-events:none;opacity:var(--rayuresOp);
+    background:repeating-linear-gradient(-14deg,#fff 0 .45cqh,transparent .45cqh 9cqh)}
+  /* Le filigrane du menu, déjà présent en fond d'intro : au moment du flash, il
+     ne bouge pas d'un pixel, il change juste de couleur avec le fond. */
+  .fondFiligrane{position:absolute;inset:0;overflow:hidden;pointer-events:none;
+    opacity:var(--filigraneFondOp,.06);will-change:translate}
+  .vignette{position:absolute;inset:0;pointer-events:none;z-index:25;
+    background:radial-gradient(110% 85% at 50% 50%,transparent 55%,rgba(0,0,0,.45) 100%)}
+
+  .secousse,.camera,.cameraZoom{position:absolute;inset:0}
+  .secousse{will-change:translate}
+  .camera{will-change:translate}
+  .cameraZoom{will-change:scale,opacity}
+
+  /* --- Une bande par perso --- */
+  .plan{position:absolute;inset:0;pointer-events:none}
+  .axe{position:absolute;left:0;top:0;width:0;height:0}
+  .bande{position:absolute;left:calc(var(--L) * -.5);top:calc(var(--T) * -.5);width:var(--L);height:var(--T);
+    transform:skewX(var(--biseau));will-change:translate;overflow:hidden;pointer-events:auto;
+    background:linear-gradient(180deg,var(--cClair) 0%,var(--c1) 46%,var(--cSombre) 100%);
+    border-block:var(--contourBande) solid var(--ink)}
+  .bande::before,.bande::after{content:'';position:absolute;left:0;right:0;height:var(--lisere);background:var(--c2);z-index:2}
+  .bande::before{top:.7cqh}
+  .bande::after{bottom:.7cqh}
+  .joint{position:absolute;top:0;bottom:0;width:var(--joint);background:var(--ink);z-index:3}
+  .joint.g{left:0;box-shadow:.4cqh 0 0 rgba(255,255,255,.85)}
+  .joint.d{right:0;box-shadow:-.4cqh 0 0 rgba(255,255,255,.85)}
+  .motif{position:absolute;inset:0;z-index:1}
+  .motif > *{position:absolute;display:none}
+  .scene[data-motif="filigrane"] .filigrane,.scene[data-motif="trame"] .trame,.scene[data-motif="rayures"] .rayuresBande{display:block}
+  .filigrane{left:0;top:50%;translate:0 -50%;white-space:nowrap;font-family:'Archivo Black',sans-serif;
+    font-size:calc(var(--T) * .52);line-height:1;color:#fff;opacity:var(--motifOp);letter-spacing:.04em;
+    will-change:transform;animation:defile var(--filigraneVitesse) linear infinite}
+  .filigrane span{padding-right:.4em}
+  @keyframes defile{to{transform:translateX(-50%)}}
+  .trame{inset:0;opacity:var(--motifOp);
+    background-image:radial-gradient(circle,var(--c2) 0 30%,transparent 33%);background-size:2.4cqh 2.4cqh}
+  .rayuresBande{inset:0;opacity:var(--motifOp);
+    background:repeating-linear-gradient(90deg,var(--c2) 0 1.4cqh,transparent 1.4cqh 6.5cqh)}
+
+  /* Ligne blanche qui ouvre la première bande. */
+  .ligne{position:absolute;left:calc(var(--L) * -.5);top:-.35cqh;width:var(--L);height:.7cqh;background:#fff;
+    box-shadow:0 0 2.2cqh rgba(255,255,255,.9);scale:0 1;opacity:0;will-change:scale,opacity}
+
+  /* Traits de vitesse : un motif fixe posé le long de l'axe, visible seulement
+     pendant le glissement des bandes. Seules son opacité et sa position bougent. */
+  .traits{position:absolute;left:calc(var(--L) * -.5);top:calc(var(--T) * -.5);width:var(--L);height:var(--T);
+    opacity:0;pointer-events:none;will-change:opacity,translate;
+    background:
+      repeating-linear-gradient(180deg,transparent 0 3.1cqh,rgba(255,255,255,.9) 3.1cqh 3.4cqh,transparent 3.4cqh 7.3cqh),
+      repeating-linear-gradient(180deg,transparent 0 5.3cqh,rgba(255,255,255,.7) 5.3cqh 5.5cqh,transparent 5.5cqh 11.9cqh);
+    -webkit-mask:repeating-linear-gradient(90deg,#000 0 23cqh,transparent 23cqh 31cqh,#000 31cqh 38cqh,transparent 38cqh 52cqh);
+    mask:repeating-linear-gradient(90deg,#000 0 23cqh,transparent 23cqh 31cqh,#000 31cqh 38cqh,transparent 38cqh 52cqh)}
+
+  /* --- Perso : sprite agrandi d'un nombre entier de pixels écran, contour et
+     ombre cuits dans le canvas (rien n'est recalculé pendant l'animation). --- */
+  .perso,.nom{position:absolute;left:0;top:0;pointer-events:auto}
+  .persoGlisse,.nomGlisse{will-change:translate,opacity}
+  .persoPose{position:relative;will-change:translate}
+  .persoPose canvas{position:absolute;left:0;top:0;image-rendering:pixelated;opacity:0;will-change:opacity}
+  .persoPose canvas[data-frame="idle"]{position:relative;display:block}
+
+  /* --- Nom + univers --- */
+  .nomSlam{will-change:scale,opacity}
+  .nomBloc{display:flex;flex-direction:column;align-items:flex-start;gap:1.1cqh;rotate:var(--angle);transform-origin:50% 50%}
+  .plan.miroir .nomBloc{align-items:flex-end}
+  .nomTexte{font-family:var(--f-nom);font-weight:var(--w-nom);font-size:7cqh;line-height:.95;letter-spacing:.02em;
+    white-space:nowrap;color:#fff;-webkit-text-stroke:var(--c-nom) var(--ink);paint-order:stroke fill;
+    text-shadow:var(--o-nom) var(--o-nom) 0 var(--ink)}
+  .univers{display:inline-block;font-family:var(--f-univers);font-weight:var(--w-univers);font-size:2.6cqh;line-height:1.1;
+    letter-spacing:.14em;white-space:nowrap;color:var(--ink);background:#fff;border:.45cqh solid var(--ink);border-radius:.8cqh;
+    padding:.35cqh 1.2cqh;box-shadow:.5cqh .5cqh 0 var(--ink);transform-origin:0 50%;will-change:scale}
+  .plan.miroir .univers{transform-origin:100% 50%}
+  .scene[data-univers="texte"] .univers{background:none;border:0;box-shadow:none;padding:0;color:#fff;
+    -webkit-text-stroke:.4cqh var(--ink);paint-order:stroke fill}
+
+  /* --- Disque et traînée --- */
+  .disqueCouche{position:absolute;inset:0;pointer-events:none;z-index:20;will-change:opacity}
+  .disque,.reflet{position:absolute;left:0;top:0;width:var(--tailleDisque);height:var(--tailleDisque);
+    margin:calc(var(--tailleDisque) * -.5) 0 0 calc(var(--tailleDisque) * -.5);will-change:translate,scale}
+  .disqueTour{width:100%;height:100%;animation:tourne var(--rotationDisque) linear infinite}
+  .scene.faceFixe .disqueTour{animation:none}
+  @keyframes tourne{to{rotate:360deg}}
+  .disque canvas{display:block;width:100%;height:100%}
+  .reflet{border-radius:50%;background:var(--couleurTrainee,#fff);opacity:0}
+
+  .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:30;will-change:opacity}
+  .onde{position:absolute;left:50%;top:50%;width:24cqh;height:24cqh;margin:-12cqh 0 0 -12cqh;border-radius:50%;
+    border:1.1cqh solid #fff;opacity:0;z-index:16;pointer-events:none;will-change:scale,opacity}
+
+  /* ===================== LE MENU D'ARRIVÉE =====================
+     Le menu D lui-même, dessiné par mockups/_menu-d.js : le même module que
+     l'éditeur menu-d.html, donc l'intro se pose sur exactement ce qui y est
+     réglé. Dessous, un fond sombre tient la place du match de démo du jeu. */
+  .menuJeu{position:absolute;inset:0;z-index:12;opacity:0;pointer-events:none}
+  .menuJeu .sousJeu{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 45%,#16223d 0%,#0a0e1a 70%)}
+  /* Filigrane du fond d'intro : mêmes règles que celui du menu. */
+  .watermark{position:absolute;top:-30%;left:-60%;width:220%;height:160%;
+    display:flex;flex-direction:column;gap:2.6cqw;transform:rotate(-14deg);animation:derive 30s linear infinite}
+  .watermark .line{white-space:nowrap;font-family:'Archivo Black',sans-serif;font-size:4.2cqw;
+    letter-spacing:.12em;color:rgba(255,255,255,.3)}
+  .watermark .line:nth-child(even){color:rgba(255,255,255,.16);transform:translateX(-6%)}
+  @keyframes derive{from{transform:rotate(-14deg) translateX(0)}to{transform:rotate(-14deg) translateX(-12%)}}
+
+  /* Logo et héros pendant leur vol : ce sont des copies posées par-dessus, qui
+     se garent pile sur celles du menu avant de leur passer la main. */
+  .logoVol{position:absolute;left:0;top:0;z-index:15;opacity:0;pointer-events:none;
+    filter:drop-shadow(0 6px 0 rgba(0,0,0,.28));will-change:translate,scale,opacity}
+  .heroVol{position:absolute;left:0;top:0;z-index:14;opacity:0;pointer-events:none;image-rendering:pixelated;
+    filter:drop-shadow(0 8px 0 rgba(0,0,0,.16));will-change:translate,scale,opacity}
+
+  /* --- Édition --- */
+  .scene [data-el]{cursor:grab}
+  .scene.lecture [data-el]{cursor:default}
+  .scene [data-el].sel{outline:2px dashed var(--accent);outline-offset:4px}
+  .scene.lecture [data-el].sel{outline:none}
+
+  /* --- Intro actuelle, pour comparer --- */
+  .comparaison{position:absolute;inset:0;z-index:60;background:#03060d}
+  .comparaison.cache{display:none}
+  .comparaison iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .comparaison button{position:absolute;right:1.5cqh;top:1.5cqh;z-index:2;font-size:12px}
+  .etiquetteComparaison{position:absolute;left:1.5cqh;top:1.5cqh;z-index:2;background:var(--or);color:var(--ink);
+    font:800 11px 'Barlow',sans-serif;letter-spacing:.08em;padding:3px 8px;border-radius:5px}
+
+  /* ===================== PANNEAU ===================== */
+  .cote{flex:1 1 340px;min-width:300px;display:flex;flex-direction:column;gap:10px}
+  details.bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px 12px}
+  details.bloc > summary{cursor:pointer;list-style:none;font-size:12px;color:var(--accent);text-transform:uppercase;
+    letter-spacing:1.2px;font-weight:700;display:flex;align-items:center;gap:7px}
+  details.bloc > summary::before{content:'▸';color:#6d80a0;transition:transform .15s}
+  details.bloc[open] > summary::before{transform:rotate(90deg)}
+  details.bloc[open] > summary{margin-bottom:9px}
+  .row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px;align-items:center}
+  .row:last-child{margin-bottom:0}
+  select{background:#0a1220;color:var(--txt);border:1px solid var(--edge);border-radius:7px;padding:5px 7px;font-size:12px;width:100%}
+  button{background:#1a2b48;color:var(--txt);border:1px solid var(--edge);border-radius:7px;
+    padding:7px 11px;font-size:11.5px;cursor:pointer;letter-spacing:.3px}
+  button:hover{background:#24395e}
+  button.on{background:#3a2c06;border-color:var(--or);color:var(--or)}
+  button.grand{flex:1 1 100%;padding:10px;font-size:13px}
+  button.vert{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .coche{display:flex;align-items:center;gap:6px;font-size:12px;color:#8fa4c4;cursor:pointer}
+  .reg{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:center;font-size:12px;margin-bottom:7px}
+  .reg label{color:#8fa4c4}
+  .reg input[type=range]{grid-column:1/-1;width:100%}
+  .reg .n{font-family:Consolas,monospace;color:var(--or);text-align:right;font-size:11.5px}
+  .reg.regChoix{grid-template-columns:128px 1fr}
+  .sousTitre{font-size:10.5px;color:#6d80a0;text-transform:uppercase;letter-spacing:1px;margin:10px 0 5px;
+    border-top:1px solid var(--edge);padding-top:8px}
+  .sousTitre:first-child{border-top:0;padding-top:0;margin-top:0}
+  .legende{font-size:11px;color:#6d80a0;line-height:1.5;margin:2px 0 0}
+  .reperes{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 9px}
+  .reperes button{padding:3px 7px;font-size:10.5px;background:#0a1220}
+  .reperes button.ici{border-color:var(--or);color:var(--or)}
+
+  .els{display:flex;flex-direction:column;gap:4px}
+  .el{display:flex;align-items:center;gap:8px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+    padding:6px 9px;cursor:pointer;font-size:12px}
+  .el:hover{border-color:#3d5c8a}
+  .el.on{border-color:var(--or);background:#171205}
+  .el .nomEl{flex:1}
+  .el .val{font-family:Consolas,monospace;font-size:10.5px;color:#7f93b3}
+  .el.on .val{color:var(--or)}
+  .vide{font-size:12px;color:#6d80a0;line-height:1.6;margin:8px 0 0}
+  .sortie{width:100%;height:220px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;
+    color:var(--or);font-family:Consolas,monospace;font-size:11px;padding:9px;resize:vertical;line-height:1.5}
+  .etatCopie{font-size:11.5px;color:#8ef0b4;min-height:16px;margin-top:5px}
+  .etatCopie.erreur{color:var(--pastel-red)}
+</style>
+</head>
+<body>
+
+<h1>Intro — LA PASSE DU ROSTER, JUSQU'AU MENU <span style="color:#6d80a0;font-size:13px">(v2)</span></h1>
+<p class="note">Le disque passe de perso en perso, chacun dans sa bande à ses couleurs, puis part droit vers l'écran :
+impact, le logo claque, et le menu se monte autour de lui. Le menu d'arrivée est celui du jeu, repris au pixel près —
+le logo et le perso se garent exactement à leur place. <b>Trois persos tirés au sort à chaque lecture</b>, comme au lancement du jeu.
+<b>Pause</b> (ou la barre d'espace), glisse la <b>frise</b> ou clique un <b>repère</b> pour figer un moment, puis clique un élément
+dans la scène pour le <b>glisser</b>. La bande 2 est le reflet des bandes 1 et 3 : ce qui est réglé sur l'une vaut pour les trois.
+Tout s'exporte dans <b>Tout copier / coller</b>.</p>
+
+<div class="haut">
+  <div class="sceneWrap">
+    <div class="scene" id="scene" data-fond="nuit" data-motif="filigrane" data-univers="etiquette">
+      <div class="secousse" id="secousseTout">
+      <div class="fondRayures" id="fondRayures"></div>
+      <div class="fondFiligrane" id="fondFiligrane"><div class="watermark" data-wm="SWAG FRISBEE CLUB"></div></div>
+      <div class="camera" id="camera">
+        <div class="cameraZoom" id="cameraZoom">
+          <div id="plans"></div>
+          <div class="axe" id="axeLigne" style="z-index:9"><div class="traits" id="traits"></div><div class="ligne" id="ligne"></div></div>
+          <div class="vignette"></div>
+        </div>
+        <div class="disqueCouche" id="disqueCouche">
+          <div id="reflets"></div>
+          <div class="disque" id="disque"><div class="disqueTour"><canvas id="disqueCanvas" width="384" height="384"></canvas></div></div>
+        </div>
+      </div>
+      <!-- Le menu D, dessiné par _menu-d.js : c'est là que l'intro se pose. -->
+      <div class="menuJeu" id="menuJeu"><div class="sousJeu"></div><div id="menuD"></div></div>
+
+      <!-- La copie volante prend la même image que celle du menu (voir plus bas). -->
+      <img class="logoVol" id="logoVol" alt="">
+      <canvas class="heroVol" id="heroVol" width="256" height="320"></canvas>
+      <div class="onde" id="onde"></div>
+      </div><!-- /secousse : le flash reste dehors, sinon ses bords se verraient -->
+      <div class="flash" id="flash"></div>
+
+      <div class="comparaison cache" id="comparaison">
+        <span class="etiquetteComparaison">INTRO ACTUELLE</span>
+        <button id="btnFermerComparaison">✕ Revenir à la nouvelle</button>
+        <iframe id="introActuelle" title="Intro actuelle" tabindex="-1"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <div class="cote" id="cote">
+    <details class="bloc" open>
+      <summary>Lecture</summary>
+      <div class="row"><button class="grand vert" id="btnLecture">⏸ Pause</button></div>
+      <div class="row">
+        <button id="btnDebut">↻ Depuis le début</button>
+        <button id="btnImage">Image suivante ▸</button>
+        <button id="btnModeLecture">Mode lecture</button>
+      </div>
+      <div class="reg"><label>Frise</label><span class="n" id="vFrise">0,00 s</span>
+        <input type="range" id="frise" min="0" max="3000" step="1" value="0"></div>
+      <div class="reperes" id="reperes"></div>
+      <div class="reg regChoix"><label>Vitesse</label>
+        <select id="selVitesse"><option value="1">1×</option><option value="0.5">0,5×</option><option value="0.25">0,25×</option><option value="0.1">0,1×</option></select></div>
+      <div class="row">
+        <label class="coche"><input type="checkbox" id="chkBoucle" checked> En boucle</label>
+        <label class="coche"><input type="checkbox" id="chkSons" checked> Sons (après un premier clic)</label>
+      </div>
+      <div class="reg"><label>Volume</label><span class="n" id="vVolume">60%</span>
+        <input type="range" id="volume" min="0" max="1" step="0.05" value="0.6"></div>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Tout copier / coller</summary>
+      <textarea class="sortie" id="sortie" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:7px">
+        <button class="vert" id="btnCopier">📋 Tout copier</button>
+        <button id="btnAppliquer">Appliquer ce qui est collé</button>
+        <button id="btnDefauts">Tout remettre à zéro</button>
+      </div>
+      <div class="etatCopie" id="etatCopie"></div>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Placement — pause, clique puis glisse</summary>
+      <div class="els" id="listeEls"></div>
+      <p class="vide" id="aucunEl">Aucun élément choisi. Clique dans la scène ou dans la liste.</p>
+      <div id="regBloc" style="display:none;margin-top:9px">
+        <div class="reg"><label id="lScale">Taille</label><span class="n" id="vScale">1.00×</span>
+          <input type="range" id="rScale" min="0.3" max="2.5" value="1" step="0.01"></div>
+        <div class="reg" id="ligneX"><label>X (gauche →)</label><span class="n" id="vX">0%</span>
+          <input type="range" id="rX" min="-40" max="100" value="0" step="0.5"></div>
+        <div class="reg"><label>Y (haut ↓)</label><span class="n" id="vY">0%</span>
+          <input type="range" id="rY" min="-40" max="100" value="0" step="0.5"></div>
+        <div class="row"><button id="btnResetEl">Réinitialiser cet élément</button></div>
+      </div>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Personnages</summary>
+      <div class="reg regChoix"><label>1 — lance</label><select id="selP0"></select></div>
+      <div class="reg regChoix"><label>2 — relance</label><select id="selP1"></select></div>
+      <div class="reg regChoix"><label>3 — tire vers l'écran</label><select id="selP2"></select></div>
+      <div class="row">
+        <button id="btnHasard">🎲 Tirer au sort</button>
+        <label class="coche"><input type="checkbox" id="chkHasard" checked> Nouveau trio à chaque lecture</label>
+      </div>
+      <p class="legende">Comme dans le jeu : trois persos tirés au sort à chaque lancement, et le dernier est celui qui reste sur le menu.</p>
+    </details>
+
+    <div id="blocsReglages"></div>
+
+    <details class="bloc" open>
+      <summary>Comparer</summary>
+      <div class="row"><button class="grand" id="btnActuelle">▶ Voir l'intro actuelle du jeu</button></div>
+      <p class="legende" id="legendeComparer">Joue la vraie intro d'aujourd'hui dans la scène, muette, sans rien enregistrer.</p>
+    </details>
+  </div>
+</div>
+
+<script type="module">
+  import { CHARS, ROSTER } from '../js/data/characters.js';
+  import { DISC_SKINS, drawSkinDisc, tracerContour, deformationDisque, getSkinId } from '../js/data/skins.js';
+  import { DEF as DEF_MENU, PLACEMENT_DEF as PLACEMENT_MENU, ORDRE_DEF as ORDRE_MENU, PHRASES_DEF,
+    construireMenuD, arriveeMenuD, dureeArrivee } from './_menu-d.js';
+
+  const $ = id => document.getElementById(id);
+  const scene = $('scene');
+  const cssv = (nom, v) => scene.style.setProperty(nom, v);
+
+  /* ================= TYPOS DU JEU ================= */
+  const POLICES = {
+    archivo:    { nom:'Archivo Black',       famille:"'Archivo Black',sans-serif",      poids:400 },
+    russo:      { nom:'Russo One',           famille:"'Russo One',sans-serif",          poids:400 },
+    barlow:     { nom:'Barlow ExtraBold',    famille:"'Barlow',sans-serif",             poids:800 },
+    chakra:     { nom:'Chakra Petch Bold',   famille:"'Chakra Petch',sans-serif",       poids:700 },
+    dotgothic:  { nom:'DotGothic16',         famille:"'DotGothic16',monospace",         poids:400 },
+    greatvibes: { nom:'Great Vibes',         famille:"'Great Vibes',cursive",           poids:400 },
+    georgia:    { nom:'Georgia (casino)',    famille:"Georgia,serif",                   poids:700 },
+    segoe:      { nom:'Segoe UI',            famille:"'Segoe UI',system-ui,sans-serif", poids:700 },
+  };
+
+  /* ================= SONS =================
+     Copies exactes de js/audio/audio.js (beep, noise et les cinq bruitages
+     utilisés), sans la musique : importer le module lancerait la piste du menu. */
+  let AC = null, gainSons = null, bruitBuf = null;
+  function initSons() {
+    if (AC) return;
+    try {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      gainSons = AC.createGain(); gainSons.gain.value = .2 * +$('volume').value * 1.5; gainSons.connect(AC.destination);
+      bruitBuf = AC.createBuffer(1, AC.sampleRate * .5, AC.sampleRate);
+      const d = bruitBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    } catch { AC = null; }
+  }
+  function beep(f0, f1, dur, type = 'square', vol = .15, delay = 0) {
+    if (!AC) return;
+    const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(f1, 1), t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(gainSons); o.start(t); o.stop(t + dur + .02);
+  }
+  function noise(dur, vol, freq = 2000, delay = 0) {
+    if (!AC) return;
+    const t = AC.currentTime + delay, s = AC.createBufferSource(); s.buffer = bruitBuf;
+    const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq;
+    const g = AC.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(gainSons); s.start(t); s.stop(t + dur);
+  }
+  const SONS = {
+    swish:      () => { noise(.07, .06, 5200); beep(1500, 900, .06, 'sine', .06); },
+    dash:       () => { noise(.14, .12, 2600); beep(500, 900, .1, 'sine', .05); },
+    throw:      () => { noise(.16, .16, 1600); beep(300, 700, .12, 'sawtooth', .07); },
+    catch:      () => { beep(500, 330, .08, 'sine', .2); noise(.06, .06, 600); },
+    move:       () => beep(760, 760, .05, 'square', .06),
+    go:         () => beep(1040, 1040, .3, 'square', .18),
+    superthrow: () => { noise(.2, .2, 2000); beep(200, 900, .16, 'sawtooth', .12); beep(900, 400, .1, 'square', .08, .05); },
+    bigbounce:  () => { beep(140, 90, .12, 'triangle', .26); noise(.1, .12, 700); },
+  };
+  function jouerSon(nom) {
+    if (!AC || !$('chkSons').checked || !SONS[nom]) return;
+    if (AC.state === 'suspended') AC.resume();
+    SONS[nom]();
+  }
+  window.addEventListener('pointerdown', initSons, { capture:true });
+  window.addEventListener('keydown', initSons, { capture:true });
+  $('volume').addEventListener('input', () => {
+    $('vVolume').textContent = Math.round($('volume').value * 100) + '%';
+    if (gainSons) gainSons.gain.value = .2 * +$('volume').value * 1.5;
+  });
+
+  /* ================= COULEURS ================= */
+  function melange(hex, vers, k) {
+    const a = parseInt(hex.slice(1), 16), b = parseInt(vers.slice(1), 16);
+    const c = s => Math.round(((a >> s) & 255) * (1 - k) + ((b >> s) & 255) * k);
+    return `rgb(${c(16)},${c(8)},${c(0)})`;
+  }
+
+  /* ================= LES TROIS PLANS ================= */
+  const FRAMES = ['idle', 'dash', 'dive', 'throw'];
+  const PERSOS_DEF = ['naruto', 'leon', 'mamie'].map((ck, i) => ROSTER.includes(ck) ? ck : ROSTER[i]);
+  const plans = [];
+  for (let i = 0; i < 3; i++) {
+    const el = document.createElement('div');
+    el.className = 'plan' + (i % 2 ? ' miroir' : '');
+    el.dataset.i = i;
+    el.style.zIndex = i + 1;
+    el.innerHTML = `
+      <div class="axe"><div class="bande" data-el="bande">
+        <div class="motif"><div class="filigrane"><span></span><span></span></div><div class="trame"></div><div class="rayuresBande"></div></div>
+        <div class="joint g"></div><div class="joint d"></div>
+      </div></div>
+      <div class="perso" data-el="perso"><div class="persoGlisse"><div class="persoPose">
+        ${FRAMES.map(f => `<canvas data-frame="${f}"></canvas>`).join('')}
+      </div></div></div>
+      <div class="nom" data-el="nom"><div class="nomGlisse"><div class="nomSlam"><div class="nomBloc">
+        <div class="nomTexte"></div><div><span class="univers"></span></div>
+      </div></div></div></div>`;
+    $('plans').appendChild(el);
+    plans.push({
+      i, el, miroir: i % 2 === 1, ck: PERSOS_DEF[i], cleSprite: '',
+      axe: el.querySelector('.axe'), bande: el.querySelector('.bande'),
+      filigrane: el.querySelector('.filigrane'),
+      perso: el.querySelector('.perso'), persoGlisse: el.querySelector('.persoGlisse'), persoPose: el.querySelector('.persoPose'),
+      frames: Object.fromEntries(FRAMES.map(f => [f, el.querySelector(`canvas[data-frame="${f}"]`)])),
+      nom: el.querySelector('.nom'), nomGlisse: el.querySelector('.nomGlisse'), nomSlam: el.querySelector('.nomSlam'),
+      nomBloc: el.querySelector('.nomBloc'), nomTexte: el.querySelector('.nomTexte'), univers: el.querySelector('.univers'),
+    });
+  }
+
+  function majPerso(pl) {
+    const c = CHARS[pl.ck];
+    pl.el.style.setProperty('--c1', c.color);
+    pl.el.style.setProperty('--c2', c.accent);
+    majCouleursPlan(pl);
+    pl.nomTexte.textContent = c.name.toUpperCase();
+    pl.univers.textContent = c.universe.toUpperCase();
+    // Juste assez de répétitions pour que le motif fasse deux fois la bande :
+    // la boucle est alors invisible, sans peindre un texte de dix mille pixels.
+    const mot = c.universe.toUpperCase() + ' · ';
+    const repet = Math.max(2, Math.ceil(28 / mot.length));
+    for (const s of pl.filigrane.children) s.textContent = mot.repeat(repet);
+    pl.cleSprite = '';
+    if (pl.i === 2) rendreMenuD();
+  }
+  function majCouleursPlan(pl) {
+    const c = CHARS[pl.ck], k = valeurs.relief ?? .28;
+    pl.el.style.setProperty('--cClair', melange(c.color, '#ffffff', k));
+    pl.el.style.setProperty('--cSombre', melange(c.color, '#000000', k * 1.3));
+  }
+
+  /* ================= LE MENU D'ARRIVÉE =================
+     Le filigrane du fond d'intro, puis le menu D (module partagé). */
+  for (const el of document.querySelectorAll('.watermark[data-wm]')) {
+    const txt = (el.dataset.wm + ' ').repeat(3);
+    el.innerHTML = Array.from({ length: 6 }, () => `<div class="line">${txt}</div>`).join('');
+  }
+  const LOGO = '../assets/logo.png';
+  let hMenu = null;
+  // Une phrase tirée au sort à chaque lecture, comme au lancement du jeu.
+  let phraseMenu = PHRASES_DEF[(Math.random() * PHRASES_DEF.length) | 0];
+  // Le perso du menu est le dernier de la passe : celui qui tire vers l'écran.
+  function rendreMenuD() {
+    hMenu = construireMenuD($('menuD'), { R: DEF_MENU, placement: PLACEMENT_MENU, ordre: ORDRE_MENU,
+      perso: plans[2].ck, phrase: phraseMenu, CHARS, logo: LOGO });
+    // Pas de flottement tant que le perso n'est pas posé : la cible bougerait.
+    hMenu.racine.classList.add('sansFlottement');
+    if (!hMenu.logoImg.complete) hMenu.logoImg.addEventListener('load', () => planifier(), { once:true });
+    const cv = $('heroVol'), g = cv.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.clearRect(0, 0, cv.width, cv.height);
+    g.drawImage(CHARS[plans[2].ck].frames.idle, 0, 0, 16, 20, 0, 0, cv.width, cv.height);
+  }
+
+  /* Sprite agrandi d'un nombre ENTIER de pixels écran par pixel de sprite :
+     jamais de pixel à demi-largeur. Le contour noir et l'ombre sont dessinés
+     une fois dans le canvas : la silhouette est dilatée (neuf copies décalées,
+     suffisant tant que le contour reste plus fin qu'un pixel de sprite). */
+  function rendreFrames(pl, n, m, o, dpr) {
+    const src = CHARS[pl.ck].frames, w = 16 * n, h = 20 * n;
+    for (const fr of FRAMES) {
+      const cv = pl.frames[fr];
+      cv.width = w + 2 * m + o; cv.height = h + 2 * m + o;
+      const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+      const sp = document.createElement('canvas'); sp.width = w; sp.height = h;
+      const s = sp.getContext('2d'); s.imageSmoothingEnabled = false;
+      if (pl.miroir) { s.translate(w, 0); s.scale(-1, 1); }
+      s.drawImage(src[fr] || src.idle, 0, 0, 16, 20, 0, 0, w, h);
+      const dil = document.createElement('canvas'); dil.width = w + 2 * m; dil.height = h + 2 * m;
+      const d = dil.getContext('2d'); d.imageSmoothingEnabled = false;
+      const decal = m ? [[0,0],[m,0],[-m,0],[0,m],[0,-m],[m,m],[m,-m],[-m,m],[-m,-m]] : [[0,0]];
+      for (const [dx, dy] of decal) d.drawImage(sp, m + dx, m + dy);
+      d.globalCompositeOperation = 'source-in'; d.fillStyle = '#111318'; d.fillRect(0, 0, dil.width, dil.height);
+      if (o) { g.globalAlpha = .34; g.drawImage(dil, o, o); g.globalAlpha = 1; }
+      if (m) g.drawImage(dil, 0, 0);
+      g.drawImage(sp, m, m);
+      cv.style.width = cv.width / dpr + 'px'; cv.style.height = cv.height / dpr + 'px';
+    }
+  }
+
+  /* ================= PLACEMENT (commun aux trois plans) =================
+     Les valeurs décrivent le plan 1 (perso à gauche). Les plans en miroir
+     prennent le reflet par le centre de la bande : la bande est inclinée, un
+     simple miroir gauche/droite poserait le perso hors de sa bande. */
+  const PLACEMENT_DEF = { bande:{ x:50, y:50, s:1 }, perso:{ x:13, y:36, s:1 }, nom:{ x:45, y:31, s:1 } };
+  const placement = JSON.parse(JSON.stringify(PLACEMENT_DEF));
+  const NOMS_EL = { bande:'Bande (hauteur, épaisseur)', perso:'Personnage', nom:'Nom + univers' };
+
+  let geo = null;
+  function miseEnPage() {
+    const Wp = scene.clientWidth, Hp = scene.clientHeight;
+    if (!Wp || !Hp) return false;
+    const cqh = Hp / 100, dpr = window.devicePixelRatio || 1, R = valeurs;
+    const ang = R.angle * Math.PI / 180, ux = Math.cos(ang), uy = Math.sin(ang);
+    const cx = Wp / 2, cy = Hp * placement.bande.y / 100;
+    // 200 cqh : juste de quoi couvrir la scène à l'arrêt (coins, biseau compris).
+    // Plus long, la bande parcourrait plus de chemin pendant le glissement et
+    // traverserait l'écran plus vite, donc moins fluide.
+    const T = 46 * cqh * placement.bande.s, L = 200 * cqh;
+    cssv('--L', L + 'px'); cssv('--T', T + 'px'); cssv('--angle', R.angle + 'deg');
+    for (const ax of [...plans.map(p => p.axe), $('axeLigne')]) {
+      ax.style.left = cx + 'px'; ax.style.top = cy + 'px'; ax.style.rotate = R.angle + 'deg';
+    }
+    const n = Math.max(1, Math.round(40 * cqh * placement.perso.s * dpr / 20));
+    const wC = 16 * n / dpr, hC = 20 * n / dpr;
+    const m = Math.round(R.contourPerso * cqh * dpr), o = Math.round(R.ombrePerso * cqh * dpr);
+    const mains = [];
+    for (const pl of plans) {
+      const cle = [n, m, o, dpr, pl.ck].join(':');
+      if (pl.cleSprite !== cle) { rendreFrames(pl, n, m, o, dpr); pl.cleSprite = cle; }
+      let x = Wp * placement.perso.x / 100, y = Hp * placement.perso.y / 100;
+      if (pl.miroir) { x = Wp - x - wC; y = 2 * cy - y - hC; }
+      x = Math.round(x * dpr) / dpr; y = Math.round(y * dpr) / dpr;
+      pl.perso.style.left = (x - m / dpr) + 'px'; pl.perso.style.top = (y - m / dpr) + 'px';
+      const mx = R.mainX / 100, my = R.mainY / 100;
+      mains.push({ x: x + (pl.miroir ? 1 - mx : mx) * wC, y: y + my * hC });
+
+      // Nom : taille réglée, rétrécie si elle dépasse la largeur permise.
+      const fs = 7 * cqh * placement.nom.s;
+      pl.nomTexte.style.fontSize = fs + 'px';
+      pl.univers.style.fontSize = (2.6 * cqh * placement.nom.s) + 'px';
+      const maxW = R.nomLargeurMax * cqh * placement.nom.s, w0 = pl.nomTexte.scrollWidth;
+      if (w0 > maxW) pl.nomTexte.style.fontSize = (fs * maxW / w0) + 'px';
+      const bw = pl.nomBloc.offsetWidth, bh = pl.nomBloc.offsetHeight;
+      let nx = Wp * placement.nom.x / 100, ny = Hp * placement.nom.y / 100;
+      if (pl.miroir) { nx = Wp - nx - bw; ny = 2 * cy - ny - bh; }
+      pl.nom.style.left = nx + 'px'; pl.nom.style.top = ny + 'px';
+    }
+    // Cibles du menu : le logo et le perso volants se garent exactement sur ceux
+    // du menu. On mesure sans le flottement, sinon la cible bougerait toute seule.
+    const hero = hMenu.heros;
+    hMenu.racine.classList.add('sansFlottement');
+    // Les copies volantes se placent dans le cadre, bordure déduite : sans ça
+    // elles se garaient 8 px plus bas et plus à droite que le vrai menu.
+    const rs = scene.getBoundingClientRect(), rl = hMenu.logoImg.getBoundingClientRect(), rh = hero.getBoundingClientRect();
+    const bx = rs.left + scene.clientLeft, bty = rs.top + scene.clientTop;
+    const cibleLogo = { x: rl.left - bx, y: rl.top - bty, w: rl.width, h: rl.height };
+    const cibleHero = { x: rh.left - bx, y: rh.top - bty, w: rh.width, h: rh.height };
+    const lv = $('logoVol'), hv = $('heroVol');
+    lv.style.left = cibleLogo.x + 'px'; lv.style.top = cibleLogo.y + 'px'; lv.style.width = cibleLogo.w + 'px';
+    hv.style.left = cibleHero.x + 'px'; hv.style.top = cibleHero.y + 'px';
+    hv.style.width = cibleHero.w + 'px'; hv.style.height = cibleHero.h + 'px';
+
+    geo = { Wp, Hp, cqh, L, ux, uy, mains, cx, cy, cibleLogo, cibleHero };
+    return true;
+  }
+
+  /* ================= FRISE (Web Animations) =================
+     Chaque élément reçoit UNE animation qui couvre toute la séquence, avec ses
+     clés placées aux bons instants. Figer, glisser la frise ou ralentir revient
+     alors à régler le temps de toutes les animations d'un coup. Tout ne bouge
+     qu'en translate / scale / opacity : rien n'est repeint pendant l'intro. */
+  const lecture = {
+    anims: [], total: 3, enPause: false, vitesse: 1,
+    temps() { const a = this.anims[0]; return a && a.currentTime != null ? +a.currentTime : 0; },
+    aller(ms) { for (const a of this.anims) a.currentTime = ms; },
+    pause() { this.enPause = true; for (const a of this.anims) a.pause(); majBoutonLecture(); },
+    jouer() {
+      if (this.temps() >= this.total * 1000 - 1) this.aller(0);
+      this.enPause = false;
+      for (const a of this.anims) { a.playbackRate = this.vitesse; a.play(); }
+      majBoutonLecture();
+    },
+    regleVitesse(v) { this.vitesse = v; for (const a of this.anims) a.updatePlaybackRate(v); },
+    vider() { for (const a of this.anims) a.cancel(); this.anims = []; },
+  };
+  function frise(el, pts, delai = 0) {
+    const tot = lecture.total;
+    pts = pts.filter(Boolean).sort((a, b) => a[0] - b[0]);
+    const kfs = pts.map(([t, props, easing]) => ({ ...props, offset: Math.min(1, Math.max(0, t / tot)), easing: easing || 'linear' }));
+    if (kfs[0].offset > 0) kfs.unshift({ ...kfs[0], offset: 0, easing: 'linear' });
+    if (kfs[kfs.length - 1].offset < 1) kfs.push({ ...kfs[kfs.length - 1], offset: 1 });
+    const a = el.animate(kfs, { duration: tot * 1000, fill: 'both', delay: delai });
+    a.playbackRate = lecture.vitesse;
+    lecture.anims.push(a);
+    return a;
+  }
+
+  const POUSSEES = { doux:'cubic-bezier(.45,0,.55,1)', fluide:'cubic-bezier(.6,0,.4,1)', nerveux:'cubic-bezier(.75,0,.25,1)', fouet:'cubic-bezier(.92,0,.08,1)' };
+  const REBOND = 'cubic-bezier(.2,1.3,.4,1)';
+  let evenements = [], reperes = [];
+
+  function construireFrise() {
+    if (!miseEnPage()) return;
+    const garde = lecture.anims.length ? lecture.temps() : 0;
+    lecture.vider();
+    const R = valeurs, G = geo;
+    const O = R.ouverture, V = R.vol, P = Math.min(R.poussee, R.vol - .04), H = R.tenue, F = R.dernierLancer;
+    const T = [O + R.avantLancer], C = [null], Ps = [null], Pe = [null];
+    for (let k = 1; k < 3; k++) {
+      C[k] = T[k - 1] + V; T[k] = C[k] + H;
+      Ps[k] = T[k - 1] + (V - P) / 2; Pe[k] = Ps[k] + P;
+    }
+    const FIN = T[2] + F;
+    // Arrivée dans le menu : le logo claque au centre, se pose à sa place, et le
+    // reste du menu se monte autour pendant qu'il vole.
+    const T_logo = FIN + .3 + R.tenueLogo, T_logoFin = T_logo + R.volLogo;
+    const T_hero = T_logo + R.retardHeros, T_heroFin = T_hero + R.arriveeHeros;
+    const T_btn = T_logo + R.retardBoutons;
+    const arrivee = arriveeMenuD(hMenu, DEF_MENU, { logo:false, perso:false });
+    const T_btnFin = T_btn + dureeArrivee(arrivee);
+    const FINI = Math.max(T_logoFin, T_heroFin, T_btnFin);
+    const TOTAL = FINI + 1;
+    lecture.total = TOTAL;
+    const pousse = POUSSEES[R.nervosite] || POUSSEES.nerveux;
+    // Côté d'où arrive le plan k : +1 = de la droite (le long de l'axe), -1 = de la gauche.
+    const cote = k => (k % 2 === 1 ? 1 : -1);
+    const le = (d, p = 1) => `${d * p * G.ux}px ${d * p * G.uy}px`;
+    const cqh = G.cqh;
+
+    // Caméra : tremblement à chaque réception. Animation maîtresse, créée en premier.
+    const a = R.tremblement * cqh, d = R.tremblementDuree;
+    const secousse = [[0, { translate:'0px 0px' }]];
+    for (const c of [C[1], C[2]]) {
+      secousse.push([c, { translate:'0px 0px' }], [c + d * .18, { translate:`${a}px ${-a * .6}px` }],
+        [c + d * .42, { translate:`${-a * .7}px ${a * .5}px` }], [c + d * .7, { translate:`${a * .35}px ${-a * .25}px` }],
+        [c + d, { translate:'0px 0px' }]);
+    }
+    frise($('camera'), secousse);
+    frise($('cameraZoom'), [[0, { scale:'1' }], [T[2], { scale:'1' }, 'cubic-bezier(.5,0,.9,.45)'], [FIN, { scale:String(R.rapprochement) }]]);
+    // `visibility` en plus de l'opacité : une couche invisible n'est plus
+    // dessinée du tout, alors qu'à opacité zéro le navigateur continue de la
+    // préparer. Même chose pour le menu, qui attend tout l'échange.
+    frise($('cameraZoom'), [[0, { opacity:1, visibility:'visible' }], [FIN + .1, { opacity:1, visibility:'visible' }, 'steps(1, end)'],
+      [FIN + .11, { opacity:0, visibility:'hidden' }]]);
+
+    // Ligne d'ouverture, puis la première bande qui s'ouvre depuis elle.
+    frise($('ligne'), [[0, { scale:'0 1', opacity:1 }, 'cubic-bezier(.2,.8,.3,1)'], [.16, { scale:'1 1', opacity:1 }],
+      [Math.max(.17, O * .55), { scale:'1 1', opacity:1 }, 'ease-out'], [Math.max(.2, O * .85), { scale:'1 1', opacity:0 }]]);
+    frise(plans[0].axe, [[0, { scale:'1 0' }], [.1, { scale:'1 0' }, 'cubic-bezier(.25,1.3,.45,1)'], [Math.max(.14, O * .75), { scale:'1 1' }]]);
+
+    // Fond : il glisse un peu avec les bandes, comme une caméra qui suit le disque.
+    let cumul = 0;
+    const fond = [[0, { translate:'0px 0px' }]];
+    for (let k = 1; k < 3; k++) {
+      fond.push([Ps[k], { translate: le(cumul) }, pousse]);
+      cumul -= cote(k) * G.L * R.parallaxeFond;
+      fond.push([Pe[k], { translate: le(cumul) }]);
+    }
+    frise($('fondFiligrane'), fond);
+
+    // Traits de vitesse : ils filent dans le sens des bandes pendant chaque glissement.
+    const traits = [[0, { opacity:0, translate:'0px 0px' }]];
+    for (let k = 1; k < 3; k++) {
+      const vers = -cote(k) * G.L * .35;
+      traits.push([Ps[k], { opacity:0, translate:`${-vers}px 0px` }], [(Ps[k] + Pe[k]) / 2, { opacity:R.traits, translate:'0px 0px' }],
+        [Pe[k], { opacity:0, translate:`${vers}px 0px` }]);
+    }
+    frise($('traits'), traits);
+
+    for (const pl of plans) {
+      const i = pl.i, f = pl.miroir ? -1 : 1;
+      // Bande : entre en glissant le long de son axe, ressort de l'autre côté.
+      const bande = [];
+      if (i === 0) bande.push([0, { translate:'0px 0px' }]);
+      else bande.push([0, { translate:`${cote(i) * G.L}px 0px` }], [Ps[i], { translate:`${cote(i) * G.L}px 0px` }, pousse], [Pe[i], { translate:'0px 0px' }]);
+      if (i < 2) bande.push([Ps[i + 1], { translate:'0px 0px' }, pousse], [Pe[i + 1], { translate:`${-cote(i + 1) * G.L}px 0px` }]);
+      frise(pl.bande, bande);
+
+      // Perso et nom : même trajet, avec leur propre profondeur.
+      const glisse = (p, arrivee, easingArrivee) => {
+        const pts = [];
+        if (i === 0) pts.push([0, { translate:'0px 0px', opacity:1 }]);
+        else pts.push([0, { translate: le(cote(i) * G.L, p), opacity:0 }], [Ps[i], { translate: le(cote(i) * G.L, p), opacity:0 }, 'steps(1, start)'],
+          [Ps[i] + .001, { translate: le(cote(i) * G.L, p), opacity:1 }, easingArrivee], [arrivee, { translate:'0px 0px', opacity:1 }]);
+        if (i < 2) pts.push([Ps[i + 1], { translate:'0px 0px', opacity:1 }, pousse], [Pe[i + 1], { translate: le(-cote(i + 1) * G.L, p), opacity:1 }, 'steps(1, end)'],
+          [Pe[i + 1] + .001, { translate: le(-cote(i + 1) * G.L, p), opacity:0 }]);
+        return pts;
+      };
+      const persoPts = glisse(R.parallaxePerso, Pe[i] ?? 0, pousse);
+      if (i === 0) {
+        // Le premier monte d'en bas pendant que sa bande s'ouvre.
+        const enBas = { translate:`0px ${G.Hp * .75}px`, opacity:1 };
+        persoPts.splice(0, 1, [0, enBas], [O * .3, enBas, REBOND], [O + .02, { translate:'0px 0px', opacity:1 }]);
+      }
+      frise(pl.persoGlisse, persoPts);
+
+      const retard = R.retardNom, arriveeNom = (Pe[i] ?? 0) + retard;
+      const nomPts = glisse(R.parallaxeNom, arriveeNom, pousse);
+      frise(pl.nomGlisse, nomPts);
+      if (i === 0) frise(pl.nomSlam, [[0, { scale:'1.9', opacity:0 }], [O * .45, { scale:'1.9', opacity:0 }, 'cubic-bezier(.3,1.2,.5,1)'], [O + .1, { scale:'1', opacity:1 }]]);
+      else frise(pl.nomSlam, [[0, { scale:'1', opacity:1 }], [arriveeNom - .02, { scale:'1', opacity:1 }, 'ease-out'],
+        [arriveeNom + .05, { scale:'1.12', opacity:1 }, 'ease-in-out'], [arriveeNom + .2, { scale:'1', opacity:1 }]]);
+      const pop = i === 0 ? O + .02 : arriveeNom + .02;
+      frise(pl.univers, [[0, { scale:'0' }], [pop, { scale:'0' }, 'cubic-bezier(.2,1.7,.4,1)'], [pop + .18, { scale:'1' }]]);
+
+      // Élan au lancer, recul à la réception.
+      const elan = R.elan * cqh, recul = R.recul * cqh, pose = [[0, { translate:'0px 0px' }]];
+      if (i >= 1) {
+        const c = C[i], retour = Math.max(c + .07, Math.min(c + .2, T[i] - .06));
+        pose.push([c - .005, { translate:'0px 0px' }, 'cubic-bezier(.2,.9,.3,1)'], [c + .05, { translate:`${-f * recul}px 0px` }, 'ease-in-out'], [retour, { translate:'0px 0px' }]);
+      }
+      pose.push([T[i] - .06, { translate:'0px 0px' }, 'cubic-bezier(.3,0,.2,1)'], [T[i] + .03, { translate:`${f * elan}px 0px` }, 'ease-out'], [T[i] + .24, { translate:'0px 0px' }]);
+      frise(pl.persoPose, pose);
+
+      // Poses du sprite : arrivée en course, plongeon à la réception, lancer.
+      const suite = i === 0 ? [[0, 'idle'], [T[0] - .04, 'throw']]
+        : [[0, 'dash'], [C[i], 'dive'], [C[i] + .12, 'idle'], [T[i] - .04, 'throw']].filter(([t, nom], j, tab) => nom !== 'idle' || t < tab[j + 1][0]);
+      for (const fr of FRAMES) frise(pl.frames[fr], suite.map(([t, nom]) => [t, { opacity: nom === fr ? 1 : 0 }, 'steps(1, end)']));
+    }
+
+    // Disque : apparaît dans la main du 1er, vole de main en main, puis fonce vers l'écran.
+    const M = G.mains, persp = R.perspective, N = 18;
+    const S = (x, y, s, sy) => ({ translate:`${x}px ${y}px`, scale:`${s} ${s * sy}` });
+    const vol = [[0, S(M[0].x, M[0].y, 0, persp)], [O - .04, S(M[0].x, M[0].y, 0, persp), 'cubic-bezier(.2,1.7,.4,1)'], [O + .12, S(M[0].x, M[0].y, 1, persp)]];
+    const enVol = [];
+    for (let k = 1; k < 3; k++) {
+      const p0 = M[k - 1], p1 = M[k], t0 = T[k - 1], t1 = C[k];
+      const dx = p1.x - p0.x, dy = p1.y - p0.y, dist = Math.hypot(dx, dy) || 1;
+      let nx = -dy / dist, ny = dx / dist;
+      if (ny > 0) { nx = -nx; ny = -ny; }     // la courbe bombe vers le haut de l'écran
+      const qx = (p0.x + p1.x) / 2 + nx * dist * R.courbe, qy = (p0.y + p1.y) / 2 + ny * dist * R.courbe;
+      vol.push([t0, S(p0.x, p0.y, 1, persp)]);
+      for (let j = 1; j <= N; j++) {
+        const u = j / N, e = u * .35 + (1 - (1 - u) * (1 - u)) * .65;
+        const x = (1 - e) * (1 - e) * p0.x + 2 * (1 - e) * e * qx + e * e * p1.x;
+        const y = (1 - e) * (1 - e) * p0.y + 2 * (1 - e) * e * qy + e * e * p1.y;
+        vol.push([t0 + u * (t1 - t0), S(x, y, 1, persp)]);
+      }
+      enVol.push([t0, t1]);
+    }
+    const diag = Math.hypot(G.Wp, G.Hp), sFin = diag * 1.15 / (R.tailleDisque * cqh);
+    vol.push([T[2], S(M[2].x, M[2].y, 1, persp)]);
+    for (let j = 1; j <= N; j++) {
+      const u = j / N, e = u * u, s = 1 + (sFin - 1) * Math.pow(u, 3.2), sy = persp + (1 - persp) * u * u;
+      vol.push([T[2] + u * F, S(M[2].x + (G.Wp / 2 - M[2].x) * e, M[2].y + (G.Hp / 2 - M[2].y) * e, s, sy)]);
+    }
+    enVol.push([T[2], FIN]);
+    frise($('disque'), vol);
+    frise($('disqueCouche'), [[0, { opacity:1 }], [FIN + .12, { opacity:1 }, 'steps(1, end)'], [FIN + .13, { opacity:0 }]]);
+
+    // Reflets : le même trajet, un peu en retard chacun, visibles seulement en vol.
+    const hote = $('reflets');
+    hote.innerHTML = '';
+    const nb = Math.round(R.fantomes);
+    cssv('--couleurTrainee', R.couleurTrainee === 'disque' ? (skinActuel().colors?.[0] || '#fff') : '#fff');
+    for (let j = 1; j <= nb; j++) {
+      const r = document.createElement('div');
+      r.className = 'reflet';
+      hote.appendChild(r);
+      const alpha = .5 * (1 - (j - 1) / nb), retard = j * R.espacement;
+      frise(r, vol.map(([t, p, e]) => [t, { ...p, scale: p.scale.split(' ').map(v => +v * (1 - j * .05)).join(' ') }, e]), retard);
+      const op = [[0, { opacity:0 }]];
+      for (const [t0, t1] of enVol) op.push([t0, { opacity:0 }], [t0 + .04, { opacity:alpha }], [t1 - .03, { opacity:alpha }], [t1, { opacity:0 }]);
+      frise(r, op, retard);
+    }
+
+    // Le flash couvre l'échange : c'est derrière lui que le décor du menu prend
+    // la place des bandes. Rien ne se coupe à l'image, tout se fait en blanc.
+    frise($('flash'), [[0, { opacity:0 }], [FIN - .03, { opacity:0 }, 'ease-out'], [FIN + .01, { opacity:R.flash }],
+      [FIN + .01 + R.flashTenue, { opacity:R.flash }, 'cubic-bezier(.2,.6,.3,1)'], [FIN + .6, { opacity:0 }]]);
+    // Secousse de l'impact : tout l'écran, menu compris.
+    const ai = R.tremblementImpact * cqh;
+    frise($('secousseTout'), [[0, { translate:'0px 0px' }], [FIN, { translate:'0px 0px' }],
+      [FIN + .05, { translate:`${-ai}px ${ai * .5}px` }], [FIN + .12, { translate:`${ai * .8}px ${-ai * .6}px` }],
+      [FIN + .2, { translate:`${-ai * .45}px ${ai * .3}px` }], [FIN + .32, { translate:'0px 0px' }]]);
+    frise($('onde'), [[0, { opacity:0, scale:'.15' }], [FIN, { opacity:0, scale:'.15' }, 'steps(1, end)'],
+      [FIN + .02, { opacity:.9, scale:'.2' }, 'cubic-bezier(.1,.75,.3,1)'], [FIN + .6, { opacity:0, scale:String(R.ondeTaille) }]]);
+    frise($('menuJeu'), [[0, { opacity:0, visibility:'hidden' }], [FIN, { opacity:0, visibility:'hidden' }, 'steps(1, end)'],
+      [FIN + .02, { opacity:1, visibility:'visible' }]]);
+
+    // Logo : il claque au centre, s'écrase, rebondit, attend, puis file se garer.
+    const CL = geo.cibleLogo, CH = geo.cibleHero, gr = R.logoImpact;
+    const auCentre = `${G.Wp / 2 - (CL.x + CL.w / 2)}px ${G.Hp / 2 - (CL.y + CL.h / 2)}px`;
+    frise($('logoVol'), [
+      [0, { opacity:0, translate:auCentre, scale:`${gr * 1.3} ${gr * 1.42}` }],
+      [FIN, { opacity:0, translate:auCentre, scale:`${gr * 1.3} ${gr * 1.42}` }, 'steps(1, end)'],
+      [FIN + .01, { opacity:1, translate:auCentre, scale:`${gr * 1.3} ${gr * 1.42}` }, 'cubic-bezier(.2,.9,.3,1)'],
+      [FIN + .14, { opacity:1, translate:auCentre, scale:`${gr * 1.06} ${gr * .9}` }, 'cubic-bezier(.3,1.4,.5,1)'],
+      [FIN + .3, { opacity:1, translate:auCentre, scale:`${gr} ${gr}` }],
+      [T_logo, { opacity:1, translate:auCentre, scale:`${gr} ${gr}` }, 'cubic-bezier(.55,0,.2,1)'],
+      [T_logoFin, { opacity:1, translate:'0px 0px', scale:'1 1' }, 'steps(1, end)'],
+      [T_logoFin + .005, { opacity:0, translate:'0px 0px', scale:'1 1' }],
+    ]);
+    frise(hMenu.logoImg, [[0, { opacity:0 }], [T_logoFin, { opacity:0 }, 'steps(1, end)'], [T_logoFin + .005, { opacity:1 }]]);
+
+    // Le perso qui vient de tirer entre par la droite et se pose à sa place.
+    const dehors = `${G.Wp * .5}px ${G.Hp * .1}px`;
+    frise($('heroVol'), [
+      [0, { opacity:0, translate:dehors, scale:'1.06' }],
+      [T_hero, { opacity:0, translate:dehors, scale:'1.06' }, 'steps(1, end)'],
+      [T_hero + .005, { opacity:1, translate:dehors, scale:'1.06' }, 'cubic-bezier(.2,.9,.25,1.06)'],
+      [T_heroFin, { opacity:1, translate:'0px 0px', scale:'1' }, 'steps(1, end)'],
+      [T_heroFin + .005, { opacity:0, translate:'0px 0px', scale:'1' }],
+    ]);
+    frise(hMenu.heros, [[0, { opacity:0 }], [T_heroFin, { opacity:0 }, 'steps(1, end)'], [T_heroFin + .005, { opacity:1 }]]);
+    // Le halo s'allume sous le perso pendant qu'il se pose.
+    frise(hMenu.halo, [[0, { opacity:0 }], [T_heroFin - .18, { opacity:0 }, 'ease-out'], [T_heroFin + .12, { opacity:1 }]]);
+
+    // Tuiles, phrase, barre du haut : l'arrivée du menu D (réglée dans menu-d.html),
+    // lancée au départ des tuiles. Même frise que le reste : elle se fige et se rejoue avec.
+    for (const d of arrivee) {
+      const a = d.el.animate(d.kf, { delay:(T_btn + d.depart) * 1000, duration:d.duree * 1000, easing:d.easing, fill:'both' });
+      a.playbackRate = lecture.vitesse;
+      lecture.anims.push(a);
+    }
+
+    evenements = [
+      { t:0, son:'swish' }, { t:.12, son:'dash' }, { t:T[0], son:'throw' },
+      { t:Ps[1], son:'swish' }, { t:C[1], son:'catch' }, { t:T[1], son:'throw' },
+      { t:Ps[2], son:'swish' }, { t:C[2], son:'catch' }, { t:T[2], son:'superthrow' },
+      { t:FIN, son:'bigbounce' }, { t:FIN + .04, son:'go' }, { t:T_hero, son:'dash' },
+      ...hMenu.tuiles.map((_, i) => ({ t:T_btn + DEF_MENU.debutTuiles + i * DEF_MENU.decalageTuiles, son:'move' })),
+    ];
+    reperes = [
+      ['Ouverture', O * .6], ['1er lancer', T[0]], ['Bandes 1→2', (Ps[1] + Pe[1]) / 2], ['Réception 2', C[1] + .05],
+      ['Bandes 2→3', (Ps[2] + Pe[2]) / 2], ['Réception 3', C[2] + .05], ['Vers l\'écran', T[2] + F * .7],
+      ['Impact', FIN + .06], ['Logo', FIN + .4], ['Le menu se monte', T_logo + .3], ['Menu fini', FINI + .15],
+    ];
+    lecture.finMenu = T_heroFin;
+    lecture.finDisque = FIN + .15;
+    dessinerDisque();
+    majReperes();
+    $('frise').max = Math.round(TOTAL * 1000);
+
+    lecture.aller(Math.min(garde, TOTAL * 1000));
+    if (lecture.enPause) for (const x of lecture.anims) x.pause();
+  }
+
+  // Une seule reconstruction par image. Le minuteur double l'appel d'image :
+  // dans un onglet en arrière-plan, le navigateur ne rend plus d'images et la
+  // mise à jour attendrait indéfiniment (les polices arrivent après, par exemple).
+  let reconstructionPrevue = false;
+  function planifier() {
+    if (reconstructionPrevue) return;
+    reconstructionPrevue = true;
+    const faire = () => {
+      if (!reconstructionPrevue) return;
+      reconstructionPrevue = false;
+      construireFrise(); majSortie();
+    };
+    requestAnimationFrame(faire);
+    setTimeout(faire, 150);
+  }
+
+  /* ================= DISQUE (le vrai rendu des skins du jeu) ================= */
+  const disqueCtx = $('disqueCanvas').getContext('2d');
+  let skinDuJour = getSkinId();
+  const skinActuel = () => DISC_SKINS.find(s => s.id === (valeurs.skin === 'jour' ? skinDuJour : valeurs.skin)) || DISC_SKINS[0];
+  function dessinerDisque() {
+    const g = disqueCtx, c = 192, r = 164, id = skinActuel().id;
+    g.clearRect(0, 0, 384, 384);
+    drawSkinDisc(g, c, c, r, id, performance.now() / 1000 * 4);
+    g.save();
+    tracerContour(g, c, c, r, deformationDisque(id));
+    if (valeurs.lisereDisque === 'blanc') { g.lineWidth = 10; g.strokeStyle = 'rgba(255,255,255,.6)'; }
+    else { g.lineWidth = 26; g.strokeStyle = '#111318'; }
+    g.stroke();
+    g.restore();
+  }
+  function majRotation(v) {
+    scene.classList.toggle('faceFixe', +v === 0);
+    if (+v > 0) cssv('--rotationDisque', v + 's');
+  }
+
+  /* ================= RÉGLAGES (le panneau et l'export sont générés d'ici) ================= */
+  const SECTIONS = [
+    { titre:'Bandes', items:[
+      { id:'angle', label:'Inclinaison', min:-30, max:0, pas:1, def:-14, unite:'°', refaire:true },
+      { id:'biseau', label:'Biseau des jonctions', min:0, max:40, pas:1, def:18, unite:'°', fn:v => cssv('--biseau', -v + 'deg') },
+      { id:'contourBande', label:'Contour noir', min:0, max:2.5, pas:.1, def:1, fn:v => cssv('--contourBande', v + 'cqh') },
+      { id:'lisere', label:'Liseré couleur secondaire', min:0, max:1.5, pas:.1, def:.6, fn:v => cssv('--lisere', v + 'cqh') },
+      { id:'relief', label:'Relief (dégradé)', min:0, max:.6, pas:.02, def:.28, fn:() => plans.forEach(majCouleursPlan) },
+      { id:'joint', label:'Jonction noire entre deux bandes', min:0, max:3, pas:.1, def:1.2, fn:v => cssv('--joint', v + 'cqh') },
+      { sous:'Motif' },
+      { id:'motif', label:'Motif', type:'choix', def:'filigrane',
+        options:[['filigrane',"Univers en filigrane"],['trame','Trame de points'],['rayures','Rayures'],['aucun','Aucun']], fn:v => { scene.dataset.motif = v; } },
+      { id:'motifOp', label:'Intensité du motif', min:0, max:.5, pas:.01, def:.16, fn:v => cssv('--motifOp', v) },
+      { id:'filigraneVitesse', label:'Défilement du filigrane', min:3, max:40, pas:1, def:14, unite:'s', fn:v => cssv('--filigraneVitesse', v + 's') },
+    ]},
+    { titre:'Personnages', items:[
+      { id:'contourPerso', label:'Contour noir', min:0, max:1.2, pas:.05, def:.45, refaire:true },
+      { id:'ombrePerso', label:'Ombre portée', min:0, max:2.5, pas:.05, def:.9, refaire:true },
+      { id:'parallaxePerso', label:'Profondeur au glissement', min:.8, max:1.6, pas:.05, def:1.15, refaire:true },
+      { id:'elan', label:'Élan au lancer', min:0, max:5, pas:.1, def:1.8, refaire:true },
+      { id:'recul', label:'Recul à la réception', min:0, max:5, pas:.1, def:1.3, refaire:true },
+      { sous:'Main qui tient le disque' },
+      { id:'mainX', label:'X dans le sprite', min:0, max:100, pas:1, def:92, unite:'%', refaire:true },
+      { id:'mainY', label:'Y dans le sprite', min:0, max:100, pas:1, def:56, unite:'%', refaire:true },
+    ]},
+    { titre:'Textes', items:[
+      { id:'police_nom', cible:'nom', label:'Typo du nom', type:'police', def:'archivo', refaire:true },
+      { id:'contourNom', label:'Contour noir du nom', min:0, max:1.6, pas:.05, def:.7, fn:v => cssv('--c-nom', v + 'cqh') },
+      { id:'ombreNom', label:'Ombre du nom', min:0, max:1.6, pas:.05, def:.6, fn:v => cssv('--o-nom', v + 'cqh') },
+      { id:'nomLargeurMax', label:'Largeur maximale du nom', min:30, max:130, pas:1, def:78, refaire:true },
+      { id:'parallaxeNom', label:'Profondeur au glissement', min:.75, max:1.3, pas:.05, def:.85, refaire:true },
+      { id:'retardNom', label:'Retard du nom', min:0, max:.25, pas:.01, def:.05, unite:'s', refaire:true },
+      { sous:'Univers' },
+      { id:'police_univers', cible:'univers', label:'Typo', type:'police', def:'chakra', refaire:true },
+      { id:'styleUnivers', label:'Style', type:'choix', def:'etiquette',
+        options:[['etiquette','Étiquette blanche'],['texte','Texte détouré']], fn:v => { scene.dataset.univers = v; }, refaire:true },
+    ]},
+    { titre:'Disque', items:[
+      { id:'skin', label:'Skin', type:'choix', def:'jour',
+        options:[['jour','Disque du jour (au hasard)'], ...DISC_SKINS.map(s => [s.id, s.name])], refaire:true },
+      { id:'tailleDisque', label:'Taille', min:3, max:14, pas:.1, def:8.5, fn:v => cssv('--tailleDisque', v + 'cqh'), refaire:true },
+      { id:'perspective', label:'Perspective (écrasement)', min:.3, max:1, pas:.01, def:.55, refaire:true },
+      { id:'lisereDisque', label:'Liseré', type:'choix', def:'noir', options:[['noir','Noir épais'],['blanc','Blanc fin (comme en match)']] },
+      { id:'rotationDisque', label:"Durée d'un tour (0 = face fixe)", min:0, max:2, pas:.05, def:.9, unite:'s', fn:majRotation },
+      { id:'courbe', label:'Courbe du lancer', min:-.6, max:.6, pas:.02, def:.2, refaire:true },
+      { sous:'Traînée' },
+      { id:'fantomes', label:'Nombre de reflets', min:0, max:10, pas:1, def:6, refaire:true },
+      { id:'espacement', label:'Écart entre reflets', min:6, max:40, pas:1, def:16, unite:'ms', refaire:true },
+      { id:'couleurTrainee', label:'Couleur', type:'choix', def:'blanc', options:[['blanc','Blanche'],['disque','Couleur du disque']], refaire:true },
+    ]},
+    { titre:'Rythme', items:[
+      { id:'ouverture', label:'Ouverture de la 1re bande', min:.2, max:1, pas:.02, def:.46, unite:'s', refaire:true },
+      { id:'avantLancer', label:'Attente avant le 1er lancer', min:0, max:.8, pas:.02, def:.16, unite:'s', refaire:true },
+      { id:'vol', label:'Temps de vol du disque', min:.24, max:1, pas:.02, def:.46, unite:'s', refaire:true },
+      { id:'poussee', label:'Durée du glissement des bandes', min:.14, max:.9, pas:.02, def:.38, unite:'s', refaire:true },
+      { id:'nervosite', label:'Glissement', type:'choix', def:'fluide',
+        options:[['doux','Doux'],['fluide','Fluide'],['nerveux','Nerveux'],['fouet','Coup de fouet']], refaire:true },
+      { id:'traits', label:'Traits de vitesse au glissement', min:0, max:.7, pas:.05, def:.3, refaire:true },
+      { id:'tenue', label:'Temps en main', min:.12, max:.7, pas:.02, def:.2, unite:'s', refaire:true },
+      { id:'dernierLancer', label:"Dernier lancer vers l'écran", min:.2, max:1, pas:.02, def:.42, unite:'s', refaire:true },
+    ]},
+    { titre:'Arrivée dans le menu', items:[
+      { id:'flashTenue', label:'Durée du flash blanc', min:.02, max:.4, pas:.01, def:.12, unite:'s', refaire:true },
+      { id:'tremblementImpact', label:"Secousse de l'impact", min:0, max:4, pas:.1, def:1.8, refaire:true },
+      { id:'ondeTaille', label:'Onde de choc', min:0, max:7, pas:.1, def:3.6, refaire:true },
+      { sous:'Logo' },
+      { id:'logoImpact', label:'Taille du logo au centre', min:1, max:2.5, pas:.05, def:1.5, unite:'×', refaire:true },
+      { id:'tenueLogo', label:'Temps où il reste au centre', min:.05, max:1.4, pas:.05, def:.45, unite:'s', refaire:true },
+      { id:'volLogo', label:'Vol jusqu’à sa place', min:.25, max:1.4, pas:.05, def:.55, unite:'s', refaire:true },
+      { sous:'Le reste du menu' },
+      { id:'retardHeros', label:'Entrée du perso (après le logo)', min:0, max:.8, pas:.02, def:.1, unite:'s', refaire:true },
+      { id:'arriveeHeros', label:'Durée de son arrivée', min:.25, max:1.2, pas:.05, def:.55, unite:'s', refaire:true },
+      { id:'retardBoutons', label:'Tuiles (après le départ du logo)', min:0, max:.8, pas:.02, def:.16, unite:'s', refaire:true },
+    ]},
+    { titre:'Caméra & fond', items:[
+      { id:'tremblement', label:'Tremblement à la réception', min:0, max:3, pas:.1, def:.9, refaire:true },
+      { id:'tremblementDuree', label:'Durée du tremblement', min:.06, max:.4, pas:.01, def:.16, unite:'s', refaire:true },
+      { id:'rapprochement', label:'Rapprochement final', min:1, max:1.4, pas:.01, def:1.1, unite:'×', refaire:true },
+      { id:'flash', label:'Flash final', min:0, max:1, pas:.05, def:1, refaire:true },
+      { id:'fond', label:'Fond', type:'choix', def:'nuit', options:[['nuit','Bleu nuit'],['noir','Noir'],['encre','Encre du jeu']], fn:v => { scene.dataset.fond = v; } },
+      { id:'rayuresFond', label:'Rayures du fond', min:0, max:.25, pas:.01, def:.07, fn:v => cssv('--rayuresOp', v) },
+      { id:'filigraneFond', label:'Filigrane du fond (celui du menu)', min:0, max:.2, pas:.01, def:.06, fn:v => cssv('--filigraneFondOp', v) },
+      { id:'parallaxeFond', label:'Le filigrane suit les bandes', min:0, max:.6, pas:.02, def:.22, refaire:true },
+    ]},
+  ];
+  const ITEMS = SECTIONS.flatMap(s => s.items).filter(it => it.id);
+  const PAR_ID = Object.fromEntries(ITEMS.map(it => [it.id, it]));
+  const valeurs = {};
+
+  function formate(it, v) {
+    const n = +v;
+    const txt = Number.isInteger(n) ? String(n) : n.toFixed(it.pas < .1 ? 2 : 1);
+    return txt + (it.unite || '');
+  }
+  function regler(id, v, silencieux) {
+    const it = PAR_ID[id];
+    if (!it) return;
+    if (!it.type) v = +v;
+    valeurs[id] = v;
+    if (it._input && String(it._input.value) !== String(v)) it._input.value = v;
+    if (it._n) it._n.textContent = formate(it, v);
+    if (it.type === 'police') {
+      const p = POLICES[v] || POLICES.archivo;
+      cssv('--f-' + it.cible, p.famille); cssv('--w-' + it.cible, p.poids);
+    } else if (it.fn) it.fn(v);
+    if (!silencieux) { if (it.refaire) planifier(); else majSortie(); }
+  }
+  (function construirePanneau() {
+    const hote = $('blocsReglages');
+    for (const s of SECTIONS) {
+      const bloc = document.createElement('details');
+      bloc.className = 'bloc'; bloc.open = true;
+      const sum = document.createElement('summary'); sum.textContent = s.titre;
+      bloc.appendChild(sum);
+      for (const it of s.items) {
+        if (it.sous) {
+          const t = document.createElement('div'); t.className = 'sousTitre'; t.textContent = it.sous;
+          bloc.appendChild(t); continue;
+        }
+        const ligne = document.createElement('div');
+        ligne.className = 'reg';
+        const lab = document.createElement('label'); lab.textContent = it.label; lab.htmlFor = 'ctl_' + it.id;
+        let input;
+        if (it.type === 'choix' || it.type === 'police') {
+          input = document.createElement('select');
+          const opts = it.type === 'police' ? Object.entries(POLICES).map(([k, p]) => [k, p.nom]) : it.options;
+          for (const [val, texte] of opts) {
+            const o = document.createElement('option'); o.value = val; o.textContent = texte;
+            if (it.type === 'police') { o.style.fontFamily = POLICES[val].famille; o.style.fontWeight = POLICES[val].poids; }
+            input.appendChild(o);
+          }
+          ligne.classList.add('regChoix');
+          ligne.append(lab, input);
+          input.addEventListener('change', () => regler(it.id, input.value));
+        } else {
+          input = document.createElement('input');
+          Object.assign(input, { type:'range', min:it.min, max:it.max, step:it.pas });
+          const n = document.createElement('span'); n.className = 'n';
+          ligne.append(lab, n, input);
+          it._n = n;
+          input.addEventListener('input', () => regler(it.id, input.value));
+        }
+        input.id = 'ctl_' + it.id;
+        it._input = input;
+        bloc.appendChild(ligne);
+      }
+      hote.appendChild(bloc);
+    }
+  })();
+
+  /* ================= PERSONNAGES ================= */
+  const selects = [$('selP0'), $('selP1'), $('selP2')];
+  selects.forEach((sel, i) => {
+    for (const ck of ROSTER) {
+      const o = document.createElement('option'); o.value = ck; o.textContent = CHARS[ck].name; sel.appendChild(o);
+    }
+    sel.value = plans[i].ck;
+    sel.addEventListener('change', () => { plans[i].ck = sel.value; majPerso(plans[i]); planifier(); });
+  });
+  // Trois persos différents, et un disque du jour si c'est lui qui est choisi.
+  function tirerPersos() {
+    phraseMenu = PHRASES_DEF[(Math.random() * PHRASES_DEF.length) | 0];
+    const sac = [...ROSTER];
+    plans.forEach((pl, i) => {
+      pl.ck = sac.splice((Math.random() * sac.length) | 0, 1)[0];
+      selects[i].value = pl.ck; majPerso(pl);
+    });
+    if (valeurs.skin === 'jour') skinDuJour = DISC_SKINS[(Math.random() * DISC_SKINS.length) | 0].id;
+  }
+  $('btnHasard').addEventListener('click', () => { tirerPersos(); lecture.aller(0); planifier(); });
+
+  /* ================= LECTURE ================= */
+  function majBoutonLecture() { $('btnLecture').textContent = lecture.enPause ? '▶ Lecture' : '⏸ Pause'; }
+  $('btnLecture').addEventListener('click', () => lecture.enPause ? lecture.jouer() : lecture.pause());
+  $('btnDebut').addEventListener('click', () => { recommencer(); lecture.jouer(); });
+  // Un nouveau trio à chaque passage, comme au lancement du jeu.
+  function recommencer() {
+    if ($('chkHasard').checked) { tirerPersos(); construireFrise(); }
+    lecture.aller(0); dernierT = -1;
+  }
+  $('btnImage').addEventListener('click', () => { lecture.pause(); lecture.aller(Math.min(lecture.total * 1000, lecture.temps() + 1000 / 60)); });
+  $('selVitesse').addEventListener('change', e => lecture.regleVitesse(+e.target.value));
+  $('frise').addEventListener('input', e => { lecture.pause(); lecture.aller(+e.target.value); });
+  $('btnModeLecture').addEventListener('click', e => {
+    const on = scene.classList.toggle('lecture');
+    e.target.classList.toggle('on', on);
+    e.target.textContent = on ? 'Mode édition' : 'Mode lecture';
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code !== 'Space' || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName)) return;
+    e.preventDefault();
+    lecture.enPause ? lecture.jouer() : lecture.pause();
+  });
+  function majReperes() {
+    const hote = $('reperes');
+    hote.innerHTML = '';
+    for (const [nom, t] of reperes) {
+      const b = document.createElement('button');
+      b.textContent = nom; b.dataset.t = t;
+      b.addEventListener('click', () => { lecture.pause(); lecture.aller(t * 1000); });
+      hote.appendChild(b);
+    }
+  }
+
+  let dernierT = -1;
+  (function boucle() {
+    requestAnimationFrame(boucle);
+    if (!lecture.anims.length) return;
+    const ms = lecture.temps(), t = ms / 1000;
+    if (!lecture.enPause) {
+      if (t >= lecture.total - .001) {
+        if ($('chkBoucle').checked) { recommencer(); return; }
+        lecture.pause();
+      } else if (t > dernierT) {
+        for (const ev of evenements) if (ev.t > dernierT && ev.t <= t) jouerSon(ev.son);
+      }
+    }
+    dernierT = t;
+    if (document.activeElement !== $('frise')) $('frise').value = Math.round(ms);
+    $('vFrise').textContent = t.toFixed(2).replace('.', ',') + ' s';
+    for (const b of $('reperes').children) b.classList.toggle('ici', Math.abs(+b.dataset.t - t) < .005);
+    // Le perso du menu ne flotte qu'une fois posé.
+    hMenu?.racine.classList.toggle('sansFlottement', !(t > (lecture.finMenu ?? 1e9) + .02));
+    // Le disque n'est redessiné que tant qu'il est à l'écran et que ça tourne :
+    // en pause, le canvas garde sa dernière image.
+    if (!lecture.enPause && t < (lecture.finDisque ?? 0)) dessinerDisque();
+  })();
+
+  /* ================= ÉDITEUR DE PLACEMENT ================= */
+  let choisi = null;
+  const liste = $('listeEls');
+  for (const cle of Object.keys(NOMS_EL)) {
+    const d = document.createElement('div');
+    d.className = 'el'; d.dataset.el = cle;
+    d.innerHTML = `<span class="nomEl">${NOMS_EL[cle]}</span><span class="val"></span>`;
+    d.addEventListener('click', () => choisir(cle));
+    liste.appendChild(d);
+  }
+  function majListe() {
+    for (const d of liste.children) {
+      const v = placement[d.dataset.el];
+      d.querySelector('.val').textContent = d.dataset.el === 'bande' ? `y ${v.y} ·${v.s.toFixed(2)}×` : `${v.x}/${v.y} ·${v.s.toFixed(2)}×`;
+      d.classList.toggle('on', d.dataset.el === choisi);
+    }
+  }
+  function majCurseursEl() {
+    if (!choisi) return;
+    const v = placement[choisi];
+    $('rScale').value = v.s; $('rX').value = v.x; $('rY').value = v.y;
+    $('vScale').textContent = v.s.toFixed(2) + '×'; $('vX').textContent = v.x + '%'; $('vY').textContent = v.y + '%';
+    $('ligneX').style.display = choisi === 'bande' ? 'none' : '';
+    $('lScale').textContent = choisi === 'bande' ? 'Épaisseur' : 'Taille';
+  }
+  function choisir(cle) {
+    choisi = cle;
+    for (const el of scene.querySelectorAll('[data-el]')) el.classList.toggle('sel', el.dataset.el === cle);
+    $('aucunEl').style.display = 'none';
+    $('regBloc').style.display = 'block';
+    majListe(); majCurseursEl();
+  }
+  for (const [idR, k] of [['rScale','s'],['rX','x'],['rY','y']]) {
+    $(idR).addEventListener('input', () => {
+      if (!choisi) return;
+      placement[choisi][k] = +$(idR).value;
+      majListe(); majCurseursEl(); planifier();
+    });
+  }
+  $('btnResetEl').addEventListener('click', () => {
+    if (!choisi) return;
+    placement[choisi] = { ...PLACEMENT_DEF[choisi] };
+    majListe(); majCurseursEl(); planifier();
+  });
+
+  // Glisser : un plan en miroir renverse le mouvement, puisqu'il affiche le reflet.
+  let drag = null;
+  scene.addEventListener('pointerdown', e => {
+    if (scene.classList.contains('lecture')) return;
+    const cible = e.target.closest('[data-el]');
+    if (!cible || !scene.contains(cible)) return;
+    e.preventDefault();
+    lecture.pause();
+    const cle = cible.dataset.el, pl = plans[+cible.closest('.plan').dataset.i];
+    choisir(cle);
+    const r = scene.getBoundingClientRect();
+    drag = { cle, sens: pl.miroir && cle !== 'bande' ? -1 : 1, x0: placement[cle].x, y0: placement[cle].y,
+             px0: e.clientX, py0: e.clientY, w: r.width, h: r.height };
+    scene.setPointerCapture(e.pointerId);
+  });
+  scene.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const v = placement[drag.cle];
+    const dx = (e.clientX - drag.px0) / drag.w * 100 * drag.sens, dy = (e.clientY - drag.py0) / drag.h * 100 * drag.sens;
+    if (drag.cle !== 'bande') v.x = Math.round((drag.x0 + dx) * 2) / 2;
+    v.y = Math.round((drag.y0 + dy) * 2) / 2;
+    majListe(); majCurseursEl(); planifier();
+  });
+  const finDrag = () => { drag = null; };
+  scene.addEventListener('pointerup', finDrag);
+  scene.addEventListener('pointercancel', finDrag);
+
+  /* ================= TOUT COPIER / COLLER ================= */
+  const sortie = $('sortie');
+  function etat() {
+    return {
+      mockup:'intro — passe du roster + arrivée dans le menu D', version:3,
+      persos: plans.map(p => p.ck),
+      reglages:{ ...valeurs },
+      placement: JSON.parse(JSON.stringify(placement)),
+    };
+  }
+  let sortieEnAttente = false;
+  function majSortie(forcer) {
+    if (forcer) { sortie.value = JSON.stringify(etat(), null, 2); return; }
+    if (document.activeElement === sortie || sortieEnAttente) return;
+    sortieEnAttente = true;
+    requestAnimationFrame(() => {
+      sortieEnAttente = false;
+      if (document.activeElement !== sortie) sortie.value = JSON.stringify(etat(), null, 2);
+    });
+  }
+  function message(txt, erreur) {
+    const e = $('etatCopie'); e.textContent = txt; e.classList.toggle('erreur', !!erreur);
+    clearTimeout(message.t); message.t = setTimeout(() => { e.textContent = ''; }, 3500);
+  }
+  function appliquer(texte) {
+    let d;
+    try { d = JSON.parse(texte.trim()); } catch { message('Format pas reconnu : colle le bloc JSON exporté ici.', true); return; }
+    if (d.reglages) for (const [id, v] of Object.entries(d.reglages)) regler(id, v, true);
+    if (d.placement) for (const cle of Object.keys(PLACEMENT_DEF)) if (d.placement[cle]) Object.assign(placement[cle], d.placement[cle]);
+    if (Array.isArray(d.persos)) d.persos.forEach((ck, i) => {
+      if (plans[i] && ROSTER.includes(ck)) { plans[i].ck = ck; selects[i].value = ck; majPerso(plans[i]); }
+    });
+    majListe(); majCurseursEl();
+    lecture.aller(0); construireFrise(); lecture.jouer();
+    sortie.blur(); majSortie(true);
+    message('Appliqué ✔');
+  }
+  $('btnCopier').addEventListener('click', async () => {
+    majSortie(true);
+    try { await navigator.clipboard.writeText(sortie.value); message('Copié dans le presse-papiers ✔'); }
+    catch {
+      sortie.focus(); sortie.select();
+      const ok = document.execCommand && document.execCommand('copy');
+      message(ok ? 'Copié ✔' : 'Sélectionné : fais Ctrl+C', !ok);
+    }
+  });
+  $('btnAppliquer').addEventListener('click', () => appliquer(sortie.value));
+  $('btnDefauts').addEventListener('click', () => {
+    for (const it of ITEMS) regler(it.id, it.def, true);
+    for (const cle of Object.keys(PLACEMENT_DEF)) placement[cle] = { ...PLACEMENT_DEF[cle] };
+    plans.forEach((pl, i) => { pl.ck = PERSOS_DEF[i]; selects[i].value = pl.ck; majPerso(pl); });
+    majListe(); majCurseursEl();
+    lecture.aller(0); construireFrise(); lecture.jouer(); majSortie(true);
+    message('Tout est revenu aux valeurs par défaut.');
+  });
+
+  /* ================= INTRO ACTUELLE (pour comparer) ================= */
+  // Le vrai jeu dans un cadre, réduit à la scène. Muet, et rien n'est écrit
+  // dans sa sauvegarde : passer la popup du premier lancement la marquerait.
+  const CSS_CADRE = `
+    html,body{margin:0!important;padding:0!important;overflow:hidden!important;background:#03060d!important;
+      height:100%!important;min-height:0!important;display:block!important}
+    body>*:not(#stage){display:none!important}
+    #stage{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;
+      border:0!important;border-radius:0!important;box-shadow:none!important;margin:0!important;aspect-ratio:auto!important}
+    #topBar,#topBarG{display:none!important}`;
+  const cadre = $('introActuelle');
+  cadre.addEventListener('load', () => {
+    if (!cadre.getAttribute('src')) return;
+    try {
+      const w = cadre.contentWindow, doc = cadre.contentDocument;
+      w.HTMLMediaElement.prototype.play = function () { return Promise.resolve(); };
+      const ACc = w.AudioContext || w.webkitAudioContext;
+      if (ACc) {
+        ACc.prototype.resume = function () { return Promise.resolve(); };
+        w.AudioContext = function (...a) { const c = new ACc(...a); c.suspend(); return c; };
+        w.AudioContext.prototype = ACc.prototype;
+      }
+      for (const f of ['setItem', 'removeItem', 'clear']) w.Storage.prototype[f] = function () {};
+      const st = doc.createElement('style'); st.textContent = CSS_CADRE; doc.head.appendChild(st);
+    } catch (err) { console.warn('Intro actuelle indisponible', err); }
+  });
+  $('btnActuelle').addEventListener('click', () => {
+    lecture.pause();
+    $('comparaison').classList.remove('cache');
+    cadre.src = '../index.html?comparaison=' + Date.now();
+  });
+  $('btnFermerComparaison').addEventListener('click', () => {
+    $('comparaison').classList.add('cache');
+    cadre.removeAttribute('src');
+    cadre.src = 'about:blank';
+    lecture.jouer();
+  });
+
+  /* ================= DÉMARRAGE ================= */
+  for (const it of ITEMS) regler(it.id, it.def, true);
+  plans.forEach(majPerso);
+  majListe();
+  new ResizeObserver(() => planifier()).observe(scene);
+  document.fonts.ready.then(() => planifier());
+  // Le logo du menu donne sa taille une fois chargé : la cible du vol en dépend.
+  $('logoVol').src = LOGO;
+  for (const img of [hMenu.logoImg, $('logoVol')]) {
+    if (img.complete) continue;
+    img.addEventListener('load', () => planifier(), { once:true });
+  }
+  construireFrise();
+  lecture.jouer();
+  majSortie(true);
+</script>
+</body>
+</html>

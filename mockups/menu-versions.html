@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menu — quatre organisations</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&family=Chakra+Petch:wght@600;700&family=DotGothic16&family=Great+Vibes&family=Russo+One&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070a12; --panel:#0e1626; --edge:#22344f; --ink:#111318; --txt:#e8f0ff; --accent:#35e0ff;
+    --or:#ffd23e; --pastel-red:#ff8f9a;
+    --yellow:#f5e63d; --green:#5df08a; --red:#e5384f; --learn:#d9b8f5;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:'Barlow',system-ui,sans-serif;padding:18px 16px 70px;
+    /* réglages communs à la scène et aux vignettes : posés ici pour que tout suive */
+    --f-bouton:'Chakra Petch','Archivo Black',sans-serif; --w-bouton:700;
+    --f-titre:'Archivo Black',sans-serif; --w-titre:400;
+    --f-bientot:'Archivo Black',sans-serif; --w-bientot:400;
+    --tailleBouton:1; --ecart:1.1cqh; --rayon:15px; --ombre:6px;
+    --grosTexte:1.55; --grosHauteur:1.7;
+    --titreTaille:2.3cqh; --titreContour:.45cqh;
+    --bientotTaille:1.45cqh; --bientotAngle:8deg; --bientotCouleur:#f5e63d;
+    --tuileRatio:1.3; --tuileIcone:7cqh; --tuileTexte:2.5cqh}
+  h1{font-size:19px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:1100px;line-height:1.6;margin:0 0 14px}
+  .note b{color:var(--or)}
+
+  /* ===================== PLANCHE : les cinq menus côte à côte ===================== */
+  .planche{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:0 0 16px}
+  .choixVersion{background:var(--panel);border:2px solid var(--edge);border-radius:12px;padding:7px;cursor:pointer;color:var(--txt);text-align:left}
+  .choixVersion:hover{border-color:#3d5c8a}
+  .choixVersion.on{border-color:var(--or);background:#171205}
+  .choixVersion b{display:block;font-size:12px;margin:6px 2px 0;letter-spacing:.3px}
+  .choixVersion span{display:block;font-size:10.5px;color:#7f93b3;margin:1px 2px 0;line-height:1.35}
+  .vignette{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;border-radius:7px;pointer-events:none}
+  /* Chaque vignette est un vrai menu de 1200 × 750 réduit : les tailles
+     minimales en pixels du jeu (clamp) y gardent leurs proportions réelles. */
+  .vignette .cadreFixe{position:absolute;left:0;top:0;width:1200px;height:750px;transform-origin:0 0}
+  @media (max-width:900px){ .planche{grid-template-columns:repeat(2,minmax(0,1fr))} }
+
+  /* ===================== SCÈNE ===================== */
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .sceneWrap{flex:1 1 660px;min-width:300px;position:sticky;top:10px}
+  /* Même cadre que #stage : 16/10, bordure de 8 px. Les unités cqh se mesurent
+     sur l'intérieur du cadre, exactement comme dans le jeu. */
+  .scene,.cadreFixe{position:relative;border:8px solid #1b2a52;border-radius:14px;overflow:hidden;
+    background:#0a0e1a;container-type:size;user-select:none}
+  .scene{width:100%;aspect-ratio:16/10;box-shadow:0 10px 0 rgba(0,0,0,.4)}
+
+  /* --- La partie derrière : le vrai jeu (démo IA contre IA), ou un terrain dessiné --- */
+  .partieFond{position:absolute;inset:0;pointer-events:none}
+  .terrain{position:absolute;inset:0;
+    background:radial-gradient(ellipse at 50% 50%,#23345a 0%,#141d31 62%,#0a0e1a 100%)}
+  .terrain::before{content:'';position:absolute;left:50%;top:9%;bottom:9%;width:3px;background:#ffffff40;transform:translateX(-50%)}
+  .terrain::after{content:'';position:absolute;left:50%;top:50%;width:22cqh;height:22cqh;border:3px solid #35e0ff55;border-radius:50%;transform:translate(-50%,-50%)}
+  #partieReelle{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .8s}
+  #partieReelle.pret{opacity:1}
+  .scene[data-partie="simulee"] #partieReelle{display:none}
+
+  /* ===================== LE MENU (D.A. du jeu) =====================
+     Règles reprises de css/style.css (écran titre, boutons, barre du haut),
+     préfixées par .menuMock. Rien d'inventé côté style : seule la façon de
+     ranger les boutons change d'une version à l'autre. */
+  .menuMock{position:absolute;inset:0;z-index:2;overflow:hidden}
+  .menuMock *{margin:0;padding:0}
+  .menuMock .bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .menuMock .bg-title{background:linear-gradient(160deg,rgba(210,247,245,.82) 0%,rgba(150,230,236,.8) 45%,rgba(99,208,221,.82) 100%)}
+  .menuMock .watermark{position:absolute;top:-30%;left:-60%;width:220%;height:160%;
+    display:flex;flex-direction:column;gap:2.6cqw;transform:rotate(-14deg);animation:derive 30s linear infinite}
+  .menuMock .watermark .line{white-space:nowrap;font-family:'Archivo Black',sans-serif;font-size:4.2cqw;letter-spacing:.12em;color:rgba(255,255,255,.3)}
+  .menuMock .watermark .line:nth-child(even){color:rgba(255,255,255,.16);transform:translateX(-6%)}
+  @keyframes derive{from{transform:rotate(-14deg) translateX(0)}to{transform:rotate(-14deg) translateX(-12%)}}
+  .menuMock .streaks{position:absolute;inset:-20%;background:repeating-linear-gradient(-14deg,rgba(255,255,255,.2) 0 3px,transparent 3px 54px);
+    animation:glisseRayures 10s linear infinite}
+  @keyframes glisseRayures{from{transform:translateX(0)}to{transform:translateX(54px)}}
+  .menuMock .ringwrap{position:absolute;top:50%;left:50%;width:150cqh;height:150cqh;transform:translate(-50%,-50%);animation:tourneRing 50s linear infinite}
+  @keyframes tourneRing{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+  .menuMock .ringwrap svg{width:100%;height:100%}
+  .menuMock .ringwrap text{font-family:'Archivo Black',sans-serif;font-size:15px;letter-spacing:.42em;fill:rgba(255,255,255,.6)}
+  .menuMock .arc{position:absolute;top:50%;left:50%;width:126cqh;height:126cqh;transform:translate(-50%,-50%);
+    border:3px dashed rgba(255,255,255,.3);border-radius:50%;animation:tourneRing 66s linear infinite reverse}
+  .vignette .menuMock *,.vignette .menuMock *::before{animation-play-state:paused!important}
+
+  .menuMock .mbtn{position:relative;display:flex;align-items:center;gap:1cqw;justify-content:space-between;
+    font-family:var(--f-bouton);font-weight:var(--w-bouton);font-size:calc(clamp(13px,2.35cqh,23px) * var(--tailleBouton));
+    letter-spacing:.03em;color:var(--ink);background:rgba(255,255,255,.96);
+    padding:1.15cqh 1.5cqw;border:4px solid var(--ink);border-radius:var(--rayon);box-shadow:var(--ombre) var(--ombre) 0 var(--ink);
+    cursor:pointer;text-align:center;white-space:nowrap;transition:background .1s,color .1s,transform .1s,box-shadow .1s}
+  .menuMock .mbtn .ico{width:2.6cqh;height:2.6cqh;min-width:24px;min-height:24px;border-radius:50%;
+    border:3px solid currentColor;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .menuMock .mbtn .ico svg{width:60%;height:60%}
+  .menuMock .mbtn .lbl{flex:1;text-align:center}
+  .menuMock .c-green{background:var(--green)}
+  .menuMock .c-learn{background:var(--learn)}
+  .menuMock .c-casino{background:#e0574f;color:#2a0509}
+  .menuMock .mbtn:not(.verrou):hover{background:var(--ink);color:#fff;transform:translate(-2px,-2px);box-shadow:calc(var(--ombre) + 2px) calc(var(--ombre) + 2px) 0 var(--ink)}
+
+  /* Barre du haut, telle quelle. */
+  .menuMock .topBar{position:absolute;top:2.6%;right:2.4%;z-index:24;display:flex;gap:.7cqw;align-items:center}
+  .menuMock .fsBtn{width:4.4cqh;height:4.4cqh;min-width:34px;min-height:34px;display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.96);color:var(--ink);border:3px solid var(--ink);border-radius:11px;box-shadow:4px 4px 0 var(--ink);cursor:pointer}
+  .menuMock .fsBtn svg{width:58%;height:58%}
+  .menuMock .fsBtn:hover{background:var(--yellow)}
+  .menuMock .compteBtn{width:auto;min-width:0;padding:0 1.1cqw;font-family:'Russo One',sans-serif;font-size:clamp(8px,1.5cqh,13px);letter-spacing:.03em;white-space:nowrap}
+
+  /* --- Version actuelle : la mise en page exacte du jeu --- */
+  .menuMock .titleLeft{position:absolute;top:0;left:0;bottom:0;width:46%;z-index:3;
+    display:flex;flex-direction:column;justify-content:center;gap:.8cqh;padding:1cqh 3.4% 14cqh}
+  .menuMock .titleLeft .logo{display:block;width:120%;max-width:none;height:auto;margin:-2cqh 0 -4cqh -9%;filter:drop-shadow(0 6px 0 rgba(0,0,0,.28))}
+  .menuMock .titleLeft .menu{display:flex;flex-direction:column;gap:1.1cqh}
+  .menuMock .titleLeft .mbtn{justify-content:flex-start;text-align:left}
+  .menuMock .hint{font-family:'Barlow',sans-serif;font-weight:700;font-size:clamp(9px,1cqw,12px);
+    letter-spacing:.14em;color:rgba(17,19,24,.62);text-transform:uppercase;margin-top:.6cqh;white-space:nowrap}
+  .menuMock .hint kbd{font-family:'Archivo Black',sans-serif;background:rgba(17,19,24,.12);padding:1px 5px;border-radius:3px}
+  .menuMock .titleRight{position:absolute;top:0;right:0;bottom:0;width:54%;z-index:2;display:flex;align-items:flex-end;justify-content:center}
+  .menuMock .heroGlow{position:absolute;bottom:2%;left:50%;transform:translateX(-50%);width:52%;aspect-ratio:1;border-radius:50%;
+    background:rgba(255,255,255,.28);filter:blur(2px)}
+  .menuMock .titleHero{position:relative;image-rendering:pixelated;height:74%;width:auto;margin-bottom:5%;
+    filter:drop-shadow(0 8px 0 rgba(0,0,0,.16));animation:flotte 2.6s ease-in-out infinite}
+  @keyframes flotte{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .menuMock .banner{position:absolute;left:0;right:0;bottom:0;z-index:4;padding:5cqh 2.4cqw 2cqh;text-align:right;pointer-events:none;
+    background:linear-gradient(to top,rgba(0,0,0,.62) 0%,rgba(0,0,0,.38) 40%,rgba(0,0,0,0) 100%)}
+  .menuMock .banner span,.menuMock .texteBandeau{font-family:'Archivo Black',sans-serif;font-size:clamp(13px,2cqw,26px);color:#fff;
+    -webkit-text-stroke:5px var(--ink);paint-order:stroke fill;line-height:1.2}
+
+  /* --- Nouvelles versions : chaque bloc se place à la souris --- */
+  .menuMock .mv{position:absolute;left:calc(var(--x) * 1%);top:calc(var(--y) * 1%);scale:var(--s,1);transform-origin:0 0;z-index:5}
+  /* Le bandeau s'accroche par la droite, comme dans le jeu : X est son bord droit. */
+  .menuMock .mv[data-ancrage="droite"]{left:auto;right:calc((100 - var(--x)) * 1%);transform-origin:100% 0}
+  .menuMock .mv.cache{display:none}
+  .menuMock .mvLogo{width:44cqw;z-index:6}
+  /* Le PNG du logo porte de grandes marges transparentes : on ne garde que la
+     bande où il y a quelque chose, pour pouvoir le poser où l'on veut. */
+  .menuMock .logoCadre{position:relative;width:100%;aspect-ratio:1254/500;overflow:hidden}
+  .menuMock .logoCadre img{display:block;width:100%;margin-top:-29%;filter:drop-shadow(0 6px 0 rgba(0,0,0,.28))}
+  .menuMock .mvBloc{width:36cqw;z-index:7}
+  .menuMock .mvPerso{z-index:4;height:74cqh}
+  .menuMock .mvPerso .titleHero{height:100%;margin:0}
+  .menuMock .mvPerso .heroGlow{bottom:-3%;width:115%}
+  .menuMock .degradeBas{position:absolute;left:0;right:0;bottom:0;height:19%;z-index:3;pointer-events:none;
+    background:linear-gradient(to top,rgba(0,0,0,.62) 0%,rgba(0,0,0,.38) 40%,rgba(0,0,0,0) 100%)}
+  body[data-degrade="texte"] .menuMock .degradeBas{left:48%;
+    -webkit-mask:linear-gradient(to right,transparent,#000 30%);mask:linear-gradient(to right,transparent,#000 30%)}
+  body[data-degrade="aucun"] .menuMock .degradeBas{display:none}
+  .menuMock .mvBandeau{z-index:8;text-align:right;white-space:nowrap}
+  .menuMock .aideBloc{margin-top:1.4cqh;padding-left:.3cqw}
+
+  .menuMock .liste{display:flex;flex-direction:column;gap:var(--ecart)}
+  .menuMock .liste > .mbtn{justify-content:flex-start;text-align:left}
+  .menuMock .mbtn.gros{font-size:calc(clamp(13px,2.35cqh,23px) * var(--tailleBouton) * var(--grosTexte));
+    padding:calc(1.15cqh * var(--grosHauteur)) 1.5cqw;letter-spacing:.08em}
+  .menuMock .mbtn.gros .ico{width:3.6cqh;height:3.6cqh}
+
+  /* Boutons verrouillés : grisés, cadenas, étiquette BIENTÔT. */
+  .menuMock .verrou{cursor:not-allowed}
+  body[data-verrou="gris"] .menuMock .verrou{background:#c5cad3!important;color:rgba(17,19,24,.55)!important}
+  /* « Atténué » garde la couleur du mode sous un voile blanc : le voile est une
+     ombre intérieure, donc il passe sous l'étiquette sans la ternir. */
+  body[data-verrou="attenue"] .menuMock .verrou{color:rgba(17,19,24,.6)!important;
+    box-shadow:inset 0 0 0 999px rgba(255,255,255,.45),var(--ombre) var(--ombre) 0 var(--ink)}
+  .menuMock .bientot{position:absolute;top:-1.3cqh;right:-.8cqw;z-index:3;rotate:var(--bientotAngle);
+    font-family:var(--f-bientot);font-weight:var(--w-bientot);font-size:var(--bientotTaille);letter-spacing:.06em;line-height:1;
+    color:var(--ink);background:var(--bientotCouleur);border:3px solid var(--ink);border-radius:8px;padding:.35cqh .6cqw .25cqh;
+    box-shadow:3px 3px 0 var(--ink);white-space:nowrap;pointer-events:none}
+  .menuMock .secoue{animation:secoue .38s cubic-bezier(.36,.07,.19,.97)}
+  @keyframes secoue{10%,90%{translate:-2px 0}20%,80%{translate:4px 0}30%,50%,70%{translate:-6px 0}40%,60%{translate:6px 0}}
+  .menuMock .secoue .bientot{animation:bientotPop .38s ease-out}
+  @keyframes bientotPop{30%{scale:1.3}100%{scale:1}}
+
+  /* A — Un gros JOUER qui se déplie */
+  /* La place s'ouvre en douceur (0fr → 1fr) ; le contenu n'est pas rogné, sinon
+     les étiquettes BIENTÔT qui dépassent au-dessus des boutons seraient coupées. */
+  .menuMock .depli{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s cubic-bezier(.3,.8,.3,1)}
+  .menuMock .depli > div{min-height:0}
+  .menuMock .depli .grille2{opacity:0;visibility:hidden;transition:opacity .15s,visibility 0s .15s}
+  .menuMock .ouvert .depli{grid-template-rows:1fr}
+  .menuMock .ouvert .depli .grille2{opacity:1;visibility:visible;transition:opacity .15s}
+  .menuMock .grille2{display:grid;grid-template-columns:1fr 1fr;gap:var(--ecart) calc(var(--ecart) * 1.2);padding-top:.4cqh}
+  .menuMock .grille2 .mbtn{justify-content:flex-start;gap:.8cqw;padding-left:1cqw;padding-right:1cqw}
+  .menuMock .grille2 .mbtn .lbl{text-align:left}
+  .menuMock .ouvert .grille2 .mbtn{animation:entreBouton .4s cubic-bezier(.2,.9,.3,1.3) backwards}
+  .menuMock .ouvert .grille2 .mbtn:nth-child(2){animation-delay:.05s}
+  .menuMock .ouvert .grille2 .mbtn:nth-child(3){animation-delay:.1s}
+  .menuMock .ouvert .grille2 .mbtn:nth-child(4){animation-delay:.15s}
+  @keyframes entreBouton{0%{opacity:0;transform:translateX(-26%)}100%{opacity:1;transform:translateX(0)}}
+  .menuMock .jouer .fleche{transition:rotate .25s}
+  .menuMock .ouvert .jouer .fleche{rotate:90deg}
+  /* Variante « remplace le menu » : la liste s'efface, les modes prennent sa place. */
+  .menuMock .vues{display:grid}
+  .menuMock .vues > .liste{grid-area:1/1;transition:opacity .22s,translate .28s cubic-bezier(.3,.8,.3,1)}
+  .menuMock .vueModes{opacity:0;translate:12% 0;pointer-events:none}
+  .menuMock .ouvert .vuePrincipale{opacity:0;translate:-12% 0;pointer-events:none}
+  .menuMock .ouvert .vueModes{opacity:1;translate:0 0;pointer-events:auto}
+  .menuMock .mbtn.retour{align-self:flex-start;font-size:calc(clamp(13px,2.35cqh,23px) * var(--tailleBouton) * .8);padding:.7cqh 1.1cqw}
+
+  /* B — Groupes avec titres */
+  .menuMock .groupe{display:flex;flex-direction:column;gap:calc(var(--ecart) * .7)}
+  .menuMock .groupeTitre{font-family:var(--f-titre);font-weight:var(--w-titre);font-size:var(--titreTaille);letter-spacing:.14em;line-height:1;
+    color:#fff;-webkit-text-stroke:var(--titreContour) var(--ink);paint-order:stroke fill;padding-left:.2cqw}
+  body[data-titres="etiquette"] .menuMock .groupeTitre{align-self:flex-start;color:var(--ink);-webkit-text-stroke:0;background:#fff;
+    border:3px solid var(--ink);border-radius:8px;padding:.4cqh .8cqw .3cqh;box-shadow:3px 3px 0 var(--ink);font-size:calc(var(--titreTaille) * .8)}
+  body[data-titres="trait"] .menuMock .groupeTitre{display:flex;align-items:center;gap:.8cqw}
+  body[data-titres="trait"] .menuMock .groupeTitre::after{content:'';flex:1;height:.45cqh;background:var(--ink);border-radius:9px;opacity:.75}
+  .menuMock .blocGroupes{display:flex;flex-direction:column;gap:calc(var(--ecart) * 2)}
+  .menuMock .mbtn.petit{align-self:flex-start;font-size:calc(clamp(13px,2.35cqh,23px) * var(--tailleBouton) * .85);padding:.8cqh 1.2cqw}
+
+  /* D — Tuiles façon jeu de combat */
+  .menuMock .tuiles{display:flex;flex-direction:column;gap:calc(var(--ecart) * 1.4)}
+  .menuMock .rangTuiles{display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--ecart) * 1.4)}
+  body[data-tuiles="ligne"] .menuMock .rangTuiles.modes{grid-template-columns:repeat(4,1fr)}
+  .menuMock .tuile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.1cqh;
+    aspect-ratio:var(--tuileRatio);font-family:var(--f-bouton);font-weight:var(--w-bouton);font-size:var(--tuileTexte);letter-spacing:.05em;
+    color:var(--ink);background:rgba(255,255,255,.96);border:4px solid var(--ink);border-radius:calc(var(--rayon) + 3px);
+    box-shadow:var(--ombre) var(--ombre) 0 var(--ink);cursor:pointer;white-space:nowrap;transition:background .1s,color .1s,transform .1s,box-shadow .1s}
+  .menuMock .tuile .ico{width:var(--tuileIcone);height:var(--tuileIcone);border-radius:50%;border:.5cqh solid currentColor;
+    display:flex;align-items:center;justify-content:center}
+  .menuMock .tuile .ico svg{width:58%;height:58%}
+  .menuMock .tuile:not(.verrou):hover{background:var(--ink);color:#fff;transform:translate(-2px,-2px);box-shadow:calc(var(--ombre) + 2px) calc(var(--ombre) + 2px) 0 var(--ink)}
+  /* Les couleurs des modes, reposées après le fond blanc des tuiles. */
+  .menuMock .tuile.c-green{background:var(--green)}
+  .menuMock .tuile.c-learn{background:var(--learn)}
+  .menuMock .tuile.c-casino{background:#e0574f;color:#2a0509}
+  .menuMock .rangTuiles.petites{grid-template-columns:repeat(3,1fr)}
+  .menuMock .rangTuiles.petites .tuile{aspect-ratio:auto;flex-direction:row;gap:.7cqw;padding:1.1cqh .6cqw;font-size:calc(var(--tuileTexte) * .72)}
+  .menuMock .rangTuiles.petites .tuile .ico{width:2.6cqh;height:2.6cqh;border-width:3px}
+
+  /* --- Édition --- */
+  .scene .menuMock .mv{cursor:grab}
+  .scene .menuMock .mv.sel{outline:2px dashed var(--accent);outline-offset:5px}
+  .scene .menuMock .mv.sel::after{content:attr(data-nom);position:absolute;left:0;top:-22px;background:var(--accent);color:#001522;
+    font:800 10px Consolas,monospace;padding:1px 6px;border-radius:4px;white-space:nowrap;scale:calc(1 / var(--s,1));transform-origin:0 100%}
+  .scene.lecture .menuMock .mv{cursor:default}
+  .scene.lecture .menuMock .mv.sel{outline:none}
+  .scene.lecture .menuMock .mv.sel::after{display:none}
+
+  /* ===================== PANNEAU ===================== */
+  .cote{flex:1 1 340px;min-width:300px;display:flex;flex-direction:column;gap:10px}
+  details.bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px 12px}
+  details.bloc > summary{cursor:pointer;list-style:none;font-size:12px;color:var(--accent);text-transform:uppercase;
+    letter-spacing:1.2px;font-weight:700;display:flex;align-items:center;gap:7px}
+  details.bloc > summary::before{content:'▸';color:#6d80a0;transition:transform .15s}
+  details.bloc[open] > summary::before{transform:rotate(90deg)}
+  details.bloc[open] > summary{margin-bottom:9px}
+  .row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px;align-items:center}
+  .row:last-child{margin-bottom:0}
+  select{background:#0a1220;color:var(--txt);border:1px solid var(--edge);border-radius:7px;padding:5px 7px;font-size:12px;width:100%}
+  button{background:#1a2b48;color:var(--txt);border:1px solid var(--edge);border-radius:7px;padding:7px 11px;font-size:11.5px;cursor:pointer;letter-spacing:.3px}
+  button:hover{background:#24395e}
+  button.on{background:#3a2c06;border-color:var(--or);color:var(--or)}
+  button.grand{flex:1 1 100%;padding:10px;font-size:13px}
+  button.vert{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .reg{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:center;font-size:12px;margin-bottom:7px}
+  .reg label{color:#8fa4c4}
+  .reg input[type=range]{grid-column:1/-1;width:100%}
+  .reg .n{font-family:Consolas,monospace;color:var(--or);text-align:right;font-size:11.5px}
+  .reg.regChoix{grid-template-columns:128px 1fr}
+  .sousTitre{font-size:10.5px;color:#6d80a0;text-transform:uppercase;letter-spacing:1px;margin:10px 0 5px;border-top:1px solid var(--edge);padding-top:8px}
+  .sousTitre:first-child{border-top:0;padding-top:0;margin-top:0}
+  .legende{font-size:11px;color:#6d80a0;line-height:1.5;margin:2px 0 0}
+  .els{display:flex;flex-direction:column;gap:4px}
+  .el{display:flex;align-items:center;gap:8px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;padding:6px 9px;cursor:pointer;font-size:12px}
+  .el:hover{border-color:#3d5c8a}
+  .el.on{border-color:var(--or);background:#171205}
+  .el .nomEl{flex:1}
+  .el .val{font-family:Consolas,monospace;font-size:10.5px;color:#7f93b3}
+  .el .oeil{opacity:.45;font-size:13px}
+  .el.masque{opacity:.45}
+  .el.masque .oeil{opacity:1}
+  .ordre{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+  .ordre .ligneOrdre{display:flex;align-items:center;gap:6px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;padding:4px 6px 4px 9px;font-size:12px}
+  .ordre .ligneOrdre span{flex:1}
+  .ordre .ligneOrdre button{padding:2px 7px;font-size:11px}
+  .vide{font-size:12px;color:#6d80a0;line-height:1.6;margin:8px 0 0}
+  .sortie{width:100%;height:200px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;color:var(--or);
+    font-family:Consolas,monospace;font-size:11px;padding:9px;resize:vertical;line-height:1.5}
+  .etatCopie{font-size:11.5px;color:#8ef0b4;min-height:16px;margin-top:5px}
+  .etatCopie.erreur{color:var(--pastel-red)}
+</style>
+</head>
+<body data-degrade="plein" data-verrou="gris" data-titres="texte" data-tuiles="grille">
+
+<h1>Menu — QUATRE ORGANISATIONS <span style="color:#6d80a0;font-size:13px">(v1)</span></h1>
+<p class="note">Même D.A. que le menu actuel (couleurs, boutons, fond, logo, perso) : seule la façon de <b>ranger les boutons</b> change.
+Clique une vignette pour l'ouvrir dans la grande scène, où le <b>vrai jeu</b> tourne derrière. Les boutons se testent :
+survol, <b>JOUER qui se déplie</b> (version A), et les modes <b>BIENTÔT</b> verrouillés qui refusent le clic.
+Clique un bloc (logo, boutons, perso, bandeau, aide) pour le <b>glisser</b> ; l'ordre des boutons se change dans le panneau.
+Tout s'exporte dans <b>Tout copier / coller</b>.</p>
+
+<div class="planche" id="planche"></div>
+
+<div class="haut">
+  <div class="sceneWrap">
+    <div class="scene" id="scene" data-partie="reelle">
+      <div class="partieFond">
+        <div class="terrain"></div>
+        <iframe id="partieReelle" src="../index.html" tabindex="-1" aria-hidden="true" title="Partie en fond"></iframe>
+      </div>
+      <div class="menuMock" id="menuScene"></div>
+    </div>
+  </div>
+
+  <div class="cote">
+    <details class="bloc" open>
+      <summary>Version</summary>
+      <div class="row" id="boutonsVersion"></div>
+      <div class="row">
+        <button id="btnLecture">Mode lecture</button>
+        <button id="btnHasardPerso">🎲 Autre perso</button>
+      </div>
+      <p class="legende" id="legendeVersion"></p>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Tout copier / coller</summary>
+      <textarea class="sortie" id="sortie" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:7px">
+        <button class="vert" id="btnCopier">📋 Tout copier</button>
+        <button id="btnAppliquer">Appliquer ce qui est collé</button>
+        <button id="btnDefauts">Tout remettre à zéro</button>
+      </div>
+      <div class="etatCopie" id="etatCopie"></div>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Placement — clique puis glisse</summary>
+      <div class="els" id="listeEls"></div>
+      <p class="vide" id="aucunEl">Aucun élément choisi. Clique dans la scène ou dans la liste.</p>
+      <div id="regBloc" style="display:none;margin-top:9px">
+        <div class="reg"><label>Taille</label><span class="n" id="vScale">1.00×</span>
+          <input type="range" id="rScale" min="0.3" max="2" value="1" step="0.01"></div>
+        <div class="reg"><label>X (gauche →)</label><span class="n" id="vX">0%</span>
+          <input type="range" id="rX" min="-20" max="100" value="0" step="0.5"></div>
+        <div class="reg"><label>Y (haut ↓)</label><span class="n" id="vY">0%</span>
+          <input type="range" id="rY" min="-20" max="100" value="0" step="0.5"></div>
+        <div class="row">
+          <button id="btnVisible">Masquer cet élément</button>
+          <button id="btnResetEl">Réinitialiser</button>
+        </div>
+      </div>
+      <p class="legende" id="legendePlacement"></p>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Ordre des boutons</summary>
+      <div id="ordres"></div>
+    </details>
+
+    <div id="blocsReglages"></div>
+
+    <details class="bloc" open>
+      <summary>Partie derrière</summary>
+      <div class="row">
+        <button id="btnReelle" class="on">Vraie partie (le jeu tourne)</button>
+        <button id="btnSimulee">Terrain dessiné</button>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script type="module">
+  import { CHARS, ROSTER } from '../js/data/characters.js';
+
+  const $ = id => document.getElementById(id);
+  const scene = $('scene');
+  const racine = document.body;
+  const cssv = (nom, v) => racine.style.setProperty(nom, v);
+
+  /* ================= TYPOS DU JEU ================= */
+  const POLICES = {
+    archivo:    { nom:'Archivo Black',       famille:"'Archivo Black',sans-serif",      poids:400 },
+    russo:      { nom:'Russo One',           famille:"'Russo One',sans-serif",          poids:400 },
+    barlow:     { nom:'Barlow ExtraBold',    famille:"'Barlow',sans-serif",             poids:800 },
+    chakra:     { nom:'Chakra Petch Bold',   famille:"'Chakra Petch','Archivo Black',sans-serif", poids:700 },
+    dotgothic:  { nom:'DotGothic16',         famille:"'DotGothic16',monospace",         poids:400 },
+    greatvibes: { nom:'Great Vibes',         famille:"'Great Vibes',cursive",           poids:400 },
+    georgia:    { nom:'Georgia (casino)',    famille:"Georgia,serif",                   poids:700 },
+    segoe:      { nom:'Segoe UI',            famille:"'Segoe UI',system-ui,sans-serif", poids:700 },
+  };
+
+  /* ================= SONS =================
+     Copies de js/audio/audio.js (beep et les trois bruitages de menu). */
+  let AC = null, gainSons = null;
+  const initSons = () => {
+    if (AC) return;
+    try { AC = new (window.AudioContext || window.webkitAudioContext)(); gainSons = AC.createGain(); gainSons.gain.value = .18; gainSons.connect(AC.destination); }
+    catch { AC = null; }
+  };
+  function beep(f0, f1, dur, type = 'square', vol = .15, delay = 0) {
+    if (!AC) return;
+    const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(f1, 1), t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(gainSons); o.start(t); o.stop(t + dur + .02);
+  }
+  const SONS = {
+    move:   () => beep(760, 760, .05, 'square', .06),
+    select: () => { beep(620, 990, .12, 'square', .12); beep(990, 1320, .1, 'square', .08, .06); },
+    deny:   () => beep(220, 150, .18, 'square', .12),
+  };
+  const son = nom => { if (AC && SONS[nom]) SONS[nom](); };
+  window.addEventListener('pointerdown', initSons, { capture:true });
+
+  /* ================= BOUTONS ET ICÔNES ================= */
+  const SVG = {
+    vsia:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18"/></svg>',
+    jcj:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 19c0-3 2.7-5 6-5M22 19c0-3-2.7-5-6-5"/></svg>',
+    enligne:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15 0 18M12 3c-2.5 2.7-2.5 15 0 18"/></svg>',
+    entrainement:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5c3-1.6 6-1.6 9 0v13c-3-1.6-6-1.6-9 0z"/><path d="M21 6.5c-3-1.6-6-1.6-9 0v13c3-1.6 6-1.6 9 0z"/></svg>',
+    casino:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10c0-3 3.5-6 8-6s8 3 8 6"/><path d="M6 7l-1.5-4M18 7l1.5-4"/><circle cx="9" cy="13" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="13" r="1.4" fill="currentColor" stroke="none"/><path d="M8 18c1.4 1.6 6.6 1.6 8 0"/></svg>',
+    options:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>',
+    histoire:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V4"/><path d="M6 4h11l-2.6 4.5L17 13H6"/></svg>',
+    jouer:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8.5 5.5v13l10-6.5z"/></svg>',
+    cadenas:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>',
+    retour:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+    plein:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  };
+  // `court` sert quand la place manque (grilles, tuiles).
+  const BOUTONS = {
+    histoire:     { label:'MODE HISTOIRE', court:'HISTOIRE', couleur:'',          verrou:true },
+    vsia:         { label:'MATCH VS IA',   court:'VS IA',    couleur:'c-green' },
+    jcj:          { label:'MATCH JCJ',     court:'JCJ',      couleur:'c-green',   verrou:true },
+    enligne:      { label:'MATCH EN LIGNE',court:'EN LIGNE', couleur:'c-online' },
+    entrainement: { label:'ENTRAÎNEMENT',  court:'ENTRAÎNEMENT', couleur:'c-learn' },
+    casino:       { label:'CASINO',        court:'CASINO',   couleur:'c-casino' },
+    options:      { label:'OPTIONS',       court:'OPTIONS',  couleur:'' },
+  };
+
+  /* ================= LES VERSIONS =================
+     Chaque version range les mêmes boutons autrement. Les listes de `ordre`
+     sont modifiables depuis le panneau. */
+  const VERSIONS = {
+    actuel:  { nom:'Actuel', resume:'Le menu du jeu aujourd’hui, pour comparer (OPTIONS coupé, aide hors cadre).' },
+    gros:    { nom:'A — Un gros JOUER', resume:'JOUER domine et déplie les modes ; le reste en dessous.' },
+    groupes: { nom:'B — Groupes avec titres', resume:'Tout visible et à un clic, rangé sous JOUER · PROGRESSER · BONUS.' },
+    liste:   { nom:'C — Même liste, remise d’aplomb', resume:'La colonne d’aujourd’hui qui tient dans le cadre, le 1er bouton en grand.' },
+    tuiles:  { nom:'D — Tuiles façon jeu de combat', resume:'Grandes cartes pour jouer, petites pour le reste.' },
+  };
+  const ORDRE_DEF = {
+    gros:    { modes:['histoire','vsia','jcj','enligne'], reste:['entrainement','casino','options'] },
+    groupes: { jouer:['histoire','vsia','jcj','enligne'], progresser:['entrainement'], bonus:['casino'], seul:['options'] },
+    liste:   { liste:['vsia','enligne','histoire','jcj','entrainement','casino','options'] },
+    tuiles:  { modes:['histoire','vsia','jcj','enligne'], petites:['entrainement','casino','options'] },
+  };
+  const NOMS_SECTIONS = { modes:'Modes (sous JOUER)', reste:'En dessous', jouer:'JOUER', progresser:'PROGRESSER', bonus:'BONUS',
+    seul:'Seul, en bas', liste:'La colonne', petites:'Petites tuiles' };
+  let ordre = JSON.parse(JSON.stringify(ORDRE_DEF));
+
+  // Placement par version : x / y en % de la scène, s = échelle.
+  const PLACEMENT_DEF = {
+    gros:    { logo:{ x:1.5, y:2, s:.92 }, bloc:{ x:3.4, y:30.5, s:1 }, perso:{ x:52, y:21, s:1 }, bandeau:{ x:97.6, y:90.3, s:1 } },
+    groupes: { logo:{ x:1.5, y:1, s:.8 },  bloc:{ x:3.4, y:25, s:.95 }, perso:{ x:53, y:21, s:1 }, bandeau:{ x:97.6, y:90.3, s:1 } },
+    liste:   { logo:{ x:1.5, y:1, s:.8 },  bloc:{ x:3.4, y:24, s:.85 }, perso:{ x:52, y:21, s:1 }, bandeau:{ x:97.6, y:90.3, s:1 } },
+    tuiles:  { logo:{ x:1.5, y:1, s:.8 },  bloc:{ x:3.4, y:26, s:1 },   perso:{ x:55, y:21, s:1 }, bandeau:{ x:97.6, y:90.3, s:1 } },
+  };
+  let placement = JSON.parse(JSON.stringify(PLACEMENT_DEF));
+  const NOMS_EL = { logo:'Logo', bloc:'Boutons (et l’aide « M musique »)', perso:'Personnage', bandeau:'Bandeau « montre au monde »' };
+  const masques = {};   // version -> { el: true }
+
+  let version = 'gros';
+  let persoMenu = ROSTER[(Math.random() * ROSTER.length) | 0];
+
+  /* ================= RENDU D'UN MENU ================= */
+  // Une seule mention du fichier : la version autonome l'intègre une fois.
+  const LOGO = '../assets/logo.png';
+  const ico = id => `<span class="ico">${SVG[id]}</span>`;
+  function bouton(id, { court = false, gros = false, jumelle = true, classe = '' } = {}) {
+    const b = BOUTONS[id], v = !!b.verrou && valeurs.verrouiller !== 'non';
+    const i = v ? ico('cadenas') : ico(id);
+    const texte = court ? b.court : b.label;
+    return `<button class="mbtn ${b.couleur} ${gros ? 'gros' : ''} ${v ? 'verrou' : ''} ${classe}" data-bouton="${id}">`
+      + `${i}<span class="lbl">${texte}</span>${jumelle ? i : ''}${v ? '<span class="bientot">BIENTÔT</span>' : ''}</button>`;
+  }
+  function tuile(id, petite) {
+    const b = BOUTONS[id], v = !!b.verrou && valeurs.verrouiller !== 'non';
+    return `<button class="tuile ${b.couleur} ${v ? 'verrou' : ''}" data-bouton="${id}">${ico(v ? 'cadenas' : id)}`
+      + `<span>${petite ? b.label : b.court}</span>${v ? '<span class="bientot">BIENTÔT</span>' : ''}</button>`;
+  }
+  function decor() {
+    return `<div class="bg bg-title"><div class="watermark">${Array.from({ length:6 }, () => '<div class="line">SWAG FRISBEE CLUB SWAG FRISBEE CLUB SWAG FRISBEE CLUB </div>').join('')}</div>
+      <div class="streaks"></div><div class="arc"></div>
+      <div class="ringwrap"><svg viewBox="0 0 400 400"><path id="PISTE" d="M 200,200 m -160,0 a 160,160 0 1,1 320,0 a 160,160 0 1,1 -320,0" fill="none"/>
+      <text><textPath href="#PISTE" startOffset="0%">MENU PRINCIPAL • MENU PRINCIPAL • MENU PRINCIPAL • MENU PRINCIPAL • </textPath></text></svg></div></div>
+      <div class="topBar"><button class="fsBtn compteBtn">SE CONNECTER</button><button class="fsBtn">${SVG.plein}</button></div>`;
+  }
+  function blocBoutons(v) {
+    const o = ordre[v];
+    if (v === 'gros') {
+      const modes = o.modes.map(id => bouton(id, { court:true, jumelle:false })).join('');
+      const reste = o.reste.map(id => bouton(id)).join('');
+      const jouer = `<button class="mbtn c-green gros jouer" data-bouton="jouer">${ico('jouer')}<span class="lbl">JOUER</span><span class="ico fleche">${SVG.jouer}</span></button>`;
+      if (valeurs.depli === 'remplace') {
+        return `<div class="vues"><div class="liste vuePrincipale">${jouer}${reste}</div>
+          <div class="liste vueModes"><button class="mbtn retour" data-bouton="retour">${ico('retour')}<span class="lbl">RETOUR</span></button>
+          <div class="grille2">${modes}</div></div></div>`;
+      }
+      return `<div class="liste">${jouer}<div class="depli"><div><div class="grille2">${modes}</div></div></div>${reste}</div>`;
+    }
+    if (v === 'groupes') {
+      const g = (cle, titre, grille) => `<div class="groupe"><div class="groupeTitre">${titre}</div>`
+        + (grille ? `<div class="grille2">${o[cle].map(id => bouton(id, { court:true, jumelle:false })).join('')}</div>`
+                  : `<div class="liste">${o[cle].map(id => bouton(id)).join('')}</div>`) + '</div>';
+      return `<div class="blocGroupes">${g('jouer', 'JOUER', true)}${g('progresser', 'PROGRESSER')}${g('bonus', 'BONUS')}`
+        + `${o.seul.map(id => bouton(id, { classe:'petit' })).join('')}</div>`;
+    }
+    if (v === 'liste') {
+      return `<div class="liste">${o.liste.map((id, i) => bouton(id, { gros: i === 0 && valeurs.premierGros === 'oui' })).join('')}</div>`;
+    }
+    if (v === 'tuiles') {
+      return `<div class="tuiles"><div class="rangTuiles modes">${o.modes.map(id => tuile(id)).join('')}</div>`
+        + `<div class="rangTuiles petites">${o.petites.map(id => tuile(id, true)).join('')}</div></div>`;
+    }
+    return '';
+  }
+  // Dessin du perso : même agrandissement que le jeu (×16).
+  function dessinerPerso(cv) {
+    const g = cv.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.clearRect(0, 0, cv.width, cv.height);
+    g.drawImage(CHARS[persoMenu].frames.idle, 0, 0, 16, 20, 0, 0, cv.width, cv.height);
+  }
+  let numPiste = 0;
+  function rendreMenu(hote, v) {
+    const piste = 'piste' + (++numPiste);
+    let html = decor().replaceAll('PISTE', piste);
+    if (v === 'actuel') {
+      html += `<div class="titleLeft"><img class="logo" src="${LOGO}" alt="">
+        <div class="menu">${['vsia','jcj','enligne','entrainement','casino','options'].map(id => {
+          const b = BOUTONS[id]; return `<button class="mbtn ${b.couleur}" data-bouton="${id}-libre">${ico(id)}<span class="lbl">${b.label}</span>${ico(id)}</button>`;
+        }).join('')}</div><div class="hint"><kbd>M</kbd> musique</div></div>
+        <div class="titleRight"><div class="heroGlow"></div><canvas class="titleHero" width="256" height="320"></canvas></div>
+        <div class="banner"><span>MONTRE AU MONDE<br>QUI EST LE MEILLEUR !</span></div>`;
+    } else {
+      const P = placement[v], M = masques[v] || {};
+      const mv = (el, contenu, classe) => {
+        const p = P[el];
+        return `<div class="mv ${classe} ${M[el] ? 'cache' : ''}" data-el="${el}" data-nom="${NOMS_EL[el]}"${el === 'bandeau' ? ' data-ancrage="droite"' : ''} style="--x:${p.x};--y:${p.y};--s:${p.s}">${contenu}</div>`;
+      };
+      html += `<div class="degradeBas"></div>`
+        + mv('perso', '<div class="heroGlow"></div><canvas class="titleHero" width="256" height="320"></canvas>', 'mvPerso')
+        + mv('logo', `<div class="logoCadre"><img src="${LOGO}" alt=""></div>`, 'mvLogo')
+        + mv('bloc', blocBoutons(v) + '<div class="hint aideBloc"><kbd>M</kbd> musique</div>', 'mvBloc')
+        + mv('bandeau', '<div class="texteBandeau">MONTRE AU MONDE<br>QUI EST LE MEILLEUR !</div>', 'mvBandeau');
+    }
+    hote.innerHTML = html;
+    hote.dataset.version = v;
+    for (const cv of hote.querySelectorAll('canvas.titleHero')) dessinerPerso(cv);
+  }
+
+  /* ================= PLANCHE ================= */
+  const planche = $('planche'), vignettes = {};
+  for (const v of Object.keys(VERSIONS)) {
+    const carte = document.createElement('button');
+    carte.className = 'choixVersion';
+    carte.innerHTML = `<div class="vignette"><div class="cadreFixe"><div class="partieFond"><div class="terrain"></div></div><div class="menuMock"></div></div></div>
+      <b>${VERSIONS[v].nom}</b><span>${VERSIONS[v].resume}</span>`;
+    carte.addEventListener('click', () => choisirVersion(v));
+    planche.appendChild(carte);
+    vignettes[v] = { carte, cadre: carte.querySelector('.cadreFixe'), menu: carte.querySelector('.menuMock') };
+  }
+  function ajusterVignettes() {
+    for (const v of Object.keys(vignettes)) {
+      const { carte, cadre } = vignettes[v];
+      const l = carte.querySelector('.vignette').clientWidth;
+      if (l) cadre.style.transform = `scale(${l / 1200})`;
+    }
+  }
+  new ResizeObserver(ajusterVignettes).observe(planche);
+
+  /* ================= SCÈNE ET INTERACTIONS ================= */
+  const menuScene = $('menuScene');
+  function rendreTout() {
+    rendreMenu(menuScene, version);
+    for (const v of Object.keys(vignettes)) rendreMenu(vignettes[v].menu, v);
+    majSelection();
+    majSortie();
+  }
+  let rendrePrevu = false;
+  function planifier() {
+    if (rendrePrevu) return;
+    rendrePrevu = true;
+    const faire = () => { if (!rendrePrevu) return; rendrePrevu = false; rendreTout(); };
+    requestAnimationFrame(faire); setTimeout(faire, 120);
+  }
+
+  let dernierSurvol = null;
+  menuScene.addEventListener('pointerover', e => {
+    const b = e.target.closest('[data-bouton]');
+    if (!b || b === dernierSurvol) return;
+    dernierSurvol = b;
+    if (!b.classList.contains('verrou') && scene.classList.contains('lecture')) son('move');
+  });
+  menuScene.addEventListener('click', e => {
+    const b = e.target.closest('[data-bouton]');
+    if (!b) return;
+    if (!scene.classList.contains('lecture') && e.target.closest('.mv') && !e.altKey) {
+      // En mode édition, un clic sert à choisir et glisser ; les boutons se testent en mode lecture.
+      if (!clicSansGlisser) return;
+    }
+    const id = b.dataset.bouton;
+    if (b.classList.contains('verrou')) {
+      son('deny');
+      b.classList.remove('secoue'); void b.offsetWidth; b.classList.add('secoue');
+      return;
+    }
+    if (id === 'jouer' || id === 'retour') {
+      son('select');
+      b.closest('.mvBloc').classList.toggle('ouvert');
+      return;
+    }
+    son('select');
+  });
+
+  function choisirVersion(v) {
+    version = v;
+    for (const k of Object.keys(vignettes)) vignettes[k].carte.classList.toggle('on', k === v);
+    for (const b of $('boutonsVersion').children) b.classList.toggle('on', b.dataset.v === v);
+    $('legendeVersion').textContent = VERSIONS[v].resume;
+    choisi = null;
+    majOrdres();
+    rendreTout();
+    majListe();
+    $('regBloc').style.display = 'none';
+    $('aucunEl').style.display = v === 'actuel' ? 'none' : '';
+    $('legendePlacement').textContent = v === 'actuel' ? 'La version actuelle est le menu du jeu tel quel : rien à placer.' : '';
+  }
+  for (const v of Object.keys(VERSIONS)) {
+    const b = document.createElement('button');
+    b.textContent = VERSIONS[v].nom.split(' — ')[0]; b.dataset.v = v; b.title = VERSIONS[v].nom;
+    b.addEventListener('click', () => choisirVersion(v));
+    $('boutonsVersion').appendChild(b);
+  }
+  $('btnHasardPerso').addEventListener('click', () => {
+    let ck = persoMenu;
+    while (ck === persoMenu && ROSTER.length > 1) ck = ROSTER[(Math.random() * ROSTER.length) | 0];
+    persoMenu = ck; rendreTout();
+  });
+  $('btnLecture').addEventListener('click', e => {
+    const on = scene.classList.toggle('lecture');
+    e.target.classList.toggle('on', on);
+    e.target.textContent = on ? 'Mode édition' : 'Mode lecture';
+  });
+
+  /* ================= ORDRE DES BOUTONS ================= */
+  function majOrdres() {
+    const hote = $('ordres');
+    hote.innerHTML = '';
+    if (version === 'actuel') { hote.innerHTML = '<p class="legende">Version actuelle : ordre du jeu, non modifiable ici.</p>'; return; }
+    for (const [cle, liste] of Object.entries(ordre[version])) {
+      if (liste.length < 2) continue;
+      const t = document.createElement('div'); t.className = 'sousTitre'; t.textContent = NOMS_SECTIONS[cle] || cle;
+      hote.appendChild(t);
+      const bloc = document.createElement('div'); bloc.className = 'ordre';
+      liste.forEach((id, i) => {
+        const l = document.createElement('div'); l.className = 'ligneOrdre';
+        l.innerHTML = `<span>${BOUTONS[id].label}${BOUTONS[id].verrou ? ' 🔒' : ''}</span>`;
+        for (const [txt, d] of [['↑', -1], ['↓', 1]]) {
+          const b = document.createElement('button'); b.textContent = txt;
+          b.disabled = (i + d < 0 || i + d >= liste.length);
+          b.addEventListener('click', () => { [liste[i], liste[i + d]] = [liste[i + d], liste[i]]; majOrdres(); planifier(); });
+          l.appendChild(b);
+        }
+        bloc.appendChild(l);
+      });
+      hote.appendChild(bloc);
+    }
+  }
+
+  /* ================= RÉGLAGES ================= */
+  const SECTIONS = [
+    { titre:'Boutons', items:[
+      { id:'police_bouton', cible:'bouton', label:'Typo', type:'police', def:'chakra' },
+      { id:'tailleBouton', label:'Taille du texte', min:.7, max:1.4, pas:.01, def:1, unite:'×', fn:v => cssv('--tailleBouton', v) },
+      { id:'ecart', label:'Écart entre boutons', min:0, max:3, pas:.05, def:1.1, fn:v => cssv('--ecart', v + 'cqh') },
+      { id:'rayon', label:'Arrondi', min:0, max:30, pas:1, def:15, unite:'px', fn:v => cssv('--rayon', v + 'px') },
+      { id:'ombre', label:'Ombre dure', min:0, max:12, pas:1, def:6, unite:'px', fn:v => cssv('--ombre', v + 'px') },
+      { sous:'Le grand bouton (A : JOUER, C : le premier)' },
+      { id:'grosTexte', label:'Texte', min:1, max:2.2, pas:.05, def:1.55, unite:'×', fn:v => cssv('--grosTexte', v) },
+      { id:'grosHauteur', label:'Hauteur', min:1, max:3, pas:.05, def:1.7, unite:'×', fn:v => cssv('--grosHauteur', v) },
+      { id:'premierGros', label:'C : 1er bouton en grand', type:'choix', def:'oui', options:[['oui','Oui'],['non','Non']], refaire:true },
+      { id:'depli', label:'A : JOUER', type:'choix', def:'dessous',
+        options:[['dessous','Déplie les modes en dessous'],['remplace','Remplace le menu (avec RETOUR)']], refaire:true },
+    ]},
+    { titre:'Modes bientôt disponibles', items:[
+      { id:'verrouiller', label:'HISTOIRE et JCJ', type:'choix', def:'oui', options:[['oui','Verrouillés, BIENTÔT'],['non','Ouverts (pour voir)']], refaire:true },
+      { id:'styleVerrou', label:'Aspect', type:'choix', def:'gris', options:[['gris','Gris'],['attenue','Leur couleur, atténuée']], fn:v => { racine.dataset.verrou = v; } },
+      { id:'police_bientot', cible:'bientot', label:'Typo de l’étiquette', type:'police', def:'archivo' },
+      { id:'bientotTaille', label:'Taille de l’étiquette', min:.8, max:2.6, pas:.05, def:1.45, fn:v => cssv('--bientotTaille', v + 'cqh') },
+      { id:'bientotAngle', label:'Inclinaison', min:-20, max:20, pas:1, def:8, unite:'°', fn:v => cssv('--bientotAngle', v + 'deg') },
+      { id:'bientotCouleur', label:'Couleur', type:'choix', def:'#f5e63d',
+        options:[['#f5e63d','Jaune'],['#ffffff','Blanche'],['#ff8f9a','Rose'],['#35e0ff','Cyan']], fn:v => cssv('--bientotCouleur', v) },
+    ]},
+    { titre:'B — Titres de groupes', items:[
+      { id:'police_titre', cible:'titre', label:'Typo', type:'police', def:'archivo' },
+      { id:'styleTitres', label:'Style', type:'choix', def:'texte',
+        options:[['texte','Blanc détouré (comme le bandeau)'],['etiquette','Étiquette blanche'],['trait','Texte + trait']], fn:v => { racine.dataset.titres = v; } },
+      { id:'titreTaille', label:'Taille', min:1.2, max:4, pas:.05, def:2.3, fn:v => cssv('--titreTaille', v + 'cqh') },
+      { id:'titreContour', label:'Contour noir', min:0, max:1, pas:.05, def:.45, fn:v => cssv('--titreContour', v + 'cqh') },
+    ]},
+    { titre:'D — Tuiles', items:[
+      { id:'dispoTuiles', label:'Tuiles de jeu', type:'choix', def:'grille', options:[['grille','2 × 2'],['ligne','4 en ligne']], fn:v => { racine.dataset.tuiles = v; } },
+      { id:'tuileRatio', label:'Proportions (largeur / hauteur)', min:.8, max:2.4, pas:.05, def:1.3, fn:v => cssv('--tuileRatio', v) },
+      { id:'tuileIcone', label:'Icône', min:3, max:12, pas:.1, def:7, fn:v => cssv('--tuileIcone', v + 'cqh') },
+      { id:'tuileTexte', label:'Texte', min:1.4, max:4, pas:.05, def:2.5, fn:v => cssv('--tuileTexte', v + 'cqh') },
+    ]},
+    { titre:'Décor', items:[
+      { id:'degrade', label:'Dégradé du bas', type:'choix', def:'plein',
+        options:[['plein','Toute la largeur (comme aujourd’hui)'],['texte','Seulement sous le bandeau'],['aucun','Aucun']], fn:v => { racine.dataset.degrade = v; } },
+    ]},
+  ];
+  const ITEMS = SECTIONS.flatMap(s => s.items).filter(it => it.id);
+  const PAR_ID = Object.fromEntries(ITEMS.map(it => [it.id, it]));
+  const valeurs = {};
+  const formate = (it, v) => { const n = +v; return (Number.isInteger(n) ? String(n) : n.toFixed(it.pas < .1 ? 2 : 1)) + (it.unite || ''); };
+  function regler(id, v, silencieux) {
+    const it = PAR_ID[id];
+    if (!it) return;
+    if (!it.type) v = +v;
+    valeurs[id] = v;
+    if (it._input && String(it._input.value) !== String(v)) it._input.value = v;
+    if (it._n) it._n.textContent = formate(it, v);
+    if (it.type === 'police') { const p = POLICES[v] || POLICES.chakra; cssv('--f-' + it.cible, p.famille); cssv('--w-' + it.cible, p.poids); }
+    else if (it.fn) it.fn(v);
+    if (!silencieux) { if (it.refaire) planifier(); else majSortie(); }
+  }
+  (function construirePanneau() {
+    const hote = $('blocsReglages');
+    for (const s of SECTIONS) {
+      const bloc = document.createElement('details'); bloc.className = 'bloc'; bloc.open = true;
+      const sum = document.createElement('summary'); sum.textContent = s.titre; bloc.appendChild(sum);
+      for (const it of s.items) {
+        if (it.sous) { const t = document.createElement('div'); t.className = 'sousTitre'; t.textContent = it.sous; bloc.appendChild(t); continue; }
+        const ligne = document.createElement('div'); ligne.className = 'reg';
+        const lab = document.createElement('label'); lab.textContent = it.label; lab.htmlFor = 'ctl_' + it.id;
+        let input;
+        if (it.type === 'choix' || it.type === 'police') {
+          input = document.createElement('select');
+          const opts = it.type === 'police' ? Object.entries(POLICES).map(([k, p]) => [k, p.nom]) : it.options;
+          for (const [val, texte] of opts) {
+            const o = document.createElement('option'); o.value = val; o.textContent = texte;
+            if (it.type === 'police') { o.style.fontFamily = POLICES[val].famille; o.style.fontWeight = POLICES[val].poids; }
+            input.appendChild(o);
+          }
+          ligne.classList.add('regChoix'); ligne.append(lab, input);
+          input.addEventListener('change', () => regler(it.id, input.value));
+        } else {
+          input = document.createElement('input');
+          Object.assign(input, { type:'range', min:it.min, max:it.max, step:it.pas });
+          const n = document.createElement('span'); n.className = 'n';
+          ligne.append(lab, n, input); it._n = n;
+          input.addEventListener('input', () => regler(it.id, input.value));
+        }
+        input.id = 'ctl_' + it.id; it._input = input;
+        bloc.appendChild(ligne);
+      }
+      hote.appendChild(bloc);
+    }
+  })();
+
+  /* ================= PLACEMENT ================= */
+  let choisi = null, clicSansGlisser = false;
+  const liste = $('listeEls');
+  for (const el of Object.keys(NOMS_EL)) {
+    const d = document.createElement('div'); d.className = 'el'; d.dataset.el = el;
+    d.innerHTML = `<span class="oeil" title="Masquer / afficher">👁</span><span class="nomEl">${NOMS_EL[el]}</span><span class="val"></span>`;
+    d.addEventListener('click', e => {
+      if (version === 'actuel') return;
+      if (e.target.classList.contains('oeil')) { basculerMasque(el); return; }
+      choisir(el);
+    });
+    liste.appendChild(d);
+  }
+  function majListe() {
+    for (const d of liste.children) {
+      const el = d.dataset.el;
+      if (version === 'actuel') { d.querySelector('.val').textContent = '—'; d.classList.remove('on', 'masque'); continue; }
+      const p = placement[version][el];
+      d.querySelector('.val').textContent = `${p.x}/${p.y} ·${p.s.toFixed(2)}×`;
+      d.classList.toggle('on', el === choisi);
+      d.classList.toggle('masque', !!(masques[version] || {})[el]);
+    }
+  }
+  function majSelection() {
+    for (const m of menuScene.querySelectorAll('.mv')) m.classList.toggle('sel', m.dataset.el === choisi);
+  }
+  function majCurseurs() {
+    if (!choisi || version === 'actuel') return;
+    const p = placement[version][choisi];
+    $('rScale').value = p.s; $('rX').value = p.x; $('rY').value = p.y;
+    $('vScale').textContent = p.s.toFixed(2) + '×'; $('vX').textContent = p.x + '%'; $('vY').textContent = p.y + '%';
+    $('btnVisible').textContent = (masques[version] || {})[choisi] ? 'Réafficher cet élément' : 'Masquer cet élément';
+  }
+  function choisir(el) {
+    choisi = el;
+    $('aucunEl').style.display = 'none'; $('regBloc').style.display = 'block';
+    majSelection(); majListe(); majCurseurs();
+  }
+  function ecrire(el) {
+    const m = menuScene.querySelector(`.mv[data-el="${el}"]`), p = placement[version][el];
+    if (m) { m.style.setProperty('--x', p.x); m.style.setProperty('--y', p.y); m.style.setProperty('--s', p.s); }
+    majListe(); majCurseurs(); majSortie();
+    planifierVignettes();
+  }
+  let vignettesPrevues = false;
+  function planifierVignettes() {
+    if (vignettesPrevues) return;
+    vignettesPrevues = true;
+    setTimeout(() => { vignettesPrevues = false; rendreMenu(vignettes[version].menu, version); }, 250);
+  }
+  function basculerMasque(el) {
+    const M = masques[version] = masques[version] || {};
+    M[el] = !M[el];
+    const m = menuScene.querySelector(`.mv[data-el="${el}"]`);
+    if (m) m.classList.toggle('cache', M[el]);
+    majListe(); majCurseurs(); majSortie(); planifierVignettes();
+  }
+  for (const [idR, k] of [['rScale','s'],['rX','x'],['rY','y']]) {
+    $(idR).addEventListener('input', () => { if (!choisi || version === 'actuel') return; placement[version][choisi][k] = +$(idR).value; ecrire(choisi); });
+  }
+  $('btnVisible').addEventListener('click', () => { if (choisi) basculerMasque(choisi); });
+  $('btnResetEl').addEventListener('click', () => {
+    if (!choisi || version === 'actuel') return;
+    placement[version][choisi] = { ...PLACEMENT_DEF[version][choisi] };
+    if (masques[version]) delete masques[version][choisi];
+    const m = menuScene.querySelector(`.mv[data-el="${choisi}"]`); if (m) m.classList.remove('cache');
+    ecrire(choisi);
+  });
+
+  // Glisser : un bloc se prend n'importe où, boutons compris ; un clic sans
+  // mouvement reste un clic (pour déplier JOUER ou tester un verrou).
+  let drag = null;
+  scene.addEventListener('pointerdown', e => {
+    if (scene.classList.contains('lecture') || version === 'actuel') return;
+    const m = e.target.closest('.menuMock .mv');
+    if (!m) return;
+    e.preventDefault();
+    const el = m.dataset.el, r = menuScene.getBoundingClientRect(), p = placement[version][el];
+    choisir(el);
+    drag = { el, x0:p.x, y0:p.y, px0:e.clientX, py0:e.clientY, w:r.width, h:r.height, bouge:false };
+    clicSansGlisser = false;
+    scene.setPointerCapture(e.pointerId);
+  });
+  scene.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.px0, dy = e.clientY - drag.py0;
+    if (!drag.bouge && Math.hypot(dx, dy) < 4) return;
+    drag.bouge = true;
+    const p = placement[version][drag.el];
+    p.x = Math.round((drag.x0 + dx / drag.w * 100) * 2) / 2;
+    p.y = Math.round((drag.y0 + dy / drag.h * 100) * 2) / 2;
+    ecrire(drag.el);
+  });
+  const finDrag = e => {
+    if (!drag) return;
+    const bouge = drag.bouge;
+    drag = null;
+    if (!bouge && e.type === 'pointerup') {
+      // Clic simple : on le rejoue sur le bouton visé, pour tester le menu en édition aussi.
+      const cible = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-bouton]');
+      if (cible) { clicSansGlisser = true; cible.click(); clicSansGlisser = false; }
+    }
+  };
+  scene.addEventListener('pointerup', finDrag);
+  scene.addEventListener('pointercancel', finDrag);
+
+  /* ================= TOUT COPIER / COLLER ================= */
+  const sortie = $('sortie');
+  function etat() {
+    return {
+      mockup:'menu — quatre organisations', version:1,
+      versionChoisie: version,
+      reglages:{ ...valeurs },
+      placement: version === 'actuel' ? null : placement[version],
+      masques: masques[version] || {},
+      ordre: version === 'actuel' ? null : ordre[version],
+      toutesLesVersions:{ placement, ordre, masques },
+    };
+  }
+  let sortiePrevue = false;
+  function majSortie(forcer) {
+    if (forcer) { sortie.value = JSON.stringify(etat(), null, 2); return; }
+    if (document.activeElement === sortie || sortiePrevue) return;
+    sortiePrevue = true;
+    const faire = () => { if (!sortiePrevue) return; sortiePrevue = false; if (document.activeElement !== sortie) sortie.value = JSON.stringify(etat(), null, 2); };
+    requestAnimationFrame(faire); setTimeout(faire, 200);
+  }
+  function message(txt, erreur) {
+    const e = $('etatCopie'); e.textContent = txt; e.classList.toggle('erreur', !!erreur);
+    clearTimeout(message.t); message.t = setTimeout(() => { e.textContent = ''; }, 3500);
+  }
+  function appliquer(texte) {
+    let d;
+    try { d = JSON.parse(texte.trim()); } catch { message('Format pas reconnu : colle le bloc JSON exporté ici.', true); return; }
+    if (d.reglages) for (const [id, v] of Object.entries(d.reglages)) regler(id, v, true);
+    const tout = d.toutesLesVersions || {};
+    for (const v of Object.keys(PLACEMENT_DEF)) {
+      if (tout.placement?.[v]) for (const el of Object.keys(NOMS_EL)) if (tout.placement[v][el]) placement[v][el] = { ...tout.placement[v][el] };
+      if (tout.ordre?.[v]) ordre[v] = JSON.parse(JSON.stringify(tout.ordre[v]));
+      if (tout.masques?.[v]) masques[v] = { ...tout.masques[v] };
+    }
+    if (d.versionChoisie && VERSIONS[d.versionChoisie]) {
+      if (d.placement && d.versionChoisie !== 'actuel') placement[d.versionChoisie] = JSON.parse(JSON.stringify(d.placement));
+      if (d.ordre && d.versionChoisie !== 'actuel') ordre[d.versionChoisie] = JSON.parse(JSON.stringify(d.ordre));
+      choisirVersion(d.versionChoisie);
+    } else rendreTout();
+    sortie.blur(); majSortie(true);
+    message('Appliqué ✔');
+  }
+  $('btnCopier').addEventListener('click', async () => {
+    majSortie(true);
+    try { await navigator.clipboard.writeText(sortie.value); message('Copié dans le presse-papiers ✔'); }
+    catch { sortie.focus(); sortie.select(); const ok = document.execCommand && document.execCommand('copy'); message(ok ? 'Copié ✔' : 'Sélectionné : fais Ctrl+C', !ok); }
+  });
+  $('btnAppliquer').addEventListener('click', () => appliquer(sortie.value));
+  $('btnDefauts').addEventListener('click', () => {
+    for (const it of ITEMS) regler(it.id, it.def, true);
+    placement = JSON.parse(JSON.stringify(PLACEMENT_DEF));
+    ordre = JSON.parse(JSON.stringify(ORDRE_DEF));
+    for (const k of Object.keys(masques)) delete masques[k];
+    choisirVersion(version); majSortie(true);
+    message('Tout est revenu aux valeurs par défaut.');
+  });
+
+  /* ================= VRAIE PARTIE EN FOND ================= */
+  // Le jeu tourne dans le cadre, réduit à son canvas : ses écrans et sa barre
+  // du haut sont masqués. Muet, et rien n'est écrit dans sa sauvegarde.
+  const CSS_CADRE = `
+    html,body{margin:0!important;padding:0!important;overflow:hidden!important;background:#0a0e1a!important;
+      height:100%!important;min-height:0!important;display:block!important}
+    body>*:not(#stage){display:none!important}
+    #stage{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;
+      border:0!important;border-radius:0!important;box-shadow:none!important;margin:0!important;aspect-ratio:auto!important}
+    #stage>*:not(#game){display:none!important}
+    #game{width:100%!important;height:100%!important}`;
+  const cadre = $('partieReelle');
+  const partie = mode => {
+    scene.dataset.partie = mode;
+    $('btnReelle').classList.toggle('on', mode === 'reelle');
+    $('btnSimulee').classList.toggle('on', mode === 'simulee');
+  };
+  $('btnReelle').addEventListener('click', () => partie('reelle'));
+  $('btnSimulee').addEventListener('click', () => partie('simulee'));
+  if (cadre) cadre.addEventListener('load', () => {
+    try {
+      const w = cadre.contentWindow, d = cadre.contentDocument;
+      w.HTMLMediaElement.prototype.play = function () { return Promise.resolve(); };
+      const ACc = w.AudioContext || w.webkitAudioContext;
+      if (ACc) {
+        ACc.prototype.resume = function () { return Promise.resolve(); };
+        w.AudioContext = function (...a) { const c = new ACc(...a); c.suspend(); return c; };
+        w.AudioContext.prototype = ACc.prototype;
+      }
+      for (const f of ['setItem', 'removeItem', 'clear']) w.Storage.prototype[f] = function () {};
+      const st = d.createElement('style'); st.textContent = CSS_CADRE; d.head.appendChild(st);
+      // La démo IA contre IA ne joue que derrière l'écran titre : on passe
+      // l'intro puis la fenêtre du premier lancement pour y arriver.
+      let essais = 0;
+      const avancer = () => {
+        const intro = d.getElementById('scr-intro');
+        if (intro && !intro.classList.contains('done')) intro.click();
+        const premier = d.getElementById('scr-firstrun');
+        if (premier && !premier.classList.contains('hidden')) d.querySelector('[data-act="skipTuto"]')?.click();
+        if (++essais < 30) setTimeout(avancer, 300);
+      };
+      avancer();
+      cadre.classList.add('pret');
+    } catch (err) {
+      console.warn('Partie réelle indisponible', err);
+      partie('simulee');
+    }
+  });
+
+  /* ================= DÉMARRAGE ================= */
+  for (const it of ITEMS) regler(it.id, it.def, true);
+  choisirVersion('gros');
+  ajusterVignettes();
+  document.fonts.ready.then(() => planifier());
+</script>
+</body>
+</html>

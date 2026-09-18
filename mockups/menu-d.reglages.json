@@ -1,0 +1,61 @@
+{
+  "mockup": "menu D — tuiles",
+  "version": 1,
+  "valide": "2026-09-18 — « c’est tout bon » (réglages par défaut du mockup)",
+  "reglages": {
+    "police_tuile": "chakra",
+    "dispoIcone": "gauche",
+    "tuileRatio": 2.5,
+    "tuileIcone": 6,
+    "tuileTexte": 2.7,
+    "ecartTuiles": 1.4,
+    "rayon": 18,
+    "ombre": 6,
+    "petiteHauteur": 6.4,
+    "styleEnLigne": "petrole",
+    "verrouiller": "oui",
+    "styleVerrou": "gris",
+    "police_bientot": "archivo",
+    "bientotTaille": 1.45,
+    "bientotAngle": 8,
+    "bientotCouleur": "#f5e63d",
+    "haloTaille": 1.15,
+    "haloOpacite": 0.28,
+    "lueurCouleur": "#9ff4ff",
+    "lueurTaille": 1.6,
+    "lueurForce": 0.85,
+    "bandeauTaille": 1.3,
+    "aideTaille": 1,
+    "styleArrivee": "pop",
+    "debutTuiles": 0.12,
+    "decalageTuiles": 0.07,
+    "dureeTuile": 0.46,
+    "rebondArrivee": 1,
+    "styleClic": "eclats",
+    "forceClic": 1
+  },
+  "placement": {
+    "logo": { "x": 0.6, "y": 0.6, "s": 1 },
+    "tuiles": { "x": 3.4, "y": 39, "s": 1 },
+    "perso": { "x": 54.65, "y": 21.65, "s": 1 },
+    "bandeau": { "x": 97.6, "y": 98.1, "s": 1 }
+  },
+  "ordre": {
+    "modes": ["vsia", "enligne", "histoire", "jcj"],
+    "petites": ["entrainement", "casino", "options"]
+  },
+  "phrases": [
+    ["MONTRE AU MONDE", "QUI EST LE MEILLEUR !"],
+    ["LE TERRAIN", "T’APPARTIENT !"],
+    ["CHAQUE LANCER", "COMPTE !"],
+    ["VISE HAUT,", "FRAPPE FORT !"],
+    ["DEVIENS UNE LÉGENDE", "DU CLUB !"],
+    ["LE DISQUE N’ATTEND", "PERSONNE !"],
+    ["UN VRAI CHAMPION", "NE LÂCHE RIEN !"],
+    ["AUJOURD’HUI,", "C’EST TON JOUR !"],
+    ["FAIS TREMBLER", "LE TERRAIN !"],
+    ["PERSONNE NE PEUT", "T’ARRÊTER !"],
+    ["LA VICTOIRE", "SE MÉRITE !"],
+    ["TON DISQUE,", "TA LÉGENDE !"]
+  ]
+}
