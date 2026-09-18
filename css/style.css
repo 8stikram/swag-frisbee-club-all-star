@@ -478,14 +478,16 @@ canvas#game{width:100%;height:100%;display:block;image-rendering:pixelated;backg
 @keyframes statShine{from{background-position:180% 0}to{background-position:-80% 0}}
 
 .gridwrap{display:flex;flex-direction:column;align-items:center;gap:1.2cqh}
-/* Trois colonnes depuis l'arrivee de 2hollis. A deux, onze cases — dix
-   personnages plus l'aleatoire — faisaient six rangees : la grille
-   descendait par-dessus le bouton COMBATTRE et le selecteur de disque. A
-   trois elle tient en quatre rangees, et les cases retrecissent juste assez
-   pour que la colonne de plus rentre entre les deux portraits. */
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.7cqh}
+/* La grille S'ADAPTE au nombre de persos : colonnes et taille des cases sont
+   calculees dans menus.js (miseEnPageGrille) et posees ici en variables. Un
+   nombre de colonnes fige finissait toujours par deborder sur la ligne IA ou
+   sur les stats a chaque perso ajoute.
+   En flex et non en grid : c'est ce qui CENTRE la derniere rangee incomplete
+   (la case « ? » seule sous douze persos) au lieu de la caler a gauche. */
+.grid{display:flex;flex-wrap:wrap;justify-content:center;gap:.7cqh;
+  width:calc(var(--cols,3) * var(--cell,9.4cqh) + (var(--cols,3) - 1) * .7cqh)}
 .grid .cell{
-  position:relative;width:9.4cqh;height:9.4cqh;min-width:46px;min-height:46px;
+  position:relative;width:var(--cell,9.4cqh);height:var(--cell,9.4cqh);min-width:40px;min-height:40px;
   background:#fff;border:4px solid var(--ink);border-radius:8px;box-shadow:4px 4px 0 var(--ink);
   cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;
   transition:transform .1s,box-shadow .1s;

@@ -397,9 +397,33 @@ function renderStats(el, ch) {
   ).join('');
 }
 
+// L'espace de la grille, en hauteur d'écran (cqh) : entre les deux étiquettes
+// de nom en largeur, et entre « AU TOUR DE » et la ligne IA en hauteur — qui
+// doit elle-même rester au-dessus de la description de l'ultime. Mesuré sur
+// l'écran de sélection, avec une marge.
+const GRILLE_L = 35, GRILLE_H = 48, GRILLE_ECART = .7, CASE_MAX = 9.4;
+
+// Le nombre de colonnes qui donne les plus grandes cases sans sortir de cet
+// espace. Recalculé à chaque dessin : un perso de plus ne demande rien.
+function miseEnPageGrille(n) {
+  let mieux = { cols: 3, cell: 0 };
+  for (let cols = 2; cols <= 8; cols++) {
+    const rangs = Math.ceil(n / cols);
+    const cell = Math.min(CASE_MAX,
+      (GRILLE_H - (rangs - 1) * GRILLE_ECART) / rangs,
+      (GRILLE_L - (cols - 1) * GRILLE_ECART) / cols);
+    if (cell > mieux.cell + .01) mieux = { cols, cell };
+  }
+  return mieux;
+}
+
 function renderCharGrid() {
   const grid = $('charGrid');
   grid.innerHTML = '';
+  // + 1 : la case aléatoire.
+  const { cols, cell } = miseEnPageGrille(ROSTER.length + 1);
+  grid.style.setProperty('--cols', cols);
+  grid.style.setProperty('--cell', cell.toFixed(2) + 'cqh');
   for (const ck of ROSTER) {
     const cell = document.createElement('div');
     cell.className = 'cell';
