@@ -31,7 +31,7 @@ const CHAMPS_JOUEUR = [
   'speed', 'stun', 'ghostT', 'holdTimer', 'dashT', 'dashGap', 'dashThrowT', 'dashEnding',
   'cancelCatchT', 'feintT', 'feintCd', 'diveT', 'diveDown', 'diveHit', 'dizzy',
   'sixT', 'sixA', 'viseT', 'tirTenu', 'dashTenu', 'bouclierT', 'piratage', 'feintSwish',
-  'lameT', 'lameCoupT', 'lameVu'
+  'lameT', 'lameCoupT', 'lameVise', 'lameFrappe', 'lameCogne', 'lameVu'
 ];
 // Couples x/y du joueur : élan de dash, direction de dash, de feinte, de plongeon.
 const VECTEURS_JOUEUR = ['dashV', 'dashDir', 'feintDir', 'diveDir'];

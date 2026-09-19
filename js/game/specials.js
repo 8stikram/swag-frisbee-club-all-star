@@ -1,14 +1,16 @@
 import { G, comment, Mouse } from './state.js';
 import { SPECIALS, RUEE_DISQUE, RUEE_POUSSEE, RUEE_CTRL, RUEE_LARGEUR,
          WT_CHANT, WT_VITESSE, WT_RAYON, WT_BANDE, WT_STUN, WT_ATTIRE, WT_SORTIE,
-         PS_CHANT, PS_CHUTE, PS_IMPACT, PS_DUREE, PS_SLOW, PS_DRAIN, LD_DELAI }
+         PS_CHANT, PS_CHUTE, PS_IMPACT, PS_DUREE, PS_SLOW, PS_DRAIN,
+         LAME_REPOUSSE, LAME_ETOURDI }
   from '../data/specials.js';
-import { COURT, CY, GOAL_TOP, GOAL_BOTTOM, TIR_ANGLE_MIN, throwSpeed } from '../core/constants.js';
+import { COURT, CY, GOAL_TOP, GOAL_BOTTOM, TIR_ANGLE_MIN, DISC_RADIUS, throwSpeed } from '../core/constants.js';
+import { COUP_ARME, COUP_COUPE, LAME_DEBUT, LAME_FIN, LAME_DEMI, epauleLame, angleCoupe, segmentLame, distanceSegment } from './lame-geo.js';
 import { sfx } from '../audio/audio.js';
 import { addPopup, burst, dust } from './fx.js';
 import { dropDisc, onCatch, throwDisc, viseVersAvant } from './actions.js';
 import { gauss, rand, pick, norm } from '../core/utils.js';
-import { gaussJeu, randJeu, pickJeu } from '../core/alea.js';
+import { gaussJeu, randJeu, pickJeu, aleaJeu } from '../core/alea.js';
 import { jeSimule, Partie, etiquetteJoueur } from '../reseau/partie.js';
 
 export function trySpecial(p) {
@@ -362,10 +364,11 @@ export function updatePsycho(dt) {
 }
 
 // ---------------------------------------------------------------------------
-// LAME DU DRAGON (Gardien Éternel de la Fricadelle). Tourne sur les deux
-// machines : le compte à rebours et le Susanoo qui suit sont de l'affichage.
-// Le coup d'épée, lui, lance le disque — c'est de l'arbitrage, réservé à celui
-// qui simule.
+// SUSANO SSJ ROSE (Gardien Éternel de la Fricadelle). Modèle : la Lame du
+// dragon de Genji — c'est le JOUEUR qui frappe, à chaque clic, là où il vise,
+// et seule la lame dessinée touche. Tourne sur les deux machines pour le
+// Susanoo qui suit et l'animation ; tout ce que la lame touche est de
+// l'arbitrage, réservé à celui qui simule.
 export function updateLame(dt) {
   for (const p of [G.p1, G.p2]) {
     if (!p || !(p.lameT > 0)) continue;
@@ -377,39 +380,49 @@ export function updateLame(dt) {
     const k = 1 - Math.exp(-7 * dt);
     p.susX = (p.susX ?? p.x) + (p.x - (p.susX ?? p.x)) * k;
     p.susY = (p.susY ?? p.y) + (p.y - (p.susY ?? p.y)) * k;
-    if (!jeSimule()) { p.lameCoupT = (p.lameCoupT ?? 9) + dt; continue; }
-    // Un nouvel attrapé : l'épée s'arme. Repéré au compteur d'attrapés plutôt
-    // qu'à `holding`, sinon le service — le disque posé dans sa main — serait
-    // frappé lui aussi.
-    if (p.stats.catches !== p.lameVu) {
-      p.lameVu = p.stats.catches;
-      if (p.holding) p.lameCoupT = -LD_DELAI;
-    }
     const avant = p.lameCoupT ?? 9;
     p.lameCoupT = avant + dt;
-    // L'impact. S'il a déjà tiré de lui-même entre-temps, il n'y a plus rien
-    // à frapper : l'épée tombe dans le vide, sans conséquence.
-    if (avant < 0 && p.lameCoupT >= 0 && p.holding) frapperLame(p);
+    if (!jeSimule()) continue;
+    if (p.ai) lameIA(p);
+    // La coupe : on balaie la lame entre l'image précédente et celle-ci, en
+    // plusieurs positions, pour qu'un disque rapide ne passe pas ENTRE deux
+    // images sans être touché.
+    const debut = COUP_ARME, fin = COUP_ARME + COUP_COUPE;
+    if (p.lameCoupT <= debut || avant >= fin) continue;
+    // Disque en main au moment du clic : il part dès que la lame s'abat, à
+    // pleine puissance, comme un Dash Throw.
+    if (p.holding && !p.lameFrappe) { p.lameFrappe = 1; renvoyer(p, null); }
+    const k0 = Math.max(0, (avant - debut) / COUP_COUPE), k1 = Math.min(1, (p.lameCoupT - debut) / COUP_COUPE);
+    for (let i = 0; i <= 5; i++) {
+      const sg = segmentLame(p, angleCoupe(p, k0 + (k1 - k0) * i / 5));
+      const d = G.disc;
+      if (!p.lameFrappe && d.free && !d.heldBy && distanceSegment(sg, d.x, d.y) < LAME_DEMI + DISC_RADIUS + 6) {
+        p.lameFrappe = 1; renvoyer(p, { x: d.x, y: d.y });
+      }
+      const f = p.foe;
+      if (!p.lameCogne && f && Math.min(distanceSegment(sg, f.x, f.y), distanceSegment(sg, f.x, f.y - 30)) < LAME_DEMI + 20) {
+        p.lameCogne = 1; cogner(p, f);
+      }
+    }
   }
 }
 
-// Le renvoi : un tir PARFAIT — charge pleine, sans l'avoir chargé — vers là
-// où il vise.
-function frapperLame(p) {
+// Le clic, pendant l'ultime : un coup d'épée vers la visée. Aucune recharge —
+// il frappe autant qu'il clique, et un nouveau clic relance le coup.
+export function coupDeLame(p, visee) {
+  let v = visee && (visee.x || visee.y) ? visee : { x: Mouse.x - p.x, y: Mouse.y - p.y };
+  if (p.ai) v = viseeIA(p);
+  p.lameVise = Math.atan2(v.y, v.x);
+  p.lameCoupT = 0; p.lameFrappe = 0; p.lameCogne = 0;
+  sfx('swish');
+}
+
+// Le renvoi : un tir PARFAIT — charge pleine, sans l'avoir chargé — vers la
+// visée. `depuis` : le point d'impact d'un disque frappé en vol ; absent, le
+// disque part de la main du Gardien.
+function renvoyer(p, depuis) {
   const versAdv = p.side === 1 ? 1 : -1;
-  let dir;
-  if (p.ai) {
-    // L'IA n'a pas de souris : chaque coup part vers un coin du but ou son
-    // centre, comme dans le mockup. Semé : ça décide de l'issue du point.
-    const zy = pickJeu([GOAL_TOP + 34, GOAL_BOTTOM - 34, CY]);
-    const tx = p.side === 1 ? COURT.right : COURT.left;
-    dir = norm(tx - p.x, zy + gaussJeu() * 40 - p.y);
-  } else {
-    // La visée vient de la fiche d'intentions, comme pour un tir ordinaire :
-    // un joueur distant n'a pas de curseur sur cette machine.
-    const c = p.cmd;
-    dir = (c && (c.visee.x || c.visee.y)) ? norm(c.visee.x, c.visee.y) : norm(Mouse.x - p.x, Mouse.y - p.y);
-  }
+  let dir = norm(Math.cos(p.lameVise || 0), Math.sin(p.lameVise || 0));
   // Le coup est déjà parti, on ne peut pas le refuser comme un tir : une visée
   // vers l'arrière est retournée, et un tir presque vertical est redressé,
   // sinon il resterait piégé dans son propre camp (voir TIR_ANGLE_MIN).
@@ -420,10 +433,44 @@ function frapperLame(p) {
   p.face = dir.x >= 0 ? 1 : -1;
   p.charge = 1;
   throwDisc(p, dir, throwSpeed(1, p.char.power));
-  burst(p.x + dir.x * 26, p.y + dir.y * 26, '#ff7fd0', 18);
+  // throwDisc pose le disque dans la main du lanceur ; frappé en vol, il
+  // repart de là où la lame l'a touché.
+  if (depuis) { G.disc.x = depuis.x; G.disc.y = depuis.y; }
+  const d = G.disc;
+  burst(d.x, d.y, '#ff7fd0', 18);
   G.shake = Math.max(G.shake, 9);
-  sfx('swish');
-  addPopup('LAME DU DRAGON !', '#ff7fd0', 14, .7, p.y - 60);
+  addPopup('SUSANO !', '#ff7fd0', 14, .7, p.y - 60);
+}
+
+// La lame touche l'adversaire : il est repoussé loin du Gardien et étourdi un
+// instant. Réglage à l'essai : l'utilisateur jugera en jouant si c'est trop fort.
+function cogner(p, f) {
+  const v = norm(f.x - p.x, f.y - p.y);
+  f.dashV.x += v.x * LAME_REPOUSSE; f.dashV.y += v.y * LAME_REPOUSSE;
+  f.stun = Math.max(f.stun || 0, LAME_ETOURDI);
+  burst(f.x, f.y - 20, '#ff7fd0', 14);
+  G.shake = Math.max(G.shake, 7);
+  sfx('stun');
+}
+
+// L'IA n'a pas de souris. Elle garde le renvoi automatique à l'attrapé, et
+// frappe en plus un disque adverse qui passe à portée de lame.
+function viseeIA(p) {
+  // Semé : ça décide de l'issue du point.
+  const zy = pickJeu([GOAL_TOP + 34, GOAL_BOTTOM - 34, CY]);
+  const tx = p.side === 1 ? COURT.right : COURT.left;
+  return { x: tx - p.x, y: zy + gaussJeu() * 40 - p.y };
+}
+function lameIA(p) {
+  if ((p.lameCoupT ?? 9) < COUP_ARME + COUP_COUPE + .1) return;
+  if (p.stats.catches !== p.lameVu) {
+    p.lameVu = p.stats.catches;
+    if (p.holding) { coupDeLame(p, null); return; }
+  }
+  const d = G.disc;
+  if (!d.free || d.heldBy || d.thrower === p) return;
+  const E = epauleLame(p), dist = Math.hypot(d.x - E.x, d.y - E.y);
+  if (dist < LAME_FIN && dist > LAME_DEBUT && aleaJeu() < .35) coupDeLame(p, null);
 }
 
 // ---------------------------------------------------------------------------

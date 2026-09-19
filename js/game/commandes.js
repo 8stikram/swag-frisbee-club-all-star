@@ -5,7 +5,7 @@ import { getDashAim } from '../data/settings.js';
 import { norm, clamp } from '../core/utils.js';
 import { doDive } from './actions.js';
 import { doFeint, cancelDash } from './input.js';
-import { trySpecial } from './specials.js';
+import { trySpecial, coupDeLame } from './specials.js';
 import { Partie, enMiroir, compterGeste, jeSimule } from '../reseau/partie.js';
 
 // ---------------------------------------------------------------------------
@@ -114,7 +114,12 @@ export function appliquerActions(p) {
   const c = p.cmd;
   if (c.plongeon) {
     c.plongeon = false;
-    if (!G.cine && p.stun <= 0 && p.diveT <= 0 && p.diveDown <= 0) {
+    // Susano SSJ Rose : le même geste devient un coup d'épée. Il passe par le
+    // canal du plongeon, donc il arrive à l'hôte sans rien ajouter au réseau ;
+    // et comme l'ultime, il n'est pas prédit — ce que la lame touche, seul
+    // l'arbitre le décide.
+    if (p.lameT > 0) { if (jeSimule() && !G.cine && p.stun <= 0) coupDeLame(p, c.visee); }
+    else if (!G.cine && p.stun <= 0 && p.diveT <= 0 && p.diveDown <= 0) {
       if (p.holding) p.charging = true;
       else doDive(p, { x: c.visee.x, y: c.visee.y });
     }

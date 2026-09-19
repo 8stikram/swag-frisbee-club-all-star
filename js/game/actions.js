@@ -122,6 +122,9 @@ export function viseVersAvant(p, dir) {
 
 export function doThrowHuman(p) {
   if (!p.holding) return;
+  // Pendant le Susano SSJ Rose, c'est l'épée qui lance, au clic : le
+  // relâchement ne doit pas tirer une seconde fois.
+  if (p.lameT > 0) return;
   // La visée vient de la fiche d'intentions, jamais de la souris. Un joueur
   // distant n'a pas de curseur sur cette machine : son tir partait donc vers
   // le curseur de l'hôte, c'est-à-dire n'importe où.

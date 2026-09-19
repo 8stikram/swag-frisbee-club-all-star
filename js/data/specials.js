@@ -116,20 +116,23 @@ export const PS_RAY = .30;      // part de l'aire de la moitie adverse
 export const PS_RAY_ECART = .5;
 
 // ---------------------------------------------------------------------------
-// LAME DU DRAGON, l'ultime du Gardien Éternel de la Fricadelle. Modèle : l'ultime
-// de Genji dans Overwatch. Choisi contre la Riposte dans
-// mockups/fricadelle-ulti.html ; le Susanoo qui porte l'épée est dessiné dans
-// render/susanoo.js.
+// SUSANO SSJ ROSE, l'ultime du Gardien Éternel de la Fricadelle (d'abord
+// appelé Lame du dragon). Modèle : la Lame du dragon de Genji dans Overwatch.
+// Le Susanoo qui porte l'épée est dessiné dans render/susanoo.js, la
+// géométrie de sa lame vit dans game/lame-geo.js.
 //
-// Pendant LD_DUREE, chaque disque qu'il ATTRAPE repart aussitôt d'un coup
-// d'épée du Susanoo, en tir parfait et sans temps de charge, là où il vise. Il
-// faut quand même attraper : un disque raté reste un but encaissé.
-export const LD_DUREE = 6;
+// Pendant LD_DUREE, CHAQUE CLIC fait frapper le Susanoo là où il vise, sans
+// recharge. Un disque touché par la lame dessinée repart en tir parfait vers
+// la visée ; un disque en main part aussitôt, pleine puissance, comme un Dash
+// Throw. Il attrape toujours normalement. La lame repousse aussi l'adversaire
+// qu'elle touche.
+export const LD_DUREE = 10;
 export const LD_INVOC = .8;     // le Susanoo monte derrière lui
-// Entre l'attrapé et l'impact de l'épée. Assez court pour que le renvoi se
-// vive comme instantané, assez long pour qu'on voie la lame tomber sur le
-// disque : à zéro, le disque repartait avant que l'épée ait bougé.
-export const LD_DELAI = .14;
+// Ce que la lame fait à l'adversaire : une poussée (px/s ajoutés à son élan)
+// et un court étourdissement. À l'essai : l'utilisateur jugera si c'est trop
+// fort, auquel cas la poussée s'enlève.
+export const LAME_REPOUSSE = 520;
+export const LAME_ETOURDI = .4;
 
 // Registre des attaques spéciales. Pour ajouter une spéciale : une entrée ici,
 // puis `ult:'<clé>'` sur le personnage dans data/characters.js.
@@ -375,25 +378,23 @@ export const SPECIALS = {
   },
 
   lamedragon: {
-    name: 'LAME DU DRAGON',
-    desc: 'Le Susanoo de la Fricadelle se dresse : 6 s durant, chaque disque attrapé repart en tir parfait d\'un coup d\'épée.',
+    name: 'SUSANO SSJ ROSE',
+    desc: 'Le Susanoo rose se dresse 10 s : chaque clic abat son épée là où tu vises, et tout disque touché repart en tir parfait.',
     // Il part les mains vides aussi : c'est une posture qui dure, pas un tir.
     needsDisc: false,
     cast(p) {
       p.meter = 0; p.stats.specials++;
       p.lameT = LD_DUREE;
       p.susX = p.x; p.susY = p.y;
-      // Les attrapés se repèrent au compteur : seul ce qui est pris APRÈS
-      // l'invocation déclenche un coup.
+      // Les attrapés se repèrent au compteur : l'IA, qui n'a pas de souris,
+      // frappe d'elle-même ce qu'elle attrape APRÈS l'invocation.
       p.lameVu = p.stats.catches;
-      // Disque déjà en main : l'épée le frappe dès que le Susanoo est à moitié
-      // levé, plutôt que de gâcher la première seconde de l'ultime.
-      p.lameCoupT = p.holding ? -(LD_DELAI + LD_INVOC * .5) : 9;
-      G.banner = { text: 'LAME DU DRAGON !!', color: '#ff7fd0', t: 0, dur: 1.3 };
+      p.lameCoupT = 9; p.lameFrappe = 0; p.lameCogne = 0;
+      G.banner = { text: 'SUSANO SSJ ROSE !!', color: '#ff7fd0', t: 0, dur: 1.3 };
       G.shake = 8; G.flash = .7;
       sfx('susanoo'); commentUlti(p,
-        ['LE SUSANOO DE LA FRICADELLE !!', 'GOÛTE LA LAME DU DRAGON !', 'LE DIEU DE LA FRICADELLE SE LÈVE !'],
-        n => [`${n} INVOQUE LE SUSANOO !!`, `LA LAME DU DRAGON DE ${n} !`, `${n} RÉVEILLE LE DIEU DE LA FRICADELLE !`]);
+        ['LE SUSANO SSJ ROSE !!', 'LE SUSANO DE LA FRICADELLE SE LÈVE !', 'LE DIEU DE LA FRICADELLE SORT LA LAME !'],
+        n => [`${n} INVOQUE LE SUSANO !!`, `LE SUSANO SSJ ROSE DE ${n} !`, `${n} RÉVEILLE LE DIEU DE LA FRICADELLE !`]);
     }
   },
 

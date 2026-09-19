@@ -14,13 +14,10 @@
 // Aucune dépendance au jeu en dehors des constantes de l'ultime : ce module ne
 // fait que dessiner ce qu'on lui donne.
 // ---------------------------------------------------------------------------
-import { LD_DUREE, LD_INVOC, LD_DELAI } from '../data/specials.js';
+import { LD_DUREE, LD_INVOC } from '../data/specials.js';
+import { etatLame, versMonde } from '../game/lame-geo.js';
 
 const TAU = Math.PI * 2;
-const lerp = (a, b, k) => a + (b - a) * k;
-const easeOut = k => 1 - Math.pow(1 - k, 3);
-const easeIn = k => k * k * k;
-const easeInOut = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
 // Hasard DÉTERMINISTE : une étincelle garde sa trajectoire d'une image à
 // l'autre au lieu de clignoter.
 const alea = i => { const v = Math.sin(i * 12.9898) * 43758.5453; return v - Math.floor(v); };
@@ -268,28 +265,9 @@ const reglage = id => {
 const REG = Object.fromEntries(ELEMENTS.map(e => [e.id, reglage(e.id)]));
 
 /* ============================ L'ÉPÉE ============================ */
-// Au repos elle est dressée derrière lui ; un coup la fait passer devant, sous
-// lui, puis elle remonte. Le coup est daté par son IMPACT, l'instant exact où
-// le disque repart — daté par son départ, la lame tombait après que le disque
-// était déjà loin.
-const REPOS = -1.15, FRAPPE = 1.76;
-const ARME = .12, TOMBE = .13, REMONTE = .47;
-// `d` : temps écoulé depuis l'impact (négatif avant). En match il n'y a que
-// LD_DELAI entre l'attrapé et l'impact, moins que l'armé et la chute de
-// l'atelier réunis : les deux sont donc resserrés d'autant, dans les mêmes
-// proportions.
-export function angleEpee(d) {
-  if (d < 0) {
-    const k = LD_DELAI / (ARME + TOMBE);
-    d /= k;
-    if (d < -(ARME + TOMBE)) return { a: REPOS, trace: 0 };
-    if (d < -TOMBE) return { a: lerp(REPOS, REPOS - .35, easeOut((d + ARME + TOMBE) / ARME)), trace: 0 };
-    const kk = (d + TOMBE) / TOMBE;
-    return { a: lerp(REPOS - .35, FRAPPE, easeIn(kk)), trace: kk };
-  }
-  if (d > REMONTE) return { a: REPOS, trace: 0 };
-  return { a: lerp(FRAPPE, REPOS, easeInOut(d / REMONTE)), trace: Math.max(0, 1 - d / .25) };
-}
+// Son angle vient de game/lame-geo.js, le même calcul que la zone de touche :
+// l'épée qu'on voit s'abattre est exactement celle qui touche. Ici on ne fait
+// que le ramener dans le repère du dessin, tourné vers la droite.
 
 function pose(sabre) {
   const b = REG.brasD, ep = REG.epee;
@@ -349,18 +327,10 @@ export function dessinerSusanoo(g, p, t) {
     const k = ecoule / (LD_INVOC + .3), r = 30 + k * 150;
     anneau(g, p.x, p.y + 44, r, r * .4, (1 - k) * .9, 'rgb(255,120,210)', 3);
   }
-  const { a, trace } = angleEpee(p.lameCoupT ?? 9);
+  const { ang, trace } = etatLame(p);
   g.save();
   g.translate(x, y);
   if (dir < 0) g.scale(-1, 1);
-  peindre(g, t, a, trace, force);
+  peindre(g, t, versMonde(p, ang), trace, force);
   g.restore();
-  // L'impact : un éclair et une onde à la main du Gardien, là où le disque
-  // vient de repartir.
-  const dd = p.lameCoupT ?? 9;
-  if (dd >= 0 && dd < .25) {
-    const hx = p.x + 22 * dir, hy = p.y + 14, k = 1 - dd / .25;
-    lueur(g, hx, hy, 20 + dd * 200, 'rgb(255,210,240)', k * .9);
-    anneau(g, hx, hy, 10 + dd * 260, (10 + dd * 260) * .5, k, 'rgb(255,150,220)', 2);
-  }
 }

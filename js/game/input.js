@@ -107,7 +107,8 @@ window.addEventListener('mousedown', e => {
     // On dépose une intention au lieu d'agir : c'est la seule façon qu'un
     // joueur distant ait les mêmes gestes qu'un joueur assis ici. La charge,
     // elle, part du maintien du bouton, que la fiche transporte déjà.
-    if (!p.holding) demanderGeste(p, 'plongeon');
+    // Pendant le Susano SSJ Rose, le clic abat l'épée — disque en main ou non.
+    if (!p.holding || p.lameT > 0) demanderGeste(p, 'plongeon');
   } else if (e.button === 2) { demanderGeste(monJoueur(), 'special'); }
 });
 
@@ -201,7 +202,8 @@ window.addEventListener('keydown', e => {
   if (e.code === getKey('charge') || e.code === 'Space') {
     if (G.cine) return;
     if (p.diveT > 0 || p.diveDown > 0) return;
-    if (!p.holding) demanderGeste(p, 'plongeon');
+    // Pendant le Susano SSJ Rose, le clic abat l'épée — disque en main ou non.
+    if (!p.holding || p.lameT > 0) demanderGeste(p, 'plongeon');
   }
 });
 

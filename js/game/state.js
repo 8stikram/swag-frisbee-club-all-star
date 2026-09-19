@@ -159,10 +159,11 @@ export function makePlayer(ck, side, human, diffIdx) {
     bouclierT: 0,
     // Piraté par Cyberleek : ses déplacements partent à l'envers.
     piratage: 0,
-    // Lame du dragon du Gardien : temps restant, instant du coup d'épée par
-    // rapport à son impact (négatif pendant qu'elle tombe), et nombre
-    // d'attrapés déjà frappés — c'est ainsi qu'on repère un nouvel attrapé.
-    lameT: 0, lameCoupT: 9, lameVu: 0
+    // Susano SSJ Rose du Gardien : temps restant, temps depuis le dernier coup
+    // d'épée, direction visée par ce coup (radians), ce qu'il a déjà touché
+    // (le disque, l'adversaire : une fois chacun par coup), et nombre
+    // d'attrapés déjà vus — c'est ainsi que l'IA repère un nouvel attrapé.
+    lameT: 0, lameCoupT: 9, lameVise: 0, lameFrappe: 0, lameCogne: 0, lameVu: 0
   };
   if (!human) {
     p.ai = {
