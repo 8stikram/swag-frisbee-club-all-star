@@ -385,7 +385,7 @@ export function scoreGoal(scorer, y) {
   // Toute la mise en scène est dans fx.js : l'invité en ligne ne compte pas les
   // points et ne passe jamais ici, il doit pouvoir la rejouer de son côté.
   effetDeBut(scorer.side, y, scorer.char.color, scorer.char.accent || scorer.char.color, pts, scorer.char.short);
-  sonMatch('goal', forceDeVitesse(Math.hypot(G.disc.vx, G.disc.vy)), scorer);
+  sonMatch(pts >= 5 ? 'goal5' : 'goal', forceDeVitesse(Math.hypot(G.disc.vx, G.disc.vy)), scorer);
   // Commentaire "légendaire" : soit une grosse remontée (mené d'au moins 5,
   // et ce point remet à égalité ou devant), soit le point de la victoire
   // alors que l'adversaire restait dans le coup jusqu'au bout. Remplace le

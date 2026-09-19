@@ -133,11 +133,15 @@ export function jouerCouches(ac, sortie, couches, ctx = {}, reglage = {}) {
       case 'clic': clic(ac, bus, t, g, clair); break;
       case 'fm': fm(ac, bus, c, t, g, fMul, dMul); break;
       case 'foule': foule(ac, bus, c, t, g, dMul); break;
+      case 'clameur': clameur(ac, bus, c, t, g, dMul); break;
+      case 'cuivre': cuivre(ac, bus, c, t, g, fMul, dMul); break;
+      case 'filet': filet(ac, bus, c, t, g, fMul, dMul); break;
+      case 'crepitement': crepitement(ac, bus, c, t, g, dMul); break;
     }
   }
-  // Débranche le bus une fois le son éteint.
+  // Débranche le bus une fois le son éteint (une clameur dure jusqu'à 4 s).
   setTimeout(() => { try { bus.disconnect(); envoi.disconnect(); } catch (e) { /* déjà fait */ } },
-    (t0 - ac.currentTime + 4) * 1000);
+    (t0 - ac.currentTime + 7) * 1000);
 }
 
 function tirerVariation(alea) {
@@ -171,19 +175,36 @@ function ton(ac, bus, c, t, g, fMul, dMul) {
   o.frequency.setValueAtTime(c.f[0] * fMul, t);
   o.frequency.exponentialRampToValueAtTime(Math.max(1, (c.f[1] ?? c.f[0]) * fMul), t + (c.a || 0) + d * (c.glisse ?? 1));
   enveloppe(v.gain, t, g, c.a || 0, d);
-  o.connect(v).connect(bus); o.start(t); o.stop(t + (c.a || 0) + d + .05);
+  o.connect(v).connect(c.sat ? saturer(ac, bus, c.sat) : bus); o.start(t); o.stop(t + (c.a || 0) + d + .05);
+}
+
+// Saturation douce (tangente hyperbolique) : c'est elle qui fait CRAQUER un
+// impact au lieu de le laisser sonner propre. `sat` = gain d'entrée ; la
+// courbe est normalisée pour que le niveau de sortie reste comparable.
+const courbes = {};
+function saturer(ac, dest, sat) {
+  const ws = ac.createWaveShaper();
+  if (!courbes[sat]) {
+    const n = 1024, k = new Float32Array(n), norme = Math.tanh(sat);
+    for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; k[i] = Math.tanh(x * sat) / norme; }
+    courbes[sat] = k;
+  }
+  ws.curve = courbes[sat]; ws.oversample = '2x';
+  ws.connect(dest);
+  return ws;
 }
 
 // Bruit filtré dont le filtre peut balayer : souffles, whooshs, frottements.
 // { t:'bruit', filtre:'bandpass'|'lowpass'|'highpass', f:[départ, arrivée], q, a, d, g }
 function bruit(ac, bus, c, t, g, fMul, dMul) {
-  const s = ac.createBufferSource(); s.buffer = res(ac).bruit;
+  // En boucle : un souffle long partant tard dans le tampon s'y arrêtait net.
+  const s = sourceBruit(ac);
   const f = ac.createBiquadFilter(); f.type = c.filtre || 'bandpass'; f.Q.value = c.q ?? 1;
   const d = c.d * dMul;
   f.frequency.setValueAtTime(Math.min(20000, c.f[0] * fMul), t);
   f.frequency.exponentialRampToValueAtTime(Math.min(20000, Math.max(20, (c.f[1] ?? c.f[0]) * fMul)), t + (c.a || 0) + d);
   const v = ac.createGain(); enveloppe(v.gain, t, g, c.a || 0, d);
-  s.connect(f).connect(v).connect(bus);
+  s.connect(f).connect(v).connect(c.sat ? saturer(ac, bus, c.sat) : bus);
   s.start(t, Math.random() * 1.5); s.stop(t + (c.a || 0) + d + .05);
 }
 
@@ -237,5 +258,125 @@ function foule(ac, bus, c, t, g, dMul) {
     for (let x = .05; x < a + d; x += .05 + Math.random() * .05) trem.gain.linearRampToValueAtTime(.55 + Math.random() * .6, t + x);
     s.connect(f).connect(trem).connect(env).connect(bus);
     s.start(t, Math.random()); s.stop(t + a + d + .05);
+  }
+}
+
+// Enveloppe tenue : montée `a`, palier `tenue`, puis extinction sur `d`. Pour
+// ce qui doit durer — un cor, une clameur — là où `enveloppe` retombe aussitôt.
+function enveloppeTenue(param, t, g, a, tenue, d) {
+  param.setValueAtTime(0.0001, t);
+  param.linearRampToValueAtTime(Math.max(g, .0002), t + Math.max(a, .001));
+  param.setValueAtTime(Math.max(g, .0002), t + Math.max(a, .001) + tenue);
+  param.exponentialRampToValueAtTime(.0001, t + Math.max(a, .001) + tenue + d);
+}
+
+// Bruit en boucle : les couches longues dépassent la durée du tampon.
+function sourceBruit(ac) {
+  const s = ac.createBufferSource(); s.buffer = res(ac).bruit; s.loop = true;
+  return s;
+}
+
+// Cuivres : trois dents de scie légèrement désaccordées par note, derrière un
+// filtre qui s'ouvre pendant l'attaque. C'est cette ouverture qui fait
+// « souffler » le cuivre ; un filtre fixe donne un orgue électronique. Un
+// léger vibrato arrive une fois la note posée.
+// { t:'cuivre', notes:[Hz…], a, tenue, d, g, filtre:[fermé, ouvert], desaccord (cents), vibrato (cents) }
+function cuivre(ac, bus, c, t, g, fMul, dMul) {
+  const a = c.a ?? .04, tenue = (c.tenue ?? .2) * dMul, d = (c.d ?? .3) * dMul, fin = t + a + tenue + d;
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 1.2;
+  const [f0, f1] = c.filtre || [500, 3200];
+  lp.frequency.setValueAtTime(f0, t);
+  lp.frequency.exponentialRampToValueAtTime(f1, t + a * 1.6);
+  lp.frequency.setValueAtTime(f1, t + a + tenue);
+  lp.frequency.exponentialRampToValueAtTime(f0, fin);
+  const v = ac.createGain(); enveloppeTenue(v.gain, t, g / Math.sqrt(c.notes.length * 3), a, tenue, d);
+  lp.connect(v).connect(c.sat ? saturer(ac, bus, c.sat) : bus);
+  const lfo = ac.createOscillator(), prof = ac.createGain();
+  lfo.frequency.value = 5.6; prof.gain.setValueAtTime(0, t);
+  prof.gain.linearRampToValueAtTime(c.vibrato ?? 12, t + a + Math.min(tenue, .25));
+  lfo.connect(prof); lfo.start(t); lfo.stop(fin + .05);
+  for (const n of c.notes) for (const dc of [-(c.desaccord ?? 9), 0, c.desaccord ?? 9]) {
+    const o = ac.createOscillator(); o.type = 'sawtooth';
+    o.frequency.value = n * fMul; o.detune.value = dc + hasard(3);
+    prof.connect(o.detune);
+    o.connect(lp); o.start(t); o.stop(fin + .05);
+  }
+}
+
+// Filet qui tremble : un bruit médium haché par un battement rapide qui
+// ralentit en s'éteignant — les mailles qui vibrent après l'impact.
+// { t:'filet', f, a, d, g }
+function filet(ac, bus, c, t, g, fMul, dMul) {
+  const d = (c.d ?? .5) * dMul, s = sourceBruit(ac);
+  const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = (c.f || 2200) * fMul; f.Q.value = 1.4;
+  const hache = ac.createGain(), lfo = ac.createOscillator(), prof = ac.createGain();
+  hache.gain.value = .5; prof.gain.value = .5;
+  lfo.type = 'square'; lfo.frequency.setValueAtTime(34, t); lfo.frequency.exponentialRampToValueAtTime(11, t + d);
+  lfo.connect(prof).connect(hache.gain);
+  const v = ac.createGain(); enveloppe(v.gain, t, g, c.a || .002, d);
+  s.connect(f).connect(hache).connect(v).connect(bus);
+  s.start(t, Math.random()); s.stop(t + d + .05); lfo.start(t); lfo.stop(t + d + .05);
+}
+
+// Crépitement : une pluie de minuscules éclats dans la seconde qui suit — les
+// débris d'une explosion, ou des confettis qui claquent.
+// { t:'crepitement', n, d, g, f }
+function crepitement(ac, bus, c, t, g, dMul) {
+  const d = (c.d ?? .6) * dMul;
+  for (let i = 0; i < (c.n || 24); i++) {
+    const x = Math.pow(Math.random(), 1.6) * d;          // plus dense au début
+    const s = ac.createBufferSource(); s.buffer = res(ac).bruit;
+    const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = (c.f || 3000) * (.6 + Math.random() * .9); f.Q.value = 2;
+    const v = ac.createGain(); enveloppe(v.gain, t + x, g * (1 - x / d * .7) * (.5 + Math.random() * .5), .0005, .01 + Math.random() * .02);
+    s.connect(f).connect(v).connect(bus); s.start(t + x, Math.random()); s.stop(t + x + .05);
+  }
+}
+
+// Clameur de stade. Une foule ne souffle pas, elle CRIE : des voyelles (« ooh »,
+// « aah », « ééh ») obtenues en filtrant le bruit sur leurs deux formants, dont
+// le volume tremble chacun de son côté ; un corps grave dessous ; des sifflets
+// qui partent au hasard et des applaudissements qui crépitent. La montée est
+// lente — la foule met un quart de seconde à comprendre qu'il y a but.
+// { t:'clameur', a, tenue, d, g, sifflets, applaudissements (par seconde) }
+function clameur(ac, bus, c, t, g, dMul) {
+  const a = c.a ?? .25, tenue = (c.tenue ?? .6) * dMul, d = (c.d ?? 1.6) * dMul, tot = a + tenue + d;
+  const env = ac.createGain(); enveloppeTenue(env.gain, t, g, a, tenue, d);
+  env.connect(bus);
+  const VOYELLES = [[800, 1200, 1], [500, 880, .9], [600, 1750, .7], [350, 2300, .45]];
+  for (const [f1, f2, gp] of VOYELLES) {
+    const s = sourceBruit(ac), trem = ac.createGain(), m = ac.createGain();
+    m.gain.value = gp;
+    for (const [fr, q, pds] of [[f1, 5, 1], [f2, 6, .6]]) {
+      const b = ac.createBiquadFilter(); b.type = 'bandpass'; b.frequency.value = fr * (.94 + Math.random() * .12); b.Q.value = q;
+      const pg = ac.createGain(); pg.gain.value = pds * 2.2;
+      s.connect(b).connect(pg).connect(trem);
+    }
+    trem.gain.setValueAtTime(.7, t);
+    for (let x = .04; x < tot; x += .04 + Math.random() * .08) trem.gain.linearRampToValueAtTime(.45 + Math.random() * .75, t + x);
+    trem.connect(m).connect(env);
+    s.start(t, Math.random() * 1.5); s.stop(t + tot + .05);
+  }
+  // Corps : la rumeur grave de milliers de voix mêlées.
+  const s = sourceBruit(ac), lp = ac.createBiquadFilter(), cg = ac.createGain();
+  lp.type = 'lowpass'; lp.frequency.value = 900; cg.gain.value = .5;
+  s.connect(lp).connect(cg).connect(env); s.start(t, Math.random()); s.stop(t + tot + .05);
+  // Sifflets : des glissandos aigus, plus nombreux au sommet de la clameur.
+  for (let i = 0; i < (c.sifflets || 0); i++) {
+    const x = a * .6 + Math.random() * (tenue + d * .4), dur = .25 + Math.random() * .45;
+    const o = ac.createOscillator(), v = ac.createGain(), f = 1900 + Math.random() * 1300;
+    o.frequency.setValueAtTime(f * .85, t + x);
+    o.frequency.linearRampToValueAtTime(f, t + x + dur * .3);
+    o.frequency.linearRampToValueAtTime(f * (Math.random() < .5 ? .8 : 1.05), t + x + dur);
+    enveloppeTenue(v.gain, t + x, g * .05, .03, dur * .5, dur * .5);
+    o.connect(v).connect(bus); o.start(t + x); o.stop(t + x + dur + .1);
+  }
+  // Applaudissements : des claquements courts, denses, sans rythme commun.
+  const nb = Math.round((c.applaudissements || 0) * (tenue + d * .6));
+  for (let i = 0; i < nb; i++) {
+    const x = a * .5 + Math.random() * (tenue + d * .6);
+    const src = ac.createBufferSource(); src.buffer = res(ac).bruit;
+    const b = ac.createBiquadFilter(); b.type = 'bandpass'; b.frequency.value = 1100 + Math.random() * 1600; b.Q.value = 1.3;
+    const v = ac.createGain(); enveloppe(v.gain, t + x, g * (.12 + Math.random() * .12), .001, .012 + Math.random() * .015);
+    src.connect(b).connect(v).connect(bus); src.start(t + x, Math.random() * 1.8); src.stop(t + x + .05);
   }
 }

@@ -162,30 +162,82 @@ export const SONS_MATCH = {
       {"t": "bruit", "filtre": "lowpass", "f": [520], "d": 0.2, "g": 0.1021}
     ] }
   ] },
-  goal: { niveau: 0.264, groupes: [
-    // A — Filet + fanfare
-    { gain: 1.3, decalage: 0, hauteur: 0, longueur: 1, couches: [
-      {"t": "bruit", "f": [420, 300], "q": 0.8, "d": 0.55, "g": 0.2302},
-      {"t": "ton", "f": [62, 38], "d": 0.5, "g": 0.422},
-      {"t": "ton", "onde": "square", "f": [660], "d": 0.16, "g": 0.0844, "delai": 0.05},
-      {"t": "ton", "onde": "square", "f": [830], "d": 0.16, "g": 0.0844, "delai": 0.135},
-      {"t": "ton", "onde": "square", "f": [990], "d": 0.16, "g": 0.0844, "delai": 0.22},
-      {"t": "ton", "onde": "square", "f": [1320], "d": 0.16, "g": 0.0844, "delai": 0.305}
+  // But à 3 points (mockups/sfx-but.html) : POW, filet, sub, cuivres, clameur.
+  goal: { niveau: 0.435, groupes: [
+    // A — POW arcade
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "clic", "g": 0.0396},
+      {"t": "ton", "f": [150, 40], "d": 0.18, "g": 0.0634, "sat": 3},
+      {"t": "bruit", "f": [3000, 800], "q": 0.7, "d": 0.09, "g": 0.0396, "sat": 2},
+      {"t": "ton", "onde": "square", "f": [220, 110], "d": 0.1, "g": 0.0056}
     ] },
-    // B — Stade
-    { gain: 0.3, decalage: 0, hauteur: -7, longueur: 1, couches: [
-      {"t": "bruit", "f": [420, 300], "q": 0.8, "d": 0.45, "g": 0.2491},
-      {"t": "ton", "f": [70, 40], "d": 0.3, "g": 0.3559},
-      {"t": "foule", "a": 0.18, "d": 1.7, "g": 0.2669, "delai": 0.05}
+    // C — Filet qui tremble
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "filet", "f": 2200, "d": 0.55, "g": 0.4012},
+      {"t": "bruit", "f": [420, 300], "q": 0.8, "d": 0.4, "g": 0.1605}
     ] },
-    // D — Boum
-    { gain: 0.5, decalage: 0, hauteur: 0, longueur: 1, couches: [
-      {"t": "ton", "f": [56, 28], "d": 0.7, "g": 0.333},
-      {"t": "bruit", "filtre": "lowpass", "f": [320], "d": 0.45, "g": 0.1427}
+    // D — Sub
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "ton", "f": [50, 26], "d": 0.9, "g": 0.2281}
     ] },
-    // E — Public
-    { gain: 0.2, decalage: 0, hauteur: 9, longueur: 1, couches: [
-      {"t": "foule", "a": 0.2, "d": 1.8, "g": 0.2258, "delai": 0.05}
+    // F — Ta-daaa cuivres
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "cuivre", "notes": [392, 493.88, 587.33], "a": 0.02, "tenue": 0.06, "d": 0.1, "filtre": [600, 3200], "g": 0.0444, "delai": 0.05},
+      {"t": "cuivre", "notes": [523.25, 659.25, 783.99], "a": 0.03, "tenue": 0.35, "d": 0.5, "filtre": [600, 3600], "vibrato": 14, "g": 0.0493, "delai": 0.2}
+    ] },
+    // I — Clameur
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "clameur", "a": 0.25, "tenue": 0.5, "d": 1.6, "g": 0.0718, "sifflets": 3, "applaudissements": 25, "delai": 0.05}
+    ] }
+  ] },
+  // But à 5 points : la même base, plus l'explosion, le klaxon, la clameur géante
+  // et les confettis. Calé 2 dB au-dessus des autres sons : il doit s'entendre plus gros.
+  goal5: { niveau: 0.456, groupes: [
+    // A — POW arcade
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "clic", "g": 0.0396},
+      {"t": "ton", "f": [150, 40], "d": 0.18, "g": 0.0634, "sat": 3},
+      {"t": "bruit", "f": [3000, 800], "q": 0.7, "d": 0.09, "g": 0.0396, "sat": 2},
+      {"t": "ton", "onde": "square", "f": [220, 110], "d": 0.1, "g": 0.0056}
+    ] },
+    // B — Explosion
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "clic", "g": 0.026},
+      {"t": "ton", "f": [90, 28], "d": 0.9, "g": 0.0468, "sat": 2.5},
+      {"t": "bruit", "filtre": "lowpass", "f": [5000, 120], "d": 1.1, "g": 0.0312, "sat": 1.5},
+      {"t": "crepitement", "n": 30, "d": 0.9, "g": 0.013, "f": 2500, "delai": 0.05}
+    ] },
+    // C — Filet qui tremble
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "filet", "f": 2200, "d": 0.55, "g": 0.4012},
+      {"t": "bruit", "f": [420, 300], "q": 0.8, "d": 0.4, "g": 0.1605}
+    ] },
+    // D — Sub
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "ton", "f": [50, 26], "d": 0.9, "g": 0.2281}
+    ] },
+    // E — Klaxon de but
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "cuivre", "notes": [233.08, 293.66, 349.23], "a": 0.05, "tenue": 0.55, "d": 0.35, "filtre": [400, 2600], "desaccord": 10, "vibrato": 10, "g": 0.0479, "delai": 0.08}
+    ] },
+    // F — Ta-daaa cuivres
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "cuivre", "notes": [392, 493.88, 587.33], "a": 0.02, "tenue": 0.06, "d": 0.1, "filtre": [600, 3200], "g": 0.0444, "delai": 0.05},
+      {"t": "cuivre", "notes": [523.25, 659.25, 783.99], "a": 0.03, "tenue": 0.35, "d": 0.5, "filtre": [600, 3600], "vibrato": 14, "g": 0.0493, "delai": 0.2}
+    ] },
+    // I — Clameur
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "clameur", "a": 0.25, "tenue": 0.5, "d": 1.6, "g": 0.0718, "sifflets": 3, "applaudissements": 25, "delai": 0.05}
+    ] },
+    // J — Clameur géante
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "clameur", "a": 0.2, "tenue": 1, "d": 2.2, "g": 0.0664, "sifflets": 8, "applaudissements": 60, "delai": 0.05}
+    ] },
+    // K — Confettis
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "crepitement", "n": 40, "d": 1.2, "g": 0.1216, "f": 5000, "delai": 0.1},
+      {"t": "fm", "f": [2637], "ratio": 2.7, "indice": [3, 0.4], "d": 0.5, "g": 0.0304, "delai": 0.15},
+      {"t": "fm", "f": [3136], "ratio": 2.7, "indice": [3, 0.4], "d": 0.5, "g": 0.0243, "delai": 0.3}
     ] }
   ] }
 };

@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Son du but</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Russo+One&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --panel2:#121d33; --edge:#22344f; --ink:#e8f0ff; --doux:#8fa4c4;
+         --accent:#35e0ff; --or:#f6c945; --impact:#ff5ca8; --musique:#b58cff; --public:#5dde8a; --epique:#ff9a3d; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Barlow','Segoe UI',system-ui,sans-serif;font-size:14px;padding:0 16px 80px}
+  h1{font-family:'Archivo Black',sans-serif;font-size:24px;margin:22px 0 4px}
+  h2{font-family:'Russo One',sans-serif;font-size:17px;margin:18px 0 8px;color:var(--doux);letter-spacing:.04em}
+  .note{color:var(--doux);max-width:1080px;line-height:1.6;margin:0 0 12px}
+  .note b{color:var(--or)}
+  button{font:inherit;cursor:pointer}
+  .contexte{position:sticky;top:0;z-index:10;background:rgba(7,12,22,.96);border-bottom:1px solid var(--edge);
+    display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:10px 0;margin-bottom:6px}
+  .contexte label{display:flex;align-items:center;gap:8px;color:var(--doux);font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+  select{background:var(--panel2);color:var(--ink);border:1px solid var(--edge);border-radius:6px;padding:5px 8px;font:inherit;font-size:13px}
+  input[type=range]{accent-color:var(--accent)}
+  .gros{border:0;border-radius:8px;padding:10px 16px;font-weight:800;letter-spacing:.04em;color:#04121c}
+  .gros.trois{background:var(--accent)} .gros.cinq{background:var(--epique)}
+  .btn{background:var(--panel2);color:var(--ink);border:1px solid var(--edge);border-radius:7px;padding:7px 11px;font-weight:700;font-size:12.5px}
+  .btn:hover{border-color:var(--accent)}
+  .compo{max-width:1080px;font-size:12.5px;color:var(--doux);line-height:1.6}
+  .compo b.t{color:var(--accent)} .compo b.c{color:var(--epique)}
+
+  .cartes{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+  .carte{background:var(--panel2);border:1px solid var(--edge);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:7px}
+  .carte.dans3{border-color:var(--accent)} .carte.dans5{box-shadow:0 0 0 2px var(--epique) inset}
+  .haut{display:flex;align-items:center;gap:8px}
+  .lettre{font-family:'Archivo Black',sans-serif;font-size:15px;width:26px;height:26px;border-radius:6px;display:grid;place-items:center;background:#1b2a45}
+  .nom{font-weight:800;flex:1;line-height:1.15}
+  .tag{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:4px;border:1px solid}
+  .tag.impact{color:var(--impact);border-color:var(--impact)} .tag.musique{color:var(--musique);border-color:var(--musique)}
+  .tag.public{color:var(--public);border-color:var(--public)} .tag.epique{color:var(--epique);border-color:var(--epique)}
+  .desc{color:var(--doux);font-size:12px;line-height:1.45;min-height:34px}
+  .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .actions label{display:flex;align-items:center;gap:5px;font-weight:800;font-size:12px;cursor:pointer}
+  .actions label.l3{color:var(--accent)} .actions label.l5{color:var(--epique)}
+  .curseur{display:grid;grid-template-columns:70px 1fr 44px;align-items:center;gap:6px;font-size:11.5px;color:var(--doux)}
+  .curseur input{width:100%}
+  .curseur span:last-child{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+  .carte:not(.dans3):not(.dans5) .curseur{opacity:.45}
+
+  .export{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:14px;margin-top:18px}
+  textarea{width:100%;min-height:150px;background:#050a13;color:#bfe9ff;border:1px solid var(--edge);border-radius:8px;padding:10px;font:12px/1.45 ui-monospace,Consolas,monospace}
+  .ligne{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
+  .etat{color:var(--doux);font-size:12px}
+</style>
+</head>
+<body>
+<h1>Son du but</h1>
+<p class="note">
+  Direction : le <b>POW</b> net de Windjammers + l'<b>explosion</b>, le <b>klaxon</b> et le <b>public qui explose</b> de Rocket League.
+  Chaque carte a deux cases : <b style="color:var(--accent)">3 pts</b> et <b style="color:var(--epique)">5 pts</b>. Le mix de départ est ma proposition :
+  le but à 5 reprend la base du but à 3 et ajoute l'explosion, le klaxon, la clameur géante et les confettis.
+  Change ce que tu veux, <b>▶ But 3 pts</b> / <b>▶ But 5 pts</b> jouent le mix, <b>▶ Actuel</b> le son d'aujourd'hui.
+  Le volume final sera recalé à l'intégration : ici, seul l'équilibre entre les couches compte.
+</p>
+
+<div class="contexte">
+  <button class="gros trois" id="j3">▶ But 3 pts</button>
+  <button class="gros cinq" id="j5">▶ But 5 pts</button>
+  <button class="btn" id="actuel">▶ Actuel</button>
+  <label>Map <select id="map"></select></label>
+  <label><input type="checkbox" id="alea" checked> Variation</label>
+  <label><input type="checkbox" id="echo" checked> Écho</label>
+  <label>Volume <input type="range" id="volume" min="0" max="100" value="70"></label>
+  <div class="compo" id="compo"></div>
+</div>
+
+<div id="sections"></div>
+
+<div class="export">
+  <h2 style="margin-top:0;color:var(--ink)">Tout copier / coller</h2>
+  <textarea id="json" spellcheck="false"></textarea>
+  <div class="ligne">
+    <button class="gros trois" id="copier">Copier</button>
+    <button class="btn" id="appliquer">Appliquer le JSON collé</button>
+    <button class="btn" id="raz">Revenir à ma proposition</button>
+    <span class="etat" id="etat"></span>
+  </div>
+</div>
+
+<script type="module">
+import { jouerCouches, jouerSon, MATIERES } from '../js/audio/moteur-sfx.js';
+import { SONS_MATCH } from '../js/audio/sons-match.js';
+
+// ---------------------------------------------------------------------------
+// Les propositions, par famille. `trois` / `cinq` : ma proposition de départ.
+// ---------------------------------------------------------------------------
+const SIB = [233.08, 293.66, 349.23];     // si bémol majeur : le klaxon
+const PROPS = [
+  { famille: 'Impact', props: [
+    { l: 'A', nom: 'POW arcade', tag: 'impact', trois: true, cinq: true,
+      desc: 'Le coup de Windjammers : un craquement sec et un boum saturé, très court. Il dit « BUT » en un dixième de seconde.',
+      c: [{ t: 'clic', g: .5 }, { t: 'ton', f: [150, 40], d: .18, g: .8, sat: 3 }, { t: 'bruit', f: [3000, 800], q: .7, d: .09, g: .5, sat: 2 }, { t: 'ton', onde: 'square', f: [220, 110], d: .1, g: .07 }] },
+    { l: 'B', nom: 'Explosion', tag: 'impact', cinq: true,
+      desc: 'Rocket League : une vraie déflagration, grave et longue, avec les débris qui retombent.',
+      c: [{ t: 'clic', g: .5 }, { t: 'ton', f: [90, 28], d: .9, g: .9, sat: 2.5 }, { t: 'bruit', filtre: 'lowpass', f: [5000, 120], d: 1.1, g: .6, sat: 1.5 }, { t: 'crepitement', n: 30, d: .9, g: .25, f: 2500, delai: .05 }] },
+    { l: 'C', nom: 'Filet qui tremble', tag: 'impact', trois: true, cinq: true,
+      desc: 'Les mailles qui vibrent sous le disque : c\'est ce détail qui fait « but » et pas « explosion ».',
+      c: [{ t: 'filet', f: 2200, d: .55, g: .5 }, { t: 'bruit', f: [420, 300], q: .8, d: .4, g: .2 }] },
+    { l: 'D', nom: 'Sub', tag: 'impact', trois: true, cinq: true,
+      desc: 'Le grave qu\'on sent dans la poitrine, sous tout le reste.',
+      c: [{ t: 'ton', f: [50, 26], d: .9, g: .8 }] }
+  ] },
+  { famille: 'Musique', props: [
+    { l: 'E', nom: 'Klaxon de but', tag: 'musique', cinq: true,
+      desc: 'La corne de Rocket League : un accord de cuivres qui enfle et tient, avec un léger vibrato.',
+      c: [{ t: 'cuivre', notes: SIB, a: .05, tenue: .55, d: .35, filtre: [400, 2600], desaccord: 10, vibrato: 10, g: .5, delai: .08 }] },
+    { l: 'F', nom: 'Ta-daaa cuivres', tag: 'musique', trois: true, cinq: true,
+      desc: 'Remplace les quatre bips : deux coups de cuivres, un court puis un long qui monte.',
+      c: [{ t: 'cuivre', notes: [392, 493.88, 587.33], a: .02, tenue: .06, d: .1, filtre: [600, 3200], g: .45, delai: .05 },
+          { t: 'cuivre', notes: [523.25, 659.25, 783.99], a: .03, tenue: .35, d: .5, filtre: [600, 3600], vibrato: 14, g: .5, delai: .2 }] },
+    { l: 'G', nom: 'Accord synthé', tag: 'musique',
+      desc: 'Arcade moderne : un gros accord de synthé plaqué, avec des clochettes qui montent derrière.',
+      c: [{ t: 'cuivre', notes: [523.25, 659.25, 783.99, 1046.5], a: .005, tenue: .05, d: .5, filtre: [900, 6000], desaccord: 18, vibrato: 0, g: .45, delai: .04 }]
+        .concat([1046.5, 1318.5, 1568, 2093].map((f, i) => ({ t: 'ton', onde: 'triangle', f: [f], d: .3, g: .08, delai: .08 + i * .06 }))) },
+    { l: 'H', nom: 'Cloches de victoire', tag: 'musique',
+      desc: 'Deux cloches claires qui sonnent après l\'impact, comme un « ding-ding » de score.',
+      c: [{ t: 'fm', f: [1318.5], ratio: 3.5, indice: [4, .5], d: 1.1, g: .15, delai: .1 }, { t: 'fm', f: [1760], ratio: 3.5, indice: [4, .5], d: 1.1, g: .13, delai: .24 }] }
+  ] },
+  { famille: 'Public', props: [
+    { l: 'I', nom: 'Clameur', tag: 'public', trois: true,
+      desc: 'Le stade qui crie : des voyelles de foule, quelques sifflets et des applaudissements.',
+      c: [{ t: 'clameur', a: .25, tenue: .5, d: 1.6, g: .6, sifflets: 3, applaudissements: 25, delai: .05 }] },
+    { l: 'J', nom: 'Clameur géante', tag: 'epique', cinq: true,
+      desc: 'Le stade entier qui se lève : plus fort, plus long, plein de sifflets.',
+      c: [{ t: 'clameur', a: .2, tenue: 1, d: 2.2, g: .8, sifflets: 8, applaudissements: 60, delai: .05 }] },
+    { l: 'K', nom: 'Confettis', tag: 'epique', cinq: true,
+      desc: 'Une pluie de petits éclats brillants, comme les confettis qui tombent à l\'écran.',
+      c: [{ t: 'crepitement', n: 40, d: 1.2, g: .2, f: 5000, delai: .1 }, { t: 'fm', f: [2637], ratio: 2.7, indice: [3, .4], d: .5, g: .05, delai: .15 }, { t: 'fm', f: [3136], ratio: 2.7, indice: [3, .4], d: .5, g: .04, delai: .3 }] }
+  ] },
+  { famille: 'Épique (5 pts)', props: [
+    { l: 'L', nom: 'Feu d\'artifice', tag: 'epique',
+      desc: 'Une deuxième explosion, un peu après la première, avec ses crépitements.',
+      c: [{ t: 'ton', f: [110, 30], d: .5, g: .7, sat: 2, delai: .35 }, { t: 'bruit', filtre: 'lowpass', f: [3000, 150], d: .7, g: .4, delai: .35 }, { t: 'crepitement', n: 26, d: .8, g: .2, f: 3500, delai: .4 }] },
+    { l: 'M', nom: 'Klaxon long', tag: 'epique',
+      desc: 'Le klaxon tenu plus longtemps, avec une quatrième note : plus triomphal.',
+      c: [{ t: 'cuivre', notes: SIB.concat([466.16]), a: .05, tenue: 1.1, d: .5, filtre: [400, 2800], desaccord: 10, vibrato: 12, g: .55, delai: .08 }] }
+  ] }
+];
+const TOUTES = PROPS.flatMap(f => f.props);
+const MAPS = { stadium: 'Swag Frisbee Stadium', arena: 'Stellar Orbital Station', dojo: 'Salle d\'entraînement', dune: 'Dune de Râ', polenord: 'Pôle Nord', raccoon: 'Raccoon City' };
+
+// --- Audio -------------------------------------------------------------------
+let AC, sortie;
+const $ = s => document.querySelector(s);
+function audio() {
+  if (!AC) {
+    AC = new AudioContext();
+    const comp = AC.createDynamicsCompressor(); comp.threshold.value = -10; comp.ratio.value = 4;
+    sortie = AC.createGain(); sortie.connect(comp).connect(AC.destination);
+  }
+  if (AC.state === 'suspended') AC.resume();
+  sortie.gain.value = +$('#volume').value / 100;
+  return AC;
+}
+const ctx = () => ({ force: .8, map: $('#map').value, alea: $('#alea').checked, salle: $('#echo').checked ? 1 : 0 });
+
+// --- Calibrage : même méthode que la page du cœur du match -----------------
+async function energie(couches) {
+  const ac = new OfflineAudioContext(1, 44100 * 3, 44100);
+  const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 100; hp.Q.value = .5;
+  const sh = ac.createBiquadFilter(); sh.type = 'highshelf'; sh.frequency.value = 1500; sh.gain.value = 4;
+  hp.connect(sh).connect(ac.destination);
+  if (couches.groupes) jouerSon(ac, hp, couches, { force: .8, map: 'arena', alea: false });
+  else jouerCouches(ac, hp, couches, { force: .8, map: 'arena', alea: false }, {});
+  const d = (await ac.startRendering()).getChannelData(0);
+  const W = 4410, H = 441; let mx = 0;
+  for (let i = 0; i + W < d.length; i += H) { let e = 0; for (let k = i; k < i + W; k++) e += d[k] * d[k]; mx = Math.max(mx, Math.sqrt(e / W)); }
+  return mx;
+}
+$('#sections').innerHTML = '<p class="note">Calibrage des volumes…</p>';
+const ref = await energie(SONS_MATCH.goal);
+for (const p of TOUTES) {
+  // Impacts et musique au niveau du but actuel ; public et épique un cran
+  // en dessous : ils s'ajoutent au reste, ils ne le remplacent pas.
+  const cible = ref * ({ impact: 1, musique: .8, public: .6, epique: .6 }[p.tag]);
+  const k = Math.min(4, cible / Math.max(await energie(p.c), 1e-5));
+  for (const c of p.c) c.g = +(c.g * k).toFixed(4);
+}
+$('#sections').innerHTML = '';
+
+// --- État ---------------------------------------------------------------------
+const DEFAUT = p => ({ trois: !!p.trois, cinq: !!p.cinq, gain: 1, decalage: 0, hauteur: 0, longueur: 1 });
+let etat = {};
+try { etat = JSON.parse(localStorage.getItem('sfxBut')) || {}; } catch (e) { etat = {}; }
+const r = p => (etat[p.l] = etat[p.l] || DEFAUT(p));
+function sauver() { try { localStorage.setItem('sfxBut', JSON.stringify(etat)); } catch (e) {} majJson(); majCompo(); }
+
+function jouerProp(p) {
+  const e = r(p);
+  jouerCouches(audio(), sortie, p.c, ctx(), { gain: e.gain, decalage: e.decalage / 1000, hauteur: e.hauteur, longueur: e.longueur });
+}
+function jouerBut(cle) {
+  // Une seule variation pour tout le but, comme dans le jeu.
+  const son = { niveau: 1, groupes: TOUTES.filter(p => r(p)[cle]).map(p => { const e = r(p); return { gain: e.gain, decalage: e.decalage / 1000, hauteur: e.hauteur, longueur: e.longueur, couches: p.c }; }) };
+  jouerSon(audio(), sortie, son, ctx());
+}
+$('#j3').onclick = () => jouerBut('trois');
+$('#j5').onclick = () => jouerBut('cinq');
+$('#actuel').onclick = () => jouerSon(audio(), sortie, SONS_MATCH.goal, ctx());
+for (const [id, n] of Object.entries(MAPS)) $('#map').add(new Option(n + ' — ' + MATIERES[id].nom, id));
+
+function majCompo() {
+  const l = cle => TOUTES.filter(p => r(p)[cle]).map(p => p.l + ' ' + p.nom).join(' + ') || '(vide)';
+  $('#compo').innerHTML = `<b class="t">3 pts :</b> ${l('trois')}<br><b class="c">5 pts :</b> ${l('cinq')}`;
+}
+
+// --- Construction --------------------------------------------------------------
+const CURSEURS = [
+  ['gain', 'Volume', 0, 2.5, .05, v => Math.round(v * 100) + '%'],
+  ['decalage', 'Décalage', 0, 400, 5, v => v + ' ms'],
+  ['hauteur', 'Hauteur', -12, 12, 1, v => (v > 0 ? '+' : '') + v + ' dt'],
+  ['longueur', 'Longueur', .5, 2, .05, v => Math.round(v * 100) + '%']
+];
+for (const fam of PROPS) {
+  const h = document.createElement('h2'); h.textContent = fam.famille; $('#sections').appendChild(h);
+  const grille = document.createElement('div'); grille.className = 'cartes'; $('#sections').appendChild(grille);
+  for (const p of fam.props) {
+    const e = r(p), carte = document.createElement('div');
+    const maj = () => { carte.classList.toggle('dans3', e.trois); carte.classList.toggle('dans5', e.cinq); };
+    carte.className = 'carte'; maj();
+    carte.innerHTML = `<div class="haut"><span class="lettre">${p.l}</span><span class="nom">${p.nom}</span><span class="tag ${p.tag}">${{ impact: 'Impact', musique: 'Musique', public: 'Public', epique: 'Épique' }[p.tag]}</span></div>
+      <div class="desc">${p.desc}</div>
+      <div class="actions"><button class="btn">▶ Seul</button>
+        <label class="l3"><input type="checkbox" data-c="trois" ${e.trois ? 'checked' : ''}> 3 pts</label>
+        <label class="l5"><input type="checkbox" data-c="cinq" ${e.cinq ? 'checked' : ''}> 5 pts</label></div>`;
+    carte.querySelector('.btn').onclick = () => jouerProp(p);
+    carte.querySelectorAll('input[type=checkbox]').forEach(cb => cb.onchange = () => { e[cb.dataset.c] = cb.checked; maj(); sauver(); });
+    for (const [cle, nom, min, max, pas, fmt] of CURSEURS) {
+      const ligne = document.createElement('div'); ligne.className = 'curseur';
+      ligne.innerHTML = `<span>${nom}</span><input type="range" min="${min}" max="${max}" step="${pas}" value="${e[cle]}"><span>${fmt(e[cle])}</span>`;
+      const inp = ligne.querySelector('input'), aff = ligne.lastElementChild;
+      inp.oninput = () => { e[cle] = +inp.value; aff.textContent = fmt(e[cle]); sauver(); };
+      inp.onchange = () => jouerProp(p);
+      ligne.ondblclick = () => { e[cle] = DEFAUT(p)[cle]; inp.value = e[cle]; aff.textContent = fmt(e[cle]); sauver(); };
+      carte.appendChild(ligne);
+    }
+    grille.appendChild(carte);
+  }
+}
+
+// --- Export / import -----------------------------------------------------------
+function exporter() {
+  const couches = TOUTES.filter(p => r(p).trois || r(p).cinq).map(p => {
+    const e = r(p);
+    return { proposition: p.l, nom: p.nom, trois: e.trois, cinq: e.cinq, gain: e.gain, decalage: e.decalage, hauteur: e.hauteur, longueur: e.longueur, couches: p.c };
+  });
+  return { mockup: 'sfx-but', version: 1, couches };
+}
+function majJson() { $('#json').value = JSON.stringify(exporter(), null, 1); }
+majJson(); majCompo();
+$('#copier').onclick = async () => {
+  try { await navigator.clipboard.writeText($('#json').value); } catch (e) { $('#json').select(); document.execCommand('copy'); }
+  $('#etat').textContent = 'Copié.';
+};
+$('#appliquer').onclick = () => {
+  try {
+    const j = JSON.parse($('#json').value); etat = {};
+    for (const p of TOUTES) etat[p.l] = { ...DEFAUT(p), trois: false, cinq: false };
+    for (const c of j.couches || []) Object.assign(etat[c.proposition], { trois: !!c.trois, cinq: !!c.cinq, gain: c.gain, decalage: c.decalage, hauteur: c.hauteur, longueur: c.longueur });
+    sauver(); location.reload();
+  } catch (e) { $('#etat').textContent = 'JSON illisible : ' + e.message; }
+};
+$('#raz').onclick = () => { etat = {}; sauver(); location.reload(); };
+window.__but = { TOUTES, jouerBut, r };
+</script>
+</body>
+</html>
