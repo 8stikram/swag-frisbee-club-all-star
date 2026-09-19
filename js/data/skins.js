@@ -12,6 +12,7 @@ export const DISC_SKINS = [
   { id: 'pegasus', name: 'Pegasus', colors: ['#1a2a5e', '#ffffff', '#ffd9f0'] },
   { id: 'vody', name: 'Vody', colors: ['#c00d14', '#d9ad55', '#141110'] },
   { id: 'coaster', name: 'Coaster', colors: ['#f4f1ea', '#14131a', '#f0d98a'] },
+  { id: 'jack', name: 'Jack Daniel’s', colors: ['#c47a1c', '#111010', '#f2efe6'] },
   // Récompense du tutoriel. `verrou` nomme la condition à remplir : le sélecteur
   // l'affiche grisé et cadenassé tant qu'elle ne l'est pas, plutôt que de le
   // cacher — on ne convoite pas ce qu'on ignore.
@@ -306,6 +307,60 @@ function bretellesCoaster(ctx, r, P, ecart, haut, bas, epais) {
     ctx.stroke();
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Jack Daniel's : le whiskey remplit tout le disque, et l'étiquette noire le
+   traverse d'un bord à l'autre, comme déroulée de la bouteille. Retenu sur
+   mockups/jack-daniels.html (1A 2B 3C 4A).
+
+   Le texte dépend de la taille : en match le disque fait 14 px de rayon et
+   une ligne y tiendrait sur trois pixels, donc on n'y garde que « No.7 ». Le
+   nom complet n'apparaît qu'à partir d'un rayon de 20 — le carrousel de
+   sélection, qui le dessine sur 90 px, sa plus grande taille dans le jeu.
+   --------------------------------------------------------------------------- */
+const JACK = { demi: .46, noir: '#111010', blanc: '#f2efe6' };
+const jackPetit = r => r < 20;
+
+// Le bord haut (sens -1) ou bas (sens 1) de la bande, rentré de `marge`.
+const jackBord = (r, sens, marge) => sens * r * (JACK.demi - (marge || 0));
+
+function jackFilet(ctx, r, sens, marge, col, lw) {
+  ctx.strokeStyle = col; ctx.lineWidth = lw;
+  ctx.beginPath();
+  for (let i = 0; i <= 20; i++) { const x = -r + (2 * r * i) / 20; const y = jackBord(r, sens, marge); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.stroke();
+}
+
+function jackTexte(ctx, t, taille, y, police) {
+  ctx.font = police || ('700 ' + taille.toFixed(1) + 'px Georgia, "Times New Roman", serif');
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = JACK.blanc;
+  ctx.fillText(t, 0, y);
+}
+
+// Le nom, posé sur un grand arc comme en haut de l'étiquette : `cy` est le
+// sommet de l'arc, `R` son rayon — plus il est grand, plus le cintrage est léger.
+function jackTexteArc(ctx, t, cy, R, police) {
+  ctx.save();
+  ctx.font = police;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = JACK.blanc;
+  let a = -(ctx.measureText(t).width / R) / 2;
+  for (const ch of t) {
+    const w = ctx.measureText(ch).width;
+    const m = a + (w / 2) / R;
+    ctx.save();
+    ctx.translate(Math.sin(m) * R, cy + R - Math.cos(m) * R);
+    ctx.rotate(m);
+    ctx.fillText(ch, 0, 0);
+    ctx.restore();
+    a += w / R;
+  }
+  ctx.restore();
+}
+
+// Petit bruit fixe : la même graine donne toujours la même bulle.
+const jackHache = i => { const x = Math.sin(i * 127.1) * 43758.5453; return x - Math.floor(x); };
 
 export function drawSkinDisc(ctx, x, y, r, skinId, spin) {
   const T = horloge();
@@ -742,6 +797,107 @@ export function drawSkinDisc(ctx, x, y, r, skinId, spin) {
       // que lui, donc elles ne le recouvrent jamais, mais l'ordre compte si on
       // les élargit un jour.
       bretellesCoaster(ctx, r, P, .42, .08, .95, .2);
+      ctx.restore();
+      break;
+    }
+
+    /* ---------- Jack Daniel's : le whiskey et l'étiquette déroulée ---------- */
+    case 'jack': {
+      // Le whiskey. Il NE tourne PAS avec la bande : c'est ce décalage qui fait
+      // lire « liquide à l'intérieur » plutôt que « image imprimée ».
+      ctx.save();
+      const fond = ctx.createRadialGradient(0, 0, r * .1, 0, 0, r);
+      fond.addColorStop(0, '#a4500f'); fond.addColorStop(.55, '#c8681a'); fond.addColorStop(.84, '#ec8c24');
+      fond.addColorStop(.95, '#f6a83e'); fond.addColorStop(1, '#7a3208');
+      ctx.fillStyle = fond; ctx.fillRect(-r, -r, r * 2, r * 2);
+      const lueur = ctx.createRadialGradient(-r * .35, -r * .45, 0, -r * .35, -r * .45, r * .75);
+      lueur.addColorStop(0, 'rgba(255,196,110,.45)'); lueur.addColorStop(1, 'rgba(255,196,110,0)');
+      ctx.fillStyle = lueur; ctx.fillRect(-r, -r, r * 2, r * 2);
+      // Les reflets de lumière dans le liquide : deux fréquences superposées,
+      // pour que l'ondulation ne se voie pas se répéter.
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.lineWidth = Math.max(.8, r * .05);
+      for (let k = 0; k < 5; k++) {
+        const y0 = -r + (k + .5) * r * .4;
+        ctx.strokeStyle = 'rgba(255,205,125,' + (.1 + .07 * Math.sin(T * 1.3 + k)).toFixed(3) + ')';
+        ctx.beginPath();
+        for (let i = 0; i <= 24; i++) {
+          const px = -r + (2 * r * i) / 24;
+          const py = y0 + Math.sin((px / r) * 3 + T * 1.6 + k * 1.7) * r * .06 + Math.sin((px / r) * 7 - T * 2.1 + k) * r * .025;
+          i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+      // Quelques bulles qui remontent lentement et s'effacent en haut.
+      ctx.fillStyle = 'rgba(255,236,200,1)';
+      for (let i = 0; i < 7; i++) {
+        const ph = (jackHache(i + 40) + T * .18) % 1;
+        ctx.globalAlpha = Math.sin(ph * Math.PI) * .6;
+        ctx.beginPath();
+        ctx.arc((jackHache(i + 3) - .5) * r * 1.6 + Math.sin(T * 2 + i) * r * .03, r * .9 - ph * r * 1.8,
+          r * (.025 + jackHache(i + 70) * .03), 0, TAU);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      ctx.restore();
+
+      // L'étiquette déroulée, qui tourne avec le disque comme une impression.
+      ctx.save();
+      ctx.rotate(spin);
+      const h = JACK.demi * r;
+      // Tracée point par point, exactement comme dans le mockup : un rectangle
+      // à quatre coins donne le même dessin, mais Chrome ne lisse pas ses bords
+      // de la même façon une fois le disque tourné — mesuré, une cinquantaine de
+      // pixels d'écart sur le bord de la bande.
+      ctx.fillStyle = JACK.noir;
+      ctx.beginPath();
+      for (let i = 0; i <= 20; i++) { const px = -r + (2 * r * i) / 20; i ? ctx.lineTo(px, -h) : ctx.moveTo(px, -h); }
+      for (let i = 20; i >= 0; i--) ctx.lineTo(-r + (2 * r * i) / 20, h);
+      ctx.closePath(); ctx.fill();
+
+      if (jackPetit(r)) {
+        // En match : une seule ligne ondulée par bord et « No.7 ». Davantage
+        // de blanc sur une bande de 13 px la ferait virer au gris.
+        ctx.strokeStyle = 'rgba(242,239,230,.6)'; ctx.lineWidth = .8;
+        for (const sens of [-1, 1]) {
+          ctx.beginPath();
+          for (let i = 0; i <= 24; i++) {
+            const px = -r + (2 * r * i) / 24, py = jackBord(r, sens, .07) + Math.sin(i * 1.9) * r * .02;
+            i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+          }
+          ctx.stroke();
+        }
+        jackTexte(ctx, 'No.7', h * .9, h * .05);
+      } else {
+        // Le filigrane : un filet droit, une frise de petits festons juste en
+        // dedans, un double filet vertical de chaque côté de la face avant.
+        const lw = Math.max(.7, r * .022);
+        ctx.strokeStyle = JACK.blanc; ctx.lineWidth = lw;
+        for (const sens of [-1, 1]) {
+          jackFilet(ctx, r, sens, .04, JACK.blanc, lw);
+          for (let i = 0; i < 22; i++) {
+            const px = -r + (2 * r * (i + .5)) / 22, py = jackBord(r, sens, .085);
+            ctx.beginPath(); ctx.arc(px, py, r * .042, sens < 0 ? 0 : Math.PI, sens < 0 ? Math.PI : TAU); ctx.stroke();
+          }
+        }
+        for (const sx of [-1, 1]) for (const dx of [.6, .64]) {
+          ctx.beginPath(); ctx.moveTo(sx * r * dx, -h * .8); ctx.lineTo(sx * r * dx, h * .8); ctx.stroke();
+        }
+        // Les ailes enroulées autour de la bouteille : de petites lignes.
+        ctx.fillStyle = 'rgba(242,239,230,.45)';
+        for (const sx of [-1, 1]) for (const k of [-.36, -.12, .12, .36]) {
+          ctx.fillRect(sx > 0 ? r * .69 : -r * .93, k * h - h * .03, r * .24, h * .06);
+        }
+        // Le texte : le nom cintré, « No.7 » dans son cadre, « WHISKEY ».
+        const serif = k => '900 ' + (h * k).toFixed(1) + 'px Georgia, "Times New Roman", serif';
+        jackTexteArc(ctx, 'JACK DANIEL’S', -h * .5, h * 3, serif(.27));
+        ctx.strokeStyle = JACK.blanc; ctx.lineWidth = Math.max(.8, r * .022);
+        ctx.strokeRect(-h * .44, -h * .24, h * .88, h * .42);
+        jackTexte(ctx, 'No.7', h * .34, -h * .03, serif(.34));
+        jackTexte(ctx, 'WHISKEY', h * .22, h * .42, serif(.22));
+      }
       ctx.restore();
       break;
     }

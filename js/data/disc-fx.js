@@ -241,6 +241,22 @@ export const FX_DISQUES = {
     }
   },
 
+  // Whiskey : un sillage ambré, des gouttes qui tombent, une spirale au rebond.
+  jack: {
+    trainee: ['#c47a1c'],
+    vol(d, out) {
+      // Des gouttes qui tombent derrière le disque. C'est l'effet le plus
+      // gourmand du registre — mesuré au mockup, une quarantaine de particules
+      // en moyenne sur les cinquante du plafond — gardé à la demande.
+      if (combien(.35)) {
+        out.push(p(d.x + gauss() * 9, d.y + gauss() * 8, gauss() * 14, rand(10, 45),
+          .6, Math.random() < .6 ? '#c47a1c' : '#eaa648', 3, 150));
+      }
+    },
+    // Les gouttes partent en tournant : on lit le sens de rotation au choc.
+    rebond(d, out) { spirale(out, d.x, d.y, ['#eaa648', '#c47a1c', '#f2efe6'], 9, 160, .6); }
+  },
+
   // Copie d'examen : poussière de craie, et la gomme qui rebondit avec.
   vingt: {
     trainee: ['#fdfaf0', '#d81f26'],
