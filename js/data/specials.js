@@ -391,7 +391,7 @@ export const SPECIALS = {
       p.lameCoupT = p.holding ? -(LD_DELAI + LD_INVOC * .5) : 9;
       G.banner = { text: 'LAME DU DRAGON !!', color: '#ff7fd0', t: 0, dur: 1.3 };
       G.shake = 8; G.flash = .7;
-      sfx('special'); commentUlti(p,
+      sfx('susanoo'); commentUlti(p,
         ['LE SUSANOO DE LA FRICADELLE !!', 'GOÛTE LA LAME DU DRAGON !', 'LE DIEU DE LA FRICADELLE SE LÈVE !'],
         n => [`${n} INVOQUE LE SUSANOO !!`, `LA LAME DU DRAGON DE ${n} !`, `${n} RÉVEILLE LE DIEU DE LA FRICADELLE !`]);
     }

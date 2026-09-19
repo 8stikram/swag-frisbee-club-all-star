@@ -128,7 +128,10 @@ export function initAudio() {
 // le même gain que le reste, donc le réglage de volume, le mode solo et le
 // filtre feutré du replay s'y appliquent aussi.
 const SAMPLES = { bell: 'assets/audio/bell.wav', mamieUlti: 'assets/audio/mamie-ulti.mp3',
-                   whiteTiger: 'assets/audio/2hollis-ulti.ogg' };
+                   whiteTiger: 'assets/audio/2hollis-ulti.ogg',
+                   // L'invocation du Susanoo : elle démarre dès la première
+                   // milliseconde, donc elle tombe pile sur l'activation.
+                   susanoo: 'assets/audio/fricadelle-ulti.wav' };
 const bufs = {};
 
 function loadSamples() {
@@ -394,6 +397,11 @@ export function sfx(cle, venuDuReseau, horsDemo) {
     // que la cloche : c'est une voix, elle doit passer par-dessus la rafale.
     case 'mamie-ulti':
       if (!sample('mamieUlti', .9)) { beep(420, 300, .3, 'sawtooth', .14); beep(300, 220, .3, 'square', .1, .2); }
+      break;
+    // L'invocation du Susanoo de la Fricadelle, fournie par l'utilisateur.
+    // Repli synthé : une montée, pour que quelque chose parte quand même.
+    case 'susanoo':
+      if (!sample('susanoo', .95)) { beep(220, 660, .5, 'sawtooth', .14); beep(330, 990, .45, 'sine', .1, .1); }
       break;
     // Le chant de 2hollis. C'est l'annonce de l'ultime a lui tout seul :
     // aucun synthese ne l'imite, donc pas de repli credible — a defaut on
