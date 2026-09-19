@@ -96,9 +96,18 @@ export const PERFECT_WINDOW = .06, PERFECT_SPEED = 1520;
 export const DIFFS = [
   // parry à 0 en Facile : le Perfect Dive reste la récompense du joueur, le CPU
   // ne le sort jamais à ce niveau.
-  { key: 'facile', label: 'FACILE', react: .5, err: 95, miss: .30, speed: .6, special: .45, smart: .35, dive: .15, parry: 0, dash: .18 },
-  { key: 'normal', label: 'NORMAL', react: .35, err: 55, miss: .16, speed: .75, special: .70, smart: .65, dive: .42, parry: .22, dash: .5 },
-  { key: 'difficile', label: 'DIFFICILE', react: .2, err: 28, miss: .07, speed: .88, special: .90, smart: .9, dive: .72, parry: .6, dash: .85 }
+  // `speed` multiplie la vitesse de course du personnage. Choisi avec le
+  // joueur : 1 en Normal et Difficile — le bot court exactement aussi vite que
+  // lui, et c'est sa tête qui fait la différence, comme dans Windjammers —
+  // mais .82 en Facile, pour laisser respirer ceux qui découvrent. L'ancienne
+  // IA plafonnait à 51, 64 et 75 % : elle ne pouvait tout simplement pas
+  // atteindre un coin, et un tir par la bande chargé passait 85 fois sur 100.
+  // err, miss et react sont calés au banc (tirs variés d'un joueur moyen) :
+  // ~34 % de buts en Facile, ~17 % en Normal, ~7 % en Difficile, et un bon
+  // tir chargé par la bande dans un coin passe 80, 58 et 35 fois sur 100.
+  { key: 'facile', label: 'FACILE', react: .55, err: 190, miss: .6, speed: .82, special: .45, smart: .35, dive: .15, parry: 0, dash: .18 },
+  { key: 'normal', label: 'NORMAL', react: .38, err: 110, miss: .35, speed: 1, special: .70, smart: .65, dive: .42, parry: .22, dash: .5 },
+  { key: 'difficile', label: 'DIFFICILE', react: .22, err: 56, miss: .15, speed: 1, special: .90, smart: .9, dive: .72, parry: .6, dash: .85 }
 ];
 
 // Géométrie dérivée de la map active. Les `let` exportés sont des liaisons vivantes :
