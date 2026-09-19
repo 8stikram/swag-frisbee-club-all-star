@@ -359,7 +359,7 @@ export function updatePlayerHuman(p, dt) {
     // Mêmes sons rejoués sans cette garde : un rembobinage qui retraverse une
     // charge en cours ferait bipper chaque palier une seconde fois.
     if (!Partie.rejeuEnCours) {
-      if (Math.floor(prev * 4) !== Math.floor(p.charge * 4) && p.charge < 1) sfx('charge');
+      if (Math.floor(prev * 4) !== Math.floor(p.charge * 4) && p.charge < 1) sfx('charge|' + Math.floor(p.charge * 4) / 4);
       if (p.charge >= 1 && !p.fullFlash) {
         sfx('full');
         addPopup('CHARGE MAX !', p.char.accent, 11, .6, p.y - 56);
@@ -391,7 +391,7 @@ export function updatePlayer2(dt) {
     const prev = p.charge;
     const vitesse = p.feintBoostT > 0 ? FEINT_CHARGE_BOOST : 1;
     p.charge = clamp(p.charge + dt * vitesse / p.char.chargeT, 0, 1);
-    if (Math.floor(prev * 4) !== Math.floor(p.charge * 4) && p.charge < 1) sfx('charge');
+    if (Math.floor(prev * 4) !== Math.floor(p.charge * 4) && p.charge < 1) sfx('charge|' + Math.floor(p.charge * 4) / 4);
     if (p.charge >= 1 && !p.fullFlash) {
       p.fullFlash = true; sfx('full');
       addPopup('CHARGE MAX ! (J2)', p.char.accent, 11, .6, p.y - 56);

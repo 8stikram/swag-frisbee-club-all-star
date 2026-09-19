@@ -206,16 +206,10 @@ export function sfx(cle, venuDuReseau, horsDemo) {
     return;
   }
   switch (n) {
-    case 'move': beep(760, 760, .05, 'square', .06); break;
-    case 'select': beep(620, 990, .12, 'square', .12); beep(990, 1320, .1, 'square', .08, .06); break;
-    case 'deny': beep(220, 150, .14, 'square', .12); break;
-    // throw, superthrow, bounce, catch, dash, dive, perfect, goal, goal5, count,
-    // go et whistle : voir SONS_MATCH plus haut.
+    // move, select, deny, throw, superthrow, bounce, catch, dash, dive, perfect,
+    // goal, goal5, count, go, whistle, win, lose, charge et full : voir
+    // SONS_MATCH plus haut.
     case 'talk': beep(920, 700, .05, 'square', .05); beep(700, 940, .05, 'square', .04, .06); break;
-    case 'win': [523, 659, 784, 1046, 1318].forEach((f, i) => beep(f, f, .2, 'square', .15, i * .13)); break;
-    case 'lose': [392, 330, 262, 196].forEach((f, i) => beep(f, f, .25, 'triangle', .16, i * .18)); break;
-    case 'charge': beep(440, 520, .04, 'square', .05); break;
-    case 'full': beep(700, 1400, .16, 'square', .14); beep(1400, 1400, .08, 'sine', .1, .1); break;
     // PSYCHO-SHELL : grave et mineral, pas une explosion. Un bourdon qui
     // monte, puis un craquement de verre.
     case 'psycho':

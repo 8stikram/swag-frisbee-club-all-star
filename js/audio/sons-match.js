@@ -291,5 +291,102 @@ export const SONS_MATCH = {
       {"t": "bruit", "filtre": "bandpass", "f": [520, 380], "q": 3, "a": 0.15, "d": 0.9, "g": 0.4732, "delai": 0.2},
       {"t": "bruit", "filtre": "bandpass", "f": [900, 650], "q": 4, "a": 0.18, "d": 0.8, "g": 0.2366, "delai": 0.22}
     ] }
+  ] },
+  // Victoire (fin de match gagnée, fin du tutoriel) — mockups/sfx-reste.html.
+  win: { niveau: 1, groupes: [
+    // A — Fanfare cuivres
+    { gain: 1, decalage: 0, hauteur: -8, longueur: 1, couches: [
+      {"t": "cuivre", "notes": [523.25], "a": 0.01, "tenue": 0.06, "d": 0.08, "filtre": [700, 3400], "g": 0.06, "delai": 0},
+      {"t": "cuivre", "notes": [659.25], "a": 0.01, "tenue": 0.06, "d": 0.08, "filtre": [700, 3400], "g": 0.06, "delai": 0.12},
+      {"t": "cuivre", "notes": [783.99], "a": 0.01, "tenue": 0.06, "d": 0.08, "filtre": [700, 3400], "g": 0.06, "delai": 0.24},
+      {"t": "cuivre", "notes": [523.25, 659.25, 783.99, 1046.5], "a": 0.03, "tenue": 0.6, "d": 0.8, "filtre": [600, 3600], "vibrato": 12, "g": 0.0857, "delai": 0.36},
+      {"t": "ton", "f": [65, 32], "d": 0.6, "g": 0.0857, "delai": 0.36}
+    ] },
+    // B — Stade en délire
+    { gain: 0.3, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "clameur", "a": 0.2, "tenue": 1, "d": 2.2, "g": 0.1108, "sifflets": 8, "applaudissements": 60, "delai": 0.3}
+    ] }
+  ] },
+  // Défaite.
+  lose: { niveau: 1, groupes: [
+    // A — Trombone triste
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "cuivre", "notes": [392], "a": 0.03, "tenue": 0.12, "d": 0.12, "filtre": [300, 1300], "desaccord": 6, "vibrato": 0, "g": 0.0519, "delai": 0},
+      {"t": "cuivre", "notes": [370], "a": 0.03, "tenue": 0.12, "d": 0.12, "filtre": [300, 1300], "desaccord": 6, "vibrato": 0, "g": 0.0519, "delai": 0.32},
+      {"t": "cuivre", "notes": [349.2], "a": 0.03, "tenue": 0.12, "d": 0.12, "filtre": [300, 1300], "desaccord": 6, "vibrato": 0, "g": 0.0519, "delai": 0.64},
+      {"t": "cuivre", "notes": [329.6], "a": 0.04, "tenue": 0.7, "d": 0.5, "filtre": [300, 1200], "desaccord": 6, "vibrato": 45, "g": 0.0577, "delai": 0.96}
+    ] }
+  ] },
+  // Cran de charge : la force est le quart de jauge atteint (.25, .5, .75), le son monte avec.
+  charge: { niveau: 1, groupes: [
+    // A — Clic d'énergie
+    { gain: 1.95, decalage: 0, hauteur: 0, longueur: 2, couches: [
+      {"t": "ton", "f": [700, 760], "d": 0.05, "g": 0.0589, "monte": 12},
+      {"t": "clic", "g": 0.0294}
+    ] },
+    // B — Ressort qui se tend
+    { gain: 1.1, decalage: 0, hauteur: -12, longueur: 2, couches: [
+      {"t": "clic", "g": 0.044},
+      {"t": "modes", "partiels": [[1800, 0.025, 1], [2900, 0.018, 0.4]], "g": 0.055, "monte": 7}
+    ] },
+    // C — Arcade
+    { gain: 2.3, decalage: 0, hauteur: -6, longueur: 2, couches: [
+      {"t": "ton", "onde": "triangle", "f": [440, 520], "d": 0.05, "g": 0.0782, "monte": 12}
+    ] }
+  ] },
+  // Charge pleine (et déblocage d'un skin).
+  full: { niveau: 1, groupes: [
+    // A — Ding d'énergie
+    { gain: 1, decalage: 0, hauteur: -12, longueur: 1, couches: [
+      {"t": "ton", "f": [700, 1400], "d": 0.1, "g": 0.0909},
+      {"t": "fm", "f": [1760], "ratio": 2, "indice": [3, 0.4], "d": 0.45, "g": 0.0909, "delai": 0.08},
+      {"t": "crepitement", "n": 14, "d": 0.2, "g": 0.0606, "f": 5000, "delai": 0.08}
+    ] },
+    // B — Verrouillage
+    { gain: 0.55, decalage: 0, hauteur: -6, longueur: 2, couches: [
+      {"t": "clic", "g": 0.2048},
+      {"t": "modes", "partiels": [[1200, 0.04, 1], [2600, 0.025, 0.5]], "g": 0.1536},
+      {"t": "ton", "f": [140, 70], "d": 0.08, "g": 0.2048}
+    ] }
+  ] },
+  // Menu : survol.
+  move: { niveau: 1, groupes: [
+    // A — Tic doux
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "ton", "f": [1200, 1100], "d": 0.03, "g": 0.0947},
+      {"t": "clic", "g": 0.0284}
+    ] }
+  ] },
+  // Menu : valider.
+  select: { niveau: 1, groupes: [
+    // A — Pop
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "ton", "f": [500, 900], "d": 0.08, "g": 0.2167},
+      {"t": "clic", "g": 0.0867},
+      {"t": "ton", "onde": "triangle", "f": [1320], "d": 0.1, "g": 0.0867, "delai": 0.05}
+    ] },
+    // B — Carillon
+    { gain: 0.6, decalage: 0, hauteur: -6, longueur: 1, couches: [
+      {"t": "fm", "f": [880], "ratio": 3.5, "indice": [2, 0.3], "d": 0.3, "g": 0.0792},
+      {"t": "fm", "f": [1320], "ratio": 3.5, "indice": [2, 0.3], "d": 0.35, "g": 0.0792, "delai": 0.07}
+    ] }
+  ] },
+  // Menu : refus.
+  deny: { niveau: 1, groupes: [
+    // A — Bonk
+    { gain: 2.5, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "ton", "f": [210, 120], "d": 0.12, "g": 0.1088, "sat": 1.5},
+      {"t": "clic", "g": 0.0193}
+    ] },
+    // B — Double buzz
+    { gain: 0.2, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "ton", "onde": "square", "f": [180, 170], "d": 0.07, "g": 0.146},
+      {"t": "ton", "onde": "square", "f": [180, 170], "d": 0.09, "g": 0.146, "delai": 0.1}
+    ] },
+    // C — Descente
+    { gain: 1, decalage: 0, hauteur: 0, longueur: 1, couches: [
+      {"t": "ton", "onde": "triangle", "f": [330], "d": 0.07, "g": 0.1762},
+      {"t": "ton", "onde": "triangle", "f": [220], "d": 0.12, "g": 0.1762, "delai": 0.08}
+    ] }
   ] }
 };

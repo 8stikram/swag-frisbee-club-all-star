@@ -122,7 +122,9 @@ export function jouerCouches(ac, sortie, couches, ctx = {}, reglage = {}) {
     // le geste est puissant ; -1 = l'inverse ; 0 = indifférent.
     const sf = c.sf || 0, k = (force - .5) * sf;
     const g = c.g * (1 + k * .9) * (alea ? 1 + hasard(.06) : 1);
-    const fMul = hauteur * (1 - k * .25);
+    // `monte` : demi-tons gagnés entre force 0 et force 1 — les crans d'une
+    // charge qui montent à mesure que la jauge se remplit.
+    const fMul = hauteur * (1 - k * .25) * Math.pow(2, (c.monte || 0) * force / 12);
     const dMul = longueur * (1 + k * .5);
     const t = t0 + (c.delai || 0) * longueur;
     if (g <= 0) continue;
