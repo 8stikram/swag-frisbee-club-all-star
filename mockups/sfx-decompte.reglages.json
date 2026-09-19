@@ -1,0 +1,39 @@
+{
+ "mockup": "sfx-decompte",
+ "version": 1,
+ "sons": {
+  "count": [
+   { "proposition": "A", "nom": "Bip d'arène", "gain": 1.95, "decalage": 0, "hauteur": 0, "longueur": 0.5, "couches": [
+    { "t": "ton", "f": [880], "d": 0.14, "g": 0.165 },
+    { "t": "ton", "onde": "triangle", "f": [1760], "d": 0.06, "g": 0.044 },
+    { "t": "clic", "g": 0.0825 } ] },
+   { "proposition": "B", "nom": "Tambour de stade", "gain": 2.5, "decalage": 0, "hauteur": 1, "longueur": 2, "couches": [
+    { "t": "ton", "f": [110, 48], "d": 0.14, "g": 0.1013, "sat": 2 },
+    { "t": "bruit", "filtre": "lowpass", "f": [320], "d": 0.08, "g": 0.0422 } ] }
+  ],
+  "go": [
+   { "proposition": "A", "nom": "Klaxon court", "gain": 1, "decalage": 0, "hauteur": 12, "longueur": 1, "couches": [
+    { "t": "cuivre", "notes": [233.08, 293.66, 349.23], "a": 0.02, "tenue": 0.25, "d": 0.2, "filtre": [500, 2800], "desaccord": 10, "vibrato": 8, "g": 0.1136 } ] },
+   { "proposition": "B", "nom": "Coup de sifflet", "gain": 2.5, "decalage": 0, "hauteur": -12, "longueur": 1, "couches": [
+    { "t": "ton", "f": [2950, 2900], "a": 0.01, "d": 0.3, "g": 0.0416 },
+    { "t": "filet", "f": 2950, "d": 0.32, "g": 0.1041 },
+    { "t": "ton", "f": [100, 45], "d": 0.2, "g": 0.1735, "sat": 2 } ] },
+   { "proposition": "E", "nom": "Public qui lance", "gain": 0.1, "decalage": 0, "hauteur": 0, "longueur": 1, "couches": [
+    { "t": "clameur", "a": 0.1, "tenue": 0.2, "d": 0.8, "g": 0.1834, "sifflets": 2, "applaudissements": 20 } ] }
+  ],
+  "whistle": [
+   { "proposition": "A", "nom": "Sifflet d'arbitre", "gain": 1, "decalage": 0, "hauteur": -5, "longueur": 1, "couches": [
+    { "t": "ton", "f": [2950, 2900], "a": 0.01, "d": 0.16, "g": 0.0845 },
+    { "t": "filet", "f": 2950, "d": 0.18, "g": 0.2113 },
+    { "t": "ton", "f": [2950, 2850], "a": 0.01, "d": 0.4, "g": 0.0845, "delai": 0.24 },
+    { "t": "filet", "f": 2950, "d": 0.42, "g": 0.2113, "delai": 0.24 } ] },
+   { "proposition": "C", "nom": "Descente arcade", "gain": 1, "decalage": 0, "hauteur": -12, "longueur": 1, "couches": [
+    { "t": "ton", "onde": "triangle", "f": [1320], "d": 0.14, "g": 0.2027 },
+    { "t": "ton", "onde": "triangle", "f": [990, 700], "d": 0.26, "g": 0.2027, "delai": 0.13 },
+    { "t": "clic", "g": 0.1216 } ] },
+   { "proposition": "D", "nom": "Huées", "gain": 0.6, "decalage": 0, "hauteur": -12, "longueur": 1, "couches": [
+    { "t": "bruit", "filtre": "bandpass", "f": [520, 380], "q": 3, "a": 0.15, "d": 0.9, "g": 0.4732, "delai": 0.2 },
+    { "t": "bruit", "filtre": "bandpass", "f": [900, 650], "q": 4, "a": 0.18, "d": 0.8, "g": 0.2366, "delai": 0.22 } ] }
+  ]
+ }
+}

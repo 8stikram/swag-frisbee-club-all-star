@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Décompte et sifflet</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Russo+One&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --panel2:#121d33; --edge:#22344f; --ink:#e8f0ff; --doux:#8fa4c4;
+         --accent:#35e0ff; --or:#f6c945; --arcade:#ff5ca8; --reel:#5dde8a; --hybride:#b58cff; --couche:#f6c945; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Barlow','Segoe UI',system-ui,sans-serif;font-size:14px;padding:0 16px 80px}
+  h1{font-family:'Archivo Black',sans-serif;font-size:24px;margin:22px 0 4px}
+  .note{color:var(--doux);max-width:1080px;line-height:1.6;margin:0 0 12px}
+  .note b{color:var(--or)}
+  button{font:inherit;cursor:pointer}
+  .contexte{position:sticky;top:0;z-index:10;background:rgba(7,12,22,.96);border-bottom:1px solid var(--edge);
+    display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:10px 0;margin-bottom:6px}
+  .contexte label{display:flex;align-items:center;gap:8px;color:var(--doux);font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+  select{background:var(--panel2);color:var(--ink);border:1px solid var(--edge);border-radius:6px;padding:5px 8px;font:inherit;font-size:13px}
+  input[type=range]{accent-color:var(--accent)}
+  .gros{border:0;border-radius:8px;padding:10px 16px;font-weight:800;letter-spacing:.04em;color:#04121c;background:var(--accent)}
+  .gros.or{background:var(--or)}
+  .btn{background:var(--panel2);color:var(--ink);border:1px solid var(--edge);border-radius:7px;padding:7px 11px;font-weight:700;font-size:12.5px}
+  .btn:hover{border-color:var(--accent)}
+  .son{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:14px;margin:14px 0}
+  .son-tete{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px}
+  .son-tete h2{font-family:'Russo One',sans-serif;font-size:18px;margin:0 8px 0 0}
+  .quand{color:var(--doux);font-size:12.5px;flex:1 1 260px}
+  .compo{font-size:12px;color:var(--doux);width:100%} .compo b{color:var(--accent)}
+  .cartes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+  .carte{background:var(--panel2);border:1px solid var(--edge);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:7px}
+  .carte.actif{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .haut{display:flex;align-items:center;gap:8px}
+  .lettre{font-family:'Archivo Black',sans-serif;font-size:15px;width:26px;height:26px;border-radius:6px;display:grid;place-items:center;background:#1b2a45}
+  .nom{font-weight:800;flex:1;line-height:1.15}
+  .tag{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:4px;border:1px solid}
+  .tag.arcade{color:var(--arcade);border-color:var(--arcade)} .tag.reel{color:var(--reel);border-color:var(--reel)}
+  .tag.hybride{color:var(--hybride);border-color:var(--hybride)} .tag.couche{color:var(--couche);border-color:var(--couche)}
+  .desc{color:var(--doux);font-size:12px;line-height:1.45;min-height:34px}
+  .actions{display:flex;gap:6px;align-items:center}
+  .actions label{display:flex;align-items:center;gap:6px;font-weight:800;font-size:12px;margin-left:auto;cursor:pointer}
+  .curseur{display:grid;grid-template-columns:70px 1fr 44px;align-items:center;gap:6px;font-size:11.5px;color:var(--doux)}
+  .curseur input{width:100%}
+  .curseur span:last-child{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+  .carte:not(.actif) .curseur{opacity:.45}
+  .export{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:14px;margin-top:18px}
+  .export h2{font-family:'Russo One',sans-serif;font-size:17px;margin:0 0 8px}
+  textarea{width:100%;min-height:150px;background:#050a13;color:#bfe9ff;border:1px solid var(--edge);border-radius:8px;padding:10px;font:12px/1.45 ui-monospace,Consolas,monospace}
+  .ligne{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
+  .etat{color:var(--doux);font-size:12px}
+</style>
+</head>
+<body>
+<h1>Décompte et sifflet</h1>
+<p class="note">
+  Trois sons encore en bips du prototype. <b>▶ Engagement</b> rejoue le vrai début de match : 3, 2, 1 toutes les 0,9 s, puis GO.
+  <b>▶ Fin de possession</b> rejoue les trois dernières secondes avant la faute de possession (le décompte y sert aussi), puis le sifflet.
+  Coche une ou plusieurs propositions par son pour les superposer ; le mix de départ est ma proposition.
+  Le GO sert aussi quand la partie en ligne se connecte et au tirage au sort du menu.
+</p>
+
+<div class="contexte">
+  <button class="gros" id="engagement">▶ Engagement 3-2-1-GO</button>
+  <button class="gros or" id="possession">▶ Fin de possession + faute</button>
+  <button class="btn" id="anciens">▶ Tout l'actuel</button>
+  <label>Map <select id="map"></select></label>
+  <label><input type="checkbox" id="alea" checked> Variation</label>
+  <label><input type="checkbox" id="echo" checked> Écho</label>
+  <label>Volume <input type="range" id="volume" min="0" max="100" value="70"></label>
+</div>
+
+<div id="sons"></div>
+
+<div class="export">
+  <h2>Tout copier / coller</h2>
+  <textarea id="json" spellcheck="false"></textarea>
+  <div class="ligne">
+    <button class="gros" id="copier">Copier</button>
+    <button class="btn" id="appliquer">Appliquer le JSON collé</button>
+    <button class="btn" id="raz">Revenir à ma proposition</button>
+    <span class="etat" id="etat"></span>
+  </div>
+</div>
+
+<script type="module">
+import { jouerCouches, jouerSon, MATIERES } from '../js/audio/moteur-sfx.js';
+
+const SIB = [233.08, 293.66, 349.23];
+const SONS = [
+  { id: 'count', nom: 'Décompte (3, 2, 1)', quand: 'Chaque chiffre de l\'engagement, et les 3 dernières secondes de possession.',
+    ancien: [{ t: 'ton', onde: 'square', f: [660], d: .09, g: .16 }],
+    props: [
+      { l: 'A', nom: 'Bip d\'arène', tag: 'hybride', mix: true, desc: 'Un bip rond et clair, avec une petite attaque : le panneau du stade qui compte.',
+        c: [{ t: 'ton', f: [880], d: .14, g: .3 }, { t: 'ton', onde: 'triangle', f: [1760], d: .06, g: .08 }, { t: 'clic', g: .15 }] },
+      { l: 'B', nom: 'Tambour de stade', tag: 'reel', mix: true, desc: 'Un coup de grosse caisse sous chaque chiffre : on sent monter la tension.',
+        c: [{ t: 'ton', f: [110, 48], d: .14, g: .6, sat: 2 }, { t: 'bruit', filtre: 'lowpass', f: [320], d: .08, g: .25 }] },
+      { l: 'C', nom: 'Tic de chrono', tag: 'reel', desc: 'Le tic métallique d\'un chronomètre, sec et précis.',
+        c: [{ t: 'clic', g: .3 }, { t: 'modes', partiels: [[2400, .03, 1], [3900, .02, .5]], g: .3 }] },
+      { l: 'D', nom: 'Arcade propre', tag: 'arcade', desc: 'L\'esprit du bip actuel, mais plus doux et plus riche.',
+        c: [{ t: 'ton', onde: 'triangle', f: [660], d: .12, g: .3 }, { t: 'ton', f: [1320], d: .08, g: .1 }] }
+    ] },
+  { id: 'go', nom: 'GO', quand: 'Le coup d\'envoi. Il doit libérer la tension du décompte.',
+    ancien: [{ t: 'ton', onde: 'square', f: [1040], d: .3, g: .18 }],
+    props: [
+      { l: 'A', nom: 'Klaxon court', tag: 'hybride', mix: true, desc: 'Le klaxon du but, en version courte : le même univers sonore du début à la fin du match.',
+        c: [{ t: 'cuivre', notes: SIB, a: .02, tenue: .25, d: .2, filtre: [500, 2800], desaccord: 10, vibrato: 8, g: .5 }] },
+      { l: 'B', nom: 'Coup de sifflet', tag: 'reel', desc: 'L\'arbitre qui siffle le coup d\'envoi, un seul coup franc, avec un boum de tambour.',
+        c: [{ t: 'ton', f: [2950, 2900], a: .01, d: .3, g: .12 }, { t: 'filet', f: 2950, d: .32, g: .3 }, { t: 'ton', f: [100, 45], d: .2, g: .5, sat: 2 }] },
+      { l: 'C', nom: 'Montée arcade', tag: 'arcade', desc: 'Un glissando qui monte d\'une octave et un accord plaqué au sommet.',
+        c: [{ t: 'ton', onde: 'sawtooth', f: [440, 880], d: .12, g: .08 }, { t: 'cuivre', notes: [523.25, 659.25, 783.99], a: .005, tenue: .1, d: .35, filtre: [900, 5000], desaccord: 16, vibrato: 0, g: .4, delai: .1 }] },
+      { l: 'D', nom: 'Cloche de ring', tag: 'reel', desc: 'Deux coups de cloche de boxe : « ding-ding, combat ! ».',
+        c: [{ t: 'fm', f: [1050], ratio: 1.41, indice: [4, .6], d: .7, g: .15 }, { t: 'fm', f: [1050], ratio: 1.41, indice: [4, .6], d: .8, g: .15, delai: .16 }] },
+      { l: 'E', nom: 'Public qui lance', tag: 'couche', mix: true, desc: 'Couche : la foule qui crie au coup d\'envoi.',
+        c: [{ t: 'clameur', a: .1, tenue: .2, d: .8, g: .5, sifflets: 2, applaudissements: 20 }] }
+    ] },
+  { id: 'whistle', nom: 'Sifflet de faute', quand: 'Faute de possession ou tir interdit : −1 point.',
+    ancien: [{ t: 'ton', onde: 'square', f: [1560], d: .16, g: .13 }, { t: 'ton', onde: 'square', f: [1560, 1150], d: .22, g: .12, delai: .14 }],
+    props: [
+      { l: 'A', nom: 'Sifflet d\'arbitre', tag: 'reel', mix: true, desc: 'Un vrai sifflet à roulette : deux coups, le second plus long. Tout le monde reconnaît une faute.',
+        c: [{ t: 'ton', f: [2950, 2900], a: .01, d: .16, g: .12 }, { t: 'filet', f: 2950, d: .18, g: .3 },
+            { t: 'ton', f: [2950, 2850], a: .01, d: .4, g: .12, delai: .24 }, { t: 'filet', f: 2950, d: .42, g: .3, delai: .24 }] },
+      { l: 'B', nom: 'Buzzer', tag: 'arcade', desc: 'Le buzzer d\'erreur des jeux télé : grave, désagréable, sans appel.',
+        c: [{ t: 'ton', onde: 'square', f: [180, 165], d: .42, g: .14 }, { t: 'ton', onde: 'sawtooth', f: [171, 157], d: .42, g: .1 }] },
+      { l: 'C', nom: 'Descente arcade', tag: 'arcade', desc: 'L\'ancien sifflet en plus soigné : deux notes qui tombent, avec un petit choc.',
+        c: [{ t: 'ton', onde: 'triangle', f: [1320], d: .14, g: .2 }, { t: 'ton', onde: 'triangle', f: [990, 700], d: .26, g: .2, delai: .13 }, { t: 'clic', g: .12 }] },
+      { l: 'D', nom: 'Huées', tag: 'couche', mix: true, desc: 'Couche : le public qui désapprouve, un « ouuuh » grave qui retombe.',
+        c: [{ t: 'bruit', filtre: 'bandpass', f: [520, 380], q: 3, a: .15, d: .9, g: .4, delai: .2 }, { t: 'bruit', filtre: 'bandpass', f: [900, 650], q: 4, a: .18, d: .8, g: .2, delai: .22 }] }
+    ] }
+];
+const MAPS = { stadium: 'Swag Frisbee Stadium', arena: 'Stellar Orbital Station', dojo: 'Salle d\'entraînement', dune: 'Dune de Râ', polenord: 'Pôle Nord', raccoon: 'Raccoon City' };
+
+let AC, sortie;
+const $ = s => document.querySelector(s);
+function audio() {
+  if (!AC) {
+    AC = new AudioContext();
+    const comp = AC.createDynamicsCompressor(); comp.threshold.value = -10; comp.ratio.value = 4;
+    sortie = AC.createGain(); sortie.connect(comp).connect(AC.destination);
+  }
+  if (AC.state === 'suspended') AC.resume();
+  sortie.gain.value = +$('#volume').value / 100;
+  return AC;
+}
+const ctx = () => ({ force: .5, map: $('#map').value, alea: $('#alea').checked, salle: $('#echo').checked ? 1 : 0 });
+
+// --- Calibrage : même mesure que le reste du jeu, au niveau des anciens ---
+async function energie(couches) {
+  const ac = new OfflineAudioContext(1, 44100 * 1.5, 44100);
+  const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 100; hp.Q.value = .5;
+  const sh = ac.createBiquadFilter(); sh.type = 'highshelf'; sh.frequency.value = 1500; sh.gain.value = 4;
+  hp.connect(sh).connect(ac.destination);
+  jouerCouches(ac, hp, couches, { force: .5, map: 'arena', alea: false, salle: 0 }, {});
+  const d = (await ac.startRendering()).getChannelData(0);
+  const W = 4410, H = 441; let mx = 0;
+  for (let i = 0; i + W < d.length; i += H) { let e = 0; for (let k = i; k < i + W; k++) e += d[k] * d[k]; mx = Math.max(mx, Math.sqrt(e / W)); }
+  return mx;
+}
+$('#sons').innerHTML = '<p class="note">Calibrage des volumes…</p>';
+for (const son of SONS) {
+  const ref = await energie(son.ancien);
+  for (const p of son.props) {
+    const k = Math.min(4, ref * (p.tag === 'couche' ? .6 : 1) / Math.max(await energie(p.c), 1e-5));
+    for (const c of p.c) c.g = +(c.g * k).toFixed(4);
+  }
+}
+$('#sons').innerHTML = '';
+
+// --- État ---------------------------------------------------------------------
+const DEFAUT = p => ({ dansMix: !!p.mix, gain: 1, decalage: 0, hauteur: 0, longueur: 1 });
+let etat = {};
+try { etat = JSON.parse(localStorage.getItem('sfxDecompte')) || {}; } catch (e) { etat = {}; }
+const r = (son, p) => { etat[son.id] = etat[son.id] || {}; return (etat[son.id][p.l] = etat[son.id][p.l] || DEFAUT(p)); };
+function sauver() { try { localStorage.setItem('sfxDecompte', JSON.stringify(etat)); } catch (e) {} majJson(); }
+
+const groupe = (son, p) => { const e = r(son, p); return { gain: e.gain, decalage: e.decalage / 1000, hauteur: e.hauteur, longueur: e.longueur, couches: p.c }; };
+function jouerMix(son) {
+  const g = son.props.filter(p => r(son, p).dansMix).map(p => groupe(son, p));
+  if (!g.length) return jouerAncien(son);
+  jouerSon(audio(), sortie, { niveau: 1, groupes: g }, ctx());
+}
+const jouerAncien = son => jouerCouches(audio(), sortie, son.ancien, { alea: false, salle: 0 }, {});
+const S = id => SONS.find(s => s.id === id);
+$('#engagement').onclick = () => { audio(); [0, .9, 1.8].forEach(t => setTimeout(() => jouerMix(S('count')), t * 1000)); setTimeout(() => jouerMix(S('go')), 2700); };
+$('#possession').onclick = () => { audio(); [0, 1, 2].forEach(t => setTimeout(() => jouerMix(S('count')), t * 1000)); setTimeout(() => jouerMix(S('whistle')), 3000); };
+$('#anciens').onclick = () => { audio(); [0, .9, 1.8].forEach(t => setTimeout(() => jouerAncien(S('count')), t * 1000)); setTimeout(() => jouerAncien(S('go')), 2700); setTimeout(() => jouerAncien(S('whistle')), 4000); };
+for (const [id, n] of Object.entries(MAPS)) $('#map').add(new Option(n + ' — ' + MATIERES[id].nom, id));
+
+const CURSEURS = [
+  ['gain', 'Volume', 0, 2.5, .05, v => Math.round(v * 100) + '%'],
+  ['decalage', 'Décalage', 0, 300, 5, v => v + ' ms'],
+  ['hauteur', 'Hauteur', -12, 12, 1, v => (v > 0 ? '+' : '') + v + ' dt'],
+  ['longueur', 'Longueur', .5, 2, .05, v => Math.round(v * 100) + '%']
+];
+const compo = son => { const a = son.props.filter(p => r(son, p).dansMix).map(p => p.l + ' ' + p.nom); return a.length ? '<b>Mix :</b> ' + a.join(' + ') : 'Mix vide : ▶ Mix joue l\'actuel.'; };
+for (const son of SONS) {
+  const sec = document.createElement('section'); sec.className = 'son';
+  sec.innerHTML = `<div class="son-tete"><h2>${son.nom}</h2><span class="quand">${son.quand}</span>
+    <button class="btn" data-a="ancien">▶ Actuel</button><button class="btn" data-a="mix" style="border-color:var(--accent)">▶ Mix</button>
+    <div class="compo"></div></div><div class="cartes"></div>`;
+  const compoEl = sec.querySelector('.compo'); compoEl.innerHTML = compo(son);
+  sec.querySelector('[data-a=ancien]').onclick = () => jouerAncien(son);
+  sec.querySelector('[data-a=mix]').onclick = () => jouerMix(son);
+  for (const p of son.props) {
+    const e = r(son, p), carte = document.createElement('div');
+    carte.className = 'carte' + (e.dansMix ? ' actif' : '');
+    carte.innerHTML = `<div class="haut"><span class="lettre">${p.l}</span><span class="nom">${p.nom}</span><span class="tag ${p.tag}">${{ arcade: 'Arcade', reel: 'Réaliste', hybride: 'Hybride', couche: 'Couche' }[p.tag]}</span></div>
+      <div class="desc">${p.desc}</div>
+      <div class="actions"><button class="btn">▶ Seul</button><label><input type="checkbox" ${e.dansMix ? 'checked' : ''}> Dans le mix</label></div>`;
+    carte.querySelector('.btn').onclick = () => jouerSon(audio(), sortie, { niveau: 1, groupes: [groupe(son, p)] }, ctx());
+    carte.querySelector('input[type=checkbox]').onchange = ev => { e.dansMix = ev.target.checked; carte.classList.toggle('actif', e.dansMix); compoEl.innerHTML = compo(son); sauver(); };
+    for (const [cle, nom, min, max, pas, fmt] of CURSEURS) {
+      const ligne = document.createElement('div'); ligne.className = 'curseur';
+      ligne.innerHTML = `<span>${nom}</span><input type="range" min="${min}" max="${max}" step="${pas}" value="${e[cle]}"><span>${fmt(e[cle])}</span>`;
+      const inp = ligne.querySelector('input'), aff = ligne.lastElementChild;
+      inp.oninput = () => { e[cle] = +inp.value; aff.textContent = fmt(e[cle]); sauver(); };
+      inp.onchange = () => jouerMix(son);
+      ligne.ondblclick = () => { e[cle] = DEFAUT(p)[cle]; inp.value = e[cle]; aff.textContent = fmt(e[cle]); sauver(); };
+      carte.appendChild(ligne);
+    }
+    sec.querySelector('.cartes').appendChild(carte);
+  }
+  $('#sons').appendChild(sec);
+}
+
+function exporter() {
+  const sons = {};
+  for (const son of SONS) sons[son.id] = son.props.filter(p => r(son, p).dansMix).map(p => {
+    const e = r(son, p); return { proposition: p.l, nom: p.nom, gain: e.gain, decalage: e.decalage, hauteur: e.hauteur, longueur: e.longueur, couches: p.c };
+  });
+  return { mockup: 'sfx-decompte', version: 1, sons };
+}
+function majJson() { $('#json').value = JSON.stringify(exporter(), null, 1); }
+majJson();
+$('#copier').onclick = async () => {
+  try { await navigator.clipboard.writeText($('#json').value); } catch (e) { $('#json').select(); document.execCommand('copy'); }
+  $('#etat').textContent = 'Copié.';
+};
+$('#appliquer').onclick = () => {
+  try {
+    const j = JSON.parse($('#json').value); etat = {};
+    for (const son of SONS) { etat[son.id] = {}; for (const p of son.props) etat[son.id][p.l] = { ...DEFAUT(p), dansMix: false }; }
+    for (const [id, liste] of Object.entries(j.sons || {})) for (const c of liste) Object.assign(etat[id][c.proposition], { dansMix: true, gain: c.gain, decalage: c.decalage, hauteur: c.hauteur, longueur: c.longueur });
+    sauver(); location.reload();
+  } catch (e) { $('#etat').textContent = 'JSON illisible : ' + e.message; }
+};
+$('#raz').onclick = () => { etat = {}; sauver(); location.reload(); };
+window.__dc = { SONS, jouerMix, r };
+</script>
+</body>
+</html>

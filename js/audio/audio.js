@@ -209,11 +209,8 @@ export function sfx(cle, venuDuReseau, horsDemo) {
     case 'move': beep(760, 760, .05, 'square', .06); break;
     case 'select': beep(620, 990, .12, 'square', .12); beep(990, 1320, .1, 'square', .08, .06); break;
     case 'deny': beep(220, 150, .14, 'square', .12); break;
-    // throw, superthrow, bounce, catch, dash, dive, perfect et goal : voir
-    // SONS_MATCH plus haut.
-    case 'count': beep(660, 660, .09, 'square', .16); break;
-    case 'go': beep(1040, 1040, .3, 'square', .18); break;
-    case 'whistle': beep(1560, 1560, .16, 'square', .13); beep(1560, 1150, .22, 'square', .12, .14); break;
+    // throw, superthrow, bounce, catch, dash, dive, perfect, goal, goal5, count,
+    // go et whistle : voir SONS_MATCH plus haut.
     case 'talk': beep(920, 700, .05, 'square', .05); beep(700, 940, .05, 'square', .04, .06); break;
     case 'win': [523, 659, 784, 1046, 1318].forEach((f, i) => beep(f, f, .2, 'square', .15, i * .13)); break;
     case 'lose': [392, 330, 262, 196].forEach((f, i) => beep(f, f, .25, 'triangle', .16, i * .18)); break;
