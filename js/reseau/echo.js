@@ -60,8 +60,13 @@ export function marquerInvite(oui) { Echo.invite = !!oui; }
 // s'entend immédiatement. Le geste, lui, reste instantané à l'écran.
 // ---------------------------------------------------------------------------
 export function sonEtouffe(nom) {
-  return Echo.invite && !LOCAUX.has(nom) && !PRODUITS_LOCALEMENT.has(nom);
+  const n = baseDuSon(nom);
+  return Echo.invite && !LOCAUX.has(n) && !PRODUITS_LOCALEMENT.has(n);
 }
+
+// Un son du match porte son contexte dans son nom (« bounce|0.80|leon », voir
+// sfx dans audio.js) : les listes ci-dessus ne connaissent que le nom nu.
+const baseDuSon = nom => String(nom).split('|')[0];
 
 // ---------------------------------------------------------------------------
 // Même seau, pour les messages qui s'affichent à l'écran.
@@ -95,7 +100,8 @@ export function viderPopups() {
 export function popupEtouffe() { return Echo.invite; }
 
 export function noterSon(nom) {
-  if (!Echo.collecte || LOCAUX.has(nom) || PRODUITS_LOCALEMENT.has(nom)) return;
+  const n = baseDuSon(nom);
+  if (!Echo.collecte || LOCAUX.has(n) || PRODUITS_LOCALEMENT.has(n)) return;
   if (Echo.file.length < MAX) Echo.file.push(nom);
 }
 

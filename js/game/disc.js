@@ -6,6 +6,7 @@ import {
 import { norm, gauss, clamp, rand } from '../core/utils.js';
 import { gaussJeu } from '../core/alea.js';
 import { sfx } from '../audio/audio.js';
+import { sonMatch, forceDeVitesse } from './sons.js';
 import { disqueImmobile, testerPanier } from './zones.js';
 import { burst, dust, addPopup } from './fx.js';
 import { onCatch, scoreGoal, setupServe } from './actions.js';
@@ -170,7 +171,7 @@ export function onBounce(d) {
   d.bounced = true;
   if (d.kind === 'kurama') { sfx('bigbounce'); G.shake = Math.max(G.shake, 8); burst(d.x, d.y, RASENGAN, 16); }
   else {
-    sfx('bounce'); dust(d.x, d.y, 6); G.shake = Math.max(G.shake, 3);
+    sonMatch('bounce', forceDeVitesse(Math.hypot(d.vx, d.vy)), d.thrower); dust(d.x, d.y, 6); G.shake = Math.max(G.shake, 3);
     // Chaque disque a son éclat de rebond : la rosace, la pyramide, l'éruption.
     eclatDeRebond(skinDuDisque(), d, G.particles);
   }

@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bruitages du match</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Russo+One&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --panel2:#121d33; --edge:#22344f; --ink:#e8f0ff; --doux:#8fa4c4;
+         --accent:#35e0ff; --or:#f6c945; --arcade:#ff5ca8; --reel:#5dde8a; --hybride:#b58cff; --couche:#f6c945; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Barlow','Segoe UI',system-ui,sans-serif;font-size:14px;padding:0 16px 80px}
+  h1{font-family:'Archivo Black',sans-serif;font-size:24px;margin:22px 0 4px;letter-spacing:.02em}
+  .note{color:var(--doux);max-width:1080px;line-height:1.6;margin:0 0 12px}
+  .note b{color:var(--or)}
+  button{font:inherit;cursor:pointer}
+
+  /* Barre de contexte, collée en haut : on règle la situation, puis on écoute. */
+  .contexte{position:sticky;top:0;z-index:10;background:rgba(7,12,22,.96);border-bottom:1px solid var(--edge);
+    display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:10px 0;margin-bottom:8px}
+  .contexte label{display:flex;align-items:center;gap:8px;color:var(--doux);font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+  .contexte select,.contexte input[type=range]{accent-color:var(--accent)}
+  select{background:var(--panel2);color:var(--ink);border:1px solid var(--edge);border-radius:6px;padding:5px 8px;font:inherit;font-size:13px}
+  .val{color:var(--ink);font-variant-numeric:tabular-nums;min-width:34px}
+  .gros{background:var(--accent);color:#04121c;border:0;border-radius:7px;padding:9px 14px;font-weight:800;letter-spacing:.04em}
+  .gros.or{background:var(--or)}
+
+  .son{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:14px;margin:14px 0}
+  .son-tete{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px}
+  .son-tete h2{font-family:'Russo One',sans-serif;font-size:18px;margin:0 8px 0 0}
+  .son-tete .quand{color:var(--doux);font-size:12.5px;flex:1 1 260px}
+  .btn{background:var(--panel2);color:var(--ink);border:1px solid var(--edge);border-radius:7px;padding:7px 11px;font-weight:700;font-size:12.5px}
+  .btn:hover{border-color:var(--accent)}
+  .btn.mix{background:#0f3a48;border-color:var(--accent);color:#bff4ff}
+  .btn.ancien{color:var(--doux)}
+  .compo{font-size:12px;color:var(--doux);width:100%}
+  .compo b{color:var(--accent)}
+
+  .cartes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+  .carte{background:var(--panel2);border:1px solid var(--edge);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:7px;transition:border-color .15s}
+  .carte.actif{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .carte .haut{display:flex;align-items:center;gap:8px}
+  .carte .lettre{font-family:'Archivo Black',sans-serif;font-size:15px;width:26px;height:26px;border-radius:6px;display:grid;place-items:center;background:#1b2a45}
+  .carte .nom{font-weight:800;flex:1;line-height:1.15}
+  .tag{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:4px;border:1px solid}
+  .tag.arcade{color:var(--arcade);border-color:var(--arcade)} .tag.reel{color:var(--reel);border-color:var(--reel)}
+  .tag.hybride{color:var(--hybride);border-color:var(--hybride)} .tag.couche{color:var(--couche);border-color:var(--couche)}
+  .carte .desc{color:var(--doux);font-size:12px;line-height:1.45;min-height:34px}
+  .carte .actions{display:flex;gap:6px;align-items:center}
+  .carte .actions label{display:flex;align-items:center;gap:6px;font-weight:700;font-size:12px;margin-left:auto;cursor:pointer}
+  .curseur{display:grid;grid-template-columns:70px 1fr 44px;align-items:center;gap:6px;font-size:11.5px;color:var(--doux)}
+  .curseur input{width:100%;accent-color:var(--accent)}
+  .curseur span:last-child{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+  .carte:not(.actif) .curseur{opacity:.45}
+
+  .export{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:14px;margin-top:18px}
+  .export h2{font-family:'Russo One',sans-serif;font-size:17px;margin:0 0 8px}
+  textarea{width:100%;min-height:170px;background:#050a13;color:#bfe9ff;border:1px solid var(--edge);border-radius:8px;padding:10px;font:12px/1.45 ui-monospace,Consolas,monospace}
+  .export .ligne{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
+  .etat{color:var(--doux);font-size:12px}
+  @media (max-width:560px){ .contexte{gap:8px 12px} .contexte label{font-size:11px} }
+</style>
+</head>
+<body>
+<h1>Bruitages du match</h1>
+<p class="note">
+  Chaque son est une pile de <b>couches</b>. Coche <b>« Dans le mix »</b> sur une ou plusieurs propositions pour les
+  <b>superposer</b>, puis règle chacune : volume, décalage, hauteur, longueur. <b>▶ Mix</b> joue la superposition.
+  Les propositions marquées <b>Couche</b> sont des ingrédients faits pour s'ajouter aux autres (un grave, un souffle, le public).
+  La barre du haut simule la situation : <b>force</b> du geste, <b>perso</b>, <b>map</b> (matière des murs et écho du lieu), et la
+  petite <b>variation</b> à chaque fois. <b>Rafale</b> rejoue le mix cinq fois de faible à fort pour entendre les deux.
+  Quand c'est bon, copie le JSON en bas et colle-le moi.
+</p>
+
+<div class="contexte">
+  <label>Force <input type="range" id="force" min="0" max="100" value="60"><span class="val" id="forceV">60</span></label>
+  <label>Perso <select id="perso"></select></label>
+  <label>Map <select id="map"></select></label>
+  <label><input type="checkbox" id="alea" checked> Variation</label>
+  <label><input type="checkbox" id="echo" checked> Écho du lieu</label>
+  <label>Volume <input type="range" id="volume" min="0" max="100" value="70"></label>
+  <button class="gros or" id="scene">▶ Scène de match</button>
+</div>
+
+<div id="sons"></div>
+
+<div class="export">
+  <h2>Tout copier / coller</h2>
+  <textarea id="json" spellcheck="false"></textarea>
+  <div class="ligne">
+    <button class="gros" id="copier">Copier</button>
+    <button class="btn" id="appliquer">Appliquer le JSON collé</button>
+    <button class="btn" id="raz">Tout réinitialiser</button>
+    <span class="etat" id="etat"></span>
+  </div>
+</div>
+
+<script type="module">
+import { jouerCouches, MATIERES, TIMBRES } from '../js/audio/moteur-sfx.js';
+
+// ---------------------------------------------------------------------------
+// Les propositions. `sf` : sensibilité à la force (voir moteur-sfx.js).
+// `mat: true` sur une couche `modes` : elle prend la matière de la map.
+// ---------------------------------------------------------------------------
+const SONS = [
+  { id: 'tir', jeu: 'throw', nom: 'Tir', quand: 'Le disque quitte la main. La force suit la charge.',
+    ancien: [{ t: 'bruit', f: [1600], q: 1, d: .16, g: .16 }, { t: 'ton', onde: 'sawtooth', f: [300, 700], d: .12, g: .07 }],
+    props: [
+      { l: 'A', nom: 'Fouet', tag: 'arcade', desc: 'Un souffle qui claque et redescend, posé sur un petit coup grave. Nerveux et lisible.',
+        c: [{ t: 'bruit', f: [2600, 900], q: 1.3, a: .004, d: .15, g: .38, sf: 1 }, { t: 'ton', onde: 'sawtooth', f: [240, 700], d: .08, g: .06, sf: .5 }, { t: 'ton', f: [130, 55], d: .08, g: .4, sf: 1 }] },
+      { l: 'B', nom: 'Coup de poignet', tag: 'reel', desc: 'Le claquement du plastique quitte la main, puis l\'air déchiré qui monte à mesure que le disque s\'éloigne.',
+        c: [{ t: 'clic', g: .3 }, { t: 'modes', partiels: [[620, .05, 1], [1450, .03, .45], [2900, .02, .2]], g: .14 }, { t: 'bruit', f: [1200, 3800], q: .8, a: .02, d: .2, g: .26, sf: .8 }] },
+      { l: 'C', nom: 'Frappe', tag: 'hybride', desc: 'Un impact franc dans la poitrine, le claquement du disque, et un souffle court.',
+        c: [{ t: 'ton', f: [170, 48], d: .1, g: .55, sf: 1 }, { t: 'bruit', filtre: 'highpass', f: [3200], d: .05, g: .22 }, { t: 'bruit', f: [1900, 700], a: .01, d: .2, g: .2, sf: .6 }] },
+      { l: 'D', nom: 'Souffle long', tag: 'couche', desc: 'Couche : la traîne d\'air derrière le disque. S\'allonge et grossit avec la force.',
+        c: [{ t: 'bruit', filtre: 'lowpass', f: [1400, 380], q: .7, a: .03, d: .32, g: .28, sf: 1.2 }] },
+      { l: 'E', nom: 'Claquement sec', tag: 'couche', desc: 'Couche : juste l\'attaque, pour donner du mordant à un tir trop mou.',
+        c: [{ t: 'clic', g: .35 }, { t: 'ton', onde: 'square', f: [1300, 650], d: .03, g: .05 }] }
+    ] },
+  { id: 'superTir', jeu: 'superthrow', nom: 'Tir chargé à fond', quand: 'Charge pleine au lâcher : le tir qui fait peur.',
+    ancien: [{ t: 'bruit', f: [2000], d: .2, g: .2 }, { t: 'ton', onde: 'sawtooth', f: [200, 900], d: .16, g: .12 }, { t: 'ton', onde: 'square', f: [900, 400], d: .1, g: .08, delai: .05 }],
+    props: [
+      { l: 'A', nom: 'Canon', tag: 'arcade', desc: 'Une détonation grave qui pousse, un souffle lourd et une montée électrique par-dessus.',
+        c: [{ t: 'ton', f: [95, 34], d: .38, g: .7 }, { t: 'bruit', filtre: 'lowpass', f: [1000, 200], d: .42, g: .38 }, { t: 'ton', onde: 'sawtooth', f: [280, 1200], d: .18, g: .09 }, { t: 'clic', g: .4 }] },
+      { l: 'B', nom: 'Déchirure', tag: 'arcade', desc: 'L\'air qui se déchire de bas en haut, avec un grincement métallique. Plus agressif que lourd.',
+        c: [{ t: 'bruit', f: [500, 5200], q: 2, a: .01, d: .36, g: .42 }, { t: 'fm', f: [220, 900], ratio: 1.41, indice: [6, 1], d: .28, g: .09 }, { t: 'ton', f: [110, 45], d: .2, g: .45 }] },
+      { l: 'C', nom: 'Réacteur', tag: 'reel', desc: 'Un vrai souffle de propulsion, qui gonfle au lieu de claquer. Grave continu dessous.',
+        c: [{ t: 'bruit', f: [380, 1700], q: .9, a: .04, d: .6, g: .34 }, { t: 'bruit', filtre: 'highpass', f: [4500], a: .02, d: .3, g: .08 }, { t: 'ton', f: [58, 48], a: .02, d: .5, g: .35 }, { t: 'clic', g: .3 }] },
+      { l: 'D', nom: 'Sub', tag: 'couche', desc: 'Couche : le grave qu\'on sent plus qu\'on ne l\'entend. À ajouter sous n\'importe quelle autre.',
+        c: [{ t: 'ton', f: [62, 30], d: .55, g: .65 }] },
+      { l: 'E', nom: 'Étincelles', tag: 'couche', desc: 'Couche : trois éclats aigus qui crépitent derrière le départ.',
+        c: [{ t: 'fm', f: [2100, 3200], ratio: 2.7, indice: [3, .5], d: .12, g: .05, delai: .03 }, { t: 'fm', f: [2600, 3900], ratio: 2.7, indice: [3, .5], d: .1, g: .04, delai: .08 }, { t: 'fm', f: [1900, 3000], ratio: 2.7, indice: [3, .5], d: .14, g: .04, delai: .14 }] }
+    ] },
+  { id: 'rebond', jeu: 'bounce', nom: 'Rebond sur le mur', quand: 'Le disque tape la bande. La force suit sa vitesse, la matière suit la map.',
+    ancien: [{ t: 'ton', onde: 'triangle', f: [190, 120], d: .07, g: .22 }, { t: 'bruit', f: [900], d: .05, g: .08 }],
+    props: [
+      { l: 'A', nom: 'Pong gras', tag: 'arcade', desc: 'Le « pong » arcade, mais épais : un triangle qui tombe et un petit choc de bruit.',
+        c: [{ t: 'ton', onde: 'triangle', f: [250, 105], d: .09, g: .4, sf: 1 }, { t: 'bruit', f: [950], d: .05, g: .16, sf: .6 }, { t: 'clic', g: .15 }] },
+      { l: 'B', nom: 'Matière', tag: 'reel', desc: 'Le mur sonne pour de vrai : métal sur la station, bois au dojo, glace au Pôle Nord, sable étouffé à Dune…',
+        c: [{ t: 'clic', g: .3, sf: .8 }, { t: 'modes', mat: true, g: .32, sf: 1 }, { t: 'bruit', f: [1400], d: .03, g: .1 }] },
+      { l: 'C', nom: 'Impact + matière', tag: 'hybride', desc: 'Un coup grave arcade pour le punch, et la résonance du mur de la map par-dessus.',
+        c: [{ t: 'ton', f: [160, 58], d: .08, g: .5, sf: 1 }, { t: 'modes', mat: true, g: .2, sf: .8 }, { t: 'clic', g: .2 }] },
+      { l: 'D', nom: 'Queue du mur', tag: 'couche', desc: 'Couche : la vibration qui traîne dans la bande après le choc.',
+        c: [{ t: 'bruit', f: [700, 400], q: 1.5, d: .26, g: .08, delai: .02, sf: 1 }] }
+    ] },
+  { id: 'attrape', jeu: 'catch', nom: 'Attrapé', quand: 'Le disque claque dans la main. La force suit la vitesse du disque reçu.',
+    ancien: [{ t: 'ton', f: [500, 330], d: .08, g: .2 }, { t: 'bruit', f: [600], d: .06, g: .06 }],
+    props: [
+      { l: 'A', nom: 'Claque', tag: 'arcade', desc: 'Une claque nette et satisfaisante, avec un fond qui chute.',
+        c: [{ t: 'ton', f: [430, 170], d: .09, g: .35 }, { t: 'bruit', f: [1150], d: .06, g: .22, sf: .8 }, { t: 'clic', g: .24 }] },
+      { l: 'B', nom: 'Gant', tag: 'reel', desc: 'Le plastique qui frappe la paume, et le corps qui encaisse. Plus sourd, plus physique.',
+        c: [{ t: 'bruit', filtre: 'lowpass', f: [2600, 700], d: .07, g: .4, sf: 1 }, { t: 'ton', f: [140, 78], d: .09, g: .34, sf: 1 }, { t: 'modes', partiels: [[560, .03, 1], [1300, .02, .4]], g: .1 }] },
+      { l: 'C', nom: 'Récompense', tag: 'arcade', desc: 'Plus « jeu » : la claque suivie d\'un petit tintement qui dit « bien joué ».',
+        c: [{ t: 'ton', f: [500, 330], d: .08, g: .22 }, { t: 'bruit', f: [900], d: .05, g: .14 }, { t: 'ton', onde: 'triangle', f: [1320], d: .12, g: .06, delai: .035 }] },
+      { l: 'D', nom: 'Ancrage grave', tag: 'couche', desc: 'Couche : le poids de la réception. Plus le disque arrivait vite, plus ça tape.',
+        c: [{ t: 'ton', f: [92, 52], d: .13, g: .5, sf: 1.3 }] }
+    ] },
+  { id: 'dash', jeu: 'dash', nom: 'Dash', quand: 'Le joueur s\'élance. On l\'entend des dizaines de fois : il doit rester léger.',
+    ancien: [{ t: 'bruit', f: [2600], d: .14, g: .12 }, { t: 'ton', f: [500, 900], d: .1, g: .05 }],
+    props: [
+      { l: 'A', nom: 'Swoosh', tag: 'arcade', desc: 'Un balayage d\'air qui monte. Simple, rapide, se fond dans le reste.',
+        c: [{ t: 'bruit', f: [900, 3400], q: 1.6, a: .02, d: .16, g: .3 }] },
+      { l: 'B', nom: 'Baskets', tag: 'reel', desc: 'L\'appui du pied au sol et le petit crissement de semelle.',
+        c: [{ t: 'bruit', filtre: 'lowpass', f: [600], d: .07, g: .28 }, { t: 'ton', f: [2500, 2150], d: .06, g: .025, delai: .01 }, { t: 'bruit', f: [1800, 3000], q: 1.2, a: .02, d: .1, g: .12, delai: .02 }] },
+      { l: 'C', nom: 'Ancien amélioré', tag: 'hybride', desc: 'Le son actuel qu\'on reconnaît, avec un appui grave et un souffle plus ample.',
+        c: [{ t: 'bruit', f: [2600, 1800], d: .14, g: .18 }, { t: 'ton', f: [500, 900], d: .1, g: .04 }, { t: 'ton', f: [110, 60], d: .06, g: .3 }] },
+      { l: 'D', nom: 'Pas lourd', tag: 'couche', desc: 'Couche : l\'impulsion du pied. Utile surtout pour les persos lourds.',
+        c: [{ t: 'ton', f: [120, 58], d: .06, g: .38 }, { t: 'bruit', filtre: 'lowpass', f: [420], d: .06, g: .2 }] }
+    ] },
+  { id: 'plongeon', jeu: 'dive', nom: 'Plongeon', quand: 'Nouveau : aujourd\'hui le plongeon ne fait aucun bruit.',
+    ancien: [],
+    props: [
+      { l: 'A', nom: 'Glissade', tag: 'hybride', desc: 'Le corps qui fend l\'air, puis touche le sol et glisse.',
+        c: [{ t: 'bruit', filtre: 'lowpass', f: [1600, 500], a: .02, d: .34, g: .3 }, { t: 'ton', f: [105, 50], d: .12, g: .42, delai: .14 }] },
+      { l: 'B', nom: 'Tissu au sol', tag: 'reel', desc: 'Réaliste : un frottement long et mat, avec le choc des coudes.',
+        c: [{ t: 'bruit', f: [800, 520], q: .7, a: .05, d: .42, g: .26, delai: .1 }, { t: 'clic', g: .2, delai: .1 }, { t: 'ton', f: [90, 55], d: .1, g: .32, delai: .1 }] },
+      { l: 'C', nom: 'Élan arcade', tag: 'arcade', desc: 'Un « fiou » qui descend : l\'effort du saut, lisible de loin.',
+        c: [{ t: 'ton', onde: 'square', f: [720, 200], d: .2, g: .06 }, { t: 'bruit', f: [1300, 600], d: .22, g: .16 }] },
+      { l: 'D', nom: 'Poussière', tag: 'couche', desc: 'Couche : le sable ou la poussière soulevés à l\'arrivée.',
+        c: [{ t: 'bruit', filtre: 'highpass', f: [2600], a: .05, d: .3, g: .09, delai: .12 }] }
+    ] },
+  { id: 'perfect', jeu: 'perfect', nom: 'Perfect', quand: 'Perfect Dive ou contre parfait : le moment qui ralentit.',
+    ancien: [{ t: 'ton', onde: 'square', f: [990], d: .1, g: .13 }, { t: 'ton', onde: 'square', f: [1320], d: .1, g: .13, delai: .05 }, { t: 'ton', onde: 'square', f: [1760], d: .1, g: .13, delai: .1 }],
+    props: [
+      { l: 'A', nom: 'Cristal', tag: 'hybride', desc: 'Un choc grave et un accord cristallin qui s\'éteint lentement.',
+        c: [{ t: 'clic', g: .35 }, { t: 'ton', f: [85, 40], d: .22, g: .55 }, { t: 'ton', f: [1320], d: .55, g: .1 }, { t: 'ton', f: [1760], d: .4, g: .07, delai: .01 }, { t: 'ton', f: [2640], d: .28, g: .045, delai: .02 }] },
+      { l: 'B', nom: 'Ralenti', tag: 'reel', desc: 'Le « whoomp » grave du ralenti cinéma, avec l\'air qui se retire.',
+        c: [{ t: 'ton', f: [210, 55], d: .6, g: .45 }, { t: 'bruit', filtre: 'lowpass', f: [3200, 250], d: .55, g: .22 }, { t: 'ton', onde: 'triangle', f: [1760, 1700], d: .6, g: .05 }] },
+      { l: 'C', nom: 'Arpège', tag: 'arcade', desc: 'L\'ancien, en plus riche : quatre notes vives et un éclat.',
+        c: [{ t: 'ton', onde: 'square', f: [990], d: .1, g: .1 }, { t: 'ton', onde: 'square', f: [1320], d: .1, g: .1, delai: .04 }, { t: 'ton', onde: 'square', f: [1760], d: .12, g: .1, delai: .08 }, { t: 'ton', onde: 'square', f: [2640], d: .16, g: .08, delai: .12 }, { t: 'bruit', filtre: 'highpass', f: [4000], d: .12, g: .1 }] },
+      { l: 'D', nom: 'Choc', tag: 'couche', desc: 'Couche : l\'impact du renvoi parfait, sourd et puissant.',
+        c: [{ t: 'ton', f: [72, 30], d: .3, g: .6 }, { t: 'bruit', filtre: 'lowpass', f: [520], d: .2, g: .3 }] }
+    ] },
+  { id: 'but', jeu: 'goal', nom: 'But', quand: 'Le disque entre dans la cage.',
+    ancien: [660, 830, 990, 1320].map((f, i) => ({ t: 'ton', onde: 'square', f: [f], d: .14, g: .16, delai: i * .09 })).concat([{ t: 'bruit', f: [500], d: .5, g: .14 }]),
+    props: [
+      { l: 'A', nom: 'Filet + fanfare', tag: 'arcade', desc: 'Le filet qui avale le disque, un boum, et la fanfare d\'origine en plus gras.',
+        c: [{ t: 'bruit', f: [420, 300], q: .8, d: .55, g: .3 }, { t: 'ton', f: [62, 38], d: .5, g: .55 }].concat([660, 830, 990, 1320].map((f, i) => ({ t: 'ton', onde: 'square', f: [f], d: .16, g: .11, delai: .05 + i * .085 }))) },
+      { l: 'B', nom: 'Stade', tag: 'reel', desc: 'Le filet, puis le public qui explose et retombe.',
+        c: [{ t: 'bruit', f: [420, 300], q: .8, d: .45, g: .28 }, { t: 'ton', f: [70, 40], d: .3, g: .4 }, { t: 'foule', a: .18, d: 1.7, g: .3, delai: .05 }] },
+      { l: 'C', nom: 'Klaxon', tag: 'arcade', desc: 'Corne de match façon arcade : un accord cuivré tenu.',
+        c: [{ t: 'ton', onde: 'sawtooth', f: [440], a: .02, d: .55, g: .08 }, { t: 'ton', onde: 'sawtooth', f: [554], a: .02, d: .55, g: .07 }, { t: 'ton', onde: 'sawtooth', f: [659], a: .02, d: .55, g: .06 }, { t: 'ton', f: [55, 40], d: .4, g: .45 }] },
+      { l: 'D', nom: 'Boum', tag: 'couche', desc: 'Couche : la grosse caisse du but.',
+        c: [{ t: 'ton', f: [56, 28], d: .7, g: .7 }, { t: 'bruit', filtre: 'lowpass', f: [320], d: .45, g: .3 }] },
+      { l: 'E', nom: 'Public', tag: 'couche', desc: 'Couche : seulement la foule. À poser sous l\'arcade pour l\'ambiance.',
+        c: [{ t: 'foule', a: .2, d: 1.8, g: .3, delai: .05 }] }
+    ] }
+];
+
+const PERSOS = { naruto: 'Naruto', isaac: 'Isaac', leon: 'Leon', jingle: 'Jingle Bells', mamie: 'Mamie Trayette', chopper: 'Chopper',
+  yuki: 'Yuki', cyberleek: 'Cyberleek', yoshi: 'Yoshi', hollis: '2hollis', flowser: 'Flowser-Two', fricadelle: 'Gardien de la Fricadelle' };
+const MAPS = { arena: 'Stellar Orbital Station', dojo: 'Salle d\'entraînement', stadium: 'Swag Frisbee Stadium', dune: 'Dune de Râ', polenord: 'Pôle Nord', raccoon: 'Raccoon City' };
+
+// --- Audio -------------------------------------------------------------------
+let AC, sortie;
+function audio() {
+  if (!AC) {
+    AC = new AudioContext();
+    const comp = AC.createDynamicsCompressor(); comp.threshold.value = -10; comp.ratio.value = 4;
+    sortie = AC.createGain(); sortie.connect(comp).connect(AC.destination);
+  }
+  if (AC.state === 'suspended') AC.resume();
+  sortie.gain.value = +$('#volume').value / 100;
+  return AC;
+}
+const $ = s => document.querySelector(s);
+const contexte = (force) => ({
+  force: force ?? +$('#force').value / 100, perso: $('#perso').value, map: $('#map').value,
+  alea: $('#alea').checked, salle: $('#echo').checked ? 1 : 0
+});
+
+// --- État : ce qui est dans le mix et avec quels réglages -------------------
+const DEFAUT = () => ({ dansMix: false, gain: 1, decalage: 0, hauteur: 0, longueur: 1 });
+let etat = {};
+function etatDe(son, l) { etat[son] = etat[son] || {}; return (etat[son][l] = etat[son][l] || DEFAUT()); }
+function sauver() { try { localStorage.setItem('sfxCoeur', JSON.stringify(etat)); } catch (e) {} majJson(); }
+try { etat = JSON.parse(localStorage.getItem('sfxCoeur')) || {}; } catch (e) { etat = {}; }
+
+function jouerProp(son, p, force) {
+  const r = etatDe(son.id, p.l);
+  jouerCouches(audio(), sortie, p.c, contexte(force), { gain: r.gain, decalage: r.decalage / 1000, hauteur: r.hauteur, longueur: r.longueur });
+}
+function jouerMix(son, force) {
+  const actifs = son.props.filter(p => etatDe(son.id, p.l).dansMix);
+  if (!actifs.length) return jouerAncien(son);
+  actifs.forEach(p => jouerProp(son, p, force));
+}
+function jouerAncien(son) {
+  jouerCouches(audio(), sortie, son.ancien, { force: .5, alea: false, salle: 0 }, {});
+}
+
+// --- Calibrage ---------------------------------------------------------------
+// Un son plus fort paraît toujours meilleur à la première écoute : sans ce
+// calibrage, la comparaison avec l'ancien était truquée (3 à 5 fois plus fort).
+// Chaque proposition est rendue hors ligne et ramenée à l'énergie de l'ancien
+// son sur ses 400 premières millisecondes ; les couches, faites pour s'ajouter,
+// un peu en dessous. Le gain corrigé est écrit dans les couches elles-mêmes,
+// donc aussi dans le JSON exporté.
+async function energie(couches, ctx) {
+  const ac = new OfflineAudioContext(1, 44100 * .6, 44100);
+  // Pondération de l'oreille (celle des mesures LUFS) : on entend mal les
+  // graves et un peu mieux le haut-médium. Sans elle, un sub puissant comptait
+  // comme très fort et se retrouvait ramené à presque rien.
+  const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 100; hp.Q.value = .5;
+  const sh = ac.createBiquadFilter(); sh.type = 'highshelf'; sh.frequency.value = 1500; sh.gain.value = 4;
+  hp.connect(sh).connect(ac.destination);
+  jouerCouches(ac, hp, couches, ctx, {});
+  const d = (await ac.startRendering()).getChannelData(0);
+  let e = 0; for (let i = 0; i < 44100 * .4; i++) e += d[i] * d[i];
+  return Math.sqrt(e / (44100 * .4));
+}
+async function calibrer() {
+  const neutre = { force: .6, perso: 'yoshi', map: 'arena', alea: false, salle: 0 };
+  const refTir = await energie(SONS[0].ancien, neutre);
+  for (const son of SONS) {
+    const ref = son.ancien.length ? await energie(son.ancien, neutre) : refTir * .8;
+    for (const p of son.props) {
+      const e = await energie(p.c, neutre);
+      const k = Math.min(3, (ref * (p.tag === 'couche' ? .6 : 1)) / Math.max(e, 1e-5));
+      for (const c of p.c) c.g = +(c.g * k).toFixed(4);
+    }
+  }
+}
+$('#sons').innerHTML = '<p class="note">Calibrage des volumes…</p>';
+await calibrer();
+$('#sons').innerHTML = '';
+
+// --- Construction de la page ------------------------------------------------
+for (const [id, n] of Object.entries(PERSOS)) $('#perso').add(new Option(n, id));
+for (const [id, n] of Object.entries(MAPS)) $('#map').add(new Option(n + ' — ' + MATIERES[id].nom, id));
+$('#perso').value = 'leon';
+$('#force').oninput = () => { $('#forceV').textContent = $('#force').value; };
+
+const CURSEURS = [
+  ['gain', 'Volume', 0, 2, .05, v => Math.round(v * 100) + '%'],
+  ['decalage', 'Décalage', -20, 200, 5, v => v + ' ms'],
+  ['hauteur', 'Hauteur', -12, 12, 1, v => (v > 0 ? '+' : '') + v + ' dt'],
+  ['longueur', 'Longueur', .5, 2, .05, v => Math.round(v * 100) + '%']
+];
+
+function compo(son) {
+  const actifs = son.props.filter(p => etatDe(son.id, p.l).dansMix).map(p => p.l + ' ' + p.nom);
+  return actifs.length ? 'Mix : <b>' + actifs.join(' + ') + '</b>' : 'Mix vide : ▶ Mix joue l\'ancien son.';
+}
+
+for (const son of SONS) {
+  const sec = document.createElement('section'); sec.className = 'son';
+  sec.innerHTML = `<div class="son-tete"><h2>${son.nom}</h2><span class="quand">${son.quand}</span>
+    <button class="btn ancien" data-a="ancien" ${son.ancien.length ? '' : 'disabled'}>▶ Ancien</button>
+    <button class="btn mix" data-a="mix">▶ Mix</button>
+    <button class="btn" data-a="rafale">Rafale faible → fort</button>
+    <div class="compo"></div></div><div class="cartes"></div>`;
+  const cartes = sec.querySelector('.cartes'), compoEl = sec.querySelector('.compo');
+  compoEl.innerHTML = compo(son);
+  sec.querySelector('[data-a=ancien]').onclick = () => jouerAncien(son);
+  sec.querySelector('[data-a=mix]').onclick = () => jouerMix(son);
+  sec.querySelector('[data-a=rafale]').onclick = () => [.1, .3, .55, .8, 1].forEach((f, i) => setTimeout(() => jouerMix(son, f), i * 420));
+  for (const p of son.props) {
+    const r = etatDe(son.id, p.l);
+    const carte = document.createElement('div'); carte.className = 'carte' + (r.dansMix ? ' actif' : '');
+    carte.innerHTML = `<div class="haut"><span class="lettre">${p.l}</span><span class="nom">${p.nom}</span><span class="tag ${p.tag}">${{ arcade: 'Arcade', reel: 'Réaliste', hybride: 'Hybride', couche: 'Couche' }[p.tag]}</span></div>
+      <div class="desc">${p.desc}</div>
+      <div class="actions"><button class="btn" data-a="solo">▶ Seul</button><label><input type="checkbox" ${r.dansMix ? 'checked' : ''}> Dans le mix</label></div>`;
+    carte.querySelector('[data-a=solo]').onclick = () => jouerProp(son, p);
+    carte.querySelector('input[type=checkbox]').onchange = e => {
+      r.dansMix = e.target.checked; carte.classList.toggle('actif', r.dansMix); compoEl.innerHTML = compo(son); sauver();
+    };
+    for (const [cle, nom, min, max, pas, fmt] of CURSEURS) {
+      const ligne = document.createElement('div'); ligne.className = 'curseur';
+      ligne.innerHTML = `<span>${nom}</span><input type="range" min="${min}" max="${max}" step="${pas}" value="${r[cle]}"><span>${fmt(r[cle])}</span>`;
+      const inp = ligne.querySelector('input'), aff = ligne.lastElementChild;
+      inp.oninput = () => { r[cle] = +inp.value; aff.textContent = fmt(r[cle]); sauver(); };
+      // Relâcher un curseur rejoue le mix : on entend tout de suite l'effet.
+      inp.onchange = () => { if (r.dansMix) jouerMix(son); else jouerProp(son, p); };
+      ligne.ondblclick = () => { r[cle] = DEFAUT()[cle]; inp.value = r[cle]; aff.textContent = fmt(r[cle]); sauver(); };
+      carte.appendChild(ligne);
+    }
+    cartes.appendChild(carte);
+  }
+  $('#sons').appendChild(sec);
+}
+
+// --- Scène de match : un échange complet avec les mix actuels ---------------
+const SCENE = [[0, 'tir', .35], [.38, 'rebond', .5], [.8, 'attrape', .5], [1.25, 'dash', .5], [1.7, 'dash', .5],
+  [2.3, 'tir', .75], [2.62, 'rebond', .8], [2.95, 'plongeon', .5], [3.12, 'perfect', .9], [3.9, 'superTir', 1],
+  [4.18, 'rebond', 1], [4.5, 'but', 1]];
+$('#scene').onclick = () => {
+  audio();
+  for (const [t, id, f] of SCENE) setTimeout(() => jouerMix(SONS.find(s => s.id === id), f), t * 1000);
+};
+
+// --- Export / import ---------------------------------------------------------
+function exporter() {
+  const sons = {};
+  for (const son of SONS) {
+    const couches = son.props.filter(p => etatDe(son.id, p.l).dansMix).map(p => {
+      const r = etatDe(son.id, p.l);
+      return { proposition: p.l, nom: p.nom, gain: r.gain, decalage: r.decalage, hauteur: r.hauteur, longueur: r.longueur, couches: p.c };
+    });
+    sons[son.id] = { jeu: son.jeu, couches };
+  }
+  return { mockup: 'sfx-coeur', version: 1, sons };
+}
+function majJson() { $('#json').value = JSON.stringify(exporter(), null, 1); }
+majJson();
+$('#copier').onclick = async () => {
+  try { await navigator.clipboard.writeText($('#json').value); $('#etat').textContent = 'Copié.'; }
+  catch (e) { $('#json').select(); document.execCommand('copy'); $('#etat').textContent = 'Copié.'; }
+};
+$('#appliquer').onclick = () => {
+  try {
+    const j = JSON.parse($('#json').value); etat = {};
+    for (const [id, s] of Object.entries(j.sons || {}))
+      for (const c of s.couches || []) Object.assign(etatDe(id, c.proposition), { dansMix: true, gain: c.gain, decalage: c.decalage, hauteur: c.hauteur, longueur: c.longueur });
+    sauver(); location.reload();
+  } catch (e) { $('#etat').textContent = 'JSON illisible : ' + e.message; }
+};
+$('#raz').onclick = () => { if (confirm('Tout remettre à zéro ?')) { etat = {}; sauver(); location.reload(); } };
+window.__sfx = { SONS, jouerMix, jouerProp, etat: () => etat };
+</script>
+</body>
+</html>

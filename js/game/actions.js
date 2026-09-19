@@ -11,6 +11,7 @@ import { clamp, norm, pick } from '../core/utils.js';
 import { gaussJeu, randJeu, aleaJeu } from '../core/alea.js';
 import { zoneByY } from '../data/maps.js';
 import { sfx, setMuffled } from '../audio/audio.js';
+import { sonMatch, forceDeVitesse } from './sons.js';
 import { burst, dust, ring, confetti, starBurst, addPopup, ondeDeBut, confettiNumerique, effetDeBut, effetDeReception, effetDeTirSuper } from './fx.js';
 import { cv } from '../core/dom.js';
 import { signalerPerfectDive } from './moves.js';
@@ -81,7 +82,7 @@ export function throwDisc(p, dir, speed, kind = 'normal') {
   d.super = (kind === 'normal' && p.charge >= .98);
   p.holding = false; p.charging = false; p.wasCharging = false; p.charge = 0; p.fullFlash = false;
   p.throwCd = .32; p.throwPoseT = .28; p.stats.thrown++; p.holdTimer = 0;
-  sfx(d.super ? 'superthrow' : 'throw');
+  sonMatch(d.super ? 'superthrow' : 'throw', forceDeVitesse(finalSpeed), p);
   if (d.super) {
     // Le souffle du tir vit dans fx.js : l'invité ne fait tourner cette
     // fonction-ci que pour SES propres tirs, et rejoue celui de l'adversaire
@@ -175,7 +176,7 @@ export function doDive(p, aim) {
   // lui, en soulève derrière ses pieds. Les deux actions se distinguent ainsi
   // même sans regarder la pose.
   dust(p.x + aim.x * 26, p.y + 22, 12);
-  sfx('dash');
+  sonMatch('dive', .5, p);
 
   // Le plongeon se coupe en deux, et la coupure est exactement celle du reste
   // du jeu en ligne : l'ÉLAN appartient au joueur, le CONTACT à l'arbitre.
@@ -239,7 +240,7 @@ function perfectDive(p) {
   G.banner = { text: 'PERFECT DIVE !', color: '#35e0ff', t: 0, dur: 1.1 };
   burst(p.x, p.y, '#ffffff', 26); burst(p.x, p.y, '#35e0ff', 22);
   starBurst(p.x, p.y); ring(p.x, p.y, '#35e0ff');
-  sfx('perfect'); commentNom(p, 'defense',
+  sonMatch('perfect', 1, p); commentNom(p, 'defense',
     ['QUEL RENVOI !', 'QUEL RÉFLEXE !', 'PERFECT DIVE !'],
     n => [`QUEL RENVOI DE ${n} !`, `${n} SORT LE GRAND JEU !`, `${n} AVEC LE PERFECT DIVE !`]);
 }
@@ -301,7 +302,7 @@ export function onCatch(p, sp, dirx, diry) {
   // La poussière et l'anneau passent par fx.js : l'invité les rejoue de son
   // côté à la vue du changement de porteur, puisque cette fonction-ci ne
   // tourne jamais chez lui (voir effetDeReception).
-  sfx('catch'); effetDeReception(p.x, p.y, p.char.accent, sp);
+  sonMatch('catch', forceDeVitesse(sp), p); effetDeReception(p.x, p.y, p.char.accent, sp);
   // Captain : un bouclier apparaît un instant autour de celui qui attrape.
   // Attaché au joueur et pas au disque, parce que le disque vient de quitter
   // le terrain pour sa main — c'est lui qu'on regarde à cet instant.
@@ -312,7 +313,7 @@ export function onCatch(p, sp, dirx, diry) {
     // de l'ultime suivant pour ce qui reste une réception, pas un but.
     if (!soiMeme) p.meter = clamp(p.meter + 14 * METER_GAIN, 0, 100);
     addPopup('PERFECT CATCH !', '#ffffff', 14, .9, p.y - 56);
-    G.timescale = .3; G.tsTimer = .18; sfx('perfect');
+    G.timescale = .3; G.tsTimer = .18; sonMatch('perfect', 1, p);
     G.shake = Math.max(G.shake, 7);
     commentNom(p, 'defense',
       ['INCROYABLE ARRÊT !', 'QUELLE RÉCEPTION !', 'IL NE LÂCHE RIEN !'],
@@ -362,7 +363,7 @@ export function scoreGoal(scorer, y) {
   // partenaire finissait par remporter la partie en plein apprentissage.
   if (G.training || G.tuto) {
     addPopup('BUT !', '#ffd23e', 20, .55, y);
-    sfx('goal');
+    sonMatch('goal', forceDeVitesse(Math.hypot(G.disc.vx, G.disc.vy)), scorer);
     burst(scorer.side === 1 ? COURT.right : COURT.left, y, '#ffd23e', 20);
     if (G.training) G.training.demandeReset = true;
     else G.tuto.demandeReset = true;
@@ -381,7 +382,7 @@ export function scoreGoal(scorer, y) {
   // Toute la mise en scène est dans fx.js : l'invité en ligne ne compte pas les
   // points et ne passe jamais ici, il doit pouvoir la rejouer de son côté.
   effetDeBut(scorer.side, y, scorer.char.color, scorer.char.accent || scorer.char.color, pts, scorer.char.short);
-  sfx('goal');
+  sonMatch('goal', forceDeVitesse(Math.hypot(G.disc.vx, G.disc.vy)), scorer);
   // Commentaire "légendaire" : soit une grosse remontée (mené d'au moins 5,
   // et ce point remet à égalité ou devant), soit le point de la victoire
   // alors que l'adversaire restait dans le coup jusqu'au bout. Remplace le

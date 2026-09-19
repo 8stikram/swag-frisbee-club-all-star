@@ -12,6 +12,7 @@ import { gaussJeu } from '../core/alea.js';
 import { getKey } from '../data/keymap.js';
 import { getDashAim, toggleDashAim, getAnimReduites, toggleAnimReduites } from '../data/settings.js';
 import { initAudio, sfx, toggleMusic } from '../audio/audio.js';
+import { sonMatch } from './sons.js';
 import { addPopup, dust } from './fx.js';
 import { doThrowHuman, throwDisc, skipReplay, doDive, viseVersAvant } from './actions.js';
 import { trySpecial } from './specials.js';
@@ -307,14 +308,14 @@ export function startDash(p, dir) {
   // Silence pendant un rejeu : ce dash a déjà claqué une fois, à l'instant où
   // il a réellement eu lieu. Le rejouer sans cette garde ferait entendre deux
   // dashs pour un seul geste, à chaque rembobinage.
-  if (!Partie.rejeuEnCours) { dust(p.x, p.y + 20, 6); sfx('dash'); }
+  if (!Partie.rejeuEnCours) { dust(p.x, p.y + 20, 6); sonMatch('dash', .5, p); }
 }
 
 export function doLunge(p) {
   p.lunge = .18; p.lungeCd = .55;
   const d = norm(Mouse.x - p.x, Mouse.y - p.y);
   p.dashV.x += d.x * 260; p.dashV.y += d.y * 260;
-  dust(p.x, p.y + 20, 4); sfx('dash');
+  dust(p.x, p.y + 20, 4); sonMatch('dash', .35, p);
 }
 
 export function updatePlayerHuman(p, dt) {
@@ -402,7 +403,7 @@ export function updatePlayer2(dt) {
   p.dashTenu = !!c.dash;
   if (veutDasher2 && p.dashCd <= 0) {
     p.dashV.x = c.viseeDash.x * DASH_SPEED * 0.7; p.dashV.y = c.viseeDash.y * DASH_SPEED * 0.7;
-    p.dashCd = DASH_CD; sfx('dash'); dust(p.x, p.y + 22, 8);
+    p.dashCd = DASH_CD; sonMatch('dash', .5, p); dust(p.x, p.y + 22, 8);
   }
   // Le tir part au relâchement de la touche (keyup), pas ici : voir plus bas.
   // Le laisser ici tirait dès que charge>0, donc quasi immédiatement après

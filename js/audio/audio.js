@@ -2,6 +2,12 @@ import { getTrackId, getTrack, setTrackId } from '../data/music.js';
 // Seau sans dépendance : il note les sons à renvoyer à l'invité. Il n'importe
 // rien, donc importer l'audio ne peut pas fermer de cycle avec l'état du jeu.
 import { noterSon, sonEtouffe } from '../reseau/echo.js';
+// Moteur et données des bruitages du match : sans dépendance non plus.
+import { jouerSon } from './moteur-sfx.js';
+import { SONS_MATCH } from './sons-match.js';
+// La map en cours colore les rebonds et l'écho. maps.js n'importe que
+// deverrouillage.js, qui n'importe rien : aucun chemin vers l'état du jeu.
+import { getMapId } from '../data/maps.js';
 
 // Bruitages toujours autorisés même pendant la démo IA-vs-IA jouée en fond
 // de menu (clics/sélections) — tout le reste (buts, coups, cris...) est
@@ -176,26 +182,32 @@ function noise(dur, vol, freq = 2000, delay = 0) {
 // rien entendu du tout.
 // `horsDemo` : son voulu par un écran (l'intro) alors que la démo du menu,
 // qui tourne derrière, coupe d'habitude tout ce qui n'est pas un son d'interface.
-export function sfx(n, venuDuReseau, horsDemo) {
+// Un son du match peut porter son contexte dans son nom : « throw|0.73|leon|dune »
+// = nom, force (0-1), personnage, map (voir sonMatch dans game/sons.js). Tout
+// voyage dans cette seule chaîne, y compris par l'écho réseau : l'invité
+// entend exactement le même tir que l'hôte, à la même force.
+export function sfx(cle, venuDuReseau, horsDemo) {
+  const [n, force, perso, map] = String(cle).split('|');
   // On note avant toute condition de sortie : que cette machine ait ou non son
   // audio prêt ne dit rien de celle d'en face, et l'hôte doit renvoyer ce que
   // le match produit même s'il joue lui-même en sourdine.
-  noterSon(n);
+  noterSon(cle);
   if (!venuDuReseau && sonEtouffe(n)) return;
   if (!AC) return;
   // Contexte en pause (pas encore de geste) : ces sons partiraient tous d'un
   // coup à la reprise.
   if (AC.state === 'suspended') return;
   if (demoMuted && !UI_SFX.has(n) && !horsDemo) return;
+  if (SONS_MATCH[n]) {
+    jouerSon(AC, sfxGain, SONS_MATCH[n], { force: force === undefined || force === '' ? .5 : +force, perso, map: map || getMapId() });
+    return;
+  }
   switch (n) {
     case 'move': beep(760, 760, .05, 'square', .06); break;
     case 'select': beep(620, 990, .12, 'square', .12); beep(990, 1320, .1, 'square', .08, .06); break;
     case 'deny': beep(220, 150, .14, 'square', .12); break;
-    case 'bounce': beep(190, 120, .07, 'triangle', .22); noise(.05, .08, 900); break;
-    case 'catch': beep(500, 330, .08, 'sine', .2); noise(.06, .06, 600); break;
-    case 'throw': noise(.16, .16, 1600); beep(300, 700, .12, 'sawtooth', .07); break;
-    case 'dash': noise(.14, .12, 2600); beep(500, 900, .1, 'sine', .05); break;
-    case 'goal': [660, 830, 990, 1320].forEach((f, i) => beep(f, f, .14, 'square', .16, i * .09)); noise(.5, .14, 500); break;
+    // throw, superthrow, bounce, catch, dash, dive, perfect et goal : voir
+    // SONS_MATCH plus haut.
     case 'count': beep(660, 660, .09, 'square', .16); break;
     case 'go': beep(1040, 1040, .3, 'square', .18); break;
     case 'whistle': beep(1560, 1560, .16, 'square', .13); beep(1560, 1150, .22, 'square', .12, .14); break;
@@ -204,8 +216,6 @@ export function sfx(n, venuDuReseau, horsDemo) {
     case 'lose': [392, 330, 262, 196].forEach((f, i) => beep(f, f, .25, 'triangle', .16, i * .18)); break;
     case 'charge': beep(440, 520, .04, 'square', .05); break;
     case 'full': beep(700, 1400, .16, 'square', .14); beep(1400, 1400, .08, 'sine', .1, .1); break;
-    case 'superthrow': noise(.2, .2, 2000); beep(200, 900, .16, 'sawtooth', .12); beep(900, 400, .1, 'square', .08, .05); break;
-    case 'perfect': [990, 1320, 1760].forEach((f, i) => beep(f, f, .1, 'square', .13, i * .05)); break;
     // PSYCHO-SHELL : grave et mineral, pas une explosion. Un bourdon qui
     // monte, puis un craquement de verre.
     case 'psycho':
