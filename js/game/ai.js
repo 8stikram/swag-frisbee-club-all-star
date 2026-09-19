@@ -475,7 +475,43 @@ function seReplacer(p, d, D, S, dt) {
     const loin = Math.hypot(d.garde.x - p.x, d.garde.y - p.y);
     if (loin > 170 && aleaJeu() < S.mobilite * D.dash * 1.5 * dt) startDash(p, norm(d.garde.x - p.x, d.garde.y - p.y));
   }
+  if (disc.heldBy === foe) return marquage(p, d, D, S, d.garde);
+  d.marquage = null;
   return { x: d.garde.x, y: d.garde.y };
+}
+
+// ---------------------------------------------------------------------------
+// Marquage : tant que l'adversaire garde le disque, un humain ne reste pas
+// planté devant sa cage. Il change d'intention toutes les demi-secondes —
+// monter presser le tireur, le suivre en miroir, se pencher d'un côté pour
+// l'inviter à tirer de l'autre — et ne tient jamais en place. Quand la charge
+// démarre, il lit la menace et se replie : celui qui presse trop haut se fait
+// punir s'il réagit tard, et c'est exactement l'ouverture qu'on doit chercher.
+// ---------------------------------------------------------------------------
+function marquage(p, d, D, S, garde) {
+  const foe = p.foe, sens = camp(p);
+  let m = d.marquage;
+  if (!m || G.now >= m.jusqua || G.now < m.depuis) {
+    const r = aleaJeu(), presse = .25 + .6 * S.agressivite;
+    m = d.marquage = {
+      mode: r < presse * .6 ? 'presse' : r < .72 ? 'ombre' : 'penche',
+      depuis: G.now,
+      jusqua: G.now + .45 + randJeu(.75),
+      avance: (60 + randJeu(120)) * (.5 + S.agressivite),
+      penche: (aleaJeu() < .5 ? -1 : 1) * (40 + randJeu(55)),
+      phase: m ? m.phase : randJeu(6.28)
+    };
+  }
+  const repli = foe.charging ? clamp(foe.charge * (1.2 + D.smart), 0, 1) : 0;
+  let x = garde.x, y = garde.y;
+  if (m.mode === 'presse') x += sens * m.avance * (1 - repli);
+  if (m.mode !== 'penche') y += (foe.y - y) * .45 * (1 - .6 * repli);
+  else y += m.penche * (1 - repli);
+  // Le balancement d'appui, plus ample chez les nerveux et les mobiles.
+  const amp = 10 + 22 * S.nervosite + 12 * S.mobilite;
+  y += Math.sin(G.now * (2.2 + 1.5 * S.nervosite) + m.phase) * amp;
+  x += Math.sin(G.now * 1.3 + m.phase * 2) * amp * .5 * sens;
+  return { x, y };
 }
 
 // ---------------------------------------------------------------------------
@@ -533,6 +569,11 @@ function attaquer(p, d, D, S, dt) {
     d.tempsDecision = clamp(.75 - .7 * S.agressivite + randJeu(.3) - d.stress * .2, .06, .9);
     d.veutFeinter = aleaJeu() < (.1 + .55 * S.ruse) * D.smart;
     d.plan = choisirTir(p, d, D, S, d.chargeVisee, .6);
+    // L'imprécision du poignet est tirée ici, pas au lâcher : elle fait partie
+    // de la visée affichée, et le disque part exactement où pointe la flèche.
+    d.bruit = gaussJeu() * D.err * .22 * (1 + d.stress);
+    d.relu = false;
+    d.emaTarget.x = d.plan.vise.x; d.emaTarget.y = d.plan.vise.y + d.bruit;
     // Où il va se poster pour tirer : près du filet pour les agressifs, plus
     // en retrait pour les posés, et du côté qui ouvre l'angle.
     const recul = 80 + (1 - S.agressivite) * 190;
@@ -542,9 +583,13 @@ function attaquer(p, d, D, S, dt) {
     };
   }
   p.holdTimer += dt;
-  const plan = d.plan;
-  d.emaTarget.x = plan.vise.x; d.emaTarget.y = plan.vise.y;
   p.face = camp(p);
+  // La visée affichée (la flèche) tourne vers le plan à vitesse de poignet :
+  // un changement d'avis se VOIT, comme la souris d'un joueur qui se ravise.
+  const e = d.emaTarget;
+  e.x = approach(e.x, d.plan.vise.x, 14, dt);
+  e.y = approach(e.y, d.plan.vise.y + d.bruit, 14, dt);
+  const plan = d.plan;
 
   // Feinte : seulement si le défenseur couvre le tir prévu — feinter dans le
   // vide ne trompe personne. Après la feinte, il repart sur le meilleur tir.
@@ -558,12 +603,17 @@ function attaquer(p, d, D, S, dt) {
   if (p.feintT <= 0 && (p.holdTimer > d.tempsDecision || doitTirer)) {
     p.charging = true;
     p.charge = Math.min(1, p.charge + dt / p.char.chargeT * (p.feintBoostT > 0 ? 4 : 1));
-    if (p.charge >= d.chargeVisee || doitTirer || p.holdTimer > 1.9) {
-      // Au moment de lâcher, il regarde une dernière fois où est le défenseur —
-      // un bon joueur change de côté au dernier moment s'il voit l'ouverture.
-      const finalPlan = aleaJeu() < D.smart ? choisirTir(p, d, D, S, p.charge, 1) : plan;
-      const bruit = gaussJeu() * D.err * .22 * (1 + d.stress);
-      const dir = norm(finalPlan.vise.x - p.x, finalPlan.vise.y + bruit - p.y);
+    // Pendant la charge, il regarde une fois où est le défenseur — un bon
+    // joueur change de côté s'il voit l'ouverture. La flèche pivote alors sous
+    // les yeux du défenseur, qui peut le lire s'il est attentif.
+    if (!d.relu && p.charge >= d.chargeVisee * .55) {
+      d.relu = true;
+      if (aleaJeu() < D.smart) d.plan = choisirTir(p, d, D, S, d.chargeVisee, 1);
+    }
+    const aVise = Math.abs(e.x - d.plan.vise.x) + Math.abs(e.y - d.plan.vise.y - d.bruit) < 12;
+    if ((p.charge >= d.chargeVisee && aVise) || doitTirer || p.holdTimer > 1.9) {
+      // Il lâche dans la direction affichée, au pixel près.
+      const dir = norm(e.x - p.x, e.y - p.y);
       throwDisc(p, dir, throwSpeed(p.charge, p.char.power));
       d.avaitDisque = false;
       d.forceShoot = false;
