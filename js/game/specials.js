@@ -407,6 +407,16 @@ export function updateLame(dt) {
   }
 }
 
+// LE GEL : tant que le Susanoo est debout, la jauge du Gardien reste à zéro,
+// quelle qu'en soit la source — recharge passive, attrapés, renvois, buts.
+// Sans ça, dix secondes de coups d'épée la remplissaient assez pour relancer
+// l'ultime aussitôt : c'était spammable. Elle repart de zéro à la fin.
+// Appelé par la boucle APRÈS toute la simulation de l'image : posé au début,
+// les gains arrivés ensuite restaient affichés une image dans le HUD.
+export function gelerJaugeLame() {
+  for (const p of [G.p1, G.p2]) if (p && p.lameT > 0) p.meter = 0;
+}
+
 // Le clic, pendant l'ultime : un coup d'épée vers la visée. Aucune recharge —
 // il frappe autant qu'il clique, et un nouveau clic relance le coup.
 export function coupDeLame(p, visee) {

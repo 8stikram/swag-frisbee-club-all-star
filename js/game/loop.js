@@ -9,7 +9,7 @@ import { doThrowHuman } from './actions.js';
 import { majCommandes, appliquerActions } from './commandes.js';
 import { updateAI } from './ai.js';
 import { updateDisc, updateDecoys } from './disc.js';
-import { updateLeg, updateBell, updateHack, updateRafale, updateGrappin, updateChien, updateRuee, updateTigre, updatePsycho, updateLame, launchCine } from './specials.js';
+import { updateLeg, updateBell, updateHack, updateRafale, updateGrappin, updateChien, updateRuee, updateTigre, updatePsycho, updateLame, gelerJaugeLame, launchCine } from './specials.js';
 import { updateDesert } from './desert.js';
 import { updateBrume } from './brume.js';
 import { SIX_ORBES } from '../data/specials.js';
@@ -313,6 +313,7 @@ export function update(dt) {
       break;
     }
   }
+  gelerJaugeLame();
   capture();
   updateFX(dt);
   // L'invité rapproche son image de ce qu'on lui a dit, puis chacun envoie ce
