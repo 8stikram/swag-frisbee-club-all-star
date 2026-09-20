@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Isaac — les tenues</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#120a10; --panel:#1c1119; --edge:#3a2334; --ink:#f3e7ee; --accent:#c76a9a; --or:#ff7f6a; --rouge:#a01b14; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:23px;margin:0 0 4px;font-family:'Archivo Black',sans-serif;letter-spacing:.5px}
+  h2{font-size:14px;margin:36px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#b79ab0;max-width:1000px;line-height:1.75;margin:0 0 14px}
+  .note b{color:var(--or)}
+  .onglets{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 16px}
+  .onglet{background:var(--panel);border:1px solid var(--edge);border-radius:9px;padding:8px 16px;
+          font-size:12px;letter-spacing:1px;color:#b79ab0;cursor:pointer;font-family:Consolas,monospace}
+  .onglet.on{border-color:var(--or);color:var(--or);background:#2a1a26}
+  .onglet.mort{opacity:.4;cursor:not-allowed}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px;
+        flex:1 1 206px;min-width:206px;max-width:268px;cursor:pointer;
+        transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#7a4a68}
+  .card.on{border-color:var(--or);transform:translateY(-2px);box-shadow:0 0 0 1px var(--or) inset}
+  .lbl{font-size:11px;color:#b79ab0;margin-bottom:8px;line-height:1.5;min-height:96px}
+  .lbl b{display:block;font-size:13px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  .duo{display:flex;gap:8px;align-items:flex-end;justify-content:center}
+  .duo canvas{background:#140c13;border-radius:8px;display:block;image-rendering:pixelated;flex:0 0 auto}
+  .duo .zoom{border:1px solid #7a4a68}
+  .duo .plein{opacity:.85}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 420px;
+          display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+  .apercu canvas{background:#140c13;border-radius:10px;image-rendering:pixelated;display:block}
+  .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 300px}
+  .fiche h3{margin:0 0 10px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .choix{font-size:11.5px;color:#b79ab0;margin-top:10px;font-family:Consolas,monospace;line-height:1.8}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#140c13;border:1px solid var(--edge);border-radius:8px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#2a1a26;color:var(--ink);border:1px solid var(--edge);border-radius:8px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#3a2434}
+  .btnCopier.ok{background:#4a2338;border-color:#7a3a5c;color:#ffb9a8}
+  .rosterRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .rosterOne{text-align:center;font-size:9px;color:#a78499;font-family:Consolas,monospace}
+  .rosterOne canvas{display:block;border-radius:6px;image-rendering:pixelated;border:1px solid var(--edge)}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>ISAAC — LES TENUES</h1>
+<p class="note">
+  <b>Les quatre tenues d'Isaac sont annoncees dans le jeu mais n'ont jamais ete dessinees.</b>
+  Les choisir laisse le sprite d'origine. On les fait donc une par une, en partant du personnage
+  reel de Binding of Isaac : AZAZEL d'abord, puis MAGDALENE, CAIN et EVE.
+  <br><br>
+  <b>Un skin d'Isaac se joue sur la PEAU et la TETE.</b> Son corps est nu : il n'y a pas de
+  vetement a habiller, seulement un teint, des yeux, et ce qui pousse dessus. Chaque tenue se
+  juge donc sur deux pieces — la tete et le corps.
+  <br><br>
+  <b>Le gabarit ne bouge pas.</b> Memes epaules, memes bras aux colonnes 1-2 et 11-12, memes
+  jambes aux colonnes 3-4 et 9-10 : ce sont eux qui rendent la course lisible, et les cinq autres
+  poses du jeu se deduisent de la tenue choisie ici par recoloration. La colonne 15 reste vide,
+  sinon le miroir du jeu fait sauter le perso quand il se retourne.
+  <br><br>
+  <b>On les fait un skin a la fois.</b> Les onglets grises attendent que celui-ci soit valide.
+  Et tout est <b>dessinable</b> : l'editeur plus bas permet de poser les pixels a la main sur
+  le rendu final, par-dessus les variantes.
+</p>
+
+<div class="onglets" id="onglets"></div>
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvGrand" width="304" height="380"></canvas>
+    <div>
+      <canvas id="cvPetit" width="230" height="120"></canvas>
+      <div class="choix" id="choix"></div>
+      <div class="copier">
+        <input class="codeChoix" id="codeChoix" readonly>
+        <button class="btnCopier" id="btnCopier">copier mes choix</button>
+      </div>
+    </div>
+  </div>
+  <div class="fiche">
+    <h3>La tenue en cours</h3>
+    <div class="choix" id="resume"></div>
+    <h3 style="margin-top:14px">A l'echelle du match, a cote du roster</h3>
+    <div class="rosterRow" id="rosterRow"></div>
+  </div>
+</div>
+
+<div class="apercu" id="editeur" style="margin-top:14px;display:block"></div>
+
+<div id="sections"></div>
+
+<script type="module">
+import { MAPS } from '../js/data/maps.js';
+import { CHARS, ROSTER } from '../js/data/characters.js';
+import { verifier, afficher } from './_verif.js';
+import { editeur, styleEditeur } from './_pixel.js';
+
+const PAL = {"S": "#f2cfcb", "a": "#e2b8b4", "b": "#c08c88", "E": "#151013", "T": "#8fd8e8", "W": "#ffffff", "K": "#151013", "M": "#4a3f57", "N": "#2f2736", "n": "#1b1622", "h": "#0e0b14", "V": "#6b3f86", "v": "#3f2352", "R": "#ff4a3d", "r": "#a01b14", "C": "#e4d8c3", "o": "#a08f74"};
+const BASE = { tete: ["....aaaaaa......", "..aaSSSSSSaa....", ".aSSSSSSSSSSa...", ".aSSSSSSSSSSa...", ".aSSSSSSSSSSa...", ".aSSWESSSWESa...", ".aSSEESSSEESa...", ".aSSTSKKSTSSa...", "..aSTSSSSTSa....", "...bbbbbbbb....."], corps: ["....bbbbbb......", "..aaSSSSSSaa....", ".aSSSSSSSSSSa...", ".aSSSSSSSSSSa...", "..bSSSSSSSSb....", "..aSSSSSSSSa....", "..aSSb..bSSa....", "..aSSb..bSSa....", "..aSSb..bSSa....", "...aa....aa....."] };
+const SKINS = [{id:'azazel',nom:'AZAZEL',accroche:"Isaac a laisse la place au petit demon noir du sous-sol. Sa grosse tete ronde et son corps nu ne bougent pas d'un pixel : c'est la PEAU qui devient ombre, les yeux qui virent au rouge, et deux ailes qui poussent dans le dos.",dominante:'MNnh',tete:["..M.hhhhhh.M....", "..nnNNNNNNnn....", ".nNNNNNNNNNNn...", ".nNNNNNNNNNNn...", ".nNNNNNNNNNNn...", ".nNNRrNNNRrNn...", ".nNNrrNNNrrNn...", ".nNNNNhhNNNNn...", "..nNNNNNNNNn....", "...hhhhhhhh....."],corps:["....hhhhhh......", "..nnNNNNNNnn....", "VnNNNNNNNNNNnV..", "vnNNNNNNNNNNnv..", "V.hNNNNNNNNh.V..", "..nNNNNNNNNn....", "..nNNh..hNNn....", "..nNNh..hNNn....", "..nNNh..hNNn....", "...nn....nn....."],sections:[{id:'tete',titre:'1 · LA TÊTE',note:"La tete d'Isaac est une GROSSE BOULE qui occupe presque toute la largeur, avec ses deux yeux aux colonnes 4-5 et 9-10 et ses larmes bleues. Un skin se juge ici sur ce qu'il garde de cette boule : plus on la sculpte, plus on s'eloigne d'Isaac. Les cornes, elles, ne peuvent pousser que sur les cotes du crane — il n'y a aucune ligne libre au-dessus de la tete dans le gabarit.",zoom:[1,0,14,9],variantes:[{id:"A",nom:"CORNES COURTES",desc:"Peau d'ombre sur quatre valeurs, deux petites cornes posees au ras du crane, et les yeux rouges a l'emplacement exact de ceux d'Isaac. C'est la version la plus proche du sprite d'origine : on reconnait sa grosse tete ronde au premier coup d'oeil. En contrepartie, c'est la moins demoniaque des cinq.",tete:["..M.hhhhhh.M....", "..nnNNNNNNnn....", ".nNNNNNNNNNNn...", ".nNNNNNNNNNNn...", ".nNNNNNNNNNNn...", ".nNNRrNNNRrNn...", ".nNNrrNNNrrNn...", ".nNNNNhhNNNNn...", "..nNNNNNNNNn....", "...hhhhhhhh....."]},{id:"B",nom:"GRANDES CORNES ET CROCS",desc:"Les cornes doublent de taille et debordent sur les cotes, et une rangee de crocs d'os ouvre le bas du visage. C'est la silhouette la plus reconnaissable de loin, impossible a confondre avec un autre perso ; mais les cornes mangent de la place a gauche et a droite, la ou les autres persos n'ont rien.",tete:[".MM.hhhhhh.MM...", ".MnnNNNNNNnnM...", "hnNNNNNNNNNNnh..", ".nNNNNNNNNNNn...", ".nhhNNNNNNhhn...", ".nNNRrNNNRrNn...", ".nNNNNhhNNNNn...", ".nNChCCCChCNn...", "..nNCNNNNCNn....", "...hhhhhhhh....."]},{id:"C",nom:"CAPUCHE D'OMBRE",desc:"Plus de visage du tout : la tete est avalee par le noir et il n'en reste que deux yeux rouges. C'est la version la plus inquietante, et celle qui se lit le mieux meme minuscule ; en revanche elle perd la rondeur du crane d'Isaac, donc le skin s'eloigne du personnage.",tete:["....hhhhhh......", "..hhhhhhhhhh....", ".nhhhhhhhhhhn...", ".nhhhhhhhhhhn...", ".nhhhhhhhhhhn...", ".nhhRRhhhRRhn...", ".nhhrrhhhrrhn...", ".nhhhhhhhhhhn...", "..nhhhhhhhhn....", "...hhhhhhhh....."]},{id:"D",nom:"CRANE DE BOUC",desc:"Un crane d'os pale a la place de la tete : orbites creusees, braise rouge au fond, et une machoire dentelee. C'est le plus fort contraste des cinq — de l'os clair sur un corps noir — donc celui qui ressort le plus sur les cartes sombres ; en revanche on quitte le demon pour aller vers le squelette.",tete:[".CC.oooooo.CC...", ".ooCCCCCCCCoo...", ".oCCCCCCCCCCo...", ".oCCCCCCCCCCo...", ".oCChhCCChhCo...", ".oCChRCCChRCo...", ".oCCCCCCCCCCo...", ".oCCChhhhCCCo...", "..oChChChCCo....", "...oooooooo....."]},{id:"E",nom:"ISAAC POSSEDE",desc:"Isaac n'a pas change de peau : il garde son teint, ses larmes et sa bouche, mais le blanc de ses yeux est devenu noir, la pupille rouge, et deux cornes ont perce. C'est la lecture la plus troublante, et la seule qui garde les larmes ; en contrepartie, de loin, il se confond avec l'Isaac d'origine.",tete:["..h.aaaaaa.h....", "..aaSSSSSSaa....", ".aSSSSSSSSSSa...", ".aSSSSSSSSSSa...", ".aSSSSSSSSSSa...", ".aSSEESSSEESa...", ".aSSRESSSRESa...", ".aSSTSKKSTSSa...", "..aSTSSSSTSa....", "...bbbbbbbb....."]}]},{id:'corps',titre:'2 · LE CORPS',note:"Le corps est SUBSTITUE au gabarit ligne a ligne : memes epaules, memes bras aux colonnes 1-2 et 11-12, memes jambes aux colonnes 3-4 et 9-10. C'est ce qui permet de deduire les cinq autres poses du jeu — course x2, tir, plongeon, dash — par simple recoloration. Les ailes n'ont donc que les colonnes 0, 13 et 14 pour exister, et la colonne 15 doit rester vide, sinon le miroir du jeu fait sauter le perso de deux pixels quand il se retourne.",zoom:[0,10,15,19],variantes:[{id:"A",nom:"AILES REPLIEES",desc:"Deux petites ailes repliees dans le dos, qui ne depassent que d'une colonne de chaque cote. La silhouette reste exactement celle d'Isaac, donc la course et le plongeon se lisent pareil ; en contrepartie les ailes se voient peu, et c'est elles qui disent le demon.",corps:["....hhhhhh......", "..nnNNNNNNnn....", "VnNNNNNNNNNNnV..", "vnNNNNNNNNNNnv..", "V.hNNNNNNNNh.V..", "..nNNNNNNNNn....", "..nNNh..hNNn....", "..nNNh..hNNn....", "..nNNh..hNNn....", "...nn....nn....."]},{id:"B",nom:"AILES DEPLOYEES",desc:"Les ailes s'ouvrent sur toute la hauteur du buste et occupent les deux colonnes de bord. C'est de loin la silhouette la plus spectaculaire et la plus demoniaque ; mais elle elargit beaucoup le personnage, et pendant la course les bras se detachent moins bien du fond des ailes.",corps:["V...hhhhhh...V..", "VvnnNNNNNNnnvV..", "VvNNNNNNNNNNvV..", "VvNNNNNNNNNNvV..", "Vv.hNNNNNNh.vV..", ".v.nNNNNNNn.v...", "..nNNh..hNNn....", "..nNNh..hNNn....", "..nNNh..hNNn....", "...nn....nn....."]},{id:"C",nom:"AILES EN LAMBEAUX",desc:"Les memes ailes, mais trouees : la membrane est mangee par endroits et il reste des trous entre les baleines. Ca raconte un demon qui a deja servi, et ca allege la silhouette par rapport aux ailes pleines ; en revanche, en petit, les trous peuvent se lire comme des pixels manquants.",corps:["....hhhhhh......", "V.nnNNNNNNnn.V..", ".vNNNNNNNNNNv...", "V.NNNNNNNNNN.V..", ".vhNNNNNNNNhv...", "V.nNNNNNNNNn.V..", "..nNNh..hNNn....", "..nNNh..hNNn....", "..nNNh..hNNn....", "...nn....nn....."]},{id:"D",nom:"CORPS D'OMBRE",desc:"Pas d'ailes du tout : le corps est cerne de noir profond au lieu de son contour habituel, et de la fumee s'echappe au ras des pieds. C'est la version la plus sobre, celle qui garde le gabarit d'Isaac au pixel pres ; en contrepartie, sans ailes, il ne reste que la tete pour dire qu'il s'agit d'Azazel.",corps:["....hhhhhh......", "..hhNNNNNNhh....", ".hNNNNNNNNNNh...", ".hNNNNNNNNNNh...", "..hNNNNNNNNh....", "..hNNNNNNNNh....", "..hNNh..hNNh....", "..hNNh..hNNh....", "..hNNh..hNNh....", "..hnn....nnh...."]},{id:"E",nom:"AILES OSSEUSES",desc:"Les ailes n'ont plus de membrane : il ne reste que les os, clairs, qui se detachent du corps noir. C'est le meilleur compromis entre les ailes pleines et le corps nu — on voit l'envergure sans masquer les bras ; en revanche l'os clair rappelle le crane, donc il va mal avec les quatre autres tetes.",corps:["C...hhhhhh...C..", "ConnNNNNNNnnoC..", "CoNNNNNNNNNNoC..", "C.NNNNNNNNNN.C..", "CohNNNNNNNNhoC..", "C.nNNNNNNNNn.C..", "..nNNh..hNNn....", "..nNNh..hNNn....", "..nNNh..hNNn....", "...nn....nn....."]}]}]}];
+const A_VENIR = [{id:'magdalene',nom:'MAGDALENE'},{id:'cain',nom:'CAIN'},{id:'eve',nom:'EVE'}];
+
+
+// Le skin affiche est porte par le fragment d'URL. Un simple `location.reload()`
+// apres avoir change une variable ne survivait pas au rechargement : on
+// revenait toujours sur le premier skin.
+let skin = SKINS.find(s => s.id === location.hash.slice(1)) || SKINS[0];
+
+/* ===================== LE DESSIN ===================== */
+function peindre(g, rows, pal, ech, ox, oy, zone) {
+  const [x0, y0, x1, y1] = zone || [0, 0, 15, 19];
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const ch = rows[y][x];
+      if (ch === '.' || !pal[ch]) continue;
+      g.fillStyle = pal[ch];
+      g.fillRect(ox + (x - x0) * ech, oy + (y - y0) * ech, ech, ech);
+    }
+  }
+}
+
+function fond(g, W, H) {
+  const d = g.createLinearGradient(0, 0, 0, H);
+  d.addColorStop(0, '#241522'); d.addColorStop(1, '#120a10');
+  g.fillStyle = d; g.fillRect(0, 0, W, H);
+}
+
+/* ===================== L'ETAT ===================== */
+const choix = {};
+skin.sections.forEach(s => { choix[s.id] = s.variantes[0].id; });
+const actuel = id => skin.sections.find(s => s.id === id).variantes.find(x => x.id === choix[id]);
+
+function batir(remplace) {
+  let tete = skin.tete, corps = skin.corps;
+  for (const s of skin.sections) {
+    const va = (remplace && remplace.sec === s.id) ? remplace.va : actuel(s.id);
+    if (va.tete) tete = va.tete;
+    if (va.corps) corps = va.corps;
+  }
+  // La retouche de l'editeur ne s'applique qu'au perso ASSEMBLE, jamais aux
+  // cartes : une carte doit montrer SA variante, sinon on choisit a l'aveugle.
+  let rows = [...tete, ...corps];
+  if (!remplace && ed && ed.actif()) rows = ed.rows();
+  return { rows, pal: PAL };
+}
+
+let ed = null;
+
+/* ===================== LES ONGLETS ===================== */
+(function onglets() {
+  const h = document.getElementById('onglets');
+  SKINS.forEach(sk => {
+    const b = document.createElement('button');
+    b.className = 'onglet' + (sk.id === skin.id ? ' on' : '');
+    b.textContent = sk.nom;
+    b.onclick = () => { location.hash = sk.id; location.reload(); };
+    h.append(b);
+  });
+  A_VENIR.forEach(sk => {
+    const b = document.createElement('button');
+    b.className = 'onglet mort';
+    b.textContent = sk.nom + ' — a venir';
+    b.title = 'On fait un skin a la fois : celui-ci arrive quand le precedent est valide.';
+    h.append(b);
+  });
+})();
+
+/* ===================== L'EDITEUR ===================== */
+styleEditeur();
+ed = editeur({
+  hote: document.getElementById('editeur'),
+  cle: 'isaac-' + skin.id,
+  rows: () => batir().rows,
+  pal: () => PAL,
+  change: () => rafraichir()
+});
+
+/* ===================== L'APERCU ===================== */
+const gG = document.getElementById('cvGrand').getContext('2d');
+const gP = document.getElementById('cvPetit').getContext('2d');
+const ARENE = MAPS[0], TH = ARENE.theme;
+
+function majApercu() {
+  const { rows, pal } = batir();
+  const cv = gG.canvas;
+  fond(gG, cv.width, cv.height);
+  const ech = 19;
+  peindre(gG, rows, pal, ech, (cv.width - 16 * ech) / 2, (cv.height - 20 * ech) / 2);
+
+  const c2 = gP.canvas;
+  gP.fillStyle = TH.floor; gP.fillRect(0, 0, c2.width, c2.height);
+  gP.strokeStyle = TH.line; gP.lineWidth = 1;
+  gP.beginPath(); gP.moveTo(0, c2.height - 14); gP.lineTo(c2.width, c2.height - 14); gP.stroke();
+  for (let i = 0; i < 3; i++) peindre(gP, rows, pal, 4.8, 14 + i * 74, c2.height - 14 - 20 * 4.8);
+
+  majChoix();
+}
+
+function majChoix() {
+  document.getElementById('choix').innerHTML =
+    skin.sections.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value =
+    skin.nom + ' : ' + skin.sections.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+  document.getElementById('resume').innerHTML =
+    '<b>' + skin.nom + '</b><br>' + skin.accroche + '<br><br>' +
+    skin.sections.map(s => {
+      const va = actuel(s.id);
+      return s.titre.replace(/^\d+ · /, '') + ' — <b>' + va.id + ' · ' + va.nom + '</b>';
+    }).join('<br>');
+}
+
+/* ===================== LES CARTES ===================== */
+const cartes = [];
+function dessinerCarte(o) {
+  const { rows, pal } = batir({ sec: o.sec.id, va: o.va });
+  const gc = o.plein.getContext('2d');
+  fond(gc, o.plein.width, o.plein.height);
+  peindre(gc, rows, pal, o.zoom ? 4 : 8, 0, 0);
+  if (!o.zoom) return;
+  const gz = o.zoom.getContext('2d');
+  fond(gz, o.zoom.width, o.zoom.height);
+  const z = o.sec.zoom;
+  peindre(gz, rows, pal, o.zoom.width / (z[2] - z[0] + 1), 0, 0, z);
+}
+
+const boite = document.getElementById('sections');
+skin.sections.forEach(sec => {
+  const h2 = document.createElement('h2');
+  h2.textContent = sec.titre;
+  const note = document.createElement('p');
+  note.className = 'note'; note.textContent = sec.note;
+  boite.append(h2, note);
+
+  const row = document.createElement('div');
+  row.className = 'row';
+  sec.variantes.forEach(va => {
+    const card = document.createElement('div');
+    card.className = 'card' + (choix[sec.id] === va.id ? ' on' : '');
+    card.dataset.sec = sec.id; card.dataset.va = va.id;
+    const lbl = document.createElement('div');
+    lbl.className = 'lbl';
+    lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + va.desc;
+    // LE GROS PLAN EST LE DESSIN PRINCIPAL, le perso entier n'est qu'une
+    // vignette a cote : ce qui change tient dans dix lignes de pixels, et se
+    // noierait au milieu de tout le personnage.
+    const duo = document.createElement('div'); duo.className = 'duo';
+    let zoom = null;
+    if (sec.zoom) {
+      const z = sec.zoom, zw = z[2] - z[0] + 1, zh = z[3] - z[1] + 1;
+      const ez = Math.min(15, Math.floor(168 / zw), Math.floor(168 / zh));
+      zoom = document.createElement('canvas');
+      zoom.className = 'zoom'; zoom.width = zw * ez; zoom.height = zh * ez;
+      duo.append(zoom);
+    }
+    const plein = document.createElement('canvas');
+    plein.className = 'plein';
+    plein.width = sec.zoom ? 16 * 4 : 16 * 8;
+    plein.height = sec.zoom ? 20 * 4 : 20 * 8;
+    duo.append(plein);
+    card.append(lbl, duo);
+    card.onclick = () => {
+      choix[sec.id] = va.id;
+      document.querySelectorAll('.card[data-sec="' + sec.id + '"]')
+        .forEach(c => c.classList.toggle('on', c.dataset.va === va.id));
+      rafraichir();
+    };
+    row.append(card);
+    cartes.push({ plein, zoom, sec, va });
+  });
+  boite.append(row);
+});
+
+function rafraichir() {
+  majApercu();
+  if (ed) ed.maj();
+  cartes.forEach(o => { if (o.plein.offsetParent) dessinerCarte(o); });
+}
+
+document.getElementById('btnCopier').onclick = async () => {
+  const b = document.getElementById('btnCopier');
+  try {
+    await navigator.clipboard.writeText(document.getElementById('codeChoix').value);
+    b.textContent = 'copié !'; b.classList.add('ok');
+    setTimeout(() => { b.textContent = 'copier mes choix'; b.classList.remove('ok'); }, 1400);
+  } catch (e) { document.getElementById('codeChoix').select(); }
+};
+
+/* --- La bande du roster, a l'echelle du match --- */
+(function bande() {
+  const hote = document.getElementById('rosterRow');
+  const ajoute = (dessine, nom) => {
+    const d = document.createElement('div'); d.className = 'rosterOne';
+    const cv = document.createElement('canvas');
+    cv.width = 16 * 4.2; cv.height = 20 * 4.2;
+    const g = cv.getContext('2d');
+    g.fillStyle = TH.floor; g.fillRect(0, 0, cv.width, cv.height);
+    dessine(g, cv);
+    const e = document.createElement('em'); e.style.fontStyle = 'normal'; e.textContent = nom;
+    d.append(cv, e); hote.append(d);
+  };
+  const moi = batir();
+  ajoute(g => peindre(g, moi.rows, moi.pal, 4.2, 0, 0), skin.nom.split(' ')[0]);
+  // L'Isaac d'origine juste a cote : c'est LUI que la tenue doit encore
+  // evoquer, sinon ce n'est plus un skin mais un autre personnage.
+  ajoute(g => peindre(g, [...BASE.tete, ...BASE.corps], PAL, 4.2, 0, 0), 'ISAAC');
+  for (const ck of ROSTER) {
+    const c = CHARS[ck];
+    ajoute((g, cv) => { g.imageSmoothingEnabled = false; g.drawImage(c.frames.idle, 0, 0, cv.width, cv.height); },
+           c.short || c.name);
+  }
+})();
+
+/* --- Le module de controle partage --- */
+const PERSO = { pal: PAL, tete: skin.tete, corps: skin.corps, dominante: skin.dominante };
+afficher(verifier({ id: 'isaac', PERSO, SECTIONS: skin.sections,
+                    options: { variantesAttendues: 5 } }), document.getElementById('errs'));
+
+rafraichir();
+</script>
+</body>
+</html>

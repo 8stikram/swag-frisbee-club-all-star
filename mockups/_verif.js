@@ -180,6 +180,19 @@ export const TRAITS = {
     { nom: 'le treillis militaire',
       pourquoi: 'le premier jet, rouge et anguleux, se lisait comme un costume de super-héros',
       test: r => contient(r, 'O') || contient(r, 'W') }
+  ],
+  // Isaac n'a ni cheveux ni vêtement : ses traits tiennent à la FORME. Une
+  // tenue qui sculpte son crâne ou décale ses yeux ne se lit plus comme lui.
+  isaac: [
+    { nom: 'la grosse tête ronde, d’un bord à l’autre',
+      pourquoi: 'c’est toute sa silhouette : un crâne qui prend presque la largeur du sprite',
+      test: r => [2, 3, 4].every(y => r[y][1] !== '.' && r[y][12] !== '.') },
+    { nom: 'les deux yeux aux colonnes 4-5 et 9-10',
+      pourquoi: 'ce sont les yeux du gabarit ; ailleurs, le regard ne tombe plus au même endroit que sur les autres persos',
+      test: r => r.slice(4, 8).some(l => l[4] !== l[7] && l[9] !== l[7]) },
+    { nom: 'les jambes aux colonnes 3-4 et 9-10',
+      pourquoi: 'c’est ce qui permet de déduire les cinq autres poses par recoloration, sans rien redessiner',
+      test: r => r.slice(16, 19).every(l => l[3] !== '.' && l[4] !== '.' && l[9] !== '.' && l[10] !== '.') }
   ]
 };
 
