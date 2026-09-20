@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hub Brawlhalla</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&family=Chakra+Petch:wght@600;700&family=DotGothic16&family=Russo+One&display=swap" rel="stylesheet">
+<!-- Les vraies règles du jeu : sélection, grille, bandeaux, boutons, tampon PRÊT. -->
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  /* ================= PAGE ================= */
+  :root{--bg:#070a12;--panel:#0e1626;--edge:#22344f;--txtE:#e8f0ff;--accent:#35e0ff;--or:#ffd23e}
+  body{display:block;overflow:auto;height:auto;margin:0;background:var(--bg);color:var(--txtE);font-family:'Barlow',system-ui,sans-serif;padding:18px 16px 70px}
+  h1.titrePage{font-size:19px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:1150px;line-height:1.6;margin:0 0 12px}
+  .note b{color:var(--or)}
+  .versions{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+  .versions button{flex:1 1 240px;text-align:left;background:var(--panel);color:var(--txtE);border:2px solid var(--edge);border-radius:12px;padding:10px 13px;cursor:pointer;font-family:inherit}
+  .versions button b{display:block;font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:3px}
+  .versions button span{font-size:12px;color:#8fa4c4;line-height:1.45}
+  .versions button.on{border-color:var(--or);background:#1d1606}
+  .versions button.on b{color:var(--or)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .sceneWrap{flex:1 1 760px;min-width:300px;position:sticky;top:10px}
+  .scene{position:relative;width:100%;aspect-ratio:16/10;border:8px solid #1b2a52;border-radius:14px;overflow:hidden;
+    background:#0a0e1a;container-type:size;user-select:none;box-shadow:0 10px 0 rgba(0,0,0,.4)}
+  .partieFond{position:absolute;inset:0;pointer-events:none}
+  .terrain{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,#23345a 0%,#141d31 62%,#0a0e1a 100%)}
+  #partieReelle{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .8s}
+  #partieReelle.pret{opacity:1}
+  .scene[data-partie="simulee"] #partieReelle{display:none}
+  #hote{position:absolute;inset:0}
+  .cote{flex:1 1 320px;min-width:280px;display:flex;flex-direction:column;gap:10px}
+  details.bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px 12px}
+  details.bloc > summary{cursor:pointer;list-style:none;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;display:flex;align-items:center;gap:7px}
+  details.bloc > summary::before{content:'▸';color:#6d80a0;transition:transform .15s}
+  details.bloc[open] > summary::before{transform:rotate(90deg)}
+  details.bloc[open] > summary{margin-bottom:9px}
+  .cote .row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px}
+  .cote button{background:#1a2b48;color:var(--txtE);border:1px solid var(--edge);border-radius:7px;padding:7px 11px;font-size:11.5px;cursor:pointer;font-family:inherit}
+  .cote button:hover{background:#24395e}
+  .cote button.on{background:#3a2c06;border-color:var(--or);color:var(--or)}
+  .cote button.vert{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .cote button:disabled{opacity:.45;cursor:default}
+  .explique{font-size:12.5px;line-height:1.6;color:#c9d6ee}
+  .explique ul{margin:6px 0 0;padding-left:18px}
+  .explique li{margin-bottom:4px}
+  .explique b{color:var(--or)}
+  textarea{width:100%;background:#0a1220;border:1px solid var(--edge);border-radius:7px;color:var(--or);font-family:Consolas,monospace;font-size:11px;padding:9px;resize:vertical;height:80px}
+  .etatCopie{font-size:11.5px;color:#8ef0b4;min-height:16px;margin-top:5px}
+
+  /* ================= HUB — commun aux trois propositions ================= */
+  .bb{--cA:#2f6bff;--cP:#ff8c1a;--cJ1:#ff8c1a;--cJ2:#9aa0ac;font-family:'Barlow',sans-serif}
+  .bb .bg-select{background:linear-gradient(100deg,color-mix(in srgb,var(--cJ1) 45%,#fff) 0%,color-mix(in srgb,var(--cJ1) 56%,#fff) 30%,
+    color-mix(in srgb,var(--cJ2) 56%,#fff) 70%,color-mix(in srgb,var(--cJ2) 45%,#fff) 100%)}
+  .bb .charglow.g1{--halo:var(--cJ1)}
+  .bb .charglow.g2{--halo:var(--cJ2)}
+  .bb .ringwrap text{display:none}
+  .bb .r-base{--rc:#9aa0ac} .bb .r-chroma{--rc:#35c6e0} .bb .r-skin{--rc:#ffae1a}
+  .piece{display:inline-block;width:1em;height:1em;border-radius:50%;border:max(1.5px,.12em) solid var(--ink);flex-shrink:0;
+    background:radial-gradient(circle at 34% 30%,#fff3b8,#eab73f 52%,#8a5f11);vertical-align:-.14em}
+
+  /* Le perso montré, et son disque qui tourne à côté (1P seulement). */
+  .hHero{position:relative;display:flex;align-items:flex-end;justify-content:center}
+  .hSprite{height:100%;width:auto;image-rendering:pixelated;animation:bob 2.8s ease-in-out infinite;
+    filter:drop-shadow(0 0 2px rgba(17,19,24,.5)) drop-shadow(0 0 6px rgba(17,19,24,.36)) drop-shadow(0 5px 7px rgba(17,19,24,.22))}
+  .hHeroDisqueWrap{position:absolute;right:-32%;bottom:24%;width:38%;aspect-ratio:1;animation:bob 2.8s ease-in-out infinite;animation-delay:-.4s;z-index:2}
+  .hHeroDisque{width:100%;height:100%;filter:drop-shadow(0 .6cqh 0 rgba(17,19,24,.35))}
+  .hHeroDisqueQ{display:none;position:absolute;inset:6%;border-radius:50%;background:var(--yellow);border:3px solid var(--ink);align-items:center;justify-content:center;
+    font-family:'Archivo Black',sans-serif;font-size:2.6cqh;color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill}
+  .hHeroDisqueWrap.hSpec .hHeroDisque{display:none}
+  .hHeroDisqueWrap.hSpec .hHeroDisqueQ{display:flex}
+  .bb[data-cote="cpu"] .hHeroDisqueWrap{display:none}
+  /* Perso tiré au sort, tenue « au hasard » ou « favorite » : la marque prend
+     la place du sprite, comme le « ? » de l'écran actuel. */
+  .bb.persoAleatoire .hHero::after,.bb.tenueSpeciale .hHero::after,.bb.heroVide .hHero::after{
+    content:'?';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;
+    font-family:'Archivo Black',sans-serif;font-size:16cqh;line-height:1;-webkit-text-stroke:5px var(--ink);paint-order:stroke fill;
+    background:linear-gradient(120deg,#ff5f6d,#ffc371,#5df08a,#35e0ff,#a06bff,#ff5f6d);background-size:400% 400%;animation:rainbow 6s ease infinite;
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .bb.tenueSpeciale .hHero::after{font-size:7cqh;align-items:flex-start;justify-content:flex-end;padding:1cqh 1cqh 0 0}
+  .bb.tenueSpeciale[data-marque="★"] .hHero::after{content:'★'}
+  .bb.heroVide .hHero::after{background:none;color:#fff;opacity:.5}
+  .bb.heroVide .hHero{min-width:16cqh}
+
+  /* Nom de la tenue, sa rareté, son prix si on ne l'a pas. */
+  .hTenueNom{display:flex;align-items:center;gap:.5cqw;font-family:'Archivo Black',sans-serif;font-size:1.6cqh;color:var(--ink);min-height:2.6cqh;white-space:nowrap}
+  .hTenueNom .rar{font-style:normal;font-size:.72em;color:#fff;background:var(--rc);border:2px solid var(--ink);border-radius:5px;padding:.1cqh .45cqw;letter-spacing:.06em}
+  .hTenueNom .rar.r-chroma{background:linear-gradient(90deg,#ff9ad5,#fff7a8,#a9f0ff,#c7a8ff);color:var(--ink)}
+  .hTenueNom .aAcheter{font-style:normal;display:inline-flex;align-items:center;gap:.3cqw;font-size:.75em;color:var(--ink);background:var(--yellow);border:2px solid var(--ink);border-radius:6px;padding:.1cqh .45cqw}
+  .hTenueNom .aAcheter svg{width:1.4cqh;height:1.4cqh}
+
+  /* Barres de stats : cinq crans larges, lisibles de loin. */
+  .hStats{display:flex;flex-direction:column;gap:.6cqh}
+  .stSeg{display:grid;grid-template-columns:9.5cqh 1fr auto;align-items:center;gap:.6cqw}
+  .stSeg b{font-family:'Archivo Black',sans-serif;font-size:1.25cqh;color:var(--ink);letter-spacing:.04em}
+  .stCrans{display:flex;gap:.35cqh}
+  .stCrans i{flex:1;max-width:3cqh;height:1.9cqh;background:#fff;border:2.5px solid var(--ink);transform:skewX(-14deg);box-shadow:2px 2px 0 var(--ink)}
+  .stCrans i.on{background:var(--sc)}
+  .stSeg em{font-style:normal;font-family:'Russo One',sans-serif;font-size:1.7cqh;color:var(--ink);min-width:1.6cqh;text-align:right}
+
+  /* Ultime, repris de l'écran actuel. */
+  .hUlti{display:flex;align-items:center;gap:.8cqw}
+  .ultiChip{font-family:'Archivo Black',sans-serif;font-size:1.1cqh;color:var(--ink);background:var(--yellow);border:2.5px solid var(--ink);border-radius:6px;
+    padding:.3cqh .6cqw;transform:skewX(-10deg);flex-shrink:0;letter-spacing:.06em}
+  .hUlti b{display:block;font-family:'Archivo Black',sans-serif;font-size:1.55cqh;color:var(--ink);line-height:1.2}
+  .hUlti em{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-style:normal;font-weight:700;font-size:1.25cqh;color:#4a5064;line-height:1.25}
+
+  /* Tuiles de tenue : grandes cartes avec nom et prix. */
+  .hTenues{display:flex;flex-wrap:wrap;gap:1cqh}
+  .hVide{font-weight:700;font-size:1.5cqh;color:#6b7080;margin:1cqh .4cqw}
+  .hT{position:relative;width:var(--tW,9.6cqh);aspect-ratio:3/4;border:3px solid var(--ink);border-radius:10px;background:#fff;box-shadow:3px 3px 0 var(--ink);
+    cursor:pointer;padding:0;overflow:hidden;transition:transform .1s,box-shadow .1s;--rc:#9aa0ac;flex-shrink:0;container-type:inline-size}
+  .hT::before{content:'';position:absolute;inset:0;background:radial-gradient(85% 65% at 50% 38%,color-mix(in srgb,var(--rc) 50%,#fff),#fff 78%)}
+  .hT img{position:absolute;left:50%;top:40%;height:58%;translate:-50% -50%;image-rendering:pixelated}
+  .hTbande{position:absolute;left:0;right:0;bottom:0;height:24%;background:var(--rc);border-top:2.5px solid var(--ink)}
+  .hTnom{position:absolute;left:4%;right:4%;bottom:4%;z-index:2;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:11cqi;line-height:1.05;color:#fff;
+    -webkit-text-stroke:2.5cqi var(--ink);paint-order:stroke fill;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hT:hover{transform:translate(-2px,-2px) scale(1.05);box-shadow:5px 5px 0 var(--ink);z-index:3}
+  .hT.sel{transform:translateY(-3px);box-shadow:0 0 0 3px #fff,0 0 0 6px var(--ink),0 0 2.4cqh .5cqh color-mix(in srgb,var(--rc) 70%,#fff);z-index:2}
+  .hT.sel::after{content:'';position:absolute;inset:0;border-radius:7px;box-shadow:inset 0 0 0 3px #fff;animation:hBrille 1.3s ease-in-out infinite}
+  @keyframes hBrille{50%{opacity:.25}}
+  .hT.verrou img{filter:grayscale(1) brightness(.72)}
+  .hT.verrou::before{filter:grayscale(1)}
+  .hTcad{position:absolute;right:5%;top:4%;width:26%;z-index:2}
+  .hTcad svg,.hDcad svg,.hP span svg{display:block;width:100%;height:auto}
+  .hTprix{position:absolute;left:50%;top:60%;translate:-50% 0;z-index:3;display:flex;align-items:center;gap:1.5cqi;font-style:normal;font-family:'Russo One',sans-serif;
+    font-size:11cqi;background:#fff;border:2cqi solid var(--ink);border-radius:20px;padding:0 4cqi;color:var(--ink)}
+  .hTetoile{position:absolute;left:4%;top:1%;z-index:4;font-size:18cqi;line-height:1;color:#fff;-webkit-text-stroke:2cqi var(--ink);paint-order:stroke fill;opacity:0;cursor:pointer;transition:opacity .1s}
+  .hT:hover .hTetoile,.hD:hover .hTetoile{opacity:.85}
+  .hT.fav .hTetoile,.hD.fav .hTetoile{opacity:1;color:#ffd23e}
+  .hTnb{position:absolute;right:4%;bottom:27%;z-index:2;font-family:'Archivo Black',sans-serif;font-size:9cqi;color:var(--ink);
+    background:linear-gradient(90deg,#ff9ad5,#fff7a8,#a9f0ff,#c7a8ff);border:2cqi solid var(--ink);border-radius:6px;padding:0 2cqi}
+  .hTspec{background:var(--yellow)}
+  .hTspec::before{display:none}
+  .hTspec[data-sid="__rnd"]{background:linear-gradient(120deg,#ff5f6d,#ffc371,#5df08a,#35e0ff,#a06bff,#ff5f6d);background-size:400% 400%;animation:rainbow 6s ease infinite}
+  .hTspecIco{position:absolute;left:50%;top:38%;translate:-50% -50%;font-family:'Archivo Black',sans-serif;font-size:34cqi;color:#fff;-webkit-text-stroke:3cqi var(--ink);paint-order:stroke fill}
+  .hTspecIco small{font-size:.6em}
+  .hTspec .hTbande{background:rgba(17,19,24,.18)}
+  .hTspec.vide{opacity:.5}
+  .hTnbFav{position:absolute;left:50%;top:62%;translate:-50% 0;z-index:3;font-style:normal;font-family:'Russo One',sans-serif;font-size:10cqi;color:var(--ink);
+    background:#fff;border:2cqi solid var(--ink);border-radius:20px;padding:0 3cqi}
+
+  /* Pastilles de chroma, façon League of Legends. */
+  .hChromas{display:flex;align-items:center;gap:.6cqh;min-height:3.2cqh;margin-bottom:.8cqh;flex-wrap:wrap}
+  .hChromas.vide{display:none}
+  .hPlabel{font-family:'Archivo Black',sans-serif;font-size:1.15cqh;color:var(--ink);letter-spacing:.08em;margin-right:.2cqw}
+  .hP{position:relative;width:2.8cqh;height:2.8cqh;border-radius:50%;border:3px solid var(--ink);background:var(--c);padding:0;cursor:pointer;box-shadow:2px 2px 0 var(--ink);transition:transform .1s;flex-shrink:0}
+  .hP i{position:absolute;inset:14%;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.75),transparent 58%)}
+  .hP:hover{transform:scale(1.22);z-index:2}
+  .hP.sel{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--ink);transform:scale(1.18)}
+  .hP.verrou{opacity:.6}
+  .hP span{position:absolute;right:-35%;bottom:-35%;width:72%}
+
+  /* Disques : la grille façon skins d'arme. */
+  .hDisquesGrille{display:grid;grid-template-columns:repeat(6,1fr);gap:.9cqh}
+  .hD{position:relative;aspect-ratio:1;border-radius:50%;border:3px solid var(--ink);background:#0a1430;padding:0;cursor:pointer;box-shadow:2px 2px 0 var(--ink);
+    transition:transform .1s;display:flex;align-items:center;justify-content:center}
+  .hD img{width:100%;height:100%;border-radius:50%}
+  .hD:hover{transform:scale(1.12);z-index:2}
+  .hD.sel{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--ink)}
+  .hD.verrou img{filter:grayscale(1) brightness(.55)}
+  .hD.hSpec{background:var(--yellow)}
+  .hD .q,.hDisqueImg .q{font-family:'Archivo Black',sans-serif;font-size:2.4cqh;color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill}
+  .hDcad{position:absolute;right:-10%;bottom:-10%;width:42%}
+  .hD .hTetoile{left:-4%;top:-10%;font-size:2cqh;-webkit-text-stroke:2px var(--ink)}
+
+  /* Grille des persos : celle du jeu. */
+  .bb .grid .cell img{width:86%;image-rendering:pixelated}
+  .bb .grid.fige{pointer-events:none;filter:saturate(.55)}
+  .bb .grid .cell.sel1{outline:4px solid #2f6bff;outline-offset:2px}
+  .bb .grid .cell.sel2{outline:4px solid var(--red);outline-offset:2px}
+
+  /* Cartes des deux camps. */
+  .bjCartes{display:flex;align-items:center;gap:1cqw;width:100%}
+  .bjCarte{position:relative;flex:1;min-width:0;display:flex;align-items:center;gap:.9cqw;background:rgba(255,255,255,.96);border:4px solid var(--ink);border-radius:12px;
+    box-shadow:5px 5px 0 var(--ink);padding:.8cqh .9cqw;cursor:pointer;text-align:left;font-family:inherit;transition:transform .12s,box-shadow .12s}
+  .bjP1{--cCote:#2f6bff} .bjCpu{--cCote:#e5384f}
+  .bjCarte:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--ink)}
+  .bjCarte.actif{outline:4px solid var(--cCote);outline-offset:3px}
+  .bjCarte.ligne{cursor:default}
+  .bjPortrait{position:relative;width:9.4cqh;height:9.4cqh;flex-shrink:0;border:3px solid var(--ink);border-radius:10px;overflow:hidden;
+    background:color-mix(in srgb,var(--cP) 38%,#fff);display:flex;align-items:flex-end;justify-content:center}
+  .bjPortrait img{height:92%;image-rendering:pixelated}
+  .bjCarte.vide .bjPortrait img{display:none}
+  .bjCarte.vide .bjPortrait::after{content:'?';align-self:center;font-family:'Archivo Black',sans-serif;font-size:4.6cqh;color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill}
+  .bjTxt{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.15}
+  .bjRole{align-self:flex-start;font-family:'Archivo Black',sans-serif;font-size:1.1cqh;color:#fff;background:var(--cCote);border:2.5px solid var(--ink);
+    padding:.15cqh .5cqw;transform:skewX(-10deg);letter-spacing:.06em}
+  .bjNom{font-family:'Archivo Black',sans-serif;font-size:2.1cqh;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.35cqh}
+  .bjTenue{font-style:normal;font-weight:700;font-size:1.3cqh;color:#4a5064;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bjEtat{position:absolute;right:.7cqw;top:.5cqh;font-family:'Archivo Black',sans-serif;font-size:1cqh;color:#9aa0ac;letter-spacing:.08em}
+  .bjCarte.actif .bjEtat{color:var(--cCote)}
+  .bjCarte.pret .bjEtat{color:#1c7a45}
+  .bjIA{display:flex;align-items:center;gap:.4cqw;font-family:'Archivo Black',sans-serif;font-size:1.2cqh;color:var(--ink);margin-top:.4cqh}
+  .bjIA .arrowBtn{width:2.6cqh;height:2.6cqh;min-width:0;min-height:0;font-size:1.1cqh;box-shadow:2px 2px 0 var(--ink)}
+  .bb.modeLigne .bjIA{display:none}
+  .bjVs{position:relative;z-index:3;font-family:'Archivo Black',sans-serif;font-size:2.8cqh;color:#fff;-webkit-text-stroke:4px var(--ink);paint-order:stroke fill;transform:skewX(-10deg);flex-shrink:0}
+  .bjCarte .tamponPret{font-size:2cqh;padding:.3cqh .8cqw}
+
+  /* Onglets, contenu, bouton. */
+  .bbOnglets{display:flex;gap:.6cqw}
+  .bbOnglets button{flex:1;font-family:'Archivo Black',sans-serif;font-size:1.45cqh;color:var(--ink);background:#fff;border:3px solid var(--ink);border-radius:8px 8px 0 0;
+    border-bottom:0;padding:.75cqh .5cqw;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bbOnglets button.on{background:var(--ink);color:#fff}
+  .bbOnglets button.off{opacity:.45}
+  .bbPan{display:none}
+  .bb[data-onglet="tenue"] .bbPanT,.bb[data-onglet="disque"] .bbPanD{display:block}
+  .bb[data-onglet="disque"] .hTenueNom{visibility:hidden}
+  .hConfirmer{justify-content:center;background:var(--green);font-size:2.4cqh;padding:1cqh 1.6cqw}
+  .hConfirmer.attente{background:#e4e6ee;color:#6b7080}
+  .hConfirmer.go{background:var(--yellow)}
+  /* Le message vit au-dessus de la grille, pas du panneau : il masquait le
+     nom du perso qu'on est en train d'habiller. */
+  .hMsg{position:absolute;left:29cqw;top:8.4cqh;z-index:30;transform:translate(-50%,0);opacity:0;pointer-events:none;background:var(--ink);color:#fff;
+    font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.75cqh;padding:.9cqh 1.6cqw;border-radius:10px;border:3px solid #fff;white-space:nowrap}
+  .hMsg.dore{background:var(--yellow);color:var(--ink);border-color:var(--ink)}
+
+  /* ================= 1 · CARTE BLANCHE ================= */
+  .bbGauche{position:absolute;left:2.4cqw;top:10cqh;width:54cqw;bottom:3cqh;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1.2cqh}
+  .v-1 .hGrille,.v-2 .hGrille{--cols:5;--cell:11.2cqh}
+  .bbGauche .bjCartes{margin-top:auto}
+  .bbPanneau{position:absolute;right:2.4cqw;top:10cqh;width:39cqw;bottom:3cqh;z-index:5;display:flex;flex-direction:column;overflow:hidden;
+    background:#fff;border:4px solid var(--ink);border-radius:14px;box-shadow:6px 6px 0 var(--ink)}
+  .bbTete{display:flex;align-items:center;gap:.9cqw;background:var(--cP);border-bottom:4px solid var(--ink);padding:.85cqh 1.1cqw;transition:background .3s}
+  .bbRole{font-family:'Archivo Black',sans-serif;font-size:1.5cqh;color:#fff;background:var(--cA);border:3px solid var(--ink);padding:.3cqh .7cqw;
+    transform:skewX(-10deg);box-shadow:3px 3px 0 var(--ink);flex-shrink:0;transition:background .2s}
+  .bbNoms{display:flex;flex-direction:column;line-height:1.05;min-width:0}
+  .bbNoms .hNom{font-family:'Archivo Black',sans-serif;font-size:2.7cqh;color:#fff;-webkit-text-stroke:4px var(--ink);paint-order:stroke fill;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bbNoms .hUnivers{font-style:normal;font-family:'Archivo Black',sans-serif;font-size:1.1cqh;color:var(--ink);letter-spacing:.1em;opacity:.75}
+  .bbScene{position:relative;height:23cqh;flex-shrink:0;overflow:hidden;border-bottom:3px solid var(--ink);
+    background:radial-gradient(55% 90% at 70% 60%,color-mix(in srgb,var(--cP) 38%,#fff) 0%,#fff 92%)}
+  .bbScene .hHero{position:absolute;left:70%;bottom:2cqh;height:18cqh;translate:-50% 0}
+  .bbSol{position:absolute;left:70%;bottom:1.2cqh;width:13cqh;height:2.4cqh;translate:-50% 0;border-radius:50%;background:rgba(17,19,24,.16)}
+  .bbScene .hStats{position:absolute;left:1cqw;bottom:1.2cqh;background:rgba(255,255,255,.92);border:3px solid var(--ink);border-radius:10px;box-shadow:3px 3px 0 var(--ink);padding:.7cqh .7cqw}
+  .bbUlti{padding:.8cqh 1.1cqw;border-bottom:3px solid var(--ink);background:#fffbe8}
+  .bbEquip{flex:1;min-height:0;display:flex;flex-direction:column;padding:.8cqh 1.1cqw 0}
+  .bbEquip .hTenueNom{margin:.7cqh 0 .5cqh}
+  .bbContenu{flex:1;min-height:0;overflow:auto;border-top:3px solid var(--ink);padding:1cqh .2cqw 1cqh 0;scrollbar-width:thin}
+  .bbBas{padding:.9cqh 1.1cqw 1.1cqh;border-top:3px solid var(--ink);display:flex}
+  .bbBas .hConfirmer{flex:1}
+
+  /* ================= 2 · ARCADE OBLIQUE ================= */
+  .v-2 .bbPanneau{background:linear-gradient(160deg,color-mix(in srgb,var(--cP) 75%,#fff) 0%,color-mix(in srgb,var(--cP) 92%,#111318) 100%)}
+  .v-2 .bbPanneau::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background:repeating-linear-gradient(-14deg,rgba(255,255,255,.22) 0 3px,transparent 3px 46px)}
+  .v-2 .bbTete{background:none;border-bottom:0;padding:1cqh 1.1cqw .4cqh}
+  .v-2 .bbNoms{background:var(--cA);border:4px solid var(--ink);box-shadow:5px 5px 0 var(--ink);transform:skewX(-10deg);padding:.4cqh 1cqw;flex:1}
+  .v-2 .bbNoms > *{transform:skewX(10deg)}
+  .v-2 .bbNoms .hUnivers{color:#fff;opacity:.9}
+  .v-2 .bbScene{background:none;border-bottom:0;height:21cqh}
+  .v-2 .bbScene .hStats{background:none;border:0;box-shadow:none;padding:0;left:1.2cqw}
+  .v-2 .stSeg b,.v-2 .stSeg em{color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill}
+  .v-2 .bbUlti{background:rgba(255,255,255,.94);border:3px solid var(--ink);border-radius:10px;box-shadow:4px 4px 0 var(--ink);margin:0 1.1cqw .8cqh}
+  .v-2 .bbEquip{background:rgba(255,255,255,.95);border:3px solid var(--ink);border-radius:12px;margin:0 1.1cqw 1cqh;padding:.8cqh .9cqw 0}
+  .v-2 .bbContenu{border-top:3px solid var(--ink)}
+  .v-2 .bbBas{border-top:0;padding-top:0}
+  .v-2 .hConfirmer{transform:skewX(-8deg);background:var(--yellow)}
+  .v-2 .hConfirmer span,.v-2 .hConfirmer{letter-spacing:.06em}
+  .v-2 .bjCarte{border-left-width:12px;border-left-color:var(--cCote)}
+  .v-2 .bjRole{background:var(--ink)}
+
+  /* ================= 3 · GRAND HÉROS ================= */
+  .b3Gauche{position:absolute;left:2cqw;top:10cqh;width:29cqw;bottom:3cqh;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1cqh}
+  .v-3 .hGrille{--cols:4;--cell:9.8cqh}
+  .v-3 .bjCartes{flex-direction:column;margin-top:auto;gap:.8cqh}
+  .v-3 .bjVs{display:none}
+  .v-3 .bjCarte{width:100%;flex:none}
+  .b3Centre{position:absolute;left:32cqw;width:32cqw;top:9.5cqh;bottom:3cqh;z-index:4;display:flex;flex-direction:column;align-items:center;gap:.8cqh}
+  .b3Centre .nameSlash{order:2}
+  .b3Centre .hHero{order:1;height:33cqh}
+  .b3Univers{order:0;font-style:normal;font-family:'Archivo Black',sans-serif;font-size:1.2cqh;color:var(--ink);background:#fff;border:3px solid var(--ink);
+    border-radius:6px;box-shadow:3px 3px 0 var(--ink);padding:.3cqh .8cqw;letter-spacing:.1em}
+  .b3Centre .hStats{order:3;width:100%;background:rgba(255,255,255,.9);border:3px solid var(--ink);border-radius:12px;box-shadow:4px 4px 0 var(--ink);padding:.8cqh 1cqw}
+  .b3Centre .hUlti{order:4;width:100%;background:rgba(255,255,255,.94);border:3px solid var(--ink);border-radius:12px;box-shadow:4px 4px 0 var(--ink);padding:.7cqh .9cqw;margin-top:auto}
+  .v-3 .bbPanneau{right:2cqw;width:31cqw;top:10cqh}
+  .v-3 .bbTete{background:var(--cA)}
+  .v-3 .bbTete .bbNoms .hNom{font-size:2.2cqh}
+  .v-3 .hT{--tW:8.6cqh}
+  .v-3 .hDisquesGrille{grid-template-columns:repeat(5,1fr)}
+  .v-3 .hMsg{left:17cqw}
+  .v-3 .charglow.g1{left:47.5%;--halo:var(--cP)}
+  .v-3 .charglow.g2{display:none}
+</style>
+</head>
+<body>
+
+<h1 class="titrePage">HUB — REFONTE BRAWLHALLA <span style="color:#6d80a0;font-size:13px">(3 propositions visuelles)</span></h1>
+<p class="note">Même écran, trois habillages. On choisit son perso à gauche, on s’équipe à droite : <b>tenue</b>, <b>chromas</b> en pastilles (façon LoL)
+et <b>disque</b> façon skin d’arme. <b>CONFIRMER</b>, puis c’est <b>pareil pour le CPU</b> : son perso et sa tenue (il peut porter toutes les tenues).
+Clique une carte de joueur en bas pour revenir sur son choix. En <b>mode en ligne</b>, seul ton camp se choisit et l’adversaire se dévoile quand il valide.
+L’<b>ultime</b> est de retour et les <b>stats</b> sont en crans lisibles.</p>
+
+<div class="versions" id="versions">
+  <button data-v="1"><b>1 · Carte blanche</b><span>Le langage des autres écrans : panneau blanc, contour encre, ombre dure. Le bandeau du panneau prend la couleur du perso, les stats sont sur une plaque claire.</span></button>
+  <button data-v="2"><b>2 · Arcade oblique</b><span>Plus Windjammers : le panneau prend la couleur du perso avec ses rayures, le nom est un bandeau penché, l’équipement sur une carte blanche, CONFIRMER jaune penché.</span></button>
+  <button data-v="3"><b>3 · Grand héros</b><span>Le perso en très grand au centre, sur son halo, avec ses stats et son ultime dessous. La grille à gauche, l’équipement dans une colonne à droite.</span></button>
+</div>
+
+<div class="haut">
+  <div class="sceneWrap">
+    <div class="scene" id="scene" data-partie="reelle">
+      <div class="partieFond">
+        <div class="terrain"></div>
+        <iframe id="partieReelle" src="../index.html" tabindex="-1" aria-hidden="true" title="Partie en fond"></iframe>
+      </div>
+      <div id="hote"></div>
+    </div>
+  </div>
+
+  <div class="cote">
+    <details class="bloc" open>
+      <summary>Cette proposition</summary>
+      <div class="explique" id="explique"></div>
+    </details>
+    <details class="bloc" open>
+      <summary>Test</summary>
+      <div class="row">
+        <button id="btnIA" class="on">Contre l’IA</button>
+        <button id="btnLigne">En ligne</button>
+      </div>
+      <div class="row">
+        <button class="vert" id="btnRecommencer">↺ Recommencer</button>
+        <button id="btnAdversaire" disabled>L’adversaire valide</button>
+      </div>
+      <div class="row">
+        <button id="btnToutPosseder">Tout posséder</button>
+        <button id="btnCompte">Compte de départ</button>
+      </div>
+      <p class="explique" style="font-size:11.5px;color:#6d80a0">En ligne, l’IA disparaît et le bouton compte les prêts (1/2, 2/2), comme aujourd’hui.</p>
+    </details>
+    <details class="bloc" open>
+      <summary>Ton choix</summary>
+      <textarea id="sortie" spellcheck="false" readonly></textarea>
+      <div class="row" style="margin-top:7px"><button class="vert" id="btnCopier">📋 Tout copier</button></div>
+      <div class="etatCopie" id="etatCopie"></div>
+    </details>
+    <details class="bloc">
+      <summary>Partie derrière</summary>
+      <div class="row">
+        <button id="btnReelle" class="on">Vraie partie (le jeu tourne)</button>
+        <button id="btnSimulee">Terrain dessiné</button>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script type="module">
+  import { CHARS, ROSTER } from '../js/data/characters.js';
+  import { SKINS } from '../js/data/skins-perso.js';
+  import { DISC_SKINS, drawSkinDisc } from '../js/data/skins.js';
+  import { construireCatalogue, etatDepart } from './_inventaire.js';
+  import { creerHubB } from './_hub-b.js';
+
+  const $ = id => document.getElementById(id);
+
+  /* ================= SONS (copies de js/audio/audio.js) ================= */
+  let AC = null, gain = null;
+  window.addEventListener('pointerdown', () => {
+    if (AC) return;
+    try { AC = new (window.AudioContext || window.webkitAudioContext)(); gain = AC.createGain(); gain.gain.value = .18; gain.connect(AC.destination); } catch { AC = null; }
+  }, { capture:true });
+  function beep(f0, f1, dur, type = 'square', vol = .15, delay = 0) {
+    if (!AC) return;
+    const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(f1, 1), t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(gain); o.start(t); o.stop(t + dur + .02);
+  }
+  const SONS = {
+    move: () => beep(760, 760, .05, 'square', .06),
+    survol: () => beep(1250, 1250, .018, 'square', .02),
+    select: () => { beep(620, 990, .12, 'square', .12); beep(990, 1320, .1, 'square', .08, .06); },
+    deny: () => beep(220, 150, .18, 'square', .12),
+  };
+  const son = n => { if (AC) SONS[n]?.(); };
+
+  /* ================= GABARITS ================= */
+  const FOND = `
+    <div class="bg bg-select">
+      <div class="charglow g1"></div><div class="charglow g2"></div>
+      <div class="beam b-a"></div><div class="beam b-b"></div><div class="streaks"></div><div class="arc"></div>
+    </div>
+    <div class="titlebar"><span>CHOISIS TON CHAMPION</span></div>
+    <div class="topBar gauche"><button class="fsBtn hRetour" title="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+    <div class="topBar"><button class="fsBtn compteBtn connecte">NONO</button><button class="fsBtn" title="Plein écran"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>
+    <div class="hMsg"></div>`;
+  const HEROS = `<img class="hSprite" alt=""><div class="hHeroDisqueWrap"><canvas class="hHeroDisque" width="120" height="120"></canvas><span class="hHeroDisqueQ">?</span></div>`;
+  const CARTES = `<div class="bjCartes">
+      <button class="bjCarte bjP1" data-cote="p1"><div class="bjPortrait"><img alt=""></div>
+        <div class="bjTxt"><span class="bjRole">1P</span><b class="bjNom">—</b><em class="bjTenue"></em></div><span class="bjEtat"></span></button>
+      <div class="bjVs">VS</div>
+      <button class="bjCarte bjCpu" data-cote="cpu"><div class="bjPortrait"><img alt=""></div>
+        <div class="bjTxt"><span class="bjRole">CPU</span><b class="bjNom">—</b><em class="bjTenue"></em>
+          <div class="bjIA"><span class="arrowBtn" data-diff="-1">◀</span><span>IA : <b class="hDiff">NORMAL</b></span><span class="arrowBtn" data-diff="1">▶</span></div>
+        </div><span class="bjEtat"></span></button>
+    </div>`;
+  const EQUIP = `<div class="bbEquip">
+      <div class="bbOnglets"><button data-onglet="tenue">TENUE</button><button data-onglet="disque">DISQUE · <span class="hDisqueNom"></span></button></div>
+      <div class="hTenueNom"></div>
+      <div class="bbContenu">
+        <div class="bbPan bbPanT"><div class="hChromas"></div><div class="hTenues"></div></div>
+        <div class="bbPan bbPanD"><div class="hDisquesGrille"></div></div>
+      </div>
+    </div>
+    <div class="bbBas"><button class="mbtn hConfirmer">CONFIRMER</button></div>`;
+
+  const PANNEAU_HAUT = `<div class="bbTete"><span class="bbRole hRole">1P</span><div class="bbNoms"><b class="hNom">—</b><em class="hUnivers">—</em></div></div>
+    <div class="bbScene"><div class="bbSol"></div><div class="hHero">${HEROS}</div><div class="hStats"></div></div>
+    <div class="hUlti bbUlti"></div>`;
+
+  const GABARITS = {
+    1: `<div class="screen scr-select bb v-1">${FOND}
+      <div class="bbGauche"><div class="turnHint hTour"></div><div class="grid hGrille"></div>${CARTES}</div>
+      <div class="bbPanneau">${PANNEAU_HAUT}${EQUIP}</div></div>`,
+    2: `<div class="screen scr-select bb v-2">${FOND}
+      <div class="bbGauche"><div class="turnHint hTour"></div><div class="grid hGrille"></div>${CARTES}</div>
+      <div class="bbPanneau">${PANNEAU_HAUT}${EQUIP}</div></div>`,
+    3: `<div class="screen scr-select bb v-3">${FOND}
+      <div class="b3Gauche"><div class="turnHint hTour"></div><div class="grid hGrille"></div>${CARTES}</div>
+      <div class="b3Centre">
+        <em class="hUnivers b3Univers">—</em>
+        <div class="hHero">${HEROS}</div>
+        <div class="nameSlash p1"><span class="hNom">—</span></div>
+        <div class="hStats"></div>
+        <div class="hUlti"></div>
+      </div>
+      <div class="bbPanneau">
+        <div class="bbTete"><span class="bbRole hRole">1P</span><div class="bbNoms"><b>ÉQUIPEMENT</b><em class="hNom">—</em></div></div>
+        ${EQUIP}
+      </div></div>`,
+  };
+
+  const EXPLIQUE = {
+    1: `<p>Le langage des autres écrans du jeu : panneau blanc, contour encre de 4 px, ombre dure.</p><ul>
+      <li>Le bandeau du panneau prend la <b>couleur du perso</b>, et l’étiquette 1P / CPU celle du camp.</li>
+      <li>Les stats sont sur une <b>plaque claire</b> posée dans la scène, à côté du perso.</li>
+      <li>C’est le plus sobre, et le plus proche de l’inventaire et des options.</li></ul>`,
+    2: `<p>Plus arcade, façon Windjammers : de la couleur et des obliques.</p><ul>
+      <li>Le panneau prend la <b>couleur du perso</b> avec ses rayures, le nom devient un <b>bandeau penché</b>.</li>
+      <li>Stats en blanc contourné directement sur la couleur, équipement sur une carte blanche.</li>
+      <li>CONFIRMER jaune et penché, cartes de joueur à liseré de camp.</li></ul>`,
+    3: `<p>Le perso d’abord : il occupe le centre, en très grand, sur son halo.</p><ul>
+      <li>Grille à gauche avec les deux cartes de joueur l’une sous l’autre.</li>
+      <li>Au centre : le perso, son nom en bandeau penché, ses stats et son ultime.</li>
+      <li>À droite, une colonne d’équipement plus étroite : tenues, chromas, disque.</li></ul>`,
+  };
+
+  /* ================= ÉTAT ================= */
+  const cat = construireCatalogue({ SKINS, ROSTER, DISC_SKINS });
+  let etat = etatDepart(cat);
+  let version = '1', mode = 'ia', hub = null;
+  function monter() {
+    hub?.arreter();
+    hub = creerHubB($('hote'), { gabarit:GABARITS[version], CHARS, ROSTER, SKINS, DISC_SKINS, drawSkinDisc, son, etat, mode });
+    for (const b of document.querySelectorAll('#versions button')) b.classList.toggle('on', b.dataset.v === version);
+    $('explique').innerHTML = EXPLIQUE[version];
+    $('btnIA').classList.toggle('on', mode === 'ia');
+    $('btnLigne').classList.toggle('on', mode === 'ligne');
+    $('btnAdversaire').disabled = mode !== 'ligne';
+    $('sortie').value = JSON.stringify({ mockup:'hub-brawlhalla', proposition:+version, chromas:'pastilles LoL', cpu:'perso et tenue choisis' }, null, 2);
+  }
+  for (const b of document.querySelectorAll('#versions button')) b.addEventListener('click', () => { version = b.dataset.v; son('select'); monter(); });
+  $('btnIA').addEventListener('click', () => { mode = 'ia'; monter(); });
+  $('btnLigne').addEventListener('click', () => { mode = 'ligne'; monter(); });
+  $('btnRecommencer').addEventListener('click', () => hub.recommencer());
+  $('btnAdversaire').addEventListener('click', () => { if (!hub.adversaireValide()) son('deny'); });
+  $('btnToutPosseder').addEventListener('click', () => { for (const o of cat) etat.possede.add(o.id); monter(); });
+  $('btnCompte').addEventListener('click', () => { etat = etatDepart(cat); monter(); });
+  $('btnCopier').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('sortie').value); $('etatCopie').textContent = 'Copié ✔'; }
+    catch { $('sortie').select(); $('etatCopie').textContent = 'Sélectionné : fais Ctrl+C'; }
+  });
+
+  /* ================= VRAIE PARTIE EN FOND ================= */
+  const CSS_CADRE = `
+    html,body{margin:0!important;padding:0!important;overflow:hidden!important;background:#0a0e1a!important;
+      height:100%!important;min-height:0!important;display:block!important}
+    body>*:not(#stage){display:none!important}
+    #stage{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;
+      border:0!important;border-radius:0!important;box-shadow:none!important;margin:0!important;aspect-ratio:auto!important}
+    #stage>*:not(#game){display:none!important}
+    #game{width:100%!important;height:100%!important}`;
+  const scene = $('scene'), cadre = $('partieReelle');
+  const partie = m => { scene.dataset.partie = m; $('btnReelle').classList.toggle('on', m === 'reelle'); $('btnSimulee').classList.toggle('on', m === 'simulee'); };
+  $('btnReelle').addEventListener('click', () => partie('reelle'));
+  $('btnSimulee').addEventListener('click', () => partie('simulee'));
+  if (cadre) cadre.addEventListener('load', () => {
+    try {
+      const w = cadre.contentWindow, d = cadre.contentDocument;
+      w.HTMLMediaElement.prototype.play = function () { return Promise.resolve(); };
+      const ACc = w.AudioContext || w.webkitAudioContext;
+      if (ACc) {
+        ACc.prototype.resume = function () { return Promise.resolve(); };
+        w.AudioContext = function (...a) { const c = new ACc(...a); c.suspend(); return c; };
+        w.AudioContext.prototype = ACc.prototype;
+      }
+      for (const f of ['setItem', 'removeItem', 'clear']) w.Storage.prototype[f] = function () {};
+      const st = d.createElement('style'); st.textContent = CSS_CADRE; d.head.appendChild(st);
+      let essais = 0;
+      const avancer = () => {
+        const intro = d.getElementById('scr-intro');
+        if (intro && !intro.classList.contains('done')) intro.click();
+        const premier = d.getElementById('scr-firstrun');
+        if (premier && !premier.classList.contains('hidden')) d.querySelector('[data-act="skipTuto"]')?.click();
+        if (++essais < 30) setTimeout(avancer, 300);
+      };
+      avancer();
+      cadre.classList.add('pret');
+    } catch (err) { console.warn('Partie réelle indisponible', err); partie('simulee'); }
+  });
+
+  monter();
+</script>
+</body>
+</html>

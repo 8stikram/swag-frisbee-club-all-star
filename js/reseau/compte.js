@@ -356,6 +356,62 @@ export async function acheterSkin(cout) {
   return solde;
 }
 
+// ---------------------------------------------------------------------------
+// Inventaire et boutique (voir supabase/inventaire.sql)
+//
+// Le PRIX est lu par la base, dans sa table `catalogue`. Le navigateur ne fait
+// que nommer l'objet : `acheter_skin(p_cout)` croyait le chiffre qu'on lui
+// envoyait, et n'importe qui pouvait s'offrir une tenue pour une pièce depuis
+// la console.
+// ---------------------------------------------------------------------------
+export async function acheterObjet(id) {
+  if (!connecte()) throw new Error('connecte-toi pour acheter');
+  const r = await appel('/rest/v1/rpc/acheter_objet', {
+    method: 'POST', headers: entetes(), body: JSON.stringify({ p_objet: id })
+  });
+  if (Compte.profil && r) {
+    Compte.profil.pieces = r.pieces;
+    Compte.profil.objets = r.objets || [];
+  }
+  return r;
+}
+
+export async function acheterStattrak(id) {
+  if (!connecte()) throw new Error('connecte-toi pour acheter un StatTrak');
+  const r = await appel('/rest/v1/rpc/acheter_stattrak', {
+    method: 'POST', headers: entetes(), body: JSON.stringify({ p_objet: id })
+  });
+  if (Compte.profil && r) {
+    Compte.profil.pieces = r.pieces;
+    Compte.profil.stattrak = r.stattrak || {};
+  }
+  return r;
+}
+
+// Fin de match : les compteurs des objets portés avancent d'un cran.
+export async function stattrakMatch(ids, gagne) {
+  if (!connecte() || !ids.length) return null;
+  const st = await appel('/rest/v1/rpc/stattrak_match', {
+    method: 'POST', headers: entetes(), body: JSON.stringify({ p_objets: ids, p_gagne: !!gagne })
+  });
+  if (Compte.profil && st) Compte.profil.stattrak = st;
+  return st;
+}
+
+// Les deux disques offerts au compte. Tirés une fois par la base, puis gardés :
+// vider son cache ne relance pas le tirage.
+export async function disquesOfferts(candidats) {
+  if (!connecte()) return null;
+  const liste = await appel('/rest/v1/rpc/disques_offerts', {
+    method: 'POST', headers: entetes(), body: JSON.stringify({ p_candidats: candidats })
+  });
+  if (Compte.profil && Array.isArray(liste)) {
+    Compte.profil.disques_offerts = liste;
+    Compte.profil.objets = [...new Set([...(Compte.profil.objets || []), ...liste])];
+  }
+  return liste;
+}
+
 export async function faceAFace(adversaireId) {
   const r = await appel('/rest/v1/rpc/face_a_face', {
     method: 'POST', headers: entetes(),

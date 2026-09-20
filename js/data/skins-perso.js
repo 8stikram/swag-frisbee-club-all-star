@@ -16,7 +16,7 @@
 // ---------------------------------------------------------------------------
 
 import { forcageTenue } from './deverrouillage.js';
-import { acheterSkin as debiterPieces, debloquerTenue, connecte, Compte } from '../reseau/compte.js';
+import { acheterObjet, debloquerTenue, connecte, Compte } from '../reseau/compte.js';
 
 // Deux tarifs, parce qu'il y a deux natures de tenue.
 //
@@ -122,8 +122,20 @@ export const SKINS = {
   ]
 };
 
+// Les chromas ne changent que les couleurs d'une tenue : ce sont des variantes
+// de la tenue d'ORIGINE, et le panneau les montre en pastilles plutôt qu'en
+// tuiles. D'où ces deux listes séparées.
+export function tenuesSeules(ck) { return listeSkins(ck).filter(s => !s.chroma); }
+export function chromasDe(ck) { return listeSkins(ck).filter(s => s.chroma); }
+// La rareté d'une tenue découle de sa nature : de base < chroma < skin.
+export function rareteTenue(ck, id) {
+  const s = listeSkins(ck).find(x => x.id === id);
+  return !s ? 'base' : s.defaut ? 'base' : s.chroma ? 'chroma' : 'skin';
+}
+
 const CLE_DEBLOQUES = 'sbcbUnlockedSkins';
 const CLE_ACTIFS = 'sbcbActiveSkins';
+const CLE_FAVORIS = 'sbcbFavTenues';
 
 let debloques = [];        // ['naruto:hokage', ...]
 let actifs = {};           // { naruto: 'hokage', ... }
@@ -179,7 +191,9 @@ function debloquer(ck, id) {
 export async function acheterSkinPerso(ck, id) {
   if (estDebloque(ck, id)) return;
   if (!connecte()) throw new Error('connecte-toi pour acheter cette tenue');
-  await debiterPieces(coutSkin(ck, id));
+  // Le prix est celui du catalogue de la base, pas celui calculé ici : le
+  // navigateur ne fait que nommer la tenue. Voir supabase/inventaire.sql.
+  await acheterObjet('tenue:' + ck + ':' + id);
   debloquer(ck, id);
 }
 
@@ -226,6 +240,21 @@ function pousserTenue(cle) {
 // `acheterSkinPerso` aurait facturé deux fois, et au mauvais tarif.
 export function offrirSkin(ck, id) {
   return debloquer(ck, id);
+}
+
+// --- Favorites ---------------------------------------------------------------
+// Une étoile posée sur une tenue. Elle ne change rien au match : elle sert au
+// tirage « une de mes tenues favorites » et à remonter ce qu'on aime en tête
+// de liste. Local seulement pour l'instant, le compte viendra avec
+// l'inventaire.
+let favoris = [];
+try { const f = JSON.parse(localStorage.getItem(CLE_FAVORIS) || '[]'); if (Array.isArray(f)) favoris = f; } catch (e) { }
+export function estFavorite(ck, id) { return favoris.includes(ck + ':' + id); }
+export function basculerFavorite(ck, id) {
+  const cle = ck + ':' + id, i = favoris.indexOf(cle);
+  if (i < 0) favoris.push(cle); else favoris.splice(i, 1);
+  try { localStorage.setItem(CLE_FAVORIS, JSON.stringify(favoris)); } catch (e) { }
+  return i < 0;
 }
 
 export function skinActif(ck) {

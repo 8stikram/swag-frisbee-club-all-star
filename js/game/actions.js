@@ -512,6 +512,12 @@ export function gameOver() {
   const victoire = heros === winner;
   sfx(victoire ? 'win' : 'lose');
   recompenserMatch(victoire);
+  // Les compteurs StatTrak™ des objets portés avancent d'un cran : la tenue du
+  // perso joué et le disque emporté, s'ils en ont un. Compté pour tous les
+  // matchs, contre l'IA comme en ligne.
+  import('../data/inventaire.js').then(inv => {
+    inv.compterMatch(heros.ck, inv.equipeDe('disque'), victoire);
+  }).catch(() => { /* l'inventaire n'est pas chargé : rien à compter */ });
   const duree = G.debutMatch ? (performance.now() - G.debutMatch) / 1000 : null;
   // Match en ligne : chacun enregistre le sien, de son point de vue. Seuls les
   // matchs en ligne comptent au classement — sinon il suffirait de battre l'IA

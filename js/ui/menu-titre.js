@@ -45,6 +45,7 @@ export function elementsMenu() {
     logo: ecran.querySelector('.mvLogo'), logoImg: ecran.querySelector('.logoImg'),
     perso: ecran.querySelector('.mvPerso'), heros: $('titleHero'), halo: ecran.querySelector('.halo'),
     tuiles: [...ecran.querySelectorAll('.rangModes .tuile')], petites: [...ecran.querySelectorAll('.rangPetites .tuile')],
+    boutique: [...ecran.querySelectorAll('.rangBoutique .tuile')],
     aide: ecran.querySelector('.mvTuiles .hint'), bandeau: ecran.querySelector('.mvBandeau'),
     degrade: ecran.querySelector('.degradeBas'), barre: $('topBar'),
   };
@@ -71,12 +72,21 @@ export function arriveeMenu({ logo = true, perso = true } = {}) {
       { transform:'none' }], d + .12, .42, 'cubic-bezier(.2,.8,.3,1)');
     add(t.querySelector('.bientot'), [{ scale:'0' }, { scale:`${1 + .3 * k}`, offset:.6 }, { scale:'1' }], d + .26, .34, 'ease-out');
   });
+  // Le bouton large arrive juste après les modes, avant les petites tuiles :
+  // il est entre les deux à l'écran, il l'est aussi dans le temps.
   const apresModes = T + h.tuiles.length * dec + D * .35;
+  h.boutique.forEach((t, j) => {
+    const d = apresModes + j * dec;
+    add(t, pop, d, D * .9, 'cubic-bezier(.2,.8,.3,1)');
+    add(t.querySelector('.ico'), [{ transform:'scale(0) rotate(-90deg)' }, { transform:`scale(${1 + .25 * k}) rotate(${10 * k}deg)`, offset:.6 },
+      { transform:'none' }], d + .1, .4, 'cubic-bezier(.2,.8,.3,1)');
+  });
+  const apresBoutique = apresModes + h.boutique.length * dec + D * .25;
   h.petites.forEach((t, j) => {
     add(t, [{ opacity:0, transform:'translateY(3cqh)' }, { opacity:1, transform:`translateY(${-.4 * k}cqh)`, offset:.7 }, { opacity:1, transform:'none' }],
-      apresModes + j * dec * .8, .36, 'cubic-bezier(.2,.9,.3,1)');
+      apresBoutique + j * dec * .8, .36, 'cubic-bezier(.2,.9,.3,1)');
   });
-  const fin = apresModes + h.petites.length * dec * .8 + .2;
+  const fin = apresBoutique + h.petites.length * dec * .8 + .2;
   add(h.aide, [{ opacity:0 }, { opacity:1 }], fin, .3);
   add(h.degrade, [{ opacity:0 }, { opacity:1 }], T, .5);
   add(h.bandeau, [{ opacity:0, transform:'translateY(3cqh)' }, { opacity:1, transform:'none' }], T + .18, .5, 'cubic-bezier(.2,.9,.3,1)');

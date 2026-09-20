@@ -48,6 +48,12 @@
 .menuD .rangPetites .tuile{aspect-ratio:auto;height:6.4cqh;justify-content:center;gap:.7cqw;padding:0 .6cqw;
   font-size:calc(2.7cqh * .7);border-radius:14.4px}
 .menuD .rangPetites .tuile .ico{width:2.8cqh;height:2.8cqh;border-width:3px}
+/* INVENTAIRE / BOUTIQUE : un bouton large, de la largeur des deux tuiles,
+   à la hauteur d'une petite. Il sépare les modes de jeu du reste. */
+.menuD .rangBoutique{margin-top:1.4cqh}
+.menuD .rangBoutique .tuile{width:100%;aspect-ratio:auto;height:7.4cqh;justify-content:flex-start;gap:1cqw;
+  font-size:calc(2.7cqh * .8);border-radius:16px;background:#fae873}
+.menuD .rangBoutique .tuile .ico{width:4cqh;height:4cqh;border-width:.38cqh}
 .menuD .tuile.c-green{background:var(--green)}
 .menuD .tuile.c-learn{background:var(--learn)}
 .menuD .tuile.c-casino{background:#e0574f;color:#2a0509}

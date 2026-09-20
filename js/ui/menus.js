@@ -18,6 +18,7 @@ import { skinActif } from '../data/skins-perso.js';
 import { ouvrirPanneauSkins, brancherSkins } from './skins-ui.js';
 import { ouvrirEnLigne } from './online-ui.js';
 import { ouvrirCasino } from '../casino/casino.js';
+import { ouvrirInventaire } from './inventaire-ui.js';
 import {
   annoncerPause, annoncerAbandon, quandPause, quandAbandon, arreterPartieReseau,
   demanderRevanche, demanderChangementPerso, quandRevanche, quandChangementPerso,
@@ -1222,6 +1223,7 @@ export function doAct(act) {
     case 'online': sfx('select'); modeJ2J = false; modeEnLigne = false; musiqueDeMenu(); ouvrirEnLigne(); break;
     case 'learn': sfx('select'); musiqueDeMenu(); ouvrirApprentissage(); break;
     case 'casino': sfx('select'); musiqueDeMenu(); ouvrirCasino(); break;
+    case 'inventaire': sfx('select'); musiqueDeMenu(); ouvrirInventaire(); break;
     case 'training': sfx('select'); jouerMusiqueEntrainement(); lancerEntrainement(); break;
     case 'tuto': sfx('select'); musiqueDeMenu(); ouvrirChapitres(); break;
     // Refuser le tutoriel au premier lancement ne doit se demander qu'une fois.
@@ -1317,6 +1319,21 @@ document.querySelectorAll('.tab').forEach(tab => {
 
 // Bouton retour de la barre du haut. Il remonte d'un cran selon l'ecran, comme
 // le ferait Echap : chaque ecran sait ou il doit ramener.
+// L'inventaire demande deux choses au menu : lancer une partie avec ce qu'on
+// vient de tirer au sort, et ouvrir le casino. Par événement plutôt que par
+// import, pour qu'il n'ait pas à dépendre de ce fichier qui l'importe déjà.
+document.addEventListener('inventaireJouer', e => {
+  const t = e.detail && e.detail.tenue;
+  if (t) { const [, ck, sid] = t.split(':'); setSkinActifDepuisFavori(ck, sid); }
+  doAct('play');
+});
+document.addEventListener('inventaireCasino', () => doAct('casino'));
+function setSkinActifDepuisFavori(ck, sid) {
+  // Le perso tiré au sort part avec sa tenue favorite, et l'écran de sélection
+  // s'ouvre sur lui.
+  import('../data/skins-perso.js').then(m => { m.setSkinActif(ck, sid); selCharPlayer = ck; refreshSelect(); });
+}
+
 (function cablerRetour() {
   const b = $('btnRetour');
   if (!b) return;

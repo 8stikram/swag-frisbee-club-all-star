@@ -88,6 +88,16 @@ const dosSvg = (() => {
 })();
 
 
+// Le dos que porte le joueur. Celui d'origine — les runes ci-dessus — reste le
+// sien tant qu'il n'en a pas acheté un autre à la boutique.
+//
+// Par branchement et non par import : ce fichier ne dépend de rien, c'est ce
+// qui permet au banc d'essai des fins de main de poser de vraies cartes sans
+// embarquer le compte et l'inventaire. main.js fait le branchement.
+let _dos = null;
+export function brancherDos(fn) { _dos = fn; }
+function dosChoisi() { return (_dos && _dos()) || dosSvg; }
+
 // `face` dit si la carte arrive déjà retournée. Le retournement lui-même est
 // une transition CSS sur `.face` : c'est la charnière qui tourne, pas une image
 // qu'on remplace.
@@ -101,7 +111,7 @@ export function carteDom(carte, face) {
         <span class="bjCentre ${couleur}">${carte.ens.s}</span>
         <span class="bjCoin bas ${couleur}">${carte.rang}<span class="bjPip">${carte.ens.s}</span></span>
       </div>
-      <div class="bjDos">${dosSvg}</div>
+      <div class="bjDos">${dosChoisi()}</div>
     </div>`;
   return d;
 }

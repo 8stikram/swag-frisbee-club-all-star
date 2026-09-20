@@ -9,6 +9,8 @@ import {
   pousserPreferences, dureeMoyenne
 } from '../reseau/compte.js';
 import { crediterEnAttente } from '../data/apprentissage.js';
+import { equipeDe } from '../data/inventaire.js';
+import { banniereHTML } from './inventaire-visuels.js';
 
 // ---------------------------------------------------------------------------
 // Compte, fiche de profil et classement. Trois panneaux qui vivent dans
@@ -284,9 +286,17 @@ function quand(iso) {
 }
 
 export function afficherEnrichi(p, recents) {
-  // Banniere : l'image si elle existe, sinon le degrade du joueur suffit.
+  // Banniere : celle choisie a l'inventaire si c'en est une dessinee, sinon
+  // l'image envoyee, sinon le degrade du joueur suffit.
   const ban = $('ficheBanniere');
-  if (ban) ban.style.backgroundImage = p.banniere ? ('url(' + p.banniere + ')') : 'none';
+  if (ban) {
+    ban.querySelectorAll('.banniere').forEach(e => e.remove());
+    const choisie = (equipeDe('banniere') || '').split(':')[1];
+    if (choisie && choisie !== 'perso') {
+      ban.style.backgroundImage = 'none';
+      ban.insertAdjacentHTML('afterbegin', banniereHTML(choisie));
+    } else ban.style.backgroundImage = p.banniere ? ('url(' + p.banniere + ')') : 'none';
+  }
 
   // Pastille : verte si le joueur s'est manifeste il y a moins de deux minutes.
   const past = $('fichePastille');

@@ -25,8 +25,16 @@ export const DISC_SKINS = [
 
 // Vrai quand le skin est jouable. Le déblocage vit dans data/apprentissage.js,
 // importé à la demande pour ne pas lier ce registre au reste au chargement.
+//
+// Depuis la boutique, un disque s'achète (50 pièces), sauf les deux offerts à
+// chaque compte. La possession est demandée à data/inventaire.js par ce
+// branchement plutôt que par un import : c'est LUI qui importe ce registre, et
+// l'inverse fermerait le cercle.
+let _possede = null;
+export function brancherPossessionDisque(fn) { _possede = fn; }
 export function skinDebloque(skin) {
-  if (!skin || !skin.verrou) return true;
+  if (!skin) return false;
+  if (!skin.verrou) return _possede ? _possede('disque:' + skin.id) : true;
   if (skin.verrou === 'tuto') {
     // Forçage du panneau admin : session seulement, jamais sauvegardé.
     const f = forcageTuto();

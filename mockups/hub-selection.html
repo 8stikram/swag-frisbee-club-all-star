@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hub de sélection</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&family=Chakra+Petch:wght@600;700&family=DotGothic16&family=Russo+One&display=swap" rel="stylesheet">
+<!-- Les vraies règles du jeu : écran de sélection, grille, bandeaux, boutons. -->
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  /* ================= PAGE ================= */
+  :root{--bg:#070a12;--panel:#0e1626;--edge:#22344f;--txtE:#e8f0ff;--accent:#35e0ff;--or:#ffd23e}
+  body{display:block;overflow:auto;height:auto;margin:0;background:var(--bg);color:var(--txtE);font-family:'Barlow',system-ui,sans-serif;padding:18px 16px 70px}
+  h1.titrePage{font-size:19px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:1150px;line-height:1.6;margin:0 0 12px}
+  .note b{color:var(--or)}
+  .versions{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+  .versions button{flex:1 1 240px;text-align:left;background:var(--panel);color:var(--txtE);border:2px solid var(--edge);border-radius:12px;padding:10px 13px;cursor:pointer;font-family:inherit}
+  .versions button b{display:block;font-family:'Archivo Black',sans-serif;font-size:14px;margin-bottom:3px}
+  .versions button span{font-size:12px;color:#8fa4c4;line-height:1.45}
+  .versions button.on{border-color:var(--or);background:#1d1606}
+  .versions button.on b{color:var(--or)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .sceneWrap{flex:1 1 760px;min-width:300px;position:sticky;top:10px}
+  .scene{position:relative;width:100%;aspect-ratio:16/10;border:8px solid #1b2a52;border-radius:14px;overflow:hidden;
+    background:#0a0e1a;container-type:size;user-select:none;box-shadow:0 10px 0 rgba(0,0,0,.4)}
+  .partieFond{position:absolute;inset:0;pointer-events:none}
+  .terrain{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,#23345a 0%,#141d31 62%,#0a0e1a 100%)}
+  #partieReelle{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .8s}
+  #partieReelle.pret{opacity:1}
+  .scene[data-partie="simulee"] #partieReelle{display:none}
+  #hote{position:absolute;inset:0}
+  .cote{flex:1 1 320px;min-width:280px;display:flex;flex-direction:column;gap:10px}
+  details.bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px 12px}
+  details.bloc > summary{cursor:pointer;list-style:none;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;display:flex;align-items:center;gap:7px}
+  details.bloc > summary::before{content:'▸';color:#6d80a0;transition:transform .15s}
+  details.bloc[open] > summary::before{transform:rotate(90deg)}
+  details.bloc[open] > summary{margin-bottom:9px}
+  .cote .row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px}
+  .cote button{background:#1a2b48;color:var(--txtE);border:1px solid var(--edge);border-radius:7px;padding:7px 11px;font-size:11.5px;cursor:pointer;font-family:inherit}
+  .cote button:hover{background:#24395e}
+  .cote button.on{background:#3a2c06;border-color:var(--or);color:var(--or)}
+  .cote button.vert{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .explique{font-size:12.5px;line-height:1.6;color:#c9d6ee}
+  .explique ul{margin:6px 0 0;padding-left:18px}
+  .explique li{margin-bottom:4px}
+  .explique b{color:var(--or)}
+  textarea{width:100%;background:#0a1220;border:1px solid var(--edge);border-radius:7px;color:var(--or);font-family:Consolas,monospace;font-size:11px;padding:9px;resize:vertical;height:90px}
+  .etatCopie{font-size:11.5px;color:#8ef0b4;min-height:16px;margin-top:5px}
+
+  /* ================= HUB — commun aux trois versions ================= */
+  .hub{--c1:#ff8c1a;--c2:#6b7280;font-family:'Barlow',sans-serif}
+  .hub .bg-select{background:linear-gradient(100deg,color-mix(in srgb,var(--c1) 45%,#fff) 0%,color-mix(in srgb,var(--c1) 56%,#fff) 26%,
+    color-mix(in srgb,var(--c2) 56%,#fff) 74%,color-mix(in srgb,var(--c2) 45%,#fff) 100%)}
+  .hub .ringwrap text{display:none}
+  .hub .r-base{--rc:#9aa0ac} .hub .r-chroma{--rc:#35c6e0} .hub .r-skin{--rc:#ffae1a}
+
+  /* Le perso choisi, sa tenue, et son disque qui tourne à côté de lui. */
+  .hHero,.hCpuHero{position:relative;display:flex;align-items:flex-end;justify-content:center}
+  .hSprite,.hCpuSprite{height:100%;width:auto;image-rendering:pixelated;animation:bob 2.8s ease-in-out infinite;
+    filter:drop-shadow(0 0 2px rgba(17,19,24,.5)) drop-shadow(0 0 6px rgba(17,19,24,.36)) drop-shadow(0 5px 7px rgba(17,19,24,.22))}
+  .hHeroDisqueWrap{position:absolute;right:-34%;bottom:26%;width:40%;aspect-ratio:1;animation:bob 2.8s ease-in-out infinite;animation-delay:-.4s;z-index:2}
+  .hHeroDisque{width:100%;height:100%;filter:drop-shadow(0 .6cqh 0 rgba(17,19,24,.35))}
+  .hHeroDisqueQ{display:none;position:absolute;inset:6%;border-radius:50%;background:var(--yellow);border:3px solid var(--ink);align-items:center;justify-content:center;
+    font-family:'Archivo Black',sans-serif;font-size:3cqh;color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill}
+  .hHeroDisqueWrap.hSpec .hHeroDisque{display:none}
+  .hHeroDisqueWrap.hSpec .hHeroDisqueQ{display:flex}
+  .hub.persoAleatoire .hHero::after,.hub.tenueFavorite .hHero::after{content:'?';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:'Archivo Black',sans-serif;font-size:20cqh;line-height:1;-webkit-text-stroke:5px var(--ink);paint-order:stroke fill;pointer-events:none;
+    background:linear-gradient(120deg,#ff5f6d,#ffc371,#5df08a,#35e0ff,#a06bff,#ff5f6d);background-size:400% 400%;animation:rainbow 6s ease infinite;
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hub.tenueFavorite .hHero::after{content:'★';font-size:9cqh;align-items:flex-start;justify-content:flex-start}
+  .hub.cpuVide .hCpuHero{opacity:.35}
+
+  /* Nom de la tenue, sa rareté, et son prix quand on ne l'a pas. */
+  .hTenueNom{display:flex;align-items:center;justify-content:center;gap:.5cqw;font-family:'Archivo Black',sans-serif;font-size:1.7cqh;color:#fff;
+    -webkit-text-stroke:3px var(--ink);paint-order:stroke fill;min-height:2.8cqh;white-space:nowrap}
+  .hTenueNom .rar{font-style:normal;font-size:.7em;-webkit-text-stroke:0;color:#fff;background:var(--rc);border:2px solid var(--ink);border-radius:5px;padding:.1cqh .45cqw;letter-spacing:.06em}
+  .hTenueNom .rar.r-chroma{background:linear-gradient(90deg,#ff9ad5,#fff7a8,#a9f0ff,#c7a8ff);color:var(--ink)}
+  .hTenueNom .aAcheter{font-style:normal;display:inline-flex;align-items:center;gap:.3cqw;font-size:.72em;-webkit-text-stroke:0;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:6px;padding:.1cqh .45cqw}
+  .hTenueNom .aAcheter svg{width:1.4cqh;height:1.4cqh}
+  .piece{display:inline-block;width:1em;height:1em;border-radius:50%;border:max(1.5px,.12em) solid var(--ink);flex-shrink:0;background:radial-gradient(circle at 34% 30%,#fff3b8,#eab73f 52%,#8a5f11);vertical-align:-.14em}
+
+  /* Tuiles de tenue */
+  .hTenues{display:flex;gap:.9cqh;justify-content:center;flex-wrap:wrap}
+  .hT{position:relative;width:var(--tT,7cqh);aspect-ratio:1;border:3px solid var(--ink);border-radius:9px;background:#fff;box-shadow:3px 3px 0 var(--ink);
+    cursor:pointer;padding:0;overflow:hidden;transition:transform .1s,box-shadow .1s;--rc:#9aa0ac;flex-shrink:0}
+  .hT::before{content:'';position:absolute;inset:0;background:radial-gradient(85% 70% at 50% 40%,color-mix(in srgb,var(--rc) 50%,#fff),#fff 78%)}
+  .hT img{position:absolute;left:50%;top:45%;height:72%;translate:-50% -50%;image-rendering:pixelated}
+  .hTbande{position:absolute;left:0;right:0;bottom:0;height:13%;background:var(--rc);border-top:2px solid var(--ink)}
+  .hT:hover{transform:translate(-2px,-2px) scale(1.07);box-shadow:5px 5px 0 var(--ink);z-index:3}
+  .hT.sel{transform:translateY(-3px);box-shadow:0 0 0 3px #fff,0 0 0 6px var(--ink),0 0 2.6cqh .6cqh color-mix(in srgb,var(--rc) 70%,#fff);z-index:2}
+  .hT.sel::after{content:'';position:absolute;inset:0;border-radius:6px;box-shadow:inset 0 0 0 3px #fff;animation:hBrille 1.3s ease-in-out infinite}
+  @keyframes hBrille{50%{opacity:.25}}
+  .hT.verrou img{filter:grayscale(1) brightness(.72)}
+  .hT.verrou::before{filter:grayscale(1)}
+  .hTcad{position:absolute;right:5%;top:5%;width:30%;z-index:2}
+  .hTcad svg,.hDcad svg,.hP span svg{display:block;width:100%;height:auto}
+  .hTetoile{position:absolute;left:5%;top:1%;z-index:3;font-size:2.2cqh;line-height:1;color:#fff;-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;opacity:0;cursor:pointer;transition:opacity .1s}
+  .hT:hover .hTetoile,.hD:hover .hTetoile{opacity:.85}
+  .hT.fav .hTetoile,.hD.fav .hTetoile{opacity:1;color:#ffd23e}
+  .hTnb{position:absolute;right:5%;bottom:16%;z-index:2;font-family:'Archivo Black',sans-serif;font-size:1.15cqh;color:var(--ink);
+    background:linear-gradient(90deg,#ff9ad5,#fff7a8,#a9f0ff,#c7a8ff);border:2px solid var(--ink);border-radius:6px;padding:0 .3cqw}
+  .hTnom,.hTprix{display:none}
+  .hTfav{background:var(--yellow)}
+  .hTfav::before{display:none}
+  .hTfavIco{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Archivo Black',sans-serif;font-size:3.2cqh;color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill}
+  .hTfavIco small{font-size:.6em}
+  .hTfav.vide{opacity:.45}
+
+  /* Pastilles de chroma, façon League of Legends */
+  .hChromas{display:flex;align-items:center;justify-content:center;gap:.65cqh;min-height:3.4cqh}
+  .hChromas.vide{visibility:hidden}
+  .hPlabel{font-family:'Archivo Black',sans-serif;font-size:1.2cqh;color:#fff;-webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill;letter-spacing:.08em;margin-right:.3cqw}
+  .hP{position:relative;width:2.9cqh;height:2.9cqh;border-radius:50%;border:3px solid var(--ink);background:var(--c);padding:0;cursor:pointer;box-shadow:2px 2px 0 var(--ink);transition:transform .1s;flex-shrink:0}
+  .hP i{position:absolute;inset:14%;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.75),transparent 58%)}
+  .hP:hover{transform:scale(1.22);z-index:2}
+  .hP.sel{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--ink);transform:scale(1.18)}
+  .hP.verrou{opacity:.6}
+  .hP span{position:absolute;right:-35%;bottom:-35%;width:72%}
+
+  /* Disque, façon skin d'arme : une case, et la grille s'ouvre au clic. */
+  .hDisqueZone{position:relative}
+  .hDisqueSlot{display:flex;align-items:center;gap:.8cqw;background:rgba(255,255,255,.95);border:3px solid var(--ink);border-radius:40px;box-shadow:4px 4px 0 var(--ink);
+    padding:.5cqh 1.2cqw .5cqh .5cqh;cursor:pointer;transition:transform .1s}
+  .hDisqueSlot:hover{transform:translate(-2px,-2px)}
+  .hDisqueImg{width:6.4cqh;height:6.4cqh;border-radius:50%;border:3px solid var(--ink);background:#0a1430;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+  .hDisqueImg img{width:100%;height:100%}
+  .hDisqueSlot.hSpec .hDisqueImg,.hD.hSpec{background:var(--yellow)}
+  .hDisqueImg .q,.hD .q{font-family:'Archivo Black',sans-serif;font-size:2.8cqh;color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill}
+  .hDisqueTxt{display:flex;flex-direction:column;font-family:'Archivo Black',sans-serif;line-height:1.15}
+  .hDisqueTxt small{font-size:1.1cqh;color:#6b7080;letter-spacing:.1em}
+  .hDisqueNom{font-size:1.7cqh;color:var(--ink);white-space:nowrap}
+  .hDisqueFleche{font-size:1.3cqh;color:var(--ink);margin-left:.2cqw}
+  .hDisquePop{position:absolute;left:50%;bottom:calc(100% + 1.4cqh);transform:translateX(-50%);z-index:20;width:46cqh;
+    background:#fff;border:4px solid var(--ink);border-radius:12px;box-shadow:6px 6px 0 var(--ink);padding:1.2cqh}
+  .hPopTitre{font-family:'Archivo Black',sans-serif;font-size:1.4cqh;color:var(--ink);letter-spacing:.08em;margin:0 0 .9cqh;display:flex;justify-content:space-between}
+  .hPopTitre em{font-style:normal;font-family:'Barlow',sans-serif;font-weight:700;color:#6b7080;letter-spacing:0}
+  .hDisquesGrille{display:grid;grid-template-columns:repeat(5,1fr);gap:.9cqh}
+  .hD{position:relative;aspect-ratio:1;border-radius:50%;border:3px solid var(--ink);background:#0a1430;padding:0;cursor:pointer;box-shadow:2px 2px 0 var(--ink);transition:transform .1s;
+    display:flex;align-items:center;justify-content:center}
+  .hD img{width:100%;height:100%;border-radius:50%}
+  .hD:hover{transform:scale(1.12);z-index:2}
+  .hD.sel{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--ink)}
+  .hD.verrou img{filter:grayscale(1) brightness(.55)}
+  .hDcad{position:absolute;right:-10%;bottom:-10%;width:42%}
+  .hD .hTetoile{left:-4%;top:-8%}
+
+  /* Grille des persos : la vraie (.grid de style.css), avec des images. */
+  .hub .grid .cell img{width:86%;image-rendering:pixelated}
+  .hub .grid.fini{pointer-events:none}
+  .hub[data-tour="2"] .grid .cell:hover{outline:4px solid var(--red);outline-offset:2px}
+
+  .hConfirmer{justify-content:center;background:var(--green);font-size:2.5cqh;padding:1.1cqh 2.6cqw}
+  .hConfirmer.attente{background:#e4e6ee;color:#6b7080}
+  .hub[data-tour="0"] .hConfirmer{background:var(--yellow)}
+  .hMsg{position:absolute;left:50%;top:8.6cqh;z-index:30;transform:translate(-50%,0);opacity:0;pointer-events:none;background:var(--ink);color:#fff;
+    font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.8cqh;padding:.9cqh 1.6cqw;border-radius:10px;border:3px solid #fff;white-space:nowrap}
+  .hMsg.dore{background:var(--yellow);color:var(--ink);border-color:var(--ink)}
+  .hMsg b{color:inherit}
+  .pips{display:flex;gap:1cqw;justify-content:center}
+  .pip{display:flex;align-items:center;gap:.25cqw}
+  .pip b{font-family:'Archivo Black',sans-serif;font-size:1.05cqh;color:#fff;-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;margin-right:.3cqw;letter-spacing:.04em}
+  .pip i{width:1.3cqh;height:1.3cqh;border:2px solid var(--ink);background:#fff;transform:skewX(-12deg)}
+  .hub.verrouille .hTenues,.hub.verrouille .hChromas,.hub.verrouille .hDisqueSlot{filter:saturate(.5);opacity:.75}
+
+  /* ================= A — D.A. ACTUELLE ================= */
+  .v-a .side{gap:1cqh}
+  .v-a .heroBox{height:24cqh}
+  .v-a .hTenues{--tT:6.2cqh}
+  .v-a .stats{width:78%;gap:.6cqh}
+  .v-a .bar{height:1.8cqh;min-height:8px}
+  .v-a .statRow{gap:.35cqh}
+  .v-a .statRow .lbl{font-size:1.3cqh}
+  .v-a .hGrille{--cols:4;--cell:8.6cqh}
+  .v-a .hConfirmer{margin-top:.4cqh}
+  .v-a .hCpuTenue{font-family:'Archivo Black',sans-serif;font-size:1.6cqh;color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;min-height:2.6cqh}
+  .v-a .hDisqueZone{position:absolute;left:50%;bottom:2.2cqh;transform:translateX(-50%);z-index:8}
+  .v-a.scr-select .special{bottom:12.4cqh}
+
+  /* ================= B — REFONTE BRAWLHALLA ================= */
+  .vbGauche{position:absolute;left:2.4cqw;top:10cqh;width:53cqw;height:86cqh;z-index:4;display:flex;flex-direction:column;align-items:center;gap:1.4cqh}
+  .v-b .hGrille{--cols:5;--cell:11.6cqh}
+  .vbAdv{margin-top:auto;display:flex;align-items:center;gap:1.2cqw;width:100%;background:rgba(255,255,255,.94);border:4px solid var(--ink);border-radius:12px;
+    box-shadow:5px 5px 0 var(--ink);padding:.9cqh 1.2cqw}
+  .vbAdvPortrait{width:9cqh;height:9cqh;border:3px solid var(--ink);border-radius:10px;background:color-mix(in srgb,var(--c2) 40%,#fff);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;flex-shrink:0}
+  .vbAdvPortrait img{height:92%;image-rendering:pixelated}
+  .vbAdvTxt{display:flex;flex-direction:column;line-height:1.15;min-width:0;flex:1}
+  .vbAdvTxt small{font-family:'Archivo Black',sans-serif;font-size:1.1cqh;color:#6b7080;letter-spacing:.1em}
+  .vbAdvTxt b{font-family:'Archivo Black',sans-serif;font-size:2.2cqh;color:var(--ink)}
+  .vbAdvTxt em{font-style:normal;font-weight:700;font-size:1.4cqh;color:#4a5064}
+  .vbAdvIA{display:flex;align-items:center;gap:.6cqw;font-family:'Archivo Black',sans-serif;font-size:1.6cqh;color:var(--ink)}
+  .vbAdvIA .arrowBtn{width:3.6cqh;height:3.6cqh;min-width:0;min-height:0;font-size:1.4cqh}
+  .vbPanneau{position:absolute;right:2.4cqw;top:10cqh;width:39cqw;height:87cqh;z-index:5;display:flex;flex-direction:column;background:#fff;
+    border:4px solid var(--ink);border-radius:14px;box-shadow:6px 6px 0 var(--ink);overflow:hidden}
+  .vbTete{display:flex;justify-content:space-between;align-items:center;gap:1cqw;background:var(--c1);border-bottom:4px solid var(--ink);padding:1cqh 1.3cqw;transition:background .3s}
+  .vbTete > div:first-child{display:flex;flex-direction:column;line-height:1.05}
+  .v-b .vbTete .hNom{font-family:'Archivo Black',sans-serif;font-size:3cqh;color:#fff;-webkit-text-stroke:4px var(--ink);paint-order:stroke fill}
+  .v-b .vbTete .hUnivers{font-style:normal;font-family:'Archivo Black',sans-serif;font-size:1.2cqh;color:var(--ink);letter-spacing:.1em;opacity:.7}
+  .v-b .vbTete .pips{flex-direction:column;gap:.35cqh;align-items:flex-end}
+  .vbScene{position:relative;height:27cqh;flex-shrink:0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:1.6cqh;overflow:hidden;
+    background:radial-gradient(70% 90% at 50% 60%,color-mix(in srgb,var(--c1) 38%,#fff) 0%,#fff 90%);border-bottom:3px solid var(--ink)}
+  .vbHalo{position:absolute;left:50%;bottom:0;width:30cqh;height:6cqh;translate:-50% 30%;border-radius:50%;background:rgba(17,19,24,.18)}
+  .v-b .hHero{height:22cqh}
+  .v-b .hTenueNom{color:var(--ink);-webkit-text-stroke:0;padding:.8cqh 1.2cqw .2cqh;justify-content:flex-start}
+  .vbOnglets{display:flex;gap:.6cqw;padding:.6cqh 1.2cqw 0}
+  .vbOnglets button{flex:1;font-family:'Archivo Black',sans-serif;font-size:1.5cqh;color:var(--ink);background:#fff;border:3px solid var(--ink);border-radius:8px 8px 0 0;border-bottom:0;
+    padding:.8cqh .5cqw;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vbOnglets button.on{background:var(--ink);color:#fff}
+  .vbContenu{flex:1;min-height:0;overflow:auto;border-top:3px solid var(--ink);margin:0 1.2cqw;padding:1.2cqh .4cqw;scrollbar-width:thin}
+  .vbPan{display:none}
+  .v-b[data-onglet="tenue"] .vbPanT,.v-b[data-onglet="disque"] .vbPanD{display:block}
+  .v-b .hTenues{--tT:8.4cqh;justify-content:flex-start}
+  .v-b .hChromas{justify-content:flex-start;margin-bottom:1cqh}
+  .v-b .hPlabel{color:var(--ink);-webkit-text-stroke:0}
+  .v-b .hDisquesGrille{grid-template-columns:repeat(6,1fr)}
+  .vbBas{padding:1cqh 1.2cqw 1.4cqh;border-top:3px solid var(--ink);display:flex}
+  .vbBas .hConfirmer{flex:1}
+
+  /* ================= C — HYBRIDE (tiroir en bas, façon LoL) ================= */
+  .vcHaut{position:absolute;left:0;right:0;top:10cqh;height:52cqh;z-index:4;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;justify-items:center;padding:0 3cqw}
+  .vcCote{display:flex;flex-direction:column;align-items:center;gap:1cqh}
+  .v-c .heroBox{height:27cqh}
+  .v-c .hGrille{--cols:5;--cell:8.2cqh}
+  .v-c .hCpuTenue{font-family:'Archivo Black',sans-serif;font-size:1.5cqh;color:#fff;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;min-height:2.4cqh}
+  .vcTiroir{position:absolute;left:2cqw;right:2cqw;bottom:2.4cqh;height:31cqh;z-index:6;display:flex;align-items:stretch;gap:1.4cqw;
+    background:rgba(255,255,255,.95);border:4px solid var(--ink);border-radius:14px;box-shadow:6px 6px 0 var(--ink);padding:1.2cqh 1.4cqw}
+  .vcTitre{width:19cqw;display:flex;flex-direction:column;justify-content:center;gap:.6cqh;border-right:3px dashed #c8cbd6;padding-right:1cqw}
+  .vcTitre small{font-family:'Archivo Black',sans-serif;font-size:1.2cqh;color:#6b7080;letter-spacing:.12em}
+  .vcTitre .hNom{font-family:'Archivo Black',sans-serif;font-size:3.2cqh;color:#fff;-webkit-text-stroke:4px var(--ink);paint-order:stroke fill;line-height:1}
+  .v-c .vcTitre .hTenueNom{justify-content:flex-start;color:var(--ink);-webkit-text-stroke:0;flex-wrap:wrap;white-space:normal;row-gap:.4cqh}
+  .vcCarrousel{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:.8cqh}
+  .v-c .hTenues{flex-wrap:nowrap;gap:1.1cqh}
+  .v-c .hT{width:11.2cqh;aspect-ratio:3/4}
+  .v-c .hT img{top:40%;height:58%}
+  .v-c .hTbande{height:24%;display:block}
+  .v-c .hTnom{display:block;position:absolute;left:4%;right:4%;bottom:5%;z-index:2;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.25cqh;line-height:1.05;color:#fff;
+    -webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .v-c .hTprix{display:flex;align-items:center;gap:.2cqw;position:absolute;left:50%;top:62%;translate:-50% 0;z-index:3;font-style:normal;font-family:'Russo One',sans-serif;font-size:1.3cqh;
+    background:#fff;border:2px solid var(--ink);border-radius:20px;padding:0 .45cqw;color:var(--ink)}
+  .v-c .hTfav .hTprix{background:var(--yellow)}
+  .v-c .hTnb{bottom:27%}
+  .v-c .hT.sel{transform:translateY(-1.2cqh) scale(1.08)}
+  .vcDroite{width:22cqw;display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:1.4cqh;border-left:3px dashed #c8cbd6;padding-left:1.2cqw}
+  .v-c .hDisqueSlot{box-shadow:3px 3px 0 var(--ink)}
+  .v-c .hDisquePop{left:auto;right:-1cqw;transform:none}
+</style>
+</head>
+<body>
+
+<h1 class="titrePage">HUB — CHOISIR SA TENUE ET SON DISQUE <span style="color:#6d80a0;font-size:13px">(3 versions)</span></h1>
+<p class="note">La sélection des persos devient le <b>hub</b> où l’on choisit tenue et disque, comme les skins et les skins d’arme de Brawlhalla.
+Tout se <b>teste</b> : survole un perso, une tenue, un chroma ou un disque pour le voir sur le perso ; clique pour le choisir ; ★ sur une tuile = favori ;
+<b>CONFIRMER</b> passe au tour du CPU (sa tenue est tirée au hasard). Les <b>chromas</b> sont des pastilles de couleur sous la tenue d’origine,
+comme dans League of Legends (essaie Yoshi, Hollis ou Flowser-Two). Même compte que le mockup de l’inventaire.</p>
+
+<div class="versions" id="versions">
+  <button data-v="a"><b>A · D.A. actuelle</b><span>L’écran d’aujourd’hui : 1P à gauche, grille au milieu, CPU à droite. Les tenues et les chromas passent sous ton perso, le disque en bas.</span></button>
+  <button data-v="b"><b>B · Refonte Brawlhalla</b><span>Grille des persos à gauche, adversaire en bas. À droite, un panneau d’équipement : ton perso en grand, onglets TENUE et DISQUE, gros CONFIRMER.</span></button>
+  <button data-v="c"><b>C · Hybride</b><span>Le face-à-face 1P contre CPU reste en haut. En bas, un tiroir façon LoL : les tenues en grandes cartes, chromas au-dessus, disque et CONFIRMER à droite.</span></button>
+</div>
+
+<div class="haut">
+  <div class="sceneWrap">
+    <div class="scene" id="scene" data-partie="reelle">
+      <div class="partieFond">
+        <div class="terrain"></div>
+        <iframe id="partieReelle" src="../index.html" tabindex="-1" aria-hidden="true" title="Partie en fond"></iframe>
+      </div>
+      <div id="hote"></div>
+    </div>
+  </div>
+
+  <div class="cote">
+    <details class="bloc" open>
+      <summary>Cette version</summary>
+      <div class="explique" id="explique"></div>
+    </details>
+    <details class="bloc" open>
+      <summary>Test</summary>
+      <div class="row">
+        <button class="vert" id="btnRecommencer">↺ Recommencer (tour de 1P)</button>
+        <button id="btnToutPosseder">Tout posséder</button>
+        <button id="btnCompte">Compte de départ</button>
+      </div>
+    </details>
+    <details class="bloc" open>
+      <summary>Ton choix</summary>
+      <textarea id="sortie" spellcheck="false" readonly></textarea>
+      <div class="row" style="margin-top:7px"><button class="vert" id="btnCopier">📋 Tout copier</button></div>
+      <div class="etatCopie" id="etatCopie"></div>
+    </details>
+    <details class="bloc">
+      <summary>Partie derrière</summary>
+      <div class="row">
+        <button id="btnReelle" class="on">Vraie partie (le jeu tourne)</button>
+        <button id="btnSimulee">Terrain dessiné</button>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script type="module">
+  import { CHARS, ROSTER } from '../js/data/characters.js';
+  import { SKINS } from '../js/data/skins-perso.js';
+  import { DISC_SKINS, drawSkinDisc } from '../js/data/skins.js';
+  import { construireCatalogue, etatDepart } from './_inventaire.js';
+  import { creerHub } from './_hub.js';
+
+  const $ = id => document.getElementById(id);
+
+  /* ================= SONS (copies de js/audio/audio.js) ================= */
+  let AC = null, gain = null;
+  window.addEventListener('pointerdown', () => {
+    if (AC) return;
+    try { AC = new (window.AudioContext || window.webkitAudioContext)(); gain = AC.createGain(); gain.gain.value = .18; gain.connect(AC.destination); } catch { AC = null; }
+  }, { capture:true });
+  function beep(f0, f1, dur, type = 'square', vol = .15, delay = 0) {
+    if (!AC) return;
+    const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(f1, 1), t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(gain); o.start(t); o.stop(t + dur + .02);
+  }
+  const SONS = {
+    move: () => beep(760, 760, .05, 'square', .06),
+    survol: () => beep(1250, 1250, .018, 'square', .02),
+    select: () => { beep(620, 990, .12, 'square', .12); beep(990, 1320, .1, 'square', .08, .06); },
+    deny: () => beep(220, 150, .18, 'square', .12),
+  };
+  const son = n => { if (AC) SONS[n]?.(); };
+
+  /* ================= LES TROIS MISES EN PAGE ================= */
+  const FOND = `
+    <div class="bg bg-select">
+      <div class="charglow g1 hGlow1"></div><div class="charglow g2 hGlow2"></div>
+      <div class="beam b-a"></div><div class="beam b-b"></div><div class="streaks"></div><div class="arc"></div>
+    </div>
+    <div class="titlebar"><span>CHOISIS TON CHAMPION</span></div>
+    <div class="topBar gauche"><button class="fsBtn hRetour" title="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+    <div class="topBar"><button class="fsBtn compteBtn connecte">NONO</button><button class="fsBtn" title="Plein écran"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>
+    <div class="hMsg"></div>`;
+  const HEROS = `<img class="hSprite" alt=""><div class="hHeroDisqueWrap"><canvas class="hHeroDisque" width="120" height="120"></canvas><span class="hHeroDisqueQ">?</span></div>`;
+  const DISQUE = `<div class="hDisqueZone">
+      <div class="hDisqueSlot" title="Choisir le disque"><div class="hDisqueImg"></div><div class="hDisqueTxt"><small>DISQUE</small><span class="hDisqueNom"></span></div><span class="hDisqueFleche">▲</span></div>
+      <div class="hDisquePop hidden"><p class="hPopTitre">TON DISQUE <em>survole pour voir · ★ = favori</em></p><div class="hDisquesGrille"></div></div>
+    </div>`;
+  const IA = `<div class="diffRow"><span class="arrowBtn ghost" data-diff="-1">◀</span><span class="diffLabel">IA : <b class="hDiff">NORMAL</b></span><span class="arrowBtn ghost" data-diff="1">▶</span></div>`;
+
+  const GABARITS = {
+    a: `<div class="screen scr-select hub v-a">${FOND}
+      <div class="badge b1 hUnivers">—</div><div class="badge b2 hCpuUnivers">—</div>
+      <div class="board">
+        <div class="side p1">
+          <div class="heroBox hHero">${HEROS}</div>
+          <div class="nameSlash p1"><span class="hNom">—</span></div>
+          <div class="hTenueNom"></div>
+          <div class="hChromas"></div>
+          <div class="hTenues"></div>
+          <div class="stats hStats"></div>
+        </div>
+        <div class="gridwrap">
+          <div class="turnHint hTour"></div>
+          <div class="grid hGrille"></div>
+          ${IA}
+          <button class="mbtn hConfirmer">CONFIRMER</button>
+        </div>
+        <div class="side p2">
+          <div class="heroBox hCpuHero"><img class="hCpuSprite" alt=""></div>
+          <div class="nameSlash p2"><span class="hCpuNom">CPU</span></div>
+          <div class="hCpuTenue"></div>
+          <div class="stats hCpuStats"></div>
+        </div>
+      </div>
+      <div class="special hUlti"></div>
+      ${DISQUE}
+    </div>`,
+    b: `<div class="screen hub v-b">${FOND}
+      <div class="vbGauche">
+        <div class="turnHint hTour"></div>
+        <div class="grid hGrille"></div>
+        <div class="vbAdv">
+          <div class="vbAdvPortrait hCpuHero"><img class="hCpuSprite" alt=""></div>
+          <div class="vbAdvTxt"><small>ADVERSAIRE</small><b class="hCpuNom">CPU</b><em class="hCpuTenue"></em></div>
+          <div class="vbAdvIA"><button class="arrowBtn" data-diff="-1">◀</button><span>IA : <b class="hDiff">NORMAL</b></span><button class="arrowBtn" data-diff="1">▶</button></div>
+        </div>
+      </div>
+      <div class="vbPanneau">
+        <div class="vbTete"><div><b class="hNom">—</b><em class="hUnivers">—</em></div><div class="hStats pips"></div></div>
+        <div class="vbScene"><div class="vbHalo"></div><div class="hHero">${HEROS}</div></div>
+        <div class="hTenueNom"></div>
+        <div class="vbOnglets"><button data-onglet="tenue">TENUE</button><button data-onglet="disque">DISQUE · <span class="hDisqueNom"></span></button></div>
+        <div class="vbContenu">
+          <div class="vbPan vbPanT"><div class="hChromas"></div><div class="hTenues"></div></div>
+          <div class="vbPan vbPanD"><div class="hDisquesGrille"></div></div>
+        </div>
+        <div class="vbBas"><button class="mbtn hConfirmer">CONFIRMER</button></div>
+      </div>
+    </div>`,
+    c: `<div class="screen scr-select hub v-c">${FOND}
+      <div class="badge b1 hUnivers">—</div><div class="badge b2 hCpuUnivers">—</div>
+      <div class="vcHaut">
+        <div class="vcCote">
+          <div class="heroBox hHero">${HEROS}</div>
+          <div class="nameSlash p1"><span class="hNom">—</span></div>
+          <div class="hStats pips"></div>
+        </div>
+        <div class="gridwrap">
+          <div class="turnHint hTour"></div>
+          <div class="grid hGrille"></div>
+          ${IA}
+        </div>
+        <div class="vcCote">
+          <div class="heroBox hCpuHero"><img class="hCpuSprite" alt=""></div>
+          <div class="nameSlash p2"><span class="hCpuNom">CPU</span></div>
+          <div class="hCpuTenue"></div>
+        </div>
+      </div>
+      <div class="vcTiroir">
+        <div class="vcTitre"><small>TENUES DE</small><b class="hNom">—</b><div class="hTenueNom"></div></div>
+        <div class="vcCarrousel"><div class="hChromas"></div><div class="hTenues"></div></div>
+        <div class="vcDroite">${DISQUE}<button class="mbtn hConfirmer">CONFIRMER</button></div>
+      </div>
+    </div>`,
+  };
+
+  const EXPLIQUE = {
+    a: `<p>On garde l’écran d’aujourd’hui et son face-à-face. Le panneau de tenues qui s’ouvrait <b>par-dessus</b> la grille disparaît.</p><ul>
+      <li>Sous ton perso : le nom de la tenue et sa rareté, les <b>pastilles de chroma</b>, la rangée de <b>tenues</b>, puis les stats (plus compactes).</li>
+      <li>Le carrousel de disques du bas devient une <b>case disque</b> : un clic ouvre la grille, comme un skin d’arme.</li>
+      <li>COMBATTRE devient <b>CONFIRMER</b>, sous la grille.</li></ul>`,
+    b: `<p>L’écran de Brawlhalla : on choisit à gauche, on s’équipe à droite.</p><ul>
+      <li>Grille des persos <b>plus grande</b>. L’adversaire et le niveau d’IA sont résumés dans une carte en bas.</li>
+      <li>Panneau d’équipement : ton perso en grand avec son disque, deux onglets <b>TENUE</b> et <b>DISQUE</b>, et un gros <b>CONFIRMER</b>.</li>
+      <li>Le face-à-face 1P contre CPU devient moins visible.</li></ul>`,
+    c: `<p>Le face-à-face d’aujourd’hui en haut, l’équipement en bas, comme la sélection de skins de League of Legends.</p><ul>
+      <li>Les tenues sont de <b>grandes cartes</b> avec leur nom et leur prix, les chromas en pastilles au-dessus.</li>
+      <li>À droite du tiroir : la <b>case disque</b> et <b>CONFIRMER</b>.</li>
+      <li>Les stats deviennent des crans sous le nom. La description de l’ultime n’a plus de place.</li></ul>`,
+  };
+
+  /* ================= ÉTAT ================= */
+  const cat = construireCatalogue({ SKINS, ROSTER, DISC_SKINS });
+  let etat = etatDepart(cat);
+  let version = 'a', hub = null;
+  function monter() {
+    hub?.arreter();
+    hub = creerHub($('hote'), { gabarit:GABARITS[version], CHARS, ROSTER, SKINS, DISC_SKINS, drawSkinDisc, son, etat });
+    for (const b of document.querySelectorAll('#versions button')) b.classList.toggle('on', b.dataset.v === version);
+    $('explique').innerHTML = EXPLIQUE[version];
+    $('sortie').value = JSON.stringify({ mockup:'hub-selection', version, chromas:'pastilles façon LoL' }, null, 2);
+  }
+  for (const b of document.querySelectorAll('#versions button')) b.addEventListener('click', () => { version = b.dataset.v; son('select'); monter(); });
+  $('btnRecommencer').addEventListener('click', () => hub.recommencer());
+  $('btnToutPosseder').addEventListener('click', () => { for (const o of cat) etat.possede.add(o.id); monter(); });
+  $('btnCompte').addEventListener('click', () => { etat = etatDepart(cat); monter(); });
+  $('btnCopier').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('sortie').value); $('etatCopie').textContent = 'Copié ✔'; }
+    catch { $('sortie').select(); $('etatCopie').textContent = 'Sélectionné : fais Ctrl+C'; }
+  });
+
+  /* ================= VRAIE PARTIE EN FOND ================= */
+  const CSS_CADRE = `
+    html,body{margin:0!important;padding:0!important;overflow:hidden!important;background:#0a0e1a!important;
+      height:100%!important;min-height:0!important;display:block!important}
+    body>*:not(#stage){display:none!important}
+    #stage{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;
+      border:0!important;border-radius:0!important;box-shadow:none!important;margin:0!important;aspect-ratio:auto!important}
+    #stage>*:not(#game){display:none!important}
+    #game{width:100%!important;height:100%!important}`;
+  const scene = $('scene'), cadre = $('partieReelle');
+  const partie = m => { scene.dataset.partie = m; $('btnReelle').classList.toggle('on', m === 'reelle'); $('btnSimulee').classList.toggle('on', m === 'simulee'); };
+  $('btnReelle').addEventListener('click', () => partie('reelle'));
+  $('btnSimulee').addEventListener('click', () => partie('simulee'));
+  if (cadre) cadre.addEventListener('load', () => {
+    try {
+      const w = cadre.contentWindow, d = cadre.contentDocument;
+      w.HTMLMediaElement.prototype.play = function () { return Promise.resolve(); };
+      const ACc = w.AudioContext || w.webkitAudioContext;
+      if (ACc) {
+        ACc.prototype.resume = function () { return Promise.resolve(); };
+        w.AudioContext = function (...a) { const c = new ACc(...a); c.suspend(); return c; };
+        w.AudioContext.prototype = ACc.prototype;
+      }
+      for (const f of ['setItem', 'removeItem', 'clear']) w.Storage.prototype[f] = function () {};
+      const st = d.createElement('style'); st.textContent = CSS_CADRE; d.head.appendChild(st);
+      let essais = 0;
+      const avancer = () => {
+        const intro = d.getElementById('scr-intro');
+        if (intro && !intro.classList.contains('done')) intro.click();
+        const premier = d.getElementById('scr-firstrun');
+        if (premier && !premier.classList.contains('hidden')) d.querySelector('[data-act="skipTuto"]')?.click();
+        if (++essais < 30) setTimeout(avancer, 300);
+      };
+      avancer();
+      cadre.classList.add('pret');
+    } catch (err) { console.warn('Partie réelle indisponible', err); partie('simulee'); }
+  });
+
+  monter();
+</script>
+</body>
+</html>

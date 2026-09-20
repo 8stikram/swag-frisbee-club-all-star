@@ -11,6 +11,8 @@
 <link rel="stylesheet" href="css/fin-de-match.css">
 <link rel="stylesheet" href="css/intro.css">
 <link rel="stylesheet" href="css/menu-titre.css">
+<link rel="stylesheet" href="css/skins-panneau.css">
+<link rel="stylesheet" href="css/inventaire.css">
 </head>
 <body>
 <h1 class="brand" id="adminTitle">Swag Frisbee Club All Star</h1>
@@ -72,6 +74,11 @@
         <button class="tuile c-enligne" data-act="online"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15 0 18M12 3c-2.5 2.7-2.5 15 0 18"/></svg></span><span class="lbl">EN LIGNE</span><span class="eclat"></span></button>
         <button class="tuile verrou" data-bientot="histoire"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg></span><span class="lbl">HISTOIRE</span><span class="bientot">BIENTÔT</span><span class="eclat"></span></button>
         <button class="tuile verrou" data-bientot="jcj"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg></span><span class="lbl">JCJ</span><span class="bientot">BIENTÔT</span><span class="eclat"></span></button>
+      </div>
+      <!-- Large, entre les modes et les trois petits boutons : c'est là qu'on
+           passe entre deux matchs. -->
+      <div class="rangBoutique">
+        <button class="tuile c-boutique" data-act="inventaire"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16l-1.2 11.2a2 2 0 0 1-2 1.8H7.2a2 2 0 0 1-2-1.8z"/><path d="M8.5 8V6.2a3.5 3.5 0 0 1 7 0V8"/></svg></span><span class="lbl">INVENTAIRE / BOUTIQUE</span><span class="eclat"></span></button>
       </div>
       <div class="rangPetites">
         <button class="tuile c-learn" data-act="learn"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5c3-1.6 6-1.6 9 0v13c-3-1.6-6-1.6-9 0z"/><path d="M21 6.5c-3-1.6-6-1.6-9 0v13c3-1.6 6-1.6 9 0z"/></svg></span><span class="lbl">ENTRAÎNEMENT</span><span class="eclat"></span></button>
@@ -253,6 +260,12 @@
       </div>
     </div>
   </div>
+
+  <!-- ============ INVENTAIRE / BOUTIQUE ============
+       Vide ici : js/ui/inventaire-ui.js construit l'écran à la première
+       ouverture. Cinq catégories et deux onglets, ça fait beaucoup de balises
+       à écrire deux fois, et toutes dépendent de ce qu'on possède. -->
+  <div class="screen scr-inventaire hidden" id="scr-inventaire"></div>
 
   <!-- ============ CASINO ============
        Écran à part, volontairement sombre : le reste du jeu est clair et

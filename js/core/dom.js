@@ -21,7 +21,8 @@ export const SCREENS = {
   pause: 'scr-pause', over: 'scr-over',
   learn: 'scr-learn', firstrun: 'scr-firstrun', chap: 'scr-chap', online: 'scr-online',
   casino: 'scr-casino', blackjack: 'scr-blackjack', poker: 'scr-poker',
-  roulette: 'scr-roulette', caisses: 'scr-caisses'
+  roulette: 'scr-roulette', caisses: 'scr-caisses',
+  inventaire: 'scr-inventaire'
 };
 
 export let curScreen = 'title';

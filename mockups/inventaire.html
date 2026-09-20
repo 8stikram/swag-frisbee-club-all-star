@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inventaire et boutique</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@600;700;800&family=Chakra+Petch:wght@600;700&family=DotGothic16&family=Great+Vibes&family=Russo+One&display=swap" rel="stylesheet">
+<!-- Les vraies règles du jeu : fonds, onglets, barre du haut, boutons. -->
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  /* ================= PAGE DE L'ÉDITEUR ================= */
+  :root{--bg:#070a12;--panel:#0e1626;--edge:#22344f;--txtE:#e8f0ff;--accent:#35e0ff;--or:#ffd23e}
+  body{display:block;overflow:auto;height:auto;margin:0;background:var(--bg);color:var(--txtE);font-family:'Barlow',system-ui,sans-serif;padding:18px 16px 70px}
+  h1.titrePage{font-size:19px;margin:0 0 4px;font-family:'Archivo Black',sans-serif}
+  .note{font-size:12.5px;color:#8fa4c4;max-width:1100px;line-height:1.6;margin:0 0 14px}
+  .note b{color:var(--or)}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .sceneWrap{flex:1 1 700px;min-width:300px;position:sticky;top:10px}
+  /* Même cadre que #stage : 16/10, bordure de 8 px (les cqh se mesurent dedans). */
+  .scene{position:relative;width:100%;aspect-ratio:16/10;border:8px solid #1b2a52;border-radius:14px;overflow:hidden;
+    background:#0a0e1a;container-type:size;user-select:none;box-shadow:0 10px 0 rgba(0,0,0,.4)}
+  .partieFond{position:absolute;inset:0;pointer-events:none}
+  .terrain{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,#23345a 0%,#141d31 62%,#0a0e1a 100%)}
+  #partieReelle{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .8s}
+  #partieReelle.pret{opacity:1}
+  .scene[data-partie="simulee"] #partieReelle{display:none}
+  #hote{position:absolute;inset:0}
+  .scene.placement .mv{cursor:grab}
+  .scene.placement .mv *{pointer-events:none}
+  .scene .mv.sel{outline:2px dashed var(--accent);outline-offset:5px}
+  .scene:not(.placement) .mv.sel{outline:none}
+
+  .cote{flex:1 1 340px;min-width:300px;display:flex;flex-direction:column;gap:10px}
+  details.bloc{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px 12px}
+  details.bloc > summary{cursor:pointer;list-style:none;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;display:flex;align-items:center;gap:7px}
+  details.bloc > summary::before{content:'▸';color:#6d80a0;transition:transform .15s}
+  details.bloc[open] > summary::before{transform:rotate(90deg)}
+  details.bloc[open] > summary{margin-bottom:9px}
+  .cote .row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:7px;align-items:center}
+  .cote .row:last-child{margin-bottom:0}
+  .cote select,.cote input[type=number]{background:#0a1220;color:var(--txtE);border:1px solid var(--edge);border-radius:7px;padding:5px 7px;font-size:12px;width:100%}
+  .cote button{background:#1a2b48;color:var(--txtE);border:1px solid var(--edge);border-radius:7px;padding:7px 11px;font-size:11.5px;cursor:pointer;letter-spacing:.3px;font-family:inherit}
+  .cote button:hover{background:#24395e}
+  .cote button.on{background:#3a2c06;border-color:var(--or);color:var(--or)}
+  .cote button.grand{flex:1 1 100%;padding:10px;font-size:13px}
+  .cote button.vert{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .reg{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:center;font-size:12px;margin-bottom:7px}
+  .reg label{color:#8fa4c4}
+  .reg input[type=range]{grid-column:1/-1;width:100%}
+  .reg .n{font-family:Consolas,monospace;color:var(--or);text-align:right;font-size:11.5px}
+  .reg.regChoix{grid-template-columns:150px 1fr}
+  .reg input[type=color]{width:54px;height:26px;border:1px solid var(--edge);background:#0a1220;border-radius:6px;padding:1px;justify-self:end}
+  .legende{font-size:11px;color:#6d80a0;line-height:1.5;margin:4px 0 0}
+  .els{display:flex;flex-direction:column;gap:4px}
+  .el{display:flex;align-items:center;gap:8px;background:#0a1220;border:1px solid var(--edge);border-radius:7px;padding:6px 9px;cursor:pointer;font-size:12px}
+  .el:hover{border-color:#3d5c8a}
+  .el.on{border-color:var(--or);background:#171205}
+  .el .nomEl{flex:1}
+  .el .val{font-family:Consolas,monospace;font-size:10.5px;color:#7f93b3}
+  .vide{font-size:12px;color:#6d80a0;line-height:1.6;margin:8px 0 0}
+  textarea{width:100%;background:#0a1220;border:1px solid var(--edge);border-radius:7px;color:var(--or);font-family:Consolas,monospace;font-size:11px;padding:9px;resize:vertical;line-height:1.5}
+  .sortie{height:200px}
+  .etatCopie{font-size:11.5px;color:#8ef0b4;min-height:16px;margin-top:5px}
+  .etatCopie.erreur{color:#ff8f9a}
+  .soldeTest{display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center;font-size:12px;color:#8fa4c4;margin-bottom:8px}
+  .cataType{font-size:10.5px;color:#6d80a0;text-transform:uppercase;letter-spacing:1px;margin:10px 0 5px;border-top:1px solid var(--edge);padding-top:8px}
+  .cataType:first-child{border-top:0;padding-top:0;margin-top:0}
+  .cataLigne{display:grid;grid-template-columns:1fr 104px 64px;gap:6px;align-items:center;font-size:11.5px;margin-bottom:3px}
+  .cataLigne span{color:#c9d6ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cataLigne span i{font-style:normal;color:#6d80a0}
+  .cataLigne select,.cataLigne input{padding:3px 5px;font-size:11px}
+  .cataLigne .fixe{font-family:Consolas,monospace;font-size:11px;color:#7f93b3;text-align:right}
+
+  /* ================= L'ÉCRAN (futur css/inventory/inventory.css) ================= */
+  /* Trois raretés, pour les tenues seulement : de base < chroma < skin. Les
+     autres objets n'en ont pas : leur bande prend la couleur de leur famille. */
+  .invEcran{font-family:'Barlow',sans-serif;--rc:var(--r-base);--vert:#5df08a}
+  .invEcran .r-base{--rc:var(--r-base)}
+  .invEcran .r-chroma{--rc:var(--r-chroma)}
+  .invEcran .r-skin{--rc:var(--r-skin)}
+  .invEcran .r-aucune.t-disque{--rc:#3d7bff}
+  .invEcran .r-aucune.t-dos{--rc:#c0262f}
+  .invEcran .r-aucune.t-banniere{--rc:#22b383}
+  .invEcran .r-aucune.t-titre{--rc:#6b5cd6}
+  .invEcran .mv{position:absolute;left:calc(var(--x) * 1%);top:calc(var(--y) * 1%);transform-origin:0 0;scale:var(--s)}
+
+  /* Fond : une couche par onglet, en fondu de l'une à l'autre. */
+  .invFondCouche{position:absolute;inset:0;transition:opacity .45s}
+  .invEcran[data-onglet="inventaire"] .invFondCouche[data-pour="boutique"],
+  .invEcran[data-onglet="boutique"] .invFondCouche[data-pour="inventaire"]{opacity:0}
+  .invDecor{position:absolute;inset:0}
+  .invDecor .streaks{opacity:.55}
+  .invDecor .ringwrap text{fill:rgba(255,255,255,.5)}
+  .invEcran.sombre .invDecor .ringwrap text{fill:rgba(255,255,255,.14)}
+  .invEcran.sombre .invDecor .streaks{opacity:.2}
+  .invEcran.sombre .invDecor .arc{border-color:rgba(255,255,255,.1)}
+  .invEcran[data-decor="sobre"] .ringwrap,.invEcran[data-decor="sobre"] .arc{display:none}
+  .invEcran[data-decor="aucun"] .invDecor{display:none}
+
+  /* Onglets INVENTAIRE / BOUTIQUE : le bandeau de titre du jeu, coupé en deux. */
+  .invTitre{z-index:6;width:40cqw;display:flex;filter:drop-shadow(0 5px 0 var(--ink))}
+  .invTitre button{flex:1;position:relative;border:4px solid var(--ink);border-top:0;background:#fff;cursor:pointer;padding:1.25cqh 0 1.15cqh;
+    font-family:var(--f-titre);font-weight:var(--w-titre);font-size:clamp(12px,2.5cqh,22px);color:var(--ink);letter-spacing:.04em;transition:background .15s}
+  .invTitre button:first-child{clip-path:polygon(0 0,100% 0,100% 100%,5% 100%);border-radius:0 0 0 10px;border-right-width:2px}
+  .invTitre button:last-child{clip-path:polygon(0 0,100% 0,95% 100%,0 100%);border-radius:0 0 10px 0;border-left-width:2px}
+  .invTitre button span{display:inline-block;transition:transform .15s}
+  .invTitre button:not(.on):hover{background:#eef0f7}
+  .invTitre button:not(.on) span{opacity:.55}
+  .invTitre button.on span{color:#fff;-webkit-text-stroke:4px var(--ink);paint-order:stroke fill;transform:scale(1.08)}
+  .invTitre button[data-onglet="inventaire"].on{background:var(--accInv)}
+  .invTitre button[data-onglet="boutique"].on{background:var(--accBout)}
+
+  /* Solde */
+  .invSolde{z-index:6;display:flex;align-items:center;gap:.7cqw;height:5.8cqh;background:#fff;border:4px solid var(--ink);border-radius:30px;
+    box-shadow:4px 4px 0 var(--ink);padding:0 1.5cqw 0 .8cqw}
+  .soldeVal{font-family:var(--f-prix);font-weight:var(--w-prix);font-size:2.7cqh;color:var(--ink);min-width:5.5cqw;letter-spacing:.02em}
+  .soldeHors{display:none;font-style:normal;font-family:var(--f-onglet);font-size:1.3cqh;color:#c02a1c}
+  .invSolde.hors .soldeHors{display:inline}
+  .pieceTourne{width:3.5cqh;height:3.5cqh;position:relative;transform-style:preserve-3d;animation:casPieceTourne 3.6s linear infinite}
+  .pieceTourne i{position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;border:2px solid var(--ink)}
+  .pieceTourne .av{background:radial-gradient(circle at 34% 30%,#fff3b8,#eab73f 52%,#8a5f11)}
+  .pieceTourne .ar{background:radial-gradient(circle at 66% 30%,#f2d98a,#c9a032 52%,#6b4d10);transform:rotateY(180deg)}
+  .piece{display:inline-block;width:1em;height:1em;border-radius:50%;border:max(1.5px,.12em) solid var(--ink);flex-shrink:0;
+    background:radial-gradient(circle at 34% 30%,#fff3b8,#eab73f 52%,#8a5f11);vertical-align:-.14em}
+  .pieceVol{position:absolute;width:2.6cqh;height:2.6cqh;border-radius:50%;border:2px solid var(--ink);z-index:30;pointer-events:none;
+    background:radial-gradient(circle at 34% 30%,#fff3b8,#eab73f 52%,#8a5f11)}
+
+  /* Catégories : les onglets du jeu (écran options), avec un compteur. */
+  .invCats{z-index:5;gap:.6cqw}
+  .invCats .tab{display:flex;align-items:center;gap:.6cqw;padding:.85cqh 1.15cqw;font-family:var(--f-onglet);font-weight:var(--w-onglet);font-size:clamp(9px,1.7cqh,14px);white-space:nowrap}
+  .invCats .tab em{font-style:normal;font-family:var(--f-prix);font-size:.82em;background:var(--ink);color:#fff;border-radius:20px;padding:.1cqh .55cqw;min-width:2.3cqh;text-align:center}
+  .invCats .tab.active em{background:#fff;color:var(--ink)}
+  .invCats .tab:not(.active):hover{background:#eef0f7}
+
+  /* Grille */
+  .invGrille{z-index:4;width:61cqw;height:69cqh;background:rgba(255,255,255,.95);border:4px solid var(--ink);border-radius:12px;box-shadow:6px 6px 0 var(--ink);padding:.6cqh .4cqw .6cqh .6cqw}
+  .igDefil{height:100%;overflow-y:auto;overflow-x:hidden;padding:1.2cqh 1cqw 2cqh .8cqw;scrollbar-width:thin;scrollbar-color:var(--ink) transparent}
+  .igCartes{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:var(--ecart)}
+  .igEntete{grid-column:1/-1;display:flex;align-items:center;gap:.6cqw;font-family:var(--f-onglet);font-weight:var(--w-onglet);font-size:1.65cqh;color:var(--ink);
+    margin-top:.8cqh;padding-bottom:.45cqh;border-bottom:3px solid var(--ink);letter-spacing:.03em}
+  .igEntete:first-child{margin-top:0}
+  .igEntete i{width:1.7cqh;height:1.7cqh;border-radius:50%;border:2px solid var(--ink);flex-shrink:0}
+  .igEntete i.gris{background:#c8cbd6}
+  .igEntete em{margin-left:auto;font-style:normal;font-family:var(--f-prix);font-size:.82em;opacity:.55}
+  .igVide{margin:6cqh 0 0;text-align:center;font-family:var(--f-onglet);font-size:1.8cqh;color:#6b7080}
+  .igVide:empty{display:none}
+
+  /* Une carte d'objet. Tout est en cqi : la carte est son propre repère, et
+     tout suit quand le nombre de colonnes change. */
+  .invCarte{position:relative;aspect-ratio:3/4;container-type:inline-size;border:3px solid var(--ink);border-radius:var(--rayon);overflow:hidden;cursor:pointer;
+    background:#fff;box-shadow:var(--ombreC) var(--ombreC) 0 var(--ink);transition:transform .12s ease-out,box-shadow .12s}
+  .invCarte:hover{transform:translate(-2px,-2px) scale(var(--survol));box-shadow:calc(var(--ombreC) + 2px) calc(var(--ombreC) + 2px) 0 var(--ink);z-index:3}
+  .invCarte.choisie{outline:3px dashed var(--ink);outline-offset:3px}
+  .invCarte.equipe{box-shadow:0 0 0 3px var(--vert),0 0 0 6px var(--ink),var(--ombreC) var(--ombreC) 0 6px var(--ink)}
+  .icFond{position:absolute;inset:0;background:radial-gradient(95% 75% at 50% 36%,color-mix(in srgb,var(--rc) 55%,#fff) 0%,color-mix(in srgb,var(--rc) 20%,#fff) 60%,#fff 100%)}
+  .icIris{position:absolute;inset:0;overflow:hidden}
+  .icIris i{position:absolute;left:50%;top:50%;width:170%;aspect-ratio:1;translate:-50% -50%;
+    background:conic-gradient(#ff5fa2,#ffe14d,#5df08a,#35e0ff,#a24bff,#ff5fa2);animation:invIris var(--iris) linear infinite}
+  .chroma .icFond{inset:4cqi 4cqi 0 4cqi;border-radius:calc(var(--rayon) - 4px) calc(var(--rayon) - 4px) 0 0}
+  @keyframes invIris{to{rotate:360deg}}
+  .icLueur{position:absolute;left:50%;top:37%;width:95%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--rc) 85%,#fff) 0%,transparent 66%);opacity:calc(.5 * var(--lueur));animation:invLueur 2.6s ease-in-out infinite}
+  @keyframes invLueur{50%{opacity:calc(.85 * var(--lueur));scale:1.08}}
+  .icVisuel{position:absolute;left:0;right:0;top:0;bottom:24%;display:flex;align-items:center;justify-content:center;z-index:1}
+  .icSprite{height:76%;image-rendering:pixelated;filter:drop-shadow(0 1.2cqi 0 rgba(17,19,24,.28))}
+  .icDisque{width:64%;filter:drop-shadow(0 2.4cqi 0 rgba(17,19,24,.3))}
+  .t-dos .icVisuel .dosCarte{width:46%}
+  .t-banniere .icVisuel .banniere{width:88%}
+  .t-titre .icVisuel .plaqueTitre{font-size:7cqi;max-width:92%}
+  .verrou .icVisuel{filter:grayscale(1) brightness(.74) contrast(.9)}
+  .verrou .icFond{filter:grayscale(.75)}
+  .icCadenas{position:absolute;left:50%;top:37%;width:24cqi;z-index:3;transform:translate(-50%,-50%)}
+  .icCadenas svg{display:block;width:100%;filter:drop-shadow(0 1.2cqi 0 rgba(0,0,0,.35))}
+  .icBas{position:absolute;left:0;right:0;bottom:0;height:24%;z-index:3;background:var(--rc);border-top:3px solid var(--ink);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:1.2cqi;padding:0 5cqi}
+  .verrou .icBas{background:color-mix(in srgb,var(--rc) 55%,#6b7080)}
+  .icNom{font-family:var(--f-nom);font-weight:var(--w-nom);font-size:calc(10.5cqi * var(--tNom));line-height:1.1;color:#fff;letter-spacing:.02em;
+    -webkit-text-stroke:max(2px,2.6cqi) var(--ink);paint-order:stroke fill;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .icSt{font-family:var(--f-prix);font-size:7cqi;color:#fff;background:rgba(17,19,24,.6);border-radius:4cqi;padding:.4cqi 3cqi;white-space:nowrap}
+  .icSt b{color:#ff9d2e;margin-right:2cqi}
+  .icEtoile{position:absolute;top:2.5cqi;left:3cqi;z-index:5;border:0;background:none;padding:0;cursor:pointer;font-size:17cqi;line-height:1;color:#fff;
+    -webkit-text-stroke:max(1.5px,1.8cqi) var(--ink);paint-order:stroke fill;opacity:0;transition:opacity .12s,color .12s}
+  .invCarte:hover .icEtoile{opacity:.8}
+  .icEtoile:hover{color:#ffe98a}
+  .invCarte.favori .icEtoile{opacity:1;color:#ffd23e}
+  .icRuban{position:absolute;top:3.5cqi;right:3.5cqi;z-index:5;display:none;font-family:var(--f-onglet);font-weight:var(--w-onglet);font-size:7cqi;
+    background:var(--vert);color:var(--ink);border:max(2px,1.8cqi) solid var(--ink);border-radius:4cqi;padding:.6cqi 2.6cqi;white-space:nowrap}
+  .invCarte.equipe .icRuban{display:block}
+  .icChroma{position:absolute;top:3.5cqi;right:3.5cqi;z-index:4;font-family:var(--f-onglet);font-weight:var(--w-onglet);font-size:6.2cqi;color:var(--ink);
+    background:linear-gradient(90deg,#ff9ad5,#fff7a8,#a9f0ff,#c7a8ff);border:max(2px,1.6cqi) solid var(--ink);border-radius:4cqi;padding:.5cqi 2.2cqi}
+  .invCarte.equipe .icChroma{top:17cqi}
+  .icPrix,.icPossede{position:absolute;left:50%;bottom:calc(24% + 3cqi);transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:2cqi;white-space:nowrap;
+    font-family:var(--f-prix);font-weight:var(--w-prix);font-size:11cqi;color:var(--ink);background:#fff;border:max(2px,2cqi) solid var(--ink);border-radius:20cqi;
+    padding:.6cqi 4cqi;box-shadow:1.6cqi 1.6cqi 0 var(--ink)}
+  .icPrix.gain,.icPrix.casino{font-size:6.8cqi;font-family:var(--f-onglet);padding:1.4cqi 3.4cqi}
+  .icPrix.casino{background:#f2698c;color:#fff}
+  .icPossede{font-size:6.8cqi;font-family:var(--f-onglet);background:var(--vert);padding:1.2cqi 3cqi}
+  .icPossede.offert{background:#fff}
+  .icParts,.iaParts{position:absolute;inset:0;pointer-events:none;z-index:2}
+  .icParts i,.iaParts i{position:absolute;width:calc(4.5cqi * var(--k));aspect-ratio:1;opacity:0;background:var(--pc,color-mix(in srgb,var(--rc) 55%,#fff));
+    clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);animation:invPart var(--t) ease-in-out infinite;animation-delay:var(--d)}
+  .r-skin .icParts i,.r-skin .iaParts i{background:var(--pc,#fff4b8)}
+  @keyframes invPart{0%{opacity:0;transform:translateY(0) scale(.4) rotate(0)}30%{opacity:1}70%{opacity:.85}100%{opacity:0;transform:translateY(-24cqi) scale(1) rotate(90deg)}}
+  .icFlash{position:absolute;inset:0;background:#fff;z-index:6;pointer-events:none}
+  .icAnneau{position:absolute;inset:6%;border:max(3px,3cqi) solid var(--rc);border-radius:var(--rayon);z-index:6;pointer-events:none}
+  .etincelle{position:absolute;left:50%;top:38%;width:6cqi;height:6cqi;z-index:7;pointer-events:none;
+    clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
+
+  /* Dos de cartes, bannières, titres */
+  .dosCarte{position:relative;aspect-ratio:2/3;border-radius:9%/6%;overflow:hidden;border:max(2px,1.6cqi) solid var(--ink);box-shadow:0 2cqi 0 rgba(17,19,24,.3)}
+  .dosCarte svg{position:absolute;inset:0;width:100%;height:100%}
+  .d-runes{background:radial-gradient(70% 60% at 50% 40%,#5c1010 0%,#4a0a0a 55%,#2e0505 100%)}
+  .d-noel{background:radial-gradient(70% 60% at 50% 45%,#d2213a 0%,#a8122a 60%,#6e0818 100%)}
+  .d-holo{background:linear-gradient(135deg,#ff9ad5 0%,#a9f0ff 25%,#fff7a8 45%,#c7a8ff 65%,#8ff5d0 85%,#ff9ad5 100%)}
+  .d-neon{background:linear-gradient(180deg,#1a0633 0%,#3a0b5e 55%,#140726 100%)}
+  .dosReflet{position:absolute;inset:-10% -80%;background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.8) 50%,transparent 58%);animation:invReflet 2.8s ease-in-out infinite}
+  @keyframes invReflet{0%{transform:translateX(-45%)}60%,100%{transform:translateX(45%)}}
+  .banniere{position:relative;aspect-ratio:3/1;border:max(2px,1.2cqi) solid var(--ink);border-radius:2cqi;overflow:hidden;background:#e9ecf5}
+  .banniere > svg{display:block;width:100%;height:100%}
+  .banVide{position:absolute;inset:7%;border:max(1.5px,.8cqi) dashed #8a90a4;border-radius:2cqi;display:flex;align-items:center;justify-content:center;gap:4%;
+    color:#6b7080;font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:6.5cqi}
+  .banVide svg{width:14%;height:auto}
+  .plaqueTitre{background:var(--ink);border:max(2px,.18em) solid var(--rc);border-radius:.6em;padding:.45em .8em;font-family:var(--f-titre);font-weight:var(--w-titre);color:#fff;
+    letter-spacing:.05em;white-space:nowrap;box-shadow:0 .3em 0 rgba(17,19,24,.3);text-align:center;overflow:hidden;text-overflow:ellipsis}
+  .plaqueTitre.createur span{background:linear-gradient(90deg,#ff5fa2,#ffe14d,#5df08a,#35e0ff,#ff5fa2);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;
+    color:transparent;animation:invCreateur 3s linear infinite}
+  @keyframes invCreateur{to{background-position:200% 0}}
+
+  /* Aperçu */
+  .invApercu{z-index:4;width:32.3cqw;height:69cqh;background:#fff;border:4px solid var(--ink);border-radius:12px;box-shadow:6px 6px 0 var(--ink);overflow:hidden;display:flex;flex-direction:column}
+  .invApercu.vide .iaScene,.invApercu.vide .iaInfos{visibility:hidden}
+  .iaTete{display:flex;justify-content:space-between;align-items:center;gap:1cqw;background:var(--ink);color:#fff;font-family:var(--f-onglet);font-weight:var(--w-onglet);font-size:1.45cqh;
+    padding:.8cqh 1.1cqw;letter-spacing:.05em;white-space:nowrap}
+  .iaEtat{display:flex;align-items:center;gap:.4cqw}
+  .iaEtat.equipe{color:var(--vert)}
+  .iaEtat.verrou{color:#ff9aa4}
+  .iaEtat .cadenas{width:1.7cqh}
+  .iaScene{position:relative;height:30cqh;flex-shrink:0;overflow:hidden;border-bottom:4px solid var(--ink);container-type:inline-size;
+    background:radial-gradient(80% 95% at 50% 45%,color-mix(in srgb,var(--rc) 50%,#fff) 0%,color-mix(in srgb,var(--rc) 80%,#111318) 100%)}
+  .iaRayons{position:absolute;left:50%;top:48%;width:150cqi;aspect-ratio:1;translate:-50% -50%;opacity:calc(.3 * var(--rayons));
+    background:repeating-conic-gradient(from 0deg,#fff 0 7deg,transparent 7deg 22deg);animation:invIris 30s linear infinite;
+    -webkit-mask:radial-gradient(circle,#000 0%,transparent 62%);mask:radial-gradient(circle,#000 0%,transparent 62%)}
+  .r-base .iaRayons,.r-aucune .iaRayons{opacity:calc(.14 * var(--rayons))}
+  .r-chroma .iaRayons{opacity:calc(.2 * var(--rayons))}
+  .iaHalo{position:absolute;left:50%;top:50%;width:64cqi;aspect-ratio:1;translate:-50% -50%;border-radius:50%;
+    background:radial-gradient(circle,color-mix(in srgb,var(--halo) 65%,#fff) 0%,transparent 66%);opacity:.75}
+  .iaSol{position:absolute;left:50%;bottom:8%;width:38cqi;height:5cqi;translate:-50% 0;border-radius:50%;background:rgba(17,19,24,.3)}
+  .t-dos .iaSol,.t-banniere .iaSol,.t-titre .iaSol{display:none}
+  .iaVisuel{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:1}
+  .iaVisuel.grise{filter:grayscale(1) brightness(.78)}
+  .iaSprite{height:calc(78% * var(--apSprite));image-rendering:pixelated;filter:drop-shadow(0 1.4cqi 0 rgba(17,19,24,.35));animation:invFlotte 2.4s ease-in-out infinite}
+  @keyframes invFlotte{50%{translate:0 calc(-2.4cqi * var(--flotte))}}
+  .iaDisque{width:56cqi;height:56cqi;animation:invFlotte 2.4s ease-in-out infinite;filter:drop-shadow(0 3cqi 0 rgba(17,19,24,.3))}
+  .iaVisuel .dosCarte{width:30cqi;border-width:max(2px,.8cqi);animation:invBascule 5s ease-in-out infinite}
+  @keyframes invBascule{0%,100%{transform:perspective(700px) rotateY(-18deg) rotateX(4deg)}50%{transform:perspective(700px) rotateY(18deg) rotateX(-3deg)}}
+  .iaVisuel .banniere{width:86cqi;border-width:max(2px,.8cqi);border-radius:1.4cqi}
+  .iaVisuel .banVide{font-size:4.5cqi}
+  .iaVisuel .plaqueTitre{font-size:6.5cqi}
+  .iaTampon{position:absolute;left:50%;top:50%;z-index:3;font-family:var(--f-titre);font-weight:var(--w-titre);font-size:10cqi;color:#fff;
+    -webkit-text-stroke:max(3px,1.4cqi) var(--ink);paint-order:stroke fill;opacity:0;white-space:nowrap;pointer-events:none;transform:translate(-50%,-50%)}
+  .iaInfos{flex:1;display:flex;flex-direction:column;gap:.95cqh;padding:1.3cqh 1.3cqw 1.5cqh;min-height:0}
+  .iaNom{font-family:var(--f-titre);font-weight:var(--w-titre);font-size:3.2cqh;line-height:1.05;color:var(--ink)}
+  .iaPuces{display:flex;gap:.5cqw;flex-wrap:wrap}
+  .puce{font-family:var(--f-onglet);font-weight:var(--w-onglet);font-size:1.3cqh;padding:.3cqh .65cqw;border:3px solid var(--ink);border-radius:7px;color:#fff;background:var(--rc);letter-spacing:.05em}
+  .puce.chr{background:linear-gradient(90deg,#ff9ad5,#fff7a8,#a9f0ff,#c7a8ff);color:var(--ink)}
+  .puce.fav{background:#ffd23e;color:var(--ink)}
+  .puce.off{background:#fff;color:var(--ink)}
+  .r-chroma .puce.rar{background:linear-gradient(90deg,#ff9ad5,#fff7a8,#a9f0ff,#c7a8ff);color:var(--ink)}
+  .iaDesc{font-size:1.55cqh;font-weight:700;color:#4a5064;line-height:1.3;min-height:2cqh}
+  .iaSt.on{background:#1b1d24;color:#fff;border:3px solid var(--ink);border-radius:9px;padding:.8cqh .9cqw}
+  .stTete{display:flex;justify-content:space-between;font-family:var(--f-onglet);font-weight:var(--w-onglet);font-size:1.2cqh}
+  .stTete b{color:#ff9d2e;letter-spacing:.08em}
+  .stTete span{opacity:.55}
+  .stChiffres{display:flex;align-items:center;gap:.9cqw;margin:.3cqh 0 .5cqh}
+  .stChiffres strong{font-family:var(--f-prix);font-weight:var(--w-prix);font-size:3.5cqh;color:#ff9d2e;line-height:1}
+  .stChiffres span{font-size:1.25cqh;font-weight:800;line-height:1.3;opacity:.85}
+  .stBarre{height:.9cqh;background:#3a3d48;border-radius:5px;overflow:hidden}
+  .stBarre i{display:block;height:100%;background:linear-gradient(90deg,#ff9d2e,#ffd23e)}
+  .iaSt p{font-size:1.3cqh;font-weight:700;color:#6b7080;margin:.5cqh 0 0;display:flex;gap:.3cqw;align-items:center;line-height:1.3}
+  .iaActions{display:flex;gap:.7cqw;margin-top:auto}
+  .iaBtn{flex:1;display:flex;align-items:center;justify-content:center;gap:.6cqw;font-family:'Chakra Petch','Archivo Black',sans-serif;font-weight:700;font-size:2cqh;
+    color:var(--ink);background:#fff;border:4px solid var(--ink);border-radius:12px;box-shadow:5px 5px 0 var(--ink);padding:.95cqh 1cqw;cursor:pointer;white-space:nowrap;
+    transition:transform .08s,box-shadow .08s,background .1s}
+  .iaBtn:hover:not(:disabled){transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--ink)}
+  .iaBtn:active:not(:disabled){transform:translate(3px,3px);box-shadow:2px 2px 0 var(--ink)}
+  .iaBtn.vert{background:var(--vert)}
+  .iaBtn.bleu{background:#8fd8ff;font-size:1.7cqh}
+  .iaBtn.or{background:#ffd23e}
+  .iaBtn.rose{background:#f2698c;color:#fff}
+  .iaBtn.equipe{background:#d9f7e3;color:#1c7a45;cursor:default}
+  .iaBtn.gris{background:#e4e6ee;color:#6b7080;font-size:1.55cqh}
+  .iaBtn.gris:disabled{cursor:not-allowed}
+  .iaBtn.fav{flex:0 0 auto;width:6.2cqh;font-size:2.6cqh;color:#d0d3dd;-webkit-text-stroke:2px var(--ink);paint-order:stroke fill}
+  .iaBtn.fav.on{color:#ffd23e}
+  .iaBtn.st{background:#1b1d24;color:#ff9d2e;font-size:1.65cqh;width:100%}
+  .iaBtn.confirme{animation:invConfirme .45s ease-in-out infinite alternate}
+  @keyframes invConfirme{to{background:#ff5f6d;color:#fff}}
+  .prixBtn{display:inline-flex;align-items:center;gap:.3cqw;font-family:var(--f-prix);font-weight:var(--w-prix);background:#fff;color:var(--ink);border:2px solid var(--ink);border-radius:20px;padding:.1cqh .6cqw}
+  .iaLien:empty{display:none}
+  .iaLienCasino{background:none;border:0;padding:0;font-family:'Barlow',sans-serif;font-weight:800;font-size:1.4cqh;color:#8a1d28;cursor:pointer;text-decoration:underline dotted}
+  .iaLienCasino b{color:#c0262f}
+
+  /* Pied */
+  .invPied{z-index:5;width:95cqw;height:6.6cqh;display:flex;align-items:center;gap:1.2cqw}
+  .ipPages{display:flex;align-items:center;gap:.5cqw;background:#fff;border:3px solid var(--ink);border-radius:10px;box-shadow:4px 4px 0 var(--ink);padding:.4cqh .5cqw}
+  .ipFleche{width:4.2cqh;height:4.2cqh;border:3px solid var(--ink);border-radius:8px;background:var(--ink);color:#fff;font-size:1.5cqh;cursor:pointer}
+  .ipFleche:disabled{background:#e4e6ee;color:#a6aab8;cursor:default}
+  .ipNum{font-family:var(--f-onglet);font-weight:var(--w-onglet);font-size:1.6cqh;color:var(--ink);padding:0 .5cqw;white-space:nowrap}
+  .ipCompte,.ipTri{font-family:var(--f-onglet);font-weight:var(--w-onglet);font-size:1.5cqh;color:var(--ink);white-space:nowrap}
+  .invEcran.sombre .ipCompte,.invEcran.sombre .ipTri{color:#fff;text-shadow:0 2px 0 var(--ink)}
+  .ipFav{margin-left:auto;display:flex;align-items:center;gap:.9cqw}
+  .ipFavBtn{display:flex;align-items:center;gap:.6cqw;font-family:'Chakra Petch','Archivo Black',sans-serif;font-weight:700;font-size:2cqh;color:var(--ink);background:#ffd23e;
+    border:4px solid var(--ink);border-radius:12px;box-shadow:5px 5px 0 var(--ink);padding:.85cqh 1.4cqw;cursor:pointer;transition:transform .08s,box-shadow .08s;white-space:nowrap}
+  .ipFavBtn:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--ink)}
+  .ipFavBtn .de{display:inline-block}
+  .ipFavBtn:hover .de{animation:invDe .6s ease-in-out}
+  @keyframes invDe{50%{rotate:180deg;scale:1.3}}
+  .ipBascules{display:flex;gap:.4cqw}
+  .ipBascule{font-family:var(--f-onglet);font-weight:var(--w-onglet);font-size:1.3cqh;border:3px solid var(--ink);border-radius:8px;padding:.6cqh .75cqw;background:#fff;color:#9aa0ac;
+    cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
+  .ipBascule.on{background:var(--ink);color:#fff}
+  .ipBascule::before{content:'○ '}
+  .ipBascule.on::before{content:'✔ ';color:var(--vert)}
+
+  .invToast{position:absolute;left:50%;bottom:11cqh;z-index:29;transform:translate(-50%,0);opacity:0;pointer-events:none;background:var(--ink);color:#fff;
+    font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:1.8cqh;padding:1cqh 1.8cqw;border-radius:10px;border:3px solid #fff;box-shadow:0 .6cqh 0 rgba(0,0,0,.3);white-space:nowrap}
+  .invToast.dore{background:#ffd23e;color:var(--ink);border-color:var(--ink)}
+
+  /* Favoris aléatoires */
+  .invRoulette{position:absolute;inset:0;z-index:28;background:rgba(10,12,20,.66);display:flex;align-items:center;justify-content:center}
+  .rlCarte{position:relative;width:64cqh;background:#fff;border:4px solid var(--ink);border-radius:14px;box-shadow:8px 8px 0 var(--ink);padding:5.4cqh 3cqh 2.4cqh;
+    display:flex;flex-direction:column;align-items:center;gap:2cqh}
+  .rlTag{position:absolute;top:-2.8cqh;left:50%;transform:translateX(-50%);background:#ffd23e;border:4px solid var(--ink);border-radius:10px;padding:.9cqh 2cqw;box-shadow:4px 4px 0 var(--ink);white-space:nowrap}
+  .rlTag span{font-family:var(--f-titre);font-weight:var(--w-titre);font-size:2.4cqh;color:var(--ink)}
+  .rlCases{display:flex;align-items:center;gap:2cqh}
+  .rlCase{display:flex;flex-direction:column;align-items:center;gap:.4cqh;width:23cqh}
+  .rlFenetre{width:23cqh;height:23cqh;border:4px solid var(--ink);border-radius:12px;background:radial-gradient(circle,#fff 0%,#d9dcf0 100%);display:flex;align-items:center;justify-content:center;
+    box-shadow:inset 0 -1cqh 0 rgba(0,0,0,.08)}
+  .rlPerso img{height:78%;image-rendering:pixelated}
+  .rlDisque canvas{width:84%;height:84%}
+  .rlCase b{font-family:var(--f-titre);font-weight:var(--w-titre);font-size:2cqh;color:var(--ink);margin-top:.4cqh}
+  .rlCase small{font-family:var(--f-onglet);font-weight:var(--w-onglet);font-size:1.3cqh;color:#6b7080}
+  .rlCase.fixe .rlFenetre{opacity:.55}
+  .rlCase.fixe small::after{content:' · FIXE'}
+  .rlPlus{font-family:var(--f-titre);font-size:4cqh;color:var(--ink)}
+  .rlBoutons{display:flex;gap:1.2cqh;width:100%}
+  .rlBoutons .iaBtn:disabled{opacity:.45;cursor:default}
+  .rlNote{font-size:1.4cqh;font-weight:700;color:#6b7080;margin:0}
+</style>
+</head>
+<body>
+
+<h1 class="titrePage">INVENTAIRE / BOUTIQUE <span style="color:#6d80a0;font-size:13px">(v1)</span></h1>
+<p class="note">L’écran complet, <b>jouable</b> avec un faux compte : survole une carte pour l’aperçu, clique pour la choisir, puis <b>ACHETER</b>
+(un second clic confirme). <b>Tenues et disques se choisissent dans la sélection des persos</b>, comme dans Brawlhalla : l’inventaire les montre,
+les met en favori et leur ajoute un StatTrak™. Dos de cartes, titres et bannières s’équipent ici d’un clic. ★ en haut à gauche d’une carte = favori. En bas : <b>FAVORIS ALÉATOIRES</b> et ses trois
+interrupteurs. Le bloc <b>Test</b> règle le compte (pièces, connexion, un match joué pour voir le StatTrak™ monter). Les dos de cartes et bannières sont
+des <b>dessins provisoires</b> : on les travaillera à l’étape contenu. Tout s’exporte dans <b>Tout copier / coller</b>.</p>
+
+<div class="haut">
+  <div class="sceneWrap">
+    <div class="scene" id="scene" data-partie="reelle">
+      <div class="partieFond">
+        <div class="terrain"></div>
+        <iframe id="partieReelle" src="../index.html" tabindex="-1" aria-hidden="true" title="Partie en fond"></iframe>
+      </div>
+      <div id="hote"></div>
+    </div>
+  </div>
+
+  <div class="cote">
+    <details class="bloc" open>
+      <summary>Test</summary>
+      <div class="row">
+        <button class="grand vert on" id="btnModeTest">Tester l’écran (clics, survol, achats)</button>
+        <button class="grand" id="btnModePlacement">Déplacer les blocs</button>
+      </div>
+      <div class="soldeTest"><span>Pièces du compte</span><input type="number" id="nPieces" min="0" max="99999" step="10"></div>
+      <div class="row">
+        <button id="btnConnecte">Connecté</button>
+        <button id="btnAutreCompte">🎲 Autre compte (autres disques offerts)</button>
+      </div>
+      <div class="row">
+        <button id="btnGagne">Match gagné ▲ StatTrak™</button>
+        <button id="btnPerdu">Match perdu ▼</button>
+      </div>
+      <div class="row">
+        <button id="btnToutPosseder">Tout posséder</button>
+        <button id="btnReset">Compte de départ</button>
+        <button id="btnPagination">Ajouter 150 tenues (pages)</button>
+      </div>
+      <p class="legende" id="infoOfferts"></p>
+    </details>
+
+    <details class="bloc" open>
+      <summary>Tout copier / coller</summary>
+      <textarea class="sortie" id="sortie" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:7px">
+        <button class="vert" id="btnCopier">📋 Tout copier</button>
+        <button id="btnAppliquer">Appliquer ce qui est collé</button>
+        <button id="btnDefauts">Tout remettre à zéro</button>
+      </div>
+      <div class="etatCopie" id="etatCopie"></div>
+    </details>
+
+    <details class="bloc">
+      <summary>Placement — « Déplacer les blocs » puis glisse</summary>
+      <div class="els" id="listeEls"></div>
+      <p class="vide" id="aucunEl">Aucun bloc choisi. Passe en « Déplacer les blocs » et clique dans la scène, ou choisis dans la liste.</p>
+      <div id="regBloc" style="display:none;margin-top:9px">
+        <div class="reg"><label>Taille</label><span class="n" id="vScale">1.00×</span><input type="range" id="rScale" min="0.5" max="1.6" value="1" step="0.01"></div>
+        <div class="reg"><label>X (gauche →)</label><span class="n" id="vX">0%</span><input type="range" id="rX" min="-10" max="100" value="0" step="0.1"></div>
+        <div class="reg"><label>Y (haut ↓)</label><span class="n" id="vY">0%</span><input type="range" id="rY" min="-10" max="100" value="0" step="0.1"></div>
+        <div class="row"><button id="btnResetEl">Réinitialiser</button></div>
+      </div>
+    </details>
+
+    <div id="blocsReglages"></div>
+
+    <details class="bloc">
+      <summary>Catalogue — raretés et prix</summary>
+      <p class="legende" style="margin:0 0 8px">La rareté d’une tenue découle de sa nature : <b>de base</b> (offerte) &lt; <b>chroma</b> (100) &lt; <b>skin</b> (200).
+        Disque 50, StatTrak™ 25. Les prix des dos de cartes et des bannières se règlent ici.</p>
+      <div id="catalogue"></div>
+    </details>
+
+    <details class="bloc">
+      <summary>Partie derrière</summary>
+      <div class="row">
+        <button id="btnReelle" class="on">Vraie partie (le jeu tourne)</button>
+        <button id="btnSimulee">Terrain dessiné</button>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script type="module">
+  import { CHARS, ROSTER } from '../js/data/characters.js';
+  import { SKINS } from '../js/data/skins-perso.js';
+  import { DISC_SKINS, drawSkinDisc } from '../js/data/skins.js';
+  import { POLICES, PALETTES, DEF, PLACEMENT_DEF, NOMS_EL, RARETES, NOMS_RARETE, CATEGORIES,
+    construireCatalogue, etatDepart, creerEcran } from './_inventaire.js';
+
+  const $ = id => document.getElementById(id);
+  const scene = $('scene'), hote = $('hote');
+
+  /* ================= SONS (copies de js/audio/audio.js) ================= */
+  let AC = null, gain = null;
+  window.addEventListener('pointerdown', () => {
+    if (AC) return;
+    try { AC = new (window.AudioContext || window.webkitAudioContext)(); gain = AC.createGain(); gain.gain.value = .18; gain.connect(AC.destination); } catch { AC = null; }
+  }, { capture:true });
+  function beep(f0, f1, dur, type = 'square', vol = .15, delay = 0) {
+    if (!AC) return;
+    const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(f1, 1), t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(gain); o.start(t); o.stop(t + dur + .02);
+  }
+  const SONS = {
+    move: () => beep(760, 760, .05, 'square', .06),
+    survol: () => beep(1250, 1250, .018, 'square', .02),
+    tic: () => beep(1400, 1100, .03, 'square', .05),
+    select: () => { beep(620, 990, .12, 'square', .12); beep(990, 1320, .1, 'square', .08, .06); },
+    deny: () => beep(220, 150, .18, 'square', .12),
+    favori: () => { beep(1320, 1760, .07, 'triangle', .1); beep(1760, 2200, .06, 'triangle', .07, .05); },
+    equip: () => { beep(523, 523, .07, 'square', .1); beep(659, 659, .07, 'square', .1, .07); beep(784, 1046, .16, 'square', .11, .14); },
+    achat: () => { for (let i = 0; i < 6; i++) beep(1500 + i * 120, 2100 + i * 140, .06, 'triangle', .08, i * .06); beep(523, 1046, .25, 'square', .1, .38); },
+  };
+  const son = n => { if (AC) SONS[n]?.(); };
+
+  /* ================= ÉTAT ================= */
+  const valeurs = { ...DEF };
+  let placement = JSON.parse(JSON.stringify(PLACEMENT_DEF));
+  const prix = {};
+  let extra = 0;
+  let cat = construireCatalogue({ SKINS, ROSTER, DISC_SKINS }, prix, extra);
+  let etat = etatDepart(cat);
+  let ecr = null;
+  const refaireCatalogue = () => { cat = construireCatalogue({ SKINS, ROSTER, DISC_SKINS }, prix, extra); ecr.catalogue(cat); };
+  function monter() {
+    ecr?.arreter();
+    ecr = creerEcran(hote, { CHARS, ROSTER, drawSkinDisc, son, R:valeurs, placement, cat, etat, surChangement:majTest });
+    majSelection();
+  }
+
+  /* ================= TEST ================= */
+  function majTest() {
+    const e = ecr ? ecr.etatActuel() : etat;
+    if (document.activeElement !== $('nPieces')) $('nPieces').value = e.pieces;
+    $('btnConnecte').classList.toggle('on', e.connecte);
+    $('btnConnecte').textContent = e.connecte ? 'Connecté ✔' : 'Déconnecté';
+    const nom = id => (cat.find(o => o.id === id) || {}).nom;
+    $('infoOfferts').textContent = `Disques offerts à ce compte (tirés sur son identifiant) : ${e.offerts.map(nom).join(' et ')}.`;
+  }
+  $('nPieces').addEventListener('input', () => { etat.pieces = Math.max(0, +$('nPieces').value | 0); ecr.rafraichir(); });
+  $('btnConnecte').addEventListener('click', () => { etat.connecte = !etat.connecte; ecr.rafraichir(); majTest(); });
+  $('btnAutreCompte').addEventListener('click', () => { etat = etatDepart(cat, 'compte-' + Math.random().toString(36).slice(2, 8)); ecr.etat(etat); majTest(); });
+  $('btnReset').addEventListener('click', () => { etat = etatDepart(cat); ecr.etat(etat); majTest(); });
+  $('btnToutPosseder').addEventListener('click', () => { for (const o of cat) etat.possede.add(o.id); ecr.rafraichir(); majTest(); });
+  $('btnGagne').addEventListener('click', () => ecr.jouerMatch(true));
+  $('btnPerdu').addEventListener('click', () => ecr.jouerMatch(false));
+  $('btnPagination').addEventListener('click', e => {
+    extra = extra ? 0 : 150;
+    e.target.classList.toggle('on', !!extra);
+    e.target.textContent = extra ? 'Retirer les 150 tenues de test' : 'Ajouter 150 tenues (pages)';
+    refaireCatalogue();
+    if (extra) for (const o of cat) if (o.factice && Math.random() < .5) etat.possede.add(o.id);
+    ecr.rafraichir();
+  });
+  const mode = m => {
+    scene.classList.toggle('placement', m === 'placement');
+    $('btnModeTest').classList.toggle('on', m !== 'placement'); $('btnModePlacement').classList.toggle('on', m === 'placement');
+  };
+  $('btnModeTest').addEventListener('click', () => mode('test'));
+  $('btnModePlacement').addEventListener('click', () => mode('placement'));
+
+  /* ================= RÉGLAGES ================= */
+  const palettes = Object.entries(PALETTES).map(([k, p]) => [k, p.nom]);
+  const SECTIONS = [
+    { titre:'Ambiance', items:[
+      { id:'fondInventaire', label:'Fond de l’inventaire', type:'choix', options:palettes },
+      { id:'fondBoutique', label:'Fond de la boutique', type:'choix', options:palettes },
+      { id:'decor', label:'Décor', type:'choix', options:[['anneau','Rayures + anneau de texte'],['sobre','Rayures seules'],['aucun','Aucun']] },
+    ]},
+    { titre:'Typo', items:[
+      { id:'police_titre', label:'Titres et noms', type:'police' },
+      { id:'police_onglet', label:'Onglets et étiquettes', type:'police' },
+      { id:'police_nom', label:'Nom sur les cartes', type:'police' },
+      { id:'police_prix', label:'Prix et chiffres', type:'police' },
+    ]},
+    { titre:'Grille', items:[
+      { id:'colonnes', label:'Colonnes', min:3, max:10, pas:1 },
+      { id:'ecart', label:'Écart', min:.4, max:3, pas:.05 },
+      { id:'rayon', label:'Arrondi', min:0, max:24, pas:1, unite:'px' },
+      { id:'ombre', label:'Ombre dure', min:0, max:8, pas:1, unite:'px' },
+      { id:'survol', label:'Grossissement au survol', min:1, max:1.2, pas:.01, unite:'×' },
+      { id:'tailleNom', label:'Taille du nom', min:.7, max:1.4, pas:.01, unite:'×' },
+      { id:'entetes', label:'En-têtes de groupe', type:'choix', options:[['boutique','Boutique seulement (palier de prix)'],['partout','Partout (perso dans l’inventaire)'],['non','Nulle part']] },
+      { id:'ordreRarete', label:'Rareté dans un perso', type:'choix', options:[['croissant','Commun → Légendaire'],['decroissant','Légendaire → Commun']] },
+    ]},
+    { titre:'Couleurs des raretés (tenues)', items: RARETES.map(r => ({ id:'c_' + r, label:NOMS_RARETE[r], type:'couleur' })) },
+    { titre:'Effets', items:[
+      { id:'particules', label:'Particules (skins, un peu sur les chromas)', min:0, max:2, pas:.05, unite:'×' },
+      { id:'lueur', label:'Lueur des skins', min:0, max:1.6, pas:.05, unite:'×' },
+      { id:'vitesseIris', label:'Vitesse du contour chroma', min:.2, max:3, pas:.05, unite:'×' },
+      { id:'flash', label:'Flash d’équipement / d’achat', min:0, max:1.6, pas:.05, unite:'×' },
+      { id:'entree', label:'Cartes qui arrivent en cascade', type:'choix', options:[['oui','Oui'],['non','Non']] },
+    ]},
+    { titre:'Aperçu', items:[
+      { id:'apercuSprite', label:'Taille du perso', min:.6, max:1.25, pas:.01, unite:'×' },
+      { id:'apercuFlotte', label:'Flottement', min:0, max:2, pas:.05, unite:'×' },
+      { id:'rayons', label:'Rayons derrière l’objet', min:0, max:2, pas:.05, unite:'×' },
+    ]},
+  ];
+  const ITEMS = SECTIONS.flatMap(s => s.items);
+  const PAR_ID = Object.fromEntries(ITEMS.map(it => [it.id, it]));
+  const formate = (it, v) => { const n = +v; return (Number.isInteger(n) ? String(n) : n.toFixed(it.pas < .1 ? 2 : 1)) + (it.unite || ''); };
+  let prevueR = false;
+  function regler(id, v, silencieux) {
+    const it = PAR_ID[id];
+    if (!it) return;
+    if (!it.type) v = +v;
+    valeurs[id] = v;
+    if (it._input && String(it._input.value) !== String(v)) it._input.value = v;
+    if (it._n) it._n.textContent = formate(it, v);
+    if (silencieux) return;
+    // Un seul rendu par image, même quand on fait glisser un curseur.
+    if (!prevueR) { prevueR = true; requestAnimationFrame(() => { prevueR = false; ecr.reglages(valeurs); }); setTimeout(() => { if (prevueR) { prevueR = false; ecr.reglages(valeurs); } }, 120); }
+    majSortie();
+  }
+  (function construirePanneau() {
+    const racine = $('blocsReglages');
+    for (const s of SECTIONS) {
+      const bloc = document.createElement('details'); bloc.className = 'bloc'; bloc.open = true;
+      const sum = document.createElement('summary'); sum.textContent = s.titre; bloc.appendChild(sum);
+      for (const it of s.items) {
+        const ligne = document.createElement('div'); ligne.className = 'reg';
+        const lab = document.createElement('label'); lab.textContent = it.label; lab.htmlFor = 'ctl_' + it.id;
+        let input;
+        if (it.type === 'couleur') {
+          input = document.createElement('input'); input.type = 'color';
+          ligne.classList.add('regChoix'); ligne.append(lab, input);
+          input.addEventListener('input', () => regler(it.id, input.value));
+        } else if (it.type) {
+          input = document.createElement('select');
+          const opts = it.type === 'police' ? Object.entries(POLICES).map(([k, p]) => [k, p.nom]) : it.options;
+          for (const [val, texte] of opts) {
+            const o = document.createElement('option'); o.value = val; o.textContent = texte;
+            if (it.type === 'police') { o.style.fontFamily = POLICES[val].famille; o.style.fontWeight = POLICES[val].poids; }
+            input.appendChild(o);
+          }
+          ligne.classList.add('regChoix'); ligne.append(lab, input);
+          input.addEventListener('change', () => regler(it.id, input.value));
+        } else {
+          input = document.createElement('input');
+          Object.assign(input, { type:'range', min:it.min, max:it.max, step:it.pas });
+          const n = document.createElement('span'); n.className = 'n';
+          ligne.append(lab, n, input); it._n = n;
+          input.addEventListener('input', () => regler(it.id, input.value));
+        }
+        input.id = 'ctl_' + it.id; it._input = input;
+        bloc.appendChild(ligne);
+      }
+      racine.appendChild(bloc);
+    }
+  })();
+
+  /* ================= CATALOGUE ================= */
+  function construireCatalogueUI() {
+    const racine = $('catalogue'); racine.innerHTML = '';
+    for (const c of CATEGORIES) {
+      const t = document.createElement('div'); t.className = 'cataType'; t.textContent = c.nom; racine.appendChild(t);
+      for (const o of cat.filter(x => x.type === c.id && !x.factice)) {
+        const l = document.createElement('div'); l.className = 'cataLigne';
+        const sous = o.ck ? CHARS[o.ck].short + ' · ' : '';
+        l.innerHTML = `<span title="${o.nom}"><i>${sous}</i>${o.nom}</span><span class="fixe">${o.rarete ? NOMS_RARETE[o.rarete] : '—'}</span>`;
+        if ((o.type === 'dos' || o.type === 'banniere') && !o.defaut) {
+          const n = document.createElement('input'); n.type = 'number'; n.min = 0; n.step = 10; n.value = o.prix;
+          n.addEventListener('change', () => { prix[o.id] = Math.max(0, +n.value | 0); refaireCatalogue(); majSortie(); });
+          l.appendChild(n);
+        } else {
+          const f = document.createElement('span'); f.className = 'fixe';
+          f.textContent = o.source === 'direct' ? o.prix : o.source === 'defaut' ? 'offert' : o.source === 'tuto' ? 'tuto' : 'à gagner';
+          l.appendChild(f);
+        }
+        racine.appendChild(l);
+      }
+    }
+  }
+
+  /* ================= PLACEMENT ================= */
+  let choisi = null;
+  const liste = $('listeEls');
+  for (const el of Object.keys(NOMS_EL)) {
+    const d = document.createElement('div'); d.className = 'el'; d.dataset.el = el;
+    d.innerHTML = `<span class="nomEl">${NOMS_EL[el]}</span><span class="val"></span>`;
+    d.addEventListener('click', () => choisir(el));
+    liste.appendChild(d);
+  }
+  function majListe() {
+    for (const d of liste.children) {
+      const p = placement[d.dataset.el];
+      d.querySelector('.val').textContent = `${p.x}/${p.y} ·${p.s.toFixed(2)}×`;
+      d.classList.toggle('on', d.dataset.el === choisi);
+    }
+  }
+  function majSelection() { for (const m of hote.querySelectorAll('.mv')) m.classList.toggle('sel', m.dataset.el === choisi); }
+  function majCurseurs() {
+    if (!choisi) return;
+    const p = placement[choisi];
+    $('rScale').value = p.s; $('rX').value = p.x; $('rY').value = p.y;
+    $('vScale').textContent = p.s.toFixed(2) + '×'; $('vX').textContent = p.x + '%'; $('vY').textContent = p.y + '%';
+  }
+  function choisir(el) {
+    choisi = el; $('aucunEl').style.display = 'none'; $('regBloc').style.display = 'block';
+    majSelection(); majListe(); majCurseurs();
+  }
+  function ecrire(el) { ecr.placement(placement); majListe(); majCurseurs(); majSortie(); }
+  for (const [idR, k] of [['rScale','s'],['rX','x'],['rY','y']]) {
+    $(idR).addEventListener('input', () => { if (!choisi) return; placement[choisi][k] = +$(idR).value; ecrire(choisi); });
+  }
+  $('btnResetEl').addEventListener('click', () => { if (!choisi) return; placement[choisi] = { ...PLACEMENT_DEF[choisi] }; ecrire(choisi); });
+
+  let drag = null;
+  scene.addEventListener('pointerdown', e => {
+    if (!scene.classList.contains('placement')) return;
+    const m = e.target.closest('.mv');
+    if (!m) return;
+    e.preventDefault();
+    const el = m.dataset.el, r = hote.getBoundingClientRect(), p = placement[el];
+    choisir(el);
+    drag = { el, x0:p.x, y0:p.y, px0:e.clientX, py0:e.clientY, w:r.width, h:r.height, bouge:false };
+    scene.setPointerCapture(e.pointerId);
+  });
+  scene.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.px0, dy = e.clientY - drag.py0;
+    if (!drag.bouge && Math.hypot(dx, dy) < 4) return;
+    drag.bouge = true;
+    const p = placement[drag.el];
+    p.x = Math.round((drag.x0 + dx / drag.w * 100) * 10) / 10;
+    p.y = Math.round((drag.y0 + dy / drag.h * 100) * 10) / 10;
+    ecrire(drag.el);
+  });
+  const fin = () => { drag = null; };
+  scene.addEventListener('pointerup', fin);
+  scene.addEventListener('pointercancel', fin);
+
+  /* ================= TOUT COPIER / COLLER ================= */
+  const sortie = $('sortie');
+  const etatExport = () => {
+    const px = {};
+    for (const o of cat) if ((o.type === 'dos' || o.type === 'banniere') && !o.defaut) px[o.id] = o.prix;
+    return { mockup:'inventaire-boutique', version:2, reglages:{ ...valeurs }, placement, prix:px };
+  };
+  let prevue = false;
+  function majSortie(forcer) {
+    if (forcer) { sortie.value = JSON.stringify(etatExport(), null, 2); return; }
+    if (document.activeElement === sortie || prevue) return;
+    prevue = true;
+    const faire = () => { if (!prevue) return; prevue = false; if (document.activeElement !== sortie) sortie.value = JSON.stringify(etatExport(), null, 2); };
+    requestAnimationFrame(faire); setTimeout(faire, 200);
+  }
+  function message(txt, erreur) {
+    const e = $('etatCopie'); e.textContent = txt; e.classList.toggle('erreur', !!erreur);
+    clearTimeout(message.t); message.t = setTimeout(() => { e.textContent = ''; }, 3500);
+  }
+  function toutAppliquer() {
+    for (const it of ITEMS) regler(it.id, valeurs[it.id], true);
+    majListe(); majCurseurs();
+    cat = construireCatalogue({ SKINS, ROSTER, DISC_SKINS }, prix, extra);
+    monter(); construireCatalogueUI(); majTest();
+  }
+  $('btnAppliquer').addEventListener('click', () => {
+    let d;
+    try { d = JSON.parse(sortie.value.trim()); } catch { message('Format pas reconnu : colle le bloc JSON exporté ici.', true); return; }
+    if (d.reglages) for (const [k, v] of Object.entries(d.reglages)) if (k in DEF) valeurs[k] = v;
+    if (d.placement) for (const el of Object.keys(PLACEMENT_DEF)) if (d.placement[el]) placement[el] = { ...d.placement[el] };
+    if (d.prix) for (const [k, v] of Object.entries(d.prix)) prix[k] = Math.max(0, +v | 0);
+    toutAppliquer();
+    sortie.blur(); majSortie(true); message('Appliqué ✔');
+  });
+  $('btnCopier').addEventListener('click', async () => {
+    majSortie(true);
+    try { await navigator.clipboard.writeText(sortie.value); message('Copié dans le presse-papiers ✔'); }
+    catch { sortie.focus(); sortie.select(); const ok = document.execCommand && document.execCommand('copy'); message(ok ? 'Copié ✔' : 'Sélectionné : fais Ctrl+C', !ok); }
+  });
+  $('btnDefauts').addEventListener('click', () => {
+    Object.assign(valeurs, DEF);
+    placement = JSON.parse(JSON.stringify(PLACEMENT_DEF));
+    for (const k of Object.keys(prix)) delete prix[k];
+    toutAppliquer(); majSortie(true);
+    message('Tout est revenu aux valeurs par défaut.');
+  });
+
+  /* ================= VRAIE PARTIE EN FOND ================= */
+  // Le jeu tourne dans le cadre, réduit à son canvas. Muet, et rien n'est écrit
+  // dans sa sauvegarde.
+  const CSS_CADRE = `
+    html,body{margin:0!important;padding:0!important;overflow:hidden!important;background:#0a0e1a!important;
+      height:100%!important;min-height:0!important;display:block!important}
+    body>*:not(#stage){display:none!important}
+    #stage{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;
+      border:0!important;border-radius:0!important;box-shadow:none!important;margin:0!important;aspect-ratio:auto!important}
+    #stage>*:not(#game){display:none!important}
+    #game{width:100%!important;height:100%!important}`;
+  const cadre = $('partieReelle');
+  const partie = m => {
+    scene.dataset.partie = m;
+    $('btnReelle').classList.toggle('on', m === 'reelle'); $('btnSimulee').classList.toggle('on', m === 'simulee');
+  };
+  $('btnReelle').addEventListener('click', () => partie('reelle'));
+  $('btnSimulee').addEventListener('click', () => partie('simulee'));
+  if (cadre) cadre.addEventListener('load', () => {
+    try {
+      const w = cadre.contentWindow, d = cadre.contentDocument;
+      w.HTMLMediaElement.prototype.play = function () { return Promise.resolve(); };
+      const ACc = w.AudioContext || w.webkitAudioContext;
+      if (ACc) {
+        ACc.prototype.resume = function () { return Promise.resolve(); };
+        w.AudioContext = function (...a) { const c = new ACc(...a); c.suspend(); return c; };
+        w.AudioContext.prototype = ACc.prototype;
+      }
+      for (const f of ['setItem', 'removeItem', 'clear']) w.Storage.prototype[f] = function () {};
+      const st = d.createElement('style'); st.textContent = CSS_CADRE; d.head.appendChild(st);
+      let essais = 0;
+      const avancer = () => {
+        const intro = d.getElementById('scr-intro');
+        if (intro && !intro.classList.contains('done')) intro.click();
+        const premier = d.getElementById('scr-firstrun');
+        if (premier && !premier.classList.contains('hidden')) d.querySelector('[data-act="skipTuto"]')?.click();
+        if (++essais < 30) setTimeout(avancer, 300);
+      };
+      avancer();
+      cadre.classList.add('pret');
+    } catch (err) { console.warn('Partie réelle indisponible', err); partie('simulee'); }
+  });
+
+  /* ================= DÉMARRAGE ================= */
+  toutAppliquer();
+  majSortie(true);
+</script>
+</body>
+</html>
