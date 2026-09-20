@@ -82,6 +82,54 @@ function colonneContinue(rows, lettres, hauteur) {
 const contient = (rows, lettre, jusqua) =>
   rows.slice(0, jusqua === undefined ? rows.length : jusqua).some(l => l.includes(lettre));
 
+// Mesures d'une ligne, sans jamais nommer de colonne : c'est ce qui permet à un
+// trait obligatoire de survivre à un recentrage du sprite.
+// `largeur` : du premier au dernier pixel peint.
+const largeur = l => {
+  const p = [...l].map((c, i) => (c === '.' ? -1 : i)).filter(i => i >= 0);
+  return p.length ? p[p.length - 1] - p[0] + 1 : 0;
+};
+// `mode` : la couleur la plus fréquente de la ligne, hors vide — celle du fond
+// de la forme, dont les détails (un œil, une bouche) se détachent.
+const mode = l => {
+  const n = {};
+  for (const c of l) if (c !== '.') n[c] = (n[c] || 0) + 1;
+  return Object.keys(n).sort((a, b) => n[b] - n[a])[0];
+};
+// `groupes` : les paquets de pixels consécutifs qui satisfont un test, rendus
+// en [début, fin]. Deux yeux, deux jambes : ce qui compte est qu'ils soient
+// DEUX et séparés.
+const groupes = (l, test) => {
+  const g = [];
+  for (let x = 0; x < l.length; x++) {
+    if (!test(l[x])) continue;
+    if (g.length && g[g.length - 1][1] === x - 1) g[g.length - 1][1] = x;
+    else g.push([x, x]);
+  }
+  return g;
+};
+// Deux marques de même couleur, courtes, séparées, prises À L'INTÉRIEUR de la
+// forme et POSÉES SYMÉTRIQUEMENT : c'est la signature d'une paire d'yeux.
+//
+// Les deux restrictions viennent chacune d'un faux positif constaté en
+// contrôle négatif, sur un visage dont on avait effacé les yeux exprès :
+//   - sans l'exclusion du bord, l'ombre du contour — présente aux deux bouts
+//     de chaque ligne — comptait pour une paire ;
+//   - sans la symétrie, deux mèches de frange faisaient l'affaire.
+const deuxMarques = l => {
+  const p = [...l].map((c, i) => (c === '.' ? -1 : i)).filter(i => i >= 0);
+  if (p.length < 5) return false;
+  const bord0 = p[0], bord1 = p[p.length - 1], milieu = (bord0 + bord1) / 2, fond = mode(l);
+  return [...new Set([...l])].some(c => {
+    if (c === '.' || c === fond) return false;
+    const g = groupes(l, ch => ch === c);
+    if (g.length !== 2) return false;
+    if (!g.every(([a, b]) => a > bord0 && b < bord1 && b - a < 3)) return false;
+    const centre = (g[0][0] + g[0][1] + g[1][0] + g[1][1]) / 4;
+    return Math.abs(centre - milieu) <= 1.5;
+  });
+};
+
 export const TRAITS = {
   fricadelle: [
     { nom: 'les saucisses posées en plaques sur le torse',
@@ -182,17 +230,23 @@ export const TRAITS = {
       test: r => contient(r, 'O') || contient(r, 'W') }
   ],
   // Isaac n'a ni cheveux ni vêtement : ses traits tiennent à la FORME. Une
-  // tenue qui sculpte son crâne ou décale ses yeux ne se lit plus comme lui.
+  // tenue qui sculpte son crâne, lui enlève un œil ou lui colle les jambes ne
+  // se lit plus comme lui.
+  //
+  // Ces trois contrôles sont écrits SANS colonne fixe, et c'est délibéré : la
+  // première version exigeait un crâne aux colonnes 1 et 12, et elle a tout
+  // rejeté le jour où le sprite a été recentré d'un pixel — alors que le
+  // dessin, lui, était juste. On mesure donc des largeurs et des groupes.
   isaac: [
     { nom: 'la grosse tête ronde, d’un bord à l’autre',
       pourquoi: 'c’est toute sa silhouette : un crâne qui prend presque la largeur du sprite',
-      test: r => [2, 3, 4].every(y => r[y][1] !== '.' && r[y][12] !== '.') },
-    { nom: 'les deux yeux aux colonnes 4-5 et 9-10',
-      pourquoi: 'ce sont les yeux du gabarit ; ailleurs, le regard ne tombe plus au même endroit que sur les autres persos',
-      test: r => r.slice(4, 8).some(l => l[4] !== l[7] && l[9] !== l[7]) },
-    { nom: 'les jambes aux colonnes 3-4 et 9-10',
+      test: r => [2, 3, 4].every(y => largeur(r[y]) >= 11) },
+    { nom: 'les deux yeux, séparés',
+      pourquoi: 'deux taches distinctes dans le visage : collées ou réduites à une, le regard d’Isaac disparaît',
+      test: r => r.slice(5, 7).some(deuxMarques) },
+    { nom: 'les deux jambes, séparées',
       pourquoi: 'c’est ce qui permet de déduire les cinq autres poses par recoloration, sans rien redessiner',
-      test: r => r.slice(16, 19).every(l => l[3] !== '.' && l[4] !== '.' && l[9] !== '.' && l[10] !== '.') }
+      test: r => r.slice(16, 19).every(l => groupes(l, c => c !== '.').length === 2) }
   ]
 };
 
