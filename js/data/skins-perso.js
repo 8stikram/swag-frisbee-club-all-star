@@ -54,12 +54,13 @@ export const SKINS = {
     { id: 'darkside', nom: 'DARKSIDE' },
     { id: 'requiem', nom: 'REQUIEM' }
   ],
+  // MAGDALENE, AZAZEL et EVE étaient annoncées ici depuis toujours mais
+  // n'avaient jamais été dessinées : les acheter coûtait deux cents pièces et
+  // laissait le sprite d'origine. On ne liste donc que ce qui existe vraiment,
+  // et chaque tenue revient ici le jour où elle est dessinée.
   isaac: [
     { id: 'isaac', nom: 'ISAAC', defaut: true },
-    { id: 'magdalene', nom: 'MAGDALENE' },
-    { id: 'cain', nom: 'CAIN' },
-    { id: 'azazel', nom: 'AZAZEL' },
-    { id: 'eve', nom: 'EVE' }
+    { id: 'cain', nom: 'CAIN' }
   ],
   // Cyberleek n'a pour l'instant que sa tenue d'origine. L'entrée est quand
   // même nécessaire : sans elle sa liste de tenues est vide, le panneau s'ouvre

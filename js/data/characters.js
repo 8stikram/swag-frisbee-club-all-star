@@ -922,6 +922,43 @@ const GF_DIVE_B = [GF_HAUT, "..AKAWWWWAKAWW..", "..bFFbWWbFFbWS..", "..AKKAWWAKK
 const GF_DASH_B = [GF_HAUT, "WWAKAWWWWAKA....", "SWbFFbWWbFFb....", "..AKKAWWAKKA....", ...GF_BAS,
   "..KK..KK........", ".KK..KK.........", "FA..FA..........", "WW..WW.........."];
 
+// ---------------------------------------------------------------------------
+// CAIN, la tenue d'Isaac. Dessinée à la main par l'utilisateur dans
+// mockups/isaac-skins.html, et reprise ici telle quelle.
+//
+// C'est un skin qui ne redessine presque rien : le crâne, les larmes et les
+// jambes d'Isaac ne bougent pas d'un pixel. Ce qui change tient en deux
+// endroits — le bandeau sur l'œil droit, avec sa lanière en diagonale, et le
+// sac de cuir sanglé sur la jambe droite.
+const PAL_CAIN = { ...PAL_I, N: '#1b1720', n: '#332c3a', C: '#7a4a22', B: '#c8a86a', y: '#8a6a3a' };
+const CAIN_HEAD = ["....naaaaa......", "..aannSSSSaa....", ".aaSSnnSSSSSa...", ".aSSSSnnSSSSa...",
+  ".aSSSSSnnSSSa...", ".aSSWKSSnNNnn...", ".aSSKKSSSNNSa...", ".aSSTSKKSTSSa...",
+  "..aSTSSSSTSa....", "...bbbbbbbb....."];
+// Le sac suit la JAMBE DROITE, quelle que soit la pose : on repeint le dernier
+// groupe de pixels des deux premières lignes de jambes. Le déduire ainsi plutôt
+// que de redessiner cinq poses garantit qu'il reste collé à la jambe quand elle
+// s'écarte en course, s'allonge au plongeon ou passe derrière au dash.
+const CAIN_SAC = ['C', 'B', 'B', 'y'];
+function corpsCain(base) {
+  return base.map((ligne, i) => {
+    if (i !== 6 && i !== 7) return ligne;
+    const fin = ligne.replace(/\.+$/, '').length - 1;
+    let debut = fin;
+    while (debut > 0 && ligne[debut - 1] !== '.') debut--;
+    const px = [...ligne];
+    for (let x = debut; x <= fin; x++) px[x] = CAIN_SAC[Math.min(x - debut, CAIN_SAC.length - 1)];
+    return px.join('');
+  });
+}
+const SKIN_CAIN = {
+  idle: buildSprite([...CAIN_HEAD, ...corpsCain(I_IDLE_B)], PAL_CAIN),
+  run1: buildSprite([...CAIN_HEAD, ...corpsCain(I_RUN1_B)], PAL_CAIN),
+  run2: buildSprite([...CAIN_HEAD, ...corpsCain(I_RUN2_B)], PAL_CAIN),
+  throw: buildSprite([...CAIN_HEAD, ...corpsCain(I_THROW_B)], PAL_CAIN),
+  dive: buildSprite([...CAIN_HEAD, ...corpsCain(I_DIVE_B)], PAL_CAIN),
+  dash: buildSprite([...CAIN_HEAD, ...corpsCain(I_DASH_B)], PAL_CAIN)
+};
+
 export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper', 'yuki', 'yoshi', 'hollis', 'flowser', 'fricadelle'];
 
 export const CHARS = {
@@ -962,6 +999,10 @@ export const CHARS = {
       throw: buildSprite([...I_HEAD, ...I_THROW_B], PAL_I),
       dive: buildSprite([...I_HEAD, ...I_DIVE_B], PAL_I),
       dash: buildSprite([...I_HEAD, ...I_DASH_B], PAL_I)
+    },
+    skins: {
+      isaac: null,              // rempli plus bas : c'est `frames` lui-même
+      cain: SKIN_CAIN
     }
   },
   leon: {
@@ -1223,6 +1264,7 @@ export function portraitURL(ck) {
 // La tenue d'origine est un skin comme les autres : elle pointe simplement sur
 // les sprites de base, ce qui évite de les dupliquer.
 CHARS.naruto.skins.shippuden = CHARS.naruto.frames;
+CHARS.isaac.skins.isaac = CHARS.isaac.frames;
 CHARS.leon.skins.rpd = CHARS.leon.frames;
 CHARS.jingle.skins.polenord = CHARS.jingle.frames;
 CHARS.yoshi.skins.vert = CHARS.yoshi.frames;
