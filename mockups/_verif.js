@@ -108,27 +108,32 @@ const groupes = (l, test) => {
   }
   return g;
 };
-// Deux marques de même couleur, courtes, séparées, prises À L'INTÉRIEUR de la
-// forme et POSÉES SYMÉTRIQUEMENT : c'est la signature d'une paire d'yeux.
+// Des marques courtes, de même couleur, prises À L'INTÉRIEUR de la forme :
+// la signature d'un œil. `deuxMarques` en exige deux, posées symétriquement ;
+// `unOeilAuMoins` accepte aussi l'œil unique — c'est le cas d'un personnage
+// borgne, dont un bandeau couvre l'autre.
 //
-// Les deux restrictions viennent chacune d'un faux positif constaté en
-// contrôle négatif, sur un visage dont on avait effacé les yeux exprès :
+// Les restrictions viennent chacune d'un faux positif constaté en contrôle
+// négatif, sur un visage dont on avait effacé les yeux exprès :
 //   - sans l'exclusion du bord, l'ombre du contour — présente aux deux bouts
 //     de chaque ligne — comptait pour une paire ;
 //   - sans la symétrie, deux mèches de frange faisaient l'affaire.
-const deuxMarques = l => {
+const marquesOeil = (l, combien) => {
   const p = [...l].map((c, i) => (c === '.' ? -1 : i)).filter(i => i >= 0);
   if (p.length < 5) return false;
   const bord0 = p[0], bord1 = p[p.length - 1], milieu = (bord0 + bord1) / 2, fond = mode(l);
   return [...new Set([...l])].some(c => {
     if (c === '.' || c === fond) return false;
     const g = groupes(l, ch => ch === c);
-    if (g.length !== 2) return false;
+    if (!combien.includes(g.length)) return false;
     if (!g.every(([a, b]) => a > bord0 && b < bord1 && b - a < 3)) return false;
+    if (g.length === 1) return true;
     const centre = (g[0][0] + g[0][1] + g[1][0] + g[1][1]) / 4;
     return Math.abs(centre - milieu) <= 1.5;
   });
 };
+const deuxMarques = l => marquesOeil(l, [2]);
+const unOeilAuMoins = l => marquesOeil(l, [1, 2]);
 
 export const TRAITS = {
   fricadelle: [
@@ -241,9 +246,12 @@ export const TRAITS = {
     { nom: 'la grosse tête ronde, d’un bord à l’autre',
       pourquoi: 'c’est toute sa silhouette : un crâne qui prend presque la largeur du sprite',
       test: r => [2, 3, 4].every(y => largeur(r[y]) >= 11) },
-    { nom: 'les deux yeux, séparés',
-      pourquoi: 'deux taches distinctes dans le visage : collées ou réduites à une, le regard d’Isaac disparaît',
-      test: r => r.slice(5, 7).some(deuxMarques) },
+    // Un œil AU MOINS, et non deux : la règle exigeait une paire, et elle a
+    // refusé Cain — dont un œil est couvert par un bandeau, ce qui est tout
+    // le personnage. Un visage sans aucun œil reste refusé.
+    { nom: 'l’œil à sa place dans le visage',
+      pourquoi: 'c’est le regard d’Isaac ; effacé, il ne reste qu’une boule de peau',
+      test: r => r.slice(5, 7).some(unOeilAuMoins) },
     { nom: 'les deux jambes, séparées',
       pourquoi: 'c’est ce qui permet de déduire les cinq autres poses par recoloration, sans rien redessiner',
       test: r => r.slice(16, 19).every(l => groupes(l, c => c !== '.').length === 2) }
