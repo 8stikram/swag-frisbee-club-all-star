@@ -2,7 +2,7 @@ import { G, comment, Mouse } from './state.js';
 import { SPECIALS, RUEE_DISQUE, RUEE_POUSSEE, RUEE_CTRL, RUEE_LARGEUR,
          WT_CHANT, WT_VITESSE, WT_RAYON, WT_BANDE, WT_STUN, WT_ATTIRE, WT_SORTIE,
          PS_CHANT, PS_CHUTE, PS_IMPACT, PS_DUREE, PS_SLOW, PS_DRAIN,
-         LAME_REPOUSSE, LAME_ETOURDI }
+         LAME_REPOUSSE, LAME_ETOURDI, LAME_RECHARGE }
   from '../data/specials.js';
 import { COURT, CY, GOAL_TOP, GOAL_BOTTOM, TIR_ANGLE_MIN, DISC_RADIUS, throwSpeed } from '../core/constants.js';
 import { COUP_ARME, COUP_COUPE, LAME_DEBUT, LAME_FIN, LAME_DEMI, epauleLame, angleCoupe, segmentLame, distanceSegment } from './lame-geo.js';
@@ -420,6 +420,11 @@ export function gelerJaugeLame() {
 // Le clic, pendant l'ultime : un coup d'épée vers la visée. Aucune recharge —
 // il frappe autant qu'il clique, et un nouveau clic relance le coup.
 export function coupDeLame(p, visee) {
+  // La recharge. Le clic pendant ce temps ne fait rien du tout : ni son, ni
+  // geste, ni refus sonore — un « deny » à chaque clic transformerait le
+  // martèlement en vacarme. C'est la barre au-dessus de sa tête qui dit quand
+  // la lame est prête.
+  if ((p.lameCoupT ?? 9) < LAME_RECHARGE) return;
   let v = visee && (visee.x || visee.y) ? visee : { x: Mouse.x - p.x, y: Mouse.y - p.y };
   if (p.ai) v = viseeIA(p);
   p.lameVise = Math.atan2(v.y, v.x);

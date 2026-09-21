@@ -133,6 +133,12 @@ export const LD_INVOC = .8;     // le Susanoo monte derrière lui
 // fort, auquel cas la poussée s'enlève.
 export const LAME_REPOUSSE = 520;
 export const LAME_ETOURDI = .4;
+// Le temps entre deux coups d'épée. Sans lui, marteler le clic donnait un coup
+// par image : l'ultime se jouait au poignet plutôt qu'au placement, et un
+// disque finissait toujours par croiser une lame. À cette valeur il reste
+// vingt coups sur les dix secondes — assez pour ne jamais se sentir bridé,
+// assez pour qu'un coup raté se paie.
+export const LAME_RECHARGE = .5;
 
 // Registre des attaques spéciales. Pour ajouter une spéciale : une entrée ici,
 // puis `ult:'<clé>'` sur le personnage dans data/characters.js.

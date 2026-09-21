@@ -14,10 +14,23 @@
 // Aucune dépendance au jeu en dehors des constantes de l'ultime : ce module ne
 // fait que dessiner ce qu'on lui donne.
 // ---------------------------------------------------------------------------
-import { LD_DUREE, LD_INVOC } from '../data/specials.js';
+import { LD_DUREE, LD_INVOC, LAME_RECHARGE } from '../data/specials.js';
 import { etatLame, versMonde } from '../game/lame-geo.js';
 
 const TAU = Math.PI * 2;
+
+// SUR UN SOL CLAIR, LE SUSANOO CHANGE DE PEINTURE.
+//
+// Il est peint en additif — comme une lumière — ce qui le rend éclatant sur les
+// cartes sombres et le fait DISPARAÎTRE sur les cartes claires : ajouter de la
+// lumière à du blanc ne donne rien. Or quatre cartes sur six ont un sol clair
+// (Pôle Nord 89 %, dojo 81 %, Dune 70 %, stade 64 %), et l'utilisateur ne le
+// voyait plus du tout au Pôle Nord.
+//
+// Sur ces cartes il passe donc en peinture normale, avec un contour sombre :
+// même dessin, même rose, mais posé sur le fond au lieu de s'y ajouter.
+let CLAIR = false;
+const melangeur = () => (CLAIR ? 'source-over' : 'lighter');
 // Hasard DÉTERMINISTE : une étincelle garde sa trajectoire d'une image à
 // l'autre au lieu de clignoter.
 const alea = i => { const v = Math.sin(i * 12.9898) * 43758.5453; return v - Math.floor(v); };
@@ -26,12 +39,12 @@ function lueur(g, x, y, r, coul, alpha) {
   if (alpha <= 0 || r <= 0) return;
   const d = g.createRadialGradient(x, y, 0, x, y, r);
   d.addColorStop(0, coul); d.addColorStop(1, 'rgba(0,0,0,0)');
-  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha *= alpha;
+  g.save(); g.globalCompositeOperation = melangeur(); g.globalAlpha *= alpha * (CLAIR ? .75 : 1);
   g.fillStyle = d; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); g.restore();
 }
 function anneau(g, x, y, rx, ry, alpha, coul, ep) {
   if (alpha <= 0 || rx <= 0) return;
-  g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha *= alpha;
+  g.save(); g.globalCompositeOperation = melangeur(); g.globalAlpha *= alpha;
   g.strokeStyle = coul; g.lineWidth = ep;
   g.beginPath(); g.ellipse(x, y, rx, Math.max(1, ry), 0, 0, TAU); g.stroke(); g.restore();
 }
@@ -45,8 +58,12 @@ const R = a => 'rgba(255,150,220,' + a + ')';
 const BORD = 'rgba(255,218,246,.92)';
 const CREUX = a => 'rgba(255,70,180,' + a + ')';
 function forme(g, chemin, a = .5, bord = BORD, lw = 1.8) {
-  g.fillStyle = R(a); g.fill(chemin);
-  g.strokeStyle = bord; g.lineWidth = lw; g.stroke(chemin);
+  // Sur sol clair : un rose plus dense et un contour SOMBRE. Le liseré rose
+  // pâle d'origine, lui, ne se voit pas du tout sur de la neige.
+  g.fillStyle = CLAIR ? 'rgba(206,32,140,' + Math.min(1, a * 1.9) + ')' : R(a);
+  g.fill(chemin);
+  g.strokeStyle = CLAIR && bord === BORD ? 'rgba(58,6,42,.95)' : bord;
+  g.lineWidth = CLAIR ? lw * 1.3 : lw; g.stroke(chemin);
 }
 const path = f => { const p = new Path2D(); f(p); return p; };
 function oeil(g, x, y, r = 5) { lueur(g, x, y, r * 1.8, 'rgba(255,250,255,1)', .95); }
@@ -68,8 +85,9 @@ function fricadelle(g, x0, x1, lar, stries = 5) {
     const xx = x0 + i * (x1 - x0) / (stries + 1);
     g.beginPath(); g.moveTo(xx, -lar * .78); g.quadraticCurveTo(xx + lar * .35, 0, xx, lar * .78); g.stroke();
   }
-  g.globalCompositeOperation = 'lighter';
-  g.strokeStyle = 'rgba(255,140,215,.9)'; g.lineWidth = Math.max(1, lar * .18); g.stroke(p);
+  g.globalCompositeOperation = melangeur();
+  g.strokeStyle = CLAIR ? 'rgba(150,40,110,.9)' : 'rgba(255,140,215,.9)';
+  g.lineWidth = Math.max(1, lar * .18); g.stroke(p);
   g.restore();
 }
 
@@ -133,7 +151,7 @@ const ELEMENTS = [
       const coude = Math.sin(t * .87 + .6) * 4;
       g.save();
       g.translate(-74, -164); g.rotate(pivot); g.translate(74, 164);
-      g.strokeStyle = R(.55); g.lineWidth = 15; g.lineCap = 'round';
+      g.strokeStyle = CLAIR ? 'rgba(232,74,176,.9)' : R(.55); g.lineWidth = 15; g.lineCap = 'round';
       g.beginPath(); g.moveTo(-74, -164);
       g.quadraticCurveTo(-96 - coude, -120, -92 + coude * .5, -74); g.stroke();
       lueur(g, -92 + coude * .5, -70, 12, 'rgba(255,200,240,1)', .6);
@@ -279,13 +297,13 @@ function pose(sabre) {
 // Le Susanoo seul, pieds en (0, 0), déjà placé et orienté par l'appelant.
 function peindre(g, t, sabre, trace, force) {
   g.save();
-  g.globalCompositeOperation = 'lighter';
+  g.globalCompositeOperation = melangeur();
   g.globalAlpha *= Math.min(1, force);
   const p = pose(sabre);
   for (const el of ELEMENTS) {
     const v = REG[el.id];
     if (el.special === 'bras') {
-      g.strokeStyle = R(.7); g.lineWidth = 15 * v.ey; g.lineCap = 'round';
+      g.strokeStyle = CLAIR ? 'rgba(232,74,176,.95)' : R(.7); g.lineWidth = 15 * v.ey; g.lineCap = 'round';
       g.beginPath(); g.moveTo(p.epaule.x, p.epaule.y); g.lineTo(p.main.x, p.main.y); g.stroke();
       continue;
     }
@@ -315,7 +333,8 @@ function peindre(g, t, sabre, trace, force) {
 // dos, pieds un peu sous les siens, et le suit avec un temps de retard
 // (susX/susY, lissés dans la boucle). Il regarde toujours le camp adverse,
 // quelle que soit la visée : c'est une présence, pas un deuxième joueur.
-export function dessinerSusanoo(g, p, t) {
+export function dessinerSusanoo(g, p, t, solClair = false) {
+  CLAIR = solClair;
   const dir = p.side === 1 ? 1 : -1;
   const x = (p.susX ?? p.x) - 18 * dir, y = (p.susY ?? p.y) + 44;
   // Il monte pendant l'invocation, tient, puis se dissout sur la dernière
@@ -332,5 +351,29 @@ export function dessinerSusanoo(g, p, t) {
   g.translate(x, y);
   if (dir < 0) g.scale(-1, 1);
   peindre(g, t, versMonde(p, ang), trace, force);
+  g.restore();
+  barreRecharge(g, p, force);
+}
+
+// La recharge de la lame, au-dessus de sa tête. Elle est petite et posée sur
+// le PERSONNAGE, pas dans le HUD : c'est lui qu'on regarde quand on clique, et
+// un indicateur à l'autre bout de l'écran ne serait jamais lu au bon moment.
+//
+// Elle ne s'affiche que pendant la recharge, et un éclair blanc marque
+// l'instant où la lame redevient prête : une barre pleine en permanence
+// deviendrait un décor qu'on ne voit plus.
+export function barreRecharge(g, p, force = 1) {
+  const t = p.lameCoupT ?? 9;
+  const k = Math.min(1, t / LAME_RECHARGE);
+  const fini = 1 - Math.min(1, Math.max(0, (t - LAME_RECHARGE) / .35));
+  if (k >= 1 && fini <= 0) return;
+  const L = 26, H = 4, x = p.x - L / 2, y = p.y - 62;
+  g.save();
+  g.globalAlpha = Math.min(1, force) * (k < 1 ? 1 : fini);
+  g.fillStyle = '#ffffff'; g.fillRect(x, y, L, H);
+  g.fillStyle = k < 1 ? '#ff7fd0' : '#ffffff';
+  g.fillRect(x, y, L * k, H);
+  g.strokeStyle = '#111318'; g.lineWidth = 1.5;
+  g.strokeRect(x - .75, y - .75, L + 1.5, H + 1.5);
   g.restore();
 }

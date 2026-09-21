@@ -13,6 +13,26 @@ import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SP
          PS_CHANT, PS_CHUTE, PS_IMPACT, PS_DUREE } from '../data/specials.js';
 import { CHARS } from '../data/characters.js';
 import { dessinerSusanoo } from './susanoo.js';
+
+// La clarté du sol de la carte en cours, mesurée une fois par carte. Elle sert
+// au Susanoo, qui se peint autrement sur un sol clair. Une couleur qu'on ne
+// sait pas lire — le sol translucide de la station orbitale — est comptée
+// sombre : c'est ce qu'elle est.
+let _solClair = { id: null, clair: false };
+function solClair() {
+  const id = getMapId();
+  if (_solClair.id === id) return _solClair.clair;
+  const h = String((getMap().theme || {}).floor || '');
+  const m = /^#([0-9a-f]{6})$/i.exec(h.trim());
+  let clair = false;
+  if (m) {
+    const n = parseInt(m[1], 16);
+    const r = n >> 16, v = (n >> 8) & 255, b = n & 255;
+    clair = (0.2126 * r + 0.7152 * v + 0.0722 * b) > 140;
+  }
+  _solClair = { id, clair };
+  return clair;
+}
 import { Reglages } from '../data/disc-fx.js';
 import { rayonSables, centreSables, densiteTempete } from '../game/desert.js';
 import { etiquetteJoueur, Partie, monJoueur, enMiroir, skinDuDisque } from '../reseau/partie.js';
@@ -3422,7 +3442,10 @@ export function render() {
   // Le Susanoo de la Fricadelle passe avant les joueurs ET le disque : il est
   // trois fois plus grand qu'eux, et devant, il masquerait justement ce qu'on
   // doit suivre. Il se tient dans le dos du Gardien, derrière tout le reste.
-  for (const p of [G.p1, G.p2]) if (p && p.lameT > 0) dessinerSusanoo(ctx, p, performance.now() / 1000);
+  // Le Susanoo est peint en additif, donc invisible sur un sol clair : on lui
+  // dit sur quoi il se pose. Quatre cartes sur six sont claires — au Pôle Nord
+  // il avait complètement disparu.
+  for (const p of [G.p1, G.p2]) if (p && p.lameT > 0) dessinerSusanoo(ctx, p, performance.now() / 1000, solClair());
   if (G.p1) {
     const ps = [G.p1, G.p2].sort((a, b) => a.y - b.y);
     let drewDisc = false;
