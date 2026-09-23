@@ -60,7 +60,8 @@ export const SKINS = {
   // et chaque tenue revient ici le jour où elle est dessinée.
   isaac: [
     { id: 'isaac', nom: 'ISAAC', defaut: true },
-    { id: 'cain', nom: 'CAIN' }
+    { id: 'cain', nom: 'CAIN' },
+    { id: 'magdalene', nom: 'MAGDALENE' }
   ],
   // Cyberleek n'a pour l'instant que sa tenue d'origine. L'entrée est quand
   // même nécessaire : sans elle sa liste de tenues est vide, le panneau s'ouvre

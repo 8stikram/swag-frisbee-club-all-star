@@ -950,6 +950,30 @@ function corpsCain(base) {
     return px.join('');
   });
 }
+// ---------------------------------------------------------------------------
+// MAGDALENE, la deuxième tenue d'Isaac. Dessinée à la main par l'utilisateur
+// dans mockups/isaac-skins.html, et reprise ici telle quelle.
+//
+// Comme Cain, elle ne redessine rien : mêmes yeux, mêmes larmes, même bouche,
+// même corps. Ce qui change tient à la coupe blonde — qui déborde du crâne sur
+// les colonnes 0 et 13, les seules libres — et au nœud rouge posé dessus.
+const PAL_MAGDA = { ...PAL_I, Y: '#f7dc5c', y: '#e2be2e', j: '#a8871c', R: '#c8232a', r: '#7e1016' };
+const MAGDA_HEAD = ["..yYYyyyyyyy....", ".yYYYYyyyyyRyR..", "yYYYyyyyyyyRrR..", "yyyyyyyyyjjRjR..",
+  "yySSSSSSSSSSjj..", "yySSWESSSWESjj..", "yaSSEESSSEESaj..", "yaSSTSKKSTSSaj..",
+  ".yaSTSSSSTSaj...", ".yybbbbbbbbjj..."];
+// Les cheveux retombent sur la ligne des épaules, la même dans les six poses :
+// on la remplace, et le reste du corps ne bouge pas d'un pixel.
+const MAGDA_EPAULES = "..yybbbbbbjj....";
+const corpsMagda = base => base.map((l, i) => (i === 0 ? MAGDA_EPAULES : l));
+const SKIN_MAGDALENE = {
+  idle: buildSprite([...MAGDA_HEAD, ...corpsMagda(I_IDLE_B)], PAL_MAGDA),
+  run1: buildSprite([...MAGDA_HEAD, ...corpsMagda(I_RUN1_B)], PAL_MAGDA),
+  run2: buildSprite([...MAGDA_HEAD, ...corpsMagda(I_RUN2_B)], PAL_MAGDA),
+  throw: buildSprite([...MAGDA_HEAD, ...corpsMagda(I_THROW_B)], PAL_MAGDA),
+  dive: buildSprite([...MAGDA_HEAD, ...corpsMagda(I_DIVE_B)], PAL_MAGDA),
+  dash: buildSprite([...MAGDA_HEAD, ...corpsMagda(I_DASH_B)], PAL_MAGDA)
+};
+
 const SKIN_CAIN = {
   idle: buildSprite([...CAIN_HEAD, ...corpsCain(I_IDLE_B)], PAL_CAIN),
   run1: buildSprite([...CAIN_HEAD, ...corpsCain(I_RUN1_B)], PAL_CAIN),
@@ -1002,7 +1026,8 @@ export const CHARS = {
     },
     skins: {
       isaac: null,              // rempli plus bas : c'est `frames` lui-même
-      cain: SKIN_CAIN
+      cain: SKIN_CAIN,
+      magdalene: SKIN_MAGDALENE
     }
   },
   leon: {
