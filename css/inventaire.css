@@ -328,3 +328,22 @@
 #scr-inventaire .ipTri:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--ink)}
 #scr-inventaire .ipTri:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
 #scr-inventaire .ipTri b{color:#6b4d00}
+
+/* Case opening : la révélation d'autre chose qu'une tenue. Un disque est rond,
+   un dos est haut, une bannière est large et basse — le sprite carré de la
+   tenue ne leur convient pas. */
+.coCarte[data-famille="disque"] canvas{width:20cqh;image-rendering:auto;border-radius:50%}
+.coCarte[data-famille="dos"] canvas{width:15cqh;image-rendering:auto;border-radius:1.2cqh}
+.coCarte[data-famille="banniere"] canvas{width:34cqh;image-rendering:auto;border-radius:1cqh}
+
+/* Case opening : les trois caisses de disques, dos et bannières, sur une
+   seconde rangée sous les deux caisses de tenues. Plus petites, pour que
+   l'écran garde sa hauteur. */
+.coCartes.coPetites{gap:2cqw}
+.coCaisse.petite{width:20cqw;max-width:230px;padding:1.8cqh 1.2cqw;gap:.7cqh}
+.coCaisse.petite .coIco{font-size:clamp(18px,4.6cqh,38px)}
+.coCaisse.petite b{font-size:clamp(9px,2cqh,17px)}
+.coCaisse.petite em{font-size:clamp(7px,1.35cqh,11px)}
+.coCaisse[data-caisse="disque"]{background:linear-gradient(180deg,#123c7a 0%,#12060a 62%,#08040a 100%)}
+.coCaisse[data-caisse="dos"]{background:linear-gradient(180deg,#5a1018 0%,#12060a 62%,#08040a 100%)}
+.coCaisse[data-caisse="banniere"]{background:linear-gradient(180deg,#0f5a48 0%,#12060a 62%,#08040a 100%)}

@@ -376,6 +376,17 @@ export async function acheterObjet(id) {
   return r;
 }
 
+// Pose un objet sur le compte sans rien débiter : les caisses du casino ont
+// déjà payé leur propre prix, qui n'est pas celui de la boutique.
+export async function debloquerObjet(id) {
+  if (!connecte()) return null;
+  const liste = await appel('/rest/v1/rpc/debloquer_objet', {
+    method: 'POST', headers: entetes(), body: JSON.stringify({ p_objet: id })
+  });
+  if (Compte.profil && Array.isArray(liste)) Compte.profil.objets = liste;
+  return liste;
+}
+
 export async function acheterStattrak(id) {
   if (!connecte()) throw new Error('connecte-toi pour acheter un StatTrak');
   const r = await appel('/rest/v1/rpc/acheter_stattrak', {

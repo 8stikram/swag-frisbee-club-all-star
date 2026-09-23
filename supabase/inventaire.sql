@@ -212,3 +212,25 @@ end; $$;
 -- `objets`, `favoris`, `stattrak` et `equipement` restent hors de
 -- profils_publics, qui ne liste que des colonnes choisies une à une.
 -- ---------------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------------
+-- 6. Les caisses du casino donnent aussi des disques, des dos de cartes et
+-- des bannières.
+--
+-- La caisse paie SON prix — moins cher que la boutique, c'est ce qu'on paie en
+-- renonçant à choisir — puis l'objet est offert. Le débit passe par
+-- `ajouter_pieces`, comme pour les caisses de tenues ; cette fonction-ci ne
+-- fait que poser l'objet sur le compte.
+--
+-- Même limite que `debloquer_tenue`, qui existe depuis toujours : c'est le jeu
+-- qui dit ce qu'il a gagné. Un tirage arbitré par la base demanderait qu'elle
+-- connaisse aussi le contenu des caisses ; ce sera à faire le jour où ça
+-- comptera vraiment.
+-- ---------------------------------------------------------------------------
+create or replace function debloquer_objet(p_objet text)
+returns text[] language sql security definer as $$
+  update profils
+     set objets = case when objets @> array[p_objet] then objets else objets || p_objet end
+   where id = auth.uid()
+  returning objets;
+$$;

@@ -21,6 +21,9 @@ import { sceau, message as messageCasino } from './casino.js';
 import { secousse, flash, emettre, boiteDe } from './effets.js';
 import { CHARS } from '../data/characters.js';
 import { SKINS, estDebloque, offrirSkin } from '../data/skins-perso.js';
+import { drawSkinDisc } from '../data/skins.js';
+import { catalogue, possede, offrir } from '../data/inventaire.js';
+import { imageDe } from '../ui/inventaire-visuels.js';
 
 // --- Ce qu'on peut gagner ---------------------------------------------------
 // Les tenues d'origine sont exclues : elles sont déjà acquises par tout le
@@ -35,11 +38,71 @@ const nonPris = liste => liste.filter(e => !estDebloque(e.ck, e.skin.id));
 // ciblée serait plein tarif pour un résultat connu d'avance.
 const persosOuvrables = () => Object.keys(SKINS).filter(ck => skinsDe(ck).length > 0 && CHARS[ck]);
 
+// ---------------------------------------------------------------------------
+// Une entrée de caisse, quelle que soit sa famille.
+//
+// La bande est un canvas : elle ne connaît ni tenues ni disques, seulement des
+// cartons à dessiner. Chaque objet se ramène donc à la même fiche — un nom, une
+// famille, une teinte, et de quoi le dessiner.
+// ---------------------------------------------------------------------------
+const NOM_FAMILLE = { tenue:'TENUE', disque:'DISQUE', dos:'DOS DE CARTES', banniere:'BANNIÈRE' };
+const TEINTE_FAMILLE = { disque:'#3d7bff', dos:'#c0262f', banniere:'#22b383' };
+
+const entreeTenue = (ck, s) => ({
+  type:'tenue', id:`tenue:${ck}:${s.id}`, ck, sid:s.id, nom:s.nom,
+  sous:(CHARS[ck] || {}).short || ck, teinte:(CHARS[ck] || {}).color || '#d4af37',
+});
+const entreeObjet = o => ({
+  type:o.type, id:o.id, did:o.did || o.bid, nom:o.nom,
+  sous:NOM_FAMILLE[o.type], teinte:TEINTE_FAMILLE[o.type] || '#d4af37',
+});
+// Ce qui se vend dans cette famille : ce qui se gagne au tutoriel ou qui est
+// offert à tout le monde n'a rien à faire dans une caisse.
+const objetsDe = type => catalogue().filter(o => o.type === type && o.source === 'direct').map(entreeObjet);
+
+// De quoi dessiner une entrée : un sprite pour une tenue, un disque peint une
+// fois, une image pour un dos ou une bannière (ce sont des SVG).
+const disquesPeints = new Map();
+function dessinDe(e) {
+  if (e.type === 'tenue') return sprite(e.ck, e.sid);
+  if (e.type === 'disque') {
+    if (!disquesPeints.has(e.did)) {
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = 96;
+      try { drawSkinDisc(cv.getContext('2d'), 48, 48, 44, e.did, 0); } catch (err) { }
+      disquesPeints.set(e.did, cv);
+    }
+    return disquesPeints.get(e.did);
+  }
+  const img = imageDe(e.type, e.did);
+  return img && img.complete && img.naturalWidth ? img : null;
+}
+// Les images des dos et bannières se décodent : on les demande avant que la
+// bande parte, sinon les premières cartes défilent vides.
+function prechauffer(entrees) {
+  const attentes = [];
+  for (const e of entrees) {
+    if (e.type !== 'dos' && e.type !== 'banniere') continue;
+    const img = imageDe(e.type, e.did);
+    if (img && !img.complete) attentes.push(new Promise(ok => { img.onload = ok; img.onerror = ok; }));
+  }
+  return Promise.all(attentes);
+}
+
 // Ce qui peut tomber, et ce qui défile. Les deux diffèrent volontairement : la
-// bande montre aussi des tenues déjà prises, sinon un personnage à qui il n'en
-// reste qu'une ferait défiler soixante fois la même carte.
-const bassinGagnant = () => nonPris(C.mode === 'perso' ? skinsDe(C.perso) : tousLesSkins());
-const bassinVisuel = () => (C.mode === 'perso' ? skinsDe(C.perso) : tousLesSkins());
+// bande montre aussi ce qu'on possède déjà, sinon une famille à laquelle il ne
+// reste qu'un objet ferait défiler soixante fois la même carte.
+const bassinDeFamille = type => objetsDe(type).filter(e => !possede(e.id));
+function bassinGagnant() {
+  if (C.mode === 'perso') return nonPris(skinsDe(C.perso)).map(e => entreeTenue(e.ck, e.skin));
+  if (C.mode === 'alea') return nonPris(tousLesSkins()).map(e => entreeTenue(e.ck, e.skin));
+  return bassinDeFamille(C.mode);
+}
+function bassinVisuel() {
+  if (C.mode === 'perso') return skinsDe(C.perso).map(e => entreeTenue(e.ck, e.skin));
+  if (C.mode === 'alea') return tousLesSkins().map(e => entreeTenue(e.ck, e.skin));
+  return objetsDe(C.mode);
+}
 
 // Le prix d'une caisse se lit contre celui de la boutique : cent pièces pour un
 // chroma, deux cents pour une tenue complète. Une caisse doit revenir moins
@@ -50,14 +113,17 @@ const bassinVisuel = () => (C.mode === 'perso' ? skinsDe(C.perso) : tousLesSkins
 // des chromas : on aurait payé cent soixante pièces pour recevoir à coup sûr
 // quelque chose qui s'achète cent. Le prix suit donc ce qu'il reste vraiment à
 // gagner chez ce personnage.
-const PRIX = { alea: 90, perso: 160, persoChroma: 80 };
+// Les trois autres familles ont chacune leur caisse. Même règle : moins cher
+// que la boutique, où l'on choisit. Un disque vaut 50, un dos et une bannière
+// de 100 à 250.
+const PRIX = { alea: 90, perso: 160, persoChroma: 80, disque: 25, dos: 130, banniere: 150 };
 
 // Ce que coûte une caisse ciblée sur `ck` : le tarif plein tant qu'une tenue
 // complète peut encore en sortir, le tarif chroma quand il n'en reste plus.
 const prixCiblee = ck =>
   nonPris(skinsDe(ck)).some(e => !e.skin.chroma) ? PRIX.perso : PRIX.persoChroma;
 
-const prixCaisse = () => C.mode === 'perso' ? prixCiblee(C.perso) : PRIX.alea;
+const prixCaisse = () => C.mode === 'perso' ? prixCiblee(C.perso) : (PRIX[C.mode] ?? PRIX.alea);
 
 const sprite = (ck, id) => {
   const c = CHARS[ck];
@@ -198,7 +264,6 @@ function dessinerBande(decalage, eclat) {
     if (!e) continue;
     const x = centre + i * PAS - decalage;
     const gagnante = eclat && i === INDEX_GAGNANT;
-    const p = CHARS[e.ck];
 
     ctx.save();
     ctx.translate(x, cy);
@@ -214,22 +279,28 @@ function dessinerBande(decalage, eclat) {
     ctx.fill(); ctx.stroke();
     ctx.shadowBlur = 0;
 
-    const src = sprite(e.ck, e.skin.id);
+    // Une bannière est large et basse : elle se dessine à plat, sans quoi elle
+    // rétrécirait au point de ne plus rien montrer.
+    const src = dessinDe(e);
     if (src) {
-      const ech = Math.min((w * .7) / src.width, (h * .56) / src.height);
-      ctx.drawImage(src, -src.width * ech / 2, -h * .38,
-                    src.width * ech, src.height * ech);
+      const sw = src.naturalWidth || src.width, sh = src.naturalHeight || src.height;
+      const boite = e.type === 'banniere' ? { l:w * .9, h:h * .3 } : { l:w * .7, h:h * .56 };
+      const ech = Math.min(boite.l / sw, boite.h / sh);
+      const yHaut = e.type === 'banniere' ? -h * .16 : -h * .38;
+      ctx.imageSmoothingEnabled = e.type !== 'tenue';
+      ctx.drawImage(src, -sw * ech / 2, yHaut, sw * ech, sh * ech);
+      ctx.imageSmoothingEnabled = false;
     }
 
     ctx.fillStyle = '#f6e27a';
     ctx.font = `700 ${Math.round(h * .085)}px 'Russo One', sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(p ? p.short : e.ck, 0, h * .30);
+    ctx.fillText(e.sous, 0, h * .30);
     ctx.fillStyle = 'rgba(253,246,224,.75)';
     ctx.font = `${Math.round(h * .068)}px 'DotGothic16', monospace`;
-    ctx.fillText(e.skin.nom.slice(0, 16), 0, h * .385);
+    ctx.fillText(e.nom.slice(0, 16), 0, h * .385);
 
-    ctx.fillStyle = p ? p.color : '#d4af37';
+    ctx.fillStyle = e.teinte;
     ctx.fillRect(-w / 2 + 6, h / 2 - 9, w - 12, 5);
     ctx.restore();
   }
@@ -247,9 +318,9 @@ function lancerOuverture() {
   C.gagne = tirer();
   if (!C.gagne) {
     sfx('deny');
-    messageCo(C.mode === 'perso'
-      ? 'Tu as déjà toutes ses tenues.'
-      : 'Tu as déjà toutes les tenues du jeu.');
+    messageCo(C.mode === 'perso' ? 'Tu as déjà toutes ses tenues.'
+      : C.mode === 'alea' ? 'Tu as déjà toutes les tenues du jeu.'
+      : 'Tu as déjà tout ce que cette caisse contient.');
     return;
   }
   C.bande = construireBande(C.gagne);
@@ -275,8 +346,10 @@ function lancerOuverture() {
   requestAnimationFrame(() => {
     calibrer();
     // La bande démarre APRÈS l'ouverture, pas pendant : les deux ensemble et
-    // l'un mange l'autre.
-    setTimeout(() => { if (C.ouvre) animer(prix); }, 420);
+    // l'un mange l'autre. Les dos et bannières, eux, se décodent d'abord — une
+    // image qui arrive en cours de route ferait défiler des cartes vides.
+    Promise.race([prechauffer(C.bande), new Promise(ok => setTimeout(ok, 900))])
+      .then(() => setTimeout(() => { if (C.ouvre) animer(prix); }, 420));
   });
 }
 
@@ -331,9 +404,16 @@ function pulserLigne() {
 // ---------------------------------------------------------------------------
 // Le résultat
 // ---------------------------------------------------------------------------
+// Donne l'objet gagné. Une tenue passe par son registre (skins-perso.js), qui la
+// synchronise depuis toujours ; les autres par l'inventaire.
+function donner(e) {
+  if (e.type === 'tenue') offrirSkin(e.ck, e.sid);
+  else offrir(e.id);
+}
+
 function conclure(prix) {
   const ecran = $('scr-caisses');
-  const { ck, skin } = C.gagne;
+  const gagne = C.gagne;
 
   sfx('coGain');
   flash(ecran, 'or', 160);
@@ -348,33 +428,40 @@ function conclure(prix) {
   if (connecte()) {
     ajouterPieces(-prix).then(s => {
       if (s !== null && s !== undefined) { C.solde = s; majSolde(); }
-      offrirSkin(ck, skin.id);
-    }).catch(() => messageCo('Le débit n\'est pas passé : la tenue reste à prendre.'));
-  } else offrirSkin(ck, skin.id);
+      donner(gagne);
+    }).catch(() => messageCo('Le débit n\'est pas passé : l\'objet reste à prendre.'));
+  } else donner(gagne);
 
   setTimeout(reveler, 620);
 }
 
 function reveler() {
-  const { ck, skin } = C.gagne;
-  const p = CHARS[ck];
+  const e = C.gagne;
   montrer('revele');
   C.ouvre = false;
 
   const carte = $('coCarte');
-  carte.style.setProperty('--teinte', p ? p.color : '#d4af37');
+  carte.style.setProperty('--teinte', e.teinte);
+  carte.dataset.famille = e.type;
   const cv = carte.querySelector('canvas');
-  const src = sprite(ck, skin.id);
+  const src = dessinDe(e);
+  const g = cv.getContext('2d');
   if (src) {
-    cv.width = src.width; cv.height = src.height;
-    const g = cv.getContext('2d');
-    g.imageSmoothingEnabled = false;
-    g.drawImage(src, 0, 0);
-  }
-  carte.querySelector('.coNom').textContent = p ? p.short : ck;
-  carte.querySelector('.coSkin').textContent = skin.nom;
-  // Toujours neuve : le tirage exclut ce qu'on possède déjà.
-  carte.querySelector('.coEtat').textContent = 'NOUVELLE TENUE';
+    // Un sprite garde ses pixels nets ; un disque, un dos ou une bannière sont
+    // des dessins lisses qu'on redimensionne. Les images se peignent à leur
+    // taille naturelle, agrandie : le canvas suit les proportions de l'objet.
+    const sw = src.naturalWidth || src.width, sh = src.naturalHeight || src.height;
+    const k = e.type === 'tenue' ? 1 : (e.type === 'banniere' ? 3 : 2);
+    cv.width = sw * k; cv.height = sh * k;
+    g.imageSmoothingEnabled = e.type !== 'tenue';
+    g.drawImage(src, 0, 0, cv.width, cv.height);
+  } else { cv.width = 8; cv.height = 8; }
+  // Pour une tenue, le nom du perso en gros et celui de la tenue dessous ; pour
+  // le reste, le nom de l'objet en gros et sa famille dessous.
+  carte.querySelector('.coNom').textContent = e.type === 'tenue' ? e.sous : e.nom;
+  carte.querySelector('.coSkin').textContent = e.type === 'tenue' ? e.nom : e.sous;
+  // Toujours neuf : le tirage exclut ce qu'on possède déjà.
+  carte.querySelector('.coEtat').textContent = e.type === 'tenue' ? 'NOUVELLE TENUE' : 'NOUVEL OBJET';
 
   const ecran = $('scr-caisses');
   emettre(ecran, 'confetti', boiteDe(ecran, carte), 26);
@@ -412,8 +499,11 @@ function messageCo(texte) {
 export function ouvrirCaisses() {
   if (!connecte()) { messageCasino('Connecte-toi : les pièces vivent sur ton compte.'); return false; }
   C.solde = (Compte.profil && Compte.profil.pieces) || 0;
-  if (C.solde < PRIX.alea) {
-    messageCasino(`Il te faut au moins ${PRIX.alea} pièces pour une caisse.`);
+  // La caisse la moins chère fixe le seuil : inutile de refuser l'entrée à qui
+  // a de quoi s'offrir un disque.
+  const seuil = Math.min(PRIX.alea, PRIX.persoChroma, PRIX.disque, PRIX.dos, PRIX.banniere);
+  if (C.solde < seuil) {
+    messageCasino(`Il te faut au moins ${seuil} pièces pour une caisse.`);
     return false;
   }
   C.mode = null; C.perso = null; C.ouvre = false;
@@ -450,6 +540,19 @@ export function ouvrirCaisses() {
     construireGrille();
     montrer('persos');
   });
+  // Les trois caisses de disques, dos et bannières. Rien à choisir de plus : on
+  // confirme le prix et la bande part.
+  for (const b of document.querySelectorAll('#scr-caisses .coCaisse[data-caisse]')) {
+    b.addEventListener('click', () => {
+      const famille = b.dataset.caisse, nom = b.querySelector('b').textContent.toLowerCase();
+      sfx('select');
+      if (!bassinDeFamille(famille).length) { sfx('deny'); messageCo(`Tu as déjà tout : ${nom}.`); return; }
+      demander(`Ouvrir une caisse de ${nom} pour ${PRIX[famille]} pièces ?`, () => {
+        C.mode = famille; C.perso = null;
+        lancerOuverture();
+      });
+    });
+  }
 
   $('coOui').addEventListener('click', () => { const s = confirmer; fermerConfirme(); if (s) s(); });
   for (const id of ['coNon', 'coConfirme'])
@@ -461,6 +564,9 @@ export function ouvrirCaisses() {
   $('coEncore').addEventListener('click', () => {
     sfx('select');
     if (prixCaisse() > C.solde) { messageCo('Pas assez de pièces.'); return; }
+    // Une famille qu'on vient de vider ne donne plus rien : on le dit ici,
+    // plutôt que de laisser lancerOuverture() refuser après le clic.
+    if (!bassinGagnant().length) { sfx('deny'); messageCo('Tu as déjà tout ce que cette caisse contient.'); return; }
     lancerOuverture();
   });
   $('coRetour').addEventListener('click', () => {

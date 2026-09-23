@@ -118,6 +118,47 @@ const SVG_BAN = {
 };
 export function banniereHTML(id) { return `<div class="banniere b-${id}">${SVG_BAN[id] || ''}</div>`; }
 
+// ---------------------------------------------------------------------------
+// La même chose, mais dessinable sur un canvas.
+//
+// La bande du case opening est un canvas : elle ne sait pas afficher du HTML.
+// On refait donc le dessin en SVG autonome — fond compris, puisque le fond des
+// dos vient de la CSS — qu'on charge dans une image. Le résultat est gardé :
+// soixante cartes défilent, ce serait soixante décodages.
+// ---------------------------------------------------------------------------
+const FOND_DOS = {
+  runes:'<radialGradient id="f" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#5c1010"/><stop offset=".55" stop-color="#4a0a0a"/><stop offset="1" stop-color="#2e0505"/></radialGradient>',
+  noel:'<radialGradient id="f" cx=".5" cy=".45" r=".7"><stop offset="0" stop-color="#d2213a"/><stop offset=".6" stop-color="#a8122a"/><stop offset="1" stop-color="#6e0818"/></radialGradient>',
+  holo:'<linearGradient id="f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9ad5"/><stop offset=".25" stop-color="#a9f0ff"/><stop offset=".45" stop-color="#fff7a8"/><stop offset=".65" stop-color="#c7a8ff"/><stop offset=".85" stop-color="#8ff5d0"/><stop offset="1" stop-color="#ff9ad5"/></linearGradient>',
+  neon:'<linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a0633"/><stop offset=".55" stop-color="#3a0b5e"/><stop offset="1" stop-color="#140726"/></linearGradient>',
+};
+const INTERIEUR_DOS = { runes:SVG_RUNES, noel:SVG_NOEL, holo:SVG_HOLO, neon:SVG_NEON };
+const sansEnveloppe = s => s.replace(/^\s*<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+
+export function svgAutonome(type, id) {
+  if (type === 'dos') {
+    const fond = FOND_DOS[id], dedans = INTERIEUR_DOS[id];
+    if (!dedans) return null;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 150"><defs>${fond}</defs>` +
+      `<rect width="100" height="150" rx="7" fill="url(#f)"/>${sansEnveloppe(dedans)}</svg>`;
+  }
+  const b = SVG_BAN[id];
+  if (!b || id === 'perso') return null;   // « ma bannière » est une image envoyée
+  return b.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+}
+
+const images = new Map();
+export function imageDe(type, id) {
+  const cle = type + ':' + id;
+  if (images.has(cle)) return images.get(cle);
+  const svg = svgAutonome(type, id);
+  if (!svg) return null;
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  images.set(cle, img);
+  return img;
+}
+
 // La plaque d'un titre, telle qu'elle s'affiche sur le profil.
 export function plaqueTitreHTML(nom, createur) {
   return `<div class="plaqueTitre${createur ? ' createur' : ''}"><span>${nom}</span></div>`;

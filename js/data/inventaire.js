@@ -23,7 +23,7 @@
 import { listeSkins, rareteTenue, estDebloque, offrirSkin, coutSkin, skinActif } from './skins-perso.js';
 import { DISC_SKINS, setFavSkin, setSkinId, getSkinId, brancherPossessionDisque } from './skins.js';
 import { ROSTER } from './characters.js';
-import { Compte, connecte, majProfil, acheterObjet, acheterStattrak, stattrakMatch, disquesOfferts } from '../reseau/compte.js';
+import { Compte, connecte, majProfil, acheterObjet, acheterStattrak, stattrakMatch, disquesOfferts, debloquerObjet } from '../reseau/compte.js';
 
 export const PRIX = { tenue:200, chroma:100, disque:50, stattrak:25 };
 
@@ -186,6 +186,16 @@ export async function acheter(id) {
   if (o.type === 'tenue') offrirSkin(o.ck, o.sid);
   else if (!objets.includes(id)) { objets.push(id); ecrire(CLES.objets, objets); }
   document.dispatchEvent(new CustomEvent('inventaireChange', { detail:{ achat:id } }));
+  return true;
+}
+
+// Offre un objet sans rien débiter. Les caisses du casino s'en servent : elles
+// ont déjà payé LEUR prix, qui n'a rien à voir avec celui de la boutique.
+export function offrir(id) {
+  if (possede(id)) return false;
+  if (!objets.includes(id)) { objets.push(id); ecrire(CLES.objets, objets); }
+  debloquerObjet(id).catch(() => { /* la copie locale reste, elle repartira */ });
+  document.dispatchEvent(new CustomEvent('inventaireChange', { detail:{ gagne:id } }));
   return true;
 }
 
