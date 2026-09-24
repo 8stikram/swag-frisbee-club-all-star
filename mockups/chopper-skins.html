@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Chopper — les tenues</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#07120c; --panel:#0e1e15; --edge:#244433; --ink:#e8f5ec; --accent:#3fae70; --or:#f5c542; --rouge:#a8232f; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:23px;margin:0 0 4px;font-family:'Archivo Black',sans-serif;letter-spacing:.5px}
+  h2{font-size:14px;margin:36px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#8fb7a1;max-width:1000px;line-height:1.75;margin:0 0 14px}
+  .note b{color:var(--or)}
+  .onglets{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 16px}
+  .onglet{background:var(--panel);border:1px solid var(--edge);border-radius:9px;padding:8px 16px;
+          font-size:12px;letter-spacing:1px;color:#8fb7a1;cursor:pointer;font-family:Consolas,monospace}
+  .onglet.on{border-color:var(--or);color:var(--or);background:#16281c}
+  .onglet.mort{opacity:.4;cursor:not-allowed}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px;
+        flex:1 1 206px;min-width:206px;max-width:268px;cursor:pointer;
+        transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#3d7a58}
+  .card.on{border-color:var(--or);transform:translateY(-2px);box-shadow:0 0 0 1px var(--or) inset}
+  .lbl{font-size:11px;color:#8fb7a1;margin-bottom:8px;line-height:1.5;min-height:96px}
+  .lbl b{display:block;font-size:13px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  .duo{display:flex;gap:8px;align-items:flex-end;justify-content:center}
+  .duo canvas{background:#0a1710;border-radius:8px;display:block;image-rendering:pixelated;flex:0 0 auto}
+  .duo .zoom{border:1px solid #3d7a58}
+  .duo .plein{opacity:.85}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 420px;
+          display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+  .apercu canvas{background:#0a1710;border-radius:10px;image-rendering:pixelated;display:block}
+  .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 300px}
+  .fiche h3{margin:0 0 10px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .choix{font-size:11.5px;color:#8fb7a1;margin-top:10px;font-family:Consolas,monospace;line-height:1.8}
+  .choix b{color:var(--or)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0a1710;border:1px solid var(--edge);border-radius:8px;
+             padding:7px 10px;color:var(--or);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#16281c;color:var(--ink);border:1px solid var(--edge);border-radius:8px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#1e3a28}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .rosterRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .rosterOne{text-align:center;font-size:9px;color:#6f9782;font-family:Consolas,monospace}
+  .rosterOne canvas{display:block;border-radius:6px;image-rendering:pixelated;border:1px solid var(--edge)}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1>CHOPPER — LES TENUES</h1>
+<p class="note">
+  <b>Les tenues de Chopper.</b> Il n'en avait aucune. On commence par TOA, d'apres le skin Toa
+  de Roadhog : masque blanc peint de rouge, plumes, tapa creme sur les epaules, torse tatoue,
+  ceinture rouge et verte, pagne de cordes tressees.
+  <br><br>
+  <b>On ne le redessine pas, on le traduit.</b> Chaque couleur de Chopper a son equivalent Toa :
+  le caoutchouc du masque devient le masque blanc, le pneu et la bonbonne deviennent le tapa, le
+  treillis devient la paille. Sa silhouette reste donc celle de Chopper au pixel pres — et ses six
+  poses du jeu suivront toutes seules, comme pour les skins de Jingle.
+  <br><br>
+  <b>On fait un skin a la fois.</b> Les onglets grises attendent que celui-ci soit valide. Et tout
+  est <b>dessinable</b> : l'editeur plus bas permet de poser les pixels a la main sur le rendu
+  final, par-dessus les variantes.
+</p>
+
+<div class="onglets" id="onglets"></div>
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvGrand" width="304" height="380"></canvas>
+    <div>
+      <canvas id="cvPetit" width="230" height="120"></canvas>
+      <div class="choix" id="choix"></div>
+      <div class="copier">
+        <input class="codeChoix" id="codeChoix" readonly>
+        <button class="btnCopier" id="btnCopier">copier mes choix</button>
+      </div>
+    </div>
+  </div>
+  <div class="fiche">
+    <h3>La tenue en cours</h3>
+    <div class="choix" id="resume"></div>
+    <h3 style="margin-top:14px">A l'echelle du match, a cote du roster</h3>
+    <div class="rosterRow" id="rosterRow"></div>
+  </div>
+</div>
+
+<div class="apercu" id="editeur" style="margin-top:14px;display:block"></div>
+
+<div id="sections"></div>
+
+<script type="module">
+import { MAPS } from '../js/data/maps.js';
+import { CHARS, ROSTER } from '../js/data/characters.js';
+import { verifier, afficher } from './_verif.js';
+import { editeur, styleEditeur } from './_pixel.js';
+
+const PAL = {"H": "#e8e0c8", "h": "#b9ae90", "M": "#4a4a52", "m": "#2e2e34", "o": "#3b3b43", "L": "#cfd8e2", "S": "#d9a17c", "s": "#ad7452", "E": "#241f1c", "T": "#e0762c", "t": "#a84a12", "V": "#3f342a", "v": "#241c15", "K": "#1c1c20", "J": "#42506a", "j": "#2a3345", "Y": "#e8c23a", "y": "#a08320", "W": "#c8ccd4", "n": "#2b2320", "P": "#efe6d2", "p": "#c4b89c", "R": "#b8262c", "r": "#7e1418", "G": "#3f8a4a", "Z": "#d9b872", "z": "#9e7c42", "B": "#a0603f", "b": "#6e3c26", "D": "#3a2418", "F": "#f4f1ea", "f": "#b9b4ab", "N": "#161214"};
+const BASE = { tete: [".....hHHh.......", "....oMMMMMo.....", "...oMMMMMMMo....", "..oMMMMMMMMMo...", "..oMMLLMMMLLo...", "..oMMLLMMMLLo...", ".YoMMMMMMMMoY...", ".yoMMMmmmmmoy...", "....MMmmmmmM....", "...KKKKKKKKK...."], corps: [".WmWmVVVVVYy....", ".mMmmVKKKKVYy...", ".WmmVKTTTTKVW...", ".SSSSTTTTTTSS...", ".SSSTTTTTTTSS...", "..SSSSSSSSSS....", "..KKWWWWWWKK....", ".JJj......jJJ...", ".JJj......jJJ...", ".nnn......nnn..."] };
+const SKINS = [{id:'toa',nom:'TOA',accroche:"Chopper en guerrier des iles, d'apres le skin Toa de Roadhog. On ne le redessine pas : on le TRADUIT. Chaque couleur de Chopper a son equivalent Toa — le caoutchouc devient le masque blanc, le treillis devient la paille — ce qui garde sa silhouette au pixel pres et fera suivre ses six poses toutes seules.",dominante:'PBZ',tete:["...fFNNNN.......", "...FpPPPPPp.....", "...pPRPPPRPp....", "..pPPRRPPRRPp...", "..pPPEEPPPEEp...", "..pPPEEPPPEEp...", ".RpPPPPPPPPpR...", ".rpPPPRRRRRpr...", "....PPRFRFRP....", "...NNNNNNNNN...."],corps:[".PPPPBBBBBPp....", ".PpPPBBBBBBPp...", ".PPPBBDBDBBBP...", ".BBBBDBDBDBBB...", ".BBBDBDBDBDBB...", "..BGGGGGGGGB....", "..RRRRPPRRRR....", ".zZzzZzZzZZzZ...", ".ZzZ......zZz...", ".bbb......bbb..."],sections:[{id:"masque",titre:"1 · LE MASQUE",note:"Le masque a gaz est la silhouette de Chopper, donc chaque variante en garde la FORME exacte — le groin, les deux orbites, la sangle — et ne change que ce qui est peint dessus et ce qui depasse du crane. Le piege est le rouge : sur la tete ET a la ceinture, le personnage devient rouge de haut en bas.",zoom:[0, 0, 14, 9],variantes:[{id:"A",nom:"MASQUE DE LA REFERENCE",desc:"Le masque blanc peint de rouge, la bouche rouge ouverte sur les dents, le chignon noir et deux plumes plantees derriere — ce que montre le skin Toa. Il garde exactement la forme du masque a gaz, donc on reconnait Chopper au premier coup d'oeil.",tete:["...fFNNNN.......", "...FpPPPPPp.....", "...pPRPPPRPp....", "..pPPRRPPRRPp...", "..pPPEEPPPEEp...", "..pPPEEPPPEEp...", ".RpPPPPPPPPpR...", ".rpPPPRRRRRpr...", "....PPRFRFRP....", "...NNNNNNNNN...."]},{id:"B",nom:"CRETE DE PLUMES",desc:"Le meme masque, et une crete de plumes blanches qui court du front a la nuque. C'est la silhouette la plus haute du roster et la plus ceremonielle ; en contrepartie elle alourdit une tete qui est deja la plus massive du jeu.",tete:["...FfFfFfFfF....", ".FF.pPPPPPp.FF..", ".F.pPRPPPRPp.F..", ".FpPPRRPPRRPpF..", "..pPPEEPPPEEp...", "..pPPEEPPPEEp...", ".RpPPPPPPPPpR...", ".rpPPPRRRRRpr...", "....PPRFRFRP....", "...NNNNNNNNN...."]},{id:"C",nom:"MASQUE ROUGE",desc:"Tout s'inverse : le masque passe au rouge et la peinture au blanc. Il se repere de tres loin sur toutes les cartes ; mais le rouge de la tete se confond alors avec celui de la ceinture, et le personnage devient rouge de haut en bas.",tete:[".....NNNN.......", "....rRRRRRr.....", "...rRRRRRRRr....", "..rRRRRRRRRRr...", "..rRREERRREEr...", "..rRREERRREEr...", ".PrRRRRRRRRrP...", ".prRRRPPPPPrp...", "....RRPFPFPR....", "...NNNNNNNNN...."]},{id:"D",nom:"MASQUE DE BOIS",desc:"Un masque de bois brut, sans peinture, seulement les orbites et la bouche creusees. Le plus sobre et le plus rituel ; en revanche il perd le contraste blanc-rouge qui fait lire le Toa de loin.",tete:[".....NNNN.......", "....bzzzzzb.....", "...bzzzzzzzb....", "..bzzzzzzzzzb...", "..bzzEEzzzEEb...", "..bzzEEzzzEEb...", ".ZbzzzzzzzzbZ...", ".zbzzzDDDDDbz...", "....zzDFDFDz....", "...NNNNNNNNN...."]},{id:"E",nom:"DEMI-MASQUE",desc:"Le masque s'arrete sous les yeux : on voit enfin le bas du visage de Chopper, sa peau et sa bouche. La seule variante qui montre l'homme sous le masque ; mais elle casse la forme du groin, qui est la silhouette meme du personnage.",tete:[".....NNNN.......", "....pPPPPPp.....", "...pPRPPPRPp....", "..pPPRRPPRRPp...", "..pPPEEPPPEEp...", "..pPPEEPPPEEp...", ".BBBBBBBBBBBB...", ".BBBBDDDDDBBB...", "....BBFFFFBB....", "...NNNNNNNNN...."]}]},{id:"tenue",titre:"2 · LA TENUE",note:"Le corps est TRADUIT lettre par lettre depuis celui de Chopper, comme les skins de Jingle : le pneu et la bonbonne deviennent le tapa des epaules, le gilet disparait, le treillis devient le pagne. C'est ce qui permettra aux six poses du jeu de suivre sans en redessiner une seule. Les tatouages, la ceinture et les cordes sont poses par-dessus.",zoom:[0, 10, 15, 19],variantes:[{id:"A",nom:"TENUE DE LA REFERENCE",desc:"Le tapa creme sur les epaules, le torse nu aux volutes sombres, la ceinture rouge au losange blanc avec sa bande verte, et le pagne de cordes tressees. Tout est TRADUIT depuis les couleurs de Chopper, lettre par lettre : c'est ce qui fera suivre les six poses du jeu sans en redessiner une seule.",corps:[".PPPPBBBBBPp....", ".PpPPBBBBBBPp...", ".PPPBBDBDBBBP...", ".BBBBDBDBDBBB...", ".BBBDBDBDBDBB...", "..BGGGGGGGGB....", "..RRRRPPRRRR....", ".zZzzZzZzZZzZ...", ".ZzZ......zZz...", ".bbb......bbb..."]},{id:"B",nom:"BRAS TATOUES",desc:"Les bras entierement couverts de tatouages sombres, comme sur la reference, et quelques motifs de plus sur le torse. Les bras se detachent du ventre, donc la course se lit mieux ; en contrepartie le haut du corps devient plus sombre.",corps:[".PPPPBBBBBPp....", ".PpPPDBDBDBPp...", ".PPPBBDBDBBDP...", ".DDBBDBDBDBDD...", ".DDBDBDBDBDDD...", "..DGGGGGGGGD....", "..RRRRPPRRRR....", ".zZzzZzZzZZzZ...", ".ZzZ......zZz...", ".bbb......bbb..."]},{id:"C",nom:"PAGNE ROUGE",desc:"Le pagne passe au rouge, en cordes alternees. Il repond au rouge du masque et de la ceinture ; mais toute la moitie basse devient rouge, et la paille — ce qui dit « ile » au premier coup d'oeil — disparait.",corps:[".PPPPBBBBBPp....", ".PpPPBBBBBBPp...", ".PPPBBDBDBBBP...", ".BBBBDBDBDBBB...", ".BBBDBDBDBDBB...", "..BGGGGGGGGB....", "..RRRRPPRRRR....", ".RrRrRrRrRrRr...", ".RRr......rRR...", ".bbb......bbb..."]},{id:"D",nom:"COLLIER DE DENTS",desc:"Un collier de dents blanches pose sur le tapa, d'une epaule a l'autre, et un pendentif sur le torse. C'est le detail le plus « guerrier » des cinq ; en revanche il se melange au creme du tapa et se lit mal en petit.",corps:[".PPPPBBBBBPp....", ".PNFNFNFNFNFp...", ".PPPBBDFDBBBP...", ".BBBBDBFBDBBB...", ".BBBDBDBDBDBB...", "..BGGGGGGGGB....", "..RRRRPPRRRR....", ".zZzzZzZzZZzZ...", ".ZzZ......zZz...", ".bbb......bbb..."]},{id:"E",nom:"PAGNE LONG",desc:"Le pagne descend jusqu'aux chevilles et cache les jambes. Le plus ceremonial ; mais la course ne se lira plus que par les bras, et c'est la lecon de la robe longue du Gardien.",corps:[".PPPPBBBBBPp....", ".PpPPBBBBBBPp...", ".PPPBBDBDBBBP...", ".BBBBDBDBDBBB...", ".BBBDBDBDBDBB...", "..BGGGGGGGGB....", "..RRRRPPRRRR....", ".zZzZzZzZzZzZ...", ".ZzZzZzZzZzZz...", ".zZzZzZzZzZzZ..."]}]}]}];
+const A_VENIR = [{id:'boucher',nom:'BOUCHER'},{id:'plagiste',nom:'PLAGISTE'},{id:'ferrailleur',nom:'FERRAILLEUR'}];
+
+
+// Le skin affiche est porte par le fragment d'URL. Un simple `location.reload()`
+// apres avoir change une variable ne survivait pas au rechargement : on
+// revenait toujours sur le premier skin.
+let skin = SKINS.find(s => s.id === location.hash.slice(1)) || SKINS[0];
+
+/* ===================== LE DESSIN ===================== */
+function peindre(g, rows, pal, ech, ox, oy, zone) {
+  const [x0, y0, x1, y1] = zone || [0, 0, 15, 19];
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const ch = rows[y][x];
+      if (ch === '.' || !pal[ch]) continue;
+      g.fillStyle = pal[ch];
+      g.fillRect(ox + (x - x0) * ech, oy + (y - y0) * ech, ech, ech);
+    }
+  }
+}
+
+function fond(g, W, H) {
+  const d = g.createLinearGradient(0, 0, 0, H);
+  d.addColorStop(0, '#132a1d'); d.addColorStop(1, '#08130d');
+  g.fillStyle = d; g.fillRect(0, 0, W, H);
+}
+
+/* ===================== L'ETAT ===================== */
+const choix = {};
+skin.sections.forEach(s => { choix[s.id] = s.variantes[0].id; });
+const actuel = id => skin.sections.find(s => s.id === id).variantes.find(x => x.id === choix[id]);
+
+function batir(remplace) {
+  let tete = skin.tete, corps = skin.corps;
+  for (const s of skin.sections) {
+    const va = (remplace && remplace.sec === s.id) ? remplace.va : actuel(s.id);
+    if (va.tete) tete = va.tete;
+    if (va.corps) corps = va.corps;
+  }
+  // La retouche de l'editeur ne s'applique qu'au perso ASSEMBLE, jamais aux
+  // cartes : une carte doit montrer SA variante, sinon on choisit a l'aveugle.
+  let rows = [...tete, ...corps];
+  if (!remplace && ed && ed.actif()) rows = ed.rows();
+  return { rows, pal: PAL };
+}
+
+let ed = null;
+
+/* ===================== LES ONGLETS ===================== */
+(function onglets() {
+  const h = document.getElementById('onglets');
+  SKINS.forEach(sk => {
+    const b = document.createElement('button');
+    b.className = 'onglet' + (sk.id === skin.id ? ' on' : '');
+    b.textContent = sk.nom;
+    b.onclick = () => { location.hash = sk.id; location.reload(); };
+    h.append(b);
+  });
+  A_VENIR.forEach(sk => {
+    const b = document.createElement('button');
+    b.className = 'onglet mort';
+    b.textContent = sk.nom + ' — a venir';
+    b.title = 'On fait un skin a la fois : celui-ci arrive quand le precedent est valide.';
+    h.append(b);
+  });
+})();
+
+/* ===================== L'EDITEUR ===================== */
+styleEditeur();
+ed = editeur({
+  hote: document.getElementById('editeur'),
+  cle: 'chopper-' + skin.id,
+  rows: () => batir().rows,
+  pal: () => PAL,
+  change: () => rafraichir()
+});
+
+/* ===================== L'APERCU ===================== */
+const gG = document.getElementById('cvGrand').getContext('2d');
+const gP = document.getElementById('cvPetit').getContext('2d');
+const ARENE = MAPS[0], TH = ARENE.theme;
+
+function majApercu() {
+  const { rows, pal } = batir();
+  const cv = gG.canvas;
+  fond(gG, cv.width, cv.height);
+  const ech = 19;
+  peindre(gG, rows, pal, ech, (cv.width - 16 * ech) / 2, (cv.height - 20 * ech) / 2);
+
+  const c2 = gP.canvas;
+  gP.fillStyle = TH.floor; gP.fillRect(0, 0, c2.width, c2.height);
+  gP.strokeStyle = TH.line; gP.lineWidth = 1;
+  gP.beginPath(); gP.moveTo(0, c2.height - 14); gP.lineTo(c2.width, c2.height - 14); gP.stroke();
+  for (let i = 0; i < 3; i++) peindre(gP, rows, pal, 4.8, 14 + i * 74, c2.height - 14 - 20 * 4.8);
+
+  majChoix();
+}
+
+function majChoix() {
+  document.getElementById('choix').innerHTML =
+    skin.sections.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value =
+    skin.nom + ' : ' + skin.sections.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+  document.getElementById('resume').innerHTML =
+    '<b>' + skin.nom + '</b><br>' + skin.accroche + '<br><br>' +
+    skin.sections.map(s => {
+      const va = actuel(s.id);
+      return s.titre.replace(/^\d+ · /, '') + ' — <b>' + va.id + ' · ' + va.nom + '</b>';
+    }).join('<br>');
+}
+
+/* ===================== LES CARTES ===================== */
+const cartes = [];
+function dessinerCarte(o) {
+  const { rows, pal } = batir({ sec: o.sec.id, va: o.va });
+  const gc = o.plein.getContext('2d');
+  fond(gc, o.plein.width, o.plein.height);
+  peindre(gc, rows, pal, o.zoom ? 4 : 8, 0, 0);
+  if (!o.zoom) return;
+  const gz = o.zoom.getContext('2d');
+  fond(gz, o.zoom.width, o.zoom.height);
+  const z = o.sec.zoom;
+  peindre(gz, rows, pal, o.zoom.width / (z[2] - z[0] + 1), 0, 0, z);
+}
+
+const boite = document.getElementById('sections');
+skin.sections.forEach(sec => {
+  const h2 = document.createElement('h2');
+  h2.textContent = sec.titre;
+  const note = document.createElement('p');
+  note.className = 'note'; note.textContent = sec.note;
+  boite.append(h2, note);
+
+  const row = document.createElement('div');
+  row.className = 'row';
+  sec.variantes.forEach(va => {
+    const card = document.createElement('div');
+    card.className = 'card' + (choix[sec.id] === va.id ? ' on' : '');
+    card.dataset.sec = sec.id; card.dataset.va = va.id;
+    const lbl = document.createElement('div');
+    lbl.className = 'lbl';
+    lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + va.desc;
+    // LE GROS PLAN EST LE DESSIN PRINCIPAL, le perso entier n'est qu'une
+    // vignette a cote : ce qui change tient dans dix lignes de pixels, et se
+    // noierait au milieu de tout le personnage.
+    const duo = document.createElement('div'); duo.className = 'duo';
+    let zoom = null;
+    if (sec.zoom) {
+      const z = sec.zoom, zw = z[2] - z[0] + 1, zh = z[3] - z[1] + 1;
+      const ez = Math.min(15, Math.floor(168 / zw), Math.floor(168 / zh));
+      zoom = document.createElement('canvas');
+      zoom.className = 'zoom'; zoom.width = zw * ez; zoom.height = zh * ez;
+      duo.append(zoom);
+    }
+    const plein = document.createElement('canvas');
+    plein.className = 'plein';
+    plein.width = sec.zoom ? 16 * 4 : 16 * 8;
+    plein.height = sec.zoom ? 20 * 4 : 20 * 8;
+    duo.append(plein);
+    card.append(lbl, duo);
+    card.onclick = () => {
+      choix[sec.id] = va.id;
+      document.querySelectorAll('.card[data-sec="' + sec.id + '"]')
+        .forEach(c => c.classList.toggle('on', c.dataset.va === va.id));
+      rafraichir();
+    };
+    row.append(card);
+    cartes.push({ plein, zoom, sec, va });
+  });
+  boite.append(row);
+});
+
+function rafraichir() {
+  majApercu();
+  if (ed) ed.maj();
+  cartes.forEach(o => { if (o.plein.offsetParent) dessinerCarte(o); });
+}
+
+document.getElementById('btnCopier').onclick = async () => {
+  const b = document.getElementById('btnCopier');
+  try {
+    await navigator.clipboard.writeText(document.getElementById('codeChoix').value);
+    b.textContent = 'copié !'; b.classList.add('ok');
+    setTimeout(() => { b.textContent = 'copier mes choix'; b.classList.remove('ok'); }, 1400);
+  } catch (e) { document.getElementById('codeChoix').select(); }
+};
+
+/* --- La bande du roster, a l'echelle du match --- */
+(function bande() {
+  const hote = document.getElementById('rosterRow');
+  const ajoute = (dessine, nom) => {
+    const d = document.createElement('div'); d.className = 'rosterOne';
+    const cv = document.createElement('canvas');
+    cv.width = 16 * 4.2; cv.height = 20 * 4.2;
+    const g = cv.getContext('2d');
+    g.fillStyle = TH.floor; g.fillRect(0, 0, cv.width, cv.height);
+    dessine(g, cv);
+    const e = document.createElement('em'); e.style.fontStyle = 'normal'; e.textContent = nom;
+    d.append(cv, e); hote.append(d);
+  };
+  const moi = batir();
+  ajoute(g => peindre(g, moi.rows, moi.pal, 4.2, 0, 0), skin.nom.split(' ')[0]);
+  // Le Chopper d'origine juste a cote : c'est LUI que la tenue doit encore
+  // evoquer, sinon ce n'est plus un skin mais un autre personnage.
+  ajoute(g => peindre(g, [...BASE.tete, ...BASE.corps], PAL, 4.2, 0, 0), 'CHOPPER');
+  for (const ck of ROSTER) {
+    const c = CHARS[ck];
+    ajoute((g, cv) => { g.imageSmoothingEnabled = false; g.drawImage(c.frames.idle, 0, 0, cv.width, cv.height); },
+           c.short || c.name);
+  }
+})();
+
+/* --- Le module de controle partage --- */
+const PERSO = { pal: PAL, tete: skin.tete, corps: skin.corps, dominante: skin.dominante };
+afficher(verifier({ id: 'chopper-toa', PERSO, SECTIONS: skin.sections,
+                    options: { variantesAttendues: 5 } }), document.getElementById('errs'));
+
+rafraichir();
+</script>
+</body>
+</html>
