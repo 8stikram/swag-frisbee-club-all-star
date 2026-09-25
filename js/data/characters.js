@@ -1,3 +1,6 @@
+import { RETOUCHES } from './retouches-tenues.js';
+import { deriverPose } from './deriver-pose.js';
+
 // Registre des personnages. Pour ajouter un perso : une palette, ses lignes de sprite,
 // puis une entrée dans CHARS + son id dans ROSTER. `ult` pointe vers une clé de data/specials.js.
 export function buildSprite(rows, pal) {
@@ -1351,3 +1354,41 @@ CHARS.jingle.skins.polenord = CHARS.jingle.frames;
 CHARS.yoshi.skins.vert = CHARS.yoshi.frames;
 CHARS.hollis.skins.platine = CHARS.hollis.frames;
 CHARS.flowser.skins.psychique = CHARS.flowser.frames;
+
+// Les retouches de l'atelier des tenues (retouches-tenues.js). Chacune donne sa
+// pose debout ; les autres poses en sont déduites, et on REMPLACE les sprites
+// dans l'objet de la tenue lui-même, pour que `skins.<défaut>`, qui pointe sur
+// `frames`, suive sans rien réassigner.
+//
+// Une autre tenue du même perso qui avait exactement les lignes de celle-ci
+// n'en est qu'une teinte — un chroma : elle reprend les nouvelles lignes, et
+// les couleurs retouchées sauf celles qu'elle teint elle-même.
+function appliquerRetouches() {
+  for (const [cle, r] of Object.entries(RETOUCHES)) {
+    const [ck, id] = cle.split(':');
+    const c = CHARS[ck];
+    const jeu = c && (c.skins ? c.skins[id] : c.frames);
+    if (!jeu || !jeu.idle || !jeu.idle.rows) continue;
+    const couleurs = r.couleurs || {};
+    const idle0 = jeu.idle.rows, idle1 = [...r.tete, ...r.corps];
+    const avant = {}, apres = {};
+    for (const pose of Object.keys(jeu)) {
+      avant[pose] = jeu[pose].rows;
+      apres[pose] = pose === 'idle' ? idle1 : deriverPose(jeu[pose].rows, idle0, idle1);
+      const palOrigine = jeu[pose].pal;
+      jeu[pose] = buildSprite(apres[pose], { ...palOrigine, ...couleurs });
+      jeu[pose].palOrigine = palOrigine;
+    }
+    if (!c.skins) continue;
+    for (const autre of Object.values(c.skins)) {
+      if (autre === jeu || !autre.idle || !autre.idle.rows) continue;
+      if (Object.keys(avant).some(pose => !autre[pose] || autre[pose].rows.join() !== avant[pose].join())) continue;
+      for (const pose of Object.keys(avant)) {
+        const pal = { ...autre[pose].pal }, base = jeu[pose].palOrigine;
+        for (const [k, v] of Object.entries(couleurs)) if (!(k in pal) || pal[k] === base[k]) pal[k] = v;
+        autre[pose] = buildSprite(apres[pose], pal);
+      }
+    }
+  }
+}
+appliquerRetouches();

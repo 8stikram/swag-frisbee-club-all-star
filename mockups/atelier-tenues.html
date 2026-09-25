@@ -203,6 +203,9 @@
     <h3>Avant / après</h3>
     <div class="vitrine" id="avantApres"></div>
 
+    <h3>Les 6 poses <span>elles suivent ta pose debout</span></h3>
+    <div class="vitrine" id="poses"></div>
+
     <h3>Dans le match <span>à l'échelle, dans les deux sens</span></h3>
     <div class="vitrine" id="match"></div>
 
@@ -272,6 +275,7 @@
 // ---------------------------------------------------------------------------
 import { CHARS, ROSTER } from '../js/data/characters.js';
 import { SKINS } from '../js/data/skins-perso.js';
+import { deriverPose } from '../js/data/deriver-pose.js';
 
 const L = 16, H = 20;
 const INTERDITE = 15;         // le jeu retourne le sprite en c -> 15-c : cette colonne reste vide
@@ -294,7 +298,11 @@ try {
       if (!sp || !sp.rows) continue;
       const rows0 = sp.rows.map(r => (r + '.'.repeat(L)).slice(0, L));
       const t = { cle: ck + ':' + s.id, ck, id: s.id, nom: s.nom, perso: c.short || c.name,
-                  rows0, pal0: { ...sp.pal }, chromas: [] };
+                  rows0, pal0: { ...sp.pal }, chromas: [], poses: [] };
+      // Les autres poses du jeu : l'atelier les fait suivre avec la même règle
+      // que le jeu (deriver-pose.js), pour voir la retouche en mouvement.
+      for (const pose of ['run1', 'run2', 'throw', 'dive', 'dash'])
+        if (jeu[pose] && jeu[pose].rows) t.poses.push({ nom: pose, rows: jeu[pose].rows, pal: jeu[pose].pal });
       // Les chromas ne se rattachent qu'à la tenue de base, et seulement s'ils
       // gardent ses lignes : alors ce n'est qu'une palette, qu'on rejoue.
       if (s === base) {
@@ -885,6 +893,10 @@ function majApercus() {
   const rows = G.map(r => r.join(''));
   const aa = $('avantApres'); aa.innerHTML = '';
   aa.append(vignette(T.rows0, T.pal0, 5, '#0a1710', 'jeu'), vignette(rows, PAL, 5, '#0a1710', 'toi'));
+  const po = $('poses'); po.innerHTML = '';
+  const NOMS_POSES = { run1: 'course 1', run2: 'course 2', throw: 'lancer', dive: 'plongeon', dash: 'dash' };
+  po.append(vignette(rows, PAL, 2, '#0a1710', 'debout'));
+  for (const p of T.poses) po.append(vignette(deriverPose(p.rows, T.rows0, rows), { ...p.pal, ...PAL }, 2, '#0a1710', NOMS_POSES[p.nom]));
   const m = $('match'); m.innerHTML = '';
   for (const [nom, c] of TERRAINS) {
     m.append(vignette(rows, PAL, 2, c, nom), vignette(rows, PAL, 2, c, '←', true));
