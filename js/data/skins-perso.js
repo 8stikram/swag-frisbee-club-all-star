@@ -77,7 +77,8 @@ export const SKINS = {
     { id: 'treillis', nom: 'TREILLIS CAMO', defaut: true }
   ],
   chopper: [
-    { id: 'junker', nom: 'ÉQUIPEMENT COMPLET', defaut: true }
+    { id: 'junker', nom: 'ÉQUIPEMENT COMPLET', defaut: true },
+    { id: 'toa', nom: 'TOA' }
   ],
   yuki: [
     { id: 'doudoune', nom: 'DOUDOUNE 雪', defaut: true }

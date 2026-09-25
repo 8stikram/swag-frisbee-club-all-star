@@ -639,6 +639,54 @@ const CH_DIVE_B  = [".WmWmVVVVVYySS..",".mMmmVKKKKVYyS..",".WmmVKTTTTKVW...",".S
 const CH_DASH_B  = ["SWmWmVVVVVYy....","SmMmmVKKKKVYy...",".WmmVKTTTTKVW...",".SSSSTTTTTTSS...",".SSSTTTTTTTSS...","..SSSSSSSSSS....","..KKWWWWWWKK....","..JJj..jJJ......",".JJj..jJJ.......",".nnn..nnn......."];
 
 // ---------------------------------------------------------------------------
+// TOA, la première tenue de Chopper, d'après le skin Toa de Roadhog. Dessinée
+// à la main par l'utilisateur dans mockups/chopper-skins.html, et reprise ici
+// telle quelle : masque blanc peint de rouge, paille sur l'épaule, torse
+// tatoué, bande verte, ceinture rouge et pagne tressé.
+const PAL_TOA = {
+  ...PAL_CH,
+  P: '#efe6d2', p: '#c4b89c',                  // le masque blanc et le tapa
+  R: '#b8262c', r: '#7e1418',                  // la peinture, la bouche, la ceinture
+  G: '#3f8a4a',                                // la bande verte
+  Z: '#d9b872', z: '#9e7c42',                  // la paille tressée
+  B: '#a0603f', b: '#6e3c26', D: '#3a2418',    // la peau et ses tatouages
+  F: '#f4f1ea', f: '#b9b4ab', N: '#161214'
+};
+const TOA_HEAD = ["...EKEEEE.......", "..KKpPPhhPp.....", ".KKpPrrPPrrp....", ".KpPPHHHHHHPp...",
+  ".KpPPVVHHVVHp...", ".KpPPHHhhHHHp...", ".EbhPPhpphPpb...", ".EbhPhERREhpb...",
+  ".EEpPERrRREP....", ".ZZZppphrRhN...."];
+const TOA_IDLE_B = ["ZZZZZBBBBbbb....", "ZZZZZBBBBBBBB...", ".ZZZBBbBbBbBB...", ".rBBBbpppbBBr...",
+  ".BBbppppppDBB...", "..GGGFFFFGGG....", "..RRRRPPRRRR....", ".ZzZzZzZzZzZz...",
+  ".zBz.z.z.zBzB...", ".bbb......bbb..."];
+// Seule la pose debout est dessinée : les cinq autres s'en déduisent à partir
+// des poses de Chopper, pour que Toa bouge exactement comme lui.
+// - Le haut garde le dessin ; seul le bras qui dépasse (lancer, plongeon) y
+//   est ajouté en peau. Au dash, le bras qui traîne reste caché sous la paille.
+// - Le pagne ne bouge pas de la hanche.
+// - Sous le pagne, les cordes pendent une colonne sur deux et les jambes de la
+//   pose passent entre elles — c'est la règle même du dessin.
+// - Les bottes deviennent des pieds nus.
+function corpsToa(base) {
+  return base.map((ligne, i) => {
+    if (i <= 6) {
+      return [...TOA_IDLE_B[i]].map((c, x) =>
+        c === '.' && ligne[x] !== '.' && CH_IDLE_B[i][x] === '.' ? 'B' : c).join('');
+    }
+    if (i === 7) return TOA_IDLE_B[7];
+    if (i === 8) return [...ligne].map((c, x) => (x % 2 && x <= 11 ? 'z' : c !== '.' ? 'B' : '.')).join('');
+    return ligne.replace(/n/g, 'b');
+  });
+}
+const SKIN_TOA = {
+  idle: buildSprite([...TOA_HEAD, ...corpsToa(CH_IDLE_B)], PAL_TOA),
+  run1: buildSprite([...TOA_HEAD, ...corpsToa(CH_RUN1_B)], PAL_TOA),
+  run2: buildSprite([...TOA_HEAD, ...corpsToa(CH_RUN2_B)], PAL_TOA),
+  throw: buildSprite([...TOA_HEAD, ...corpsToa(CH_THROW_B)], PAL_TOA),
+  dive: buildSprite([...TOA_HEAD, ...corpsToa(CH_DIVE_B)], PAL_TOA),
+  dash: buildSprite([...TOA_HEAD, ...corpsToa(CH_DASH_B)], PAL_TOA)
+};
+
+// ---------------------------------------------------------------------------
 // Yuki. Loup blanc de Michou, doudoune noire au kanji 雪 (« neige »).
 // Deux partis pris de dessin qui ont demandé une reprise complète :
 // 1. Un personnage blanc a besoin de QUATRE valeurs, pas deux. Avec seulement
@@ -1121,6 +1169,10 @@ export const CHARS = {
       throw: buildSprite([...CH_HEAD, ...CH_THROW_B], PAL_CH),
       dive: buildSprite([...CH_HEAD, ...CH_DIVE_B], PAL_CH),
       dash: buildSprite([...CH_HEAD, ...CH_DASH_B], PAL_CH)
+    },
+    skins: {
+      junker: null,             // rempli juste après : c'est `frames` lui-même
+      toa: SKIN_TOA
     }
   },
   yuki: {
@@ -1290,6 +1342,7 @@ export function portraitURL(ck) {
 // les sprites de base, ce qui évite de les dupliquer.
 CHARS.naruto.skins.shippuden = CHARS.naruto.frames;
 CHARS.isaac.skins.isaac = CHARS.isaac.frames;
+CHARS.chopper.skins.junker = CHARS.chopper.frames;
 CHARS.leon.skins.rpd = CHARS.leon.frames;
 CHARS.jingle.skins.polenord = CHARS.jingle.frames;
 CHARS.yoshi.skins.vert = CHARS.yoshi.frames;

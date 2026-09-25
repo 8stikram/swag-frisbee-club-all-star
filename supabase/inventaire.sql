@@ -73,6 +73,7 @@ insert into catalogue (id, type, prix) values
   ('tenue:isaac:cain', 'tenue', 200),
   ('tenue:isaac:azazel', 'tenue', 200),
   ('tenue:isaac:eve', 'tenue', 200),
+  ('tenue:chopper:toa', 'tenue', 200),
   ('tenue:jingle:smoking', 'tenue', 200),
   ('tenue:jingle:ninja', 'tenue', 200),
   ('tenue:jingle:cowboy', 'tenue', 200),
