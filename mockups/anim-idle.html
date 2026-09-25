@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Animation d'attente</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Russo+One&family=Barlow:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c16; --panel:#0e1626; --panel2:#121d33; --edge:#22344f; --ink:#e8f0ff; --doux:#8fa4c4;
+         --accent:#35e0ff; --or:#f6c945; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Barlow','Segoe UI',system-ui,sans-serif;font-size:14px;padding:0 16px 80px}
+  h1{font-family:'Archivo Black',sans-serif;font-size:24px;margin:22px 0 4px}
+  h2{font-family:'Russo One',sans-serif;font-size:17px;margin:20px 0 8px}
+  .note{color:var(--doux);max-width:1080px;line-height:1.6;margin:0 0 12px}
+  .note b{color:var(--or)}
+  button{font:inherit;cursor:pointer}
+  .disposition{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start}
+  @media (max-width:900px){ .disposition{grid-template-columns:1fr} }
+  .scene{position:sticky;top:8px}
+  canvas{display:block;width:100%;background:#020408;border:1px solid var(--edge);border-radius:10px;image-rendering:pixelated}
+  .legende{display:flex;justify-content:space-around;color:var(--doux);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin:6px 0 10px}
+  .legende b{color:var(--accent)}
+  .outils{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:8px 0}
+  .outils label{display:flex;align-items:center;gap:6px;color:var(--doux);font-weight:700;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+  select{background:var(--panel2);color:var(--ink);border:1px solid var(--edge);border-radius:6px;padding:5px 8px;font:inherit;font-size:13px}
+  input[type=range]{accent-color:var(--accent)}
+  .panneau{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px}
+  .choix{display:flex;flex-direction:column;gap:8px}
+  .carte{background:var(--panel2);border:1px solid var(--edge);border-radius:10px;padding:10px;cursor:pointer}
+  .carte.actif{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .carte .nom{font-weight:800;display:flex;align-items:center;gap:8px}
+  .carte .nom span{font-family:'Archivo Black',sans-serif;width:24px;height:24px;border-radius:6px;display:grid;place-items:center;background:#1b2a45;font-size:13px}
+  .carte .desc{color:var(--doux);font-size:12px;line-height:1.45;margin-top:4px}
+  .seg{display:flex;border:1px solid var(--edge);border-radius:8px;overflow:hidden}
+  .seg button{flex:1;background:var(--panel2);color:var(--doux);border:0;padding:8px;font-weight:800;font-size:12px}
+  .seg button.actif{background:var(--accent);color:#04121c}
+  .curseur{display:grid;grid-template-columns:90px 1fr 46px;align-items:center;gap:6px;font-size:12px;color:var(--doux);margin:6px 0}
+  .curseur input{width:100%}
+  .curseur span:last-child{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+  .curseur.off{opacity:.35;pointer-events:none}
+  .coches label{display:flex;gap:8px;align-items:flex-start;margin:6px 0;font-size:12.5px;color:var(--doux);cursor:pointer}
+  .coches b{color:var(--ink)}
+  textarea{width:100%;min-height:120px;background:#050a13;color:#bfe9ff;border:1px solid var(--edge);border-radius:8px;padding:10px;font:12px/1.45 ui-monospace,Consolas,monospace}
+  .ligne{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
+  .gros{border:0;border-radius:8px;padding:9px 14px;font-weight:800;color:#04121c;background:var(--accent)}
+  .btn{background:var(--panel2);color:var(--ink);border:1px solid var(--edge);border-radius:7px;padding:7px 11px;font-weight:700;font-size:12.5px}
+  .etat{color:var(--doux);font-size:12px}
+</style>
+</head>
+<body>
+<h1>Animation d'attente — Leon</h1>
+<p class="note">
+  Première animation du chantier : ce que fait le perso quand il ne bouge pas. À gauche l'<b>actuel</b> (image figée),
+  à droite la <b>proposition</b>. Le disque tourne dans le terrain d'en face pour voir la tête le suivre.
+  Choisis une variante, règle-la, puis compare les deux <b>rendus</b> : <b>pixel pur</b> (Rivals of Aether : tout bouge
+  par pixels entiers) ou <b>fluide</b> (Windjammers : continu, plus cartoon). La bande du bas montre la même attente sur
+  tout le roster, pour vérifier qu'elle marche pour tout le monde avant la touche perso. Quand c'est bon : Copier, et colle-moi le JSON.
+</p>
+
+<div class="disposition">
+  <div class="scene">
+    <canvas id="terrain" width="960" height="400"></canvas>
+    <div class="legende"><span>Actuel</span><span><b>Proposition</b></span></div>
+    <div class="outils">
+      <label>Zoom <select id="zoom"><option value="1">×1 (taille du match)</option><option value="2" selected>×2</option><option value="3">×3</option></select></label>
+      <label><input type="checkbox" id="ralenti"> Ralenti ×0,25</label>
+      <label><input type="checkbox" id="disque" checked> Disque en jeu</label>
+      <label>Perso <select id="perso"></select></label>
+    </div>
+    <canvas id="roster" width="960" height="150"></canvas>
+  </div>
+
+  <div class="panneau">
+    <h2 style="margin-top:0">Variante</h2>
+    <div class="choix" id="variantes"></div>
+    <h2>Rendu</h2>
+    <div class="seg" id="rendu"><button data-v="pixel">Pixel pur</button><button data-v="fluide">Fluide</button></div>
+    <h2>Réglages</h2>
+    <div id="curseurs"></div>
+    <h2>Autour du perso</h2>
+    <div class="coches">
+      <label><input type="checkbox" id="ombre"> <span><b>Ombre vivante</b> — elle s'écrase avec lui et rétrécit quand il décolle.</span></label>
+      <label><input type="checkbox" id="poussiere"> <span><b>Poussière aux appuis</b> — un petit nuage à chaque retour au sol (utile surtout pour « prêt à bondir »).</span></label>
+    </div>
+    <h2>Tout copier / coller</h2>
+    <textarea id="json" spellcheck="false"></textarea>
+    <div class="ligne">
+      <button class="gros" id="copier">Copier</button>
+      <button class="btn" id="appliquer">Appliquer</button>
+      <button class="btn" id="raz">Ma proposition</button>
+      <span class="etat" id="etat"></span>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { CHARS, ROSTER } from '../js/data/characters.js';
+import { poseIdle, dessinerCorps, POSE_NEUTRE } from '../js/render/anim-perso.js';
+
+const VARIANTES = [
+  { id: 'respiration', l: 'A', nom: 'Respiration', desc: 'Le torse gonfle et se relâche, la tête suit avec un léger retard. Calme, sobre.', reglages: ['amplitude', 'vitesse'] },
+  { id: 'bondir', l: 'B', nom: 'Prêt à bondir', desc: 'Petits rebonds sur les appuis, genoux qui plient au contact : le joueur de tennis qui attend le service.', reglages: ['amplitude', 'vitesse'] },
+  { id: 'garde', l: 'C', nom: 'Garde active', desc: 'Il respire, fait passer son poids d\'un pied sur l\'autre et ne quitte pas le disque des yeux.', reglages: ['amplitude', 'vitesse', 'suivi'] },
+  { id: 'showoff', l: 'D', nom: 'Garde + tics', desc: 'La garde active, plus de temps en temps un petit geste : il s\'arme, se redresse d\'un coup, se repose.', reglages: ['amplitude', 'vitesse', 'suivi', 'tics'] }
+];
+const CURSEURS = {
+  amplitude: ['Amplitude', .3, 2, .05, v => Math.round(v * 100) + '%'],
+  vitesse: ['Vitesse', .4, 2, .05, v => Math.round(v * 100) + '%'],
+  suivi: ['Suivi disque', 0, 1.5, .05, v => Math.round(v * 100) + '%'],
+  tics: ['Fréquence tics', .3, 3, .05, v => '×' + v.toFixed(2)]
+};
+// Réglage validé (anim-idle.reglages.json) : la garde active, fluide, discrète.
+const DEFAUT = () => ({ variante: 'garde', rendu: 'fluide', reglages: { amplitude: .3, vitesse: .8, suivi: .6, tics: .3 }, ombre: true, poussiere: false });
+const $ = s => document.querySelector(s);
+let E;
+try { E = { ...DEFAUT(), ...JSON.parse(localStorage.getItem('animIdle') || '{}') }; } catch (e) { E = DEFAUT(); }
+function sauver() { try { localStorage.setItem('animIdle', JSON.stringify(E)); } catch (e) {} majJson(); }
+
+// --- Panneau ------------------------------------------------------------------
+function construire() {
+  $('#variantes').innerHTML = '';
+  for (const v of VARIANTES) {
+    const c = document.createElement('div');
+    c.className = 'carte' + (E.variante === v.id ? ' actif' : '');
+    c.innerHTML = `<div class="nom"><span>${v.l}</span>${v.nom}</div><div class="desc">${v.desc}</div>`;
+    c.onclick = () => { E.variante = v.id; sauver(); construire(); };
+    $('#variantes').appendChild(c);
+  }
+  document.querySelectorAll('#rendu button').forEach(b => {
+    b.classList.toggle('actif', b.dataset.v === E.rendu);
+    b.onclick = () => { E.rendu = b.dataset.v; sauver(); construire(); };
+  });
+  const utiles = VARIANTES.find(v => v.id === E.variante).reglages;
+  $('#curseurs').innerHTML = '';
+  for (const [cle, [nom, min, max, pas, fmt]] of Object.entries(CURSEURS)) {
+    const l = document.createElement('div'); l.className = 'curseur' + (utiles.includes(cle) ? '' : ' off');
+    l.innerHTML = `<span>${nom}</span><input type="range" min="${min}" max="${max}" step="${pas}" value="${E.reglages[cle]}"><span>${fmt(E.reglages[cle])}</span>`;
+    const i = l.querySelector('input');
+    i.oninput = () => { E.reglages[cle] = +i.value; l.lastElementChild.textContent = fmt(+i.value); sauver(); };
+    l.ondblclick = () => { E.reglages[cle] = 1; construire(); sauver(); };
+    $('#curseurs').appendChild(l);
+  }
+  $('#ombre').checked = E.ombre; $('#poussiere').checked = E.poussiere;
+}
+$('#ombre').onchange = e => { E.ombre = e.target.checked; sauver(); };
+$('#poussiere').onchange = e => { E.poussiere = e.target.checked; sauver(); };
+for (const id of ROSTER) $('#perso').add(new Option(CHARS[id].short, id));
+$('#perso').value = 'leon';
+
+// --- Scène ---------------------------------------------------------------------
+// Même échelle que le match : un pixel du sprite = 3 × 1,6 = 4,8 px.
+const EM = 3 * 1.6;
+const cv = $('#terrain'), g = cv.getContext('2d');
+const rc = $('#roster'), gr = rc.getContext('2d');
+g.imageSmoothingEnabled = false; gr.imageSmoothingEnabled = false;
+const poussieres = [];
+const dernierAppui = {};
+
+function ombre(ctx, x, y, e, pose, vivante) {
+  let rx = 17 * 1.6 * (e / EM), ry = rx * .36, a = .33;
+  if (vivante) { rx *= pose.sx * (1 - .25 * pose.haut); ry *= (1 - .2 * pose.haut); a *= 1 - .35 * pose.haut; }
+  ctx.fillStyle = `rgba(0,0,20,${a})`;
+  ctx.beginPath(); ctx.ellipse(x, y + 2 * (e / EM), rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+}
+
+function perso(ctx, img, x, y, e, pose, cle) {
+  if (E.ombre || cle !== 'prop') ombre(ctx, x, y, e, pose, E.ombre && cle !== 'actuel');
+  // Poussière : au moment où il retouche le sol.
+  if (E.poussiere && cle !== 'actuel') {
+    const k = cle + ':' + x;
+    if (pose.appui && !dernierAppui[k]) for (const s of [-1, 1]) poussieres.push({ ctx, x: x + s * 6 * e / EM, y, vx: s * (18 + Math.random() * 12) * e / EM, vie: .35, e });
+    dernierAppui[k] = pose.appui;
+  }
+  ctx.save(); ctx.translate(Math.round(x), Math.round(y));
+  dessinerCorps(ctx, img, pose, cle === 'actuel' ? 'pixel' : E.rendu, e);
+  ctx.restore();
+}
+
+function terrain() {
+  g.fillStyle = '#020408'; g.fillRect(0, 0, 960, 400);
+  g.fillStyle = 'rgba(15,26,46,0.9)'; g.fillRect(20, 30, 920, 360);
+  g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = 2; g.strokeRect(20, 30, 920, 360);
+  g.setLineDash([8, 8]); g.beginPath(); g.moveTo(740, 30); g.lineTo(740, 390); g.stroke(); g.setLineDash([]);
+}
+
+let t = 0, prec = performance.now();
+function image(now) {
+  const dt = Math.min(.05, (now - prec) / 1000) * ($('#ralenti').checked ? .25 : 1); prec = now; t += dt;
+  const z = +$('#zoom').value, e = EM * z;
+  terrain();
+  // Le disque : une boucle à droite de la proposition, de haut en bas.
+  const dX = 850 + Math.cos(t * 1.3) * 80, dY = 220 + Math.sin(t * 1.9) * 150;
+  const img = CHARS[$('#perso').value].frames.idle;
+  // Pieds calés pour que le perso tienne dans le cadre à tous les zooms.
+  const pieds = 200 + 60 * z;
+  const xA = 250, xB = 590;
+  const info = { versDisque: $('#disque').checked ? { x: (dX - xB) / z * 1.5, y: (dY - (pieds - 12 * e)) / z } : null, graine: 0 };
+  perso(g, img, xA, pieds, e, POSE_NEUTRE, 'actuel');
+  perso(g, img, xB, pieds, e, poseIdle(E.variante, t, E.reglages, info), 'prop');
+  if ($('#disque').checked) {
+    g.fillStyle = '#f6c945'; g.beginPath(); g.arc(dX, dY, 12, 0, 7); g.fill();
+    g.strokeStyle = '#7a5a10'; g.lineWidth = 2; g.stroke();
+  }
+  // Roster : tout le monde avec la même attente, à la taille du match, chacun
+  // décalé dans le temps (sinon ils respirent tous ensemble, comme un ballet).
+  gr.fillStyle = '#0a1322'; gr.fillRect(0, 0, 960, 150);
+  ROSTER.forEach((id, i) => {
+    const x = 40 + i * 80, y = 128;
+    const p = poseIdle(E.variante, t + i * .37, E.reglages, { versDisque: { x: 200, y: -40 }, graine: i * 1.7 });
+    perso(gr, CHARS[id].frames.idle, x, y, EM, p, 'roster' + i);
+  });
+  // Poussière.
+  for (let i = poussieres.length - 1; i >= 0; i--) {
+    const d = poussieres[i]; d.vie -= dt; d.x += d.vx * dt; d.y -= 6 * dt * d.e / EM;
+    if (d.vie <= 0) { poussieres.splice(i, 1); continue; }
+    const s = Math.max(1, Math.round(d.e * .6));
+    d.ctx.fillStyle = `rgba(220,225,235,${d.vie / .35 * .6})`;
+    d.ctx.fillRect(Math.round(d.x), Math.round(d.y - s), s, s);
+  }
+  requestAnimationFrame(image);
+}
+
+// --- Export --------------------------------------------------------------------
+function majJson() { $('#json').value = JSON.stringify({ mockup: 'anim-idle', version: 1, ...E }, null, 1); }
+$('#copier').onclick = async () => {
+  try { await navigator.clipboard.writeText($('#json').value); } catch (e) { $('#json').select(); document.execCommand('copy'); }
+  $('#etat').textContent = 'Copié.';
+};
+$('#appliquer').onclick = () => {
+  try { const j = JSON.parse($('#json').value); E = { ...DEFAUT(), variante: j.variante, rendu: j.rendu, reglages: { ...DEFAUT().reglages, ...j.reglages }, ombre: !!j.ombre, poussiere: !!j.poussiere }; sauver(); construire(); $('#etat').textContent = 'Appliqué.'; }
+  catch (e) { $('#etat').textContent = 'JSON illisible : ' + e.message; }
+};
+$('#raz').onclick = () => { E = DEFAUT(); sauver(); construire(); };
+construire(); majJson();
+requestAnimationFrame(image);
+window.__anim = { E, poseIdle };
+</script>
+</body>
+</html>

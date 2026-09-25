@@ -13,6 +13,7 @@ import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SP
          PS_CHANT, PS_CHUTE, PS_IMPACT, PS_DUREE } from '../data/specials.js';
 import { CHARS } from '../data/characters.js';
 import { dessinerSusanoo } from './susanoo.js';
+import { poseIdle, dessinerCorps, decalageTete, IDLE_JEU } from './anim-perso.js';
 
 // La clarté du sol de la carte en cours, mesurée une fois par carte. Elle sert
 // au Susanoo, qui se peint autrement sur un sol clair. Une couleur qu'on ne
@@ -1698,10 +1699,20 @@ function drawBouclier(p) {
   ctx.restore();
 }
 
+// L'attente animée (voir anim-perso.js). Le regard suit le disque : son écart
+// est donné vers l'AVANT du perso, d'où le produit par `face`, et en hauteur
+// par rapport à sa tête. L'horloge est celle de l'affichage, pas du match :
+// G.now repart de zéro à chaque engagement et l'attente sauterait. Les deux
+// joueurs sont décalés, sinon ils respirent ensemble comme un ballet.
+function poseAttente(p) {
+  const d = G.disc;
+  const info = { versDisque: d ? { x: (d.x - p.x) * p.face, y: d.y - (p.y - 24) } : null };
+  return poseIdle(IDLE_JEU.variante, performance.now() / 1000 + p.side * 1.9, IDLE_JEU.reglages, info);
+}
+
 function drawPlayer(p) {
   const c = p.char;
   drawGhosts(p);
-  drawShadow(p.x, p.y, 17 * SCALE);
   let fr = p.forceFr;
   if (!fr) {
     fr = 'idle';
@@ -1718,6 +1729,10 @@ function drawPlayer(p) {
     else if (p.holding && (p.charging || p.throwPoseT > 0)) fr = 'throw';
     else if (p.moving) fr = (Math.floor(p.walk) % 2) ? 'run1' : 'run2';
   }
+  // Seule l'attente est animée pour l'instant : les autres poses gardent leur
+  // image telle quelle en attendant leur tour. L'ombre suit la pose.
+  const pose = fr === 'idle' ? poseAttente(p) : null;
+  drawShadow(p.x, p.y, 17 * SCALE * (pose && IDLE_JEU.ombre ? pose.sx * (1 - .25 * pose.haut) : 1));
   // Les six orbes passent AVANT le sprite : elles gravitent derrière lui, elles
   // ne doivent jamais recouvrir ni son corps ni le disque qu'il tient.
   if (p.sixT > 0) dessinerOrbes(p);
@@ -1748,8 +1763,15 @@ function drawPlayer(p) {
     // dixième porte l'écharpe, qui appartient aux épaules et ne doit donc pas
     // s'envoler avec la cloche.
     const OR = 9, LIGNE = 3 * SCALE;
-    ctx.drawImage(img, 0, OR, 16, 20 - OR,
+    if (pose) {
+      ctx.save(); ctx.translate(0, 60 * SCALE);
+      dessinerCorps(ctx, img, pose, IDLE_JEU.rendu, LIGNE, OR);
+      ctx.restore();
+    } else ctx.drawImage(img, 0, OR, 16, 20 - OR,
       -24 * SCALE, OR * LIGNE, 48 * SCALE, (20 - OR) * LIGNE);
+    // La cloche suit les épaules quand il respire : elle lévite AU-DESSUS
+    // d'elles, pas au-dessus de l'endroit où elles étaient.
+    const suit = pose ? decalageTete(pose, IDLE_JEU.rendu, LIGNE) : { x: 0, y: 0 };
     // Retard sur le mouvement + oscillation lente et rotation légère.
     p.bellLag = p.bellLag || { x: 0, y: 0, a: 0 };
     const vx = p.vx + p.dashV.x, vy = p.vy + p.dashV.y;
@@ -1762,11 +1784,14 @@ function drawPlayer(p) {
     if (!enUlti) {
       const flot = Math.sin(G.now * 2.4 + p.side) * 2.4;
       ctx.save();
-      ctx.translate(p.bellLag.x * SCALE, p.bellLag.y * SCALE + flot - 6);
+      ctx.translate(p.bellLag.x * SCALE + suit.x, p.bellLag.y * SCALE + flot - 6 + suit.y);
       ctx.rotate(p.bellLag.a + Math.sin(G.now * 1.7) * .05);
       ctx.drawImage(img, 0, 0, 16, OR, -24 * SCALE, 0, 48 * SCALE, OR * LIGNE);
       ctx.restore();
     }
+  } else if (pose) {
+    ctx.translate(0, 60 * SCALE);                 // l'origine passe aux pieds
+    dessinerCorps(ctx, img, pose, IDLE_JEU.rendu, 3 * SCALE);
   } else {
     ctx.drawImage(img, -24 * SCALE, 0, 48 * SCALE, 60 * SCALE);
   }

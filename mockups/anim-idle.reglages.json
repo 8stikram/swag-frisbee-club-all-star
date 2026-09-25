@@ -1,0 +1,15 @@
+{
+ "mockup": "anim-idle",
+ "version": 1,
+ "variante": "garde",
+ "rendu": "fluide",
+ "reglages": {
+  "amplitude": 0.3,
+  "vitesse": 0.8,
+  "suivi": 0.6,
+  "tics": 0.3
+ },
+ "ombre": true,
+ "poussiere": false,
+ "note": "Validé le 25/09/2026, avec une consigne : la tête ne doit jamais flotter au-dessus du corps (règle appliquée dans js/render/anim-perso.js)."
+}
