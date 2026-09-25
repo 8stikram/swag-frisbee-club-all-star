@@ -10,6 +10,9 @@ export function buildSprite(rows, pal) {
       if (ch !== '.') { g.fillStyle = pal[ch]; g.fillRect(x, y, 1, 1); }
     }
   });
+  // Gardés pour mockups/atelier-tenues.html : il relit chaque tenue telle que
+  // le jeu l'assemble, y compris celles que des fonctions construisent.
+  c.rows = rows; c.pal = pal;
   return c;
 }
 

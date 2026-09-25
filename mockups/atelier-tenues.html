@@ -1,0 +1,1112 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Atelier des tenues</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07120c; --panel:#0e1e15; --panel2:#122619; --edge:#244433; --edge2:#3d7a58;
+    --ink:#e8f5ec; --doux:#8fb7a1; --pale:#5f8a74; --accent:#3fae70; --or:#f5c542; --rouge:#e0564a;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;
+       display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;user-select:none}
+  button{font:inherit;color:inherit}
+  .mono{font-family:Consolas,monospace}
+
+  /* ---- barre du haut ---------------------------------------------------- */
+  #haut{display:flex;align-items:center;gap:12px;padding:9px 14px;background:var(--panel);
+        border-bottom:1px solid var(--edge)}
+  #haut h1{font-family:'Archivo Black',sans-serif;font-size:17px;margin:0;letter-spacing:.6px;white-space:nowrap}
+  #fil{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--doux);margin-left:10px}
+  #fil b{color:var(--or);letter-spacing:.6px}
+  .nav{background:var(--panel2);border:1px solid var(--edge);border-radius:7px;width:28px;height:28px;
+       cursor:pointer;font-size:14px;line-height:1}
+  .nav:hover{border-color:var(--edge2)}
+  #etat{font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid var(--edge);color:var(--pale)}
+  #etat.modif{border-color:#a8742a;color:var(--or);background:#2a2110}
+  .espace{flex:1}
+  .gros{background:var(--panel2);border:1px solid var(--edge);border-radius:8px;padding:7px 13px;
+        font-size:12px;cursor:pointer;white-space:nowrap;letter-spacing:.3px}
+  .gros:hover{border-color:var(--edge2);background:#18301f}
+  .gros.or{border-color:#8a6f1f;color:var(--or)}
+  .gros.or:hover{background:#2a2410}
+
+  /* ---- les trois colonnes ---------------------------------------------- */
+  #corps{display:grid;grid-template-columns:230px 52px 1fr 300px;min-height:0}
+
+  /* le roster */
+  #roster{background:var(--panel);border-right:1px solid var(--edge);display:flex;flex-direction:column;min-height:0}
+  #cherche{margin:10px;padding:7px 10px;border-radius:8px;border:1px solid var(--edge);background:#0a1710;
+           color:var(--ink);font-size:12.5px;outline:none}
+  #cherche:focus{border-color:var(--edge2)}
+  #liste{overflow:auto;padding:0 8px 14px;flex:1}
+  .perso{margin-top:10px}
+  .perso h4{margin:0 0 4px;font-size:10.5px;letter-spacing:1.4px;color:var(--accent);display:flex;gap:6px;
+            align-items:center;padding:0 4px}
+  .perso h4 span{color:var(--pale);font-weight:normal;letter-spacing:.3px;font-size:10px}
+  .tenue{display:flex;align-items:center;gap:9px;padding:4px 6px;border-radius:8px;cursor:pointer;
+         border:1px solid transparent}
+  .tenue:hover{background:var(--panel2)}
+  .tenue.on{background:#16281c;border-color:var(--or)}
+  .tenue canvas{width:32px;height:40px;image-rendering:pixelated;background:#0a1710;border-radius:4px;flex:0 0 auto}
+  .tenue .nom{font-size:12px;letter-spacing:.3px;line-height:1.25}
+  .tenue .nom small{display:block;color:var(--pale);font-size:10px}
+  .tenue .point{margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--or);display:none;flex:0 0 auto}
+  .tenue.retouchee .point{display:block}
+
+  /* les outils */
+  #outils{background:var(--panel);border-right:1px solid var(--edge);display:flex;flex-direction:column;
+          align-items:center;gap:4px;padding:10px 0}
+  .outil{position:relative;width:38px;height:38px;border-radius:9px;border:1px solid transparent;
+         background:transparent;cursor:pointer;display:grid;place-items:center;color:var(--doux)}
+  .outil:hover{background:var(--panel2);color:var(--ink)}
+  .outil.on{background:#1d3a28;border-color:var(--accent);color:var(--ink)}
+  .outil svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .outil .bulle{position:absolute;left:46px;top:50%;transform:translateY(-50%);background:#02080a;
+                border:1px solid var(--edge2);padding:5px 9px;border-radius:7px;font-size:11.5px;white-space:nowrap;
+                pointer-events:none;opacity:0;transition:opacity .12s;z-index:20;color:var(--ink)}
+  .outil .bulle kbd{color:var(--or);font-family:Consolas,monospace;margin-left:6px}
+  .outil:hover .bulle{opacity:1}
+  .sep{width:28px;height:1px;background:var(--edge);margin:5px 0}
+  #duo{position:relative;width:40px;height:40px;margin-top:6px}
+  #duo div{position:absolute;width:24px;height:24px;border-radius:5px;border:2px solid #02080a;cursor:pointer;
+           box-shadow:0 0 0 1px var(--edge2)}
+  #c1{left:0;top:0;z-index:2} #c2{right:0;bottom:0}
+  #duoEch{font-size:10px;color:var(--pale);margin-top:2px;cursor:pointer}
+
+  /* la zone de dessin */
+  #centre{display:flex;flex-direction:column;min-width:0;min-height:0}
+  #options{display:flex;align-items:center;gap:14px;padding:7px 14px;background:#0b1811;border-bottom:1px solid var(--edge);
+           font-size:12px;color:var(--doux);min-height:42px;flex-wrap:wrap}
+  #options .titreOutil{color:var(--ink);font-weight:600;letter-spacing:.3px}
+  .seg{display:inline-flex;border:1px solid var(--edge);border-radius:7px;overflow:hidden}
+  .seg button{background:transparent;border:0;padding:4px 10px;cursor:pointer;font-size:11.5px;color:var(--doux)}
+  .seg button+button{border-left:1px solid var(--edge)}
+  .seg button.on{background:#1d3a28;color:var(--ink)}
+  .bascule{display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:4px 9px;border:1px solid var(--edge);
+           border-radius:7px;font-size:11.5px}
+  .bascule.on{border-color:var(--accent);color:var(--ink);background:#15301f}
+  .bascule kbd,.seg kbd{font-family:Consolas,monospace;color:var(--pale);font-size:10.5px}
+  #scene{flex:1;position:relative;min-height:0}
+  #toile{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
+  #astuce{position:absolute;left:14px;bottom:10px;font-size:11px;color:var(--pale);pointer-events:none}
+
+  /* la colonne de droite */
+  #droite{background:var(--panel);border-left:1px solid var(--edge);overflow:auto;padding:4px 14px 20px}
+  #droite h3{font-size:10.5px;letter-spacing:1.4px;color:var(--accent);margin:16px 0 8px;text-transform:uppercase;
+             display:flex;align-items:center;gap:8px}
+  #droite h3 span{color:var(--pale);font-weight:normal;letter-spacing:.3px;text-transform:none;font-size:10.5px}
+  #palette{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+  .pastille{position:relative;aspect-ratio:1;border-radius:7px;cursor:pointer;border:2px solid #02080a;
+            box-shadow:0 0 0 1px var(--edge)}
+  .pastille:hover{box-shadow:0 0 0 1px var(--edge2)}
+  .pastille .l{position:absolute;left:3px;top:1px;font:bold 10px Consolas,monospace;color:#fff;
+               text-shadow:0 0 2px #000,0 0 2px #000}
+  .pastille .n{position:absolute;right:3px;bottom:1px;font:9px Consolas,monospace;color:#fff;
+               text-shadow:0 0 2px #000,0 0 2px #000}
+  .pastille.p1{box-shadow:0 0 0 2px var(--or)}
+  .pastille.p2{box-shadow:0 0 0 2px #9fb4c8}
+  .pastille.p1.p2{box-shadow:0 0 0 2px var(--or),0 0 0 4px #9fb4c8}
+  .pastille.inutile{opacity:.35}
+  .pastille.change::after{content:'';position:absolute;right:-3px;top:-3px;width:8px;height:8px;border-radius:50%;
+                          background:var(--or);border:1px solid #02080a}
+  .damier{background:repeating-conic-gradient(#3a4a42 0 25%,#243029 0 50%) 0 0/10px 10px}
+  #edite{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  #edite input[type=color]{width:38px;height:30px;border:1px solid var(--edge);border-radius:7px;background:none;padding:1px;cursor:pointer}
+  #hex{width:84px;background:#0a1710;border:1px solid var(--edge);border-radius:7px;color:var(--ink);padding:6px 8px;
+       font-family:Consolas,monospace;font-size:12px;outline:none}
+  #hex:focus{border-color:var(--edge2)}
+  .petit{background:var(--panel2);border:1px solid var(--edge);border-radius:7px;padding:5px 9px;font-size:11px;cursor:pointer}
+  .petit:hover{border-color:var(--edge2)}
+  .petit:disabled{opacity:.4;cursor:default}
+  #aideCouleur{font-size:11px;color:var(--pale);margin-top:7px;line-height:1.5}
+  .vitrine{display:flex;gap:8px;flex-wrap:wrap}
+  .vitrine figure{margin:0;text-align:center;font-size:10px;color:var(--pale)}
+  .vitrine canvas{display:block;border-radius:7px;image-rendering:pixelated;border:1px solid var(--edge)}
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .actions .petit{text-align:left;padding:7px 9px}
+  .actions kbd{float:right;font-family:Consolas,monospace;color:var(--pale);font-size:10px}
+
+  /* la barre d'état */
+  #bas{display:flex;gap:18px;padding:5px 14px;background:#040b07;border-top:1px solid var(--edge);font-size:11.5px;
+       color:var(--pale);font-family:Consolas,monospace;white-space:nowrap;overflow:hidden}
+  #bas b{color:var(--doux);font-weight:normal}
+
+  /* fenêtres */
+  .voile{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;place-items:center;z-index:50}
+  .voile.ouvert{display:grid}
+  .fenetre{background:var(--panel);border:1px solid var(--edge2);border-radius:14px;padding:18px;width:min(720px,92vw);
+           max-height:88vh;display:flex;flex-direction:column;gap:10px}
+  .fenetre h2{margin:0;font-family:'Archivo Black',sans-serif;font-size:16px;letter-spacing:.5px}
+  .fenetre p{margin:0;font-size:12.5px;color:var(--doux);line-height:1.6}
+  .fenetre textarea{flex:1;min-height:320px;background:#0a1710;border:1px solid var(--edge);border-radius:9px;
+                    color:var(--or);font:12px/1.5 Consolas,monospace;padding:10px;resize:vertical;outline:none;user-select:text}
+  .fenetre .ligneBtn{display:flex;gap:8px;justify-content:flex-end}
+  .raccourcis{display:grid;grid-template-columns:1fr 1fr;gap:4px 26px;font-size:12.5px;overflow:auto}
+  .raccourcis div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #16281c;padding:4px 0}
+  .raccourcis kbd{font-family:Consolas,monospace;color:var(--or)}
+  .raccourcis h5{grid-column:1/-1;margin:10px 0 2px;color:var(--accent);font-size:11px;letter-spacing:1.3px}
+  #toast{position:fixed;left:50%;bottom:44px;transform:translateX(-50%) translateY(20px);background:#1d4a33;
+         border:1px solid #2f7a52;color:#b6f5cf;padding:8px 16px;border-radius:9px;font-size:12.5px;opacity:0;
+         transition:opacity .18s,transform .18s;pointer-events:none;z-index:60}
+  #toast.vu{opacity:1;transform:translateX(-50%)}
+  #erreur{position:fixed;inset:0;display:none;place-items:center;background:var(--bg);color:var(--rouge);
+          font:14px Consolas,monospace;padding:30px;white-space:pre-wrap;z-index:99}
+</style>
+</head>
+<body>
+
+<header id="haut">
+  <h1>ATELIER DES TENUES</h1>
+  <div id="fil">
+    <button class="nav" id="prec" title="Tenue précédente  [">‹</button>
+    <span id="filTexte"></span>
+    <button class="nav" id="suiv" title="Tenue suivante  ]">›</button>
+  </div>
+  <span id="etat">intacte</span>
+  <div class="espace"></div>
+  <button class="gros" id="btnColler">Coller des retouches</button>
+  <button class="gros or" id="btnExport">Copier mes retouches</button>
+  <button class="gros" id="btnAide" title="Raccourcis  ?">?</button>
+</header>
+
+<main id="corps">
+  <aside id="roster">
+    <input id="cherche" placeholder="Chercher un perso, une tenue…" autocomplete="off">
+    <div id="liste"></div>
+  </aside>
+
+  <nav id="outils"></nav>
+
+  <section id="centre">
+    <div id="options"></div>
+    <div id="scene">
+      <canvas id="toile"></canvas>
+      <div id="astuce">Clic gauche : couleur 1 · clic droit : couleur 2 · Alt : pipette · Espace maintenu : voir l'original</div>
+    </div>
+  </section>
+
+  <aside id="droite">
+    <h3>Couleurs <span id="nbCouleurs"></span></h3>
+    <div id="palette"></div>
+    <div id="edite">
+      <input type="color" id="picker" title="Changer la teinte de la couleur 1">
+      <input id="hex" class="mono" spellcheck="false" maxlength="7">
+      <button class="petit" id="nouvelle" title="Ajoute la teinte du sélecteur comme nouvelle couleur">+ nouvelle couleur</button>
+      <button class="petit" id="retablirCouleur" title="Rend à la couleur 1 sa teinte d'origine">teinte d'origine</button>
+    </div>
+    <div id="aideCouleur">Changer la teinte d'une couleur la change partout sur la tenue. Clic droit sur une pastille : couleur 2.</div>
+
+    <h3>Avant / après</h3>
+    <div class="vitrine" id="avantApres"></div>
+
+    <h3>Dans le match <span>à l'échelle, dans les deux sens</span></h3>
+    <div class="vitrine" id="match"></div>
+
+    <div id="blocChromas">
+      <h3>Chromas <span>ils suivent tes retouches</span></h3>
+      <div class="vitrine" id="chromas"></div>
+    </div>
+
+    <h3>Toute la tenue</h3>
+    <div class="actions">
+      <button class="petit" data-act="gauche">Décaler ← <kbd>⇧←</kbd></button>
+      <button class="petit" data-act="droite">Décaler → <kbd>⇧→</kbd></button>
+      <button class="petit" data-act="haut">Décaler ↑ <kbd>⇧↑</kbd></button>
+      <button class="petit" data-act="bas">Décaler ↓ <kbd>⇧↓</kbd></button>
+      <button class="petit" data-act="miroir">Miroir <kbd>H</kbd></button>
+      <button class="petit" data-act="copierTenue">Copier cette tenue</button>
+      <button class="petit" data-act="reset" style="grid-column:1/-1;color:var(--rouge)">Repartir de la tenue du jeu</button>
+    </div>
+  </aside>
+</main>
+
+<footer id="bas">
+  <span>outil <b id="sOutil"></b></span>
+  <span>case <b id="sCase">—</b></span>
+  <span>couleur <b id="sLettre">—</b></span>
+  <span>retouches <b id="sTotal">0</b></span>
+  <span id="sInfo"></span>
+</footer>
+
+<div class="voile" id="vExport"><div class="fenetre">
+  <h2>TES RETOUCHES</h2>
+  <p>Seulement les tenues que tu as modifiées. Copie tout et envoie-le tel quel : chaque tenue donne ses lignes de tête et
+     de corps, et les couleurs changées ou ajoutées.</p>
+  <textarea id="txtExport" readonly></textarea>
+  <div class="ligneBtn"><button class="gros" data-ferme>Fermer</button><button class="gros or" id="copierExport">Copier</button></div>
+</div></div>
+
+<div class="voile" id="vColler"><div class="fenetre">
+  <h2>COLLER DES RETOUCHES</h2>
+  <p>Colle un bloc copié ici (le tien, ou une seule tenue) : les tenues qu'il contient sont remplacées, les autres ne bougent pas.
+     Ça s'annule tenue par tenue avec Ctrl+Z.</p>
+  <textarea id="txtColler" spellcheck="false"></textarea>
+  <div class="ligneBtn"><button class="gros" data-ferme>Fermer</button><button class="gros or" id="appliquer">Appliquer</button></div>
+</div></div>
+
+<div class="voile" id="vAide"><div class="fenetre">
+  <h2>RACCOURCIS</h2>
+  <div class="raccourcis" id="listeRaccourcis"></div>
+  <div class="ligneBtn"><button class="gros" data-ferme>Fermer</button></div>
+</div></div>
+
+<div id="toast"></div>
+<div id="erreur"></div>
+
+<script type="module">
+// ---------------------------------------------------------------------------
+// L'ATELIER DES TENUES. Toutes les tenues du jeu, pose debout, retouchables au
+// pixel — sauf les chromas, qui ne sont que des teintes de leur tenue de base :
+// ils suivent tout seuls, on les voit changer à droite.
+//
+// Les lignes viennent du jeu lui-même (buildSprite garde `rows` et `pal` sur
+// chaque sprite) : une tenue ajoutée demain apparaît ici sans rien toucher.
+//
+// Ce qu'on retouche vit dans localStorage, tenue par tenue. « Copier mes
+// retouches » sort un seul bloc avec ce qui a changé, et c'est ce bloc qui
+// part dans le jeu.
+// ---------------------------------------------------------------------------
+import { CHARS, ROSTER } from '../js/data/characters.js';
+import { SKINS } from '../js/data/skins-perso.js';
+
+const L = 16, H = 20;
+const INTERDITE = 15;         // le jeu retourne le sprite en c -> 15-c : cette colonne reste vide
+const CLE = 'atelierTenues:v1', CLE_UI = 'atelierTenues:ui';
+const LETTRES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const $ = id => document.getElementById(id);
+const lireLS = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v ?? d; } catch (e) { return d; } };
+const ecrireLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
+
+// ---- 1. Les tenues ---------------------------------------------------------
+const TENUES = [];            // { cle, ck, id, nom, perso, rows0, pal0, chromas: [{nom, diff}] }
+try {
+  for (const ck of ROSTER) {
+    const c = CHARS[ck], liste = SKINS[ck] || [];
+    const base = liste.find(s => s.defaut) || liste[0];
+    for (const s of liste) {
+      if (s.chroma) continue;
+      const jeu = (c.skins && c.skins[s.id]) || (s.defaut ? c.frames : null);
+      const sp = jeu && jeu.idle;
+      if (!sp || !sp.rows) continue;
+      const rows0 = sp.rows.map(r => (r + '.'.repeat(L)).slice(0, L));
+      const t = { cle: ck + ':' + s.id, ck, id: s.id, nom: s.nom, perso: c.short || c.name,
+                  rows0, pal0: { ...sp.pal }, chromas: [] };
+      // Les chromas ne se rattachent qu'à la tenue de base, et seulement s'ils
+      // gardent ses lignes : alors ce n'est qu'une palette, qu'on rejoue.
+      if (s === base) {
+        for (const ch of liste.filter(x => x.chroma)) {
+          const cs = c.skins && c.skins[ch.id] && c.skins[ch.id].idle;
+          if (!cs || !cs.rows) continue;
+          const diff = {};
+          for (const [k, v] of Object.entries(cs.pal)) if (sp.pal[k] !== v) diff[k] = v;
+          const memes = cs.rows.join() === sp.rows.join();
+          t.chromas.push({ nom: ch.nom, diff, rows: memes ? null : cs.rows, pal: cs.pal });
+        }
+      }
+      TENUES.push(t);
+    }
+  }
+  if (!TENUES.length) throw new Error('aucune tenue lue — buildSprite ne garde pas ses lignes ?');
+} catch (e) {
+  $('erreur').style.display = 'grid';
+  $('erreur').textContent = 'L\'atelier n\'a pas pu lire les tenues du jeu :\n\n' + e.message;
+  throw e;
+}
+const PAR_CLE = Object.fromEntries(TENUES.map(t => [t.cle, t]));
+
+// ---- 2. Les retouches ------------------------------------------------------
+// Pour chaque tenue retouchée : ses 20 lignes et sa palette complète.
+const RET = lireLS(CLE, {});
+for (const k of Object.keys(RET)) if (!PAR_CLE[k]) delete RET[k];
+const HIST = {};              // cle -> { passe: [], futur: [] }
+
+const lignesDe = t => (RET[t.cle] ? RET[t.cle].rows : t.rows0);
+const paletteDe = t => (RET[t.cle] ? RET[t.cle].pal : t.pal0);
+function diffPalette(t) {
+  const p = paletteDe(t), d = {};
+  for (const [k, v] of Object.entries(p)) if (t.pal0[k] !== v) d[k] = v;
+  return d;
+}
+function estRetouchee(t) {
+  if (!RET[t.cle]) return false;
+  return RET[t.cle].rows.join() !== t.rows0.join() || Object.keys(diffPalette(t)).length > 0;
+}
+function sauver() {
+  for (const k of Object.keys(RET)) if (!estRetouchee(PAR_CLE[k])) delete RET[k];
+  ecrireLS(CLE, RET);
+}
+
+// ---- 3. L'état de l'éditeur ------------------------------------------------
+const UI = Object.assign({ tenue: TENUES[0].cle, outil: 'pinceau', taille: 1, rectPlein: false, contigu: true,
+  grille: true, fantome: false, marques: false, symetrie: false, axe: 14, fond: 0 }, lireLS(CLE_UI, {}));
+if (!PAR_CLE[UI.tenue]) UI.tenue = TENUES[0].cle;
+const garderUI = () => ecrireLS(CLE_UI, UI);
+
+let T = PAR_CLE[UI.tenue];    // la tenue ouverte
+let G = [];                   // sa grille en cours : G[y][x] = lettre
+let PAL = {};                 // sa palette en cours
+let c1 = null, c2 = '.';      // couleur 1 (clic gauche), couleur 2 (clic droit)
+
+let survol = null;            // {x, y} sous la souris
+let trace = null;             // geste en cours : {bouton, x0, y0, x1, y1, avant}
+let selection = null;         // {x, y, w, h}
+let flottant = null;          // pixels soulevés : {x, y, w, h, px}
+let presse = null;            // pour déplacer un flottant : {dx, dy}
+let pressePapier = null;      // {w, h, px}
+let voirOriginal = false;     // Espace maintenu
+let altPipette = false;
+
+function ouvrir(cle) {
+  if (flottant) poserFlottant();
+  selection = null;
+  T = PAR_CLE[cle]; UI.tenue = cle; garderUI();
+  G = lignesDe(T).map(r => [...r]);
+  PAL = { ...paletteDe(T) };
+  const utilisees = compter();
+  if (!c1 || !(c1 in PAL)) c1 = Object.keys(utilisees).sort((a, b) => utilisees[b] - utilisees[a])[0] || '.';
+  if (c2 !== '.' && !(c2 in PAL)) c2 = '.';
+  if (!HIST[cle]) HIST[cle] = { passe: [], futur: [] };
+  document.querySelectorAll('.tenue').forEach(el => el.classList.toggle('on', el.dataset.cle === cle));
+  const el = document.querySelector(`.tenue[data-cle="${cle}"]`);
+  if (el) el.scrollIntoView({ block: 'nearest' });
+  toutRedessiner();
+}
+
+// ---- 4. Écrire dans la grille ---------------------------------------------
+function instantane() { return { rows: G.map(r => r.join('')), pal: { ...PAL } }; }
+function memoriser() {
+  const h = HIST[T.cle];
+  h.passe.push(instantane());
+  if (h.passe.length > 200) h.passe.shift();
+  h.futur.length = 0;
+}
+function restaurer(e) { G = e.rows.map(r => [...r]); PAL = { ...e.pal }; }
+function annuler() {
+  if (flottant) { annulerFlottant(); return; }
+  const h = HIST[T.cle]; if (!h.passe.length) { toast('Rien à annuler'); return; }
+  h.futur.push(instantane()); restaurer(h.passe.pop()); valider();
+}
+function retablir() {
+  const h = HIST[T.cle]; if (!h.futur.length) { toast('Rien à rétablir'); return; }
+  h.passe.push(instantane()); restaurer(h.futur.pop()); valider();
+}
+// Enregistre l'état courant comme la retouche de la tenue.
+function valider() {
+  RET[T.cle] = instantane();
+  sauver();
+  toutRedessiner();
+}
+
+const dedans = (x, y) => x >= 0 && x < L && y >= 0 && y < H;
+function miroirX(x) { return UI.axe - x; }
+function poser(x, y, l) {
+  const pts = [[x, y]];
+  if (UI.symetrie) pts.push([miroirX(x), y]);
+  for (const [px, py] of pts) if (dedans(px, py) && px !== INTERDITE) G[py][px] = l;
+}
+function tampon(x, y, l) {
+  const n = UI.taille, o = Math.floor((n - 1) / 2);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) poser(x - o + i, y - o + j, l);
+}
+function segment(x0, y0, x1, y1, f) {
+  const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+  let e = dx + dy;
+  for (;;) {
+    f(x0, y0);
+    if (x0 === x1 && y0 === y1) break;
+    const e2 = 2 * e;
+    if (e2 >= dy) { e += dy; x0 += sx; }
+    if (e2 <= dx) { e += dx; y0 += sy; }
+  }
+}
+function rectangle(x0, y0, x1, y1, plein, f) {
+  const [a, b] = [Math.min(x0, x1), Math.max(x0, x1)], [c, d] = [Math.min(y0, y1), Math.max(y0, y1)];
+  for (let y = c; y <= d; y++) for (let x = a; x <= b; x++)
+    if (plein || y === c || y === d || x === a || x === b) f(x, y);
+}
+function remplir(x, y, l) {
+  const cible = G[y][x];
+  if (cible === l) return;
+  if (!UI.contigu) {
+    for (let j = 0; j < H; j++) for (let i = 0; i < L; i++) if (G[j][i] === cible) poser(i, j, l);
+    return;
+  }
+  const pile = [[x, y]], vu = new Set();
+  while (pile.length) {
+    const [i, j] = pile.pop();
+    const k = j * L + i;
+    if (!dedans(i, j) || vu.has(k) || G[j][i] !== cible || i === INTERDITE) continue;
+    vu.add(k);
+    poser(i, j, l);
+    pile.push([i + 1, j], [i - 1, j], [i, j + 1], [i, j - 1]);
+  }
+}
+// Shift sur une ligne : horizontale, verticale ou à 45°. Sur un rectangle : un carré.
+function contraindre(x0, y0, x1, y1, outil) {
+  const dx = x1 - x0, dy = y1 - y0;
+  if (outil === 'rect') { const m = Math.max(Math.abs(dx), Math.abs(dy)); return [x0 + Math.sign(dx || 1) * m, y0 + Math.sign(dy || 1) * m]; }
+  const ax = Math.abs(dx), ay = Math.abs(dy);
+  if (ax > ay * 2) return [x1, y0];
+  if (ay > ax * 2) return [x0, y1];
+  const m = Math.max(ax, ay); return [x0 + Math.sign(dx) * m, y0 + Math.sign(dy) * m];
+}
+
+// ---- 5. La sélection et les pixels flottants -------------------------------
+function souleverSelection(copie) {
+  if (!selection) return;
+  const { x, y, w, h } = selection, px = [];
+  memoriser();
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    px.push(G[y + j][x + i]);
+    if (!copie) G[y + j][x + i] = '.';
+  }
+  flottant = { x, y, w, h, px };
+}
+function poserFlottant() {
+  if (!flottant) return;
+  const { x, y, w, h, px } = flottant;
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const l = px[j * w + i], X = x + i, Y = y + j;
+    if (l !== '.' && dedans(X, Y) && X !== INTERDITE) G[Y][X] = l;
+  }
+  selection = { x: Math.max(0, x), y: Math.max(0, y), w, h };
+  selection.w = Math.min(w, L - selection.x); selection.h = Math.min(h, H - selection.y);
+  flottant = null; presse = null;
+  valider();
+}
+function annulerFlottant() {
+  const h = HIST[T.cle];
+  if (h.passe.length) restaurer(h.passe.pop());
+  flottant = null; presse = null; toutRedessiner();
+}
+function retournerSelection() {
+  if (flottant) {
+    const { w, h, px } = flottant, n = [];
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) n.push(px[j * w + (w - 1 - i)]);
+    flottant.px = n; dessiner(); return;
+  }
+  if (selection) { souleverSelection(false); retournerSelection(); poserFlottant(); toast('Sélection retournée'); return; }
+  memoriser();
+  // Tout le sprite, autour de l'axe du jeu (c -> 14-c) : la colonne 15 reste vide.
+  G = G.map(r => { const n = [...r]; for (let x = 0; x < INTERDITE; x++) n[x] = r[INTERDITE - 1 - x]; return n; });
+  valider(); toast('Tenue retournée');
+}
+function viderSelection() {
+  if (flottant) { flottant = null; presse = null; valider(); return; }
+  if (!selection) return;
+  memoriser();
+  const { x, y, w, h } = selection;
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) G[y + j][x + i] = '.';
+  valider();
+}
+function decaler(dx, dy) {
+  if (flottant) { flottant.x += dx; flottant.y += dy; dessiner(); return; }
+  if (selection) {
+    souleverSelection(false); flottant.x += dx; flottant.y += dy; poserFlottant();
+    return;
+  }
+  memoriser();
+  const n = Array.from({ length: H }, () => Array(L).fill('.'));
+  for (let y = 0; y < H; y++) for (let x = 0; x < INTERDITE; x++) {
+    const X = x + dx, Y = y + dy;
+    if (G[y][x] !== '.' && X >= 0 && X < INTERDITE && Y >= 0 && Y < H) n[Y][X] = G[y][x];
+  }
+  const perdus = G.flat().filter(l => l !== '.').length - n.flat().filter(l => l !== '.').length;
+  G = n; valider();
+  if (perdus > 0) toast(perdus + ' pixel' + (perdus > 1 ? 's sortent' : ' sort') + ' du cadre — Ctrl+Z pour revenir');
+}
+
+// ---- 6. Le dessin de la grille ---------------------------------------------
+const toile = $('toile'), g = toile.getContext('2d');
+const FONDS = [
+  { nom: 'sombre', a: '#16241c', b: '#101b15', trait: 'rgba(255,255,255,.08)', fort: 'rgba(245,197,66,.55)' },
+  { nom: 'blanc', a: '#ffffff', b: '#ebebf0', trait: 'rgba(0,0,0,.12)', fort: 'rgba(160,110,0,.7)' },
+  { nom: 'gris', a: '#8a8a93', b: '#7f7f88', trait: 'rgba(0,0,0,.14)', fort: 'rgba(40,20,0,.6)' },
+  { nom: 'terrain', a: '#1d2440', b: '#1d2440', trait: 'rgba(255,255,255,.07)', fort: 'rgba(245,197,66,.5)' }
+];
+let geo = { z: 20, ox: 0, oy: 0 };
+function caler() {
+  const r = toile.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  toile.width = Math.round(r.width * dpr); toile.height = Math.round(r.height * dpr);
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const marge = 44;
+  const z = Math.max(8, Math.floor(Math.min((r.width - marge * 2) / L, (r.height - marge * 2) / H)));
+  geo = { z, ox: Math.round((r.width - z * L) / 2) + 10, oy: Math.round((r.height - z * H) / 2), w: r.width, h: r.height };
+}
+function caseSous(e) {
+  const r = toile.getBoundingClientRect();
+  return { x: Math.floor((e.clientX - r.left - geo.ox) / geo.z), y: Math.floor((e.clientY - r.top - geo.oy) / geo.z) };
+}
+const couleur = l => (l === '.' ? null : (PAL[l] || '#ff00ff'));
+
+let fourmis = 0;
+function dessiner() {
+  const { z, ox, oy } = geo, F = FONDS[UI.fond];
+  g.clearRect(0, 0, geo.w, geo.h);
+  // le fond, en damier discret
+  for (let y = 0; y < H; y++) for (let x = 0; x < L; x++) {
+    g.fillStyle = (x + y) % 2 ? F.a : F.b; g.fillRect(ox + x * z, oy + y * z, z, z);
+  }
+  // la colonne interdite, hachurée
+  g.save(); g.beginPath(); g.rect(ox + INTERDITE * z, oy, z, H * z); g.clip();
+  g.strokeStyle = 'rgba(224,86,74,.35)'; g.lineWidth = 1.5;
+  for (let k = -H * z; k < H * z; k += 8) { g.beginPath(); g.moveTo(ox + INTERDITE * z, oy + k); g.lineTo(ox + (INTERDITE + 1) * z, oy + k + z); g.stroke(); }
+  g.restore();
+
+  // la grille à afficher : l'original si Espace, sinon l'état courant (+ geste en aperçu)
+  const vue = voirOriginal ? T.rows0.map(r => [...r]) : apercuGeste();
+  const palVue = voirOriginal ? T.pal0 : PAL;
+  if (UI.fantome && !voirOriginal) {
+    g.globalAlpha = .28;
+    for (let y = 0; y < H; y++) for (let x = 0; x < L; x++) {
+      const l = T.rows0[y][x]; if (l === '.') continue;
+      g.fillStyle = T.pal0[l]; g.fillRect(ox + x * z, oy + y * z, z, z);
+    }
+    g.globalAlpha = 1;
+  }
+  for (let y = 0; y < H; y++) for (let x = 0; x < L; x++) {
+    const l = vue[y][x]; if (l === '.') continue;
+    g.fillStyle = palVue[l] || '#ff00ff'; g.fillRect(ox + x * z, oy + y * z, z, z);
+  }
+  if (flottant && !voirOriginal) {
+    const { x: fx, y: fy, w, h, px } = flottant;
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+      const l = px[j * w + i]; if (l === '.') continue;
+      g.fillStyle = couleur(l); g.fillRect(ox + (fx + i) * z, oy + (fy + j) * z, z, z);
+    }
+  }
+  // les pixels qui ont bougé depuis le jeu
+  if (UI.marques && !voirOriginal) {
+    g.fillStyle = '#f5c542';
+    for (let y = 0; y < H; y++) for (let x = 0; x < L; x++) {
+      const a = T.rows0[y][x], b = G[y][x];
+      const pareil = a === b ? (a === '.' || T.pal0[a] === PAL[b]) : (a !== '.' && b !== '.' && T.pal0[a] === PAL[b]);
+      if (!pareil) { g.beginPath(); g.moveTo(ox + (x + 1) * z, oy + y * z); g.lineTo(ox + (x + 1) * z - z * .32, oy + y * z); g.lineTo(ox + (x + 1) * z, oy + y * z + z * .32); g.fill(); }
+    }
+  }
+  // grille
+  if (UI.grille && z >= 10) {
+    g.strokeStyle = F.trait; g.lineWidth = 1; g.beginPath();
+    for (let x = 1; x < L; x++) { g.moveTo(ox + x * z + .5, oy); g.lineTo(ox + x * z + .5, oy + H * z); }
+    for (let y = 1; y < H; y++) { g.moveTo(ox, oy + y * z + .5); g.lineTo(ox + L * z, oy + y * z + .5); }
+    g.stroke();
+  }
+  // la coupe tête / corps
+  g.strokeStyle = F.fort; g.lineWidth = 2; g.setLineDash([6, 4]);
+  g.beginPath(); g.moveTo(ox - 8, oy + 10 * z); g.lineTo(ox + L * z + 8, oy + 10 * z); g.stroke(); g.setLineDash([]);
+  // l'axe de symétrie
+  if (UI.symetrie) {
+    const ax = ox + (UI.axe + 1) / 2 * z;
+    g.strokeStyle = 'rgba(95,200,255,.8)'; g.lineWidth = 2; g.setLineDash([3, 3]);
+    g.beginPath(); g.moveTo(ax, oy - 10); g.lineTo(ax, oy + H * z + 10); g.stroke(); g.setLineDash([]);
+  }
+  // le cadre
+  g.strokeStyle = '#3d7a58'; g.lineWidth = 1; g.strokeRect(ox - .5, oy - .5, L * z + 1, H * z + 1);
+  // les repères : colonnes en haut, lignes à gauche comptées par moitié
+  g.font = '11px Consolas,monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (let x = 0; x < L; x++) {
+    g.fillStyle = survol && survol.x === x ? '#f5c542' : (x === INTERDITE ? '#e0564a' : '#5f8a74');
+    g.fillText(x, ox + x * z + z / 2, oy - 12);
+  }
+  g.textAlign = 'right';
+  for (let y = 0; y < H; y++) {
+    g.fillStyle = survol && survol.y === y ? '#f5c542' : '#5f8a74';
+    g.fillText(y % 10, ox - 10, oy + y * z + z / 2);
+  }
+  g.save(); g.font = 'bold 10px Consolas,monospace'; g.fillStyle = '#3fae70'; g.textAlign = 'center';
+  for (const [txt, y0] of [['TÊTE', 0], ['CORPS', 10]]) {
+    g.save(); g.translate(ox - 30, oy + (y0 + 5) * z); g.rotate(-Math.PI / 2); g.fillText(txt, 0, 0); g.restore();
+  }
+  g.restore();
+
+  // la sélection, en pointillés qui défilent
+  const sel = flottant ? { x: flottant.x, y: flottant.y, w: flottant.w, h: flottant.h } : selection;
+  if (sel && !voirOriginal) {
+    const X = ox + sel.x * z + .5, Y = oy + sel.y * z + .5;
+    g.lineWidth = 1.5; g.setLineDash([5, 4]);
+    g.strokeStyle = '#000'; g.lineDashOffset = fourmis; g.strokeRect(X, Y, sel.w * z, sel.h * z);
+    g.strokeStyle = '#fff'; g.lineDashOffset = fourmis + 4.5; g.strokeRect(X, Y, sel.w * z, sel.h * z);
+    g.setLineDash([]); g.lineDashOffset = 0;
+  }
+  // la case survolée, avec la taille réelle de l'outil
+  if (survol && dedans(survol.x, survol.y) && !trace && !voirOriginal) {
+    const o = outilActif();
+    const n = (o === 'pinceau' || o === 'gomme') ? UI.taille : 1, d = Math.floor((n - 1) / 2);
+    const cases = [[survol.x - d, survol.y - d]];
+    if (UI.symetrie && (o === 'pinceau' || o === 'gomme')) cases.push([miroirX(survol.x) - (n - 1 - d), survol.y - d]);
+    for (const [cx, cy] of cases) {
+      if ((o === 'pinceau') && c1 !== '.') { g.globalAlpha = .55; g.fillStyle = couleur(c1); g.fillRect(ox + cx * z, oy + cy * z, n * z, n * z); g.globalAlpha = 1; }
+      g.strokeStyle = '#f5c542'; g.lineWidth = 2; g.strokeRect(ox + cx * z + 1, oy + cy * z + 1, n * z - 2, n * z - 2);
+    }
+  }
+  if (voirOriginal) {
+    g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(ox, oy + H * z + 10, 150, 22);
+    g.fillStyle = '#f5c542'; g.font = 'bold 11px Consolas,monospace'; g.textAlign = 'left';
+    g.fillText('TENUE DU JEU (original)', ox + 8, oy + H * z + 21);
+  }
+}
+// Le geste en cours (ligne, rectangle) dessiné par-dessus sans l'écrire.
+function apercuGeste() {
+  if (!trace || !['ligne', 'rect'].includes(trace.outil)) return G;
+  const sauve = G; G = G.map(r => [...r]);
+  const l = trace.bouton === 2 ? c2 : c1;
+  if (trace.outil === 'ligne') segment(trace.x0, trace.y0, trace.x1, trace.y1, (x, y) => poser(x, y, l));
+  else rectangle(trace.x0, trace.y0, trace.x1, trace.y1, UI.rectPlein, (x, y) => poser(x, y, l));
+  const vue = G; G = sauve; return vue;
+}
+setInterval(() => { if (selection || flottant) { fourmis = (fourmis + 1) % 9; dessiner(); } }, 90);
+
+// ---- 7. La souris ----------------------------------------------------------
+const outilActif = () => (altPipette ? 'pipette' : UI.outil);
+toile.addEventListener('contextmenu', e => e.preventDefault());
+toile.addEventListener('mousedown', e => {
+  const p = caseSous(e), o = outilActif(), bouton = e.button === 2 ? 2 : 1;
+  if (voirOriginal) return;
+  if (o === 'selection') {
+    const dansSel = s => s && p.x >= s.x && p.x < s.x + s.w && p.y >= s.y && p.y < s.y + s.h;
+    if (flottant && dansSel(flottant)) { presse = { dx: p.x - flottant.x, dy: p.y - flottant.y }; return; }
+    if (flottant) poserFlottant();
+    if (dansSel(selection)) {
+      souleverSelection(e.altKey || e.ctrlKey);   // Alt / Ctrl : déplacer une copie
+      presse = { dx: p.x - flottant.x, dy: p.y - flottant.y }; dessiner(); return;
+    }
+    selection = null;
+    trace = { outil: o, bouton, x0: clampX(p.x), y0: clampY(p.y), x1: clampX(p.x), y1: clampY(p.y) };
+    dessiner(); return;
+  }
+  if (!dedans(p.x, p.y)) return;
+  if (o === 'pipette') { choisir(G[p.y][p.x], bouton); return; }
+  const l = o === 'gomme' ? '.' : (bouton === 2 ? c2 : c1);
+  memoriser();
+  if (o === 'pot') { remplir(p.x, p.y, l); valider(); return; }
+  trace = { outil: o, bouton, x0: p.x, y0: p.y, x1: p.x, y1: p.y, l };
+  if (o === 'pinceau' || o === 'gomme') { tampon(p.x, p.y, l); dessiner(); majApercus(); }
+  else dessiner();
+});
+const clampX = x => Math.max(0, Math.min(L - 1, x)), clampY = y => Math.max(0, Math.min(H - 1, y));
+addEventListener('mousemove', e => {
+  const p = caseSous(e);
+  const avant = survol;
+  survol = (dedans(p.x, p.y) && (e.target === toile || trace || presse)) ? p : null;
+  if (presse && flottant) {
+    const nx = p.x - presse.dx, ny = p.y - presse.dy;
+    if (nx !== flottant.x || ny !== flottant.y) { flottant.x = nx; flottant.y = ny; }
+    dessiner(); statut(); return;
+  }
+  if (trace) {
+    let [x1, y1] = [p.x, p.y];
+    if (trace.outil === 'selection') { x1 = clampX(x1); y1 = clampY(y1); }
+    if (e.shiftKey && (trace.outil === 'ligne' || trace.outil === 'rect')) [x1, y1] = contraindre(trace.x0, trace.y0, x1, y1, trace.outil);
+    if (trace.outil === 'pinceau' || trace.outil === 'gomme') {
+      segment(trace.x1, trace.y1, x1, y1, (x, y) => tampon(x, y, trace.l));
+      majApercus();
+    }
+    trace.x1 = x1; trace.y1 = y1;
+    dessiner(); statut(); return;
+  }
+  if (e.target === toile && (!avant || !survol || avant.x !== survol.x || avant.y !== survol.y)) { dessiner(); statut(); }
+});
+addEventListener('mouseup', () => {
+  if (presse) { presse = null; dessiner(); return; }
+  if (!trace) return;
+  const t = trace; trace = null;
+  if (t.outil === 'selection') {
+    const x = Math.min(t.x0, t.x1), y = Math.min(t.y0, t.y1);
+    selection = { x, y, w: Math.abs(t.x1 - t.x0) + 1, h: Math.abs(t.y1 - t.y0) + 1 };
+    if (selection.w * selection.h <= 1 && t.x0 === t.x1 && t.y0 === t.y1) selection = null;
+    dessiner(); return;
+  }
+  if (t.outil === 'ligne') segment(t.x0, t.y0, t.x1, t.y1, (x, y) => poser(x, y, t.l));
+  if (t.outil === 'rect') rectangle(t.x0, t.y0, t.x1, t.y1, UI.rectPlein, (x, y) => poser(x, y, t.l));
+  valider();
+});
+toile.addEventListener('mouseleave', () => { survol = null; dessiner(); statut(); });
+
+// ---- 8. Les outils ---------------------------------------------------------
+const ICONES = {
+  pinceau: '<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 7l3 3"/>',
+  gomme: '<path d="M8 20h12"/><path d="M4 15l9-9 6 6-8 8H8z"/><path d="M9 10l6 6"/>',
+  pipette: '<path d="M4 20l1-4 9-9 3 3-9 9z"/><path d="M13 5l2-2 6 6-2 2"/>',
+  pot: '<path d="M5 11l7-7 7 7-7 7z"/><path d="M5 11h14"/><path d="M20 15c1 1.6 1 3 0 3.6-1 .6-2-.4-1.6-1.6z"/>',
+  ligne: '<path d="M5 19L19 5"/><circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="5" r="1.6"/>',
+  rect: '<rect x="4" y="6" width="16" height="12" rx="1"/>',
+  selection: '<path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4" /><path d="M11 4h2M11 20h2M4 11v2M20 11v2"/>'
+};
+const OUTILS = [
+  { id: 'pinceau', nom: 'Pinceau', touche: 'B' },
+  { id: 'gomme', nom: 'Gomme', touche: 'E' },
+  { id: 'pipette', nom: 'Pipette', touche: 'I' },
+  { id: 'pot', nom: 'Pot de peinture', touche: 'G' },
+  { id: 'ligne', nom: 'Ligne', touche: 'L' },
+  { id: 'rect', nom: 'Rectangle', touche: 'U' },
+  { id: 'selection', nom: 'Sélection', touche: 'M' }
+];
+function barreOutils() {
+  const nav = $('outils');
+  nav.innerHTML = '';
+  for (const o of OUTILS) {
+    const b = document.createElement('button');
+    b.className = 'outil'; b.dataset.o = o.id;
+    b.innerHTML = `<svg viewBox="0 0 24 24">${ICONES[o.id]}</svg><span class="bulle">${o.nom}<kbd>${o.touche}</kbd></span>`;
+    b.onclick = () => choisirOutil(o.id);
+    nav.appendChild(b);
+  }
+  nav.insertAdjacentHTML('beforeend', '<div class="sep"></div><div id="duo"><div id="c1" title="Couleur 1 (clic gauche)"></div><div id="c2" title="Couleur 2 (clic droit)"></div></div><div id="duoEch" title="Échanger  X">⇄ X</div>');
+  $('duoEch').onclick = echanger;
+  $('c1').onclick = () => $('picker').click();
+}
+function choisirOutil(id) {
+  if (UI.outil === 'selection' && id !== 'selection') { if (flottant) poserFlottant(); selection = null; }
+  UI.outil = id; garderUI(); majOutils(); dessiner();
+}
+function majOutils() {
+  document.querySelectorAll('.outil').forEach(b => b.classList.toggle('on', b.dataset.o === UI.outil));
+  const o = OUTILS.find(x => x.id === UI.outil);
+  const sym = `<span class="bascule ${UI.symetrie ? 'on' : ''}" data-b="symetrie">Symétrie <kbd>S</kbd></span>` +
+    (UI.symetrie ? `<span class="seg" data-g="axe"><button data-v="14" class="${UI.axe === 14 ? 'on' : ''}">axe col. 7</button><button data-v="13" class="${UI.axe === 13 ? 'on' : ''}">axe entre 6 et 7</button></span>` : '');
+  let html = `<span class="titreOutil">${o.nom}</span>`;
+  if (UI.outil === 'pinceau' || UI.outil === 'gomme')
+    html += `<span class="seg" data-g="taille">${[1, 2, 3].map(n => `<button data-v="${n}" class="${UI.taille === n ? 'on' : ''}">${n} px <kbd>${n}</kbd></button>`).join('')}</span>` + sym;
+  if (UI.outil === 'ligne') html += '<span>Shift : droite ou 45°</span>' + sym;
+  if (UI.outil === 'rect') html += `<span class="seg" data-g="rectPlein"><button data-v="0" class="${!UI.rectPlein ? 'on' : ''}">contour</button><button data-v="1" class="${UI.rectPlein ? 'on' : ''}">plein</button></span><span>Shift : carré</span>` + sym;
+  if (UI.outil === 'pot') html += `<span class="seg" data-g="contigu"><button data-v="1" class="${UI.contigu ? 'on' : ''}">zone touchée</button><button data-v="0" class="${!UI.contigu ? 'on' : ''}">toute cette couleur</button></span>` + sym;
+  if (UI.outil === 'pipette') html += '<span>Clic gauche : couleur 1 · clic droit : couleur 2 · Alt avec n\'importe quel outil</span>';
+  if (UI.outil === 'selection') html += '<span>Glisser : sélectionner · glisser dedans : déplacer (Alt : une copie) · flèches : 1 px · H : retourner · Suppr : vider · Entrée : poser</span>';
+  html += '<span class="espace" style="flex:1"></span>' +
+    `<span class="bascule ${UI.grille ? 'on' : ''}" data-b="grille">Grille <kbd>Q</kbd></span>` +
+    `<span class="bascule ${UI.fantome ? 'on' : ''}" data-b="fantome">Calque fantôme <kbd>O</kbd></span>` +
+    `<span class="bascule ${UI.marques ? 'on' : ''}" data-b="marques">Pixels changés <kbd>D</kbd></span>` +
+    `<span class="bascule" data-b="fond">Fond ${FONDS[UI.fond].nom} <kbd>F</kbd></span>`;
+  $('options').innerHTML = html;
+  $('options').querySelectorAll('.seg').forEach(s => s.querySelectorAll('button').forEach(b => b.onclick = () => {
+    const k = s.dataset.g, v = +b.dataset.v;
+    UI[k] = (k === 'rectPlein' || k === 'contigu') ? !!v : v;
+    garderUI(); majOutils(); dessiner();
+  }));
+  $('options').querySelectorAll('.bascule').forEach(b => b.onclick = () => basculer(b.dataset.b));
+  $('sOutil').textContent = o.nom;
+}
+function basculer(k) {
+  if (k === 'fond') UI.fond = (UI.fond + 1) % FONDS.length; else UI[k] = !UI[k];
+  garderUI(); majOutils(); dessiner();
+}
+
+// ---- 9. Les couleurs -------------------------------------------------------
+function compter() {
+  const n = {};
+  for (const r of G) for (const l of r) if (l !== '.') n[l] = (n[l] || 0) + 1;
+  return n;
+}
+function choisir(l, bouton) {
+  if (bouton === 2) c2 = l; else c1 = l;
+  majPalette(); dessiner();
+}
+function echanger() { [c1, c2] = [c2, c1]; majPalette(); dessiner(); }
+function majPalette() {
+  const n = compter(), box = $('palette');
+  const lettres = Object.keys(PAL).sort((a, b) => (n[b] || 0) - (n[a] || 0) || a.localeCompare(b));
+  box.innerHTML = '';
+  const ajoute = (l, fondCss, cls, titre) => {
+    const d = document.createElement('div');
+    d.className = 'pastille ' + cls + (c1 === l ? ' p1' : '') + (c2 === l ? ' p2' : '');
+    if (fondCss) d.style.background = fondCss;
+    d.title = titre;
+    d.innerHTML = `<span class="l">${l === '.' ? '∅' : l}</span>` + (n[l] ? `<span class="n">${n[l]}</span>` : '');
+    d.onclick = () => choisir(l, 1);
+    d.oncontextmenu = e => { e.preventDefault(); choisir(l, 2); };
+    box.appendChild(d);
+  };
+  ajoute('.', null, 'damier', 'Transparent (efface)');
+  // Une lettre posée sans couleur dans la palette : le jeu ne la dessine pas.
+  for (const l of Object.keys(n).filter(l => !(l in PAL)))
+    ajoute(l, '#ff00ff', '', `${l} · ABSENTE de la palette : ces ${n[l]} px sont invisibles dans le jeu`);
+  for (const l of lettres) {
+    const change = T.pal0[l] !== PAL[l];
+    ajoute(l, PAL[l], (n[l] ? '' : 'inutile') + (change ? ' change' : ''),
+      `${l} · ${PAL[l]}${n[l] ? ' · ' + n[l] + ' px' : ' · pas utilisée'}${change ? ' · teinte changée (origine ' + (T.pal0[l] || 'nouvelle') + ')' : ''}`);
+  }
+  $('nbCouleurs').textContent = Object.keys(n).length + ' utilisées sur ' + lettres.length;
+  const pose = (el, l) => { el.style.background = l === '.' ? '' : PAL[l]; el.classList.toggle('damier', l === '.'); };
+  pose($('c1'), c1); pose($('c2'), c2);
+  const actif = c1 !== '.';
+  $('picker').disabled = !actif; $('hex').disabled = !actif;
+  $('picker').value = actif ? PAL[c1] : '#000000';
+  if (document.activeElement !== $('hex')) $('hex').value = actif ? PAL[c1] : '';
+  $('retablirCouleur').disabled = !actif || !T.pal0[c1] || T.pal0[c1] === PAL[c1];
+}
+const HEX = /^#[0-9a-f]{6}$/i;
+let teinteEnCours = false;
+function changerTeinte(v) {
+  if (c1 === '.' || !HEX.test(v)) return;
+  if (!teinteEnCours) { memoriser(); teinteEnCours = true; }
+  PAL[c1] = v.toLowerCase();
+  RET[T.cle] = instantane(); sauver();
+  dessiner(); majApercus(); majPalette(); majEtat(); majMinis();
+}
+$('picker').addEventListener('input', e => changerTeinte(e.target.value));
+$('picker').addEventListener('change', () => { teinteEnCours = false; });
+$('hex').addEventListener('input', e => { let v = e.target.value.trim(); if (v[0] !== '#') v = '#' + v; if (HEX.test(v)) { changerTeinte(v); teinteEnCours = false; } });
+$('nouvelle').onclick = () => {
+  const libre = [...LETTRES].find(l => !(l in PAL));
+  if (!libre) { toast('Plus de lettre libre'); return; }
+  memoriser();
+  PAL[libre] = $('picker').value.toLowerCase();
+  c1 = libre; valider(); toast('Nouvelle couleur ' + libre + ' — change sa teinte avec le sélecteur');
+};
+$('retablirCouleur').onclick = () => { if (c1 !== '.' && T.pal0[c1]) { memoriser(); PAL[c1] = T.pal0[c1]; valider(); } };
+
+// ---- 10. Les aperçus --------------------------------------------------------
+function sprite(rows, pal, ech, miroir) {
+  const c = document.createElement('canvas'); c.width = L * ech; c.height = H * ech;
+  const k = c.getContext('2d');
+  for (let y = 0; y < H; y++) for (let x = 0; x < L; x++) {
+    const l = rows[y][x]; if (l === '.' || !pal[l]) continue;
+    k.fillStyle = pal[l]; k.fillRect((miroir ? INTERDITE - x : x) * ech, y * ech, ech, ech);
+  }
+  return c;
+}
+function vignette(rows, pal, ech, fondC, legende, miroir) {
+  const f = document.createElement('figure');
+  const c = sprite(rows, pal, ech, miroir);
+  const v = document.createElement('canvas'); v.width = c.width + 16; v.height = c.height + 12;
+  const k = v.getContext('2d'); k.fillStyle = fondC; k.fillRect(0, 0, v.width, v.height);
+  k.fillStyle = 'rgba(0,0,0,.25)'; k.beginPath(); k.ellipse(v.width / 2, v.height - 7, c.width * .38, 3, 0, 0, 7); k.fill();
+  k.drawImage(c, 8, 4);
+  f.appendChild(v);
+  if (legende) f.insertAdjacentHTML('beforeend', legende);
+  return f;
+}
+const TERRAINS = [['nuit', '#1d2440'], ['neige', '#dde6ee'], ['sable', '#d9b47c'], ['herbe', '#3c7038']];
+function majApercus() {
+  const rows = G.map(r => r.join(''));
+  const aa = $('avantApres'); aa.innerHTML = '';
+  aa.append(vignette(T.rows0, T.pal0, 5, '#0a1710', 'jeu'), vignette(rows, PAL, 5, '#0a1710', 'toi'));
+  const m = $('match'); m.innerHTML = '';
+  for (const [nom, c] of TERRAINS) {
+    m.append(vignette(rows, PAL, 2, c, nom), vignette(rows, PAL, 2, c, '←', true));
+  }
+  const ch = $('chromas'); ch.innerHTML = '';
+  $('blocChromas').style.display = T.chromas.length ? '' : 'none';
+  for (const c of T.chromas) {
+    // Un chroma = la palette de la tenue retouchée, où seules ses propres teintes changent.
+    const pal = c.rows ? c.pal : { ...PAL, ...c.diff };
+    ch.append(vignette(c.rows || rows, pal, 3, '#0a1710', c.nom.toLowerCase() + (c.rows ? ' (fixe)' : '')));
+  }
+}
+function majMinis() {
+  const k = document.querySelector(`.tenue[data-cle="${T.cle}"] canvas`);
+  if (k) peindreMini(k, T);
+  document.querySelectorAll('.tenue').forEach(el => el.classList.toggle('retouchee', estRetouchee(PAR_CLE[el.dataset.cle])));
+}
+function peindreMini(k, t) {
+  const c = k.getContext('2d'); c.clearRect(0, 0, 16, 20);
+  const rows = lignesDe(t), pal = paletteDe(t);
+  for (let y = 0; y < H; y++) for (let x = 0; x < L; x++) { const l = rows[y][x]; if (l !== '.' && pal[l]) { c.fillStyle = pal[l]; c.fillRect(x, y, 1, 1); } }
+}
+
+// ---- 11. Le roster ----------------------------------------------------------
+function construireListe() {
+  const box = $('liste'); box.innerHTML = '';
+  const q = $('cherche').value.trim().toLowerCase();
+  const parPerso = {};
+  for (const t of TENUES) (parPerso[t.ck] = parPerso[t.ck] || []).push(t);
+  for (const ck of Object.keys(parPerso)) {
+    const ts = parPerso[ck].filter(t => !q || (t.perso + ' ' + t.nom + ' ' + ck).toLowerCase().includes(q));
+    if (!ts.length) continue;
+    const d = document.createElement('div'); d.className = 'perso';
+    const nbC = parPerso[ck][0].chromas.length;
+    d.innerHTML = `<h4>${parPerso[ck][0].perso}<span>${parPerso[ck].length} tenue${parPerso[ck].length > 1 ? 's' : ''}${nbC ? ' · ' + nbC + ' chromas' : ''}</span></h4>`;
+    for (const t of ts) {
+      const el = document.createElement('div');
+      el.className = 'tenue' + (t.cle === T.cle ? ' on' : '') + (estRetouchee(t) ? ' retouchee' : '');
+      el.dataset.cle = t.cle;
+      el.innerHTML = `<canvas width="16" height="20"></canvas><div class="nom">${t.nom}<small>${t.cle}</small></div><div class="point" title="Retouchée"></div>`;
+      peindreMini(el.querySelector('canvas'), t);
+      el.onclick = () => ouvrir(t.cle);
+      d.appendChild(el);
+    }
+    box.appendChild(d);
+  }
+}
+$('cherche').addEventListener('input', construireListe);
+function voisine(d) {
+  const i = TENUES.indexOf(T);
+  ouvrir(TENUES[(i + d + TENUES.length) % TENUES.length].cle);
+}
+$('prec').onclick = () => voisine(-1);
+$('suiv').onclick = () => voisine(1);
+
+// ---- 12. Export / import ----------------------------------------------------
+function blocTenue(t) {
+  const r = RET[t.cle];
+  const rows = r ? r.rows : t.rows0;
+  const couleurs = r ? diffPalette(t) : {};
+  const ligne = a => '[\n' + a.map(x => '        ' + JSON.stringify(x)).join(',\n') + '\n      ]';
+  let s = `    ${JSON.stringify(t.cle)}: {\n      "perso": ${JSON.stringify(t.perso)}, "tenue": ${JSON.stringify(t.nom)},\n` +
+    `      "tete": ${ligne(rows.slice(0, 10))},\n      "corps": ${ligne(rows.slice(10))}`;
+  const nc = Object.keys(couleurs);
+  if (nc.length) s += `,\n      "couleurs": { ${nc.map(k => JSON.stringify(k) + ': ' + JSON.stringify(couleurs[k])).join(', ')} }`;
+  return s + '\n    }';
+}
+function exporter(liste) {
+  return '{\n  "atelier": "tenues",\n  "retouches": {\n' + liste.map(blocTenue).join(',\n') + '\n  }\n}';
+}
+function ouvrirFenetre(id) { document.querySelectorAll('.voile').forEach(v => v.classList.toggle('ouvert', v.id === id)); }
+function fermerFenetres() { document.querySelectorAll('.voile').forEach(v => v.classList.remove('ouvert')); }
+document.querySelectorAll('[data-ferme]').forEach(b => b.onclick = fermerFenetres);
+document.querySelectorAll('.voile').forEach(v => v.addEventListener('mousedown', e => { if (e.target === v) fermerFenetres(); }));
+$('btnExport').onclick = () => {
+  const liste = TENUES.filter(estRetouchee);
+  $('txtExport').value = liste.length ? exporter(liste) : '(aucune tenue retouchée pour l\'instant)';
+  ouvrirFenetre('vExport');
+};
+async function copier(txt, msg) {
+  try { await navigator.clipboard.writeText(txt); }
+  catch (e) { const a = document.createElement('textarea'); a.value = txt; document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove(); }
+  toast(msg);
+}
+$('copierExport').onclick = () => copier($('txtExport').value, 'Copié — colle-le moi tel quel');
+$('btnColler').onclick = () => { $('txtColler').value = ''; ouvrirFenetre('vColler'); setTimeout(() => $('txtColler').focus(), 30); };
+$('appliquer').onclick = () => {
+  let o;
+  try { o = JSON.parse($('txtColler').value); } catch (e) { toast('Ce n\'est pas un bloc valide'); return; }
+  const src = o.retouches || o;
+  let n = 0;
+  for (const [cle, v] of Object.entries(src)) {
+    const t = PAR_CLE[cle]; if (!t || !v) continue;
+    const rows = [...(v.tete || []), ...(v.corps || [])];
+    if (rows.length !== H) continue;
+    if (!HIST[cle]) HIST[cle] = { passe: [], futur: [] };
+    HIST[cle].passe.push({ rows: lignesDe(t).slice(), pal: { ...paletteDe(t) } });
+    RET[cle] = { rows: rows.map(r => (r + '.'.repeat(L)).slice(0, L)), pal: { ...t.pal0, ...(v.couleurs || {}) } };
+    n++;
+  }
+  sauver(); fermerFenetres(); construireListe(); ouvrir(T.cle);
+  toast(n ? n + ' tenue' + (n > 1 ? 's' : '') + ' appliquée' + (n > 1 ? 's' : '') : 'Aucune tenue reconnue dans ce bloc');
+};
+
+// ---- 13. Actions sur toute la tenue ----------------------------------------
+document.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
+  const a = b.dataset.act;
+  if (a === 'gauche') decaler(-1, 0);
+  if (a === 'droite') decaler(1, 0);
+  if (a === 'haut') decaler(0, -1);
+  if (a === 'bas') decaler(0, 1);
+  if (a === 'miroir') { selection = null; retournerSelection(); }
+  if (a === 'copierTenue') copier(exporter([T]), 'Tenue copiée');
+  if (a === 'reset') {
+    if (!estRetouchee(T)) { toast('Cette tenue est déjà celle du jeu'); return; }
+    memoriser(); G = T.rows0.map(r => [...r]); PAL = { ...T.pal0 }; valider(); toast('Tenue du jeu rétablie — Ctrl+Z pour revenir');
+  }
+});
+
+// ---- 14. Le clavier ---------------------------------------------------------
+const RACCOURCIS = [
+  ['Outils'], ['B', 'Pinceau'], ['E', 'Gomme'], ['I', 'Pipette'], ['G', 'Pot de peinture'], ['L', 'Ligne'], ['U', 'Rectangle'], ['M', 'Sélection'],
+  ['Alt maintenu', 'Pipette temporaire'], ['1 · 2 · 3', 'Taille du pinceau'],
+  ['Couleurs'], ['Clic gauche', 'Couleur 1'], ['Clic droit', 'Couleur 2 (transparent au départ)'], ['X', 'Échanger 1 et 2'],
+  ['Affichage'], ['Espace maintenu', 'Voir la tenue du jeu'], ['O', 'Calque fantôme'], ['D', 'Marquer les pixels changés'], ['Q', 'Grille'], ['F', 'Fond suivant'], ['S', 'Symétrie'],
+  ['Sélection'], ['Glisser dedans', 'Déplacer'], ['Alt + glisser', 'Déplacer une copie'], ['Flèches', 'Déplacer d\'1 px'], ['Ctrl+C / Ctrl+V', 'Copier / coller'],
+  ['H', 'Retourner (ou toute la tenue)'], ['Suppr', 'Vider'], ['Entrée', 'Poser'], ['Échap', 'Désélectionner'],
+  ['Tenue'], ['Shift + flèches', 'Décaler toute la tenue'], ['Ctrl+Z / Ctrl+Y', 'Annuler / rétablir'], ['[ et ]', 'Tenue précédente / suivante'], ['?', 'Cette aide']
+];
+$('listeRaccourcis').innerHTML = RACCOURCIS.map(r => r.length === 1 ? `<h5>${r[0].toUpperCase()}</h5>` : `<div><span>${r[1]}</span><kbd>${r[0]}</kbd></div>`).join('');
+$('btnAide').onclick = () => ouvrirFenetre('vAide');
+
+addEventListener('keydown', e => {
+  if (e.target.matches && e.target.matches('input, textarea')) { if (e.key === 'Escape') e.target.blur(); return; }
+  if (document.querySelector('.voile.ouvert')) { if (e.key === 'Escape') fermerFenetres(); return; }
+  const k = e.key, ctrl = e.ctrlKey || e.metaKey;
+  if (k === 'Alt') { e.preventDefault(); if (!altPipette) { altPipette = true; dessiner(); } return; }
+  if (k === ' ') { e.preventDefault(); if (!voirOriginal) { voirOriginal = true; dessiner(); } return; }
+  if (ctrl && (k === 'z' || k === 'Z')) { e.preventDefault(); if (e.shiftKey) retablir(); else annuler(); return; }
+  if (ctrl && (k === 'y' || k === 'Y')) { e.preventDefault(); retablir(); return; }
+  if (ctrl && (k === 'c' || k === 'C')) {
+    const s = flottant || selection; if (!s) return;
+    e.preventDefault();
+    const px = flottant ? flottant.px.slice() : [];
+    if (!flottant) for (let j = 0; j < s.h; j++) for (let i = 0; i < s.w; i++) px.push(G[s.y + j][s.x + i]);
+    pressePapier = { w: s.w, h: s.h, px }; toast('Sélection copiée'); return;
+  }
+  if (ctrl && (k === 'v' || k === 'V')) {
+    if (!pressePapier) return;
+    e.preventDefault();
+    if (flottant) poserFlottant();
+    memoriser();
+    const s = selection || { x: 0, y: 0 };
+    flottant = { x: s.x, y: s.y, ...pressePapier, px: pressePapier.px.slice() };
+    UI.outil = 'selection'; majOutils(); dessiner(); toast('Collé — glisse-le, Entrée pour poser'); return;
+  }
+  if (ctrl) return;
+  if (k.startsWith('Arrow')) {
+    e.preventDefault();
+    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[k];
+    // Avec une sélection : elle bouge. Sans : Shift décale toute la tenue.
+    if (selection || flottant || e.shiftKey) decaler(...d);
+    return;
+  }
+  if (k === 'Enter') { if (flottant) poserFlottant(); return; }
+  if (k === 'Escape') { if (flottant) annulerFlottant(); selection = null; dessiner(); return; }
+  if (k === 'Delete' || k === 'Backspace') { viderSelection(); return; }
+  if (k === '[') { voisine(-1); return; }
+  if (k === ']') { voisine(1); return; }
+  if (k === '?') { ouvrirFenetre('vAide'); return; }
+  const lettre = k.toLowerCase();
+  const o = OUTILS.find(x => x.touche.toLowerCase() === lettre);
+  if (o) { choisirOutil(o.id); return; }
+  if (['1', '2', '3'].includes(k)) { UI.taille = +k; garderUI(); majOutils(); dessiner(); return; }
+  if (lettre === 'x') { echanger(); return; }
+  if (lettre === 'h') { retournerSelection(); return; }
+  if (lettre === 'o') { basculer('fantome'); return; }
+  if (lettre === 'd') { basculer('marques'); return; }
+  if (lettre === 'q') { basculer('grille'); return; }
+  if (lettre === 'f') { basculer('fond'); return; }
+  if (lettre === 's') { basculer('symetrie'); return; }
+});
+addEventListener('keyup', e => {
+  if (e.key === 'Alt') { altPipette = false; dessiner(); }
+  if (e.key === ' ') { voirOriginal = false; dessiner(); }
+});
+addEventListener('blur', () => { altPipette = false; voirOriginal = false; trace = null; presse = null; dessiner(); });
+
+// ---- 15. L'état ------------------------------------------------------------
+function statut() {
+  if (survol) {
+    const l = G[survol.y][survol.x];
+    $('sCase').textContent = `${survol.y < 10 ? 'tête' : 'corps'} · ligne ${survol.y % 10} · col. ${survol.x}` + (survol.x === INTERDITE ? ' (interdite : miroir du jeu)' : '');
+    $('sLettre').textContent = l === '.' ? 'transparent' : `${l}  ${PAL[l]}`;
+  } else { $('sCase').textContent = '—'; $('sLettre').textContent = '—'; }
+  const s = flottant || selection;
+  $('sInfo').textContent = s ? `sélection ${s.w}×${s.h}` : '';
+}
+function majEtat() {
+  const r = estRetouchee(T);
+  $('etat').textContent = r ? 'retouchée' : 'intacte';
+  $('etat').classList.toggle('modif', r);
+  $('filTexte').innerHTML = `${T.perso} › <b>${T.nom}</b>`;
+  const n = TENUES.filter(estRetouchee).length;
+  $('sTotal').textContent = n + ' tenue' + (n > 1 ? 's' : '');
+  $('btnExport').textContent = 'Copier mes retouches' + (n ? ` (${n})` : '');
+}
+function toutRedessiner() { majOutils(); majPalette(); dessiner(); majApercus(); majEtat(); majMinis(); statut(); }
+let minuteur;
+function toast(m) {
+  const t = $('toast'); t.textContent = m; t.classList.add('vu');
+  clearTimeout(minuteur); minuteur = setTimeout(() => t.classList.remove('vu'), 1900);
+}
+
+// ---- 16. Démarrage -----------------------------------------------------------
+barreOutils();
+construireListe();
+new ResizeObserver(() => { caler(); dessiner(); }).observe($('scene'));
+caler();
+ouvrir(UI.tenue);
+window.__atelier = { TENUES, RET, get G() { return G; }, get PAL() { return PAL; }, get geo() { return geo; },
+  get sel() { return flottant || selection; }, ouvrir };
+</script>
+</body>
+</html>
