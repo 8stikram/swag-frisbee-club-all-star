@@ -7,6 +7,7 @@ import { centreDunk, centrePanier, ZONES } from '../game/zones.js';
 import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap, getMapId, setMapId } from '../data/maps.js';
 import { drawCourtRaccoon, drawBrumeRaccoon } from './terrains/raccoon.js';
+import { drawCourtTemple } from './terrains/temple.js';
 import { copieExacte, peindreHorsEcran } from './calques.js';
 import { getSkinId, drawSkinDisc, deformationDisque, tracerContour, teinteDeCharge, chaufferCouleur, avecAlpha } from '../data/skins.js';
 import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE, CHIEN_VIDEO, CHIEN_DUREE, RUEE_N, TIGRE_SPRITE, WT_CHANT, WT_SORTIE, WT_STUN,
@@ -1431,6 +1432,7 @@ export function peindreTerrain(cible, mapId) {
 
 function drawCourt() {
   if (getMap().style === 'raccoon') { drawCourtRaccoon(); return; }
+  if (getMap().style === 'temple') { drawCourtTemple(); return; }
   if (getMap().style === 'noel') { drawCourtNoel(); return; }
   if (getMap().style === 'desert') { drawCourtDesert(); return; }
   if (getMap().style === 'stade') { drawCourtStade(); return; }
@@ -3514,9 +3516,6 @@ export function render() {
   // La brume de Raccoon City, au même endroit et pour la même raison que la
   // tempête : c'est une règle de jeu, elle doit masquer les joueurs et le
   // disque, donc elle passe après eux et en espace écran.
-  drawBrumeRaccoon();
-  // La brume de Raccoon City : en espace écran comme la tempête, donc par
-  // dessus les joueurs et le disque — c'est une règle, elle doit les masquer.
   drawBrumeRaccoon();
   // Le chien passe après tout le reste, HUD compris : il aveugle vraiment.
   // En espace écran comme la tempête, donc jamais retourné chez l'invité.

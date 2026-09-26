@@ -1,0 +1,2014 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Temple de la Fricadelle — le terrain complet</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b0708; --panel:#17100f; --edge:#3a2420; --ink:#f0e6dc;
+         --or:#e8a94a; --rose:#ff7fd0; --doux:#a89080; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:'Segoe UI',system-ui,sans-serif}
+  .page{display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:26px;
+        align-items:start;padding:20px 20px 90px;max-width:1840px;margin:0 auto}
+  @media (max-width:1250px){ .page{grid-template-columns:minmax(0,1fr) 440px} }
+
+  h1{font-size:23px;margin:0 0 6px;font-family:'Archivo Black',sans-serif;letter-spacing:.3px}
+  h2{font-size:14px;margin:34px 0 6px;color:var(--or);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:var(--doux);line-height:1.7;margin:0 0 14px}
+  .note b{color:var(--ink)}
+
+  .modele{background:var(--panel);border:1px solid var(--edge);border-left:3px solid var(--or);
+          border-radius:7px;padding:13px 16px;margin:0 0 8px}
+  .modele h3{margin:0 0 8px;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--or)}
+  .modele ul{margin:0;padding-left:17px;font-size:12.5px;color:var(--doux);line-height:1.75}
+  .modele li b{color:var(--ink)}
+  .chiffre{color:var(--rose);font-weight:600;font-variant-numeric:tabular-nums}
+  .matieres{display:flex;flex-wrap:wrap;gap:5px;margin:11px 0 0}
+  .mat{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--doux);
+       background:#0f0a0a;border:1px solid var(--edge);border-radius:4px;padding:3px 7px}
+  .mat i{width:11px;height:11px;border-radius:2px;display:block;border:1px solid rgba(255,255,255,.14)}
+
+  .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:11px}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:9px;padding:9px;
+        cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#6d4a40;transform:translateY(-2px)}
+  .card.on{border-color:var(--or);box-shadow:0 0 0 1px var(--or) inset}
+  .card canvas{display:block;width:100%;height:auto;border-radius:5px;background:#0b0708}
+  .lbl{font-size:11.5px;color:var(--doux);margin:8px 2px 0;line-height:1.55}
+  .lbl b{display:block;font-size:13.5px;color:var(--or);letter-spacing:.5px;margin-bottom:3px}
+  .card.on .lbl b{color:#fff}
+
+  .cote{position:sticky;top:16px}
+  .cote canvas{display:block;width:100%;height:auto;border-radius:8px;
+               border:1px solid var(--edge);background:#0b0708;cursor:zoom-in}
+  .barre{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:10px 0 0}
+  button{font:inherit;font-size:11.5px;letter-spacing:.4px;cursor:pointer;background:#221816;
+         color:var(--ink);border:1px solid var(--edge);border-radius:5px;padding:6px 11px}
+  button:hover{background:#31221f;border-color:#6d4a40}
+  button.on{background:var(--or);color:#1a1008;border-color:var(--or);font-weight:700}
+  .recette{font-size:12px;color:var(--doux);font-family:ui-monospace,Consolas,monospace;
+           line-height:1.75;margin:11px 0 0}
+  .recette b{color:var(--or)}
+  .mesure{font-size:11.5px;color:var(--doux);margin:9px 0 0;line-height:1.75;font-variant-numeric:tabular-nums}
+  .mesure b{color:var(--ink)} .bon{color:#6ad08a} .mauvais{color:#e84a58}
+
+  .loupe{position:fixed;inset:0;background:rgba(5,3,3,.93);display:flex;align-items:center;
+         justify-content:center;z-index:50;cursor:zoom-out}
+  .loupe canvas{width:min(96vw,1440px);height:auto;image-rendering:pixelated;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div>
+  <h1>Temple de la Fricadelle</h1>
+  <p class="note">Terrain du <b>Gardien Éternel de la Fricadelle</b>, univers <b>LE CH'NORD</b>.
+  Premier degré&nbsp;: un vrai temple, d'une <b>culture inventée</b> — le plan d'un temple antique,
+  bâti en brique et en ardoise du Nord, avec des feux venus d'ailleurs. <b>On joue dans la nef</b>&nbsp;:
+  l'idole au fond dans son abside, les bas-côtés le long des deux touches, l'entrée en bas.
+  <b>Six sections, quatre variantes chacune.</b> Chaque vignette est le terrain entier avec cette seule
+  pièce changée&nbsp;; l'aperçu de droite se recompose au clic, et se voit en grand en cliquant dessus.
+  Tout est en coordonnées du jeu (960×600, terrain 70→890 / 84→560, cages de 200 sur 48).</p>
+
+  <div class="modele">
+    <h3>Le modèle de lumière — relevé sur références, à contester tout de suite</h3>
+    <ul>
+      <li><b>Deux sources, et deux seulement.</b> En haut, la lumière divine sur l'idole. En bas, le jour
+          gris du Nord par l'entrée. Le <b>milieu du terrain est donc le plus sombre</b>, et les deux camps,
+          gauche et droite, reçoivent exactement la même chose&nbsp;: le terrain reste équitable.</li>
+      <li><b>Une nef est sombre.</b> Mesuré sur trois nefs de brique&nbsp;: l'ombre profonde fait
+          <span class="chiffre">35&nbsp;%</span> de l'image, la lumière
+          <span class="chiffre">4&nbsp;%</span>. Le panneau de mesure le vérifie en direct.</li>
+      <li><b>Jamais de noir neutre.</b> L'ombre d'une église de brique est brun-rouge
+          (<span class="chiffre">#231518</span> relevé). Tout le fichier s'y tient.</li>
+      <li><b>Le rayon n'est pas doré.</b> Mesuré sur quatre rayons&nbsp;: cœur écrêté au blanc, teinte
+          crème (<span class="chiffre">#efece0</span>). <b>L'or vient de ce que le rayon frappe.</b></li>
+      <li><b>L'or de l'idole est celui du perso</b> (<span class="chiffre">#e8a94a</span>, repris de
+          data/characters.js). Hors lumière il retombe à <span class="chiffre">#6d3f12</span>.</li>
+      <li><b>Les feux sont locaux.</b> Cierges, braises, braseros n'éclairent que leur mètre carré.
+          Leçon de Raccoon&nbsp;: c'est la lumière qui détache l'aire de jeu, jamais la clarté de la matière.</li>
+    </ul>
+    <div class="matieres" id="matieres"></div>
+  </div>
+
+  <div id="sections"></div>
+</div>
+
+<div class="cote">
+  <canvas id="grand" width="960" height="600" title="Cliquer pour agrandir"></canvas>
+  <div class="barre">
+    <button id="btAction">Voir l'action</button>
+    <button id="btNu">Sans la lumière</button>
+    <button id="btFige">Figer</button>
+    <button id="btCopie">Copier la recette</button>
+  </div>
+  <div class="recette" id="recette"></div>
+  <div class="mesure" id="mesure"></div>
+</div>
+
+</div>
+
+<script>
+/* ===========================================================================
+   TEMPLE DE LA FRICADELLE — le terrain complet, six sections.
+
+   Géométrie recopiée du jeu (core/dom.js, data/maps.js) : une vignette n'est
+   qu'un ctx.scale() appliqué avant, jamais un dessin différent. Toutes les
+   fonctions dessinent dans le repère 960×600 et se transposent telles quelles
+   dans js/render/terrains/.
+   ======================================================================== */
+const W = 960, H = 600;
+const COURT = { left: 70, right: 890, top: 84, bottom: 560 };
+const CX = (COURT.left + COURT.right) / 2, CY = (COURT.top + COURT.bottom) / 2;
+const TAU = Math.PI * 2;
+const BANDE = COURT.top;          // 0 → 84   : l'abside, en élévation
+const SEUIL = COURT.bottom;       // 560 → 600 : le mur d'entrée, vu en plan
+const GOAL_D = 48, GH = 100;      // les cages : 48 de profondeur, 200 de haut
+// Les zones de but. Le 5 prend l'or du Gardien, les 3 le rose de son Susanoo :
+// les deux couleurs du perso, et elles se distinguent au premier coup d'œil.
+const ZONES = [
+  { from: -100, to: -26, points: 3, color: '#c24f9a' },
+  { from: -26,  to: 26,  points: 5, color: '#e8a94a' },
+  { from: 26,   to: 100, points: 3, color: '#c24f9a' }
+];
+// Les deux poches libres de chaque bas-côté, au-dessus et au-dessous de la
+// cage : c'est tout ce que les flancs ont pour eux, 70 px sur 124.
+const POCHES = [
+  { y0: COURT.top + 4,     y1: CY - GH - 10 },
+  { y0: CY + GH + 10,      y1: COURT.bottom - 2 }
+];
+
+const graine = i => { const x = Math.sin(i * 127.1) * 43758.5453; return x - Math.floor(x); };
+const alea = (i, a, b) => a + graine(i) * (b - a);
+
+/* --- Les matières, nommées, déclinées ombre / moyen / clair. --- */
+const MAT = {
+  noirChaud:'#140d0e', ombre:'#231518',
+  briqueOmbre:'#3a2420', brique:'#6d4a40', briqueClaire:'#9a6a58', mortier:'#8d7a68',
+  pierreOmbre:'#3a332e', pierre:'#6e6259', pierreClaire:'#9f8f80',
+  marbre:'#b8aea0', marbreSombre:'#2a2426',
+  ardoise:'#2a2f35',
+  orOmbre:'#6d3f12', or:'#e8a94a', orVif:'#f7d488',
+  bronze:'#7a4f26', bronzeClair:'#b8823f',
+  fer:'#1d1b1e', ferArete:'#5d575b',
+  bois:'#4a3526', boisClair:'#6e5038',
+  laine:'#5a4a3e', laineSombre:'#3a2e26', laineClaire:'#7a6a58',
+  rouge:'#6e1a22', rougeClair:'#a8323a',
+  blancArmure:'#f2f4f8', combinaison:'#1b1d24',
+  mosaique:'#221a22',
+  huile:'#a8661a', huileClaire:'#e8b04a',
+  rayon:'#efece0', jourFroid:'#9fb4c0',
+  feu:'#ff9a2e', braise:'#c2410c',
+  rose:'#ff7fd0', roseSombre:'#c24f9a',
+  peau:'#cf9660'
+};
+const NOMS = {
+  ombre:'ombre de nef', brique:'brique du Nord', briqueClaire:'brique éclairée', pierre:'dallage',
+  pierreClaire:'dallage éclairé', marbre:'marbre', ardoise:'ardoise', or:'or du Gardien',
+  orOmbre:'or dans l\'ombre', bronze:'bronze', laine:'laine des fidèles', rouge:'drap rouge',
+  huile:'huile sacrée', rayon:'le rayon', jourFroid:'jour du Nord', feu:'flamme', rose:'rose du Susanoo'
+};
+
+/* --- Couleur. --- */
+function hx(h){ return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]; }
+function tt(h, a){ const [r,g,b] = hx(h); return `rgba(${r},${g},${b},${a})`; }
+function mel(a, b, k){
+  k = Math.max(0, Math.min(1, k));
+  const A = hx(a), B = hx(b);
+  return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * k).toString(16).padStart(2, '0')).join('');
+}
+
+/* ===========================================================================
+   PRIMITIVES — les pièces que toutes les sections se partagent.
+   ======================================================================== */
+
+/* Un appareil de brique en panneresses décalées. `base` est la teinte des
+   briques, posées en transparence sur ce qu'il y a dessous : on dessine
+   toujours le mur sombre d'abord, et les briques n'en sont que le relief. */
+function appareil(c, x, y, w, h, o = {}){
+  const hb = o.hb || 6, lb = o.lb || 16, base = o.base || MAT.brique;
+  const a0 = o.a0 ?? .08, a1 = o.a1 ?? .17;
+  c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+  let rang = 0;
+  for (let yy = y; yy < y + h; yy += hb, rang++){
+    const dec = rang % 2 ? 0 : lb / 2;
+    for (let xx = x - dec; xx < x + w; xx += lb){
+      c.fillStyle = tt(base, a0 + graine(xx * 1.7 + yy * 3.1) * (a1 - a0));
+      c.fillRect(xx, yy + .8, lb - 1.3, hb - 1.6);
+    }
+  }
+  c.restore();
+}
+
+/* Le chemin d'une ouverture en plein cintre, du sommet de l'arc au sol. */
+function arche(c, x, lg, yHaut, yBas){
+  const r = lg / 2, yN = yHaut + r;
+  c.beginPath();
+  c.moveTo(x - r, yBas); c.lineTo(x - r, yN);
+  c.arc(x, yN, r, Math.PI, 0);
+  c.lineTo(x + r, yBas); c.closePath();
+}
+
+/* Une lueur de feu. Radiale, ici, et c'est juste : une flamme EST un point. */
+function lueur(c, x, y, r, col, a){
+  c.save(); c.globalCompositeOperation = 'screen';
+  const g = c.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, tt(col, a)); g.addColorStop(.32, tt(col, a * .42)); g.addColorStop(1, tt(col, 0));
+  c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2);
+  c.restore();
+}
+
+/* Une flamme : une langue orange et son cœur clair, qui battent sur deux
+   fréquences non multiples — une seule sinusoïde se lit comme un clignotant. */
+function flamme(c, x, y, t, s, k = 1){
+  const v = .5 + Math.sin(t * 9 + s * 2.3) * .28 + Math.sin(t * 14.7 + s) * .22;
+  c.save(); c.globalCompositeOperation = 'screen';
+  c.fillStyle = tt(MAT.feu, .8);
+  c.beginPath(); c.ellipse(x, y - 3 * k, 2.2 * k, (4 + v * 2.4) * k, Math.sin(t * 3 + s) * .14, 0, TAU); c.fill();
+  c.fillStyle = tt('#fff1c2', .92);
+  c.beginPath(); c.ellipse(x, y - 2.2 * k, .95 * k, (1.9 + v) * k, 0, 0, TAU); c.fill();
+  c.restore();
+  return v;
+}
+
+/* Un cierge : cire, coulure, mèche. Sa flamme est posée à part, après la
+   pénombre générale, sinon elle serait éteinte avec le reste. */
+function cierge(c, x, y, h){
+  c.fillStyle = '#d9ccb0'; c.fillRect(x - 1.7, y - h, 3.4, h);
+  c.fillStyle = tt('#ffffff', .3); c.fillRect(x - 1.7, y - h, 1, h);
+  c.fillStyle = tt(MAT.noirChaud, .35); c.fillRect(x + .7, y - h, 1, h);
+  c.fillStyle = '#e8dcc2'; c.fillRect(x - 2.3, y - h, 4.6, 1.4);
+  c.fillStyle = MAT.noirChaud; c.fillRect(x - .4, y - h - 1.6, .8, 1.6);
+}
+
+/* LA FRICADELLE. Un boudin long à bouts arrondis, peau grenue, et le pli de
+   cuisson qui court sur tout le flanc : c'est lui qui dit « fricadelle » et
+   pas « saucisse ». Debout, base au point (x, y). `pal` porte les teintes :
+   l'or de l'idole ou le brun d'une vraie fricadelle frite. */
+const PAL_FRITE = { clair:'#c8843e', moyen:'#8e4c1d', sombre:'#4a2410', grain:'#3a1a0a' };
+function palOr(e){
+  return { clair: mel(MAT.orOmbre, MAT.orVif, .22 + e * .78), moyen: mel(MAT.orOmbre, MAT.or, .28 + e * .72),
+           sombre: mel(MAT.noirChaud, MAT.orOmbre, .55 + e * .45), grain: MAT.orOmbre };
+}
+function fricadelle(c, x, y, lg, ht, pal, s){
+  c.save(); c.translate(x, y);
+  c.beginPath(); c.roundRect(-lg / 2, -ht, lg, ht, lg / 2);
+  c.fillStyle = pal.moyen; c.fill();
+  c.save(); c.clip();
+  // Le modelé d'un cylindre : une bande claire au tiers, jamais sur le bord.
+  const g = c.createLinearGradient(-lg / 2, 0, lg / 2, 0);
+  g.addColorStop(0, tt(pal.sombre, .9)); g.addColorStop(.3, tt(pal.clair, .7));
+  g.addColorStop(.46, tt(pal.clair, .25)); g.addColorStop(.8, tt(pal.sombre, .55));
+  g.addColorStop(1, tt(pal.sombre, .95));
+  c.fillStyle = g; c.fillRect(-lg / 2, -ht, lg, ht);
+  // La peau grenue, plus serrée dans l'ombre.
+  const n = Math.max(6, Math.round(lg * ht / 34));
+  for (let i = 0; i < n; i++){
+    const px = alea(s * 3 + i, -lg * .44, lg * .44), py = alea(s * 5 + i, -ht * .95, -ht * .05);
+    c.fillStyle = tt(pal.grain, .12 + graine(s + i * 1.3) * .22);
+    c.beginPath(); c.ellipse(px, py, .7 + graine(i + s) * lg * .05, .6, 0, 0, TAU); c.fill();
+  }
+  // Le pli de cuisson.
+  c.strokeStyle = tt(pal.grain, .5); c.lineWidth = Math.max(.8, lg * .065);
+  c.beginPath(); c.moveTo(lg * .08, -ht * .93);
+  c.bezierCurveTo(lg * .22, -ht * .66, -lg * .02, -ht * .38, lg * .12, -ht * .07); c.stroke();
+  c.strokeStyle = tt(pal.clair, .35); c.lineWidth = Math.max(.6, lg * .03);
+  c.beginPath(); c.moveTo(lg * .02, -ht * .92);
+  c.bezierCurveTo(lg * .16, -ht * .65, -lg * .08, -ht * .38, lg * .06, -ht * .08); c.stroke();
+  c.restore();
+  // Les deux bouts, plus cuits.
+  c.fillStyle = tt(pal.grain, .4);
+  c.beginPath(); c.ellipse(0, -ht + lg * .16, lg * .3, lg * .12, 0, 0, TAU); c.fill();
+  c.beginPath(); c.ellipse(0, -lg * .14, lg * .3, lg * .1, 0, 0, TAU); c.fill();
+  c.restore();
+}
+/* Couchée, centrée sur (x, y), longue de L. */
+function fricadelleCouchee(c, x, y, L, E, pal, s, ang = 0){
+  c.save(); c.translate(x, y); c.rotate(ang + Math.PI / 2);
+  fricadelle(c, 0, L / 2, E, L, pal, s);
+  c.restore();
+}
+
+/* Un socle à degrés de pierre, large en bas. */
+function socle(c, x, ySol, lg, n, e = .5){
+  for (let k = 0; k < n; k++){
+    const w = lg + (n - 1 - k) * 22, y = ySol - (k + 1) * 7;
+    c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .3 + e * .4 - k * .06);
+    c.fillRect(x - w / 2, y, w, 7);
+    c.fillStyle = tt(MAT.pierreClaire, .12 + e * .18); c.fillRect(x - w / 2, y, w, 1.6);
+    c.fillStyle = tt(MAT.noirChaud, .55); c.fillRect(x - w / 2, y + 5.6, w, 1.4);
+  }
+}
+
+/* Une colonne de brique en élévation, avec son ombre portée sur le dallage.
+   L'ombre s'écarte de la source la plus proche : vers le bas dans la moitié
+   haute (sous l'idole), vers le haut dans la moitié basse (face à l'entrée).
+   C'est elle qui trahit le modèle de lumière et rend la salle crédible. */
+function colonne(c, x, ySol, ht, lg){
+  const vers = ySol < CY ? 1 : -1;
+  const dx = (x < CX ? 1 : -1) * 22;
+  c.fillStyle = tt(MAT.noirChaud, .4);
+  c.beginPath();
+  c.moveTo(x - lg / 2, ySol); c.lineTo(x + lg / 2, ySol);
+  c.lineTo(x + lg / 2 + dx, ySol + vers * 46); c.lineTo(x - lg / 2 + dx, ySol + vers * 46);
+  c.closePath(); c.fill();
+  // La base, deux ressauts.
+  c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .5);
+  c.fillRect(x - lg / 2 - 5, ySol - 9, lg + 10, 9);
+  c.fillStyle = tt(MAT.pierreClaire, .18); c.fillRect(x - lg / 2 - 5, ySol - 9, lg + 10, 1.6);
+  c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .35);
+  c.fillRect(x - lg / 2 - 2, ySol - 13, lg + 4, 4);
+  // Le fût, assisé.
+  const haut = ySol - 13 - ht;
+  for (let y = ySol - 13, r = 0; y > haut; y -= 5, r++){
+    c.fillStyle = mel(MAT.briqueOmbre, MAT.brique, .45 + graine(y * 3 + x) * .45);
+    c.fillRect(x - lg / 2, y - 5, lg, 4.2);
+    c.fillStyle = tt(MAT.noirChaud, .3); c.fillRect(x - lg / 2, y - .8, lg, .8);
+    if (r % 2) { c.fillStyle = tt(MAT.noirChaud, .25); c.fillRect(x - 1, y - 5, 1, 4.2); }
+  }
+  // Le modelé du cylindre : la lumière vient de la nef.
+  const g = c.createLinearGradient(x - lg / 2, 0, x + lg / 2, 0);
+  const nef = x < CX;
+  g.addColorStop(0, tt(nef ? MAT.noirChaud : MAT.briqueClaire, nef ? .6 : .18));
+  g.addColorStop(.6, tt(MAT.briqueClaire, .06));
+  g.addColorStop(1, tt(nef ? MAT.briqueClaire : MAT.noirChaud, nef ? .22 : .6));
+  c.fillStyle = g; c.fillRect(x - lg / 2, haut, lg, ht + 1);
+  // Le chapiteau : une corbeille de pierre et son tailloir.
+  c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .55);
+  c.beginPath();
+  c.moveTo(x - lg / 2, haut); c.lineTo(x + lg / 2, haut);
+  c.lineTo(x + lg / 2 + 5, haut - 8); c.lineTo(x - lg / 2 - 5, haut - 8); c.closePath(); c.fill();
+  c.fillStyle = mel(MAT.pierre, MAT.pierreClaire, .2);
+  c.fillRect(x - lg / 2 - 7, haut - 13, lg + 14, 5);
+  c.fillStyle = tt(MAT.pierreClaire, .3); c.fillRect(x - lg / 2 - 7, haut - 13, lg + 14, 1.4);
+}
+
+/* Un fidèle agenouillé, en robe de laine à capuche. Il se balance : la
+   prière, pas le vent. `dir` le tourne vers le centre de la nef. */
+function fidele(c, x, y, h, t, i, dir){
+  const bat = Math.sin(t * 1.15 + i * 1.7);
+  const robe = [MAT.laine, MAT.laineSombre, MAT.laineClaire, '#4a3a44', '#3e4436'][(graine(i * 3.3) * 5) | 0];
+  c.save(); c.translate(x, y); c.scale(dir, 1);
+  c.fillStyle = tt(MAT.noirChaud, .5);
+  c.beginPath(); c.ellipse(0, 0, h * .36, h * .08, 0, 0, TAU); c.fill();
+  c.rotate(.06 * bat);
+  c.fillStyle = robe;
+  c.beginPath();
+  c.moveTo(-h * .3, 0); c.lineTo(-h * .24, -h * .38);
+  c.quadraticCurveTo(-h * .12, -h * .64, h * .1, -h * .52);
+  c.lineTo(h * .24, -h * .12); c.lineTo(h * .32, 0); c.closePath(); c.fill();
+  // Le pli du dos, dans l'ombre, et l'arête qui prend la lumière d'en haut.
+  c.fillStyle = tt(MAT.noirChaud, .35);
+  c.beginPath(); c.moveTo(-h * .3, 0); c.lineTo(-h * .24, -h * .38); c.lineTo(-h * .12, -h * .36);
+  c.lineTo(-h * .14, 0); c.closePath(); c.fill();
+  c.strokeStyle = tt(MAT.laineClaire, .35); c.lineWidth = 1;
+  c.beginPath(); c.moveTo(-h * .23, -h * .42); c.quadraticCurveTo(-h * .1, -h * .63, h * .1, -h * .53); c.stroke();
+  // La capuche, penchée.
+  c.fillStyle = mel(robe, MAT.noirChaud, .12);
+  c.beginPath(); c.ellipse(h * .1, -h * .55 + bat * h * .015, h * .12, h * .13, .5, 0, TAU); c.fill();
+  c.fillStyle = tt(MAT.peau, .5); c.fillRect(h * .16, -h * .56, h * .05, h * .07);
+  // Les mains jointes ; une fois sur deux, elles portent l'offrande.
+  c.fillStyle = tt(MAT.peau, .7); c.fillRect(h * .2, -h * .36, h * .07, h * .06);
+  if (graine(i * 11.7) > .5){
+    c.fillStyle = PAL_FRITE.moyen; c.fillRect(h * .22, -h * .44, h * .06, h * .16);
+    c.fillStyle = tt(PAL_FRITE.clair, .6); c.fillRect(h * .22, -h * .44, h * .025, h * .16);
+  }
+  c.restore();
+}
+
+/* Un fidèle debout, qui avance à petits pas. Même robe, même capuche. */
+function fideleDebout(c, x, y, h, t, i, porte){
+  const pas = Math.sin(t * 2.2 + i * 1.3);
+  const robe = [MAT.laine, MAT.laineSombre, MAT.laineClaire, '#4a3a44', '#3e4436'][(graine(i * 3.3) * 5) | 0];
+  c.save(); c.translate(x, y);
+  c.fillStyle = tt(MAT.noirChaud, .5);
+  c.beginPath(); c.ellipse(0, 0, h * .24, h * .06, 0, 0, TAU); c.fill();
+  c.translate(0, -Math.abs(pas) * h * .02);
+  c.fillStyle = robe;
+  c.beginPath();
+  c.moveTo(-h * .2, 0); c.lineTo(-h * .15, -h * .62); c.quadraticCurveTo(0, -h * .72, h * .15, -h * .62);
+  c.lineTo(h * .2, 0); c.closePath(); c.fill();
+  c.fillStyle = tt(MAT.noirChaud, .3); c.fillRect(-h * .2, -h * .6, h * .12, h * .6);
+  c.fillStyle = mel(robe, MAT.noirChaud, .12);
+  c.beginPath(); c.ellipse(0, -h * .76, h * .13, h * .14, 0, 0, TAU); c.fill();
+  c.fillStyle = tt(MAT.peau, .45); c.fillRect(-h * .05, -h * .76, h * .1, h * .08);
+  if (porte === 'cierge'){
+    cierge(c, h * .16, -h * .42, h * .2);
+  } else if (porte === 'plat'){
+    c.fillStyle = MAT.bronzeClair; c.fillRect(-h * .2, -h * .47, h * .4, h * .04);
+    fricadelleCouchee(c, 0, -h * .52, h * .3, h * .07, PAL_FRITE, i);
+  }
+  c.restore();
+}
+
+/* Un garde du temple : la combinaison noire et l'armure blanche du Gardien
+   Éternel, les plaques de fricadelle dorées, la hallebarde. */
+function garde(c, x, y, h, t, i, dir){
+  const souffle = Math.sin(t * 1.3 + i) * h * .008;
+  c.save(); c.translate(x, y); c.scale(dir, 1);
+  c.fillStyle = tt(MAT.noirChaud, .5);
+  c.beginPath(); c.ellipse(0, 0, h * .28, h * .06, 0, 0, TAU); c.fill();
+  // La hallebarde, derrière lui.
+  c.fillStyle = MAT.bois; c.fillRect(h * .22, -h * 1.12, h * .045, h * 1.12);
+  c.fillStyle = MAT.ferArete;
+  c.beginPath(); c.moveTo(h * .245, -h * 1.26); c.lineTo(h * .29, -h * 1.1); c.lineTo(h * .2, -h * 1.1); c.closePath(); c.fill();
+  c.fillStyle = tt('#c8ccd4', .8);
+  c.beginPath(); c.moveTo(h * .24, -h * 1.08); c.quadraticCurveTo(h * .44, -h * 1.02, h * .26, -h * .9); c.closePath(); c.fill();
+  c.translate(0, souffle);
+  // Jambes, bottes.
+  c.fillStyle = MAT.combinaison;
+  c.fillRect(-h * .13, -h * .36, h * .1, h * .36); c.fillRect(h * .03, -h * .36, h * .1, h * .36);
+  c.fillStyle = MAT.blancArmure; c.fillRect(-h * .14, -h * .1, h * .12, h * .1); c.fillRect(h * .02, -h * .1, h * .12, h * .1);
+  // Torse, plastron blanc, ceinture dorée.
+  c.fillStyle = MAT.combinaison; c.beginPath(); c.roundRect(-h * .17, -h * .68, h * .34, h * .34, h * .04); c.fill();
+  c.fillStyle = MAT.blancArmure; c.fillRect(-h * .13, -h * .64, h * .26, h * .19);
+  c.fillStyle = tt(MAT.noirChaud, .25); c.fillRect(-h * .13, -h * .5, h * .26, h * .05);
+  c.fillStyle = MAT.or; c.fillRect(-h * .17, -h * .38, h * .34, h * .05);
+  // Les épaulières : deux fricadelles dorées couchées.
+  fricadelleCouchee(c, -h * .19, -h * .66, h * .16, h * .08, palOr(.7), i);
+  fricadelleCouchee(c, h * .19, -h * .66, h * .16, h * .08, palOr(.7), i + 3);
+  // La main sur la hampe.
+  c.fillStyle = MAT.blancArmure; c.fillRect(h * .17, -h * .56, h * .08, h * .07);
+  // Le casque blanc, visière noire, les yeux roses du Susanoo.
+  c.fillStyle = MAT.blancArmure; c.beginPath(); c.roundRect(-h * .12, -h * .92, h * .24, h * .24, h * .07); c.fill();
+  c.fillStyle = MAT.combinaison; c.fillRect(-h * .09, -h * .82, h * .19, h * .06);
+  c.fillStyle = tt(MAT.rose, .85); c.fillRect(-h * .05, -h * .81, h * .035, h * .03); c.fillRect(h * .04, -h * .81, h * .035, h * .03);
+  c.fillStyle = tt(MAT.noirChaud, .22); c.fillRect(-h * .12, -h * .92, h * .06, h * .24);
+  c.restore();
+}
+
+/* ===========================================================================
+   SECTION 5 · LE DALLAGE. Ce sur quoi on joue vraiment. Tout ici est
+   statique, donc peint une seule fois dans le fond mis en cache.
+   ======================================================================== */
+
+/* A · Les dalles usées. De grandes pierres en assises décalées, de largeurs
+   inégales : une grille régulière se lit comme un tableur, c'est le décalage
+   d'une rangée à l'autre qui fait la maçonnerie. Aucune fissure dessinée —
+   des traits cassés au hasard ne représentent rien, on l'a appris sur Raccoon.
+
+   Deuxième passe, après l'avoir regardée à 2× : une dalle d'un seul aplat,
+   bordée d'un joint noir et d'un liseré clair réguliers, c'est du carrelage de
+   salle de bain. Une vieille pierre a une valeur qui glisse d'un bord à
+   l'autre, des angles épaufrés, des joints qui s'élargissent, et certaines
+   ont tassé — leur arête haute est alors dans l'ombre au lieu de la lumière. */
+function dalle(c, x0, y0, x1, y1, s){
+  const v = graine(s * 5 + 2), w = x1 - x0, h = y1 - y0;
+  c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .2 + v * .56);
+  c.fillRect(x0, y0, w, h);
+  // La valeur qui glisse d'un bord à l'autre, dans un sens propre à chaque pierre.
+  const a = graine(s * 7) * TAU, cx = x0 + w / 2, cy = y0 + h / 2;
+  const g = c.createLinearGradient(cx - Math.cos(a) * w / 2, cy - Math.sin(a) * h / 2,
+                                   cx + Math.cos(a) * w / 2, cy + Math.sin(a) * h / 2);
+  g.addColorStop(0, tt(MAT.pierreClaire, .07)); g.addColorStop(1, tt(MAT.noirChaud, .14));
+  c.fillStyle = g; c.fillRect(x0, y0, w, h);
+  // Le grain : des éclats minuscules, jamais des taches.
+  for (let k = 0; k < 12; k++){
+    c.fillStyle = tt(k % 3 ? MAT.noirChaud : MAT.pierreClaire, .05 + graine(s * 9 + k) * .08);
+    c.fillRect(alea(s * 7 + k, x0 + 2, x1 - 6), alea(s * 3 + k, y0 + 3, y1 - 4), 1.5 + graine(k + s) * 4, 1.2);
+  }
+  // Les arêtes. Une dalle tassée (une sur cinq) a son arête haute dans l'ombre.
+  const tassee = graine(s * 13) > .8;
+  c.fillStyle = tassee ? tt(MAT.noirChaud, .35) : tt(MAT.pierreClaire, .05 + v * .08);
+  c.fillRect(x0, y0, w, 1.3);
+  c.fillStyle = tt(MAT.noirChaud, .45); c.fillRect(x0, y1 - 1.5, w, 1.5);
+  // Les angles épaufrés : un éclat sombre, de taille et de coin variables.
+  for (let k = 0; k < 4; k++){
+    if (graine(s * 17 + k) < .6) continue;
+    const e = 3 + graine(s * 19 + k) * 5;
+    const px = k % 2 ? x1 : x0, py = k < 2 ? y0 : y1, sx = k % 2 ? -1 : 1, sy = k < 2 ? 1 : -1;
+    c.fillStyle = tt(MAT.noirChaud, .55);
+    c.beginPath(); c.moveTo(px, py); c.lineTo(px + sx * e, py); c.lineTo(px, py + sy * e * .8); c.closePath(); c.fill();
+  }
+}
+
+/* La dalle funéraire : dans toutes les nefs du Nord, une pierre sur quinze
+   ou vingt couvre une tombe, gravée d'un cadre et d'une épitaphe usée. Ici
+   l'épitaphe porte le glyphe de la fricadelle — le même que la frise de
+   l'abside. Gravée à peine : c'est un détail qu'on découvre, pas un motif. */
+function dalleGravee(c, x0, y0, x1, y1, s){
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const creux = (x, y, w, h) => {
+    c.fillStyle = tt(MAT.noirChaud, .32); c.fillRect(x, y, w, h);
+    c.fillStyle = tt(MAT.pierreClaire, .08); c.fillRect(x, y + h, w, .8);
+  };
+  c.strokeStyle = tt(MAT.noirChaud, .24); c.lineWidth = 1.2;
+  c.strokeRect(x0 + 7, y0 + 6, x1 - x0 - 14, y1 - y0 - 12);
+  c.strokeStyle = tt(MAT.pierreClaire, .07);
+  c.strokeRect(x0 + 8, y0 + 7.2, x1 - x0 - 14, y1 - y0 - 12);
+  // Le glyphe : la fricadelle dressée entre ses deux points.
+  c.fillStyle = tt(MAT.noirChaud, .34);
+  c.beginPath(); c.roundRect(cx - 3, cy - 17, 6, 16, 3); c.fill();
+  c.fillRect(cx - 10, cy - 10, 2.4, 2.4); c.fillRect(cx + 7.6, cy - 10, 2.4, 2.4);
+  // Deux lignes d'épitaphe : des mots de longueurs inégales, rognés par les pas.
+  // Des points réguliers se lisaient comme une grille perforée, pas comme du texte.
+  for (let k = 0; k < 2; k++){
+    const lg = 30 + graine(s * 3 + k) * 20;
+    let x = cx - lg / 2;
+    while (x < cx + lg / 2){
+      const mot = 3 + graine(s * 7 + x) * 8;
+      if (graine(x * 1.7 + k) > .2) creux(x, cy + 5 + k * 6, Math.min(mot, cx + lg / 2 - x), 1.5);
+      x += mot + 2.5;
+    }
+  }
+}
+
+function solDalles(c){
+  const L = COURT.left, R = COURT.right, T = COURT.top, B = COURT.bottom;
+  c.fillStyle = mel(MAT.pierreOmbre, MAT.noirChaud, .45); c.fillRect(L, T, R - L, B - T);
+  const hR = (B - T) / 8;
+  for (let j = 0; j < 8; j++){
+    const y = T + j * hR;
+    let x = L - graine(j * 13 + 1) * 120;
+    for (let i = 0; x < R; i++){
+      const s = j * 31 + i, w = 96 + graine(s) * 82;
+      // Des joints de largeur inégale : 1,5 à 3,5 px selon la pierre.
+      const jt = 1.5 + graine(s * 23) * 2;
+      const x0 = Math.max(L, x + jt / 2), x1 = Math.min(R, x + w - jt / 2);
+      if (x1 > x0 + 2){
+        dalle(c, x0, y + jt / 2, x1, y + hR - jt / 2, s);
+        // Une gravée de temps en temps, jamais sur l'axe ni rognée par un bord.
+        const loin = Math.abs((x0 + x1) / 2 - CX) > 110;
+        if (graine(s * 29) > .9 && loin && x0 > L + 2 && x1 < R - 2) dalleGravee(c, x0, y + jt / 2, x1, y + hR - jt / 2, s);
+      }
+      x += w;
+    }
+  }
+  // L'axe poli par les pas, du portail à l'idole : une trace d'usage.
+  const ax = c.createLinearGradient(CX - 80, 0, CX + 80, 0);
+  ax.addColorStop(0, tt(MAT.pierreClaire, 0)); ax.addColorStop(.5, tt(MAT.pierreClaire, .06));
+  ax.addColorStop(1, tt(MAT.pierreClaire, 0));
+  c.fillStyle = ax; c.fillRect(CX - 80, T, 160, B - T);
+}
+
+/* B · Le damier. Le pavement d'église, noir et marbre. Adouci exprès : un
+   vrai damier noir et blanc fait clignoter le disque qui passe dessus. Le
+   marbre clair est donc tiré vers la pierre, et chaque case a ses veines. */
+function solDamier(c){
+  const L = COURT.left, R = COURT.right, T = COURT.top, B = COURT.bottom;
+  const nx = 14, ny = 8, dw = (R - L) / nx, dh = (B - T) / ny;
+  c.fillStyle = MAT.noirChaud; c.fillRect(L, T, R - L, B - T);
+  for (let j = 0; j < ny; j++){
+    for (let i = 0; i < nx; i++){
+      const x = L + i * dw, y = T + j * dh, s = i * 17 + j * 5, noir = (i + j) % 2;
+      // Mesuré au premier réglage : 63 % d'ombre profonde, des cases noires qui
+      // trouaient le sol. Les deux valeurs sont rapprochées vers la pierre.
+      const base = noir ? mel(MAT.marbreSombre, MAT.pierreOmbre, .4 + graine(s) * .2)
+                        : mel(MAT.marbre, MAT.pierreOmbre, .66 + graine(s) * .1);
+      c.fillStyle = base; c.fillRect(x + .8, y + .8, dw - 1.6, dh - 1.6);
+      // Les veines : deux courbes lâches, qui traversent la case d'un bord à l'autre.
+      c.save(); c.beginPath(); c.rect(x + .8, y + .8, dw - 1.6, dh - 1.6); c.clip();
+      c.strokeStyle = noir ? tt(MAT.marbre, .07) : tt(MAT.pierreOmbre, .28); c.lineWidth = .9;
+      for (let k = 0; k < 2; k++){
+        const a = graine(s * 3 + k);
+        c.beginPath(); c.moveTo(x, y + a * dh);
+        c.bezierCurveTo(x + dw * .3, y + graine(s + k) * dh, x + dw * .6, y + graine(s * 7 + k) * dh, x + dw, y + (1 - a) * dh);
+        c.stroke();
+      }
+      c.restore();
+      c.fillStyle = tt(MAT.pierreClaire, noir ? .04 : .1); c.fillRect(x + .8, y + .8, dw - 1.6, 1.2);
+      c.fillStyle = tt(MAT.noirChaud, .4); c.fillRect(x + .8, y + dh - 2, dw - 1.6, 1.2);
+    }
+  }
+}
+
+/* C · La mosaïque de la légende. Des tesselles sombres, une frise en méandre
+   d'or le long du bord, et au centre le médaillon : la fricadelle d'or
+   couchée dans ses rayons. Tout le récit tient dans le rond central — le
+   reste reste du fond, pour que le disque se lise partout ailleurs. */
+function solMosaique(c){
+  const L = COURT.left, R = COURT.right, T = COURT.top, B = COURT.bottom, p = 6;
+  // Le mortier entre les tesselles, pas du noir : avec des joints de 1,4 px
+  // sur du noir, 41 % de la surface était du joint et le sol tombait à 34.
+  c.fillStyle = mel(MAT.pierreOmbre, MAT.noirChaud, .25); c.fillRect(L, T, R - L, B - T);
+  // Tirées vers la pierre : au premier réglage le fond de tesselles tombait à 27
+  // de luminance moyenne, 91 % d'ombre profonde — un trou noir sous les joueurs.
+  const fonds = [mel(MAT.mosaique, MAT.pierre, .5), mel(MAT.mosaique, MAT.pierre, .64), mel(MAT.mosaique, MAT.brique, .75),
+                 mel(MAT.mosaique, MAT.pierre, .76), mel(MAT.mosaique, MAT.pierre, .38)];
+  for (let y = T; y < B; y += p){
+    for (let x = L; x < R; x += p){
+      c.fillStyle = fonds[(graine(x * .37 + y * 1.91) * fonds.length) | 0];
+      c.fillRect(x + .5, y + .5, p - 1, p - 1);
+    }
+  }
+  // Les rayons du médaillon, en éventail de tesselles alternées.
+  c.save();
+  for (let k = 0; k < 24; k++){
+    const a0 = k / 24 * TAU, a1 = (k + .5) / 24 * TAU;
+    c.fillStyle = k % 2 ? tt(MAT.orOmbre, .5) : tt(MAT.rouge, .5);
+    c.beginPath(); c.moveTo(CX + Math.cos(a0) * 70, CY + Math.sin(a0) * 70);
+    c.lineTo(CX + Math.cos((a0 + a1) / 2) * 150, CY + Math.sin((a0 + a1) / 2) * 118);
+    c.lineTo(CX + Math.cos(a1) * 70, CY + Math.sin(a1) * 70); c.closePath(); c.fill();
+  }
+  // Le médaillon.
+  c.beginPath(); c.arc(CX, CY, 60, 0, TAU); c.fillStyle = mel(MAT.rouge, MAT.noirChaud, .25); c.fill();
+  c.clip();
+  fricadelleCouchee(c, CX, CY + 2, 86, 20, palOr(.62), 5, -.35);
+  // La grille des tesselles, par-dessus : c'est elle qui dit « mosaïque ».
+  c.strokeStyle = tt(MAT.noirChaud, .45); c.lineWidth = .8;
+  for (let x = CX - 60; x < CX + 60; x += 4){ c.beginPath(); c.moveTo(x, CY - 60); c.lineTo(x, CY + 60); c.stroke(); }
+  for (let y = CY - 60; y < CY + 60; y += 4){ c.beginPath(); c.moveTo(CX - 60, y); c.lineTo(CX + 60, y); c.stroke(); }
+  c.restore();
+  // La frise en méandre, le long des grands bords.
+  c.save();
+  c.strokeStyle = tt(MAT.or, .42); c.lineWidth = 3; c.lineCap = 'square';
+  for (const yb of [T + 9, B - 21]){
+    for (let x = L + 10; x < R - 24; x += 24){
+      c.beginPath();
+      c.moveTo(x, yb + 12); c.lineTo(x, yb); c.lineTo(x + 15, yb); c.lineTo(x + 15, yb + 8);
+      c.lineTo(x + 7, yb + 8); c.lineTo(x + 7, yb + 4);
+      c.moveTo(x, yb + 12); c.lineTo(x + 24, yb + 12);
+      c.stroke();
+    }
+  }
+  c.restore();
+}
+
+/* D · Les dalles et le tapis rouge. La nef est traversée de l'entrée à
+   l'idole par un long tapis — qui tombe PILE sur la ligne médiane du
+   terrain. Il en devient la ligne : ses deux galons d'or la tracent. */
+function solTapis(c){
+  solDalles(c);
+  const T = COURT.top, lg = 108, x0 = CX - lg / 2;
+  c.fillStyle = tt(MAT.noirChaud, .5); c.fillRect(x0 - 3, T, lg + 6, H - T);  // l'ombre du bord
+  c.fillStyle = MAT.rouge; c.fillRect(x0, T, lg, H - T);
+  const g = c.createLinearGradient(x0, 0, x0 + lg, 0);
+  g.addColorStop(0, tt(MAT.noirChaud, .4)); g.addColorStop(.5, tt(MAT.rougeClair, .16));
+  g.addColorStop(1, tt(MAT.noirChaud, .4));
+  c.fillStyle = g; c.fillRect(x0, T, lg, H - T);
+  // Les poils, en fines côtes, et l'usure au milieu là où l'on marche.
+  for (let x = x0 + 12; x < x0 + lg - 12; x += 3){
+    c.fillStyle = tt(x % 2 ? MAT.rougeClair : MAT.noirChaud, .05); c.fillRect(x, T, 1, H - T);
+  }
+  const u = c.createLinearGradient(CX - 26, 0, CX + 26, 0);
+  u.addColorStop(0, tt(MAT.pierreClaire, 0)); u.addColorStop(.5, tt(MAT.pierreClaire, .07));
+  u.addColorStop(1, tt(MAT.pierreClaire, 0));
+  c.fillStyle = u; c.fillRect(CX - 26, T, 52, H - T);
+  // Les galons d'or et leur motif de losanges.
+  for (const gx of [x0 + 6, x0 + lg - 12]){
+    c.fillStyle = mel(MAT.orOmbre, MAT.or, .55); c.fillRect(gx, T, 6, H - T);
+    c.fillStyle = tt(MAT.noirChaud, .5); c.fillRect(gx + 2.4, T, 1.2, H - T);
+    for (let y = T + 10; y < H; y += 22){
+      c.fillStyle = mel(MAT.orOmbre, MAT.orVif, .5);
+      c.beginPath(); c.moveTo(gx + 3, y - 4); c.lineTo(gx + 6, y); c.lineTo(gx + 3, y + 4); c.lineTo(gx, y); c.closePath(); c.fill();
+    }
+  }
+  // Un pli, en travers : le tapis a été piétiné, il n'est pas neuf.
+  const yp = T + 318;
+  c.fillStyle = tt(MAT.noirChaud, .35);
+  c.beginPath(); c.moveTo(x0, yp); c.lineTo(x0 + lg, yp - 9); c.lineTo(x0 + lg, yp - 5); c.lineTo(x0, yp + 4); c.closePath(); c.fill();
+  c.fillStyle = tt(MAT.rougeClair, .22);
+  c.beginPath(); c.moveTo(x0, yp - 3); c.lineTo(x0 + lg, yp - 12); c.lineTo(x0 + lg, yp - 9); c.lineTo(x0, yp); c.closePath(); c.fill();
+}
+
+/* Le marquage, incrusté de laiton : une rainure noire et un filet d'or. Il
+   ne doit JAMAIS ressembler aux joints des dalles — premier jet, on ne
+   distinguait plus les lignes du terrain de la maçonnerie. */
+function marquage(c, sansMediane){
+  const L = COURT.left, R = COURT.right, T = COURT.top, B = COURT.bottom;
+  const filet = (x, y, w, h) => {
+    c.fillStyle = tt(MAT.noirChaud, .7); c.fillRect(x - 1, y - 1, w + 2, h + 2);
+    c.fillStyle = tt(MAT.or, .36); c.fillRect(x, y, w, h);
+  };
+  filet(L + 3, T + 3, R - L - 6, 2); filet(L + 3, B - 5, R - L - 6, 2);
+  if (!sansMediane) filet(CX - 1.5, T, 3, B - T);
+  c.strokeStyle = tt(MAT.noirChaud, .7); c.lineWidth = 5;
+  c.beginPath(); c.arc(CX, CY, 62, 0, TAU); c.stroke();
+  c.strokeStyle = tt(MAT.or, .34); c.lineWidth = 2.2;
+  c.beginPath(); c.arc(CX, CY, 62, 0, TAU); c.stroke();
+}
+
+const SOLS = [
+  { k:'A', nom:'Les dalles usées', fixe: solDalles,
+    txt:"De grandes pierres en assises décalées, de largeurs inégales, polies au milieu par des siècles de pas. Neutre et sombre : tout ce qu'on pose dessus ressort — c'est ce qui a sauvé la lisibilité sur Raccoon." },
+  { k:'B', nom:'Le damier', fixe: solDamier,
+    txt:"Le pavement d'église, marbre et noir, chaque case veinée. Déjà adouci : un vrai noir et blanc ferait clignoter le disque. Graphiquement le plus fort — c'est le plus risqué en mouvement, regarde-le avec « Voir l'action »." },
+  { k:'C', nom:'La mosaïque de la légende', fixe: solMosaique,
+    txt:"Des tesselles sombres, une frise en méandre d'or sur les grands bords, et au centre le médaillon : la fricadelle d'or couchée dans ses rayons. Le récit tient dans le rond central, le reste reste du fond." },
+  { k:'D', nom:'Les dalles et le tapis rouge', fixe: c => solTapis(c), sansMediane: true,
+    txt:"Un long tapis rouge de l'entrée à l'idole, qui tombe pile sur la ligne médiane et en devient la ligne : ses galons d'or la tracent. Usé au milieu, un pli en travers — piétiné, pas neuf." }
+];
+
+/* ===========================================================================
+   SECTION 3 · LES FLANCS. Les deux bas-côtés, 70 px de large, coupés en deux
+   poches par la cage. Chaque variante a sa part fixe (peinte une fois), sa
+   part animée (sous la pénombre) et ses feux (par-dessus la pénombre, sinon
+   ils s'éteignent avec le reste).
+   ======================================================================== */
+
+/* Le mur commun des bas-côtés, et la marche de pierre qui borde le terrain. */
+function murBasCotes(c, clair = 0){
+  for (const [x0, x1] of [[0, COURT.left], [COURT.right, W]]){
+    c.fillStyle = mel(MAT.briqueOmbre, MAT.noirChaud, .18 - clair); c.fillRect(x0, 0, x1 - x0, H);
+    appareil(c, x0, 0, x1 - x0, H, { base: MAT.brique, a0: .06 + clair * .2, a1: .15 + clair * .3 });
+  }
+  for (const x of [COURT.left - 5, COURT.right]){
+    c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .45); c.fillRect(x, COURT.top, 5, COURT.bottom - COURT.top);
+    c.fillStyle = tt(MAT.pierreClaire, .2); c.fillRect(x + (x < CX ? 4 : 0), COURT.top, 1, COURT.bottom - COURT.top);
+  }
+}
+/* Parcourt les quatre poches : (x du bord extérieur, sens vers la nef, poche, rang). */
+function chaquePoche(fn){
+  let n = 0;
+  for (const cote of [0, 1]){
+    for (const p of POCHES){
+      const dir = cote ? -1 : 1;
+      fn(cote ? W : 0, dir, p, n++);
+    }
+  }
+}
+
+/* A · Colonnades et fidèles. */
+const flancsColonnes = {
+  fixe(c){
+    murBasCotes(c);
+    chaquePoche((xb, dir, p) => {
+      colonne(c, xb + dir * 17, p.y1 - 2, p.y1 - p.y0 - 32, 24);
+      // Les prie-Dieu : deux barres de bois vues en plan, où l'on s'agenouille.
+      for (let k = 0; k < 2; k++){
+        const y = p.y0 + 44 + k * 40;
+        c.fillStyle = mel(MAT.bois, MAT.noirChaud, .3); c.fillRect(Math.min(xb + dir * 36, xb + dir * 66), y, 30, 5);
+        c.fillStyle = tt(MAT.boisClair, .3); c.fillRect(Math.min(xb + dir * 36, xb + dir * 66), y, 30, 1.2);
+      }
+    });
+  },
+  anime(c, t){
+    chaquePoche((xb, dir, p, n) => {
+      for (let k = 0; k < 4; k++){
+        const x = xb + dir * (43 + (k % 2) * 17), y = p.y0 + 40 + Math.floor(k / 2) * 40 + (k % 2) * 3;
+        fidele(c, x, y, 29, t, n * 7 + k, dir);
+      }
+    });
+  },
+  lueurs(){}
+};
+
+/* B · Chapelles et cierges. */
+const flancsChapelles = {
+  fixe(c){
+    murBasCotes(c);
+    chaquePoche((xb, dir, p) => {
+      const x0 = Math.min(xb + dir * 4, xb + dir * 64), y0 = p.y0 + 8, hC = p.y1 - p.y0 - 16;
+      // Le sol de la chapelle, plus sombre, et ses deux piles de pierre.
+      c.fillStyle = mel(MAT.pierreOmbre, MAT.noirChaud, .5); c.fillRect(x0, y0, 60, hC);
+      for (const y of [y0 - 4, y0 + hC - 4]){
+        c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .5); c.fillRect(x0 - 2, y, 64, 8);
+        c.fillStyle = tt(MAT.pierreClaire, .2); c.fillRect(x0 - 2, y, 64, 1.4);
+      }
+      // L'autel contre le mur, sa nappe blanche et son retable d'or.
+      const xa = Math.min(xb + dir * 6, xb + dir * 22);
+      c.fillStyle = mel(MAT.pierre, MAT.pierreClaire, .15); c.fillRect(xa, y0 + 16, 16, hC - 32);
+      c.fillStyle = '#d8d2c4'; c.fillRect(xa + 2, y0 + 16, 12, hC - 32);
+      c.fillStyle = tt(MAT.rouge, .7); c.fillRect(xa + 6, y0 + 16, 4, hC - 32);
+      c.fillStyle = mel(MAT.orOmbre, MAT.or, .6); c.fillRect(xa + (dir > 0 ? 0 : 12), y0 + 30, 4, hC - 60);
+      // Le râtelier à cierges, une herse de fer vue en plan.
+      const xr = Math.min(xb + dir * 34, xb + dir * 60);
+      c.fillStyle = MAT.fer; c.fillRect(xr, y0 + 22, 26, hC - 44);
+      c.strokeStyle = tt(MAT.ferArete, .5); c.lineWidth = 1; c.strokeRect(xr + .5, y0 + 22.5, 25, hC - 45);
+    });
+  },
+  anime(c, t){
+    chaquePoche((xb, dir, p, n) => {
+      const xr = Math.min(xb + dir * 34, xb + dir * 60), y0 = p.y0 + 30, hC = p.y1 - p.y0 - 60;
+      for (let r = 0; r < 4; r++) for (let k = 0; k < 3; k++){
+        const s = n * 40 + r * 3 + k;
+        if (graine(s) < .15) continue;                       // quelques places vides
+        cierge(c, xr + 5 + k * 8, y0 + 12 + r * (hC / 4), 5 + graine(s * 3) * 9);
+      }
+    });
+  },
+  lueurs(c, t){
+    chaquePoche((xb, dir, p, n) => {
+      const xr = Math.min(xb + dir * 34, xb + dir * 60), y0 = p.y0 + 30, hC = p.y1 - p.y0 - 60;
+      lueur(c, xr + 13, y0 + hC / 2, 62, MAT.feu, .34 + Math.sin(t * 3 + n) * .03);
+      for (let r = 0; r < 4; r++) for (let k = 0; k < 3; k++){
+        const s = n * 40 + r * 3 + k;
+        if (graine(s) < .15) continue;
+        flamme(c, xr + 5 + k * 8, y0 + 12 + r * (hC / 4) - (5 + graine(s * 3) * 9) - 1.6, t, s, .7);
+      }
+      // Le reflet de l'or du retable.
+      const xa = Math.min(xb + dir * 6, xb + dir * 22);
+      lueur(c, xa + 8, p.y0 + (p.y1 - p.y0) / 2, 22, MAT.orVif, .12);
+    });
+  }
+};
+
+/* C · Les murs nus et les bannières. */
+function banniere(c, x, y0, L, t, i){
+  const lg = 30, bat = Math.sin(t * .7 + i * 1.9);
+  // La tringle de bronze et ses deux pommeaux.
+  c.fillStyle = MAT.bronze; c.fillRect(x - lg / 2 - 5, y0 - 2, lg + 10, 3);
+  c.fillStyle = MAT.bronzeClair; c.beginPath(); c.arc(x - lg / 2 - 5, y0 - .5, 2.4, 0, TAU); c.arc(x + lg / 2 + 5, y0 - .5, 2.4, 0, TAU); c.fill();
+  // Le drap, tracé en tranches : chacune se décale un peu plus que celle du
+  // dessus, c'est ce qui fait onduler le bas sans toucher la tringle.
+  for (let y = 0; y < L; y += 2){
+    const d = bat * (y / L) * (y / L) * 5 + Math.sin(t * 1.6 + y * .08 + i) * (y / L) * 1.2;
+    const bord = y > L - 12 ? Math.abs((y - (L - 12)) / 12) : 0;   // la queue d'aronde
+    c.fillStyle = mel(MAT.rouge, MAT.noirChaud, .15 + (y / L) * .2);
+    c.fillRect(x - lg / 2 + d, y0 + y, lg / 2 - bord * lg * .5 + .5, 2.2);
+    c.fillRect(x + d + bord * lg * .5 - .5, y0 + y, lg / 2 - bord * lg * .5 + .5, 2.2);
+    if (y < L - 12){
+      c.fillStyle = mel(MAT.orOmbre, MAT.or, .6);
+      c.fillRect(x - lg / 2 + d, y0 + y, 2, 2.2); c.fillRect(x + lg / 2 - 2 + d, y0 + y, 2, 2.2);
+    }
+  }
+  // L'emblème : la fricadelle d'or dressée, entre deux épis.
+  const d = bat * .3 * .3 * 5;
+  fricadelle(c, x + d, y0 + L * .55, 7, 22, palOr(.55), i);
+  c.strokeStyle = tt(MAT.or, .55); c.lineWidth = 1.2;
+  for (const s of [-1, 1]){
+    c.beginPath(); c.moveTo(x + d + s * 3, y0 + L * .58);
+    c.quadraticCurveTo(x + d + s * 11, y0 + L * .45, x + d + s * 7, y0 + L * .28); c.stroke();
+  }
+}
+const flancsBannieres = {
+  fixe(c){
+    murBasCotes(c, .12);
+    // Les contreforts : de grosses piles qui avancent du mur, vues en plan.
+    for (const cote of [0, 1]){
+      for (const y of [COURT.top - 6, CY - GH - 16, CY + GH + 4, COURT.bottom - 6]){
+        const x = cote ? W - 26 : 0;
+        c.fillStyle = mel(MAT.briqueOmbre, MAT.brique, .35); c.fillRect(x, y, 26, 12);
+        c.fillStyle = tt(MAT.briqueClaire, .18); c.fillRect(x, y, 26, 1.6);
+        c.fillStyle = tt(MAT.noirChaud, .5); c.fillRect(x, y + 10.5, 26, 1.5);
+      }
+    }
+  },
+  anime(c, t){
+    chaquePoche((xb, dir, p, n) => banniere(c, xb + dir * 36, p.y0 + 12, p.y1 - p.y0 - 26, t, n));
+  },
+  lueurs(){}
+};
+
+/* D · Braseros et gardes. */
+const flancsBraseros = {
+  fixe(c){
+    murBasCotes(c);
+    chaquePoche((xb, dir, p) => {
+      const x = xb + dir * 24, y = p.y0 + 58;
+      // Le trépied de bronze.
+      c.strokeStyle = MAT.bronze; c.lineWidth = 2.4;
+      c.beginPath(); c.moveTo(x, y); c.lineTo(x - 10, y + 30); c.moveTo(x, y); c.lineTo(x + 10, y + 30);
+      c.moveTo(x, y); c.lineTo(x, y + 33); c.stroke();
+      c.fillStyle = tt(MAT.noirChaud, .45); c.beginPath(); c.ellipse(x, y + 32, 14, 4, 0, 0, TAU); c.fill();
+      // La vasque.
+      c.fillStyle = MAT.bronze;
+      c.beginPath(); c.moveTo(x - 15, y - 6); c.quadraticCurveTo(x, y + 12, x + 15, y - 6); c.closePath(); c.fill();
+      c.fillStyle = MAT.bronzeClair; c.fillRect(x - 16, y - 8, 32, 3);
+      c.fillStyle = tt(MAT.noirChaud, .4); c.fillRect(x - 16, y - 5, 32, 1);
+    });
+  },
+  anime(c, t){
+    chaquePoche((xb, dir, p, n) => {
+      // Les braises dans la vasque.
+      const x = xb + dir * 24, y = p.y0 + 58;
+      for (let k = 0; k < 6; k++){
+        c.fillStyle = tt(k % 2 ? MAT.braise : '#7a1e0a', .9);
+        c.fillRect(x - 12 + k * 4, y - 9 - graine(n * 7 + k) * 3, 4, 3);
+      }
+      garde(c, xb + dir * 52, p.y1 - 8, 42, t, n, dir);
+    });
+  },
+  lueurs(c, t){
+    chaquePoche((xb, dir, p, n) => {
+      const x = xb + dir * 24, y = p.y0 + 48;
+      const v = .85 + Math.sin(t * 5 + n) * .08 + Math.sin(t * 11.3 + n * 2) * .07;
+      lueur(c, x, y, 86, MAT.feu, .36 * v);
+      for (let k = 0; k < 5; k++) flamme(c, x - 10 + k * 5, y + 1 - (k % 2) * 2, t, n * 9 + k, 1.5 + (k === 2) * .7);
+      // Les escarbilles qui montent et s'éteignent.
+      c.save(); c.globalCompositeOperation = 'screen';
+      for (let k = 0; k < 7; k++){
+        const q = (t * .5 + graine(n * 13 + k)) % 1;
+        c.fillStyle = tt('#ffc070', (1 - q) * .8);
+        c.fillRect(x + Math.sin(t * 2 + k * 3) * 6 + alea(n + k, -8, 8), y - 6 - q * 46, 1.4, 1.4);
+      }
+      c.restore();
+    });
+  }
+};
+
+const FLANCS = [
+  { k:'A', nom:'Colonnades et fidèles', ...flancsColonnes,
+    txt:"Une grosse colonne de brique par poche, et les fidèles agenouillés sur leurs prie-Dieu, qui se balancent en priant, une fricadelle d'offrande aux mains un sur deux. Ça remplace le public, et c'est le plus sombre des quatre." },
+  { k:'B', nom:'Chapelles et cierges', ...flancsChapelles,
+    txt:"Chaque poche devient une chapelle : autel à nappe blanche, retable d'or, et une herse de cierges dont certains sont usés jusqu'au bout. Des dizaines de petits feux chauds qui bordent le terrain." },
+  { k:'C', nom:'Murs nus et bannières', ...flancsBannieres,
+    txt:"La brique nue, haute, avec ses contreforts, et une bannière rouge par poche : la fricadelle d'or entre deux épis, le bas qui ondule. Le plus sobre près du jeu, le plus reposant pour l'œil." },
+  { k:'D', nom:'Braseros et gardes', ...flancsBraseros,
+    txt:"Une vasque de bronze sur trépied, un vrai feu qui lance ses escarbilles, et à côté un garde dans l'armure du Gardien Éternel — combinaison noire, plastron blanc, épaulières-fricadelles, hallebarde, yeux roses." }
+];
+
+/* ===========================================================================
+   L'ABSIDE — commune, en élévation dans la bande du haut. La niche centrale
+   a son arc coupé par le haut de l'image : c'est ce qui fait croire à une
+   abside très haute alors qu'on ne dispose que de 84 px.
+   ======================================================================== */
+const NICHE = 196;
+function abside(c){
+  const g = c.createLinearGradient(0, 0, 0, BANDE);
+  g.addColorStop(0, MAT.noirChaud); g.addColorStop(.4, MAT.briqueOmbre);
+  g.addColorStop(1, mel(MAT.brique, MAT.briqueOmbre, .5));
+  c.fillStyle = g; c.fillRect(0, 0, W, BANDE);
+  appareil(c, 0, 22, W, BANDE - 22, { a0: .07, a1: .18 });
+  // La frise sculptée sous la voûte : le glyphe de la fricadelle, répété.
+  // C'est la signature de la culture inventée — un motif qu'on retrouve
+  // gravé, pas une décoration empruntée.
+  c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .35); c.fillRect(0, 14, W, 9);
+  c.fillStyle = tt(MAT.pierreClaire, .16); c.fillRect(0, 14, W, 1.2);
+  for (let x = 10; x < W; x += 20){
+    c.fillStyle = tt(MAT.noirChaud, .5);
+    c.beginPath(); c.roundRect(x - 1.6, 15.5, 3.2, 6, 1.6); c.fill();
+    c.fillRect(x + 5, 17.6, 1.5, 1.5); c.fillRect(x - 6.5, 17.6, 1.5, 1.5);
+  }
+  const v = c.createLinearGradient(0, 0, 0, 16);
+  v.addColorStop(0, MAT.noirChaud); v.addColorStop(1, tt(MAT.ardoise, .5));
+  c.fillStyle = v; c.fillRect(0, 0, W, 14);
+
+  // Les deux portes basses du chœur.
+  for (const dx of [-306, 306]){
+    arche(c, CX + dx, 58, 42, BANDE - 6); c.fillStyle = MAT.noirChaud; c.fill();
+    c.strokeStyle = tt(MAT.briqueClaire, .22); c.lineWidth = 4; c.stroke();
+  }
+  // Les pilastres qui rythment le mur.
+  for (const dx of [-168, 168, -440, 440]){
+    c.fillStyle = mel(MAT.briqueOmbre, MAT.brique, .35); c.fillRect(CX + dx - 7, 23, 14, BANDE - 29);
+    c.fillStyle = tt(MAT.briqueClaire, .14); c.fillRect(CX + dx - 7, 23, 2, BANDE - 29);
+    c.fillStyle = tt(MAT.noirChaud, .4); c.fillRect(CX + dx + 5, 23, 2, BANDE - 29);
+  }
+  // La niche, creusée : noire au pied, un peu plus claire dans le cul-de-four.
+  arche(c, CX, NICHE, -64, BANDE - 6);
+  c.fillStyle = MAT.noirChaud; c.fill();
+  const cf = c.createLinearGradient(0, 0, 0, BANDE);
+  cf.addColorStop(0, tt(MAT.brique, .24)); cf.addColorStop(1, tt(MAT.brique, 0));
+  c.fillStyle = cf; c.fill();
+  // Le double rouleau de brique de l'arc.
+  c.save();
+  arche(c, CX, NICHE + 10, -69, BANDE - 6); c.strokeStyle = mel(MAT.brique, MAT.briqueClaire, .3); c.lineWidth = 8; c.stroke();
+  arche(c, CX, NICHE + 22, -75, BANDE - 6); c.strokeStyle = tt(MAT.noirChaud, .55); c.lineWidth = 2; c.stroke();
+  c.restore();
+  // Le bandeau de pierre au pied du mur, qui ferme la bande.
+  c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .55); c.fillRect(0, BANDE - 7, W, 7);
+  c.fillStyle = tt(MAT.pierreClaire, .22); c.fillRect(0, BANDE - 7, W, 1.6);
+  c.fillStyle = tt(MAT.noirChaud, .6); c.fillRect(0, BANDE - 1.4, W, 1.4);
+}
+
+/* ===========================================================================
+   SECTION 2 · L'IDOLE. Posée sur le bandeau (y = BANDE − 7), dans la niche.
+   `e` est l'éclat que la lumière lui accorde, de 0 à 1 : une idole ne décide
+   pas de son éclat. `lueurs` porte ses propres feux, s'il y en a.
+   ======================================================================== */
+const SOL_IDOLE = BANDE - 7;
+
+/* A · La fricadelle dressée. */
+const idoleDressee = {
+  peindre(c, t, e){
+    socle(c, CX, SOL_IDOLE, 46, 3, e);
+    fricadelle(c, CX, SOL_IDOLE - 21, 30, 56, palOr(e), 11);
+    // Le ruban sacré qui la ceint, noué d'or.
+    c.fillStyle = mel(MAT.roseSombre, MAT.rose, e * .4);
+    c.fillRect(CX - 15, SOL_IDOLE - 50, 30, 5);
+    c.fillStyle = tt(MAT.noirChaud, .3); c.fillRect(CX - 15, SOL_IDOLE - 46, 30, 1);
+    c.fillStyle = mel(MAT.orOmbre, MAT.orVif, e);
+    c.beginPath(); c.arc(CX + 7, SOL_IDOLE - 47.5, 3, 0, TAU); c.fill();
+    c.fillRect(CX + 6, SOL_IDOLE - 46, 2, 8); c.fillRect(CX + 9, SOL_IDOLE - 46, 2, 6);
+    // Deux torchères de pierre.
+    for (const dx of [-66, 66]){
+      c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .45); c.fillRect(CX + dx - 5, SOL_IDOLE - 28, 10, 28);
+      c.fillStyle = tt(MAT.pierreClaire, .18); c.fillRect(CX + dx - 5, SOL_IDOLE - 28, 2, 28);
+      c.fillStyle = MAT.bronze; c.fillRect(CX + dx - 8, SOL_IDOLE - 32, 16, 5);
+    }
+  },
+  lueurs(c, t){
+    for (const dx of [-66, 66]){
+      lueur(c, CX + dx, SOL_IDOLE - 36, 36, MAT.feu, .34);
+      flamme(c, CX + dx - 3, SOL_IDOLE - 33, t, dx, 1.3); flamme(c, CX + dx + 3, SOL_IDOLE - 33, t, dx + 5, 1.1);
+    }
+  }
+};
+
+/* B · La statue du Gardien, assis en majesté. Deuxième version : la première
+   peignait la statue aux couleurs du costume — plastron blanc, combinaison
+   noire, genoux dorés — et, regardée à 4×, elle se lisait comme un robot ou
+   un grille-pain. Une statue est d'UNE seule matière. Tout est donc en or,
+   modelé par la lumière d'en haut, et seuls les yeux roses gardent leur
+   couleur : ils ne sont pas sculptés, ils brillent.
+   La pose est celle des rois de pierre : l'épée plantée devant soi, les deux
+   mains sur le pommeau. Sauf que l'épée est une fricadelle. Ramenée à 70 %
+   autour de ses pieds pour que la tête tienne dans l'image. */
+const idoleDieu = {
+  peindre(c, t, e){
+    socle(c, CX, SOL_IDOLE, 112, 2, e);
+    const y = SOL_IDOLE - 14, p = palOr(e);
+    c.save(); c.translate(CX, y); c.scale(.7, .7); c.translate(-CX, -y);
+    // Le trône de pierre : dossier haut, deux pommeaux, assise en bloc.
+    c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .3 + e * .35);
+    c.fillRect(CX - 40, y - 80, 80, 54);
+    c.fillStyle = tt(MAT.pierreClaire, .15 + e * .15); c.fillRect(CX - 40, y - 80, 80, 2);
+    c.fillStyle = tt(MAT.noirChaud, .3); c.fillRect(CX - 34, y - 74, 68, 44);
+    for (const dx of [-40, 40]){
+      c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .4 + e * .35);
+      c.beginPath(); c.arc(CX + dx, y - 83, 5, 0, TAU); c.fill();
+    }
+    c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .25 + e * .3); c.fillRect(CX - 46, y - 26, 92, 26);
+    c.fillStyle = tt(MAT.noirChaud, .35); c.fillRect(CX - 46, y - 6, 92, 6);
+
+    const dore = (x, yy, w, h, r = 2) => {
+      c.fillStyle = p.moyen; c.beginPath(); c.roundRect(x, yy, w, h, r); c.fill();
+      c.fillStyle = tt(p.clair, .55); c.fillRect(x + 1, yy + 1, Math.max(1, w * .28), h - 2);
+      c.fillStyle = tt(p.sombre, .6); c.fillRect(x + w - Math.max(1.5, w * .22), yy + 1, Math.max(1.5, w * .22), h - 2);
+    };
+    // Les pieds, les tibias, les genoux.
+    dore(CX - 23, y - 6, 14, 6); dore(CX + 9, y - 6, 14, 6);
+    dore(CX - 21, y - 26, 11, 21); dore(CX + 10, y - 26, 11, 21);
+    dore(CX - 25, y - 34, 19, 10, 5); dore(CX + 6, y - 34, 19, 10, 5);
+    // Le buste, en trapèze : large aux épaules, serré à la taille.
+    c.fillStyle = p.moyen;
+    c.beginPath(); c.moveTo(CX - 24, y - 62); c.lineTo(CX + 24, y - 62);
+    c.lineTo(CX + 17, y - 34); c.lineTo(CX - 17, y - 34); c.closePath(); c.fill();
+    c.fillStyle = tt(p.clair, .45);
+    c.beginPath(); c.moveTo(CX - 24, y - 62); c.lineTo(CX - 8, y - 62); c.lineTo(CX - 8, y - 34); c.lineTo(CX - 17, y - 34); c.closePath(); c.fill();
+    c.fillStyle = tt(p.sombre, .55);
+    c.beginPath(); c.moveTo(CX + 10, y - 62); c.lineTo(CX + 24, y - 62); c.lineTo(CX + 17, y - 34); c.lineTo(CX + 8, y - 34); c.closePath(); c.fill();
+    // La ceinture, en relief.
+    c.fillStyle = tt(p.sombre, .7); c.fillRect(CX - 18, y - 38, 36, 3);
+    // Les bras qui descendent, les avant-bras qui reviennent vers le pommeau.
+    dore(CX - 31, y - 60, 8, 20); dore(CX + 23, y - 60, 8, 20);
+    c.strokeStyle = p.moyen; c.lineWidth = 7; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(CX - 27, y - 42); c.lineTo(CX - 6, y - 50); c.stroke();
+    c.beginPath(); c.moveTo(CX + 27, y - 42); c.lineTo(CX + 6, y - 50); c.stroke();
+    c.strokeStyle = tt(p.sombre, .5); c.lineWidth = 2;
+    c.beginPath(); c.moveTo(CX + 27, y - 40); c.lineTo(CX + 6, y - 48); c.stroke();
+    c.lineCap = 'butt';
+    // L'épée-fricadelle, plantée entre les genoux, jusqu'au menton.
+    fricadelle(c, CX, y - 20, 11, 34, p, 21);
+    // Les deux mains sur le pommeau.
+    dore(CX - 8, y - 55, 16, 8, 3);
+    // Les épaulières : deux fricadelles couchées, comme sur le sprite.
+    fricadelleCouchee(c, CX - 25, y - 61, 20, 10, p, 3);
+    fricadelleCouchee(c, CX + 25, y - 61, 20, 10, p, 7);
+    // Le cou, la tête, la masse des cheveux en mèches.
+    dore(CX - 4, y - 66, 8, 6, 1);
+    c.fillStyle = p.moyen; c.beginPath(); c.arc(CX, y - 73, 9, 0, TAU); c.fill();
+    c.fillStyle = tt(p.clair, .5); c.beginPath(); c.arc(CX - 3, y - 74, 5, 0, TAU); c.fill();
+    c.fillStyle = mel(p.sombre, p.moyen, .35);
+    c.beginPath(); c.moveTo(CX - 10, y - 72);
+    for (let k = 0; k <= 6; k++){
+      const a = Math.PI + k / 6 * Math.PI;
+      c.lineTo(CX + Math.cos(a) * 12, y - 75 + Math.sin(a) * 11 - (k % 2) * 3);
+    }
+    c.lineTo(CX + 10, y - 72); c.lineTo(CX + 8, y - 76); c.lineTo(CX - 8, y - 76); c.closePath(); c.fill();
+    // Les yeux roses du Susanoo : la seule couleur de la statue.
+    const bat = .55 + Math.sin(t * 1.6) * .45;
+    c.fillStyle = tt(MAT.rose, .5 + bat * .5);
+    c.fillRect(CX - 5, y - 72, 3, 2.4); c.fillRect(CX + 2, y - 72, 3, 2.4);
+    c.restore();
+  },
+  lueurs(c, t){
+    const bat = .55 + Math.sin(t * 1.6) * .45;
+    lueur(c, CX, SOL_IDOLE - 14 - 71 * .7, 14, MAT.rose, .16 + bat * .22);
+  }
+};
+
+/* C · Dans la gueule du four. L'idole n'est pas devant le mur, elle est
+   dedans : contre-jour sur un lit de braises. */
+const idoleFour = {
+  peindre(c, t, e){
+    const bat = .8 + Math.sin(t * 2.1) * .12 + Math.sin(t * 5.3) * .08;
+    c.save();
+    arche(c, CX, 112, SOL_IDOLE - 74, SOL_IDOLE); c.clip();
+    c.fillStyle = MAT.noirChaud; c.fillRect(CX - 60, 0, 120, SOL_IDOLE);
+    // La voûte du four, noircie de suie.
+    appareil(c, CX - 56, 0, 112, SOL_IDOLE, { base: MAT.briqueOmbre, a0: .2, a1: .4, hb: 5, lb: 12 });
+    const br = c.createLinearGradient(0, SOL_IDOLE, 0, SOL_IDOLE - 60);
+    br.addColorStop(0, tt(MAT.feu, .8 * bat)); br.addColorStop(.3, tt(MAT.braise, .45 * bat));
+    br.addColorStop(1, tt(MAT.braise, 0));
+    c.fillStyle = br; c.fillRect(CX - 60, 0, 120, SOL_IDOLE);
+    for (let i = 0; i < 22; i++){
+      c.fillStyle = tt(i % 3 ? MAT.feu : '#ffd27a', (.35 + graine(i * 5) * .5) * bat);
+      c.fillRect(CX + alea(i, -52, 48), SOL_IDOLE - 2 - graine(i * 3) * 8, 3 + graine(i) * 5, 2.4);
+    }
+    c.restore();
+    // La fricadelle, en contre-jour : SOMBRE, c'est le principe.
+    fricadelle(c, CX, SOL_IDOLE - 5, 26, 54, palOr(e * .3), 31);
+    // Le rouleau du four et son ébrasement noirci.
+    arche(c, CX, 120, SOL_IDOLE - 78, SOL_IDOLE); c.strokeStyle = mel(MAT.brique, MAT.briqueClaire, .15 + e * .2); c.lineWidth = 8; c.stroke();
+    arche(c, CX, 134, SOL_IDOLE - 85, SOL_IDOLE); c.strokeStyle = tt(MAT.noirChaud, .6); c.lineWidth = 4; c.stroke();
+  },
+  lueurs(c, t){
+    const bat = .8 + Math.sin(t * 2.1) * .12 + Math.sin(t * 5.3) * .08;
+    // Le liseré de feu sur le contour de la statue : il la détache du fond.
+    c.save(); c.globalCompositeOperation = 'screen';
+    c.strokeStyle = tt(MAT.feu, .45 * bat); c.lineWidth = 1.6;
+    c.beginPath(); c.roundRect(CX - 13, SOL_IDOLE - 59, 26, 54, 13); c.stroke();
+    c.restore();
+    lueur(c, CX, SOL_IDOLE, 90, MAT.feu, .26 * bat);
+    // Les étincelles qui montent du lit de braises.
+    c.save(); c.globalCompositeOperation = 'screen';
+    for (let k = 0; k < 10; k++){
+      const q = (t * .6 + graine(k * 3)) % 1;
+      c.fillStyle = tt('#ffc070', (1 - q) * .8);
+      c.fillRect(CX + alea(k, -40, 40) + Math.sin(t * 3 + k) * 4, SOL_IDOLE - 4 - q * 60, 1.4, 1.4);
+    }
+    c.restore();
+  }
+};
+
+/* D · La triade. Trois fricadelles sur des degrés : un panthéon plutôt qu'un
+   dieu, qui remplit la largeur de la niche. */
+const idoleTriade = {
+  peindre(c, t, e){
+    socle(c, CX, SOL_IDOLE, 150, 2, e);
+    const y = SOL_IDOLE - 14;
+    const gens = [{ dx: -56, h: 38, lg: 18, s: 41, f: .6, p: 6 },
+                  { dx: 56,  h: 38, lg: 18, s: 47, f: .6, p: 6 },
+                  { dx: 0,   h: 48, lg: 25, s: 43, f: 1,  p: 10 }];
+    for (const g of gens){
+      c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .35 + e * .25);
+      c.fillRect(CX + g.dx - g.lg / 2 - 6, y - g.p, g.lg + 12, g.p);
+      c.fillStyle = tt(MAT.pierreClaire, .2); c.fillRect(CX + g.dx - g.lg / 2 - 6, y - g.p, g.lg + 12, 1.4);
+      fricadelle(c, CX + g.dx, y - g.p, g.lg, g.h, palOr(e * g.f), g.s);
+    }
+    // Les offrandes au pied : de vraies fricadelles frites, dans leurs barquettes.
+    for (let i = 0; i < 8; i++){
+      const px = CX + alea(i + 60, -84, 84);
+      c.fillStyle = '#d8d0bc'; c.fillRect(px - 6, SOL_IDOLE - 4, 12, 4);
+      fricadelleCouchee(c, px, SOL_IDOLE - 5.5, 11, 3.2, PAL_FRITE, i);
+    }
+    // Deux grands cierges aux extrémités du socle.
+    for (const dx of [-94, 94]) cierge(c, CX + dx, SOL_IDOLE, 16);
+  },
+  lueurs(c, t){
+    for (const dx of [-94, 94]){
+
+      lueur(c, CX + dx, SOL_IDOLE - 20, 26, MAT.feu, .32);
+      flamme(c, CX + dx, SOL_IDOLE - 17.6, t, dx, 1.2);
+    }
+  }
+};
+
+const IDOLES = [
+  { k:'A', nom:'La fricadelle dressée', ...idoleDressee,
+    txt:"Une seule, colossale, plantée comme un menhir sur trois degrés, ceinte d'un ruban rose noué d'or, entre deux torchères. Le parti le plus simple, donc le plus lisible de loin — et le plus solennel." },
+  { k:'B', nom:'La statue du Gardien', ...idoleDieu,
+    txt:"Le Gardien Éternel lui-même, statufié en or massif, assis en majesté sur un trône de pierre : épaulières-fricadelles comme sur son sprite, et la fricadelle géante plantée devant lui comme une épée, les deux mains sur le pommeau. Seuls ses yeux roses brillent. Celui qui relie le plus fort la map au perso." },
+  { k:'C', nom:'Dans la gueule du four', ...idoleFour,
+    txt:"L'idole est dans une bouche de four voûtée, en contre-jour sur un lit de braises, cernée d'un liseré de feu, des étincelles qui montent. Le plus brutal — et il apporte sa propre lumière, qui se cumule avec la section 1." },
+  { k:'D', nom:'La triade', ...idoleTriade,
+    txt:"Trois fricadelles d'or sur des degrés, la centrale plus haute, et à leurs pieds de vraies fricadelles frites dans leurs barquettes. Un panthéon plutôt qu'un dieu, qui remplit la largeur de la niche." }
+];
+
+/* ===========================================================================
+   SECTION 1 · LA LUMIÈRE DIVINE. Chaque variante déclare l'éclat qu'elle
+   accorde à l'or (`eclat`), ce qu'elle peint AVANT la statue (`avant` —
+   un vitrail derrière elle, une gloire) et ce qu'elle pose PAR-DESSUS tout
+   (`peindre`). La lumière décide de l'or, jamais l'inverse.
+   ======================================================================== */
+
+/* Le faisceau : un volume découpé, rempli d'un dégradé le long de sa hauteur.
+   Surtout pas un dégradé radial — c'est la leçon de la brume de Raccoon : un
+   rond qui s'éteint, c'est une lampe, jamais autre chose. */
+function faisceau(c, hautLg, basLg, yBas, alpha, teinte){
+  c.save(); c.globalCompositeOperation = 'screen';
+  c.beginPath();
+  c.moveTo(CX - hautLg / 2, 0); c.lineTo(CX + hautLg / 2, 0);
+  c.lineTo(CX + basLg / 2, yBas); c.lineTo(CX - basLg / 2, yBas); c.closePath(); c.clip();
+  const g = c.createLinearGradient(0, 0, 0, yBas);
+  g.addColorStop(0, tt(teinte, alpha)); g.addColorStop(.45, tt(teinte, alpha * .5)); g.addColorStop(1, tt(teinte, 0));
+  c.fillStyle = g; c.fillRect(CX - basLg, 0, basLg * 2, yBas);
+  // Les bords du volume, un peu plus denses que son cœur : c'est ce qui fait
+  // qu'on lit un faisceau dans l'air poussiéreux, pas un voile.
+  const h = c.createLinearGradient(CX - basLg / 2, 0, CX + basLg / 2, 0);
+  h.addColorStop(0, tt(teinte, alpha * .35)); h.addColorStop(.18, tt(teinte, 0));
+  h.addColorStop(.82, tt(teinte, 0)); h.addColorStop(1, tt(teinte, alpha * .35));
+  c.globalAlpha = .7; c.fillStyle = h; c.fillRect(CX - basLg, 0, basLg * 2, yBas);
+  c.restore();
+}
+/* La poussière qui vit dans le rayon : elle descend lentement en tournant. */
+function poussiere(c, t, lg, yBas, alpha){
+  c.save(); c.globalCompositeOperation = 'screen';
+  for (let i = 0; i < 46; i++){
+    const p = (graine(i) + t * .03) % 1, y = p * yBas, w = lg * (.45 + p * .55);
+    const x = CX + Math.sin(t * .45 + i * 2.3) * w * .38 + alea(i + 90, -w * .12, w * .12);
+    c.fillStyle = tt(MAT.rayon, Math.sin(p * Math.PI) * alpha * (.3 + graine(i + 7) * .7));
+    c.fillRect(x, y, 1.5, 1.5);
+  }
+  c.restore();
+}
+/* La flaque que le rayon pose sur les premières dalles : un plateau franc au
+   centre et un bord qui s'estompe en quelques pixels — un soleil passé par un
+   trou. Découpée net au premier jet, elle se lisait comme un disque posé. */
+function flaque(c, y, rx, ry, alpha, teinte){
+  c.save(); c.globalCompositeOperation = 'screen';
+  c.translate(CX, y); c.scale(rx / ry, 1);
+  const g = c.createRadialGradient(0, 0, 0, 0, 0, ry);
+  g.addColorStop(0, tt(teinte, alpha)); g.addColorStop(.6, tt(teinte, alpha * .8)); g.addColorStop(1, tt(teinte, 0));
+  c.fillStyle = g; c.fillRect(-ry, -ry, ry * 2, ry * 2);
+  c.restore();
+}
+/* Le cœur écrêté sur la statue : mesuré sur références, le cœur d'un rayon
+   est à 255 quand la nef vit entre 66 et 99. */
+function coeur(c, a){
+  // Fondu de tous côtés : une ellipse remplie se lisait comme une bulle de
+  // verre posée sur la statue.
+  c.save(); c.globalCompositeOperation = 'screen';
+  c.translate(CX, SOL_IDOLE - 32); c.scale(.8, 1.1);
+  const g = c.createRadialGradient(0, 0, 0, 0, 0, 40);
+  g.addColorStop(0, tt('#ffffff', a)); g.addColorStop(.45, tt('#ffffff', a * .55)); g.addColorStop(1, tt('#ffffff', 0));
+  c.fillStyle = g; c.fillRect(-40, -40, 80, 80);
+  c.restore();
+}
+
+const lumOculus = {
+  eclat: () => 1,
+  avant(){},
+  peindre(c, t){
+    faisceau(c, 44, 132, 206, .3, MAT.rayon);
+    poussiere(c, t, 110, 200, .5);
+    flaque(c, BANDE + 36, 80, 36, .2, MAT.rayon);
+    coeur(c, .32);
+  }
+};
+
+/* La rosace. Conséquence assumée : l'idole est à CONTRE-JOUR. */
+const TEINTES_ROSE = ['#d8404a', '#3a6ad8', '#e8a94a', '#d8404a', '#3a6ad8', '#e8a94a', '#2fa06a', '#3a6ad8'];
+const lumRosace = {
+  eclat: () => .2,
+  avant(c, t){
+    const cy = 22, R = 34;
+    c.save();
+    c.beginPath(); c.arc(CX, cy, R + 4, 0, TAU); c.fillStyle = MAT.noirChaud; c.fill();
+    c.globalCompositeOperation = 'screen';
+    for (let k = 0; k < 16; k++){
+      const a = k / 16 * TAU;
+      c.fillStyle = tt(TEINTES_ROSE[k % 8], .72);
+      c.beginPath(); c.moveTo(CX, cy); c.arc(CX, cy, R, a, a + TAU / 16); c.closePath(); c.fill();
+    }
+    c.fillStyle = tt('#fff6d8', .8); c.beginPath(); c.arc(CX, cy, 9, 0, TAU); c.fill();
+    c.restore();
+    // Les meneaux et les lobes : ils redécoupent la rose et la rendent lisible.
+    c.strokeStyle = MAT.noirChaud; c.lineWidth = 2.2;
+    for (let k = 0; k < 16; k++){
+      const a = k / 16 * TAU;
+      c.beginPath(); c.moveTo(CX + Math.cos(a) * 9, cy + Math.sin(a) * 9); c.lineTo(CX + Math.cos(a) * R, cy + Math.sin(a) * R); c.stroke();
+    }
+    c.beginPath(); c.arc(CX, cy, 20, 0, TAU); c.stroke();
+    c.beginPath(); c.arc(CX, cy, R, 0, TAU); c.lineWidth = 4; c.strokeStyle = mel(MAT.pierreOmbre, MAT.pierre, .4); c.stroke();
+  },
+  peindre(c, t){
+    // Le halo coloré autour de la rose.
+    lueur(c, CX, 22, 70, '#fff0d8', .12);
+    // La projection : des taches colorées floues, étirées vers le bas parce que
+    // la rose est haute, et qui se chevauchent — c'est là que les couleurs se
+    // mélangent. Premier jet en losanges nets : un anneau régulier qu'on lisait
+    // comme un motif d'interface, pas comme de la lumière. Elles dérivent à
+    // peine : le soleil tourne, lentement.
+    c.save(); c.globalCompositeOperation = 'screen';
+    const dx = Math.sin(t * .05) * 10;
+    for (let k = 0; k < 16; k++){
+      const a = k / 16 * TAU, col = TEINTES_ROSE[k % 8];
+      c.save();
+      c.translate(CX + dx + Math.cos(a) * 78, BANDE + 104 + Math.sin(a) * 44);
+      c.rotate(Math.cos(a) * .25); c.scale(.8, 1.35);
+      const g = c.createRadialGradient(0, 0, 0, 0, 0, 26);
+      g.addColorStop(0, tt(col, .22)); g.addColorStop(.5, tt(col, .1)); g.addColorStop(1, tt(col, 0));
+      c.fillStyle = g; c.fillRect(-26, -26, 52, 52);
+      c.restore();
+    }
+    c.save(); c.translate(CX + dx, BANDE + 104); c.scale(1.3, 1);
+    const m = c.createRadialGradient(0, 0, 0, 0, 0, 34);
+    m.addColorStop(0, tt('#fff6d8', .14)); m.addColorStop(1, tt('#fff6d8', 0));
+    c.fillStyle = m; c.fillRect(-34, -34, 68, 68);
+    c.restore();
+    c.restore();
+    // Le contour lumineux de la statue à contre-jour.
+    faisceau(c, 60, 180, 230, .08, '#fff0d8');
+  }
+};
+
+/* Le souffle : le même rayon qui respire, sur huit secondes. */
+const souffle = t => .5 + Math.sin(t * .78) * .5;
+const lumSouffle = {
+  eclat: t => .15 + souffle(t) * .85,
+  avant(){},
+  peindre(c, t){
+    const s = souffle(t);
+    faisceau(c, 30 + s * 30, 90 + s * 60, 160 + s * 60, .1 + s * .24, MAT.rayon);
+    poussiere(c, t, 80 + s * 44, 160 + s * 60, .12 + s * .42);
+    flaque(c, BANDE + 32, 50 + s * 36, 24 + s * 16, .05 + s * .18, MAT.rayon);
+    coeur(c, .05 + s * .3);
+  }
+};
+
+/* L'idole irradie : l'or est la source. Une gloire derrière elle, puis des
+   rais en éventail qui descendent du fond vers nous. */
+const lumGloire = {
+  eclat: () => 1,
+  avant(c, t){
+    const bat = .85 + Math.sin(t * .9) * .15;
+    c.save(); c.globalCompositeOperation = 'screen';
+    // La gloire : des rayons pointus plantés derrière la statue.
+    for (let k = 0; k < 22; k++){
+      const a = Math.PI + k / 21 * Math.PI, L = (k % 2 ? 46 : 72) * bat;
+      c.fillStyle = tt(MAT.orVif, k % 2 ? .22 : .34);
+      c.beginPath(); c.moveTo(CX + Math.cos(a - .05) * 12, SOL_IDOLE - 30 + Math.sin(a - .05) * 12);
+      c.lineTo(CX + Math.cos(a) * L, SOL_IDOLE - 30 + Math.sin(a) * L);
+      c.lineTo(CX + Math.cos(a + .05) * 12, SOL_IDOLE - 30 + Math.sin(a + .05) * 12); c.closePath(); c.fill();
+    }
+    c.restore();
+    lueur(c, CX, SOL_IDOLE - 30, 70, MAT.or, .4 * bat);
+  },
+  peindre(c, t){
+    const bat = .85 + Math.sin(t * .9) * .15;
+    c.save(); c.globalCompositeOperation = 'screen';
+    // La nappe dorée, radiale et écrasée : elle s'éteint aussi sur les côtés.
+    // En rectangle, ses deux bords droits se voyaient le long des touches.
+    c.save(); c.translate(CX, BANDE - 10); c.scale(2.2, 1);
+    const g = c.createRadialGradient(0, 0, 0, 0, 0, 250);
+    g.addColorStop(0, tt(MAT.or, .22 * bat)); g.addColorStop(.4, tt(MAT.or, .08 * bat)); g.addColorStop(1, tt(MAT.or, 0));
+    c.fillStyle = g; c.fillRect(-250, 0, 500, 250);
+    c.restore();
+    for (let k = -3; k <= 3; k++){
+      if (!k) continue;
+      c.save(); c.translate(CX, SOL_IDOLE - 30); c.rotate(k * .28 + Math.sin(t * .3) * .02);
+      const r = c.createLinearGradient(0, 0, 0, 280);
+      r.addColorStop(0, tt(MAT.orVif, .15 * bat)); r.addColorStop(1, tt(MAT.orVif, 0));
+      c.fillStyle = r; c.beginPath(); c.moveTo(-6, 0); c.lineTo(6, 0); c.lineTo(30, 280); c.lineTo(-30, 280); c.closePath(); c.fill();
+      c.restore();
+    }
+    c.restore();
+  }
+};
+
+const LUMIERES = [
+  { k:'A', nom:"L'oculus", ...lumOculus,
+    txt:"Un trou rond dans la voûte, hors champ : un seul faisceau étroit et net qui tombe sur l'idole, la poussière qui tourne dedans, le cœur écrêté au blanc sur la statue. La nef reste sombre autour — c'est la lumière qui désigne le sacré." },
+  { k:'B', nom:"La rosace", ...lumRosace,
+    txt:"Un vitrail rond derrière l'idole. Conséquence assumée : la statue est à contre-jour, presque éteinte, et ce sont les losanges rouges, bleus et dorés qui tombent sur le dallage. Le plus beau — le plus risqué pour suivre le disque en haut du terrain." },
+  { k:'C', nom:"Le souffle", ...lumSouffle,
+    txt:"Le même rayon, mais il respire sur huit secondes : l'idole passe de l'ombre à l'or plein et y retourne. Le lieu paraît vivant sans que rien ne bouge. La lisibilité varie dans le temps — le panneau de mesure le suit." },
+  { k:'D', nom:"L'idole irradie", ...lumGloire,
+    txt:"Pas de rayon : l'or est la source. Une gloire de rais pointus plantée derrière la statue, et une nappe dorée qui descend du fond en éventail. La seule où le sacré éclaire au lieu d'être éclairé — elle dore toute la moitié haute du terrain." }
+];
+
+/* ===========================================================================
+   SECTION 4 · LES CAGES. Dessinées dans le repère de la cage de gauche —
+   origine au bord du terrain, à mi-hauteur, x négatif vers l'extérieur — et
+   recopiées en miroir pour la droite, exactement comme pourChaqueCage() le
+   fait dans le moteur.
+   ======================================================================== */
+function pourChaqueCage(c, fn){
+  for (const side of [1, 2]){
+    c.save();
+    c.translate(side === 1 ? COURT.left : COURT.right, CY);
+    c.scale(side === 1 ? 1 : -1, 1);
+    fn(c, side);
+    c.restore();
+  }
+}
+/* Le cadre de pierre commun : les jambages et les deux linteaux. */
+function cadreCage(c, base){
+  c.fillStyle = mel(base, MAT.noirChaud, .25); c.fillRect(-GOAL_D - 14, -GH - 12, GOAL_D + 16, GH * 2 + 24);
+  c.fillStyle = tt(MAT.pierreClaire, .16); c.fillRect(-GOAL_D - 14, -GH - 12, GOAL_D + 16, 2);
+  c.fillStyle = tt(MAT.noirChaud, .6); c.fillRect(-GOAL_D - 14, GH + 9, GOAL_D + 16, 3);
+}
+
+/* A · La grille de fer forgé, posée sur la fosse d'une crypte. */
+const cageGrille = {
+  fixe(c){
+    cadreCage(c, MAT.pierre);
+    c.fillStyle = '#0a0607'; c.fillRect(-GOAL_D, -GH, GOAL_D, GH * 2);
+    // Au fond de la fosse, le reliquaire : on l'aperçoit entre les fers.
+    c.fillStyle = mel(MAT.orOmbre, MAT.or, .35); c.fillRect(-GOAL_D + 8, -16, 14, 32);
+    c.fillStyle = tt(MAT.orVif, .3); c.fillRect(-GOAL_D + 8, -16, 14, 2);
+    fricadelleCouchee(c, -GOAL_D + 15, 0, 22, 6, palOr(.5), 9, Math.PI / 2);
+    // Les fers : deux longerons, des traverses, et dans chaque case une lyre
+    // de deux volutes affrontées, à rosace dorée.
+    const fer = (x, y, w, h) => {
+      c.fillStyle = MAT.fer; c.fillRect(x, y, w, h);
+      c.fillStyle = tt(MAT.ferArete, .6); c.fillRect(x, y, Math.min(w, 1.2), h);
+    };
+    fer(-GOAL_D + 1, -GH, 4, GH * 2); fer(-5, -GH, 4, GH * 2);
+    for (let y = -GH; y <= GH; y += 25) fer(-GOAL_D + 1, y - 1.5, GOAL_D - 2, 3);
+    c.lineWidth = 2.2;
+    for (let y = -GH; y < GH; y += 25){
+      const m = y + 12.5, xm = -GOAL_D / 2;
+      c.strokeStyle = MAT.fer;
+      for (const s of [-1, 1]){
+        c.beginPath();
+        c.moveTo(xm, y + 2);
+        c.bezierCurveTo(xm + s * 17, y + 2, xm + s * 17, m + 8, xm + s * 7, m + 6);
+        c.bezierCurveTo(xm + s * 2, m + 4, xm + s * 4, m - 1, xm + s * 8, m);
+        c.stroke();
+      }
+      c.beginPath(); c.moveTo(xm, y + 2); c.lineTo(xm, y + 23); c.stroke();
+      c.fillStyle = mel(MAT.orOmbre, MAT.or, .6);
+      c.beginPath(); c.arc(xm, m, 2.6, 0, TAU); c.fill();
+      c.fillStyle = tt(MAT.orVif, .5); c.fillRect(xm - 1, m - 1.8, 1.4, 1.4);
+    }
+  },
+  lueurs(c, t){
+    // Deux lumignons au fond de la fosse, vus à travers les fers.
+    for (const y of [-54, 54]){
+      lueur(c, -GOAL_D + 12, y, 16, MAT.feu, .3 + Math.sin(t * 4 + y) * .05);
+      flamme(c, -GOAL_D + 12, y + 2, t, y, .8);
+    }
+  }
+};
+
+/* B · La bouche de four. Le disque disparaît dans la braise. */
+const cageFour = {
+  fixe(c){
+    c.fillStyle = MAT.briqueOmbre; c.fillRect(-GOAL_D - 14, -GH - 12, GOAL_D + 16, GH * 2 + 24);
+    appareil(c, -GOAL_D - 14, -GH - 12, GOAL_D + 16, GH * 2 + 24, { base: MAT.brique, a0: .25, a1: .5, hb: 5, lb: 12 });
+    // La sole du four, en briques posées de chant, noircies.
+    c.fillStyle = '#1a0f0c'; c.fillRect(-GOAL_D, -GH, GOAL_D, GH * 2);
+    appareil(c, -GOAL_D, -GH, GOAL_D, GH * 2, { base: MAT.briqueOmbre, a0: .3, a1: .55, hb: 12, lb: 8 });
+    // La suie qui lèche l'ouverture, plus épaisse vers le haut du foyer.
+    const s = c.createLinearGradient(0, 0, -GOAL_D, 0);
+    s.addColorStop(0, tt(MAT.noirChaud, .75)); s.addColorStop(.5, tt(MAT.noirChaud, .3)); s.addColorStop(1, tt(MAT.noirChaud, 0));
+    c.fillStyle = s; c.fillRect(-GOAL_D, -GH, GOAL_D, GH * 2);
+    // Les deux jambages de pierre du four.
+    for (const y of [-GH - 12, GH + 2]){
+      c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .4); c.fillRect(-GOAL_D - 14, y, GOAL_D + 16, 10);
+      c.fillStyle = tt(MAT.pierreClaire, .18); c.fillRect(-GOAL_D - 14, y, GOAL_D + 16, 1.5);
+    }
+  },
+  anime(c, t){
+    // Le lit de braises, au fond, qui respire.
+    for (let i = 0; i < 56; i++){
+      const v = .55 + Math.sin(t * 2.2 + i * 1.7) * .25 + Math.sin(t * 5.1 + i) * .2;
+      c.fillStyle = mel('#3a0c06', i % 4 ? MAT.braise : MAT.feu, v);
+      c.fillRect(-GOAL_D + 1 + graine(i) * graine(i * 9) * 20, -GH + 4 + graine(i * 3) * (GH * 2 - 8), 2.5 + graine(i * 5) * 3.5, 2 + graine(i * 7) * 2);
+    }
+  },
+  lueurs(c, t){
+    const v = .85 + Math.sin(t * 2.2) * .1 + Math.sin(t * 5.7) * .05;
+    c.save(); c.globalCompositeOperation = 'screen';
+    const g = c.createLinearGradient(-GOAL_D, 0, 40, 0);
+    g.addColorStop(0, tt(MAT.feu, .42 * v)); g.addColorStop(.45, tt(MAT.braise, .2 * v)); g.addColorStop(1, tt(MAT.braise, 0));
+    c.fillStyle = g; c.fillRect(-GOAL_D, -GH, GOAL_D + 40, GH * 2);
+    // Les escarbilles poussées vers le terrain par le tirage.
+    for (let k = 0; k < 12; k++){
+      const q = (t * .45 + graine(k * 7)) % 1;
+      c.fillStyle = tt('#ffc070', (1 - q) * .85);
+      c.fillRect(-GOAL_D + 8 + q * 70, alea(k, -GH + 10, GH - 10) + Math.sin(t * 3 + k) * 6, 1.5, 1.5);
+    }
+    c.restore();
+  }
+};
+
+/* C · La niche à offrandes. Marquer, c'est déposer. */
+const cageNiche = {
+  fixe(c){
+    cadreCage(c, MAT.pierreClaire);
+    // Le fond d'or, en tesselles.
+    for (let y = -GH; y < GH; y += 4) for (let x = -GOAL_D; x < 0; x += 4){
+      c.fillStyle = mel(MAT.orOmbre, MAT.or, .25 + graine(x * 1.3 + y * .7) * .35);
+      c.fillRect(x + .5, y + .5, 3, 3);
+    }
+    c.fillStyle = tt(MAT.noirChaud, .45); c.fillRect(-6, -GH, 6, GH * 2);     // l'ombre du bord de la niche
+    // Les piles d'offrandes : de vraies fricadelles, frites, entassées.
+    for (const yc of [-66, 0, 66]){
+      for (let r = 0; r < 3; r++) for (let k = 0; k < 4 - r; k++){
+        fricadelleCouchee(c, -GOAL_D + 12 + r * 7 + k * 0, yc - 12 + k * 8 + r * 4, 20, 5.5, PAL_FRITE, yc + r * 5 + k);
+      }
+    }
+    // Les deux draperies rouges, relevées aux deux bouts de la niche.
+    for (const s of [-1, 1]){
+      for (let k = 0; k < 8; k++){
+        c.fillStyle = k % 2 ? MAT.rouge : MAT.rougeClair;
+        const y0 = s < 0 ? -GH : GH - 22;
+        c.beginPath();
+        c.moveTo(-GOAL_D + k * 6, y0 + (s < 0 ? 0 : 22));
+        c.lineTo(-GOAL_D + k * 6 + 6, y0 + (s < 0 ? 0 : 22));
+        c.lineTo(-GOAL_D + k * 6 + 4, y0 + (s < 0 ? 22 - k * 1.8 : k * 1.8));
+        c.lineTo(-GOAL_D + k * 6 + 1, y0 + (s < 0 ? 22 - k * 1.8 : k * 1.8)); c.closePath(); c.fill();
+      }
+      c.fillStyle = mel(MAT.orOmbre, MAT.or, .6); c.fillRect(-GOAL_D, s < 0 ? -GH : GH - 2, GOAL_D, 2);
+    }
+  },
+  lueurs(c, t){
+    for (const y of [-33, 33]){
+      lueur(c, -GOAL_D + 8, y, 22, MAT.feu, .28);
+      flamme(c, -GOAL_D + 8, y + 2, t, y, .8);
+    }
+    // L'or qui scintille quand la flamme bouge.
+    c.save(); c.globalCompositeOperation = 'screen';
+    for (let k = 0; k < 9; k++){
+      const v = Math.max(0, Math.sin(t * 2.3 + k * 2.1));
+      c.fillStyle = tt(MAT.orVif, v * v * .7);
+      c.fillRect(-GOAL_D + 2 + graine(k) * 40, alea(k + 3, -GH + 26, GH - 26), 1.6, 1.6);
+    }
+    c.restore();
+  }
+};
+
+/* D · Le bac de friture sacré. L'huile frémit, les fricadelles flottent. */
+const cageBac = {
+  fixe(c){
+    cadreCage(c, MAT.pierre);
+    c.fillStyle = MAT.noirChaud;
+    c.beginPath(); c.roundRect(-GOAL_D - 1, -GH - 1, GOAL_D + 2, GH * 2 + 2, 7); c.fill();
+    const g = c.createLinearGradient(-GOAL_D, 0, 0, 0);
+    g.addColorStop(0, mel(MAT.huile, MAT.noirChaud, .45)); g.addColorStop(.5, MAT.huile); g.addColorStop(1, mel(MAT.huile, MAT.noirChaud, .5));
+    c.fillStyle = g; c.beginPath(); c.roundRect(-GOAL_D + 2, -GH + 2, GOAL_D - 4, GH * 2 - 4, 5); c.fill();
+    // Le bord intérieur, où l'huile a noirci la pierre.
+    c.strokeStyle = tt(MAT.noirChaud, .6); c.lineWidth = 3;
+    c.beginPath(); c.roundRect(-GOAL_D + 2, -GH + 2, GOAL_D - 4, GH * 2 - 4, 5); c.stroke();
+  },
+  anime(c, t){
+    // Les fricadelles qui flottent et tournent doucement.
+    for (let k = 0; k < 4; k++){
+      const y = -70 + k * 46 + Math.sin(t * .8 + k * 2) * 6;
+      fricadelleCouchee(c, -GOAL_D / 2 + Math.sin(t * .6 + k) * 5, y, 26, 7, PAL_FRITE, k * 3, Math.sin(t * .5 + k) * .25);
+    }
+    // Les bulles : elles gonflent, puis crèvent.
+    for (let k = 0; k < 18; k++){
+      const q = (t * (.7 + graine(k) * .6) + graine(k * 3)) % 1;
+      const x = -GOAL_D + 6 + graine(k * 5) * (GOAL_D - 12), y = -GH + 8 + graine(k * 7) * (GH * 2 - 16);
+      c.strokeStyle = tt(MAT.huileClaire, (1 - q) * .75); c.lineWidth = 1;
+      c.beginPath(); c.arc(x, y, .8 + q * 3.4, 0, TAU); c.stroke();
+    }
+  },
+  lueurs(c, t){
+    lueur(c, -GOAL_D / 2, 0, 76, MAT.huileClaire, .14 + Math.sin(t * 1.3) * .02);
+    // Les reflets sur l'huile.
+    c.save(); c.globalCompositeOperation = 'screen';
+    for (let k = 0; k < 6; k++){
+      c.fillStyle = tt('#fff0c0', .18 + Math.sin(t * 2 + k) * .1);
+      c.fillRect(-GOAL_D + 8 + graine(k * 9) * 30, -GH + 14 + k * 32 + Math.sin(t + k) * 3, 7, 1.2);
+    }
+    // La vapeur, en fibres qui dérivent et s'effilochent.
+    for (let k = 0; k < 7; k++){
+      const q = (t * .12 + graine(k * 11)) % 1;
+      const y = -GH + 10 + graine(k * 13) * (GH * 2 - 20);
+      c.fillStyle = tt('#e8e0d4', Math.sin(q * Math.PI) * .07);
+      c.fillRect(-GOAL_D + q * 60, y, 22 + graine(k) * 18, 2);
+      c.fillRect(-GOAL_D + q * 60 + 6, y + 3, 14 + graine(k + 1) * 12, 1.4);
+    }
+    c.restore();
+  }
+};
+
+const CAGES = [
+  { k:'A', nom:'La grille de fer forgé', ...cageGrille,
+    txt:"Une grille ouvragée posée sur la fosse d'une crypte : longerons, traverses et des lyres de volutes à rosace d'or, et tout au fond le reliquaire qu'on aperçoit entre les fers, avec deux lumignons. Ça se lit comme une cage et comme une église." },
+  { k:'B', nom:'La bouche de four', ...cageFour,
+    txt:"Une gueule de four en brique noircie de suie, un lit de braises au fond qui respire, et les escarbilles que le tirage pousse vers le terrain. La chaleur éclaire le bord de chaque camp. Le plus brutal." },
+  { k:'C', nom:'La niche à offrandes', ...cageNiche,
+    txt:"Une alcôve tapissée d'or en tesselles, des piles de vraies fricadelles frites déposées, deux lumignons, et les draperies rouges relevées aux deux bouts. Marquer, c'est faire une offrande. Le plus élégant." },
+  { k:'D', nom:'Le bac de friture sacré', ...cageBac,
+    txt:"Une cuve de pierre remplie d'huile qui frémit : les bulles gonflent et crèvent, quatre fricadelles flottent en tournant, la vapeur s'effiloche. Le plus drôle — et il tire le lieu vers la friterie, là où on a dit premier degré." }
+];
+
+/* Les volets de zone, hors miroir pour que les chiffres restent lisibles.
+   Pas en aplat : au premier jet, rose et or peints à .2 sur toute la cage
+   noyaient sa matière — l'huile du bac virait au rose, les lyres de fer
+   disparaissaient. La couleur tient donc dans une lèvre franche à la bouche
+   de la cage, là où le disque entre, avec un voile à peine teinté derrière
+   et des séparations nettes entre les zones. */
+function volets(c){
+  c.save();
+  for (const side of [1, 2]){
+    const gx = side === 1 ? COURT.left - GOAL_D : COURT.right;
+    const lx = side === 1 ? COURT.left - 4 : COURT.right;
+    for (const z of ZONES){
+      const y0 = CY + z.from, h = z.to - z.from;
+      c.globalAlpha = .07; c.fillStyle = z.color; c.fillRect(gx, y0, GOAL_D, h);
+      c.globalAlpha = .9; c.fillRect(lx, y0 + 2, 4, h - 4);
+      c.globalAlpha = 1;
+      c.fillStyle = tt(MAT.noirChaud, .75); c.fillRect(gx, y0 - 1, GOAL_D, 2);
+      c.font = '700 16px "Archivo Black", sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillStyle = tt(MAT.noirChaud, .8); c.fillText(z.points, gx + GOAL_D / 2 + 1, y0 + h / 2 + 1.5);
+      c.fillStyle = z.points === 5 ? MAT.orVif : '#ffe4f4';
+      c.fillText(z.points, gx + GOAL_D / 2, y0 + h / 2);
+    }
+    c.fillStyle = tt(MAT.noirChaud, .75); c.fillRect(gx, CY + GH - 1, GOAL_D, 2);
+  }
+  c.restore();
+}
+
+/* ===========================================================================
+   SECTION 6 · L'ENTRÉE. Le mur du bas, vu en plan, et ce qui passe dans sa
+   baie. C'est la seconde source de lumière : chaque variante en décide.
+   ======================================================================== */
+const BAIE = 240;
+function murEntree(c){
+  c.fillStyle = mel(MAT.briqueOmbre, MAT.noirChaud, .3); c.fillRect(0, SEUIL, W, H - SEUIL);
+  appareil(c, 0, SEUIL, W, H - SEUIL, { a0: .08, a1: .2 });
+  c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .5); c.fillRect(0, SEUIL, W, 4);
+  c.fillStyle = tt(MAT.pierreClaire, .18); c.fillRect(0, SEUIL, W, 1.2);
+  // Les deux piédroits de la baie.
+  for (const s of [-1, 1]){
+    const x = CX + s * (BAIE / 2 + 7);
+    c.fillStyle = mel(MAT.pierreOmbre, MAT.pierre, .55); c.fillRect(x - 7, SEUIL, 14, H - SEUIL);
+    c.fillStyle = tt(MAT.pierreClaire, .2); c.fillRect(x - 7, SEUIL, 14, 1.4);
+  }
+}
+/* Le seuil ouvert : une grande dalle mouillée, puis la rue pavée sous la pluie.
+   Premier jet, les pavés étaient une grille régulière de rectangles : vu de
+   près, un radiateur. Des pavés, c'est rond, inégal, et luisant sur le dessus. */
+function seuilOuvert(c){
+  const x0 = CX - BAIE / 2;
+  const g = c.createLinearGradient(0, SEUIL + 20, 0, H);
+  g.addColorStop(0, mel('#252e37', MAT.jourFroid, .3)); g.addColorStop(1, mel('#252e37', MAT.jourFroid, .55));
+  c.fillStyle = g; c.fillRect(x0, SEUIL + 20, BAIE, H - SEUIL - 20);
+  for (let k = 0; k < 90; k++){
+    const px = x0 + 4 + graine(k * 3.1) * (BAIE - 8), py = SEUIL + 23 + graine(k * 5.7) * (H - SEUIL - 25);
+    const r = 2.6 + graine(k) * 2.2;
+    c.fillStyle = tt('#161c22', .55);
+    c.beginPath(); c.ellipse(px, py + .8, r + .8, r * .55 + .5, 0, 0, TAU); c.fill();
+    c.fillStyle = mel('#3a4550', MAT.jourFroid, .2 + graine(k * 2) * .35);
+    c.beginPath(); c.ellipse(px, py, r, r * .55, 0, 0, TAU); c.fill();
+    c.fillStyle = tt('#ffffff', .12 + graine(k * 7) * .12);
+    c.fillRect(px - r * .4, py - r * .3, r * .7, .9);
+  }
+  // La dalle de seuil : une seule pierre, creusée au milieu par les pas,
+  // mouillée — elle renvoie le ciel gris en son centre.
+  c.fillStyle = mel(MAT.pierre, MAT.jourFroid, .18); c.fillRect(x0, SEUIL, BAIE, 20);
+  const rf = c.createLinearGradient(x0, 0, x0 + BAIE, 0);
+  rf.addColorStop(0, tt(MAT.noirChaud, .3)); rf.addColorStop(.5, tt(MAT.jourFroid, .2)); rf.addColorStop(1, tt(MAT.noirChaud, .3));
+  c.fillStyle = rf; c.fillRect(x0, SEUIL, BAIE, 20);
+  c.fillStyle = tt(MAT.noirChaud, .16);
+  c.beginPath(); c.ellipse(CX, SEUIL + 10, 62, 5.5, 0, 0, TAU); c.fill();
+  c.fillStyle = tt('#ffffff', .1); c.fillRect(x0 + 10, SEUIL + 3, BAIE - 20, 1);
+  c.fillStyle = tt(MAT.noirChaud, .55); c.fillRect(x0, SEUIL + 19, BAIE, 1.5);
+}
+/* La nappe de jour froid, découpée en ellipse : une porte éclaire une bande
+   qui s'élargit, pas un cercle — et surtout pas un rectangle, comme au
+   premier jet où ses bords droits se voyaient en travers du dallage. */
+function nappeJour(c, force){
+  // Un dégradé radial écrasé, centré sous le seuil : il s'éteint de tous les
+  // côtés. La première version découpait une ellipse nette — ses bords se
+  // voyaient comme un dôme blanc posé sur le dallage.
+  c.save(); c.globalCompositeOperation = 'screen';
+  c.translate(CX, SEUIL + 14); c.scale(1.7, 1);
+  const g = c.createRadialGradient(0, 0, 0, 0, 0, 170);
+  g.addColorStop(0, tt(MAT.jourFroid, .24 * force)); g.addColorStop(.35, tt(MAT.jourFroid, .1 * force));
+  g.addColorStop(1, tt(MAT.jourFroid, 0));
+  c.fillStyle = g; c.fillRect(-170, -170, 340, 170);
+  c.restore();
+}
+/* La pluie du Nord sur le seuil : des ronds qui s'ouvrent et s'effacent. */
+function pluieSeuil(c, t){
+  c.save();
+  for (let k = 0; k < 16; k++){
+    const q = (t * 1.4 + graine(k * 3)) % 1;
+    const x = CX - BAIE / 2 + 6 + graine(k * 5 + Math.floor(t * 1.4 + graine(k * 3))) * (BAIE - 12);
+    const y = SEUIL + 8 + graine(k * 7) * 30;
+    c.strokeStyle = tt('#dfe8ee', (1 - q) * .45); c.lineWidth = .9;
+    c.beginPath(); c.ellipse(x, y, 1 + q * 5, .5 + q * 2, 0, 0, TAU); c.stroke();
+  }
+  c.restore();
+}
+
+const entreeOuverte = {
+  fixe(c){ murEntree(c); seuilOuvert(c); },
+  anime(c, t){ pluieSeuil(c, t); },
+  jour(c){ nappeJour(c, 1); }
+};
+
+const entreeFermee = {
+  fixe(c){
+    murEntree(c);
+    // Les deux vantaux de chêne, vus en plan : l'épaisseur du bois, ses
+    // ferrures, ses clous.
+    const x0 = CX - BAIE / 2;
+    c.fillStyle = '#120b09'; c.fillRect(x0, SEUIL + 4, BAIE, H - SEUIL - 4);
+    for (const s of [0, 1]){
+      const xv = x0 + s * BAIE / 2;
+      c.fillStyle = MAT.bois; c.fillRect(xv + 1, SEUIL + 8, BAIE / 2 - 2, 16);
+      for (let x = xv + 1; x < xv + BAIE / 2 - 2; x += 9){
+        c.fillStyle = tt(MAT.noirChaud, .4); c.fillRect(x, SEUIL + 8, 1, 16);
+        c.fillStyle = tt(MAT.boisClair, .25); c.fillRect(x + 1, SEUIL + 8, 1.2, 16);
+      }
+      for (const y of [SEUIL + 11, SEUIL + 19]){
+        c.fillStyle = MAT.fer; c.fillRect(xv + 6, y, BAIE / 2 - 12, 2.4);
+        for (let x = xv + 10; x < xv + BAIE / 2 - 8; x += 14){
+          c.fillStyle = MAT.ferArete; c.fillRect(x, y + .4, 1.6, 1.6);
+        }
+      }
+    }
+  },
+  anime(){},
+  jour(c, t){
+    // Le trait de jour par la fente des vantaux, et la poussière dedans.
+    c.save(); c.globalCompositeOperation = 'screen';
+    c.beginPath(); c.moveTo(CX - 2, SEUIL + 8); c.lineTo(CX + 2, SEUIL + 8);
+    c.lineTo(CX + 30, SEUIL - 150); c.lineTo(CX - 30, SEUIL - 150); c.closePath(); c.clip();
+    const g = c.createLinearGradient(0, SEUIL + 8, 0, SEUIL - 150);
+    g.addColorStop(0, tt(MAT.jourFroid, .32)); g.addColorStop(1, tt(MAT.jourFroid, 0));
+    c.fillStyle = g; c.fillRect(CX - 30, SEUIL - 150, 60, 160);
+    for (let k = 0; k < 14; k++){
+      const q = (t * .05 + graine(k)) % 1;
+      c.fillStyle = tt('#ffffff', Math.sin(q * Math.PI) * .45);
+      c.fillRect(CX + Math.sin(t * .5 + k) * 12 * q, SEUIL - q * 140, 1.3, 1.3);
+    }
+    c.restore();
+    c.save(); c.globalCompositeOperation = 'screen';
+    c.fillStyle = tt(MAT.jourFroid, .14); c.fillRect(CX - BAIE / 2, SEUIL + 4, BAIE, 2);
+    c.restore();
+  }
+};
+
+/* La procession : les fidèles entrent un à un, cierge ou plat en main. */
+const PROCESSION = 8;
+function posProcession(k, t){
+  // Ils attendent leur tour : chacun piétine sur place, décalé de ses voisins.
+  const x = CX - BAIE / 2 + 16 + k * (BAIE - 32) / (PROCESSION - 1);
+  return { x: x + Math.sin(t * .9 + k * 1.7) * 1.5, y: H - 3 };
+}
+const entreeProcession = {
+  fixe(c){ murEntree(c); seuilOuvert(c); },
+  anime(c, t){
+    pluieSeuil(c, t);
+    for (let k = 0; k < PROCESSION; k++){
+      const p = posProcession(k, t);
+      fideleDebout(c, p.x, p.y, 36, t, k + 50, k % 3 ? 'cierge' : 'plat');
+    }
+  },
+  jour(c){ nappeJour(c, .62); },
+  lueurs(c, t){
+    for (let k = 0; k < PROCESSION; k++){
+      if (!(k % 3)) continue;
+      const p = posProcession(k, t), h = 36;
+      const x = p.x + h * .16, y = p.y - h * .42 - h * .2 - 1.6;
+      lueur(c, x, y, 18, MAT.feu, .3);
+      flamme(c, x, y, t, k, .8);
+    }
+  }
+};
+
+/* L'escalier de la crypte : l'entrée descend, et la seconde source devient
+   chaude — c'est la seule variante qui change le modèle de lumière. */
+const entreeCrypte = {
+  fixe(c){
+    murEntree(c);
+    const x0 = CX - BAIE / 2;
+    for (let k = 0; k < 6; k++){
+      const y = SEUIL + 4 + k * 6;
+      c.fillStyle = mel(MAT.pierre, MAT.noirChaud, .2 + k * .14); c.fillRect(x0, y, BAIE, 6);
+      c.fillStyle = tt(MAT.pierreClaire, .16 - k * .02); c.fillRect(x0, y, BAIE, 1.2);
+      c.fillStyle = tt(MAT.noirChaud, .5); c.fillRect(x0, y + 5, BAIE, 1);
+    }
+    // La balustrade dorée, de part et d'autre.
+    for (const s of [-1, 1]){
+      const x = CX + s * (BAIE / 2 - 5);
+      c.fillStyle = mel(MAT.orOmbre, MAT.or, .45); c.fillRect(x - 1.5, SEUIL + 2, 3, H - SEUIL);
+      for (let y = SEUIL + 6; y < H; y += 8){
+        c.fillStyle = mel(MAT.orOmbre, MAT.orVif, .5); c.fillRect(x - 3, y, 6, 3);
+      }
+    }
+  },
+  anime(){},
+  jour(c, t){
+    c.save(); c.globalCompositeOperation = 'screen';
+    // Radiale et écrasée, comme la nappe de jour : découpée en ellipse, son
+    // bord se voyait en arc de cercle sur le dallage.
+    c.translate(CX, H); c.scale(1.7, 1);
+    const g = c.createRadialGradient(0, 0, 0, 0, 0, 150);
+    g.addColorStop(0, tt(MAT.or, .3)); g.addColorStop(.4, tt(MAT.or, .1)); g.addColorStop(1, tt(MAT.or, 0));
+    c.fillStyle = g; c.fillRect(-150, -150, 300, 150);
+    c.restore();
+    // L'encens qui monte de la crypte, en fibres lentes.
+    c.save(); c.globalCompositeOperation = 'screen';
+    for (let k = 0; k < 9; k++){
+      const q = (t * .06 + graine(k * 5)) % 1;
+      const y = H - q * 200, x = CX + alea(k, -90, 90) + Math.sin(t * .4 + k * 2) * 20 * q;
+      c.fillStyle = tt('#d8ccc0', Math.sin(q * Math.PI) * .07);
+      c.fillRect(x - 20, y, 40 + graine(k) * 20, 2.2);
+      c.fillRect(x - 10, y + 4, 24, 1.6);
+    }
+    c.restore();
+  }
+};
+
+const ENTREES = [
+  { k:'A', nom:'Le grand portail ouvert', ...entreeOuverte,
+    txt:"La baie ouverte sur le dehors : une grande dalle de seuil mouillée, les pavés, la pluie du Ch'Nord qui fait des ronds, et la nappe de jour froid qui remonte sur le dallage. La seconde source du modèle, telle quelle." },
+  { k:'B', nom:'Les vantaux fermés', ...entreeFermee,
+    txt:"Deux vantaux de chêne cloutés de fer, fermés. Seul un trait de jour passe par la fente, avec sa poussière, et un liseré sous la porte. Le bas du terrain devient aussi sombre que le haut — la salle entière appartient à l'idole." },
+  { k:'C', nom:'La procession', ...entreeProcession,
+    txt:"La porte est ouverte et les fidèles entrent en file, cierge ou plat de fricadelle en main, sous la pluie. Leurs flammes font une rangée de petits feux au bas de l'image. Le lieu est habité, et il y a du mouvement en bas." },
+  { k:'D', nom:"L'escalier de la crypte", ...entreeCrypte,
+    txt:"L'entrée descend : un escalier qui s'enfonce, une balustrade dorée, une lueur d'or qui monte d'en dessous et l'encens qui s'élève. La seule variante qui change le modèle — plus de jour froid, les deux sources deviennent chaudes." }
+];
+
+/* ===========================================================================
+   LA PÉNOMBRE. Elle tient les 35 % d'ombre relevés, et ferme par les bords —
+   pas au centre, où le disque doit rester lisible. Premier réglage, elle
+   noircissait en plus les bas-côtés : mesuré à 45 %, et les colonnes comme
+   les fidèles y disparaissaient. Les flancs gardent donc leur propre valeur.
+   ======================================================================== */
+function tenebres(c){
+  c.save();
+  const g = c.createRadialGradient(CX, CY, 100, CX, CY, 560);
+  g.addColorStop(0, tt(MAT.noirChaud, .06));
+  g.addColorStop(.5, tt(MAT.noirChaud, .3));
+  g.addColorStop(1, tt(MAT.noirChaud, .8));
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  c.restore();
+}
+
+/* ===========================================================================
+   L'ASSEMBLAGE. Tout ce qui ne bouge pas est peint une seule fois dans un fond
+   mis en cache par combinaison : vingt-quatre vignettes et l'aperçu à 60 i/s,
+   sans ça, c'est le navigateur qui s'arrête.
+   ======================================================================== */
+const R = { lum: 0, idole: 0, flancs: 0, cages: 0, sol: 0, entree: 0 };
+const OPTS = { action: false, nu: false };
+let fige = false;
+
+const CACHE = new Map();
+function fond(r){
+  const cle = `${r.sol}${r.flancs}${r.cages}${r.entree}`;
+  let cv = CACHE.get(cle);
+  if (!cv){
+    cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c = cv.getContext('2d');
+    c.fillStyle = MAT.noirChaud; c.fillRect(0, 0, W, H);
+    SOLS[r.sol].fixe(c);
+    marquage(c, SOLS[r.sol].sansMediane);
+    FLANCS[r.flancs].fixe(c);
+    abside(c);
+    pourChaqueCage(c, cc => CAGES[r.cages].fixe(cc));
+    ENTREES[r.entree].fixe(c);
+    CACHE.set(cle, cv);
+    if (CACHE.size > 60) CACHE.delete(CACHE.keys().next().value);
+  }
+  return cv;
+}
+
+/* L'ordre des couches ne se négocie pas : le décor, les corps, la pénombre,
+   puis la statue — dont l'éclat ne dépend QUE de la lumière — puis tous les
+   feux et la lumière divine par-dessus. */
+function scene(c, t, r, o){
+  const F = FLANCS[r.flancs], I = IDOLES[r.idole], Cg = CAGES[r.cages], E = ENTREES[r.entree], L = LUMIERES[r.lum];
+  c.drawImage(fond(r), 0, 0);
+  F.anime(c, t);
+  if (Cg.anime) pourChaqueCage(c, cc => Cg.anime(cc, t));
+  E.anime(c, t);
+  tenebres(c);
+  const e = o.nu ? .45 : L.eclat(t);
+  if (!o.nu) L.avant(c, t);
+  I.peindre(c, t, e);
+  E.jour(c, t);
+  F.lueurs(c, t);
+  if (Cg.lueurs) pourChaqueCage(c, cc => Cg.lueurs(cc, t));
+  if (I.lueurs) I.lueurs(c, t, e);
+  if (E.lueurs) E.lueurs(c, t);
+  if (!o.nu) L.peindre(c, t);
+  volets(c);
+  if (o.action) action(c, t);
+}
+
+/* Deux joueurs et un disque, à la taille du match : un décor ne se juge
+   jouable qu'avec eux dessus. */
+function action(c, t){
+  const dx = CX + Math.sin(t * 1.1) * 300, dy = CY + Math.cos(t * 1.7) * 190;
+  for (const [px, py, col] of [[CX - 250, CY + Math.sin(t) * 120, '#e8a94a'], [CX + 250, CY + Math.cos(t * .8) * 120, '#5fd0d8']]){
+    c.fillStyle = 'rgba(0,0,0,.45)'; c.beginPath(); c.ellipse(px, py + 18, 13, 5, 0, 0, TAU); c.fill();
+    c.fillStyle = col; c.fillRect(px - 8, py - 18, 16, 34);
+    c.fillStyle = '#f0c090'; c.fillRect(px - 6, py - 29, 12, 11);
+  }
+  c.fillStyle = 'rgba(0,0,0,.5)'; c.beginPath(); c.ellipse(dx, dy + 12, 14, 5, 0, 0, TAU); c.fill();
+  c.fillStyle = '#ffffff'; c.beginPath(); c.ellipse(dx, dy, 14, 8, 0, 0, TAU); c.fill();
+  c.fillStyle = '#9fd8ff'; c.beginPath(); c.ellipse(dx, dy - 1.5, 9, 4.5, 0, 0, TAU); c.fill();
+}
+
+/* ===========================================================================
+   LA MESURE. On relit les pixels : la part d'ombre profonde sur l'IMAGE
+   ENTIÈRE (comme les références — la relever sur le seul terrain, c'est
+   mesurer la zone qu'on éclaire exprès), la luminance du dallage, et
+   l'écart du disque au PIRE endroit du terrain, pas en moyenne : c'est là
+   qu'on le perd.
+   ======================================================================== */
+function mesurer(cv){
+  const g = cv.getContext('2d');
+  const d = g.getImageData(0, 0, W, H).data;
+  let sombres = 0, n = 0;
+  const sol = [];
+  for (let y = 0; y < H; y += 3){
+    for (let x = 0; x < W; x += 3){
+      const i = (y * W + x) * 4;
+      const L = .2126 * d[i] + .7152 * d[i + 1] + .0722 * d[i + 2];
+      n++; if (L < 50) sombres++;
+      if (x > COURT.left + 4 && x < COURT.right - 4 && y > COURT.top + 4 && y < COURT.bottom - 4) sol.push(L);
+    }
+  }
+  sol.sort((a, b) => a - b);
+  const moy = sol.reduce((a, b) => a + b, 0) / sol.length;
+  const pire = sol[Math.floor(sol.length * .98)];
+  const part = Math.round(100 * sombres / n);
+  const disque = 236, ecart = disque - pire;
+  document.getElementById('mesure').innerHTML =
+    `dallage, moyenne <b>${moy.toFixed(0)}</b> · au plus clair <b>${pire.toFixed(0)}</b> · disque <b>${disque}</b><br>` +
+    `écart du disque au pire endroit <span class="${ecart > 110 ? 'bon' : 'mauvais'}">+${ecart.toFixed(0)}</span> ` +
+    `<span style="opacity:.7">(seuil : +110)</span><br>` +
+    `ombre profonde, image entière <b>${part}&nbsp;%</b> ` +
+    `<span class="${Math.abs(part - 35) <= 12 ? 'bon' : 'mauvais'}">(références : 35 %)</span>`;
+}
+
+/* ===========================================================================
+   LA PAGE.
+   ======================================================================== */
+const SECTIONS = [
+  { cle: 'lum', titre: '1 · La lumière divine', liste: LUMIERES,
+    note: "D'où vient la lumière sur l'idole, et ce qu'elle fait au reste. <b>À choisir en premier</b> : elle décide de l'éclat de l'or, de la longueur des ombres et de si les feux se voient encore." },
+  { cle: 'idole', titre: "2 · L'idole", liste: IDOLES,
+    note: "La signature, dans la niche du fond. Dessinée en élévation comme la station du R.P.D. sur Raccoon City : c'est la convention du jeu. Elle dispose de 77 px de haut." },
+  { cle: 'flancs', titre: '3 · Les flancs', liste: FLANCS,
+    note: "Les deux bas-côtés, le long des touches. 70 px de large, coupés en deux poches par la cage — c'est tout l'espace qu'ils ont." },
+  { cle: 'cages', titre: '4 · Les cages', liste: CAGES,
+    note: "Ce que sont les buts dans un temple. Les volets 3 / 5 / 3 sont peints par-dessus, aux couleurs du perso : le rose du Susanoo pour les 3, l'or pour le 5." },
+  { cle: 'sol', titre: '5 · Le dallage', liste: SOLS,
+    note: "La surface sur laquelle on joue. C'est elle qui décide si le disque se lit — lance « Voir l'action » et regarde l'écart au pire endroit." },
+  { cle: 'entree', titre: "6 · L'entrée", liste: ENTREES,
+    note: "Le mur du bas, vu en plan, et sa baie. C'est la seconde source de lumière du modèle : chaque variante décide de ce qui entre." }
+];
+
+const cartes = [];
+const hote = document.getElementById('sections');
+for (const S of SECTIONS){
+  const h = document.createElement('h2'); h.textContent = S.titre; hote.appendChild(h);
+  const p = document.createElement('p'); p.className = 'note'; p.innerHTML = S.note; hote.appendChild(p);
+  const row = document.createElement('div'); row.className = 'row'; hote.appendChild(row);
+  S.liste.forEach((v, i) => {
+    const d = document.createElement('div');
+    d.className = 'card' + (R[S.cle] === i ? ' on' : '');
+    d.innerHTML = `<canvas width="480" height="300"></canvas><div class="lbl"><b>${v.k} · ${v.nom}</b>${v.txt}</div>`;
+    d.onclick = () => {
+      R[S.cle] = i;
+      [...row.children].forEach(e => e.classList.remove('on'));
+      d.classList.add('on'); recette();
+    };
+    row.appendChild(d);
+    const g = d.querySelector('canvas').getContext('2d');
+    cartes.push({ el: d, g, cle: S.cle, i });
+  });
+}
+
+document.getElementById('matieres').innerHTML = Object.entries(NOMS)
+  .map(([k, n]) => `<span class="mat"><i style="background:${MAT[k]}"></i>${n} ${MAT[k]}</span>`).join('');
+
+function texteRecette(){
+  return SECTIONS.map(S => `${S.titre.replace(/^\d · /, '').toLowerCase()} ${S.liste[R[S.cle]].k}`).join(' · ');
+}
+function recette(){
+  document.getElementById('recette').innerHTML = SECTIONS.map(S =>
+    `${S.titre.replace(/^\d · /, '')} <b>${S.liste[R[S.cle]].k}</b> — ${S.liste[R[S.cle]].nom}`).join('<br>');
+}
+
+const grand = document.getElementById('grand'), gg = grand.getContext('2d');
+let loupe = null;
+grand.onclick = () => {
+  const f = document.createElement('div'); f.className = 'loupe';
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  f.appendChild(cv); document.body.appendChild(f);
+  loupe = cv.getContext('2d');
+  f.onclick = () => { f.remove(); loupe = null; };
+};
+const bascule = (id, fn) => { document.getElementById(id).onclick = e => e.target.classList.toggle('on', fn()); };
+bascule('btAction', () => (OPTS.action = !OPTS.action));
+bascule('btNu', () => (OPTS.nu = !OPTS.nu));
+bascule('btFige', () => (fige = !fige));
+document.getElementById('btCopie').onclick = e => {
+  navigator.clipboard.writeText('Temple de la Fricadelle — ' + texteRecette()).then(() => {
+    e.target.textContent = 'Copié !'; setTimeout(() => (e.target.textContent = 'Copier la recette'), 1400);
+  });
+};
+
+// Les vignettes ne tournent qu'à l'écran, et à 8 images par seconde.
+const visibles = new Set();
+const obs = new IntersectionObserver(es => es.forEach(e => {
+  const k = cartes.find(q => q.el === e.target);
+  e.isIntersecting ? visibles.add(k) : visibles.delete(k);
+}), { rootMargin: '150px' });
+cartes.forEach(k => obs.observe(k.el));
+
+let t0 = performance.now(), tps = 0, dernierLent = 0, dernierMes = 0;
+function boucle(now){
+  const dt = Math.min(.05, (now - t0) / 1000); t0 = now;
+  if (!fige) tps += dt;
+  scene(gg, tps, R, OPTS);
+  if (loupe) scene(loupe, tps, R, OPTS);
+  if (now - dernierLent > 125){
+    dernierLent = now;
+    for (const k of visibles){
+      k.g.save(); k.g.scale(.5, .5);
+      scene(k.g, tps, { ...R, [k.cle]: k.i }, { action: false, nu: false });
+      k.g.restore();
+    }
+  }
+  if (now - dernierMes > 600){ dernierMes = now; mesurer(grand); }
+  requestAnimationFrame(boucle);
+}
+recette();
+requestAnimationFrame(boucle);
+</script>
+</body>
+</html>

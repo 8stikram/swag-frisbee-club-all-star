@@ -233,6 +233,41 @@ MAPS.push({
   }
 });
 
+// ================= TEMPLE DE LA FRICADELLE =================
+// Le terrain du Gardien Éternel de la Fricadelle : la nef d'un temple du
+// Ch'Nord, l'idole d'or au fond, les braseros et leurs gardes le long des
+// touches, les cages en bouches de four, l'escalier de la crypte en bas. Pas
+// de règle : c'est un décor. Le dessin vit dans js/render/terrains/temple.js,
+// les variantes écartées dans mockups/temple-fricadelle.html.
+MAPS.push({
+  id: 'temple',
+  name: 'TEMPLE DE LA FRICADELLE',
+  // Pas d'OST, comme Raccoon City : aucune piste de data/music.js ne lui va.
+  court: { left: 70, right: 890, top: 84, bottom: 560 },
+  goal: { height: 200, depth: 48 },
+  // Les deux couleurs du Gardien : l'or pour le 5, le rose de son Susanoo
+  // pour les 3. Elles se distinguent au premier coup d'œil, et ce sont les
+  // seules couleurs saturées du terrain avec les feux.
+  zones: [
+    { from: -100, to: -26, points: 3, color: '#c24f9a' },
+    { from: -26, to: 26, points: 5, color: '#e8a94a' },
+    { from: 26, to: 100, points: 3, color: '#c24f9a' }
+  ],
+  style: 'temple',
+  theme: {
+    // Celles que lit l'écran de choix. Le nuancier des matières — brique,
+    // pierre, marbre, or, bronze — vit avec le dessin, dans temple.js.
+    bgInner: '#3a2420',
+    bgOuter: '#140d0e',        // l'ombre d'une nef de brique : brun-rouge, jamais noire
+    floor: '#5a524c',          // le damier, en valeur moyenne
+    line: 'rgba(232,169,74,.5)',
+    goalFill: 'rgba(194,79,154,.16)',
+    goalStroke: '#6d4a40',
+    crowdColors: ['#1b1d24', '#f2f4f8', '#e8a94a'],   // les gardes : combinaison, armure, or
+    starColor: 'rgba(0,0,0,0)'
+  }
+});
+
 // Vrai quand le terrain est jouable. Même principe que pour les skins.
 export function mapDebloquee(m) {
   if (!m || !m.verrou) return true;
