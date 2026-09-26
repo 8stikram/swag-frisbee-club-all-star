@@ -152,7 +152,7 @@ async function lancerMatch(persoHote, persoInvite, graine) {
   });
 
   surChangement(e => {
-    if (e === 'connecte') { sfx('go'); preparerMatch(Reseau.role); }
+    if (e === 'connecte') { clearTimeout(veilleLiaison); sfx('go'); preparerMatch(Reseau.role); }
     else if (e === 'perdu') {
       // En plein match, une coupure ne renvoie plus directement au menu :
       // c'est menus.js qui prend le relais, avec la pause de dix secondes et
@@ -161,7 +161,10 @@ async function lancerMatch(persoHote, persoInvite, graine) {
       // alors le retour immédiat d'origine.
       if (Partie.active) { signalerDeconnexionEnMatch(); return; }
       arreterPartieReseau();
-      dire('liaison perdue.', true);
+      clearTimeout(veilleLiaison);
+      // Pas encore de partie : la liaison n'a jamais tenu. C'est presque
+      // toujours un réseau qui bloque la connexion directe, pas une coupure.
+      dire('la connexion directe a echoue entre vos deux reseaux (4G, wifi d ecole ou d entreprise, box stricte...). essayez depuis un autre reseau.', true);
       showScreen('online');
       montrerPanneau('onChoix');
     }
@@ -189,6 +192,21 @@ export function lancerArene(role) {
 // le service est injoignable. Ce qu'on montre d'abord, c'est le code.
 let areneCourante = null, arretAttente = null;
 
+// Le code a fait son travail, les deux navigateurs se connaissent : reste à
+// ouvrir la liaison directe. Elle échoue quand l'un des deux réseaux la bloque
+// (4G, box en « NAT strict », wifi d'école ou d'entreprise) — et l'écran
+// restait alors figé sur « connexion… », sans rien dire. Passé ce délai, on
+// explique ce qui se passe au lieu de laisser les joueurs attendre.
+const DELAI_LIAISON = 20000;
+let veilleLiaison = null;
+function surveillerLiaison() {
+  clearTimeout(veilleLiaison);
+  veilleLiaison = setTimeout(() => {
+    if (Reseau.etat === 'connecte') return;
+    dire('la connexion directe ne passe pas entre vos deux reseaux (4G, wifi d ecole ou d entreprise, box stricte...). essayez depuis un autre reseau.', true);
+  }, DELAI_LIAISON);
+}
+
 export function abandonnerArene() {
   if (arretAttente) { arretAttente(); arretAttente = null; }
   if (areneCourante) { fermerArene(areneCourante); areneCourante = null; }
@@ -209,6 +227,7 @@ async function hebergerAvecCode() {
     arretAttente = attendreReponse(areneCourante, async (reponse, souci) => {
       if (souci || !reponse) { dire(souci || 'personne n a rejoint.', true); return; }
       dire('adversaire trouve, connexion...');
+      surveillerLiaison();
       try { await accepterReponse(reponse); fermerArene(areneCourante); areneCourante = null; }
       catch (e) { dire('sa reponse est illisible.', true); }
     });
@@ -230,6 +249,7 @@ async function rejoindreAvecCode() {
     $('onMaReponse').value = reponse;
     await repondreArene(code, reponse);
     dire(a.hote ? ('arene de ' + a.hote + ' — connexion...') : 'connexion...');
+    surveillerLiaison();
   } catch (e) { dire(e.message, true); }
 }
 

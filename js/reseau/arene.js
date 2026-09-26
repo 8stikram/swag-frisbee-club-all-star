@@ -1,4 +1,3 @@
-import { Compte } from './compte.js';
 
 // ---------------------------------------------------------------------------
 // Le code d'arene.
@@ -18,11 +17,15 @@ const LETTRES = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 // lente pour ne pas marteler le service pendant qu'on attend un adversaire.
 export const CADENCE = 2000;
 
+// Toujours la clé publique, JAMAIS le jeton du compte. La table des arènes est
+// ouverte à tous (voir supabase/schema.sql) : le compte n'y apporte rien. Et le
+// jeton, lui, pouvait tout casser — il expire au bout d'une heure, et la
+// session reste gardée des jours dans le navigateur. Un joueur connecté la
+// veille envoyait donc un jeton périmé, le service refusait (« No suitable key
+// or wrong key type ») et il ne pouvait ni héberger ni rejoindre, alors qu'un
+// joueur sans compte passait sans souci.
 function entetes() {
-  const h = { apikey: CLE, 'Content-Type': 'application/json' };
-  const t = Compte.session && Compte.session.access_token;
-  h.Authorization = 'Bearer ' + (t || CLE);
-  return h;
+  return { apikey: CLE, 'Content-Type': 'application/json', Authorization: 'Bearer ' + CLE };
 }
 
 async function appel(chemin, options = {}) {

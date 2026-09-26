@@ -27,6 +27,14 @@ export const Reseau = {
 };
 
 let pc = null, canal = null;
+// Second canal, FIABLE et ordonné, pour les ordres : présentation, « prêt »,
+// coup d'envoi, pause, abandon, votes. Le canal du jeu, lui, ne renvoie jamais
+// un message perdu et jette ce qui déborde de sa file — c'est exactement ce
+// qu'il faut pour l'état du match, périmé en quelques millisecondes, et
+// exactement ce qu'il ne faut pas pour un « GO » : un seul paquet perdu, ou
+// une file pleine du flot d'états que l'hôte envoie déjà pendant les choix,
+// et les deux joueurs restaient figés sur « PRÊTS 2/2 ».
+let ordres = null;
 let auMessage = null, auChangement = null;
 
 export function surMessage(fn) { auMessage = fn; }
@@ -57,16 +65,21 @@ function attendreAdresses(p) {
   });
 }
 
+function recevoir(e) {
+  let m; try { m = JSON.parse(e.data); } catch (err) { return; }
+  if (m.t === 'ping') { envoyer({ t: 'pong', h: m.h }); return; }
+  if (m.t === 'pong') { Reseau.ping = Math.round(performance.now() - m.h); return; }
+  if (auMessage) auMessage(m);
+}
+
 function brancherCanal(c) {
+  // Le canal des ordres se reconnaît à son nom. Sa fermeture ne dit rien de
+  // plus que celle du canal du jeu, qui suffit à signaler la coupure.
+  if (c.label === 'ordres') { ordres = c; c.onmessage = recevoir; return; }
   canal = c;
   c.onopen = () => etat('connecte');
   c.onclose = () => etat('perdu');
-  c.onmessage = e => {
-    let m; try { m = JSON.parse(e.data); } catch (err) { return; }
-    if (m.t === 'ping') { envoyer({ t: 'pong', h: m.h }); return; }
-    if (m.t === 'pong') { Reseau.ping = Math.round(performance.now() - m.h); return; }
-    if (auMessage) auMessage(m);
-  };
+  c.onmessage = recevoir;
 }
 
 function nouvellePc() {
@@ -86,6 +99,7 @@ export async function heberger() {
   // ordered/maxRetransmits : les intentions de jeu sont périssables, une
   // ancienne qu'on retransmettrait indéfiniment n'a plus aucune valeur.
   brancherCanal(pc.createDataChannel('jeu', { ordered: false, maxRetransmits: 0 }));
+  brancherCanal(pc.createDataChannel('ordres'));          // fiable et ordonné par défaut
   await pc.setLocalDescription(await pc.createOffer());
   await attendreAdresses(pc);
   return emballer(pc.localDescription);
@@ -122,6 +136,15 @@ export function envoyer(obj, urgent) {
   canal.send(JSON.stringify(obj));
   return true;
 }
+
+// Un ordre ne se jette jamais et se retransmet s'il se perd. Si le canal des
+// ordres n'est pas (encore) ouvert — les premières millisecondes, ou un
+// adversaire resté sur une version du jeu qui ne le connaît pas — on retombe
+// sur le canal du jeu, sans jamais sauter l'envoi.
+export function envoyerOrdre(obj) {
+  if (ordres && ordres.readyState === 'open') { ordres.send(JSON.stringify(obj)); return true; }
+  return envoyer(obj, true);
+}
 // Taille de la file d'envoi, en octets. Utile pour voir venir un bouchon.
 export function fileDAttente() { return canal ? canal.bufferedAmount : 0; }
 export function mesurerPing() { envoyer({ t: 'ping', h: performance.now() }); }
@@ -134,6 +157,7 @@ export function fermer() {
   // une fermeture volontaire (abandon, bascule vers l'IA) se relabellait
   // toute seule en coupure subie, un instant après l'avoir décidée.
   if (canal) { canal.onclose = null; try { canal.close(); } catch (e) { } canal = null; }
+  if (ordres) { try { ordres.close(); } catch (e) { } ordres = null; }
   if (pc) { pc.onconnectionstatechange = null; try { pc.close(); } catch (e) { } pc = null; }
   Reseau.role = null; Reseau.ping = 0; Reseau.bouchons = 0;
   etat('ferme');

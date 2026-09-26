@@ -1,5 +1,5 @@
 import { G, makePlayer, comment } from '../game/state.js';
-import { Reseau, envoyer, connecte, surMessage, mesurerPing, fermer } from './connexion.js';
+import { Reseau, envoyer, envoyerOrdre, connecte, surMessage, mesurerPing, fermer } from './connexion.js';
 import { Compte, monId } from './compte.js';
 import { setMapId, getMapId } from '../data/maps.js';
 import { activerEcho, viderEcho, marquerInvite, viderPopups } from './echo.js';
@@ -1563,7 +1563,7 @@ export function annoncerIdentite(perso) {
   Partie.monPerso = perso;
   choixFrais.moi = true;
   const p = Compte.profil || {};
-  envoyer({
+  envoyerOrdre({
     t: 'moi',
     id: monId() || null,
     pseudo: p.pseudo || null,
@@ -1577,6 +1577,30 @@ export function annoncerIdentite(perso) {
     avatar: p.avatar || null, banniere: p.banniere || null,
     couleur1: p.couleur1 || null, couleur2: p.couleur2 || null
   });
+  // L'invité a pu valider son terrain AVANT nous : sa présentation est alors
+  // déjà là, et c'est notre propre validation qui complète la paire.
+  tenterCoupDEnvoi();
+}
+
+// L'hôte seul tranche, puis donne le coup d'envoi avec les deux personnages et
+// le terrain retenu. Deux décisions indépendantes donneraient deux matchs
+// différents, et les joueurs ne verraient pas la même chose. Il attend d'avoir
+// les deux choix frais : après un changement de personnage, il relancerait
+// sinon avec l'ancien personnage d'en face.
+//
+// Appelé des DEUX côtés de la paire — à notre présentation comme à la sienne.
+// Il ne l'était qu'à la réception de la sienne : si l'invité validait son
+// terrain le premier, sa présentation arrivait quand l'hôte n'avait pas encore
+// choisi, elle était mise de côté, et rien ne relançait le coup d'envoi quand
+// l'hôte validait à son tour. Les deux restaient sur « PRÊTS 2/2 » pour toujours.
+function tenterCoupDEnvoi() {
+  if (Partie.role !== 'hote' || !Partie.monPerso || !Partie.adversaire || !peutRelancer()) return;
+  // La paire est consommée : une présentation renvoyée ensuite ne doit pas
+  // donner un second coup d'envoi en plein match.
+  attenteNouveauxChoix();
+  const terrain = terrainDuMatch(Partie.monTerrain || getMapId(), Partie.adversaire.terrain);
+  setMapId(terrain);
+  annoncerCoupDEnvoi(Partie.monPerso, Partie.adversaire.perso || 'leon', terrain);
 }
 
 function recevoirIdentite(m) {
@@ -1588,16 +1612,7 @@ function recevoirIdentite(m) {
     couleur1: m.couleur1 || null, couleur2: m.couleur2 || null
   };
   choixFrais.lui = true;
-  // L'hôte seul tranche, puis donne le coup d'envoi avec les deux personnages
-  // et le terrain retenu. Deux décisions indépendantes donneraient deux matchs
-  // différents, et les joueurs ne verraient pas la même chose.
-  // Il attend d'avoir les deux choix : après un changement de personnage, il
-  // relancerait sinon avec l'ancien personnage d'en face.
-  if (Partie.role === 'hote' && Partie.monPerso && peutRelancer()) {
-    const terrain = terrainDuMatch(Partie.monTerrain || getMapId(), m.terrain);
-    setMapId(terrain);
-    annoncerCoupDEnvoi(Partie.monPerso, m.perso || 'leon', terrain);
-  }
+  tenterCoupDEnvoi();
 }
 
 // ---------------------------------------------------------------------------
@@ -1616,7 +1631,7 @@ export function terrainDuMatch(mien, sien) {
   return Math.random() < .5 ? mien : sien;
 }
 
-export function annoncerTerrain(terrain) { envoyer({ t: 'terrain', terrain }); }
+export function annoncerTerrain(terrain) { envoyerOrdre({ t: 'terrain', terrain }); }
 
 // ---------------------------------------------------------------------------
 // Votes de terrain.
@@ -1658,7 +1673,7 @@ export function quandPretAdversaire(fn) { surPretAdversaire = fn; }
 
 export function annoncerPret(etape, valeur, pret) {
   if (!Partie.active) return;
-  envoyer({ t: 'pret', etape, valeur: valeur || null, pret: pret ? 1 : 0 }, true);
+  envoyerOrdre({ t: 'pret', etape, valeur: valeur || null, pret: pret ? 1 : 0 });
 }
 
 function recevoirPret(m) {
@@ -1671,7 +1686,7 @@ export function oublierPrets() { Pret.adversairePerso = null; Pret.adversaireTer
 
 export function annoncerVoteTerrain(terrain) {
   if (!Partie.active) return;
-  envoyer({
+  envoyerOrdre({
     t: 'vote',
     terrain,
     pseudo: (Compte.profil && Compte.profil.pseudo) || null,
@@ -1709,7 +1724,7 @@ export function quandChangementPerso(fn) { surChangementPerso = fn; }
 export function demanderRevanche() {
   if (!Partie.active) return false;
   if (Partie.role === 'hote') { relancerMemeMatch(); return true; }
-  envoyer({ t: 'revanche' }, true);
+  envoyerOrdre({ t: 'revanche' });
   return true;
 }
 
@@ -1724,7 +1739,7 @@ export function relancerMemeMatch() {
 // l'hôte redonnera le coup d'envoi quand il aura les deux.
 export function demanderChangementPerso() {
   if (!Partie.active) return false;
-  envoyer({ t: 'changeperso' }, true);
+  envoyerOrdre({ t: 'changeperso' });
   attenteNouveauxChoix();
   return true;
 }
@@ -1746,7 +1761,7 @@ export function preparerNouveauxChoix() { attenteNouveauxChoix(); }
 // ---------------------------------------------------------------------------
 export function annoncerChoixFin(choix) {
   if (!Partie.active) return;
-  envoyer({ t: 'fin', choix }, true);
+  envoyerOrdre({ t: 'fin', choix });
 }
 let surChoixFin = null;
 export function quandChoixFinAdversaire(fn) { surChoixFin = fn; }
@@ -1755,14 +1770,14 @@ export function quandChoixFinAdversaire(fn) { surChoixFin = fn; }
 // plus ou de moins n'a aucune importance, une demande perdue laisserait
 // l'invité à regarder un rejeu qu'il a explicitement voulu couper.
 export function demanderSkipRejeu() {
-  if (Partie.active) envoyer({ t: 'skip' }, true);
+  if (Partie.active) envoyerOrdre({ t: 'skip' });
 }
 
 export function annoncerPause(enPause) {
-  if (Partie.active) envoyer({ t: 'pause', on: enPause ? 1 : 0 }, true);
+  if (Partie.active) envoyerOrdre({ t: 'pause', on: enPause ? 1 : 0 });
 }
 export function annoncerAbandon() {
-  if (Partie.active) envoyer({ t: 'abandon' }, true);
+  if (Partie.active) envoyerOrdre({ t: 'abandon' });
 }
 
 // ---------------------------------------------------------------------------
@@ -1784,6 +1799,6 @@ export function annoncerCoupDEnvoi(persoHote, persoInvite, terrain) {
   // écraserait celle-ci. On la transporte donc jusqu'au bout de la chaîne.
   const graine = graineNeuve();
   Partie.choixFinAdversaire = null;
-  envoyer({ t: 'go', p1: persoHote, p2: persoInvite, terrain, graine });
+  envoyerOrdre({ t: 'go', p1: persoHote, p2: persoInvite, terrain, graine });
   if (auCoupDEnvoi) auCoupDEnvoi(persoHote, persoInvite, terrain, graine);
 }
