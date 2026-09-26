@@ -556,7 +556,12 @@ function plonger(p, d, D, S, dt) {
 function attaquer(p, d, D, S, dt) {
   const foe = p.foe;
   d.state = 'STRIKE';
-  if (!d.avaitDisque) {
+  // Le plan se refait aussi quand il a disparu sous nos pieds : onCatch
+  // (actions.js) l'efface à chaque attrapé, et un disque qui part puis revient
+  // entre deux décisions de l'IA — l'ultime de Naruto, un renvoi collé — ne
+  // lui laissait jamais voir qu'elle l'avait lâché. Elle gardait alors
+  // « avaitDisque » et plantait sur un plan vide (trouvé au banc d'équilibrage).
+  if (!d.avaitDisque || !d.plan) {
     // Le plan se décide à la prise du disque.
     d.avaitDisque = true;
     p.holdTimer = 0;
