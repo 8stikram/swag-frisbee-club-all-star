@@ -2255,16 +2255,23 @@ function drawHUD() {
   panel(gauche, 14, false);
   panel(droite, W - 14, true);
 
-  // ----- Bandeau central (mockup hud-bandeau-central-final.html) -----
+  // ----- Le rappel du score à atteindre -----
+  // Il trônait en haut au centre (mockup hud-bandeau-central-final.html), pile
+  // sur le décor qui signe chaque terrain : les lettres du R.P.D., l'idole du
+  // Temple de la Fricadelle. Le bas-centre étant celui du commentateur, dont
+  // les pilules s'empilent là, il descend dans le coin bas-gauche, plus petit.
   ctx.textAlign = 'center';
-  ctx.font = '11px "Archivo Black", system-ui, sans-serif';
+  ctx.font = '10px "Archivo Black", system-ui, sans-serif';
   const label = 'PREMIER À ' + TARGET;
-  const pw = ctx.measureText(label).width + 28, ph = 20, px = CX - pw / 2, py = 8;
+  const pw = ctx.measureText(label).width + 22, ph = 18, px = 14, py = H - 14 - ph;
   ctx.fillStyle = '#ffffff';
   ctx.beginPath(); ctx.roundRect(px, py, pw, ph, ph / 2); ctx.fill();
   ctx.strokeStyle = '#111318'; ctx.lineWidth = 2.5; ctx.stroke();
   ctx.fillStyle = '#111318';
-  ctx.fillText(label, CX, py + 14);
+  ctx.fillText(label, px + pw / 2, py + 12.5);
+  // Le ping et le compteur d'échange restent en haut, là où ils étaient
+  // quand ils se calaient sous le bandeau.
+  const hautCentre = 28;
 
   // Ping de la liaison : barres de signal + texte, sans cadre (piste D). Il
   // n'était pas affiché avant parce qu'il n'était pas mesuré : `mesurerPing`
@@ -2272,7 +2279,7 @@ function drawHUD() {
   if (Partie.active) {
     const ms = Reseau.ping | 0;
     const col = ms === 0 ? '#9aa0ac' : (ms < 60 ? '#7bd66a' : (ms < 120 ? '#ffd23e' : '#ff5340'));
-    const bx0 = CX - 20, by0 = py + ph + 12;
+    const bx0 = CX - 20, by0 = hautCentre + 12;
     ctx.fillStyle = col;
     [[0, 4], [4, 6], [8, 8]].forEach(([dx, h]) => ctx.fillRect(bx0 + dx, by0 - h, 3, h));
     ctx.fillStyle = '#eaf2ff';
@@ -2285,7 +2292,7 @@ function drawHUD() {
   // Compteur d'échange : grand chiffre lumineux qui respire doucement en
   // continu (jamais figé, mais sans clignoter dur — piste D).
   if (G.rally >= 4) {
-    const ry = py + ph + 40, breathe = 1 + Math.sin(G.now * 3.5) * .07;
+    const ry = hautCentre + 40, breathe = 1 + Math.sin(G.now * 3.5) * .07;
     ctx.save();
     ctx.translate(CX, ry); ctx.scale(breathe, breathe);
     ctx.shadowColor = 'rgba(255,210,80,.85)'; ctx.shadowBlur = 14 + Math.sin(G.now * 3.5) * 6;
