@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Trinity — Donald et Dingo</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0a0c14; --panel:#131826; --edge:#2a3350; --ink:#eef1f8; --accent:#f8c81c; --bleu:#3f63d8; --vert:#9ad12e; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:23px;margin:0 0 6px;font-family:'Archivo Black',sans-serif;letter-spacing:.5px}
+  h1 em{font-style:normal;color:var(--accent)}
+  h2{font-size:14px;margin:34px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#a7b0c8;max-width:1060px;line-height:1.75;margin:0 0 14px}
+  .note b{color:var(--ink)}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px;
+        flex:1 1 230px;min-width:230px;max-width:300px;cursor:pointer;transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#44527a}
+  .card.on{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 0 0 1px var(--accent) inset}
+  .lbl{font-size:11px;color:#a7b0c8;margin-bottom:8px;line-height:1.5;min-height:92px}
+  .lbl b{display:block;font-size:13px;color:var(--accent);letter-spacing:.5px;margin-bottom:3px}
+  .card canvas{display:block;width:100%;height:auto;border-radius:8px}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 560px;min-width:0}
+  .apercu canvas{display:block;width:100%;height:auto;border-radius:10px}
+  .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 320px}
+  .fiche h3{margin:0 0 10px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .fiche canvas{display:block;width:100%;height:auto;border-radius:10px}
+  .choix{font-size:11.5px;color:#b9c1d6;margin-top:10px;font-family:Consolas,monospace;line-height:1.8}
+  .choix b{color:var(--accent)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0c101a;border:1px solid var(--edge);border-radius:8px;
+             padding:7px 10px;color:var(--accent);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#1d2540;color:var(--ink);border:1px solid var(--edge);border-radius:8px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;white-space:nowrap}
+  .btnCopier:hover{background:#27315a}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+</style>
+</head>
+<body>
+
+<h1>TRINITY — <em>DONALD ET DINGO</em></h1>
+<p class="note" id="intro"></p>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvGrand" width="1100" height="560"></canvas>
+    <div class="choix" id="choix"></div>
+    <div class="copier">
+      <input class="codeChoix" id="codeChoix" readonly>
+      <button class="btnCopier" id="btnCopier">copier mes choix</button>
+    </div>
+  </div>
+  <div class="fiche">
+    <h3>À l'échelle du match, à côté de Sora</h3>
+    <canvas id="cvMatch" width="640" height="300"></canvas>
+    <h3 style="margin-top:14px">Sur les sols clairs et sombres</h3>
+    <canvas id="cvSols" width="640" height="220"></canvas>
+  </div>
+</div>
+
+<div id="sections"></div>
+
+<script type="module">
+import { MAPS } from '../js/data/maps.js';
+
+/* ===================== SORA (le dessin retenu) ===================== */
+const SORA_PAL = { H:'#8a5a30', h:'#58341a', j:'#b98352', S:'#f5cfa6', s:'#d8a074', E:'#2168dc', W:'#f4f4f6',
+  w:'#c2c5ce', R:'#d8262c', r:'#9c151a', K:'#26262e', k:'#50525e', B:'#3257d4', b:'#1f3794', V:'#dde2ea',
+  v:'#8f96a4', Y:'#f8c81c', y:'#c8920c', N:'#18181d' };
+const SORA = ["...hH.HH.Hh.....","..HHHHHjHHHH....",".hHHHHjHHHHHh...","..hHHHHHHHHh....","..HHHHHHHHHH....",
+  "..HHSHHSHHSH....","..hSSESSSSEh....","..sSSSSSSSSs....","...SSSSSWSS.....","....BKRRKB......",
+  "..WWKRRVRKWW....",".WWWKRRVRKWWW...",".kWKKRRvRKKWk...",".SKKKRRvRKKKS...","..bBBEEwbbbb....",
+  "..RRRRRvEwRw....","...rr....rw.....","...ss....ss.....",".yYNY....YNYy...",".yyYY....YYyy..."];
+// Sora fait 60 unités de haut en match (20 lignes × 3) : c'est l'étalon des tailles.
+const SORA_H = 60;
+function peindreSora(g, x, piedY, ech) {           // ech = pixels d'écran par unité de jeu
+  const p = 3 * ech;
+  for (let y = 0; y < 20; y++) for (let c = 0; c < 16; c++) {
+    const l = SORA[y][c]; if (l === '.') continue;
+    g.fillStyle = SORA_PAL[l]; g.fillRect(Math.round(x + (c - 8) * p), Math.round(piedY - (20 - y) * p), Math.ceil(p), Math.ceil(p));
+  }
+}
+
+/* ===================== LES OUTILS DE DESSIN ===================== */
+// Une forme lisse fermée passant par des points (Catmull-Rom -> Bézier).
+function blob(pts) {
+  const p = new Path2D(), n = pts.length;
+  const P = i => pts[(i + n) % n];
+  p.moveTo(P(0)[0], P(0)[1]);
+  for (let i = 0; i < n; i++) {
+    const [x0, y0] = P(i - 1), [x1, y1] = P(i), [x2, y2] = P(i + 1), [x3, y3] = P(i + 2);
+    p.bezierCurveTo(x1 + (x2 - x0) / 6, y1 + (y2 - y0) / 6, x2 - (x3 - x1) / 6, y2 - (y3 - y1) / 6, x2, y2);
+  }
+  p.closePath();
+  const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+  return { p, bb: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] };
+}
+function ell(cx, cy, rx, ry, rot = 0) {
+  const p = new Path2D(); p.ellipse(cx, cy, rx, ry, rot, 0, Math.PI * 2);
+  return { p, bb: [cx - rx, cy - ry, cx + rx, cy + ry] };
+}
+function rect(x, y, w, h, r = 0) {
+  const p = new Path2D(); p.roundRect(x, y, w, h, r);
+  return { p, bb: [x, y, x + w, y + h] };
+}
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mix = (a, b, t) => { const A = hex(a), B = hex(b); return 'rgb(' + A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',') + ')'; };
+
+// LE STYLE DU TRAIT, choisi en section 1. Tout le dessin passe par ces deux
+// fonctions : changer de style ne touche jamais au dessin lui-même.
+let ST = null;
+function part(g, f, c, s) {
+  const { p, bb } = f;
+  if (ST.halo) { g.save(); g.shadowColor = ST.halo; g.shadowBlur = ST.haloFlou; g.fillStyle = c; g.fill(p); g.restore(); }
+  if (ST.ombre === 'rim' && s) {
+    g.save(); g.clip(p); g.fillStyle = s; g.fill(p);
+    g.translate(ST.rim, -ST.rim); g.fillStyle = c; g.fill(p); g.restore();
+  } else if (ST.ombre === 'degrade' && s) {
+    const d = g.createLinearGradient(bb[2], bb[1], bb[0], bb[3]);
+    d.addColorStop(0, mix(c, '#ffffff', .18)); d.addColorStop(.55, c); d.addColorStop(1, s);
+    g.fillStyle = d; g.fill(p);
+  } else { g.fillStyle = c; g.fill(p); }
+  if (ST.trait > 0) { g.lineWidth = ST.trait; g.strokeStyle = ST.couleurTrait; g.lineJoin = 'round'; g.stroke(p); }
+}
+// Un membre en tube (bras, jambe, cou) : le trait est un tube plus large dessous.
+function tube(g, pts, w, c) {
+  const p = new Path2D(); p.moveTo(...pts[0]);
+  for (let i = 1; i < pts.length; i++) p.lineTo(...pts[i]);
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  if (ST.halo) { g.save(); g.shadowColor = ST.halo; g.shadowBlur = ST.haloFlou; g.strokeStyle = c; g.lineWidth = w; g.stroke(p); g.restore(); }
+  if (ST.trait > 0) { g.strokeStyle = ST.couleurTrait; g.lineWidth = w + ST.trait * 2; g.stroke(p); }
+  g.strokeStyle = c; g.lineWidth = w; g.stroke(p);
+}
+function ligne(g, pts, w, c) {
+  g.beginPath(); g.moveTo(...pts[0]); for (let i = 1; i < pts.length; i++) g.lineTo(...pts[i]);
+  g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = c; g.lineWidth = w; g.stroke();
+}
+// Un oeil de cartoon : blanc ovale, pupille noire, reflet.
+function oeil(g, cx, cy, rx, ry, px, py, pr, teinte) {
+  part(g, ell(cx, cy, rx, ry), '#ffffff', teinte);
+  g.fillStyle = '#121216'; g.beginPath(); g.ellipse(px, py, pr * .8, pr, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#ffffff'; g.beginPath(); g.arc(px + pr * .3, py - pr * .45, pr * .32, 0, Math.PI * 2); g.fill();
+}
+
+/* ===================== DONALD ===================== */
+// Repère local : 1 unité, pieds en y = 0, regard vers la droite (+x) comme
+// les sprites du jeu. Hauteur totale ~ 104 unités, bonnet compris.
+const DO = {
+  plume: '#f8f8fc', plumeO: '#c3cde2', bec: '#f7b21c', becO: '#cf7f0a', bouche: '#d9452c', langue: '#f07a6a',
+  veste: '#27399a', vesteO: '#161f5e', cape: '#3f63d8', capeO: '#2645a6', jaune: '#f2c230', clair: '#78d4f4',
+  poche: '#6d5fd8', zip: '#c9ced8', bonnet: '#3866d6', bonnetO: '#2146a4', bande: '#1b2c74', or: '#e3ad26', teinte: '#d6e4ff'
+};
+function dessinerDonald(g, pr) {
+  const k = pr.tete;
+  // queue, pattes
+  part(g, blob([[-19, -46], [-33, -54], [-29, -45], [-37, -42], [-28, -36], [-18, -33]]), DO.plume, DO.plumeO);
+  tube(g, [[-7, -24], [-9, -5]], 4.2, DO.bec);
+  tube(g, [[6, -24], [8, -5]], 4.2, DO.bec);
+  part(g, blob([[-5, -6], [-16, -6], [-27, -3], [-29, 0], [-15, 1.2], [-2, 0]]), DO.bec, DO.becO);
+  part(g, blob([[3, -6], [15, -6], [28, -3], [31, 0], [15, 1.2], [0, 0]]), DO.bec, DO.becO);
+  // bras arrière (derrière le corps)
+  tube(g, [[-15, -57], [-23, -46]], 7, DO.veste);
+  tube(g, [[-23, -46], [-22, -35]], 5, DO.plume);
+  part(g, ell(-21.5, -33.5, 3.4, 1.6), DO.or, null);
+  part(g, ell(-21.5, -30.5, 4.6, 4.4), DO.plume, DO.plumeO);
+  // corps
+  part(g, ell(-1, -38, 21, 19), DO.plume, DO.plumeO);
+  // veste
+  part(g, blob([[-19, -59], [17, -59], [21, -46], [19, -35], [9, -31], [1, -34], [-8, -31], [-18, -35], [-22, -47]]), DO.veste, DO.vesteO);
+  ligne(g, [[-18, -35], [-8, -31.5], [1, -34.5], [9, -31.5], [19, -35.5]], 1.2, DO.clair);
+  part(g, rect(-15, -47, 8, 7, 1.5), DO.poche, null);
+  part(g, rect(7, -47, 8, 7, 1.5), DO.poche, null);
+  ligne(g, [[2, -57], [2, -33]], 1.3, DO.zip);
+  part(g, rect(0.6, -36, 2.8, 4, .6), DO.zip, null);
+  // petite cape sur les épaules, bordée de jaune
+  part(g, blob([[-21, -60], [-11, -65], [12, -65], [21, -60], [22, -52], [11, -50.5], [1, -53], [-9, -50.5], [-22, -52]]), DO.cape, DO.capeO);
+  ligne(g, [[-22, -52], [-9, -50.5], [1, -53], [11, -50.5], [22, -52]], 1.3, DO.jaune);
+  part(g, rect(-6, -66, 13, 3.2, 1.5), DO.bande, null);
+  part(g, rect(-2, -62, 7, 2.4, .8), DO.zip, null);
+  // bras avant, main sur la hanche
+  tube(g, [[16, -57], [25, -49]], 7, DO.veste);
+  tube(g, [[25, -49], [19, -41]], 5, DO.plume);
+  part(g, ell(22.5, -45, 1.8, 3.4, .8), DO.or, null);
+  part(g, ell(17.5, -39.5, 4.6, 4.2), DO.plume, DO.plumeO);
+  // tête (grossie autour du cou selon les proportions)
+  g.save(); g.translate(3, -64); g.scale(k, k); g.translate(-3, 64);
+  part(g, ell(4, -78, 17.5, 18), DO.plume, DO.plumeO);
+  // bec : mandibule du bas, bouche, mandibule du haut
+  part(g, blob([[9, -67], [27, -65], [33, -62], [22, -59.5], [10, -61.5]]), DO.bec, DO.becO);
+  part(g, blob([[12, -66.5], [26, -65.5], [22, -62.5], [13, -63]]), DO.bouche, null);
+  part(g, blob([[7, -73], [19, -75], [35, -72], [39, -68], [31, -66], [15, -66.5], [6, -69]]), DO.bec, DO.becO);
+  oeil(g, 9.5, -83, 4.4, 6.8, 11.5, -82, 2.3, DO.teinte);
+  oeil(g, 18, -82, 3.8, 6.2, 19.6, -81, 2.1, DO.teinte);
+  // bonnet bleu qui retombe sur le côté, avec sa tirette de fermeture
+  part(g, blob([[-12, -98], [-25, -96], [-27, -86], [-21, -81], [-14, -88]]), DO.bonnet, DO.bonnetO);
+  part(g, blob([[-16, -88], [-12, -101], [4, -106], [19, -100], [23, -90], [4, -92]]), DO.bonnet, DO.bonnetO);
+  part(g, blob([[-15, -88], [-3, -93.5], [13, -93.5], [22, -89], [18, -86], [-12, -85]]), DO.bande, null);
+  ligne(g, [[-22, -82], [-23, -77]], .9, DO.zip);
+  part(g, rect(-25, -78, 4, 5.5, .8), DO.zip, null);
+  g.restore();
+}
+
+/* ===================== DINGO ===================== */
+// Même repère. Hauteur totale ~ 133 unités, chapeau compris. Dingo est un grand
+// échalas : de longues jambes noires sous le pantalon, un long cou, et une tête
+// dont le masque pêche remonte autour des yeux.
+const DINGO_H = 133;
+const DI = {
+  noir: '#1d1b22', noirO: '#0b0a0e', museau: '#f3c79c', museauO: '#d39c6c', nez: '#131115', dent: '#fbf8ee',
+  bouche: '#b8303a', chapeau: '#f5b52a', chapeauO: '#cc8616', bande: '#23357a', lunette: '#e0782a', verre: '#f7dcae',
+  pull: '#9ad12e', pullO: '#5f9419', rayure: '#77ad20', gilet: '#3a3c46', giletO: '#23242b', pocheG: '#7b8292',
+  ceinture: '#1b1b20', boucle: '#c9ced8', pantalon: '#f5b925', pantalonO: '#cc8a12', sangle: '#8a5a2a', revers: '#d8841c',
+  chaussure: '#8c6c3e', chaussureO: '#5c4524', embout: '#bcc1ca', anneau: '#ece4bf', gant: '#fafafa', gantO: '#d2d3db', manchette: '#e0892a'
+};
+function dessinerDingo(g, pr) {
+  const k = pr.tete;
+  // chaussures, anneaux, jambes
+  part(g, blob([[-5, -8], [-19, -7.5], [-31, -3.5], [-31, 0], [-3, 0]]), DI.chaussure, DI.chaussureO);
+  part(g, blob([[-31, -3.5], [-24, -6.5], [-22, -2], [-24, 0], [-31, 0]]), DI.embout, null);
+  part(g, blob([[4, -8], [20, -8], [33, -3.5], [33, 0], [2, 0]]), DI.chaussure, DI.chaussureO);
+  part(g, blob([[33, -3.5], [26, -7], [24, -2], [26, 0], [33, 0]]), DI.embout, null);
+  tube(g, [[-9, -32], [-8, -9]], 3.2, DI.noir);
+  tube(g, [[9, -32], [8, -9]], 3.2, DI.noir);
+  part(g, ell(-8, -9, 4.4, 1.9), DI.anneau, null);
+  part(g, ell(8, -9, 4.4, 1.9), DI.anneau, null);
+  // bras arrière
+  tube(g, [[-12, -82], [-19, -70], [-22, -60]], 7.5, DI.pull);
+  part(g, ell(-22, -59, 4.2, 1.9, .2), DI.manchette, null);
+  part(g, ell(-22.5, -54.5, 5.2, 5.6), DI.gant, DI.gantO);
+  // pantalon : deux jambes bouffantes, revers roulés, sangles aux genoux
+  part(g, blob([[-16, -61], [15, -61], [16, -53], [-17, -53]]), DI.pantalon, DI.pantalonO);
+  part(g, blob([[-15, -58], [-2, -58], [0, -46], [-3, -36], [-6, -31], [-14, -31], [-19, -36], [-20, -48]]), DI.pantalon, DI.pantalonO);
+  part(g, blob([[0, -58], [15, -58], [20, -48], [19, -36], [14, -31], [6, -31], [3, -36], [1, -46]]), DI.pantalon, DI.pantalonO);
+  part(g, ell(-10, -31, 7, 3.6), DI.revers, null);
+  part(g, ell(10, -31, 7, 3.6), DI.revers, null);
+  part(g, rect(-21, -47, 3.5, 6.5, 1), DI.sangle, null);
+  part(g, rect(17.5, -47, 3.5, 6.5, 1), DI.sangle, null);
+  part(g, rect(-14, -52, 6, 5, 1), DI.pantalonO, null);
+  // ceinture
+  part(g, rect(-17, -63, 33, 4.5, 1.5), DI.ceinture, null);
+  part(g, rect(1, -64, 8, 6.5, 1.2), DI.boucle, null);
+  part(g, rect(3, -62.3, 4, 3, .6), DI.ceinture, null);
+  // pull rayé et gilet
+  part(g, blob([[-12, -87], [11, -87], [14, -75], [15, -62], [-15, -62], [-14, -75]]), DI.pull, DI.pullO);
+  for (const x of [-11, -7.5, 8, 11.5]) ligne(g, [[x, -85], [x, -64]], .8, DI.rayure);
+  part(g, blob([[-10, -86], [-2, -86], [-2, -64], [-11, -66]]), DI.gilet, DI.giletO);
+  part(g, blob([[3, -86], [10, -86], [11, -66], [3, -64]]), DI.gilet, DI.giletO);
+  part(g, rect(-9, -77, 5, 5, 1), DI.pocheG, null);
+  part(g, rect(4.8, -79, 5, 6, 1), DI.pocheG, null);
+  ligne(g, [[.5, -87], [.5, -64]], 1.2, DI.boucle);
+  part(g, blob([[-5.5, -90], [6.5, -90], [7.5, -86], [-6.5, -86]]), DI.pull, DI.pullO);
+  // bras avant, main posée sur la hanche
+  tube(g, [[11, -82], [20, -72], [24, -64]], 7.5, DI.pull);
+  part(g, ell(23.5, -63, 4.2, 1.9, -.3), DI.manchette, null);
+  part(g, ell(23, -58, 5.2, 5.6), DI.gant, DI.gantO);
+  // long cou, puis la tête
+  tube(g, [[1, -89], [3, -95]], 3.2, DI.noir);
+  g.save(); g.translate(2, -93); g.scale(k, k); g.translate(-2, 93);
+  // oreille du fond, qui pend derrière la tête jusqu'à l'épaule
+  part(g, blob([[-4, -104], [-9, -99], [-11, -89], [-9.5, -84], [-7, -90], [-2, -100]]), DI.noir, DI.noirO);
+  part(g, ell(2, -101, 9.5, 9), DI.noir, DI.noirO);
+  // oreille de devant, qui pend derrière la mâchoire
+  part(g, blob([[9, -97], [12.5, -92], [12, -83], [14, -80], [15.5, -85], [14, -96]]), DI.noir, DI.noirO);
+  // le masque pêche : il remonte autour des yeux et file dans le museau
+  part(g, blob([[1, -103], [7, -108], [14, -105.5], [23, -100], [29.5, -96], [26, -91.5], [13, -90.5], [3, -91.5], [0, -97]]), DI.museau, DI.museauO);
+  part(g, blob([[6, -92], [18, -91.5], [15, -88], [8, -88.5]]), DI.bouche, null);
+  part(g, rect(11.5, -91.7, 2.6, 4, .6), DI.dent, null);
+  part(g, rect(14.6, -91.5, 2.6, 3.8, .6), DI.dent, null);
+  part(g, ell(29, -96.5, 3.6, 3), DI.nez, null);
+  oeil(g, 7, -103.5, 3.2, 4.6, 8.5, -102.6, 1.7, '#e6e6ee');
+  oeil(g, 12.5, -103, 2.8, 4.2, 13.8, -102.2, 1.6, '#e6e6ee');
+  // chapeau qui part en arrière, bande bleue, lunettes d'aviateur, moustaches
+  part(g, blob([[-8, -108], [-10, -116], [-7, -123], [-13, -131], [-4, -133], [5, -125], [9, -114], [10, -108]]), DI.chapeau, DI.chapeauO);
+  part(g, blob([[-9, -109.5], [1, -111.5], [10.5, -109], [10, -106], [1, -107.5], [-9, -106]]), DI.bande, null);
+  part(g, ell(5, -108.5, 3.1, 3.1), DI.lunette, null);
+  part(g, ell(5, -108.5, 1.8, 1.8), DI.verre, null);
+  part(g, ell(10.2, -108, 2.6, 2.7), DI.lunette, null);
+  part(g, ell(10.2, -108, 1.5, 1.6), DI.verre, null);
+  for (const [a, b] of [[[2, -112], [6, -122]], [[3, -112], [9, -120]], [[1, -112], [2, -123]]]) ligne(g, [a, b], .6, '#141216');
+  g.restore();
+}
+
+/* ===================== LES SECTIONS ===================== */
+const TRAIT_SOMBRE = '#2a1c26';
+const SECTIONS = [
+  { id: 'trait', titre: '1 · LE TRAIT',
+    note: "Tout le reste en depend : comment Donald et Dingo sont peints. Ils sont en vectoriel, a cote de persos en pixels, donc le trait decide s'ils ont l'air de faire partie du match ou d'etre colles dessus. Les artworks de KH1 ont un contour fin et sombre ; le jeu en 3D n'en a pas.",
+    variantes: [
+      { id: 'A', nom: 'CONTOUR FIN, OMBRE AU BORD', desc: "Un contour fin et sombre comme sur l'artwork de Nomura, et une ombre posee sur le bord oppose a la lumiere. Le plus fidele a tes images dessinees, et ils se lisent bien sur tous les sols ; mais c'est le plus 'dessin anime' a cote des pixels.",
+        st: { trait: 1.1, couleurTrait: TRAIT_SOMBRE, ombre: 'rim', rim: 1.6 } },
+      { id: 'B', nom: 'SANS CONTOUR, VOLUME DOUX', desc: "Pas de contour, et un degrade du clair au fonce sur chaque piece, comme le rendu 3D des jeux. Le plus proche de tes captures de KH3 ; en revanche sans contour ils se fondent dans les sols de la meme couleur, et en petit les pieces se melangent.",
+        st: { trait: 0, ombre: 'degrade' } },
+      { id: 'C', nom: 'GROS CONTOUR CARTOON', desc: "Un contour epais et des aplats sans ombre, comme un cartoon Disney classique. Ils se lisent de tres loin, meme en tout petit sur le terrain ; mais ils paraissent plus plats et plus enfantins que le reste du jeu.",
+        st: { trait: 2.2, couleurTrait: '#141018', ombre: 'aucune' } },
+      { id: 'D', nom: 'APLATS OMBRES, SANS CONTOUR', desc: "Aucun contour, mais une ombre franche au bord de chaque piece : le style des persos en pixels du roster, qui n'ont pas de contour non plus. Le plus coherent avec Sora ; en revanche les pieces sombres (le gilet de Dingo, la veste de Donald) se detachent moins.",
+        st: { trait: 0, ombre: 'rim', rim: 2.2 } },
+      { id: 'E', nom: 'INVOQUES, LISERE LUMINEUX', desc: "Un liseré clair et un halo dore autour d'eux : on voit tout de suite qu'ils sont invoques par l'ultime et pas des joueurs. Le plus lisible en plein match ; mais le halo les rend moins 'vrais', plus proches d'un effet que de persos.",
+        st: { trait: 1, couleurTrait: '#fff4c8', ombre: 'rim', rim: 1.6, halo: 'rgba(255,214,90,.85)', haloFlou: 9 } },
+    ] },
+  { id: 'taille', titre: '2 · LA TAILLE FACE À SORA',
+    note: "Sora fait 60 unites de haut en match. Dans les jeux, Dingo le depasse d'une tete et Donald lui arrive a l'epaule. Plus ils sont grands, plus on les voit — mais Dingo court dans le camp de Sora pendant 5 secondes, et un Dingo trop grand cache le disque et le terrain.",
+    variantes: [
+      { id: 'A', nom: 'COMME DANS LES JEUX', desc: "Dingo depasse Sora d'une tete, Donald lui arrive a l'epaule. Les proportions de tes images, qu'on reconnait tout de suite ; Dingo prend quand meme de la place dans le camp.",
+        taille: { dingo: 1.3, donald: .82 } },
+      { id: 'B', nom: 'A LA TAILLE DE SORA', desc: "Dingo a la hauteur de Sora, Donald un peu plus petit. Dingo devient un joueur comme un autre et ne cache rien ; en revanche on perd le grand echalas qui le rend drole.",
+        taille: { dingo: 1, donald: .75 } },
+      { id: 'C', nom: 'ACOLYTES REDUITS', desc: "Les deux nettement plus petits que Sora : on voit tout de suite que ce sont des allies qui l'accompagnent, pas des joueurs. Le moins encombrant ; mais Donald devient minuscule et ses details disparaissent.",
+        taille: { dingo: .85, donald: .6 } },
+      { id: 'D', nom: 'EN GRAND', desc: "Dingo une fois et demie plus grand que Sora, Donald a sa taille : l'invocation fait son effet. Le plus spectaculaire ; mais Dingo couvre une grosse part du camp, et le disque passe derriere lui.",
+        taille: { dingo: 1.55, donald: 1 } },
+    ] },
+  { id: 'prop', titre: '3 · LES PROPORTIONS',
+    note: "A l'echelle du match, une tete fidele devient minuscule : les yeux et le bec de Donald, le museau de Dingo, se perdent. Grossir la tete la fait lire, au prix de la fidelite. Les sprites du roster ont tous une tete sur la moitie de leur hauteur.",
+    variantes: [
+      { id: 'A', nom: 'FIDELES', desc: "Les proportions de tes images : la tete de Dingo petite sur un long corps, celle de Donald ronde. Tout de suite reconnaissables en grand ; en petit, les visages se lisent mal.",
+        prop: { tete: 1 } },
+      { id: 'B', nom: 'TETES PLUS GROSSES', desc: "Les tetes grossissent d'un quart : les yeux, le bec et le museau restent lisibles a l'echelle du match. Un bon compromis ; Dingo perd un peu de son cote degingande.",
+        prop: { tete: 1.25 } },
+      { id: 'C', nom: 'FACON SPRITE DU ROSTER', desc: "Les tetes grossissent de moitie, comme les persos du jeu dont la tete fait la moitie du corps. Ils ressemblent le plus au roster et se lisent parfaitement en petit ; mais ils deviennent chibi, loin de tes images.",
+        prop: { tete: 1.5 } },
+    ] },
+];
+
+const choix = {}; SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+const actuel = id => SECTIONS.find(s => s.id === id).variantes.find(v => v.id === choix[id]);
+function reglages(rempl) {
+  const va = id => (rempl && rempl.sec === id) ? rempl.va : actuel(id);
+  return { st: va('trait').st, taille: va('taille').taille, prop: va('prop').prop };
+}
+
+/* ===================== LES SCÈNES ===================== */
+const ARENE = MAPS[0].theme;
+function sol(g, W, H, couleur) {
+  g.fillStyle = couleur || ARENE.floor; g.fillRect(0, 0, W, H);
+}
+// Pose le trio sur la scène. ech = pixels par unité de jeu. Dingo à gauche, Sora
+// au milieu, Donald à droite, comme sur tes captures.
+function trio(g, cx, piedY, ech, R, t = 0) {
+  ST = R.st;
+  const respire = Math.sin(t * 2.4) * .6;
+  const hDi = SORA_H * R.taille.dingo, hDo = SORA_H * R.taille.donald;
+  const sDi = ech * hDi / DINGO_H, sDo = ech * hDo / 104;
+  g.save(); g.translate(cx - 46 * ech, piedY); g.scale(sDi, sDi); g.translate(0, respire); dessinerDingo(g, R.prop); g.restore();
+  peindreSora(g, cx, piedY, ech);
+  g.save(); g.translate(cx + 36 * ech, piedY); g.scale(sDo, sDo); g.translate(0, respire * .8); dessinerDonald(g, R.prop); g.restore();
+}
+
+const gG = document.getElementById('cvGrand').getContext('2d');
+const gM = document.getElementById('cvMatch').getContext('2d');
+const gS = document.getElementById('cvSols').getContext('2d');
+function majApercu(t) {
+  const R = reglages();
+  const W = gG.canvas.width, H = gG.canvas.height;
+  const d = gG.createLinearGradient(0, 0, 0, H); d.addColorStop(0, '#1b2238'); d.addColorStop(1, '#0b0e18');
+  gG.fillStyle = d; gG.fillRect(0, 0, W, H);
+  trio(gG, W / 2, H - 40, 4.6, R, t);
+  // à l'échelle du match (1 unité = 1,6 px, comme render.js)
+  sol(gM, gM.canvas.width, gM.canvas.height);
+  gM.strokeStyle = ARENE.line; gM.beginPath(); gM.moveTo(0, 240); gM.lineTo(640, 240); gM.stroke();
+  trio(gM, 320, 240, 1.6, R, t);
+  // sols
+  const SOLS = ['#1d2440', '#dde6ee', '#d9b47c', '#3c7038'];
+  SOLS.forEach((c, i) => { gS.fillStyle = c; gS.fillRect(i * 160, 0, 160, 220); });
+  SOLS.forEach((c, i) => { gS.save(); gS.beginPath(); gS.rect(i * 160, 0, 160, 220); gS.clip(); trio(gS, i * 160 + 80, 190, 1.35, R, t); gS.restore(); });
+}
+
+/* ===================== LES CARTES ===================== */
+const cartes = [];
+const boite = document.getElementById('sections');
+SECTIONS.forEach(sec => {
+  const h2 = document.createElement('h2'); h2.textContent = sec.titre;
+  const note = document.createElement('p'); note.className = 'note'; note.textContent = sec.note;
+  const row = document.createElement('div'); row.className = 'row';
+  sec.variantes.forEach(va => {
+    const card = document.createElement('div');
+    card.className = 'card' + (choix[sec.id] === va.id ? ' on' : '');
+    card.dataset.sec = sec.id; card.dataset.va = va.id;
+    card.innerHTML = '<div class="lbl"><b>' + va.id + ' · ' + va.nom + '</b>' + va.desc + '</div>';
+    const cv = document.createElement('canvas'); cv.width = 560; cv.height = 300;
+    card.append(cv);
+    card.onclick = () => {
+      choix[sec.id] = va.id;
+      document.querySelectorAll('.card[data-sec="' + sec.id + '"]').forEach(c => c.classList.toggle('on', c.dataset.va === va.id));
+      tout();
+    };
+    row.append(card);
+    cartes.push({ cv, sec, va });
+  });
+  boite.append(h2, note, row);
+});
+function dessinerCarte(o) {
+  const g = o.cv.getContext('2d'), W = o.cv.width, H = o.cv.height;
+  const R = reglages({ sec: o.sec.id, va: o.va });
+  sol(g, W, H);
+  trio(g, W / 2, H - 22, o.sec.id === 'taille' ? 2.4 : 2.9, R, 0);
+}
+function tout() {
+  cartes.forEach(dessinerCarte);
+  document.getElementById('choix').innerHTML = SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value = SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+}
+document.getElementById('btnCopier').onclick = async () => {
+  const b = document.getElementById('btnCopier');
+  try { await navigator.clipboard.writeText(document.getElementById('codeChoix').value);
+        b.textContent = 'copié !'; b.classList.add('ok');
+        setTimeout(() => { b.textContent = 'copier mes choix'; b.classList.remove('ok'); }, 1400); }
+  catch (e) { document.getElementById('codeChoix').select(); }
+};
+
+document.getElementById('intro').innerHTML = `
+  <b>L'ultime de Sora : TRINITY.</b> Donald et Dingo débarquent pendant <b>5 secondes</b>. Dingo joue
+  <b>en coéquipier</b> — il court dans le camp de Sora et attrape les disques à sa place — et Donald
+  <b>booste le disque</b> : le prochain tir de Sora part enflammé, en tir parfait.
+  <br><br>
+  <b>Une chose à la fois : ici, seulement leur dessin.</b> Ils sont en <b>vectoriel lisse</b>, comme le
+  Susanoo du Gardien, d'après tes visuels de KH1. Dingo : tête noire, museau pêche, gros nez, dents,
+  longues oreilles, chapeau jaune qui part en arrière avec la bande bleue et les lunettes d'aviateur,
+  pull vert rayé et gilet gris à poches, ceinture à boucle argent, pantalon jaune bouffant à sangles et
+  revers orange, chaussures marron à embout argent. Donald : corps blanc en poire, grands yeux, long bec,
+  bonnet bleu qui retombe avec sa tirette, veste marine à liserés clairs et petite cape bleue bordée de
+  jaune, bracelets dorés, pattes palmées. Ils sont construits en <b>pantins articulés</b> : les poses
+  et l'animation viendront ensuite, dans le mockup suivant.
+  <br><br>
+  On choisit ici <b>le trait</b>, <b>la taille face à Sora</b> et <b>les proportions</b>. Le panneau de
+  droite les montre à l'échelle réelle du match et sur les quatre familles de sols.`;
+
+tout();
+// Pour inspecter un perso seul, de pres (outil de mise au point).
+window.__trinity = { dessinerDonald, dessinerDingo, style: st => { ST = st; }, SECTIONS };
+function boucle(now) { majApercu(now / 1000); requestAnimationFrame(boucle); }
+requestAnimationFrame(boucle);
+</script>
+</body>
+</html>
