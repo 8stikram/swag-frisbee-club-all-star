@@ -1,0 +1,25 @@
+{
+ "trinity": "apparition",
+ "valide": "2026-09-27",
+ "reglages": {
+  "flashOuverture": 0.12,
+  "flashExtinction": 0.45,
+  "flashRayon": 38,
+  "flashIntensite": 0.9,
+  "flashRayons": 10,
+  "apparition": 0.06,
+  "decalage": 0.1,
+  "pop": 1.08,
+  "popDuree": 0.3,
+  "blanchiment": 0.9,
+  "blanchimentDuree": 0.25,
+  "transitionDebut": 0.25,
+  "transitionDuree": 0.6,
+  "presence": 5,
+  "respiration": 1,
+  "retourE": 0.35,
+  "dissolution": 0.5,
+  "montee": 14,
+  "etincelles": 26
+ }
+}
