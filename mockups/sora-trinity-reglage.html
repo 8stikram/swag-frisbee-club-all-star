@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Trinity — l'atelier de Donald et Dingo</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0a0c14; --panel:#131826; --panel2:#182036; --edge:#2a3350; --edge2:#44527a; --ink:#eef1f8;
+         --doux:#a7b0c8; --pale:#6b7594; --or:#f8c81c; --bleu:#3f63d8; --rouge:#e0564a; }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;
+       display:grid;grid-template-rows:auto auto 1fr auto;grid-template-columns:minmax(0,1fr);overflow:hidden;user-select:none}
+  button,select,input{font:inherit;color:inherit}
+  header{display:flex;align-items:center;gap:12px;padding:9px 14px;min-width:0;overflow:hidden;background:var(--panel);border-bottom:1px solid var(--edge)}
+  header h1{font-family:'Archivo Black',sans-serif;font-size:16px;margin:0;letter-spacing:.5px;white-space:nowrap}
+  header h1 em{font-style:normal;color:var(--or)}
+  header .aide{font-size:11.5px;color:var(--pale);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .gros{background:var(--panel2);border:1px solid var(--edge);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;white-space:nowrap}
+  .gros:hover{border-color:var(--edge2)}
+  .gros.or{border-color:#8a6f1f;color:var(--or)}
+  .gros.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+
+  /* barre d'outils */
+  #outils{display:flex;align-items:center;gap:8px;padding:6px 14px;background:#0e1320;border-bottom:1px solid var(--edge);font-size:12px;flex-wrap:wrap}
+  .btn{background:transparent;border:1px solid var(--edge);border-radius:7px;padding:4px 9px;cursor:pointer;font-size:11.5px;color:var(--doux)}
+  .btn:hover{border-color:var(--edge2);color:var(--ink)}
+  .btn.on{background:#22305a;border-color:var(--bleu);color:var(--ink)}
+  .btn kbd{font-family:Consolas,monospace;color:var(--pale);font-size:10.5px;margin-left:4px}
+  .sep{width:1px;height:20px;background:var(--edge)}
+  select{background:#0c101a;border:1px solid var(--edge);border-radius:7px;padding:4px 6px;font-size:11.5px}
+
+  /* corps */
+  #corps{display:grid;grid-template-columns:minmax(0,1fr) 330px;min-height:0;min-width:0}
+  #scene{position:relative;min-width:0;min-height:0;background:#070910}
+  #toile{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #droite{background:var(--panel);border-left:1px solid var(--edge);overflow:auto;padding:4px 12px 16px}
+  #droite h3{font-size:10.5px;letter-spacing:1.3px;color:var(--or);margin:14px 0 7px;text-transform:uppercase;display:flex;gap:8px;align-items:center}
+  #droite h3 span{color:var(--pale);font-weight:normal;letter-spacing:.2px;text-transform:none}
+
+  /* calques */
+  #calques{border:1px solid var(--edge);border-radius:9px;max-height:300px;overflow:auto;background:#0e1320}
+  .cq{display:flex;align-items:center;gap:6px;padding:3px 8px;font-size:12px;cursor:pointer;border-bottom:1px solid #151c2e;white-space:nowrap}
+  .cq:hover{background:#18203a}
+  .cq.on{background:#22305a}
+  .cq .oeil{width:18px;text-align:center;cursor:pointer;opacity:.85;flex:0 0 auto}
+  .cq.cache .nom{opacity:.4;text-decoration:line-through}
+  .cq .fl{width:12px;color:var(--pale);flex:0 0 auto;text-align:center}
+  .cq.grp .nom{font-weight:600;color:var(--ink)}
+  .cq .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--doux)}
+  .cq .pt{width:7px;height:7px;border-radius:50%;background:var(--or);flex:0 0 auto;visibility:hidden}
+  .cq.mod .pt{visibility:visible}
+
+  /* propriétés */
+  .vide{font-size:11.5px;color:var(--pale);line-height:1.6}
+  .sel-nom{font-size:13px;font-weight:600;margin-bottom:6px}
+  .sel-nom small{display:block;font-weight:normal;color:var(--pale);font-size:10.5px;font-family:Consolas,monospace}
+  .curseur{display:grid;grid-template-columns:70px 1fr 50px;gap:7px;align-items:center;font-size:11px;color:var(--doux);margin:5px 0;font-family:Consolas,monospace}
+  .curseur input[type=range]{width:100%}
+  .curseur span{text-align:right;color:var(--or)}
+  .lie{font-size:11px;color:var(--doux);display:flex;gap:6px;align-items:center;margin:4px 0 6px}
+  .ligneBtn{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+  .petit{background:var(--panel2);border:1px solid var(--edge);border-radius:7px;padding:5px 8px;font-size:11px;cursor:pointer}
+  .petit:hover{border-color:var(--edge2)}
+  .petit:disabled{opacity:.4;cursor:default}
+
+  /* couleurs */
+  .coul{display:grid;grid-template-columns:30px 1fr 74px 22px;gap:6px;align-items:center;margin:4px 0;font-size:11px;color:var(--doux)}
+  .coul input[type=color]{width:30px;height:24px;border:1px solid var(--edge);border-radius:6px;background:none;padding:1px;cursor:pointer}
+  .coul input.hex{width:74px;background:#0c101a;border:1px solid var(--edge);border-radius:6px;padding:4px 6px;font-family:Consolas,monospace;font-size:11px}
+  .coul .raz{cursor:pointer;color:var(--pale);text-align:center}
+  .coul.change .nomc{color:var(--or)}
+
+  #apercu{display:block;width:100%;height:auto;border-radius:9px;border:1px solid var(--edge)}
+  footer{display:flex;gap:18px;padding:5px 14px;background:#05070c;border-top:1px solid var(--edge);font-size:11.5px;color:var(--pale);font-family:Consolas,monospace;white-space:nowrap;overflow:hidden}
+  footer b{color:var(--doux);font-weight:normal}
+
+  .voile{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;place-items:center;z-index:50}
+  .voile.ouvert{display:grid}
+  .fenetre{background:var(--panel);border:1px solid var(--edge2);border-radius:14px;padding:18px;width:min(720px,92vw);max-height:88vh;display:flex;flex-direction:column;gap:10px}
+  .fenetre h2{margin:0;font-family:'Archivo Black',sans-serif;font-size:16px}
+  .fenetre p{margin:0;font-size:12.5px;color:var(--doux);line-height:1.6}
+  .fenetre textarea{min-height:300px;background:#0c101a;border:1px solid var(--edge);border-radius:9px;color:var(--or);font:12px/1.5 Consolas,monospace;padding:10px;resize:vertical;user-select:text}
+  .fenetre .ligneBtn{justify-content:flex-end}
+  .raccourcis{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;font-size:12.5px}
+  .raccourcis div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #1a2238;padding:4px 0}
+  .raccourcis kbd{font-family:Consolas,monospace;color:var(--or)}
+  #toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%) translateY(16px);background:#1d4a33;border:1px solid #2f7a52;color:#b6f5cf;padding:8px 16px;border-radius:9px;font-size:12.5px;opacity:0;transition:opacity .18s,transform .18s;pointer-events:none;z-index:60}
+  #toast.vu{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>TRINITY — <em>L'ATELIER DE DONALD ET DINGO</em></h1>
+  <div class="aide">Clic : choisir une pièce · double-clic : son groupe · glisser : déplacer · poignées : taille et rotation · molette : zoom · Espace + glisser : vue</div>
+  <button class="gros" id="bColler">Coller des réglages</button>
+  <button class="gros or" id="bExport">Copier mes réglages</button>
+  <button class="gros" id="bAide" title="Raccourcis  ?">?</button>
+</header>
+
+<div id="outils">
+  <button class="btn" id="bZoomM" title="Dézoomer  −">−</button>
+  <span id="zoomTxt" style="font-family:Consolas,monospace;color:var(--doux);min-width:46px;text-align:center">100 %</span>
+  <button class="btn" id="bZoomP" title="Zoomer  +">+</button>
+  <button class="btn" id="bAjuster" title="Tout voir  0">ajuster<kbd>0</kbd></button>
+  <button class="btn" id="bDingo">cadrer Dingo<kbd>1</kbd></button>
+  <button class="btn" id="bDonald">cadrer Donald<kbd>2</kbd></button>
+  <span class="sep"></span>
+  <button class="btn on" id="bGrille">grille<kbd>G</kbd></button>
+  <button class="btn" id="bFond">fond : sombre<kbd>F</kbd></button>
+  <button class="btn on" id="bSora">Sora pour l'échelle<kbd>S</kbd></button>
+  <button class="btn on" id="bCadres">cadre au survol</button>
+  <span class="sep"></span>
+  <label style="color:var(--doux);font-size:11.5px">trait
+    <select id="selStyle"></select></label>
+  <span class="sep"></span>
+  <button class="btn" id="bAnnuler" title="Ctrl+Z">annuler<kbd>Ctrl+Z</kbd></button>
+  <button class="btn" id="bRetablir" title="Ctrl+Y">rétablir<kbd>Ctrl+Y</kbd></button>
+  <button class="btn" id="bToutRaz" style="color:var(--rouge)">tout remettre</button>
+</div>
+
+<main id="corps">
+  <section id="scene"><canvas id="toile"></canvas></section>
+  <aside id="droite">
+    <h3>Calques <span>l'œil masque, le point doré = retouché</span></h3>
+    <div id="calques"></div>
+    <h3>Pièce choisie</h3>
+    <div id="props"></div>
+    <h3>Ses couleurs <span>changent toutes les pièces de cette couleur</span></h3>
+    <div id="couleurs"></div>
+    <h3>À l'échelle du match</h3>
+    <canvas id="apercu" width="640" height="330"></canvas>
+  </aside>
+</main>
+
+<footer>
+  <span>pièce <b id="sNom">—</b></span>
+  <span>souris <b id="sPos">—</b></span>
+  <span>retouches <b id="sMod">0</b></span>
+</footer>
+
+<div class="voile" id="vExport"><div class="fenetre">
+  <h2>TES RÉGLAGES</h2>
+  <p>Seulement ce que tu as changé : la position, la taille et la rotation des pièces retouchées, les
+     pièces masquées, les couleurs changées et l'ordre des calques s'il a bougé. Copie tout et
+     envoie-le tel quel.</p>
+  <textarea id="txtExport" readonly></textarea>
+  <div class="ligneBtn"><button class="gros" data-ferme>Fermer</button><button class="gros or" id="bCopierExport">Copier</button></div>
+</div></div>
+<div class="voile" id="vColler"><div class="fenetre">
+  <h2>COLLER DES RÉGLAGES</h2>
+  <p>Colle un bloc copié ici : il remplace les réglages actuels. Ctrl+Z revient en arrière.</p>
+  <textarea id="txtColler" spellcheck="false"></textarea>
+  <div class="ligneBtn"><button class="gros" data-ferme>Fermer</button><button class="gros or" id="bAppliquer">Appliquer</button></div>
+</div></div>
+<div class="voile" id="vAide"><div class="fenetre">
+  <h2>RACCOURCIS</h2>
+  <div class="raccourcis" id="listeRaccourcis"></div>
+  <div class="ligneBtn"><button class="gros" data-ferme>Fermer</button></div>
+</div></div>
+<div id="toast"></div>
+
+<script type="module">
+// ---------------------------------------------------------------------------
+// L'ATELIER DE DONALD ET DINGO. Chaque personnage est découpé en pièces, et
+// chaque pièce est un calque qu'on déplace, étire et tourne — comme le Susanoo
+// du Gardien et le diable du casino. Les pièces sont rangées dans une
+// hiérarchie : la tête est un groupe, le bâton suit le bras de Donald qui le
+// tient, le bouclier suit celui de Dingo. Tourner un bras le fait donc pivoter
+// autour de l'épaule, avec ce qu'il porte.
+// ---------------------------------------------------------------------------
+import { MAPS } from '../js/data/maps.js';
+
+/* ===================== SORA (le dessin retenu), pour l'échelle ===================== */
+const SORA_PAL = { H:'#8a5a30', h:'#58341a', j:'#b98352', S:'#f5cfa6', s:'#d8a074', E:'#2168dc', W:'#f4f4f6',
+  w:'#c2c5ce', R:'#d8262c', r:'#9c151a', K:'#26262e', k:'#50525e', B:'#3257d4', b:'#1f3794', V:'#dde2ea',
+  v:'#8f96a4', Y:'#f8c81c', y:'#c8920c', N:'#18181d' };
+const SORA = ["...hH.HH.Hh.....","..HHHHHjHHHH....",".hHHHHjHHHHHh...","..hHHHHHHHHh....","..HHHHHHHHHH....",
+  "..HHSHHSHHSH....","..hSSESSSSEh....","..sSSSSSSSSs....","...SSSSSWSS.....","....BKRRKB......",
+  "..WWKRRVRKWW....",".WWWKRRVRKWWW...",".kWKKRRvRKKWk...",".SKKKRRvRKKKS...","..bBBEEwbbbb....",
+  "..RRRRRvEwRw....","...rr....rw.....","...ss....ss.....",".yYNY....YNYy...",".yyYY....YYyy..."];
+// En unités de jeu : Sora fait 60 de haut (20 lignes × 3), pieds en y = 0, centré en x = 0.
+function peindreSora(g) {
+  for (let y = 0; y < 20; y++) for (let c = 0; c < 16; c++) {
+    const l = SORA[y][c]; if (l === '.') continue;
+    g.fillStyle = SORA_PAL[l]; g.fillRect((c - 8) * 3, (y - 20) * 3, 3.02, 3.02);
+  }
+}
+
+/* ===================== LES COULEURS (modifiables) ===================== */
+const DI = {
+  noir: '#1d1b22', noirO: '#0b0a0e', museau: '#f3c79c', museauO: '#d39c6c', nez: '#131115', dent: '#fbf8ee',
+  bouche: '#b8303a', chapeau: '#f5b52a', chapeauO: '#cc8616', bande: '#23357a', lunette: '#e0782a', verre: '#f7dcae',
+  moustache: '#141216', pull: '#9ad12e', pullO: '#5f9419', rayure: '#77ad20', gilet: '#3a3c46', giletO: '#23242b',
+  pocheG: '#7b8292', ceinture: '#1b1b20', boucle: '#c9ced8', pantalon: '#f5b925', pantalonO: '#cc8a12',
+  sangle: '#8a5a2a', revers: '#d8841c', chaussure: '#8c6c3e', chaussureO: '#5c4524', embout: '#bcc1ca',
+  anneau: '#ece4bf', gant: '#fafafa', gantO: '#d2d3db', manchette: '#e0892a',
+  oeilBlanc: '#ffffff', oeilOmbre: '#e6e6ee', pupille: '#121216',
+  bouclierOr: '#f2c23a', bouclierOrO: '#c38d1a', bouclierBleu: '#3f7fe0', bouclierBleuO: '#2a58b0',
+  bouclierClair: '#86cdf0', bouclierClairO: '#57a6d2', metal: '#4a4c55', metalO: '#2a2b33', metalReflet: '#aab0bc'
+};
+const DO = {
+  plume: '#f8f8fc', plumeO: '#c3cde2', bec: '#f7b21c', becO: '#cf7f0a', bouche: '#d9452c',
+  veste: '#27399a', vesteO: '#161f5e', cape: '#3f63d8', capeO: '#2645a6', liseréJaune: '#f2c230', liseréClair: '#78d4f4',
+  poche: '#6d5fd8', zip: '#c9ced8', bonnet: '#3866d6', bonnetO: '#2146a4', bande: '#1b2c74', bracelet: '#e3ad26',
+  oeilBlanc: '#ffffff', oeilOmbre: '#d6e4ff', pupille: '#121216',
+  manche: '#2e2320', bague: '#e8ecf2', pommeau: '#e0a020', eclair: '#2f5fd6', eclairO: '#1c3c9a',
+  eclairBord: '#dfe8ff', chapeauMage: '#b07a2a', chapeauMageO: '#74491a'
+};
+const PAL = { dingo: DI, donald: DO };
+const PAL0 = { dingo: { ...DI }, donald: { ...DO } };
+
+/* ===================== LES OUTILS DE DESSIN ===================== */
+function blob(pts) {
+  const p = new Path2D(), n = pts.length, P = i => pts[(i + n) % n];
+  p.moveTo(P(0)[0], P(0)[1]);
+  for (let i = 0; i < n; i++) {
+    const [x0, y0] = P(i - 1), [x1, y1] = P(i), [x2, y2] = P(i + 1), [x3, y3] = P(i + 2);
+    p.bezierCurveTo(x1 + (x2 - x0) / 6, y1 + (y2 - y0) / 6, x2 - (x3 - x1) / 6, y2 - (y3 - y1) / 6, x2, y2);
+  }
+  p.closePath();
+  const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+  return { p, bb: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] };
+}
+function ell(cx, cy, rx, ry, rot = 0) {
+  const p = new Path2D(); p.ellipse(cx, cy, rx, ry, rot, 0, Math.PI * 2);
+  const r = Math.max(rx, ry);
+  return { p, bb: rot ? [cx - r, cy - r, cx + r, cy + r] : [cx - rx, cy - ry, cx + rx, cy + ry] };
+}
+function rect(x, y, w, h, r = 0) { const p = new Path2D(); p.roundRect(x, y, w, h, r); return { p, bb: [x, y, x + w, y + h] }; }
+const hexRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mix = (a, b, t) => { const A = hexRgb(a), B = hexRgb(b); return 'rgb(' + A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',') + ')'; };
+
+// Trois modes pour les mêmes fonctions de dessin :
+//  - normal : on peint ;
+//  - MESURE : on relève la boîte de la pièce et les couleurs qu'elle emploie ;
+//  - PIOCHE : on peint la pièce d'une couleur unique dans un calque caché, pour
+//    savoir au pixel près laquelle est sous la souris.
+let ST = null, MESURE = null, PIOCHE = null;
+function noter(g, bb, marge = 0) {
+  if (!MESURE) return;
+  const m = g.getTransform();
+  for (const [x, y] of [[bb[0] - marge, bb[1] - marge], [bb[2] + marge, bb[1] - marge], [bb[2] + marge, bb[3] + marge], [bb[0] - marge, bb[3] + marge]]) {
+    const q = m.transformPoint({ x, y });
+    MESURE.bb[0] = Math.min(MESURE.bb[0], q.x); MESURE.bb[1] = Math.min(MESURE.bb[1], q.y);
+    MESURE.bb[2] = Math.max(MESURE.bb[2], q.x); MESURE.bb[3] = Math.max(MESURE.bb[3], q.y);
+  }
+}
+function couleur(c) { if (MESURE && c) MESURE.couleurs.add(c); return c; }
+function part(g, f, c, s) {
+  noter(g, f.bb, ST.trait / 2); couleur(c); couleur(s);
+  if (PIOCHE) { g.fillStyle = PIOCHE; g.fill(f.p); g.lineWidth = Math.max(ST.trait, .6) + 1; g.strokeStyle = PIOCHE; g.stroke(f.p); return; }
+  const { p, bb } = f;
+  if (ST.halo) { g.save(); g.shadowColor = ST.halo; g.shadowBlur = ST.haloFlou; g.fillStyle = c; g.fill(p); g.restore(); }
+  if (ST.ombre === 'rim' && s) {
+    g.save(); g.clip(p); g.fillStyle = s; g.fill(p);
+    g.translate(ST.rim, -ST.rim); g.fillStyle = c; g.fill(p); g.restore();
+  } else if (ST.ombre === 'degrade' && s) {
+    const d = g.createLinearGradient(bb[2], bb[1], bb[0], bb[3]);
+    d.addColorStop(0, mix(c, '#ffffff', .18)); d.addColorStop(.55, c); d.addColorStop(1, s);
+    g.fillStyle = d; g.fill(p);
+  } else { g.fillStyle = c; g.fill(p); }
+  if (ST.trait > 0) { g.lineWidth = ST.trait; g.strokeStyle = ST.couleurTrait; g.lineJoin = 'round'; g.stroke(p); }
+}
+function chemin(pts) { const p = new Path2D(); p.moveTo(...pts[0]); for (let i = 1; i < pts.length; i++) p.lineTo(...pts[i]); return p; }
+function bbPts(pts) { const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]; }
+function tube(g, pts, w, c) {
+  noter(g, bbPts(pts), w / 2 + ST.trait); couleur(c);
+  const p = chemin(pts);
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  if (PIOCHE) { g.strokeStyle = PIOCHE; g.lineWidth = w + ST.trait * 2 + 1; g.stroke(p); return; }
+  if (ST.halo) { g.save(); g.shadowColor = ST.halo; g.shadowBlur = ST.haloFlou; g.strokeStyle = c; g.lineWidth = w; g.stroke(p); g.restore(); }
+  if (ST.trait > 0) { g.strokeStyle = ST.couleurTrait; g.lineWidth = w + ST.trait * 2; g.stroke(p); }
+  g.strokeStyle = c; g.lineWidth = w; g.stroke(p);
+}
+function ligne(g, pts, w, c) {
+  noter(g, bbPts(pts), w / 2); couleur(c);
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  g.strokeStyle = PIOCHE || c; g.lineWidth = PIOCHE ? w + 1.5 : w; g.stroke(chemin(pts));
+}
+function oeil(g, P, cx, cy, rx, ry, px, py, pr) {
+  part(g, ell(cx, cy, rx, ry), P.oeilBlanc, P.oeilOmbre);
+  if (PIOCHE) return;
+  couleur(P.pupille);
+  g.fillStyle = P.pupille; g.beginPath(); g.ellipse(px, py, pr * .8, pr, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = P.oeilBlanc; g.beginPath(); g.arc(px + pr * .3, py - pr * .45, pr * .32, 0, Math.PI * 2); g.fill();
+}
+
+/* ===================== LES PIÈCES ===================== */
+// Chaque pièce se dessine dans le repère de son personnage : pieds en (0, 0),
+// regard vers la droite (+x) comme les sprites du jeu. `pivot` est le point
+// autour duquel elle tourne et grandit (l'épaule pour un bras, le cou pour la
+// tête…) ; sans pivot, c'est le centre de sa boîte. `parent` la fait suivre
+// une autre pièce ou un groupe.
+const NOEUDS = [];
+const noeud = o => NOEUDS.push(o);
+
+// -------- DINGO --------
+noeud({ id: 'dingo', nom: 'DINGO', perso: 'dingo', groupe: true, pivot: [0, 0] });
+noeud({ id: 'dingo.chaussureArr', nom: 'chaussure arrière', perso: 'dingo', parent: 'dingo', f(g) {
+  part(g, blob([[-5, -8], [-19, -7.5], [-31, -3.5], [-31, 0], [-3, 0]]), DI.chaussure, DI.chaussureO);
+  part(g, blob([[-31, -3.5], [-24, -6.5], [-22, -2], [-24, 0], [-31, 0]]), DI.embout, null); } });
+noeud({ id: 'dingo.jambeArr', nom: 'jambe arrière', perso: 'dingo', parent: 'dingo', pivot: [-9, -32], f(g) {
+  tube(g, [[-9, -32], [-8, -9]], 3.2, DI.noir); part(g, ell(-8, -9, 4.4, 1.9), DI.anneau, null); } });
+noeud({ id: 'dingo.chaussureAv', nom: 'chaussure avant', perso: 'dingo', parent: 'dingo', f(g) {
+  part(g, blob([[4, -8], [20, -8], [33, -3.5], [33, 0], [2, 0]]), DI.chaussure, DI.chaussureO);
+  part(g, blob([[33, -3.5], [26, -7], [24, -2], [26, 0], [33, 0]]), DI.embout, null); } });
+noeud({ id: 'dingo.jambeAv', nom: 'jambe avant', perso: 'dingo', parent: 'dingo', pivot: [9, -32], f(g) {
+  tube(g, [[9, -32], [8, -9]], 3.2, DI.noir); part(g, ell(8, -9, 4.4, 1.9), DI.anneau, null); } });
+noeud({ id: 'dingo.brasArr', nom: 'bras arrière', perso: 'dingo', parent: 'dingo', pivot: [-12, -82], f(g) {
+  tube(g, [[-12, -82], [-20, -72], [-21, -62]], 7.5, DI.pull);
+  part(g, ell(-21, -61, 4.2, 1.9, .1), DI.manchette, null);
+  part(g, ell(-21.5, -56.5, 5.2, 5.6), DI.gant, DI.gantO); } });
+noeud({ id: 'dingo.hanches', nom: 'pantalon — hanches', perso: 'dingo', parent: 'dingo', f(g) {
+  part(g, blob([[-16, -61], [15, -61], [16, -53], [-17, -53]]), DI.pantalon, DI.pantalonO); } });
+noeud({ id: 'dingo.pantalonArr', nom: 'pantalon — jambe arrière', perso: 'dingo', parent: 'dingo', f(g) {
+  part(g, blob([[-15, -58], [-2, -58], [0, -46], [-3, -36], [-6, -31], [-14, -31], [-19, -36], [-20, -48]]), DI.pantalon, DI.pantalonO); } });
+noeud({ id: 'dingo.pantalonAv', nom: 'pantalon — jambe avant', perso: 'dingo', parent: 'dingo', f(g) {
+  part(g, blob([[0, -58], [15, -58], [20, -48], [19, -36], [14, -31], [6, -31], [3, -36], [1, -46]]), DI.pantalon, DI.pantalonO); } });
+noeud({ id: 'dingo.reversArr', nom: 'revers arrière', perso: 'dingo', parent: 'dingo', f(g) { part(g, ell(-10, -31, 7, 3.6), DI.revers, null); } });
+noeud({ id: 'dingo.reversAv', nom: 'revers avant', perso: 'dingo', parent: 'dingo', f(g) { part(g, ell(10, -31, 7, 3.6), DI.revers, null); } });
+noeud({ id: 'dingo.sangleArr', nom: 'sangle arrière', perso: 'dingo', parent: 'dingo', f(g) { part(g, rect(-21, -47, 3.5, 6.5, 1), DI.sangle, null); } });
+noeud({ id: 'dingo.sangleAv', nom: 'sangle avant', perso: 'dingo', parent: 'dingo', f(g) { part(g, rect(17.5, -47, 3.5, 6.5, 1), DI.sangle, null); } });
+noeud({ id: 'dingo.pocheCuisse', nom: 'poche de cuisse', perso: 'dingo', parent: 'dingo', f(g) { part(g, rect(-14, -52, 6, 5, 1), DI.pantalonO, null); } });
+noeud({ id: 'dingo.ceinture', nom: 'ceinture', perso: 'dingo', parent: 'dingo', f(g) { part(g, rect(-17, -63, 33, 4.5, 1.5), DI.ceinture, null); } });
+noeud({ id: 'dingo.boucle', nom: 'boucle', perso: 'dingo', parent: 'dingo', f(g) {
+  part(g, rect(1, -64, 8, 6.5, 1.2), DI.boucle, null); part(g, rect(3, -62.3, 4, 3, .6), DI.ceinture, null); } });
+noeud({ id: 'dingo.pull', nom: 'pull rayé', perso: 'dingo', parent: 'dingo', f(g) {
+  part(g, blob([[-12, -87], [11, -87], [14, -75], [15, -62], [-15, -62], [-14, -75]]), DI.pull, DI.pullO);
+  for (const x of [-11, -7.5, 8, 11.5]) ligne(g, [[x, -85], [x, -64]], .8, DI.rayure); } });
+noeud({ id: 'dingo.giletG', nom: 'gilet — pan gauche', perso: 'dingo', parent: 'dingo', f(g) {
+  part(g, blob([[-10, -86], [-2, -86], [-2, -64], [-11, -66]]), DI.gilet, DI.giletO); } });
+noeud({ id: 'dingo.giletD', nom: 'gilet — pan droit', perso: 'dingo', parent: 'dingo', f(g) {
+  part(g, blob([[3, -86], [10, -86], [11, -66], [3, -64]]), DI.gilet, DI.giletO); } });
+noeud({ id: 'dingo.pochesGilet', nom: 'poches du gilet', perso: 'dingo', parent: 'dingo', f(g) {
+  part(g, rect(-9, -77, 5, 5, 1), DI.pocheG, null); part(g, rect(4.8, -79, 5, 6, 1), DI.pocheG, null); } });
+noeud({ id: 'dingo.fermeture', nom: 'fermeture éclair', perso: 'dingo', parent: 'dingo', f(g) { ligne(g, [[.5, -87], [.5, -64]], 1.2, DI.boucle); } });
+noeud({ id: 'dingo.colRoule', nom: 'col roulé', perso: 'dingo', parent: 'dingo', f(g) {
+  part(g, blob([[-5.5, -90], [6.5, -90], [7.5, -86], [-6.5, -86]]), DI.pull, DI.pullO); } });
+noeud({ id: 'dingo.cou', nom: 'cou', perso: 'dingo', parent: 'dingo', f(g) { tube(g, [[1, -89], [3, -95]], 3.2, DI.noir); } });
+// bras avant, prêt au combat : il présente le bouclier devant le corps
+noeud({ id: 'dingo.brasAv', nom: 'bras avant', perso: 'dingo', parent: 'dingo', pivot: [11, -82], f(g) {
+  tube(g, [[11, -82], [20, -72], [15, -66]], 7.5, DI.pull);
+  part(g, ell(14.5, -65.5, 1.9, 4.2, .3), DI.manchette, null);
+  part(g, ell(12.5, -65, 5.2, 5.6), DI.gant, DI.gantO); } });
+// le bouclier du chevalier : anneau doré, bande bleue, anneau doré, fond bleu
+// clair, et l'emblème tête de Mickey en trois disques de métal cerclés d'or.
+// Vu de trois quarts, il est aplati en largeur.
+noeud({ id: 'dingo.bouclier', nom: 'BOUCLIER', perso: 'dingo', parent: 'dingo.brasAv', pivot: [11, -67], f(g) {
+  g.save(); g.translate(11, -67); g.scale(.82, 1);
+  part(g, ell(0, 0, 15.5, 15.5), DI.bouclierOr, DI.bouclierOrO);
+  part(g, ell(0, 0, 13.7, 13.7), DI.bouclierBleu, DI.bouclierBleuO);
+  part(g, ell(0, 0, 12.1, 12.1), DI.bouclierOr, DI.bouclierOrO);
+  part(g, ell(0, 0, 10.9, 10.9), DI.bouclierClair, DI.bouclierClairO);
+  for (const [x, y, r] of [[-6.3, -6.2, 3.7], [6.3, -6.2, 3.7], [0, 1.3, 6.9]]) {
+    part(g, ell(x, y, r, r), DI.bouclierOr, DI.bouclierOrO);
+    part(g, ell(x, y, r - .9, r - .9), DI.metal, DI.metalO);
+    if (!PIOCHE) { couleur(DI.metalReflet); g.fillStyle = DI.metalReflet; g.globalAlpha = .55;
+      g.beginPath(); g.ellipse(x + r * .15, y - r * .3, r * .38, r * .26, 0, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
+  }
+  g.restore(); } });
+// la tête : un groupe qui tourne et grandit autour du cou
+noeud({ id: 'dingo.tete', nom: 'Tête', perso: 'dingo', groupe: true, parent: 'dingo', pivot: [2, -93] });
+const T_DI = { perso: 'dingo', parent: 'dingo.tete' };
+noeud({ ...T_DI, id: 'dingo.oreilleArr', nom: 'oreille arrière', pivot: [-4, -102], f(g) {
+  part(g, blob([[-4, -104], [-9, -99], [-11, -89], [-9.5, -84], [-7, -90], [-2, -100]]), DI.noir, DI.noirO); } });
+noeud({ ...T_DI, id: 'dingo.crane', nom: 'crâne', f(g) { part(g, ell(2, -101, 9.5, 9), DI.noir, DI.noirO); } });
+noeud({ ...T_DI, id: 'dingo.oreilleAv', nom: 'oreille avant', pivot: [12, -96], f(g) {
+  part(g, blob([[9, -97], [12.5, -92], [12, -83], [14, -80], [15.5, -85], [14, -96]]), DI.noir, DI.noirO); } });
+noeud({ ...T_DI, id: 'dingo.masque', nom: 'masque et museau', f(g) {
+  part(g, blob([[1, -103], [7, -108], [14, -105.5], [23, -100], [29.5, -96], [26, -91.5], [13, -90.5], [3, -91.5], [0, -97]]), DI.museau, DI.museauO); } });
+noeud({ ...T_DI, id: 'dingo.bouche', nom: 'bouche', f(g) { part(g, blob([[6, -92], [18, -91.5], [15, -88], [8, -88.5]]), DI.bouche, null); } });
+noeud({ ...T_DI, id: 'dingo.dents', nom: 'dents', f(g) {
+  part(g, rect(11.5, -91.7, 2.6, 4, .6), DI.dent, null); part(g, rect(14.6, -91.5, 2.6, 3.8, .6), DI.dent, null); } });
+noeud({ ...T_DI, id: 'dingo.nez', nom: 'nez', f(g) { part(g, ell(29, -96.5, 3.6, 3), DI.nez, null); } });
+noeud({ ...T_DI, id: 'dingo.oeilG', nom: 'œil gauche', f(g) { oeil(g, DI, 7, -103.5, 3.2, 4.6, 8.5, -102.6, 1.7); } });
+noeud({ ...T_DI, id: 'dingo.oeilD', nom: 'œil droit', f(g) { oeil(g, DI, 12.5, -103, 2.8, 4.2, 13.8, -102.2, 1.6); } });
+noeud({ ...T_DI, id: 'dingo.chapeau', nom: 'chapeau', pivot: [1, -108], f(g) {
+  part(g, blob([[-8, -108], [-10, -116], [-7, -123], [-13, -131], [-4, -133], [5, -125], [9, -114], [10, -108]]), DI.chapeau, DI.chapeauO); } });
+noeud({ ...T_DI, id: 'dingo.bandeChapeau', nom: 'bande du chapeau', f(g) {
+  part(g, blob([[-9, -109.5], [1, -111.5], [10.5, -109], [10, -106], [1, -107.5], [-9, -106]]), DI.bande, null); } });
+noeud({ ...T_DI, id: 'dingo.lunettes', nom: "lunettes d'aviateur", f(g) {
+  part(g, ell(5, -108.5, 3.1, 3.1), DI.lunette, null); part(g, ell(5, -108.5, 1.8, 1.8), DI.verre, null);
+  part(g, ell(10.2, -108, 2.6, 2.7), DI.lunette, null); part(g, ell(10.2, -108, 1.5, 1.6), DI.verre, null); } });
+noeud({ ...T_DI, id: 'dingo.moustaches', nom: 'moustaches', pivot: [2, -112], f(g) {
+  for (const [a, b] of [[[2, -112], [6, -122]], [[3, -112], [9, -120]], [[1, -112], [2, -123]]]) ligne(g, [a, b], .6, DI.moustache); } });
+
+// -------- DONALD --------
+noeud({ id: 'donald', nom: 'DONALD', perso: 'donald', groupe: true, pivot: [0, 0] });
+noeud({ id: 'donald.queue', nom: 'queue', perso: 'donald', parent: 'donald', pivot: [-19, -40], f(g) {
+  part(g, blob([[-19, -46], [-33, -54], [-29, -45], [-37, -42], [-28, -36], [-18, -33]]), DO.plume, DO.plumeO); } });
+noeud({ id: 'donald.jambeArr', nom: 'jambe arrière', perso: 'donald', parent: 'donald', pivot: [-7, -24], f(g) { tube(g, [[-7, -24], [-9, -5]], 4.2, DO.bec); } });
+noeud({ id: 'donald.patteArr', nom: 'patte arrière', perso: 'donald', parent: 'donald', f(g) {
+  part(g, blob([[-5, -6], [-16, -6], [-27, -3], [-29, 0], [-15, 1.2], [-2, 0]]), DO.bec, DO.becO); } });
+noeud({ id: 'donald.jambeAv', nom: 'jambe avant', perso: 'donald', parent: 'donald', pivot: [6, -24], f(g) { tube(g, [[6, -24], [8, -5]], 4.2, DO.bec); } });
+noeud({ id: 'donald.patteAv', nom: 'patte avant', perso: 'donald', parent: 'donald', f(g) {
+  part(g, blob([[3, -6], [15, -6], [28, -3], [31, 0], [15, 1.2], [0, 0]]), DO.bec, DO.becO); } });
+noeud({ id: 'donald.brasArr', nom: 'bras arrière', perso: 'donald', parent: 'donald', pivot: [-15, -57], f(g) {
+  tube(g, [[-15, -57], [-23, -46]], 7, DO.veste); tube(g, [[-23, -46], [-22, -35]], 5, DO.plume);
+  part(g, ell(-21.5, -33.5, 3.4, 1.6), DO.bracelet, null); part(g, ell(-21.5, -30.5, 4.6, 4.4), DO.plume, DO.plumeO); } });
+noeud({ id: 'donald.corps', nom: 'corps', perso: 'donald', parent: 'donald', f(g) { part(g, ell(-1, -38, 21, 19), DO.plume, DO.plumeO); } });
+noeud({ id: 'donald.veste', nom: 'veste', perso: 'donald', parent: 'donald', f(g) {
+  part(g, blob([[-19, -59], [17, -59], [21, -46], [19, -35], [9, -31], [1, -34], [-8, -31], [-18, -35], [-22, -47]]), DO.veste, DO.vesteO);
+  ligne(g, [[-18, -35], [-8, -31.5], [1, -34.5], [9, -31.5], [19, -35.5]], 1.2, DO.liseréClair); } });
+noeud({ id: 'donald.poches', nom: 'poches', perso: 'donald', parent: 'donald', f(g) {
+  part(g, rect(-15, -47, 8, 7, 1.5), DO.poche, null); part(g, rect(7, -47, 8, 7, 1.5), DO.poche, null); } });
+noeud({ id: 'donald.fermeture', nom: 'fermeture éclair', perso: 'donald', parent: 'donald', f(g) {
+  ligne(g, [[2, -57], [2, -33]], 1.3, DO.zip); part(g, rect(.6, -36, 2.8, 4, .6), DO.zip, null); } });
+noeud({ id: 'donald.cape', nom: 'petite cape', perso: 'donald', parent: 'donald', f(g) {
+  part(g, blob([[-21, -60], [-11, -65], [12, -65], [21, -60], [22, -52], [11, -50.5], [1, -53], [-9, -50.5], [-22, -52]]), DO.cape, DO.capeO);
+  ligne(g, [[-22, -52], [-9, -50.5], [1, -53], [11, -50.5], [22, -52]], 1.3, DO.liseréJaune); } });
+noeud({ id: 'donald.col', nom: 'col', perso: 'donald', parent: 'donald', f(g) {
+  part(g, rect(-6, -66, 13, 3.2, 1.5), DO.bande, null); part(g, rect(-2, -62, 7, 2.4, .8), DO.zip, null); } });
+// le bâton du mage, tenu levé devant lui : manche sombre, bagues blanches,
+// pommeau doré, éclair bleu en zigzag et chapeau de sorcier plié au sommet.
+noeud({ id: 'donald.baton', nom: 'BÂTON', perso: 'donald', parent: 'donald.brasAv', pivot: [36.8, -55], f(g) {
+  g.save(); g.translate(31, -30); g.rotate(.2288);
+  part(g, rect(-1.9, -3.5, 3.8, 4.5, 1.2), DO.pommeau, null);
+  part(g, rect(-1.7, -6, 3.4, 2.4, .6), DO.bague, null);
+  tube(g, [[0, -6], [0, -45]], 2.5, DO.manche);
+  part(g, rect(-1.9, -47.5, 3.8, 2.6, .6), DO.bague, null);
+  part(g, blob([[-2, -47.5], [3, -47.5], [4.2, -52], [-.6, -54.5], [5, -60], [1, -61], [-4.2, -55], [.6, -52.5]]), DO.eclair, DO.eclairO);
+  ligne(g, [[3, -47.5], [4.2, -52], [-.6, -54.5], [5, -60]], .6, DO.eclairBord);
+  part(g, ell(1.5, -61, 7.2, 2.2), DO.chapeauMage, DO.chapeauMageO);
+  part(g, blob([[-3.5, -61.5], [6.5, -61.5], [4.5, -67], [10, -73], [3.5, -71], [-.5, -66]]), DO.chapeauMage, DO.chapeauMageO);
+  part(g, rect(-3.2, -63.4, 9.4, 1.6, .4), DO.manche, null);
+  g.restore(); } });
+// bras avant, levé vers l'avant : il tient le bâton
+noeud({ id: 'donald.brasAv', nom: 'bras avant', perso: 'donald', parent: 'donald', pivot: [16, -57], f(g) {
+  tube(g, [[16, -57], [28, -49]], 7, DO.veste); tube(g, [[28, -49], [35, -54]], 5, DO.plume);
+  part(g, ell(31, -51.5, 1.7, 3.4, -.9), DO.bracelet, null); part(g, ell(36.8, -55, 4.4, 4.4), DO.plume, DO.plumeO); } });
+noeud({ id: 'donald.tete', nom: 'Tête', perso: 'donald', groupe: true, parent: 'donald', pivot: [3, -64] });
+const T_DO = { perso: 'donald', parent: 'donald.tete' };
+noeud({ ...T_DO, id: 'donald.bonnetPli', nom: 'bonnet — pli qui retombe', pivot: [-14, -92], f(g) {
+  part(g, blob([[-12, -98], [-25, -96], [-27, -86], [-21, -81], [-14, -88]]), DO.bonnet, DO.bonnetO); } });
+noeud({ ...T_DO, id: 'donald.crane', nom: 'crâne', f(g) { part(g, ell(4, -78, 17.5, 18), DO.plume, DO.plumeO); } });
+noeud({ ...T_DO, id: 'donald.becBas', nom: 'bec — mandibule du bas', pivot: [10, -64], f(g) {
+  part(g, blob([[9, -67], [27, -65], [33, -62], [22, -59.5], [10, -61.5]]), DO.bec, DO.becO); } });
+noeud({ ...T_DO, id: 'donald.bouche', nom: 'bouche', f(g) { part(g, blob([[12, -66.5], [26, -65.5], [22, -62.5], [13, -63]]), DO.bouche, null); } });
+noeud({ ...T_DO, id: 'donald.becHaut', nom: 'bec — mandibule du haut', pivot: [8, -70], f(g) {
+  part(g, blob([[7, -73], [19, -75], [35, -72], [39, -68], [31, -66], [15, -66.5], [6, -69]]), DO.bec, DO.becO); } });
+noeud({ ...T_DO, id: 'donald.oeilG', nom: 'œil gauche', f(g) { oeil(g, DO, 9.5, -83, 4.4, 6.8, 11.5, -82, 2.3); } });
+noeud({ ...T_DO, id: 'donald.oeilD', nom: 'œil droit', f(g) { oeil(g, DO, 18, -82, 3.8, 6.2, 19.6, -81, 2.1); } });
+noeud({ ...T_DO, id: 'donald.bonnet', nom: 'bonnet', pivot: [4, -92], f(g) {
+  part(g, blob([[-16, -88], [-12, -101], [4, -106], [19, -100], [23, -90], [4, -92]]), DO.bonnet, DO.bonnetO); } });
+noeud({ ...T_DO, id: 'donald.bandeBonnet', nom: 'bande du bonnet', f(g) {
+  part(g, blob([[-15, -88], [-3, -93.5], [13, -93.5], [22, -89], [18, -86], [-12, -85]]), DO.bande, null); } });
+noeud({ ...T_DO, id: 'donald.tirette', nom: 'tirette', pivot: [-22, -82], f(g) {
+  ligne(g, [[-22, -82], [-23, -77]], .9, DO.zip); part(g, rect(-25, -78, 4, 5.5, .8), DO.zip, null); } });
+
+const PAR_ID = Object.fromEntries(NOEUDS.map(n => [n.id, n]));
+const PIECES = NOEUDS.filter(n => !n.groupe);
+const parentDe = n => (n.parent ? PAR_ID[n.parent] : null);
+const enfants = n => NOEUDS.filter(q => q.parent === n.id);
+const descendants = n => { const o = []; for (const e of enfants(n)) { o.push(e); o.push(...descendants(e)); } return o; };
+
+/* ===================== LES STYLES DU TRAIT (section 1 du mockup de design) ===================== */
+const STYLES = {
+  A: { nom: 'A · contour fin, ombre au bord', trait: 1.1, couleurTrait: '#2a1c26', ombre: 'rim', rim: 1.6 },
+  B: { nom: 'B · sans contour, volume doux', trait: 0, ombre: 'degrade' },
+  C: { nom: 'C · gros contour cartoon', trait: 2.2, couleurTrait: '#141018', ombre: 'aucune' },
+  D: { nom: 'D · aplats ombrés, sans contour', trait: 0, ombre: 'rim', rim: 2.2 },
+  E: { nom: 'E · invoqués, liseré lumineux', trait: 1, couleurTrait: '#fff4c8', ombre: 'rim', rim: 1.6, halo: 'rgba(255,214,90,.85)', haloFlou: 9 },
+};
+
+/* ===================== L'ÉTAT ===================== */
+const CLE = 'trinityAtelier:v1';
+const neutre = () => ({ dx: 0, dy: 0, ex: 1, ey: 1, rot: 0, vis: true });
+const etat = {}; NOEUDS.forEach(n => { etat[n.id] = neutre(); });
+const ORDRE0 = { dingo: PIECES.filter(n => n.perso === 'dingo').map(n => n.id), donald: PIECES.filter(n => n.perso === 'donald').map(n => n.id) };
+let ORDRE = { dingo: [...ORDRE0.dingo], donald: [...ORDRE0.donald] };
+let STYLE = 'A';
+// `auto` : tant qu'on n'a ni zoomé ni déplacé la vue, elle se recadre toute seule
+// quand la fenêtre change de taille.
+const UI = { zoom: 0, ox: 0, oy: 0, grille: true, fond: 0, sora: true, cadres: true, auto: true };
+
+function instantane() {
+  return JSON.stringify({ etat, couleurs: { dingo: { ...DI }, donald: { ...DO } }, ordre: ORDRE, style: STYLE });
+}
+function restaurer(txt) {
+  const o = JSON.parse(txt);
+  for (const id of Object.keys(etat)) etat[id] = { ...neutre(), ...(o.etat && o.etat[id]) };
+  if (o.couleurs) { Object.assign(DI, PAL0.dingo, o.couleurs.dingo || {}); Object.assign(DO, PAL0.donald, o.couleurs.donald || {}); }
+  if (o.ordre) for (const p of ['dingo', 'donald']) {
+    const l = (o.ordre[p] || []).filter(id => ORDRE0[p].includes(id));
+    ORDRE[p] = [...l, ...ORDRE0[p].filter(id => !l.includes(id))];
+  }
+  if (o.style && STYLES[o.style]) STYLE = o.style;
+}
+function garder() { try { localStorage.setItem(CLE, instantane()); } catch (e) { } }
+try { const g = localStorage.getItem(CLE); if (g) restaurer(g); } catch (e) { }
+
+const passe = [], futur = [];
+let avantGeste = null;
+function debutGeste() { avantGeste = instantane(); }
+function finGeste() {
+  if (avantGeste === null) return;
+  const apres = instantane();
+  if (apres !== avantGeste) { passe.push(avantGeste); if (passe.length > 200) passe.shift(); futur.length = 0; garder(); }
+  avantGeste = null;
+  majTout();
+}
+function changer(fn) { debutGeste(); fn(); finGeste(); }
+function annuler() { if (!passe.length) { toast('Rien à annuler'); return; } futur.push(instantane()); restaurer(passe.pop()); garder(); majTout(); }
+function retablir() { if (!futur.length) { toast('Rien à rétablir'); return; } passe.push(instantane()); restaurer(futur.pop()); garder(); majTout(); }
+
+/* ===================== LA MESURE DES PIÈCES ===================== */
+// On dessine chaque pièce une fois, sans transformation, pour relever sa boîte
+// et ses couleurs. Les pivots par défaut en découlent et ne bougent plus ensuite.
+const mesureCv = document.createElement('canvas').getContext('2d');
+ST = STYLES.A;
+for (const n of PIECES) {
+  MESURE = { bb: [Infinity, Infinity, -Infinity, -Infinity], couleurs: new Set() };
+  mesureCv.setTransform(1, 0, 0, 1, 0, 0);
+  n.f(mesureCv);
+  n.box = MESURE.bb;
+  // Les couleurs d'une pièce sont retrouvées par leur NOM dans la palette : c'est
+  // ce qui permet de les changer ensuite partout où elles servent.
+  const P = PAL[n.perso];
+  n.cles = [...MESURE.couleurs].map(c => Object.keys(P).find(k => P[k] === c)).filter(Boolean);
+  n.cles = [...new Set(n.cles)];
+}
+MESURE = null;
+const locale = n => {
+  const v = etat[n.id], p = n.piv;
+  return new DOMMatrix().translate(p[0] + v.dx, p[1] + v.dy).rotate(v.rot * 180 / Math.PI).scale(v.ex, v.ey).translate(-p[0], -p[1]);
+};
+// La boîte d'un groupe : l'union de celles de ses descendants, ramenées dans son repère.
+function boiteDans(n) {
+  if (!n.groupe) return n.box;
+  const bb = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const e of enfants(n)) {
+    const b = boiteDans(e), m = locale(e);
+    for (const [x, y] of [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]]) {
+      const q = m.transformPoint({ x, y });
+      bb[0] = Math.min(bb[0], q.x); bb[1] = Math.min(bb[1], q.y); bb[2] = Math.max(bb[2], q.x); bb[3] = Math.max(bb[3], q.y);
+    }
+  }
+  return bb;
+}
+// Pivots par défaut, calculés sur l'état NEUTRE pour ne jamais dériver.
+{
+  const sauve = JSON.stringify(etat);
+  NOEUDS.forEach(n => { etat[n.id] = neutre(); n.piv = n.pivot || null; });
+  for (const n of [...NOEUDS].reverse()) if (!n.piv) { n.piv = [0, 0]; const b = boiteDans(n); n.piv = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; }
+  Object.assign(etat, JSON.parse(sauve));
+}
+
+/* ===================== LA SCÈNE ===================== */
+// En unités de jeu : Sora au centre (60 de haut), Dingo à gauche, Donald à
+// droite, à la taille « comme dans les jeux » du mockup de design.
+const PLACE = {
+  dingo: new DOMMatrix().translate(-54, 0).scale(60 * 1.3 / 133),
+  donald: new DOMMatrix().translate(46, 0).scale(60 * .82 / 104),
+};
+function monde(n) {
+  let m = locale(n);
+  for (let q = parentDe(n); q; q = parentDe(q)) m = locale(q).multiply(m);
+  return PLACE[n.perso].multiply(m);
+}
+const visible = n => { for (let q = n; q; q = parentDe(q)) if (!etat[q.id].vis) return false; return true; };
+function peindreScene(g, VUE, opts = {}) {
+  ST = STYLES[STYLE];
+  for (const perso of ['dingo', 'donald']) {
+    for (const id of ORDRE[perso]) {
+      const n = PAR_ID[id];
+      if (!visible(n)) continue;
+      g.save(); g.setTransform(VUE.multiply(monde(n)));
+      if (opts.pioche) PIOCHE = opts.pioche(n);
+      n.f(g);
+      PIOCHE = null;
+      g.restore();
+    }
+    if (perso === 'dingo' && opts.sora) { g.save(); g.setTransform(VUE); peindreSora(g); g.restore(); }
+  }
+}
+
+/* ===================== L'ATELIER ===================== */
+const toile = document.getElementById('toile'), g = toile.getContext('2d');
+const pioche = document.createElement('canvas'), gp = pioche.getContext('2d', { willReadFrequently: true });
+let W = 0, H = 0, DPR = 1;
+function caler() {
+  const r = toile.getBoundingClientRect(); DPR = devicePixelRatio || 1;
+  W = r.width; H = r.height;
+  toile.width = Math.round(W * DPR); toile.height = Math.round(H * DPR);
+  pioche.width = toile.width; pioche.height = toile.height;
+  if (!UI.zoom || UI.auto) ajuster();
+}
+const VUE = () => new DOMMatrix().scale(DPR).translate(UI.ox, UI.oy).scale(UI.zoom);
+// Boîte de la scène en unités de jeu, pour « ajuster ».
+function cadrer(x0, y0, x1, y1) {
+  const z = Math.min((W - 60) / (x1 - x0), (H - 60) / (y1 - y0));
+  UI.zoom = z; UI.ox = W / 2 - (x0 + x1) / 2 * z; UI.oy = H / 2 - (y0 + y1) / 2 * z;
+  majZoom();
+}
+function boiteMonde(n) {
+  const b = boiteDans(n), m = monde(n);
+  const pts = [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]].map(([x, y]) => m.transformPoint({ x, y }));
+  return [Math.min(...pts.map(p => p.x)), Math.min(...pts.map(p => p.y)), Math.max(...pts.map(p => p.x)), Math.max(...pts.map(p => p.y))];
+}
+function ajuster() {
+  const a = boiteMonde(PAR_ID.dingo), b = boiteMonde(PAR_ID.donald);
+  cadrer(Math.min(a[0], b[0], -26) - 4, Math.min(a[1], b[1], -62) - 4, Math.max(a[2], b[2], 26) + 4, 6);
+}
+const FONDS = [
+  { nom: 'sombre', a: '#141a2a', b: '#0b0f1a', grille: 'rgba(255,255,255,.05)' },
+  { nom: 'clair', a: '#e9edf3', b: '#d9dfe8', grille: 'rgba(0,0,0,.07)' },
+  { nom: 'terrain', a: MAPS[0].theme.floor, b: MAPS[0].theme.floor, grille: 'rgba(255,255,255,.05)' },
+];
+
+let choisi = null, survol = null;
+function dessiner() {
+  const F = FONDS[UI.fond];
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  const d = g.createLinearGradient(0, 0, 0, toile.height); d.addColorStop(0, F.a); d.addColorStop(1, F.b);
+  g.fillStyle = d; g.fillRect(0, 0, toile.width, toile.height);
+  const V = VUE();
+  if (UI.grille) {
+    g.save(); g.setTransform(V); g.strokeStyle = F.grille; g.lineWidth = 1 / (UI.zoom * DPR);
+    const x0 = (-UI.ox) / UI.zoom, x1 = (W - UI.ox) / UI.zoom, y0 = (-UI.oy) / UI.zoom, y1 = (H - UI.oy) / UI.zoom;
+    const pas = UI.zoom > 12 ? 1 : 5;
+    g.beginPath();
+    for (let x = Math.floor(x0 / pas) * pas; x < x1; x += pas) { g.moveTo(x, y0); g.lineTo(x, y1); }
+    for (let y = Math.floor(y0 / pas) * pas; y < y1; y += pas) { g.moveTo(x0, y); g.lineTo(x1, y); }
+    g.stroke();
+    g.strokeStyle = 'rgba(248,200,28,.35)'; g.lineWidth = 1.5 / (UI.zoom * DPR);
+    g.beginPath(); g.moveTo(x0, 0); g.lineTo(x1, 0); g.stroke();
+    g.restore();
+  }
+  peindreScene(g, V, { sora: UI.sora });
+  if (UI.cadres && survol && survol !== choisi) cadre(PAR_ID[survol], 'rgba(160,190,255,.55)', false);
+  if (choisi) cadre(PAR_ID[choisi], '#f8c81c', true);
+}
+// Le cadre d'une pièce ou d'un groupe, avec ses poignées.
+function poignees(n) {
+  const b = boiteDans(n), m = VUE().multiply(monde(n));
+  const P = (x, y) => { const q = m.transformPoint({ x, y }); return { x: q.x / DPR, y: q.y / DPR }; };
+  const coins = [P(b[0], b[1]), P(b[2], b[1]), P(b[2], b[3]), P(b[0], b[3])];
+  const mh = P((b[0] + b[2]) / 2, b[1]);
+  const c = P((b[0] + b[2]) / 2, (b[1] + b[3]) / 2);
+  const dir = { x: mh.x - c.x, y: mh.y - c.y }, L = Math.hypot(dir.x, dir.y) || 1;
+  return { coins, mh, rot: { x: mh.x + dir.x / L * 24, y: mh.y + dir.y / L * 24 },
+           lh: coins[2], l: P(b[2], (b[1] + b[3]) / 2), h: P((b[0] + b[2]) / 2, b[3]), piv: P(n.piv[0], n.piv[1]) };
+}
+function cadre(n, coul, avecPoignees) {
+  const p = poignees(n);
+  g.save(); g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  g.strokeStyle = coul; g.lineWidth = 1.3; g.setLineDash([5, 4]);
+  g.beginPath(); p.coins.forEach((q, i) => (i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y))); g.closePath(); g.stroke();
+  g.setLineDash([]);
+  if (avecPoignees) {
+    g.beginPath(); g.moveTo(p.mh.x, p.mh.y); g.lineTo(p.rot.x, p.rot.y); g.stroke();
+    g.fillStyle = coul; g.strokeStyle = '#0a0c14'; g.lineWidth = 1;
+    for (const k of ['lh', 'l', 'h']) { g.fillRect(p[k].x - 5, p[k].y - 5, 10, 10); g.strokeRect(p[k].x - 5, p[k].y - 5, 10, 10); }
+    g.beginPath(); g.arc(p.rot.x, p.rot.y, 6, 0, Math.PI * 2); g.fill(); g.stroke();
+    // le pivot, en croix : c'est autour de lui que la pièce tourne et grandit
+    g.strokeStyle = '#ff7fd0'; g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(p.piv.x - 6, p.piv.y); g.lineTo(p.piv.x + 6, p.piv.y); g.moveTo(p.piv.x, p.piv.y - 6); g.lineTo(p.piv.x, p.piv.y + 6); g.stroke();
+  }
+  g.restore();
+}
+
+// La pièce sous la souris, au pixel près : chaque pièce est peinte d'une
+// couleur unique dans un calque caché, et on lit la couleur.
+function piocher(x, y) {
+  gp.setTransform(1, 0, 0, 1, 0, 0); gp.clearRect(0, 0, pioche.width, pioche.height);
+  const idx = new Map();
+  peindreScene(gp, VUE(), { pioche: n => { const i = PIECES.indexOf(n) + 1; idx.set(i, n.id); return 'rgb(' + i + ',128,64)'; } });
+  const px = Math.round(x * DPR), py = Math.round(y * DPR);
+  const d = gp.getImageData(px - 2, py - 2, 5, 5).data;
+  const ordre = [12, 7, 11, 13, 17, 6, 8, 16, 18]; // le centre d'abord, puis autour
+  for (const k of ordre) { const i = k * 4; if (d[i + 3] === 255 && d[i + 1] === 128 && d[i + 2] === 64 && idx.has(d[i])) return idx.get(d[i]); }
+  return null;
+}
+
+/* ---------- souris ---------- */
+const pos = ev => { const r = toile.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; };
+const versJeu = p => ({ x: (p.x - UI.ox) / UI.zoom, y: (p.y - UI.oy) / UI.zoom });
+let geste = null, espace = false;
+// Le repère du parent d'un nœud, en pixels d'écran CSS.
+function repereParent(n) {
+  const q = parentDe(n);
+  const m = q ? monde(q) : PLACE[n.perso];
+  return new DOMMatrix().translate(UI.ox, UI.oy).scale(UI.zoom).multiply(m);
+}
+function repereSansEchelle(n) {
+  const v = etat[n.id];
+  return repereParent(n).translate(n.piv[0] + v.dx, n.piv[1] + v.dy).rotate(v.rot * 180 / Math.PI);
+}
+toile.addEventListener('contextmenu', e => e.preventDefault());
+toile.addEventListener('pointerdown', ev => {
+  const p = pos(ev);
+  toile.setPointerCapture(ev.pointerId);
+  if (ev.button === 1 || espace) { UI.auto = false; geste = { mode: 'vue', p0: p, o0: { x: UI.ox, y: UI.oy } }; return; }
+  if (choisi) {
+    const po = poignees(PAR_ID[choisi]);
+    for (const k of ['rot', 'lh', 'l', 'h']) {
+      if (Math.hypot(p.x - po[k].x, p.y - po[k].y) < 9) {
+        const n = PAR_ID[choisi], v = etat[n.id];
+        const inv = repereSansEchelle(n).inverse(), q0 = inv.transformPoint(p);
+        const inv2 = repereParent(n).translate(n.piv[0] + v.dx, n.piv[1] + v.dy).inverse(), r0 = inv2.transformPoint(p);
+        debutGeste();
+        geste = { mode: k, n, v0: { ...v }, q0, inv, inv2, a0: Math.atan2(r0.y, r0.x) };
+        return;
+      }
+    }
+  }
+  const id = piocher(p.x, p.y);
+  if (!id) { choisir(null); return; }
+  // Un clic sur une pièce déjà dans le groupe choisi garde le groupe : on peut
+  // ainsi déplacer toute la tête en la saisissant par l'œil.
+  let cible = id;
+  if (choisi && PAR_ID[choisi].groupe && descendants(PAR_ID[choisi]).some(d => d.id === id)) cible = choisi;
+  choisir(cible);
+  const n = PAR_ID[cible], inv = repereParent(n).inverse();
+  debutGeste();
+  geste = { mode: 'deplacer', n, v0: { ...etat[cible] }, q0: inv.transformPoint(p), inv };
+});
+toile.addEventListener('dblclick', ev => {
+  if (!choisi) return;
+  const par = parentDe(PAR_ID[choisi]);
+  if (par) choisir(par.id);
+});
+toile.addEventListener('pointermove', ev => {
+  const p = pos(ev), j = versJeu(p);
+  document.getElementById('sPos').textContent = j.x.toFixed(1) + ' , ' + j.y.toFixed(1);
+  if (!geste) {
+    const id = UI.cadres ? piocher(p.x, p.y) : null;
+    if (id !== survol) { survol = id; dessiner(); }
+    toile.style.cursor = espace ? 'grab' : (id ? 'move' : 'default');
+    if (choisi) {
+      const po = poignees(PAR_ID[choisi]);
+      if (Math.hypot(p.x - po.rot.x, p.y - po.rot.y) < 9) toile.style.cursor = 'crosshair';
+      else if (['lh', 'l', 'h'].some(k => Math.hypot(p.x - po[k].x, p.y - po[k].y) < 9)) toile.style.cursor = 'nwse-resize';
+    }
+    return;
+  }
+  const v = geste.n ? etat[geste.n.id] : null;
+  if (geste.mode === 'vue') { UI.ox = geste.o0.x + p.x - geste.p0.x; UI.oy = geste.o0.y + p.y - geste.p0.y; dessiner(); return; }
+  if (geste.mode === 'deplacer') {
+    const q = geste.inv.transformPoint(p);
+    let dx = q.x - geste.q0.x, dy = q.y - geste.q0.y;
+    if (ev.shiftKey) { if (Math.abs(dx) > Math.abs(dy)) dy = 0; else dx = 0; }
+    v.dx = Math.round((geste.v0.dx + dx) * 2) / 2; v.dy = Math.round((geste.v0.dy + dy) * 2) / 2;
+  } else if (geste.mode === 'rot') {
+    const r = geste.inv2.transformPoint(p);
+    let a = geste.v0.rot + Math.atan2(r.y, r.x) - geste.a0;
+    if (ev.shiftKey) a = Math.round(a / (Math.PI / 12)) * (Math.PI / 12);
+    v.rot = Math.atan2(Math.sin(a), Math.cos(a));
+  } else {
+    const q = geste.inv.transformPoint(p), q0 = geste.q0;
+    const borne = x => Math.min(4, Math.max(.15, Math.round(x * 100) / 100));
+    const rx = Math.abs(q0.x) > 1 ? q.x / q0.x : 1, ry = Math.abs(q0.y) > 1 ? q.y / q0.y : 1;
+    if (geste.mode === 'l') v.ex = borne(geste.v0.ex * rx);
+    else if (geste.mode === 'h') v.ey = borne(geste.v0.ey * ry);
+    else if (lier || ev.shiftKey) { const k = Math.hypot(q.x, q.y) / (Math.hypot(q0.x, q0.y) || 1); v.ex = borne(geste.v0.ex * k); v.ey = borne(geste.v0.ey * k); }
+    else { v.ex = borne(geste.v0.ex * rx); v.ey = borne(geste.v0.ey * ry); }
+  }
+  dessiner(); majProps(true); majApercu();
+});
+toile.addEventListener('pointerup', ev => {
+  toile.releasePointerCapture(ev.pointerId);
+  if (geste && geste.mode !== 'vue') finGeste();
+  geste = null;
+});
+toile.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  const p = pos(ev), avant = versJeu(p);
+  UI.auto = false;
+  UI.zoom = Math.min(80, Math.max(1, UI.zoom * Math.exp(-ev.deltaY * .0015)));
+  UI.ox = p.x - avant.x * UI.zoom; UI.oy = p.y - avant.y * UI.zoom;
+  majZoom(); dessiner();
+}, { passive: false });
+function zoomer(k) { UI.auto = false; const c = { x: W / 2, y: H / 2 }, a = versJeu(c); UI.zoom = Math.min(80, Math.max(1, UI.zoom * k)); UI.ox = c.x - a.x * UI.zoom; UI.oy = c.y - a.y * UI.zoom; majZoom(); dessiner(); }
+function majZoom() { document.getElementById('zoomTxt').textContent = Math.round(UI.zoom / 4 * 100) + ' %'; }
+
+/* ---------- calques ---------- */
+const plis = new Set();
+function zMax(n) { if (!n.groupe) return ORDRE[n.perso].indexOf(n.id); return Math.max(-1, ...enfants(n).map(zMax)); }
+const modifie = id => { const v = etat[id]; return v.dx || v.dy || v.ex !== 1 || v.ey !== 1 || v.rot; };
+function construireCalques() {
+  const h = document.getElementById('calques'); h.innerHTML = '';
+  const ligneCq = (n, prof) => {
+    const d = document.createElement('div');
+    d.className = 'cq' + (n.groupe ? ' grp' : '') + (n.id === choisi ? ' on' : '') + (etat[n.id].vis ? '' : ' cache') + (modifie(n.id) ? ' mod' : '');
+    d.style.paddingLeft = (8 + prof * 14) + 'px';
+    d.innerHTML = `<span class="oeil" title="Masquer / afficher">${etat[n.id].vis ? '👁' : '·'}</span>` +
+      `<span class="fl">${n.groupe ? (plis.has(n.id) ? '▸' : '▾') : ''}</span><span class="nom">${n.nom}</span><span class="pt"></span>`;
+    d.querySelector('.oeil').onclick = e => { e.stopPropagation(); changer(() => { etat[n.id].vis = !etat[n.id].vis; }); };
+    d.querySelector('.fl').onclick = e => { if (!n.groupe) return; e.stopPropagation(); plis.has(n.id) ? plis.delete(n.id) : plis.add(n.id); construireCalques(); };
+    d.onclick = () => choisir(n.id);
+    h.append(d);
+    if (n.groupe && !plis.has(n.id)) {
+      // Comme dans Photoshop : le calque du dessus en haut de la liste.
+      for (const e of enfants(n).sort((a, b) => zMax(b) - zMax(a))) ligneCq(e, prof + 1);
+    }
+  };
+  ligneCq(PAR_ID.dingo, 0); ligneCq(PAR_ID.donald, 0);
+}
+
+/* ---------- propriétés ---------- */
+let lier = true, curseurs = [];
+function choisir(id) {
+  choisi = id;
+  document.getElementById('sNom').textContent = id ? PAR_ID[id].nom : '—';
+  construireCalques(); majProps(); majCouleurs(); dessiner();
+  const el = document.querySelector('.cq.on'); if (el) el.scrollIntoView({ block: 'nearest' });
+}
+function curseur(lib, cle, min, max, pas, aff, versVal, depuisVal) {
+  const d = document.createElement('div'); d.className = 'curseur';
+  d.innerHTML = `<label>${lib}</label><input type="range" min="${min}" max="${max}" step="${pas}"><span></span>`;
+  const inp = d.querySelector('input'), sp = d.querySelector('span');
+  const maj = () => { const v = etat[choisi]; inp.value = depuisVal(v[cle]); sp.textContent = aff(v[cle]); };
+  inp.addEventListener('pointerdown', debutGeste);
+  inp.addEventListener('keydown', debutGeste);
+  inp.oninput = () => {
+    if (avantGeste === null) debutGeste();
+    const v = etat[choisi]; v[cle] = versVal(+inp.value);
+    if (lier && (cle === 'ex' || cle === 'ey')) { v.ex = v[cle]; v.ey = v[cle]; }
+    majProps(true); dessiner(); majApercu();
+  };
+  inp.onchange = finGeste;
+  maj(); d._maj = maj; return d;
+}
+function majProps(depuisCurseur) {
+  const h = document.getElementById('props');
+  if (depuisCurseur) { curseurs.forEach(c => c._maj()); return; }
+  h.innerHTML = ''; curseurs = [];
+  if (!choisi) { h.innerHTML = '<div class="vide">Clique une pièce sur Donald ou Dingo, ou choisis-la dans les calques. Double-clic : son groupe (la tête, tout le perso).</div>'; return; }
+  const n = PAR_ID[choisi];
+  const chemin = []; for (let q = parentDe(n); q; q = parentDe(q)) chemin.unshift(q.nom);
+  h.insertAdjacentHTML('beforeend', `<div class="sel-nom">${n.nom}<small>${chemin.join(' › ') || 'personnage entier'}${n.groupe ? ' · groupe' : ''}</small></div>`);
+  const id = x => x;
+  curseurs.push(curseur('horizontal', 'dx', -80, 80, .5, x => x.toFixed(1), id, id));
+  curseurs.push(curseur('vertical', 'dy', -80, 80, .5, x => x.toFixed(1), id, id));
+  curseurs.push(curseur('largeur', 'ex', .15, 4, .01, x => '×' + x.toFixed(2), id, id));
+  curseurs.push(curseur('hauteur', 'ey', .15, 4, .01, x => '×' + x.toFixed(2), id, id));
+  curseurs.push(curseur('rotation', 'rot', -180, 180, 1, x => Math.round(x * 180 / Math.PI) + '°', x => x * Math.PI / 180, x => x * 180 / Math.PI));
+  curseurs.forEach(c => h.append(c));
+  const lie = document.createElement('label'); lie.className = 'lie';
+  lie.innerHTML = `<input type="checkbox"${lier ? ' checked' : ''}> garder les proportions (Maj en tirant le coin)`;
+  lie.querySelector('input').onchange = e => { lier = e.target.checked; };
+  h.append(lie);
+  const btns = document.createElement('div'); btns.className = 'ligneBtn';
+  const b = (txt, fn, dis) => { const x = document.createElement('button'); x.className = 'petit'; x.textContent = txt; x.disabled = !!dis; x.onclick = fn; btns.append(x); };
+  b('remettre à zéro', () => changer(() => { const vis = etat[choisi].vis; etat[choisi] = { ...neutre(), vis }; }), !modifie(choisi));
+  b(etat[choisi].vis ? 'masquer (H)' : 'afficher (H)', () => changer(() => { etat[choisi].vis = !etat[choisi].vis; }));
+  b('monter ]', () => deplacerZ(1), n.groupe);
+  b('descendre [', () => deplacerZ(-1), n.groupe);
+  b('choisir le groupe', () => { const q = parentDe(n); if (q) choisir(q.id); }, !parentDe(n));
+  h.append(btns);
+}
+function deplacerZ(s) {
+  const n = PAR_ID[choisi]; if (!n || n.groupe) return;
+  const l = ORDRE[n.perso], i = l.indexOf(n.id), j = i + s;
+  if (j < 0 || j >= l.length) return;
+  changer(() => { [l[i], l[j]] = [l[j], l[i]]; });
+  toast(s > 0 ? 'Monté d\'un cran' : 'Descendu d\'un cran');
+}
+
+/* ---------- couleurs ---------- */
+function majCouleurs() {
+  const h = document.getElementById('couleurs'); h.innerHTML = '';
+  if (!choisi) { h.innerHTML = '<div class="vide">Les couleurs de la pièce choisie apparaissent ici.</div>'; return; }
+  const n = PAR_ID[choisi];
+  const pieces = n.groupe ? descendants(n).filter(d => !d.groupe) : [n];
+  const P = PAL[n.perso], P0 = PAL0[n.perso];
+  const cles = [...new Set(pieces.flatMap(q => q.cles))];
+  for (const k of cles) {
+    const d = document.createElement('div'); d.className = 'coul' + (P[k] !== P0[k] ? ' change' : '');
+    d.innerHTML = `<input type="color" value="${P[k]}"><span class="nomc">${k}</span><input class="hex" value="${P[k]}" spellcheck="false" maxlength="7"><span class="raz" title="couleur d'origine">↺</span>`;
+    const [pk, , hx, raz] = d.children;
+    const poser = v => { P[k] = v.toLowerCase(); pk.value = P[k]; hx.value = P[k]; d.classList.toggle('change', P[k] !== P0[k]); dessiner(); majApercu(); };
+    pk.addEventListener('pointerdown', debutGeste);
+    pk.oninput = () => { if (avantGeste === null) debutGeste(); poser(pk.value); };
+    pk.onchange = finGeste;
+    hx.oninput = () => { let v = hx.value.trim(); if (v[0] !== '#') v = '#' + v; if (/^#[0-9a-f]{6}$/i.test(v)) changer(() => poser(v)); };
+    raz.onclick = () => changer(() => poser(P0[k]));
+    h.append(d);
+  }
+}
+
+/* ---------- aperçu à l'échelle du match ---------- */
+const ga = document.getElementById('apercu').getContext('2d');
+function majApercu() {
+  const c = ga.canvas, SOLS = ['#1d2440', '#dde6ee', '#d9b47c', '#3c7038'];
+  ga.setTransform(1, 0, 0, 1, 0, 0);
+  // en haut : la scène à 1,6 px par unité, comme render.js
+  ga.fillStyle = MAPS[0].theme.floor; ga.fillRect(0, 0, c.width, 170);
+  ga.strokeStyle = MAPS[0].theme.line; ga.beginPath(); ga.moveTo(0, 150); ga.lineTo(c.width, 150); ga.stroke();
+  peindreScene(ga, new DOMMatrix().translate(c.width / 2, 150).scale(1.6), { sora: true });
+  // en bas : les quatre familles de sols
+  SOLS.forEach((s, i) => {
+    ga.setTransform(1, 0, 0, 1, 0, 0); ga.fillStyle = s; ga.fillRect(i * 160, 170, 160, 160);
+    ga.save(); ga.beginPath(); ga.rect(i * 160, 170, 160, 160); ga.clip();
+    peindreScene(ga, new DOMMatrix().translate(i * 160 + 80, 312).scale(1.25), { sora: true });
+    ga.restore();
+  });
+}
+
+/* ---------- export / import ---------- */
+function exporter() {
+  const elements = {}, caches = [];
+  for (const n of NOEUDS) {
+    const v = etat[n.id];
+    if (modifie(n.id)) elements[n.id] = { dx: v.dx, dy: v.dy, ex: +v.ex.toFixed(2), ey: +v.ey.toFixed(2), rot: Math.round(v.rot * 180 / Math.PI) };
+    if (!v.vis) caches.push(n.id);
+  }
+  const couleurs = {};
+  for (const p of ['dingo', 'donald']) {
+    const d = {}; for (const k of Object.keys(PAL0[p])) if (PAL[p][k] !== PAL0[p][k]) d[k] = PAL[p][k];
+    if (Object.keys(d).length) couleurs[p] = d;
+  }
+  const ordre = {};
+  for (const p of ['dingo', 'donald']) if (ORDRE[p].join() !== ORDRE0[p].join()) ordre[p] = ORDRE[p];
+  const o = { atelier: 'trinity', style: STYLE, elements };
+  if (caches.length) o.caches = caches;
+  if (Object.keys(couleurs).length) o.couleurs = couleurs;
+  if (Object.keys(ordre).length) o.ordre = ordre;
+  return JSON.stringify(o, null, 1);
+}
+function importer(txt) {
+  const o = JSON.parse(txt);
+  changer(() => {
+    for (const id of Object.keys(etat)) etat[id] = neutre();
+    for (const [id, v] of Object.entries(o.elements || {})) if (etat[id]) Object.assign(etat[id], { dx: v.dx, dy: v.dy, ex: v.ex, ey: v.ey, rot: (v.rot || 0) * Math.PI / 180 });
+    for (const id of o.caches || []) if (etat[id]) etat[id].vis = false;
+    Object.assign(DI, PAL0.dingo, (o.couleurs || {}).dingo || {}); Object.assign(DO, PAL0.donald, (o.couleurs || {}).donald || {});
+    for (const p of ['dingo', 'donald']) {
+      const l = ((o.ordre || {})[p] || []).filter(id => ORDRE0[p].includes(id));
+      ORDRE[p] = [...l, ...ORDRE0[p].filter(id => !l.includes(id))];
+    }
+    if (o.style && STYLES[o.style]) STYLE = o.style;
+  });
+}
+const ouvrir = id => document.querySelectorAll('.voile').forEach(v => v.classList.toggle('ouvert', v.id === id));
+const fermer = () => document.querySelectorAll('.voile').forEach(v => v.classList.remove('ouvert'));
+document.querySelectorAll('[data-ferme]').forEach(b => b.onclick = fermer);
+document.querySelectorAll('.voile').forEach(v => v.addEventListener('mousedown', e => { if (e.target === v) fermer(); }));
+document.getElementById('bExport').onclick = () => { document.getElementById('txtExport').value = exporter(); ouvrir('vExport'); };
+document.getElementById('bCopierExport').onclick = async () => {
+  const t = document.getElementById('txtExport').value;
+  try { await navigator.clipboard.writeText(t); } catch (e) { document.getElementById('txtExport').select(); document.execCommand('copy'); }
+  toast('Copié — colle-le moi tel quel');
+};
+document.getElementById('bColler').onclick = () => { document.getElementById('txtColler').value = ''; ouvrir('vColler'); };
+document.getElementById('bAppliquer').onclick = () => {
+  try { importer(document.getElementById('txtColler').value); fermer(); toast('Réglages appliqués'); }
+  catch (e) { toast('Ce n\'est pas un bloc de réglages valide'); }
+};
+
+/* ---------- barre d'outils ---------- */
+const sel = document.getElementById('selStyle');
+for (const [k, s] of Object.entries(STYLES)) sel.insertAdjacentHTML('beforeend', `<option value="${k}">${s.nom}</option>`);
+sel.value = STYLE;
+sel.onchange = () => changer(() => { STYLE = sel.value; });
+const bascule = (id, cle, txt) => { const b = document.getElementById(id); b.onclick = () => { UI[cle] = !UI[cle]; b.classList.toggle('on', UI[cle]); dessiner(); }; };
+bascule('bGrille', 'grille'); bascule('bSora', 'sora'); bascule('bCadres', 'cadres');
+document.getElementById('bFond').onclick = () => { UI.fond = (UI.fond + 1) % FONDS.length; document.getElementById('bFond').firstChild.textContent = 'fond : ' + FONDS[UI.fond].nom; dessiner(); };
+document.getElementById('bZoomP').onclick = () => zoomer(1.25);
+document.getElementById('bZoomM').onclick = () => zoomer(.8);
+document.getElementById('bAjuster').onclick = () => { UI.auto = true; ajuster(); dessiner(); };
+document.getElementById('bDingo').onclick = () => { UI.auto = false; const b = boiteMonde(PAR_ID.dingo); cadrer(b[0] - 3, b[1] - 3, b[2] + 3, b[3] + 3); dessiner(); };
+document.getElementById('bDonald').onclick = () => { UI.auto = false; const b = boiteMonde(PAR_ID.donald); cadrer(b[0] - 3, b[1] - 3, b[2] + 3, b[3] + 3); dessiner(); };
+document.getElementById('bAnnuler').onclick = annuler;
+document.getElementById('bRetablir').onclick = retablir;
+document.getElementById('bToutRaz').onclick = () => {
+  if (!confirm('Tout remettre comme au départ (positions, couleurs, calques) ?')) return;
+  changer(() => { for (const id of Object.keys(etat)) etat[id] = neutre(); Object.assign(DI, PAL0.dingo); Object.assign(DO, PAL0.donald); ORDRE = { dingo: [...ORDRE0.dingo], donald: [...ORDRE0.donald] }; });
+};
+
+/* ---------- clavier ---------- */
+const RACCOURCIS = [
+  ['Clic', 'Choisir une pièce'], ['Double-clic', 'Choisir son groupe'], ['Glisser', 'Déplacer'], ['Maj en glissant', 'Droit à l\'horizontale ou à la verticale'],
+  ['Poignée ronde', 'Tourner (Maj : par 15°)'], ['Poignées carrées', 'Largeur, hauteur, les deux'], ['Flèches', 'Déplacer d\'une unité (Maj : 5)'],
+  ['Molette', 'Zoomer sur la souris'], ['Espace + glisser', 'Déplacer la vue'], ['0 · 1 · 2', 'Tout voir · Dingo · Donald'],
+  ['[ et ]', 'Descendre / monter le calque'], ['H', 'Masquer / afficher la pièce'], ['Suppr', 'Remettre la pièce à zéro'],
+  ['Ctrl+Z / Ctrl+Y', 'Annuler / rétablir'], ['G · F · S', 'Grille · fond · Sora'], ['Échap', 'Désélectionner'], ['?', 'Cette aide'],
+];
+document.getElementById('listeRaccourcis').innerHTML = RACCOURCIS.map(r => `<div><span>${r[1]}</span><kbd>${r[0]}</kbd></div>`).join('');
+document.getElementById('bAide').onclick = () => ouvrir('vAide');
+let fleche = null;
+addEventListener('keydown', ev => {
+  const t = ev.target;
+  if (t.matches && t.matches('input, textarea, select')) return;
+  if (document.querySelector('.voile.ouvert')) { if (ev.key === 'Escape') fermer(); return; }
+  const k = ev.key, ctrl = ev.ctrlKey || ev.metaKey;
+  if (k === ' ') { ev.preventDefault(); espace = true; toile.style.cursor = 'grab'; return; }
+  if (ctrl && (k === 'z' || k === 'Z')) { ev.preventDefault(); ev.shiftKey ? retablir() : annuler(); return; }
+  if (ctrl && (k === 'y' || k === 'Y')) { ev.preventDefault(); retablir(); return; }
+  if (ctrl) return;
+  if (k === '?') { ouvrir('vAide'); return; }
+  if (k === '0') { UI.auto = true; ajuster(); dessiner(); return; }
+  if (k === '1') { document.getElementById('bDingo').click(); return; }
+  if (k === '2') { document.getElementById('bDonald').click(); return; }
+  if (k === '+' || k === '=') { zoomer(1.25); return; }
+  if (k === '-') { zoomer(.8); return; }
+  if (k === 'g' || k === 'G') { document.getElementById('bGrille').click(); return; }
+  if (k === 'f' || k === 'F') { document.getElementById('bFond').click(); return; }
+  if (k === 's' || k === 'S') { document.getElementById('bSora').click(); return; }
+  if (!choisi) return;
+  if (k === 'Escape') { choisir(null); return; }
+  if (k === 'h' || k === 'H') { changer(() => { etat[choisi].vis = !etat[choisi].vis; }); return; }
+  if (k === 'Delete' || k === 'Backspace') { changer(() => { const vis = etat[choisi].vis; etat[choisi] = { ...neutre(), vis }; }); return; }
+  if (k === ']') { deplacerZ(1); return; }
+  if (k === '[') { deplacerZ(-1); return; }
+  const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[k];
+  if (d) {
+    ev.preventDefault();
+    if (!fleche) { debutGeste(); fleche = true; }
+    const pas = ev.shiftKey ? 5 : 1, v = etat[choisi];
+    v.dx += d[0] * pas; v.dy += d[1] * pas;
+    dessiner(); majProps(true); majApercu();
+  }
+});
+addEventListener('keyup', ev => {
+  if (ev.key === ' ') { espace = false; toile.style.cursor = 'default'; }
+  if (ev.key.startsWith('Arrow') && fleche) { fleche = null; finGeste(); }
+});
+
+/* ---------- tout rafraîchir ---------- */
+function majTout() {
+  sel.value = STYLE;
+  construireCalques(); majProps(); majCouleurs(); dessiner(); majApercu();
+  document.getElementById('sMod').textContent = NOEUDS.filter(n => modifie(n.id) || !etat[n.id].vis).length + ' pièces';
+}
+let minuteur;
+function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('vu'); clearTimeout(minuteur); minuteur = setTimeout(() => t.classList.remove('vu'), 1800); }
+
+new ResizeObserver(() => { caler(); dessiner(); }).observe(document.getElementById('scene'));
+caler();
+majTout();
+window.__atelier = { etat, NOEUDS, PAR_ID, choisir, exporter, importer, poignees, UI, piocher, get choisi() { return choisi; } };
+</script>
+</body>
+</html>
