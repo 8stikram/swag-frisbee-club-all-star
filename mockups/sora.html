@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Sora — chara-design</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0a0a0f; --panel:#14141c; --edge:#2e2e3d; --ink:#eef0f6;
+         --accent:#f8c81c; --or:#f4f6fa; --rose:#3257d4; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:22px 18px 70px}
+  h1{font-size:23px;margin:0 0 6px;font-family:'Archivo Black',sans-serif;letter-spacing:.5px}
+  h1 em{font-style:normal;color:var(--accent)}
+  h2{font-size:14px;margin:34px 0 6px;color:var(--accent);text-transform:uppercase;
+     letter-spacing:1.4px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+  .note{font-size:12.5px;color:#a3a6b8;max-width:1000px;line-height:1.75;margin:0 0 14px}
+  .note b{color:var(--ink)}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:10px;
+        flex:1 1 206px;min-width:206px;max-width:268px;cursor:pointer;
+        transition:border-color .12s,transform .12s}
+  .card:hover{border-color:#4a4a63}
+  .card.on{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 0 0 1px var(--accent) inset}
+  .lbl{font-size:11px;color:#a3a6b8;margin-bottom:8px;line-height:1.5;min-height:96px}
+  .lbl b{display:block;font-size:13px;color:var(--accent);letter-spacing:.5px;margin-bottom:3px}
+  .duo{display:flex;gap:8px;align-items:flex-end;justify-content:center}
+  .duo canvas{background:#0e0e15;border-radius:8px;display:block;image-rendering:pixelated;flex:0 0 auto}
+  .duo .zoom{border:1px solid #3d3d52}
+  .duo .plein{opacity:.85}
+  .haut{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .apercu{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 420px;
+          display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+  .apercu canvas{background:#0e0e15;border-radius:10px;image-rendering:pixelated;display:block}
+  .fiche{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px;flex:1 1 300px}
+  .fiche h3{margin:0 0 10px;font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px}
+  .choix{font-size:11.5px;color:#b9bcce;margin-top:10px;font-family:Consolas,monospace;line-height:1.8}
+  .choix b{color:var(--accent)}
+  .copier{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .codeChoix{flex:1 1 190px;background:#0e0e15;border:1px solid var(--edge);border-radius:8px;
+             padding:7px 10px;color:var(--accent);font-family:Consolas,monospace;font-size:13px;letter-spacing:1.2px}
+  .btnCopier{background:#22223a;color:var(--ink);border:1px solid var(--edge);border-radius:8px;
+             padding:8px 15px;font-size:11.5px;cursor:pointer;letter-spacing:.4px;white-space:nowrap}
+  .btnCopier:hover{background:#2f2f4d}
+  .btnCopier.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  .rosterRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .rosterOne{text-align:center;font-size:9px;color:#8a8da0;font-family:Consolas,monospace}
+  .rosterOne canvas{display:block;border-radius:6px;image-rendering:pixelated;border:1px solid var(--edge)}
+  #errs{font-size:12.5px;font-family:Consolas,monospace;color:#5df08a;white-space:pre-wrap;margin:10px 0 4px}
+  #errs.bad{color:#ff5340}
+</style>
+</head>
+<body>
+
+<h1><em>SORA</em> — KINGDOM HEARTS</h1>
+<p class="note">
+  <b>Sora, la tenue du premier Kingdom Hearts, d'après tes quatre visuels.</b> Cheveux bruns en
+  pics, frange en pointes, yeux bleus et grand sourire ; combinaison rouge fermée par une
+  glissière argent, pendentif couronne ; veste noire très courte à manches blanches bouffantes,
+  capuche doublée de bleu ; deux ceintures bleues à boucle argent ; gants blancs ; short rouge
+  bouffant, chaîne de couronnes à la hanche ; et les énormes chaussures jaunes.
+  <br><br>
+  <b>Le gabarit est celui de Naruto et Leon, ligne pour ligne</b> : yeux à la ligne 6, épaules
+  sur les colonnes 1 à 12, mains à la ligne 3, jambes aux colonnes 3-4 et 9-10 — c'est ce qui
+  permettra de reprendre leurs poses sans les redessiner. Ils sont posés en grand juste à côté,
+  pour comparer.
+  <br><br>
+  <b>On ne juge que le look ici.</b> Chaque variante de la tête, du buste et du bas est
+  choisissable à part. Le profil de jeu (tu as choisi « rapide et agile ») et l'ultime
+  TRINITY avec Donald et Dingo viendront chacun dans leur propre mockup, une fois ce Sora
+  arrêté. Et l'éditeur plus bas permet de poser les pixels toi-même par-dessus tes choix.
+</p>
+
+<div id="errs"></div>
+
+<div class="haut">
+  <div class="apercu">
+    <canvas id="cvGrand" width="304" height="380"></canvas>
+    <div>
+      <canvas id="cvPetit" width="230" height="120"></canvas>
+      <div class="choix" id="choix"></div>
+      <div class="copier">
+        <input class="codeChoix" id="codeChoix" readonly>
+        <button class="btnCopier" id="btnCopier">copier mes choix</button>
+      </div>
+    </div>
+  </div>
+  <div class="fiche">
+    <h3>À côté de Naruto et Leon, à la même taille</h3>
+    <div class="rosterRow" id="cousins"></div>
+    <h3 style="margin-top:14px">À côté du roster, à l'échelle du match</h3>
+    <div class="rosterRow" id="rosterRow"></div>
+  </div>
+</div>
+
+<div class="apercu" id="editeur" style="margin-top:14px;display:block"></div>
+
+<div id="sections"></div>
+
+<script type="module">
+import { MAPS } from '../js/data/maps.js';
+import { CHARS, ROSTER } from '../js/data/characters.js';
+import { verifier, afficher } from './_verif.js';
+import { editeur, styleEditeur } from './_pixel.js';
+
+const PAL = {'H':'#8a5a30','h':'#58341a','j':'#b98352','S':'#f5cfa6','s':'#d8a074','E':'#2168dc','W':'#f4f4f6','w':'#c2c5ce','R':'#d8262c','r':'#9c151a','q':'#6c0d11','K':'#26262e','k':'#50525e','U':'#1f2a52','u':'#34457e','B':'#3257d4','b':'#1f3794','V':'#dde2ea','v':'#8f96a4','Y':'#f8c81c','y':'#c8920c','L':'#fff09a','N':'#18181d','G':'#4a4b52','m':'#7a2230'};
+const BASE = { tete: ['..h..HH..Hh.....','.hHh.HHjHHHh....','hHHHHHjHHHHHHh..','.hHHHjHHHHHHHh..','hHHHSHHSHHSHHh..','.hHSSSSSSSSSHh..','.hHSSESSSSESHh..','..hSSSSSSSSSh...','...sSSSWWSSs....','....sSSSSs......'], corps: ['....BVRRVB......','..WKKRRVRKKW....','.kWKKRRVRKKWk...','.WKKKRRvRKKKW...','..bBBBBBVBBb....','..RRRRRvRRRV....','.rRRRr..rRRvr...','...SS....SS.....','..NYYL...NYYL...','.GYYYy..GYYYy...'] };
+const SECTIONS = [{'id':'tete','titre':'1 · LA TÊTE','zoom':[0,0,14,9],'note':'Le gabarit est celui de Naruto et Leon : un pixel par oeil a la ligne 6, aux colonnes 5 et 10, decale d\'un cran a droite du centre pour que le miroir du jeu se lise. Ce qu\'on juge ici, c\'est jusqu\'ou vont les pics — Sora se reconnait a sa coiffure qui deborde, mais une tete trop grosse ecrase le corps — et s\'il garde le grand sourire de toutes tes images, alors que personne dans le roster n\'a de bouche.','variantes':[{'id':'A','nom':'D\'APRES TES VISUELS — PICS ET GRAND SOURIRE','desc':'Les pics bruns qui partent vers l\'arriere et sur les cotes, la frange en pointes qui laisse voir le front entre elles, les yeux bleus et le grand sourire de toutes tes images. Le sourire est un vrai parti pris : Naruto et Leon n\'ont pas de bouche, lui en aura une — c\'est ce qui dit Sora au premier coup d\'oeil, mais ca le distingue du reste du roster.','tete':['..h..HH..Hh.....','.hHh.HHjHHHh....','hHHHHHjHHHHHHh..','.hHHHjHHHHHHHh..','hHHHSHHSHHSHHh..','.hHSSSSSSSSSHh..','.hHSSESSSSESHh..','..hSSSSSSSSSh...','...sSSSWWSSs....','....sSSSSs......']},{'id':'B','nom':'SAGE COMME LE ROSTER','desc':'Une coiffure ramassee dans le cadre de Naruto et Leon (colonnes 2 a 11), trois pointes de frange seulement, et pas de bouche, comme eux. Il rentre parfaitement dans le style du roster ; en revanche il perd ce qui fait Sora au premier coup d\'oeil : les pics qui debordent et le sourire.','tete':['...h.hHHh.h.....','..hHhHHjHHHh....','..HHHHHHHHHH....','..HHHHHjHHHH....','..HHSHHSHHSH....','..hSSSSSSSSh....','..SSSESSSSES....','..SSSSSSSSSS....','...sSSSSSSs.....','....sSSSSs......']},{'id':'C','nom':'COIFFURE XXL','desc':'Les pics poussent jusqu\'aux bords du gabarit, deux lignes plus haut et deux colonnes plus large, comme sur l\'artwork de Nomura. C\'est la silhouette la plus reconnaissable de loin, meme en tout petit ; en contrepartie la tete devient enorme a cote du corps, et elle depasse tout le roster.','tete':['.h.hH.HH.Hh.h...','hHhHHHHjHHHHHh..','HHHHHHjHHHHHHHh.','hHHHHjHHHHHHHHH.','HHHHSHHSHHSHHHh.','hHHSSSSSSSSSHHh.','.hHSSESSSSESHh..','..hSSSSSSSSSh...','...sSSSWWSSs....','....sSSSSs......']},{'id':'D','nom':'PICS AU VENT','desc':'Toute la coiffure part vers l\'arriere, comme s\'il courait deja : les pointes filent a gauche, le cote du regard reste court. Le plus dynamique des cinq, et il se lit dans le sens de la course ; mais le miroir du jeu le retournera quand il vise de l\'autre cote, et les pics sembleront alors partir vers l\'avant.','tete':['hh...HH.........','.hHhHHHjHh......','hHHHHHjHHHHHh...','HhHHHjHHHHHHHh..','hHHHSHHSHHSHh...','HhHSSSSSSSSSH...','.hHSSESSSSESH...','..hSSSSSSSSSh...','...sSSSWWSSs....','....sSSSSs......']},{'id':'E','nom':'YEUX PLISSES, GRAND RIRE','desc':'Les yeux se ferment en deux accents circonflexes et la bouche s\'ouvre en grand : le Sora qui rit, celui des cinematiques. Le plus expressif et le plus attachant des cinq ; en contrepartie on perd le bleu des yeux, et un visage qui rit en permanence peut sembler moqueur quand il encaisse un but.','tete':['..h..HH..Hh.....','.hHh.HHjHHHh....','hHHHHHjHHHHHHh..','.hHHHjHHHHHHHh..','hHHHSHHSHHSHHh..','.hHSShSSSShSHh..','.hHShShSShShHh..','..hSSSSSSSSSh...','...sSmWWWWmSs...','....sSmmmmS.....']}]},{'id':'buste','titre':'2 · LE BUSTE','zoom':[0,10,15,14],'note':'C\'est la tenue de KH1 : combinaison rouge, veste noire tres courte a manches blanches, capuche doublee de bleu, ceintures bleues, gants blancs. Quatre couleurs franches sur dix colonnes, c\'est le piege : chaque variante choisit laquelle domine. Le rouge seul se lit de tres loin mais perd la veste ; les manches blanches font la silhouette mais debordent vite du gabarit.','variantes':[{'id':'A','nom':'D\'APRES TES VISUELS — VESTE COURTE','desc':'La combinaison rouge fermee par la glissiere argent et le pendentif couronne au milieu ; la veste noire tres courte par-dessus, ses manches blanches bouffantes a revers gris fonce ; la doublure bleue de la capuche autour du cou ; les deux ceintures bleues et la boucle argent ; les gants blancs au bout des bras. Tout est la, mais le buste est charge : quatre couleurs se partagent dix colonnes.','lignes':{0:'....BVRRVB......',1:'..WKKRRVRKKW....',2:'.kWKKRRVRKKWk...',3:'.WKKKRRvRKKKW...',4:'..bBBBBBVBBb....'},'corps':['....BVRRVB......','..WKKRRVRKKW....','.kWKKRRVRKKWk...','.WKKKRRvRKKKW...','..bBBBBBVBBb....','..RRRRRvRRRV....','.rRRRr..rRRvr...','...SS....SS.....','..NYYL...NYYL...','.GYYYy..GYYYy...']},{'id':'B','nom':'SANS VESTE','desc':'On retire la veste : la combinaison rouge prend tout le torse, avec le collier et les ceintures. Le plus lisible des cinq, un grand aplat rouge qu\'on repere de loin ; en revanche il perd les manches blanches, qui sont la moitie de la silhouette de Sora sur toutes tes images.','lignes':{0:'....SVRRVS......',1:'..RRRRRVRRRR....',2:'.SRRRRRVRRRRS...',3:'.WrRRRRvRRRrW...',4:'..bBBBBBVBBb....'},'corps':['....SVRRVS......','..RRRRRVRRRR....','.SRRRRRVRRRRS...','.WrRRRRvRRRrW...','..bBBBBBVBBb....','..RRRRRvRRRV....','.rRRRr..rRRvr...','...SS....SS.....','..NYYL...NYYL...','.GYYYy..GYYYy...']},{'id':'C','nom':'MANCHES XXL','desc':'Les manches blanches gonflent jusqu\'aux colonnes 0 et 13, comme sur l\'artwork de Nomura ou elles sont enormes. Les epaules deviennent la forme la plus large du perso, et ca lui donne une carrure de heros ; en contrepartie il depasse le gabarit de 12 colonnes que tout le roster respecte.','lignes':{0:'..WWBVRRVBWW....',1:'.WWKKRRVRKKWW...',2:'wWWKKRRVRKKWWw..',3:'kWKKKRRvRKKKWk..',4:'..bBBBBBVBBb....'},'corps':['..WWBVRRVBWW....','.WWKKRRVRKKWW...','wWWKKRRVRKKWWw..','kWKKKRRvRKKKWk..','..bBBBBBVBBb....','..RRRRRvRRRV....','.rRRRr..rRRvr...','...SS....SS.....','..NYYL...NYYL...','.GYYYy..GYYYy...']},{'id':'D','nom':'VESTE BLEU NUIT','desc':'La meme coupe, mais la veste passe du noir au bleu nuit, la couleur qu\'elle prend sous les lumieres de KH1. Sur les cartes sombres, le noir disparaissait contre le sol ; le bleu nuit reste lisible partout. Il s\'eloigne un peu de ton rendu Smash, ou elle est franchement noire.','lignes':{0:'....BVRRVB......',1:'..WUURRVRUUW....',2:'.kWUURRVRUUWk...',3:'.WuUURRvRUUuW...',4:'..bBBBBBVBBb....'},'corps':['....BVRRVB......','..WUURRVRUUW....','.kWUURRVRUUWk...','.WuUURRvRUUuW...','..bBBBBBVBBb....','..RRRRRvRRRV....','.rRRRr..rRRvr...','...SS....SS.....','..NYYL...NYYL...','.GYYYy..GYYYy...']},{'id':'E','nom':'GRAND COL BLEU','desc':'La capuche retombe en grand col bleu sur les epaules, et un passepoil bleu borde la veste et les manches. Le bleu devient la couleur du haut et repond aux ceintures ; en revanche on perd le noir de la veste, et le haut du perso tire vers un marin.','lignes':{0:'...BBVRRVBB.....',1:'..WbBRRVRBbW....',2:'.bWbKRRVRKbWb...',3:'.WKbKRRvRKbKW...',4:'..bBBBBBVBBb....'},'corps':['...BBVRRVBB.....','..WbBRRVRBbW....','.bWbKRRVRKbWb...','.WKbKRRvRKbKW...','..bBBBBBVBBb....','..RRRRRvRRRV....','.rRRRr..rRRvr...','...SS....SS.....','..NYYL...NYYL...','.GYYYy..GYYYy...']}]},{'id':'bas','titre':'3 · LE BAS DU CORPS','zoom':[0,15,15,19],'note':'Le short bouffant et les enormes chaussures jaunes sont les deux pieces les plus Sora du perso, et les deux plus encombrantes : les jambes du roster sont aux colonnes 3-4 et 9-10, et c\'est ce qui permet de reprendre leurs poses de course. Plus on grossit le short et les chaussures, plus il ressemble a tes images — et moins la course se lit.','variantes':[{'id':'A','nom':'D\'APRES TES VISUELS — SHORT BOUFFANT','desc':'Le short rouge qui gonfle sur les cuisses, la glissiere qui descend jusqu\'a l\'entrejambe, la chaine argent qui pend a la hanche droite, un bout de mollet nu, puis les enormes chaussures jaunes a languette noire et semelle grise. Fidele, mais le short ne tient que sur deux lignes, et la chaine n\'est plus qu\'un trait gris.','lignes':{5:'..RRRRRvRRRV....',6:'.rRRRr..rRRvr...',7:'...SS....SS.....',8:'..NYYL...NYYL...',9:'.GYYYy..GYYYy...'},'corps':['....BVRRVB......','..WKKRRVRKKW....','.kWKKRRVRKKWk...','.WKKKRRvRKKKW...','..bBBBBBVBBb....','..RRRRRvRRRV....','.rRRRr..rRRvr...','...SS....SS.....','..NYYL...NYYL...','.GYYYy..GYYYy...']},{'id':'B','nom':'SHORT JUSQU\'AUX CHAUSSURES','desc':'Le short prend trois lignes et descend jusqu\'aux chaussures, revers roules en rouge fonce, sans mollet visible. C\'est la plus grosse masse rouge du perso, comme sur tes images ou le short est la piece la plus volumineuse ; en contrepartie les jambes ne se voient plus, donc la course se lira surtout aux chaussures.','lignes':{5:'..RRRRRvRRRR....',6:'.rRRRRr.rRRRRr..',7:'.rrrrr..rrrrr...',8:'..NYYL...NYYL...',9:'.GYYYy..GYYYy...'},'corps':['....BVRRVB......','..WKKRRVRKKW....','.kWKKRRVRKKWk...','.WKKKRRvRKKKW...','..bBBBBBVBBb....','..RRRRRvRRRR....','.rRRRRr.rRRRRr..','.rrrrr..rrrrr...','..NYYL...NYYL...','.GYYYy..GYYYy...']},{'id':'C','nom':'CHAUSSURES GEANTES','desc':'Les chaussures montent sur trois lignes et avancent d\'une colonne, languette noire bien haute et reflet sur la pointe : elles deviennent la piece la plus lourde du bas, comme dans le jeu ou elles font la moitie de sa jambe. Tres drole et tres Sora ; mais deux pieds qui pointent a droite sur un perso de face, ca se voit.','lignes':{5:'..RRRRRvRRRR....',6:'.rRRRr..rRRRr...',7:'..NYY....NYY....',8:'..NYLLY..NYLLY..',9:'.GYYYYy.GYYYYy..'},'corps':['....BVRRVB......','..WKKRRVRKKW....','.kWKKRRVRKKWk...','.WKKKRRvRKKKW...','..bBBBBBVBBb....','..RRRRRvRRRR....','.rRRRr..rRRRr...','..NYY....NYY....','..NYLLY..NYLLY..','.GYYYYy.GYYYYy..']},{'id':'D','nom':'SHORT BALLON','desc':'Le short gonfle jusqu\'aux bords, rond comme deux ballons, et se resserre au-dessus des chaussures. C\'est l\'exageration du cartoon de KH1, la silhouette en poire qu\'on reconnait de loin ; en revanche il deborde du gabarit de 12 colonnes et cache la moitie des jambes quand il court.','lignes':{5:'.RRRRRRvRRRRR...',6:'rRRRRRr.rRRRRRr.',7:'.rRRr....rRRr...',8:'..NYYL...NYYL...',9:'.GYYYy..GYYYy...'},'corps':['....BVRRVB......','..WKKRRVRKKW....','.kWKKRRVRKKWk...','.WKKKRRvRKKKW...','..bBBBBBVBBb....','.RRRRRRvRRRRR...','rRRRRRr.rRRRRRr.','.rRRr....rRRr...','..NYYL...NYYL...','.GYYYy..GYYYy...']},{'id':'E','nom':'SHORT DROIT, JAMBES NUES','desc':'Le short tombe droit, les jambes nues restent aux colonnes de Naruto et Leon et les chaussures redeviennent de simples pieds jaunes : leurs poses de course se reprendront telles quelles. Le plus sage et le plus lisible en mouvement ; mais il perd les deux pieces les plus Sora du bas, le short bouffant et les chaussures enormes.','lignes':{5:'..RRRRRvRRRR....',6:'...RRr...RRr....',7:'...SS....SS.....',8:'...SS....SS.....',9:'..YYY....YYY....'},'corps':['....BVRRVB......','..WKKRRVRKKW....','.kWKKRRVRKKWk...','.WKKKRRvRKKKW...','..bBBBBBVBBb....','..RRRRRvRRRR....','...RRr...RRr....','...SS....SS.....','...SS....SS.....','..YYY....YYY....']}]}];
+
+
+/* ===================== LE DESSIN ===================== */
+function peindre(g, rows, pal, ech, ox, oy, zone) {
+  const [x0, y0, x1, y1] = zone || [0, 0, 15, 19];
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const ch = rows[y][x];
+      if (ch === '.' || !pal[ch]) continue;
+      g.fillStyle = pal[ch];
+      g.fillRect(ox + (x - x0) * ech, oy + (y - y0) * ech, ech, ech);
+    }
+  }
+}
+
+function fond(g, W, H) {
+  const d = g.createLinearGradient(0, 0, 0, H);
+  d.addColorStop(0, '#1b1b26'); d.addColorStop(1, '#0b0b11');
+  g.fillStyle = d; g.fillRect(0, 0, W, H);
+}
+
+/* ===================== L'ÉTAT ===================== */
+const choix = {};
+SECTIONS.forEach(s => { choix[s.id] = s.variantes[0].id; });
+const actuel = id => SECTIONS.find(s => s.id === id).variantes.find(x => x.id === choix[id]);
+
+// Chaque section ne RETOUCHE que ses lignes. Une section qui remplacerait tout
+// le corps écraserait l'autre : le buste et le bas ne seraient plus choisissables
+// séparément, et c'est justement ce qu'on veut pouvoir faire ici.
+function batir(remplace) {
+  let tete = [...BASE.tete];
+  const corps = [...BASE.corps];
+  for (const s of SECTIONS) {
+    const va = (remplace && remplace.sec === s.id) ? remplace.va : actuel(s.id);
+    if (va.tete) tete = va.tete;
+    if (va.lignes) for (const [i, l] of Object.entries(va.lignes)) corps[+i] = l;
+  }
+  let rows = [...tete, ...corps];
+  if (!remplace && ed && ed.actif()) rows = ed.rows();
+  return { rows, pal: PAL };
+}
+
+let ed = null;
+
+/* ===================== L'ÉDITEUR ===================== */
+styleEditeur();
+ed = editeur({
+  hote: document.getElementById('editeur'),
+  cle: 'sora',
+  rows: () => batir().rows,
+  pal: () => PAL,
+  change: () => rafraichir()
+});
+
+/* ===================== L'APERÇU ===================== */
+const gG = document.getElementById('cvGrand').getContext('2d');
+const gP = document.getElementById('cvPetit').getContext('2d');
+const ARENE = MAPS[0], TH = ARENE.theme;
+
+function majApercu() {
+  const { rows, pal } = batir();
+  const cv = gG.canvas;
+  fond(gG, cv.width, cv.height);
+  const ech = 19;
+  peindre(gG, rows, pal, ech, (cv.width - 16 * ech) / 2, (cv.height - 20 * ech) / 2);
+
+  const c2 = gP.canvas;
+  gP.fillStyle = TH.floor; gP.fillRect(0, 0, c2.width, c2.height);
+  gP.strokeStyle = TH.line; gP.lineWidth = 1;
+  gP.beginPath(); gP.moveTo(0, c2.height - 14); gP.lineTo(c2.width, c2.height - 14); gP.stroke();
+  for (let i = 0; i < 3; i++) peindre(gP, rows, pal, 4.8, 14 + i * 74, c2.height - 14 - 20 * 4.8);
+
+  document.getElementById('choix').innerHTML =
+    SECTIONS.map(s => s.titre.replace(/^\d+ · /, '') + ' <b>' + choix[s.id] + '</b>').join('  ·  ');
+  document.getElementById('codeChoix').value =
+    SECTIONS.map((s, i) => (i + 1) + choix[s.id]).join(' ');
+}
+
+/* ===================== LES CARTES ===================== */
+const cartes = [];
+function dessinerCarte(o) {
+  const { rows, pal } = batir({ sec: o.sec.id, va: o.va });
+  const gc = o.plein.getContext('2d');
+  fond(gc, o.plein.width, o.plein.height);
+  peindre(gc, rows, pal, 4, 0, 0);
+  const gz = o.zoom.getContext('2d');
+  fond(gz, o.zoom.width, o.zoom.height);
+  const z = o.sec.zoom;
+  peindre(gz, rows, pal, o.zoom.width / (z[2] - z[0] + 1), 0, 0, z);
+}
+
+const boite = document.getElementById('sections');
+SECTIONS.forEach(sec => {
+  const h2 = document.createElement('h2');
+  h2.textContent = sec.titre;
+  const note = document.createElement('p');
+  note.className = 'note'; note.textContent = sec.note;
+  const row = document.createElement('div');
+  row.className = 'row';
+  sec.variantes.forEach(va => {
+    const card = document.createElement('div');
+    card.className = 'card' + (choix[sec.id] === va.id ? ' on' : '');
+    card.dataset.sec = sec.id; card.dataset.va = va.id;
+    const lbl = document.createElement('div');
+    lbl.className = 'lbl';
+    lbl.innerHTML = '<b>' + va.id + ' · ' + va.nom + '</b>' + va.desc;
+    // LE GROS PLAN EST LE DESSIN PRINCIPAL, le perso entier n'est qu'une
+    // vignette à côté : ce qui change dans une section tient souvent en
+    // quelques lignes de pixels, invisibles au milieu de tout le personnage.
+    const duo = document.createElement('div'); duo.className = 'duo';
+    const z = sec.zoom, zw = z[2] - z[0] + 1, zh = z[3] - z[1] + 1;
+    const ez = Math.min(16, Math.floor(170 / zw), Math.floor(170 / zh));
+    const zoom = document.createElement('canvas');
+    zoom.className = 'zoom'; zoom.width = zw * ez; zoom.height = zh * ez;
+    const plein = document.createElement('canvas');
+    plein.className = 'plein'; plein.width = 16 * 4; plein.height = 20 * 4;
+    duo.append(zoom, plein);
+    card.append(lbl, duo);
+    card.onclick = () => {
+      choix[sec.id] = va.id;
+      document.querySelectorAll('.card[data-sec="' + sec.id + '"]')
+        .forEach(c => c.classList.toggle('on', c.dataset.va === va.id));
+      rafraichir();
+    };
+    row.append(card);
+    cartes.push({ plein, zoom, sec, va });
+  });
+  boite.append(h2, note, row);
+});
+
+function rafraichir() {
+  majApercu();
+  cousins();
+  if (ed) ed.maj();
+  cartes.forEach(o => dessinerCarte(o));
+}
+
+document.getElementById('btnCopier').onclick = async () => {
+  const b = document.getElementById('btnCopier');
+  try { await navigator.clipboard.writeText(document.getElementById('codeChoix').value);
+        b.textContent = 'copié !'; b.classList.add('ok');
+        setTimeout(() => { b.textContent = 'copier mes choix'; b.classList.remove('ok'); }, 1400); }
+  catch (e) { document.getElementById('codeChoix').select(); }
+};
+
+/* --- Naruto et Leon, en grand : c'est sur eux qu'il est modele --- */
+function cousins() {
+  const hote = document.getElementById('cousins');
+  hote.innerHTML = '';
+  const E = 7;
+  const case_ = (dessine, nom) => {
+    const d = document.createElement('div'); d.className = 'rosterOne';
+    const cv = document.createElement('canvas');
+    cv.width = 16 * E; cv.height = 20 * E;
+    const g = cv.getContext('2d');
+    g.fillStyle = TH.floor; g.fillRect(0, 0, cv.width, cv.height);
+    dessine(g, cv);
+    const e = document.createElement('em'); e.style.fontStyle = 'normal'; e.textContent = nom;
+    d.append(cv, e); hote.append(d);
+  };
+  const moi = batir();
+  case_(g => peindre(g, moi.rows, moi.pal, E, 0, 0), 'SORA');
+  for (const ck of ['naruto', 'leon']) {
+    case_((g, cv) => { g.imageSmoothingEnabled = false;
+                       g.drawImage(CHARS[ck].frames.idle, 0, 0, cv.width, cv.height); }, CHARS[ck].short);
+  }
+}
+
+/* --- La bande du roster, à l'échelle du match --- */
+(function bande() {
+  const hote = document.getElementById('rosterRow');
+  const ajoute = (dessine, nom) => {
+    const d = document.createElement('div'); d.className = 'rosterOne';
+    const cv = document.createElement('canvas');
+    cv.width = 16 * 4.2; cv.height = 20 * 4.2;
+    const g = cv.getContext('2d');
+    g.fillStyle = TH.floor; g.fillRect(0, 0, cv.width, cv.height);
+    dessine(g, cv);
+    const e = document.createElement('em'); e.style.fontStyle = 'normal'; e.textContent = nom;
+    d.append(cv, e); hote.append(d);
+  };
+  const moi = batir();
+  ajoute(g => peindre(g, moi.rows, moi.pal, 4.2, 0, 0), 'SORA');
+  for (const ck of ROSTER) {
+    const c = CHARS[ck];
+    ajoute((g, cv) => { g.imageSmoothingEnabled = false; g.drawImage(c.frames.idle, 0, 0, cv.width, cv.height); },
+           c.short || c.name);
+  }
+})();
+
+afficher(verifier({ id: 'sora', PERSO: { pal: PAL, tete: BASE.tete, corps: BASE.corps },
+                    SECTIONS, options: { variantesAttendues: 5 } }),
+         document.getElementById('errs'));
+
+rafraichir();
+</script>
+</body>
+</html>
