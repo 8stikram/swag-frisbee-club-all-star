@@ -122,13 +122,13 @@
   <span class="sep"></span>
   <button class="btn" id="bAnnuler" title="Ctrl+Z">annuler<kbd>Ctrl+Z</kbd></button>
   <button class="btn" id="bRetablir" title="Ctrl+Y">rétablir<kbd>Ctrl+Y</kbd></button>
-  <button class="btn" id="bToutRaz" style="color:var(--rouge)">tout remettre</button>
+  <button class="btn" id="bToutRaz" style="color:var(--rouge)">tout revenir au validé</button>
 </div>
 
 <main id="corps">
   <section id="scene"><canvas id="toile"></canvas></section>
   <aside id="droite">
-    <h3>Calques <span>glisse-les pour changer l'ordre · l'œil masque · point doré = retouché</span></h3>
+    <h3>Calques <span>glisse-les pour changer l'ordre · l'œil masque · point doré = changé depuis tes réglages validés</span></h3>
     <div id="calques"></div>
     <h3>Pièce choisie</h3>
     <div id="props"></div>
@@ -147,8 +147,8 @@
 
 <div class="voile" id="vExport"><div class="fenetre">
   <h2>TES RÉGLAGES</h2>
-  <p>Seulement ce que tu as changé : la position, la taille et la rotation des pièces retouchées, les
-     pièces masquées, les couleurs changées et l'ordre des calques s'il a bougé. Copie tout et
+  <p>Tous tes réglages, validés compris : la position, la taille et la rotation des pièces déplacées,
+     les pièces masquées, les couleurs changées, l'ordre des calques et le trait. Copie tout et
      envoie-le tel quel.</p>
   <textarea id="txtExport" readonly></textarea>
   <div class="ligneBtn"><button class="gros" data-ferme>Fermer</button><button class="gros or" id="bCopierExport">Copier</button></div>
@@ -585,12 +585,27 @@ const STYLES = {
 };
 
 /* ===================== L'ÉTAT ===================== */
-const CLE = 'trinityAtelier:v1';
+// Les réglages VALIDÉS, envoyés tels quels le 27/09/2026 et gardés aussi dans
+// sora-trinity-reglage.reglages.json. Ils sont la BASE : l'atelier s'ouvre
+// dessus, « revenir au validé » y ramène, et le point doré des calques marque
+// ce qui a changé DEPUIS — c'est ce qui dit ce qui est neuf dans le prochain envoi.
+const VALIDES = {"atelier": "trinity", "style": "D", "elements": {"dingo.brasArr.manchette": {"dx": 0, "dy": 0, "ex": 0.79, "ey": 1, "rot": 0}, "dingo.brasArr.gant": {"dx": 0, "dy": -2, "ex": 1, "ey": 1, "rot": 0}, "dingo.oreilleMachoire": {"dx": -1, "dy": -1, "ex": 1, "ey": 1, "rot": 0}, "dingo.jambeArr": {"dx": -2.5, "dy": -0.5, "ex": 2.13, "ey": 1, "rot": -5}, "dingo.jambeAv": {"dx": 3.5, "dy": 0, "ex": 2.01, "ey": 1, "rot": 10}, "dingo.chaussureAv": {"dx": 1, "dy": 0, "ex": 1, "ey": 1, "rot": 0}, "dingo.hanches": {"dx": 0, "dy": 0, "ex": 0.74, "ey": 1, "rot": 0}, "dingo.pantalonArr": {"dx": 0, "dy": 0, "ex": 0.61, "ey": 1, "rot": 7}, "dingo.pantalonAv": {"dx": 0, "dy": 0, "ex": 0.62, "ey": 1, "rot": -5}, "dingo.pocheCuisse": {"dx": 1, "dy": 1, "ex": 1, "ey": 1, "rot": 0}, "dingo.sangleArr": {"dx": 1.5, "dy": -3, "ex": 1, "ey": 1, "rot": 14}, "dingo.sangleAv": {"dx": -2, "dy": -2.5, "ex": 1, "ey": 1, "rot": -12}, "dingo.guetreArr": {"dx": -2, "dy": -1, "ex": 0.52, "ey": 0.82, "rot": 0}, "dingo.guetreAv": {"dx": 1.5, "dy": -1, "ex": 0.58, "ey": 0.97, "rot": 0}, "dingo.ceinture": {"dx": 0, "dy": 0, "ex": 0.89, "ey": 1, "rot": 0}, "dingo.boucle": {"dx": -4.5, "dy": 0.5, "ex": 0.76, "ey": 0.76, "rot": 0}, "dingo.pull": {"dx": 0, "dy": 0, "ex": 0.83, "ey": 1, "rot": 0}, "dingo.giletG": {"dx": -3, "dy": 2, "ex": 0.95, "ey": 1, "rot": 0}, "dingo.giletD": {"dx": 1.5, "dy": 2, "ex": 1, "ey": 1, "rot": 0}, "dingo.pochesGilet": {"dx": -1, "dy": 0, "ex": 1.34, "ey": 1, "rot": 0}, "dingo.fermeture": {"dx": 0, "dy": 2, "ex": 1, "ey": 1.06, "rot": 0}, "dingo.cou": {"dx": -2, "dy": -1.5, "ex": 1.58, "ey": 1, "rot": -7}, "dingo.crane.dome": {"dx": 0, "dy": 1, "ex": 1, "ey": 1.2, "rot": 0}, "dingo.oreilleNuque": {"dx": 1, "dy": -1, "ex": 1, "ey": 1, "rot": 0}, "dingo.machoire": {"dx": 4, "dy": -7, "ex": 1.31, "ey": 1.31, "rot": 7}, "dingo.bouche": {"dx": 9, "dy": -2, "ex": 0.95, "ey": 1, "rot": 0}, "dingo.langue": {"dx": 9, "dy": -3, "ex": 1.21, "ey": 1.21, "rot": 0}, "dingo.dents": {"dx": 7.5, "dy": -0.5, "ex": 1, "ey": 1, "rot": 0}, "dingo.nez": {"dx": 1, "dy": 1, "ex": 0.55, "ey": 0.55, "rot": 0}, "dingo.oeilD": {"dx": 1, "dy": 0, "ex": 1, "ey": 1, "rot": 0}, "dingo.oeilG": {"dx": 1, "dy": 1, "ex": 1, "ey": 1, "rot": 0}, "dingo.bandeChapeau": {"dx": 0, "dy": -5, "ex": 0.75, "ey": 0.78, "rot": -4}, "dingo.lunettes": {"dx": 0, "dy": 0, "ex": 1, "ey": 1, "rot": -10}, "dingo.meches": {"dx": -1, "dy": 5, "ex": 0.73, "ey": 0.71, "rot": -46}, "dingo.brasAv.manchette": {"dx": 0, "dy": 0, "ex": 1.07, "ey": 0.69, "rot": 82}, "dingo.brasAv.gant": {"dx": 1.5, "dy": 2, "ex": 1, "ey": 1, "rot": 0}, "dingo.bouclier": {"dx": 1.5, "dy": 1, "ex": 1, "ey": 1, "rot": 0}, "donald.brasArr": {"dx": -1.5, "dy": -1, "ex": 1, "ey": 1, "rot": -2}, "donald.tenue": {"dx": 2.5, "dy": -3.5, "ex": 0.86, "ey": 0.78, "rot": 0}, "donald.brasArr.manche": {"dx": 2.5, "dy": -0.5, "ex": 0.81, "ey": 0.69, "rot": 14}, "donald.brasArr.bras": {"dx": 2.5, "dy": -3.5, "ex": 0.65, "ey": 0.72, "rot": 0}, "donald.brasArr.bracelet": {"dx": 2.5, "dy": -5.5, "ex": 0.63, "ey": 0.63, "rot": 9}, "donald.brasArr.main": {"dx": 2.5, "dy": -8, "ex": 0.61, "ey": 0.61, "rot": 0}, "donald.queue": {"dx": 5, "dy": 5.5, "ex": 1, "ey": 1, "rot": 0}, "donald.corps": {"dx": 2, "dy": -0.5, "ex": 0.79, "ey": 1.05, "rot": 8}, "donald.veste": {"dx": 0, "dy": 6, "ex": 0.97, "ey": 1, "rot": 0}, "donald.lisere": {"dx": -2.5, "dy": 2.5, "ex": 1.04, "ey": 1.04, "rot": 0}, "donald.poches": {"dx": -1.5, "dy": 1, "ex": 1, "ey": 1, "rot": 0}, "donald.fermeture": {"dx": -1.5, "dy": -2, "ex": 1, "ey": 1, "rot": 0}, "donald.cape": {"dx": 0, "dy": 2, "ex": 1, "ey": 1, "rot": 0}, "donald.col": {"dx": 0, "dy": 4, "ex": 1, "ey": 0.94, "rot": 0}, "donald.fermoir": {"dx": -2.5, "dy": 4, "ex": 0.76, "ey": 0.76, "rot": 0}, "donald.bonnetPli": {"dx": -8, "dy": 8, "ex": 0.7, "ey": 0.7, "rot": -150}, "donald.bonnet": {"dx": 0, "dy": -1, "ex": 1, "ey": 1, "rot": 1}, "donald.fermetureBonnet": {"dx": -7.5, "dy": 0, "ex": 0.78, "ey": 0.78, "rot": -49}, "donald.tirette": {"dx": -1, "dy": -2, "ex": 1, "ey": 1, "rot": 0}, "donald.baton": {"dx": -0.5, "dy": 0.5, "ex": 1.09, "ey": 0.87, "rot": 0}, "donald.brasAv.manche": {"dx": 0, "dy": 0, "ex": 0.89, "ey": 0.89, "rot": 16}, "donald.brasAv.bras": {"dx": -1, "dy": 1.5, "ex": 1.05, "ey": 0.83, "rot": 0}, "donald.brasAv.bracelet": {"dx": 2.5, "dy": 0.5, "ex": 0.83, "ey": 0.83, "rot": 43}, "donald.brasAv.main": {"dx": 0.5, "dy": 0.5, "ex": 1, "ey": 1, "rot": 0}}, "ordre": {"dingo": ["dingo.brasArr.manche", "dingo.brasArr.manchette", "dingo.brasArr.gant", "dingo.oreilleMachoire", "dingo.jambeArr", "dingo.anneauArr", "dingo.jambeAv", "dingo.anneauAv", "dingo.chaussureArr", "dingo.chaussureAv", "dingo.hanches", "dingo.pantalonArr", "dingo.pantalonAv", "dingo.pocheCuisse", "dingo.sangleArr", "dingo.sangleAv", "dingo.guetreArr", "dingo.guetreAv", "dingo.ceinture", "dingo.pull", "dingo.colRoule", "dingo.giletG", "dingo.giletD", "dingo.pochesGilet", "dingo.fermeture", "dingo.cou", "dingo.crane.dome", "dingo.boucle", "dingo.oreilleNuque", "dingo.machoire", "dingo.bouche", "dingo.langue", "dingo.oeilD", "dingo.dents", "dingo.masque", "dingo.nez", "dingo.oeilG", "dingo.chapeau", "dingo.bandeChapeau", "dingo.lunettes", "dingo.meches", "dingo.brasAv.manche", "dingo.brasAv.manchette", "dingo.brasAv.gant", "dingo.bouclier"], "donald": ["donald.queue", "donald.brasArr.manche", "donald.brasArr.bras", "donald.brasArr.bracelet", "donald.brasArr.main", "donald.jambeArr", "donald.jambeAv", "donald.patteArr", "donald.patteAv", "donald.corps", "donald.veste", "donald.lisere", "donald.poches", "donald.fermeture", "donald.brasAv.manche", "donald.cape", "donald.bordureCape", "donald.col", "donald.fermoir", "donald.bonnetPli", "donald.crane", "donald.becBas", "donald.bouche", "donald.langue", "donald.becHaut", "donald.oeilD", "donald.oeilG", "donald.bonnet", "donald.fermetureBonnet", "donald.bandeBonnet", "donald.tirette", "donald.baton", "donald.brasAv.bras", "donald.brasAv.bracelet", "donald.brasAv.main"]}};
+// Nouvelle clé : l'ancienne gardait l'état d'avant l'envoi, qui aurait
+// recouvert les réglages validés.
+const CLE = 'trinityAtelier:v2';
 const neutre = () => ({ dx: 0, dy: 0, ex: 1, ey: 1, rot: 0, vis: true });
+const valide = id => {
+  const v = VALIDES.elements[id];
+  return v ? { dx: v.dx, dy: v.dy, ex: v.ex, ey: v.ey, rot: (v.rot || 0) * Math.PI / 180, vis: !(VALIDES.caches || []).includes(id) } : neutre();
+};
 const etat = {}; NOEUDS.forEach(n => { etat[n.id] = neutre(); });
 const ORDRE0 = { dingo: PIECES.filter(n => n.perso === 'dingo').map(n => n.id), donald: PIECES.filter(n => n.perso === 'donald').map(n => n.id) };
 let ORDRE = { dingo: [...ORDRE0.dingo], donald: [...ORDRE0.donald] };
 let STYLE = 'A';
+const ORDRE_VALIDE = p => {
+  const l = ((VALIDES.ordre || {})[p] || []).filter(id => ORDRE0[p].includes(id));
+  return [...l, ...ORDRE0[p].filter(id => !l.includes(id))];
+};
 // `auto` : tant qu'on n'a ni zoomé ni déplacé la vue, elle se recadre toute seule
 // quand la fenêtre change de taille.
 const UI = { zoom: 0, ox: 0, oy: 0, grille: true, fond: 0, sora: true, cadres: true, auto: true };
@@ -609,7 +624,6 @@ function restaurer(txt) {
   if (o.style && STYLES[o.style]) STYLE = o.style;
 }
 function garder() { try { localStorage.setItem(CLE, instantane()); } catch (e) { } }
-try { const g = localStorage.getItem(CLE); if (g) restaurer(g); } catch (e) { }
 
 const passe = [], futur = [];
 let avantGeste = null;
@@ -666,6 +680,15 @@ function boiteDans(n) {
   for (const n of [...NOEUDS].reverse()) if (!n.piv) { n.piv = [0, 0]; const b = boiteDans(n); n.piv = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; }
   Object.assign(etat, JSON.parse(sauve));
 }
+// On part des réglages validés, puis des retouches gardées dans le navigateur.
+function versValide() {
+  for (const n of NOEUDS) etat[n.id] = valide(n.id);
+  ORDRE = { dingo: ORDRE_VALIDE('dingo'), donald: ORDRE_VALIDE('donald') };
+  if (STYLES[VALIDES.style]) STYLE = VALIDES.style;
+  Object.assign(DI, PAL0.dingo, (VALIDES.couleurs || {}).dingo || {}); Object.assign(DO, PAL0.donald, (VALIDES.couleurs || {}).donald || {});
+}
+versValide();
+try { const g0 = localStorage.getItem(CLE); if (g0) restaurer(g0); } catch (e) { }
 
 /* ===================== LA SCÈNE ===================== */
 // En unités de jeu : Sora au centre (60 de haut), Dingo à gauche, Donald à
@@ -901,7 +924,12 @@ function majZoom() { document.getElementById('zoomTxt').textContent = Math.round
 const plis = new Set(NOEUDS.filter(n => n.groupe && n.parent).map(n => n.id));
 function zMax(n) { if (!n.groupe) return ORDRE[n.perso].indexOf(n.id); return Math.max(-1, ...enfants(n).map(zMax)); }
 const modifie = id => { const v = etat[id]; return v.dx || v.dy || v.ex !== 1 || v.ey !== 1 || v.rot; };
-const contientModif = n => modifie(n.id) || !etat[n.id].vis || (n.groupe && enfants(n).some(contientModif));
+const retouche = id => {
+  const a = etat[id], b = valide(id);
+  return Math.abs(a.dx - b.dx) > .01 || Math.abs(a.dy - b.dy) > .01 || Math.abs(a.ex - b.ex) > .005 || Math.abs(a.ey - b.ey) > .005
+    || Math.abs(a.rot - b.rot) > .005 || a.vis !== b.vis;
+};
+const contientModif = n => retouche(n.id) || (n.groupe && enfants(n).some(contientModif));
 function construireCalques() {
   const h = document.getElementById('calques'), haut = h.scrollTop; h.innerHTML = '';
   const ligneCq = (n, prof) => {
@@ -1019,6 +1047,7 @@ function majProps(depuisCurseur) {
   h.append(lie);
   const btns = document.createElement('div'); btns.className = 'ligneBtn';
   const b = (txt, fn, dis) => { const x = document.createElement('button'); x.className = 'petit'; x.textContent = txt; x.disabled = !!dis; x.onclick = fn; btns.append(x); };
+  b('revenir au validé', () => changer(() => { etat[choisi] = valide(choisi); }), !retouche(choisi));
   b('remettre à zéro', () => changer(() => { const vis = etat[choisi].vis; etat[choisi] = { ...neutre(), vis }; }), !modifie(choisi));
   b(etat[choisi].vis ? 'masquer (H)' : 'afficher (H)', () => changer(() => { etat[choisi].vis = !etat[choisi].vis; }));
   b('monter ]', () => deplacerZ(1), n.groupe);
@@ -1141,8 +1170,8 @@ document.getElementById('bDonald').onclick = () => { UI.auto = false; const b = 
 document.getElementById('bAnnuler').onclick = annuler;
 document.getElementById('bRetablir').onclick = retablir;
 document.getElementById('bToutRaz').onclick = () => {
-  if (!confirm('Tout remettre comme au départ (positions, couleurs, calques) ?')) return;
-  changer(() => { for (const id of Object.keys(etat)) etat[id] = neutre(); Object.assign(DI, PAL0.dingo); Object.assign(DO, PAL0.donald); ORDRE = { dingo: [...ORDRE0.dingo], donald: [...ORDRE0.donald] }; });
+  if (!confirm('Tout revenir à tes réglages validés (positions, couleurs, calques, trait) ?')) return;
+  changer(versValide);
 };
 
 /* ---------- clavier ---------- */
@@ -1150,7 +1179,7 @@ const RACCOURCIS = [
   ['Clic', 'Choisir une pièce'], ['Double-clic', 'Choisir son groupe'], ['Glisser', 'Déplacer'], ['Maj en glissant', 'Droit à l\'horizontale ou à la verticale'],
   ['Poignée ronde', 'Tourner (Maj : par 15°)'], ['Poignées carrées', 'Largeur, hauteur, les deux'], ['Flèches', 'Déplacer d\'une unité (Maj : 5)'],
   ['Molette', 'Zoomer sur la souris'], ['Espace + glisser', 'Déplacer la vue'], ['0 · 1 · 2', 'Tout voir · Dingo · Donald'],
-  ['[ et ]', 'Descendre / monter le calque'], ['H', 'Masquer / afficher la pièce'], ['Suppr', 'Remettre la pièce à zéro'],
+  ['[ et ]', 'Descendre / monter le calque'], ['H', 'Masquer / afficher la pièce'], ['Suppr', 'Revenir au réglage validé'],
   ['Ctrl+Z / Ctrl+Y', 'Annuler / rétablir'], ['G · F · S', 'Grille · fond · Sora'], ['Échap', 'Désélectionner'], ['?', 'Cette aide'],
 ];
 document.getElementById('listeRaccourcis').innerHTML = RACCOURCIS.map(r => `<div><span>${r[1]}</span><kbd>${r[0]}</kbd></div>`).join('');
@@ -1177,7 +1206,7 @@ addEventListener('keydown', ev => {
   if (!choisi) return;
   if (k === 'Escape') { choisir(null); return; }
   if (k === 'h' || k === 'H') { changer(() => { etat[choisi].vis = !etat[choisi].vis; }); return; }
-  if (k === 'Delete' || k === 'Backspace') { changer(() => { const vis = etat[choisi].vis; etat[choisi] = { ...neutre(), vis }; }); return; }
+  if (k === 'Delete' || k === 'Backspace') { changer(() => { etat[choisi] = valide(choisi); }); return; }
   if (k === ']') { deplacerZ(1); return; }
   if (k === '[') { deplacerZ(-1); return; }
   const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[k];
@@ -1198,7 +1227,7 @@ addEventListener('keyup', ev => {
 function majTout() {
   sel.value = STYLE;
   construireCalques(); majProps(); majCouleurs(); dessiner(); majApercu();
-  document.getElementById('sMod').textContent = NOEUDS.filter(n => modifie(n.id) || !etat[n.id].vis).length + ' pièces';
+  document.getElementById('sMod').textContent = NOEUDS.filter(n => retouche(n.id)).length + ' depuis le validé';
 }
 let minuteur;
 function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('vu'); clearTimeout(minuteur); minuteur = setTimeout(() => t.classList.remove('vu'), 1800); }
