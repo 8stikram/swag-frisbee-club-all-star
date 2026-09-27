@@ -1037,7 +1037,51 @@ const SKIN_CAIN = {
   dash: buildSprite([...CAIN_HEAD, ...corpsCain(I_DASH_B)], PAL_CAIN)
 };
 
-export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper', 'yuki', 'yoshi', 'hollis', 'flowser', 'fricadelle'];
+// ---------------------------------------------------------------------------
+// SORA (Kingdom Hearts 1). Dessiné à la main par l'utilisateur dans
+// mockups/sora.html, sur le gabarit de Naruto et Leon : pics bruns, frange sur
+// les yeux, combinaison rouge, veste noire courte à manches blanches,
+// ceintures bleues, short rouge et chaussures jaunes géantes.
+//
+// Les cinq autres poses : le HAUT du corps est déduit de celles de Leon (même
+// gabarit, mêmes bras), les mains ajoutées passant en gants blancs. Les
+// JAMBES sont redessinées pose par pose — ses chaussures sur deux lignes
+// n'ont pas d'équivalent chez Leon, et la déduction y laissait des lettres
+// étrangères à sa palette, donc des pixels invisibles.
+const PAL_SORA = {
+  H: '#8a5a30', h: '#58341a', j: '#b98352',          // cheveux
+  S: '#f5cfa6', s: '#d8a074',                        // peau
+  E: '#2168dc',                                      // yeux, boucle
+  W: '#f4f4f6', w: '#c2c5ce',                        // manches, gants, dents, chaîne
+  R: '#d8262c', r: '#9c151a',                        // combinaison et short
+  K: '#26262e', k: '#50525e',                        // veste noire, revers gris
+  B: '#3257d4', b: '#1f3794',                        // capuche, ceintures
+  V: '#dde2ea', v: '#8f96a4',                        // couronne, glissière
+  Y: '#f8c81c', y: '#c8920c', N: '#18181d'           // chaussures
+};
+const SORA_HEAD = ["...hH.HH.Hh.....", "..HHHHHjHHHH....", ".hHHHHjHHHHHh...", "..hHHHHHHHHh....",
+  "..HHHHHHHHHH....", "..HHSHHSHHSH....", "..hSSESSSSEh....", "..sSSSSSSSSs....",
+  "...SSSSSWSS.....", "....BKRRKB......"];
+const SORA_IDLE_B = ["..WWKRRVRKWW....", ".WWWKRRVRKWWW...", ".kWKKRRvRKKWk...", ".SKKKRRvRKKKS...",
+  "..bBBEEwbbbb....", "..RRRRRvEwRw....", "...rr....rw.....", "...ss....ss.....",
+  ".yYNY....YNYy...", ".yyYY....YYyy..."];
+const SORA_RUN1_B = ["..WWKRRVRKWW....", ".WWWKRRVRKWW....", "...KKRRvRKKWk...", "..KKKRRvRKKKS...",
+  "..bBBEEwbbbb....", "..RRRRRvEwRw....", "..rr......rw....", "..ss......ss....",
+  "yYNY.......YNYy.", "yyYY.......YYyy."];
+const SORA_RUN2_B = ["..WWKRRVRKWW....", "...WKRRVRKWWW...", ".kWKKRRvRKKW....", "..KKKRRvRKKKS...",
+  "..bBBEEwbbbb....", "..RRRRRvEwRw....", "...rr....rw.....", "...ss....ss.....",
+  ".yYNY....YNYy...", ".yyYY....YYyy..."];
+const SORA_THROW_B = ["..WWKRRVRKWW....", "..WWKRRVRKWWWW..", "..WKKRRvRKKWkW..", "..KKKRRvRKKK....",
+  "..bBBEEwbbbb....", "..RRRRRvEwRw....", "..rr.....rw.....", "..ss.....ss.....",
+  "yYNY......YNYy..", "yyYY......YYyy.."];
+const SORA_DIVE_B = ["..WWKRRVRKWW....", "..WWKRRVRKWWWW..", "..WKKRRvRKKWkW..", "..KKKRRvRKKK....",
+  "..bBBEEwbbbb....", "..RRRRRvEwRw....", ".rrrr...rrrw....", "yYN.......NYy...",
+  "yyY.......Yyy...", "................"];
+const SORA_DASH_B = ["..WWKRRVRKWW....", "WWWWKRRVRKWW....", "WkWKKRRvRKKW....", "..KKKRRvRKKK....",
+  "..bBBEEwbbbb....", "..RRRRRvEwRw....", "..rr..rw........", ".ss..ss.........",
+  "yNY.yNY.........", "yYY.yYY........."];
+
+export const ROSTER = ['naruto', 'isaac', 'leon', 'jingle', 'cyberleek', 'mamie', 'chopper', 'yuki', 'yoshi', 'hollis', 'flowser', 'fricadelle', 'sora'];
 
 export const CHARS = {
   naruto: {
@@ -1330,6 +1374,25 @@ export const CHARS = {
       throw: buildSprite([...GF_HEAD, ...GF_THROW_B], PAL_GF),
       dive: buildSprite([...GF_HEAD, ...GF_DIVE_B], PAL_GF),
       dash: buildSprite([...GF_HEAD, ...GF_DASH_B], PAL_GF)
+    }
+  },
+  sora: {
+    name: 'SORA', short: 'SORA', icon: '🗝️', universe: 'ÎLES DU DESTIN',
+    // Profil « vif » : le deuxième plus rapide du roster derrière Yuki, une
+    // charge courte, mais le bras un peu faible et la plus petite zone
+    // d'attrapé après Naruto. Il gagne ses points en bougeant, et son ultime
+    // lui donne ce qui lui manque : un gardien et un tir parfait.
+    speed: 358, power: .9, catchR: 28, chargeT: .7,
+    color: '#d8262c', accent: '#f8c81c',
+    stats: { spd: 5, pow: 2, ctl: 4 },
+    ult: 'trinite',
+    frames: {
+      idle: buildSprite([...SORA_HEAD, ...SORA_IDLE_B], PAL_SORA),
+      run1: buildSprite([...SORA_HEAD, ...SORA_RUN1_B], PAL_SORA),
+      run2: buildSprite([...SORA_HEAD, ...SORA_RUN2_B], PAL_SORA),
+      throw: buildSprite([...SORA_HEAD, ...SORA_THROW_B], PAL_SORA),
+      dive: buildSprite([...SORA_HEAD, ...SORA_DIVE_B], PAL_SORA),
+      dash: buildSprite([...SORA_HEAD, ...SORA_DASH_B], PAL_SORA)
     }
   }
 };

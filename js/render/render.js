@@ -14,6 +14,7 @@ import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SP
          PS_CHANT, PS_CHUTE, PS_IMPACT, PS_DUREE } from '../data/specials.js';
 import { CHARS } from '../data/characters.js';
 import { dessinerSusanoo } from './susanoo.js';
+import { acteursTrinite, dessinerFeuTrinite } from './trinity-anim.js';
 import { poseIdle, dessinerCorps, decalageTete, IDLE_JEU } from './anim-perso.js';
 
 // La clarté du sol de la carte en cours, mesurée une fois par carte. Elle sert
@@ -3481,13 +3482,16 @@ export function render() {
   // il avait complètement disparu.
   for (const p of [G.p1, G.p2]) if (p && p.lameT > 0) dessinerSusanoo(ctx, p, performance.now() / 1000, solClair());
   if (G.p1) {
-    const ps = [G.p1, G.p2].sort((a, b) => a.y - b.y);
+    // Donald et Dingo (TRINITÉ) se rangent avec les joueurs, par leurs pieds.
+    const ps = [G.p1, G.p2, ...acteursTrinite(G.trinite)].sort((a, b) => a.y - b.y);
     let drewDisc = false;
     for (const p of ps) {
       if (!drewDisc && G.disc.y < p.y) { drawDisc(); drewDisc = true; }
-      drawPlayer(p);
+      if (p.dessiner) p.dessiner(ctx); else drawPlayer(p);
     }
     if (!drewDisc) drawDisc();
+    // Le Brasier de Donald et le disque en feu passent par-dessus tout le monde.
+    dessinerFeuTrinite(ctx, G.trinite, G.disc, G.trail, G.now);
   }
   if (G.leg && G.leg.phase !== 'shadow') drawLeg();
   if (G.bell) drawBell();

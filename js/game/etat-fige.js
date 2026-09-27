@@ -31,7 +31,7 @@ const CHAMPS_JOUEUR = [
   'speed', 'stun', 'ghostT', 'holdTimer', 'dashT', 'dashGap', 'dashThrowT', 'dashEnding',
   'cancelCatchT', 'feintT', 'feintCd', 'diveT', 'diveDown', 'diveHit', 'dizzy',
   'sixT', 'sixA', 'viseT', 'tirTenu', 'dashTenu', 'bouclierT', 'piratage', 'feintSwish',
-  'lameT', 'lameCoupT', 'lameVise', 'lameFrappe', 'lameCogne', 'lameVu'
+  'lameT', 'lameCoupT', 'lameVise', 'lameFrappe', 'lameCogne', 'lameVu', 'triniteFeu'
 ];
 // Couples x/y du joueur : élan de dash, direction de dash, de feinte, de plongeon.
 const VECTEURS_JOUEUR = ['dashV', 'dashDir', 'feintDir', 'diveDir'];
@@ -145,6 +145,11 @@ export function figerEtat() {
   e.bell = figerScene(G.bell);
   e.hack = figerScene(G.hack);
   e.cine = figerScene(G.cine);
+  // TRINITÉ : Dingo renvoie le disque, donc elle pèse sur le match. Ses deux
+  // personnages sont des objets à part : on les copie, sinon la photo
+  // bougerait avec eux.
+  e.trinite = G.trinite ? { ...G.trinite, owner: cote(G.trinite.owner),
+    dingo: { ...G.trinite.dingo }, donald: { ...G.trinite.donald } } : null;
   e.tempete = G.tempete ? { ...G.tempete } : null;
   e.mem = { ...G.mem };
   // Le tampon du rejeu n'est PAS figé : il glisse, donc ce qui en sort est
@@ -177,6 +182,8 @@ export function restaurerEtat(e) {
   G.bell = degelerScene(e.bell, ['owner']);
   G.hack = degelerScene(e.hack, ['cible']);
   G.cine = degelerScene(e.cine, ['p']);
+  G.trinite = e.trinite ? { ...e.trinite, owner: parCote(e.trinite.owner),
+    dingo: { ...e.trinite.dingo }, donald: { ...e.trinite.donald } } : null;
   G.tempete = e.tempete ? { ...e.tempete } : null;
   Object.assign(G.mem, e.mem);
   G.replay = e.replay ? { ...e.replay, cam: e.replay.cam ? { ...e.replay.cam } : null } : null;

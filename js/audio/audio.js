@@ -389,6 +389,16 @@ export function sfx(cle, venuDuReseau, horsDemo) {
     case 'mamie-ulti':
       if (!sample('mamieUlti', .9)) { beep(420, 300, .3, 'sawtooth', .14); beep(300, 220, .3, 'square', .1, .2); }
       break;
+    // TRINITÉ de Sora, en synthé en attendant un vrai son : l'appel (un
+    // carillon magique qui monte), le coup de bouclier de Dingo (un choc
+    // métallique), le lancer de Brasier et l'embrasement du disque.
+    case 'trinite':
+      [523, 659, 784, 1046, 1318].forEach((f, i) => beep(f, f * 1.01, .22, 'sine', .12, i * .06));
+      beep(1568, 2093, .5, 'triangle', .06, .3); noise(.35, .05, 5200, .25);
+      break;
+    case 'trinite-bouclier': beep(880, 420, .14, 'square', .1); beep(1760, 1320, .08, 'triangle', .08); noise(.1, .14, 3200); break;
+    case 'trinite-sort': beep(300, 900, .22, 'sawtooth', .08); noise(.25, .08, 1800, .02); break;
+    case 'trinite-feu': noise(.4, .18, 900); beep(180, 60, .38, 'sawtooth', .12); beep(660, 990, .2, 'sine', .07, .05); break;
     // L'invocation du Susanoo de la Fricadelle, fournie par l'utilisateur.
     // Repli synthé : une montée, pour que quelque chose parte quand même.
     case 'susanoo':

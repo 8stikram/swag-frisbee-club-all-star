@@ -206,7 +206,10 @@ function etatPourLeReseau() {
     // Le Susano SSJ Rose du Gardien : l'invité doit voir le Susanoo, et son
     // épée s'abattre dans la direction visée. Le coup est décidé ici, chez
     // l'hôte ; l'invité ne fait que le montrer.
-    +(p.lameT || 0).toFixed(2), +(p.lameCoupT ?? 9).toFixed(3), +(p.lameVise || 0).toFixed(3)];
+    +(p.lameT || 0).toFixed(2), +(p.lameCoupT ?? 9).toFixed(3), +(p.lameVise || 0).toFixed(3),
+    // TRINITÉ de Sora : le disque est enflammé, le prochain tir sera parfait.
+    // L'invité en a besoin pour son propre tir, qu'il joue sans attendre l'hôte.
+    p.triniteFeu ? 1 : 0];
   const d = G.disc;
   return {
     t: 'e', n: ++numeroEnvoi,
@@ -333,15 +336,18 @@ function commentaireNeuf() {
   return [c.text, c.cat];
 }
 
+// Les gestes de TRINITÉ voyagent en numéro plutôt qu'en toutes lettres.
+const GESTES_TR = ['garde', 'course', 'coup', 'trotte', 'incante'];
+
 function scenesPourLeReseau() {
   const c = G.cine, b = G.bell, h = G.hack, l = G.leg, t = G.tempete, br = G.brume;
-  const ba = G.banner, zo = G.zoom, ra = G.rafale, gr = G.grappin, ci = G.chien, ru = G.ruee, ti = G.tigre, ps = G.psycho;
+  const ba = G.banner, zo = G.zoom, ra = G.rafale, gr = G.grappin, ci = G.chien, ru = G.ruee, ti = G.tigre, ps = G.psycho, tr = G.trinite;
   // La ruée, le tigre et la zone psychique manquaient à cette liste. Chacun
   // est pourtant un ultime à lui seul : lancé sans qu'aucune autre scène ne
   // tourne — le cas normal — la fonction rendait zéro et l'invité ne voyait
   // strictement rien de l'ultime qui venait de le frapper. Il ne restait chez
   // lui que l'effet subi, sans sa cause.
-  if (!c && !b && !h && !l && !t && !br && !ba && !zo && !ra && !gr && !ci && !ru && !ti && !ps) return 0;
+  if (!c && !b && !h && !l && !t && !br && !ba && !zo && !ra && !gr && !ci && !ru && !ti && !ps && !tr) return 0;
   const q = p => (p === G.p1 ? 1 : (p === G.p2 ? 2 : 0));
   return {
     // Le bandeau qui annonce l'ultime, et le zoom du Perfect Dive. Ils vivent
@@ -387,7 +393,17 @@ function scenesPourLeReseau() {
     // entre les joueurs au moment du cast, donc l'invite ne peut pas le
     // recalculer — il n'a pas les positions de cet instant-la.
     ps: ps ? [q(ps.owner), +ps.t.toFixed(2), Math.round(ps.x),
-              Math.round(ps.y), Math.round(ps.r)] : 0
+              Math.round(ps.y), Math.round(ps.r)] : 0,
+    // TRINITÉ : Dingo et Donald bougent et changent de geste selon ce que
+    // l'hôte arbitre ; l'invité reçoit leurs positions, leurs gestes (et le
+    // précédent, pour le fondu), l'instant du coup de bouclier, celui du
+    // lancer de Brasier et le boost. Tout le reste se redessine de ces valeurs.
+    tr: tr ? [q(tr.owner), +tr.t.toFixed(3),
+              Math.round(tr.dingo.x), Math.round(tr.dingo.y), GESTES_TR.indexOf(tr.dingo.geste), +tr.dingo.gT.toFixed(3),
+              GESTES_TR.indexOf(tr.dingo.prec), +tr.dingo.precT.toFixed(3), +tr.dingo.impact.toFixed(3),
+              Math.round(tr.donald.x), Math.round(tr.donald.y), GESTES_TR.indexOf(tr.donald.geste), +tr.donald.gT.toFixed(3),
+              GESTES_TR.indexOf(tr.donald.prec), +tr.donald.precT.toFixed(3), +tr.donald.lancer.toFixed(3),
+              tr.donald.boost ? 1 : 0, +tr.donald.inc.toFixed(3)] : 0
   };
 }
 
@@ -397,7 +413,7 @@ function scenesPourLeReseau() {
 // resonnerait à chaque fois.
 function appliquerScenes(sc) {
   const j = n => (n === 1 ? G.p1 : (n === 2 ? G.p2 : null));
-  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.brume = null; G.banner = null; G.zoom = null; G.rafale = null; G.grappin = null; G.chien = null; G.ruee = null; G.tigre = null; G.psycho = null; return; }
+  if (!sc) { G.cine = null; G.bell = null; G.hack = null; G.leg = null; G.tempete = null; G.brume = null; G.banner = null; G.zoom = null; G.rafale = null; G.grappin = null; G.chien = null; G.ruee = null; G.tigre = null; G.psycho = null; G.trinite = null; return; }
   const ba = sc.ba;
   if (ba) { if (!G.banner || G.banner.text !== ba[0]) G.banner = { text: ba[0], color: ba[1], t: ba[2], dur: ba[3] };
     else G.banner.t = ba[2]; }
@@ -458,6 +474,18 @@ function appliquerScenes(sc) {
     G.tigre.owner = j(ti[0]); G.tigre.t = ti[1]; G.tigre.dir = ti[2];
     G.tigre.x = ti[3]; G.tigre.y = ti[4]; G.tigre.touche = ti[5]; G.tigre.prise = ti[6]; }
   else G.tigre = null;
+  // TRINITÉ : mise à jour en place, comme les autres scènes — la recréer à
+  // chaque paquet rembobinerait l'apparition soixante fois par seconde.
+  const tr = sc.tr;
+  if (tr) {
+    const g = n => GESTES_TR[n] || 'garde';
+    if (!G.trinite) G.trinite = { owner: j(tr[0]), t: 0, dingo: { vy: 0 }, donald: {} };
+    const T = G.trinite, D = T.dingo, O = T.donald;
+    T.owner = j(tr[0]); T.t = tr[1];
+    D.x = tr[2]; D.y = tr[3]; D.geste = g(tr[4]); D.gT = tr[5]; D.prec = g(tr[6]); D.precT = tr[7]; D.impact = tr[8];
+    O.x = tr[9]; O.y = tr[10]; O.geste = g(tr[11]); O.gT = tr[12]; O.prec = g(tr[13]); O.precT = tr[14];
+    O.lancer = tr[15]; O.boost = !!tr[16]; O.inc = tr[17];
+  } else G.trinite = null;
   // La zone psychique : proprietaire, minuteur, centre et rayon. Sa phase se
   // recalcule des deux cotes a partir du seul minuteur, puisque les trois
   // durees de mise en scene sont fixes.
@@ -866,6 +894,7 @@ function appliquerEtat(m) {
     // n'envoie pas ces deux champs, et la liaison doit tenir quand même.
     if (a.length > 27) { p.lameT = a[26]; p.lameCoupT = a[27]; }
     if (a.length > 28) p.lameVise = a[28];
+    if (a.length > 29) p.triniteFeu = !!a[29];
     // Qui tient le disque est une décision de l'hôte — sauf pendant la fenêtre,
     // où l'hôte croit encore que je l'ai en main alors que je viens de tirer.
     if (!(mien && enAttente)) p.holding = !!a[5];

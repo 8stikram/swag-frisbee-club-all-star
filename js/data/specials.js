@@ -14,6 +14,7 @@ import { buildSprite } from './characters.js';
 // réseau doit pouvoir en fabriquer un chez l'invité, et l'importer d'ici
 // aurait fermé un cycle (specials -> actions -> partie -> specials).
 import { construireTerminal } from './hack-terminal.js';
+import { lancerTrinite } from '../game/trinite.js';
 
 // Commentaire de déclenchement d'un ultime : varié, et cite le pseudo en
 // ligne plutôt qu'un texte générique — en multi les deux joueurs sont de
@@ -534,6 +535,23 @@ export const SPECIALS = {
       sfx('hack'); commentUlti(p,
         ['IL PREND LA MAIN !', 'PIRATAGE EN COURS !', 'LES COMMANDES PARTENT À L\'ENVERS !'],
         n => [`${n} PREND LA MAIN !`, `${n} LANCE LE PIRATAGE !`, `${n} INVERSE LES COMMANDES !`]);
+    }
+  },
+
+  trinite: {
+    name: 'TRINITÉ',
+    desc: 'Donald et Dingo débarquent 5 s : Dingo garde le but et renvoie le disque à Sora, Donald l\'enflamme en tir parfait.',
+    // Sora n'a pas besoin du disque : Dingo garde son but tout de suite, et
+    // Donald attend que Sora l'ait en main pour lancer Brasier.
+    needsDisc: false,
+    cast(p) {
+      p.meter = 0; p.stats.specials++;
+      lancerTrinite(p);
+      G.banner = { text: 'TRINITÉ !!', color: '#f8c81c', t: 0, dur: 1.3 };
+      G.shake = 8; G.flash = .35;
+      sfx('trinite'); commentUlti(p,
+        ['DONALD ET DINGO DÉBARQUENT !', 'TRINITÉ !!', 'LE TRIO EST RÉUNI !'],
+        n => [`${n} APPELLE DONALD ET DINGO !`, `LA TRINITÉ DE ${n} !!`, `${n} N'EST PLUS SEUL !`]);
     }
   },
 

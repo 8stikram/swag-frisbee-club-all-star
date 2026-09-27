@@ -97,6 +97,9 @@ export const SKINS = {
   fricadelle: [
     { id: 'gardien', nom: 'GARDIEN', defaut: true }
   ],
+  sora: [
+    { id: 'kh1', nom: 'KINGDOM HEARTS', defaut: true }
+  ],
   hollis: [
     { id: 'platine', nom: 'PLATINE', defaut: true },
     { id: 'corbeau', nom: 'CORBEAU', chroma: true },

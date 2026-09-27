@@ -14,6 +14,7 @@ import { throwDisc, doDive } from './actions.js';
 import { startDash, cancelDash, doFeint } from './input.js';
 import { trySpecial } from './specials.js';
 import { SPECIALS } from '../data/specials.js';
+import { TRINITE_DUREE } from '../data/trinite-reglages.js';
 
 // ===========================================================================
 // L'ADVERSAIRE ORDINATEUR
@@ -616,7 +617,10 @@ function attaquer(p, d, D, S, dt) {
       if (aleaJeu() < D.smart) d.plan = choisirTir(p, d, D, S, d.chargeVisee, 1);
     }
     const aVise = Math.abs(e.x - d.plan.vise.x) + Math.abs(e.y - d.plan.vise.y - d.bruit) < 12;
-    if ((p.charge >= d.chargeVisee && aVise) || doitTirer || p.holdTimer > 1.9) {
+    // TRINITÉ : tant que Donald n'a pas enflammé le disque, il attend le feu
+    // au lieu de gâcher l'instant par un tir ordinaire — sauf tir forcé.
+    const T = G.trinite, attendFeu = T && T.owner === p && !T.donald.boost && T.t < TRINITE_DUREE;
+    if ((!attendFeu && ((p.charge >= d.chargeVisee && aVise) || p.holdTimer > 1.9)) || doitTirer) {
       // Il lâche dans la direction affichée, au pixel près.
       const dir = norm(e.x - p.x, e.y - p.y);
       throwDisc(p, dir, throwSpeed(p.charge, p.char.power));

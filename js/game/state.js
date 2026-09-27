@@ -54,6 +54,8 @@ export const G = {
   // Chien de Yuki : null hors ultime. Il ne porte aucune position — il occupe
   // tout l'écran — seulement son propriétaire et son minuteur.
   chien: null,
+  // TRINITÉ de Sora : Dingo, Donald et leurs horloges (voir game/trinite.js).
+  trinite: null,
   // Mise en scène du Piratage de Cyberleek : le terminal qui défile.
   hack: null,
   // Cercles bonus au sol du Swag Frisbee Stadium. Vide partout ailleurs.
@@ -163,7 +165,10 @@ export function makePlayer(ck, side, human, diffIdx) {
     // d'épée, direction visée par ce coup (radians), ce qu'il a déjà touché
     // (le disque, l'adversaire : une fois chacun par coup), et nombre
     // d'attrapés déjà vus — c'est ainsi que l'IA repère un nouvel attrapé.
-    lameT: 0, lameCoupT: 9, lameVise: 0, lameFrappe: 0, lameCogne: 0, lameVu: 0
+    lameT: 0, lameCoupT: 9, lameVise: 0, lameFrappe: 0, lameCogne: 0, lameVu: 0,
+    // TRINITÉ de Sora : Donald a enflammé le disque, le prochain tir part en
+    // tir parfait (voir throwDisc).
+    triniteFeu: false
   };
   if (!human) {
     p.ai = {
@@ -196,7 +201,7 @@ export function initMatch(demo, ck, cpu, diffIdx, j2j) {
   semerAlea(graineNeuve());
   G.demo = demo; G.now = 0; G.winner = null; G.banner = null; G.cine = null; G.leg = null; G.bell = null; G.replay = null;
   G.hack = null;
-  G.rafale = null; G.balles.length = 0; G.grappin = null; G.chien = null;
+  G.rafale = null; G.balles.length = 0; G.grappin = null; G.chien = null; G.trinite = null;
   G.particles.length = 0; G.popups.length = 0; G.trail.length = 0; G.decoys.length = 0; G.rec.length = 0;
   // `tsTimer`, `goalT` et `pendingServe` manquaient à cette remise à zéro, et
   // ça se voyait : un match relancé juste après un but héritait du ralenti du

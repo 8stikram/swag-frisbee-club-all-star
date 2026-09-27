@@ -474,8 +474,15 @@ function monde(n, pose) {
 const visible = n => { for (let q = n; q; q = parentDe(q)) if (CACHES.has(q.id)) return false; return true; };
 
 /* ===================== LE DESSIN ===================== */
-export function dessinerPerso(g, perso, { style = STYLES.D, pose = null } = {}) {
+// `blanc` (0 à 1) fond toutes ses couleurs vers un blanc chaud : c'est ce qui
+// le fait sortir de l'éclat de lumière à l'apparition, et s'y dissoudre au départ.
+const BLANC_CHAUD = [255, 248, 226];
+const versBlanc = (c, k) => '#' + hexRgb(c).map((v, i) => Math.round(v + (BLANC_CHAUD[i] - v) * k).toString(16).padStart(2, '0')).join('');
+export function dessinerPerso(g, perso, { style = STYLES.D, pose = null, blanc = 0 } = {}) {
   ST = style;
+  const P = perso === 'dingo' ? DI : DO;
+  const sauve = blanc > 0 ? { ...P } : null;
+  if (sauve) for (const k of Object.keys(P)) P[k] = versBlanc(P[k], Math.min(1, blanc));
   for (const id of ORDRE[perso]) {
     const n = PAR_ID[id];
     if (!visible(n)) continue;
@@ -484,6 +491,7 @@ export function dessinerPerso(g, perso, { style = STYLES.D, pose = null } = {}) 
     n.f(g);
     g.restore();
   }
+  if (sauve) Object.assign(P, sauve);
 }
 // Les identifiants des pièces et des dossiers, pour animer par `pose`.
 export const PIECES = NOEUDS.map(n => ({ id: n.id, nom: n.nom, perso: n.perso, groupe: !!n.groupe, parent: n.parent || null, pivot: n.piv }));

@@ -64,6 +64,17 @@ export function throwDisc(p, dir, speed, kind = 'normal') {
   // Tous les tirs passant par ici, il suffit de les requalifier au seuil — le
   // tir de l'ultime, lui, arrive déjà étiqueté et n'est pas concerné.
   if (kind === 'normal' && p.sixT > 0) kind = 'kurama';
+  // TRINITÉ : Donald a enflammé le disque. Le tir suivant de Sora part en tir
+  // PARFAIT du jeu — visé vers le but adverse, à la vitesse du Perfect Dive —
+  // avec le feu en plus. Tous les tirs passent par ici, IA et dash throw
+  // compris : un seul endroit suffit.
+  const feu = kind === 'normal' && p.triniteFeu;
+  if (feu) {
+    p.triniteFeu = false;
+    dir = norm((p.side === 1 ? COURT.right : COURT.left) - p.x, CY - p.y);
+    speed = PERFECT_SPEED * p.char.power;
+    kind = 'trinite';
+  }
   let bonus = 1;
   if (G.lungeBonus && G.lungeBonusTimer > 0 && p.human && !p.holding) {
     bonus = 1.6; G.lungeBonus = false; G.lungeBonusTimer = 0;
@@ -79,7 +90,7 @@ export function throwDisc(p, dir, speed, kind = 'normal') {
   d.panierMarque = false;        // un panier par lancer, pas un par image
   d.kind = kind; d.stall = 0;
   d.big = (kind === 'kurama'); d.kSpeed = (kind === 'kurama') ? finalSpeed : 0;
-  d.super = (kind === 'normal' && p.charge >= .98);
+  d.super = (kind === 'normal' && p.charge >= .98) || feu;
   p.holding = false; p.charging = false; p.wasCharging = false; p.charge = 0; p.fullFlash = false;
   p.throwCd = .32; p.throwPoseT = .28; p.stats.thrown++; p.holdTimer = 0;
   sonMatch(d.super ? 'superthrow' : 'throw', forceDeVitesse(finalSpeed), p);

@@ -9,6 +9,7 @@ import { doThrowHuman } from './actions.js';
 import { majCommandes, appliquerActions } from './commandes.js';
 import { updateAI } from './ai.js';
 import { updateDisc, updateDecoys } from './disc.js';
+import { updateTrinite } from './trinite.js';
 import { updateLeg, updateBell, updateHack, updateRafale, updateGrappin, updateChien, updateRuee, updateTigre, updatePsycho, updateLame, gelerJaugeLame, launchCine } from './specials.js';
 import { updateDesert } from './desert.js';
 import { updateBrume } from './brume.js';
@@ -151,6 +152,7 @@ export function update(dt) {
   updateGrappin(wdt);
   updateChien(wdt);
   updateRuee(wdt);
+  updateTrinite(wdt);
   updateTigre(wdt);
   updatePsycho(wdt);
   updateLame(wdt);
