@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Trinity — Donald et le Brasier</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0a0c14; --panel:#131826; --panel2:#182036; --edge:#2a3350; --edge2:#44527a; --ink:#eef1f8;
+         --doux:#a7b0c8; --pale:#6b7594; --or:#f8c81c; --bleu:#3f63d8; --feu:#ff7a2a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:20px 18px 60px}
+  h1{font-size:22px;margin:0 0 6px;font-family:'Archivo Black',sans-serif;letter-spacing:.5px}
+  h1 em{font-style:normal;color:var(--feu)}
+  .note{font-size:12.5px;color:var(--doux);max-width:1100px;line-height:1.75;margin:0 0 14px}
+  .note b{color:var(--ink)} .note code{color:var(--or)}
+  .haut{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}
+  .bloc{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:12px}
+  .bloc h3{margin:0 0 8px;font-size:11px;color:var(--or);text-transform:uppercase;letter-spacing:1.3px}
+  canvas{display:block;width:100%;height:auto;border-radius:10px}
+  .lecteur{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .btn{background:var(--panel2);border:1px solid var(--edge);border-radius:8px;padding:6px 11px;font-size:12px;cursor:pointer;color:var(--ink)}
+  .btn:hover{border-color:var(--edge2)}
+  .btn.on{background:#22305a;border-color:var(--bleu)}
+  .btn.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+  #temps{flex:1;min-width:160px}
+  #tTxt{font-family:Consolas,monospace;font-size:12px;color:var(--or);min-width:90px;text-align:right}
+  .curseur{display:grid;grid-template-columns:120px 1fr 52px;gap:7px;align-items:center;font-size:11px;color:var(--doux);margin:5px 0;font-family:Consolas,monospace}
+  .curseur input{width:100%}
+  .curseur span{text-align:right;color:var(--or)}
+  .groupe{font-size:10px;color:var(--pale);letter-spacing:1.2px;margin:12px 0 3px;text-transform:uppercase}
+  textarea{width:100%;min-height:140px;background:#0c101a;color:var(--or);border:1px solid var(--edge);border-radius:8px;font:11px/1.5 Consolas,monospace;padding:8px;margin-top:8px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .legende{font-size:11px;color:var(--pale);margin-top:6px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<h1>TRINITY — <em>DONALD ET LE BRASIER</em></h1>
+<p class="note">
+  <b>Son rôle :</b> Donald <b>suit Sora</b> un peu en retrait, et dès que Sora a le disque en main il lance
+  <b>Brasier</b> : il lève son bâton, le fait tournoyer en criant l'incantation (le bec s'ouvre), et le pointe
+  vers le disque. Une boule de feu part du bâton, le disque <b>s'embrase</b>, et le tir suivant de Sora part
+  <b>enflammé, en tir parfait</b>. Un seul boost par ultime.
+  <br><br>
+  <b>Tu m'as laissé les paramètres :</b> je les ai réglés à l'œil — trottinement de canard (petits pas
+  rapides, dandinement, queue qui frétille), incantation avec cercle magique au sol, bâton qui tournoie,
+  boule de feu en arc, disque en flammes et tir avec traînée de feu. Même juice que Dingo : fondus entre les
+  gestes, squash &amp; stretch, retour en ressort, bonnet et tirette qui suivent le corps, arrêt sur image et
+  secousse quand le feu touche le disque, clignement. Tout reste réglable, au cas où.
+  <br><br>
+  Même dessin que l'atelier (<code>js/render/trinity.js</code>), avec tes réglages validés.
+</p>
+
+<div class="haut">
+  <div>
+    <div class="bloc">
+      <h3>En grand</h3>
+      <div class="lecteur" style="margin:0 0 10px">
+        <button class="btn" data-anim="garde">garde</button>
+        <button class="btn" data-anim="trotte">trottinement</button>
+        <button class="btn" data-anim="incante">Brasier</button>
+        <button class="btn on" data-anim="enchaine">l'enchaînement</button>
+      </div>
+      <canvas id="cvGrand" width="1100" height="560"></canvas>
+      <div class="lecteur">
+        <button class="btn" id="bJouer">pause</button>
+        <button class="btn on" data-vit="1">×1</button>
+        <button class="btn" data-vit=".5">×0,5</button>
+        <button class="btn" data-vit=".25">×0,25</button>
+        <input type="range" id="temps" min="0" max="1000" value="0">
+        <span id="tTxt"></span>
+      </div>
+    </div>
+    <div class="bloc" style="margin-top:14px">
+      <h3>En match — Donald suit Sora, enflamme le disque, Sora tire</h3>
+      <canvas id="cvMatch" width="1100" height="420"></canvas>
+      <div class="legende">Vu de dessus comme le jeu, le but de Sora à gauche : Donald trottine derrière Sora, lance
+        Brasier sur le disque qu'il tient, et le tir part en feu jusqu'au but adverse.</div>
+    </div>
+  </div>
+  <div class="bloc">
+    <h3>Réglages</h3>
+    <div id="curseurs"></div>
+    <h3 style="margin-top:14px">À m'envoyer</h3>
+    <textarea id="sortie" readonly></textarea>
+    <div class="btns">
+      <button class="btn" id="bCopier">copier mes réglages</button>
+      <button class="btn" id="bRaz">revenir aux valeurs de départ</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { MAPS } from '../js/data/maps.js';
+import { dessinerPerso, STYLES, HAUTEUR, VALIDES, PIECES } from '../js/render/trinity.js';
+
+/* ===================== SORA ===================== */
+const SORA_PAL = { H:'#8a5a30', h:'#58341a', j:'#b98352', S:'#f5cfa6', s:'#d8a074', E:'#2168dc', W:'#f4f4f6',
+  w:'#c2c5ce', R:'#d8262c', r:'#9c151a', K:'#26262e', k:'#50525e', B:'#3257d4', b:'#1f3794', V:'#dde2ea',
+  v:'#8f96a4', Y:'#f8c81c', y:'#c8920c', N:'#18181d' };
+const SORA = ["...hH.HH.Hh.....","..HHHHHjHHHH....",".hHHHHjHHHHHh...","..hHHHHHHHHh....","..HHHHHHHHHH....",
+  "..HHSHHSHHSH....","..hSSESSSSEh....","..sSSSSSSSSs....","...SSSSSWSS.....","....BKRRKB......",
+  "..WWKRRVRKWW....",".WWWKRRVRKWWW...",".kWKKRRvRKKWk...",".SKKKRRvRKKKS...","..bBBEEwbbbb....",
+  "..RRRRRvEwRw....","...rr....rw.....","...ss....ss.....",".yYNY....YNYy...",".yyYY....YYyy..."];
+function peindreSora(g) {
+  for (let y = 0; y < 20; y++) for (let c = 0; c < 16; c++) {
+    const l = SORA[y][c]; if (l === '.') continue;
+    g.fillStyle = SORA_PAL[l]; g.fillRect((c - 8) * 3, (y - 20) * 3, 3.02, 3.02);
+  }
+}
+
+/* ===================== LES RÉGLAGES (choisis à l'œil) ===================== */
+const DEPART = {
+  // trottinement de canard
+  cycle: .3, jambes: 22, pied: 14, dandine: 7, rebond: 2.2, brasTrot: 14, queue: 20,
+  // garde
+  tapote: 1, respiration: 1,
+  // Brasier
+  armeDuree: .22, armeAngle: 95, tourDuree: .38, tours: 1, lancerDuree: .1, lancerAngle: 28,
+  retourDuree: .32, depassement: .35, bec: 16, cercle: 30,
+  // la boule de feu et le disque
+  vol: .38, arc: 18, boule: 6, attente: .75, flammes: 1.4, trainee: 1,
+  // transitions et juice
+  transition: .18, squash: .08, ressort: 1, bonnet: 16,
+  arret: .06, secousse: 5, etincelles: 14, clignement: 1,
+};
+const CLE = 'trinityDonald:v1';
+const R = { ...DEPART };
+try { Object.assign(R, JSON.parse(localStorage.getItem(CLE) || '{}')); } catch (e) { }
+const garder = () => { try { localStorage.setItem(CLE, JSON.stringify(R)); } catch (e) { } };
+const CURSEURS = [
+  ['Le trottinement'],
+  ['cycle', 'durée d\'un pas', .15, .6, .01, 's'], ['jambes', 'amplitude des pas', 5, 45, 1, '°'], ['pied', 'pied', 0, 40, 1, '°'],
+  ['dandine', 'dandinement', 0, 20, .5, '°'], ['rebond', 'rebond', 0, 8, .1, 'u'], ['brasTrot', 'bras', 0, 40, 1, '°'], ['queue', 'queue qui frétille', 0, 45, 1, '°'],
+  ['La garde'],
+  ['tapote', 'tapote du pied', 0, 1, 1, ''], ['respiration', 'respiration', 0, 3, .05, ''],
+  ['Brasier — l\'incantation'],
+  ['armeDuree', 'lever le bâton', .06, .6, .01, 's'], ['armeAngle', 'hauteur du bâton', 30, 160, 1, '°'],
+  ['tourDuree', 'tournoiement', .1, 1, .01, 's'], ['tours', 'nombre de tours', 0, 3, 1, ''],
+  ['lancerDuree', 'pointer', .04, .3, .01, 's'], ['lancerAngle', 'angle pointé', -20, 70, 1, '°'],
+  ['retourDuree', 'retour', .1, .8, .01, 's'], ['depassement', 'dépassement', 0, 1, .05, ''],
+  ['bec', 'bec qui crie', 0, 35, 1, '°'], ['cercle', 'cercle magique', 0, 60, 1, 'u'],
+  ['La boule de feu et le disque'],
+  ['vol', 'durée du vol', .15, 1, .01, 's'], ['arc', 'hauteur de l\'arc', 0, 80, 1, 'u'], ['boule', 'taille de la boule', 2, 14, .5, 'u'],
+  ['attente', 'avant le tir', .2, 2, .05, 's'], ['flammes', 'flammes du disque', 0, 2, .05, ''], ['trainee', 'traînée de feu', 0, 2, .05, ''],
+  ['Les transitions'],
+  ['transition', 'fondu entre deux gestes', 0, .6, .01, 's'],
+  ['Le juice'],
+  ['squash', 'squash & stretch', 0, .2, .005, ''], ['ressort', 'ballant qui suit le corps', 0, 3, .05, ''], ['bonnet', 'bonnet et tirette', 0, 40, 1, '°'],
+  ['arret', 'arrêt sur image au feu', 0, .2, .005, 's'], ['secousse', 'secousse de l\'écran', 0, 20, .5, 'px'],
+  ['etincelles', 'étincelles', 0, 30, 1, ''], ['clignement', 'clignement des yeux', 0, 1, 1, ''],
+];
+
+/* ===================== LES OS ===================== */
+// Repère de Donald (pieds en (0, 0), unités de dessin), recalé sur les réglages validés.
+const OS = {
+  arr: { hanche: [-6.5, -25], cheville: [-8.5, -5] },
+  av: { hanche: [6.5, -25], cheville: [8.5, -5] },
+  bassin: [0, -24], epauleAv: [12, -60], epauleArr: [-11.5, -61],
+  poignee: [36.3, -54.5],           // la main qui tient le bâton
+  pointe: [45.7, -81.6],            // le haut du bâton, d'où part le sort
+  queue: [-18, -42], charniere: [10, -69],
+};
+const JAMBE = { arr: 'donald.jambeArr', av: 'donald.jambeAv' }, PATTE = { arr: 'donald.patteArr', av: 'donald.patteAv' };
+const PIV = Object.fromEntries(PIECES.map(p => [p.id, p.pivot]));
+const deg = d => d * Math.PI / 180;
+function autour(id, rotations) {
+  const p = PIV[id], v = VALIDES.elements[id] || { dx: 0, dy: 0 };
+  const x0 = p[0] + v.dx, y0 = p[1] + v.dy;
+  let x = x0, y = y0, rot = 0;
+  for (const [[jx, jy], a] of rotations) {
+    const c = Math.cos(a), s = Math.sin(a), dx = x - jx, dy = y - jy;
+    x = jx + dx * c - dy * s; y = jy + dx * s + dy * c; rot += a;
+  }
+  return { dx: x - x0, dy: y - y0, rot };
+}
+function tournePoint([x, y], rotations) {
+  for (const [[jx, jy], a] of rotations) { const c = Math.cos(a), s = Math.sin(a), dx = x - jx, dy = y - jy; x = jx + dx * c - dy * s; y = jy + dx * s + dy * c; }
+  return [x, y];
+}
+function ajoute(pose, id, q) {
+  const o = pose[id] || (pose[id] = { dx: 0, dy: 0, rot: 0, ex: 1, ey: 1 });
+  o.dx += q.dx || 0; o.dy += q.dy || 0; o.rot += q.rot || 0; o.ex *= q.ex || 1; o.ey *= q.ey || 1;
+}
+
+/* ===================== LA POSE ===================== */
+const neutre = () => ({ jambes: { arr: { cuisse: 0, pied: 0 }, av: { cuisse: 0, pied: 0 } }, bras: { av: 0, arr: 0 },
+  baton: 0, dandine: 0, tete: 0, bec: 0, queue: 0, pli: 0, tirette: 0, x: 0, y: 0, sx: 1, sy: 1, cligne: 0, charge: 0 });
+function melanger(a, b, k) {
+  if (typeof a === 'number') return a + (b - a) * k;
+  const o = {}; for (const c of Object.keys(a)) o[c] = melanger(a[c], b[c], k); return o;
+}
+function construirePose(a) {
+  const pose = {};
+  for (const cote of ['arr', 'av']) {
+    const j = a.jambes[cote], o = OS[cote];
+    ajoute(pose, JAMBE[cote], autour(JAMBE[cote], [[o.hanche, j.cuisse]]));
+    ajoute(pose, PATTE[cote], autour(PATTE[cote], [[o.cheville, j.pied], [o.hanche, j.cuisse]]));
+  }
+  const dandine = [OS.bassin, a.dandine];
+  ajoute(pose, 'donald.corpsD', autour('donald.corpsD', [dandine]));
+  ajoute(pose, 'donald.tenue', autour('donald.tenue', [dandine]));
+  ajoute(pose, 'donald.tete', autour('donald.tete', [[PIV['donald.tete'], a.tete], dandine]));
+  ajoute(pose, 'donald.brasAv', autour('donald.brasAv', [[OS.epauleAv, a.bras.av], dandine]));
+  ajoute(pose, 'donald.brasArr', autour('donald.brasArr', [[OS.epauleArr, a.bras.arr], dandine]));
+  ajoute(pose, 'donald.baton', autour('donald.baton', [[OS.poignee, a.baton]]));
+  ajoute(pose, 'donald.queue', autour('donald.queue', [[OS.queue, a.queue]]));
+  ajoute(pose, 'donald.becBas', autour('donald.becBas', [[OS.charniere, a.bec]]));
+  ajoute(pose, 'donald.langue', autour('donald.langue', [[OS.charniere, a.bec * .6]]));
+  ajoute(pose, 'donald.bonnetPli', { rot: a.pli });
+  ajoute(pose, 'donald.tirette', { rot: a.tirette });
+  if (a.cligne > 0) for (const id of ['donald.oeilG', 'donald.oeilD']) ajoute(pose, id, { ey: 1 - .9 * a.cligne });
+  ajoute(pose, 'donald', { dx: a.x, dy: a.y, ex: a.sx, ey: a.sy });
+  const p = tournePoint(OS.pointe, [[OS.poignee, a.baton], [OS.epauleAv, a.bras.av], dandine]);
+  return { pose, pointe: [p[0] * a.sx + a.x, p[1] * a.sy + a.y] };
+}
+
+/* ===================== LES GESTES ===================== */
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const lisse = x => { x = clamp(x); return x * x * (3 - 2 * x); };
+const sortie = x => 1 - Math.pow(1 - clamp(x), 3);
+const ressortRetour = (x, d) => { x = clamp(x); return 1 - Math.pow(1 - x, 2) * Math.cos(x * Math.PI * (1 + d * 1.6)) * (1 - x * .2); };
+const cligne = t => { if (!R.clignement) return 0; const p = (t + .7) % 3.3; return p < .13 ? Math.sin(p / .13 * Math.PI) : 0; };
+function garde(t) {
+  const a = neutre(), r = Math.sin(t * 2.6) * R.respiration;
+  a.y = r * .25; a.sy = 1 + .008 * r; a.sx = 1 - .005 * r;
+  // il tapote du pied avant, impatient, par petites rafales
+  if (R.tapote) { const p = t % 1.6; if (p < .5) a.jambes.av.pied = deg(-12 * Math.max(0, Math.sin(p / .5 * Math.PI * 3))); }
+  a.queue = deg(4 * Math.sin(t * 3.1));
+  a.cligne = cligne(t);
+  return a;
+}
+function trotte(t) {
+  const a = neutre(), phi = t / R.cycle * Math.PI * 2, s = Math.sin(phi);
+  a.jambes.av.cuisse = deg(-R.jambes * s); a.jambes.arr.cuisse = deg(R.jambes * s);
+  a.jambes.av.pied = deg(R.pied * s * .6 + R.pied * Math.max(0, Math.cos(phi)) * .6);
+  a.jambes.arr.pied = deg(-R.pied * s * .6 + R.pied * Math.max(0, -Math.cos(phi)) * .6);
+  const haut = 1 - Math.abs(s);
+  a.y = -R.rebond * haut;
+  const sq = R.squash * (haut * 2 - 1); a.sy = 1 + sq * .8; a.sx = 1 - sq * .5;
+  // le dandinement du canard : tout le haut bascule d'un pied sur l'autre
+  a.dandine = deg(R.dandine * s);
+  a.bras.av = deg(-R.brasTrot * s * .5); a.bras.arr = deg(R.brasTrot * s);
+  a.queue = deg(R.queue * Math.sin(phi * 2 + .5));
+  a.tete = deg(-R.dandine * .4 * s);
+  a.cligne = cligne(t);
+  return a;
+}
+const phasesIncante = () => { const a = R.armeDuree, b = a + R.tourDuree, c = b + R.lancerDuree; return { arme: a, tour: b, lancer: c, fin: c + R.retourDuree }; };
+const dureeIncante = () => phasesIncante().fin;
+// Le bâton est tenu par le bras : tourner le bras le fait basculer avec lui.
+// On le redresse donc à part — levé, il reste pointé vers le ciel ; pointé,
+// il vise le disque (environ 70° à droite de la verticale).
+const VISEE = 70;
+function incante(t) {
+  const P = phasesIncante(), a = garde(t), A = R.armeAngle;
+  a.jambes.av.pied = 0;
+  let bras = 0, arr = 0, baton = 0, bec = 0, charge = 0, sx = 1, sy = 1, y = 0;
+  if (t < P.arme) {                                   // il lève le bâton, droit, et se ramasse
+    const u = sortie(t / R.armeDuree);
+    bras = -A * u; baton = A * u; arr = -45 * u; bec = R.bec * .4 * u; charge = .3 * u;
+    sy = 1 - R.squash * u; sx = 1 + R.squash * .6 * u; y = 1.5 * u;
+  } else if (t < P.tour) {                            // le bâton tournoie au-dessus de sa tête
+    const u = (t - P.arme) / R.tourDuree;
+    bras = -A + 6 * Math.sin(u * Math.PI * 4); arr = -45 - 10 * Math.sin(u * Math.PI * 2);
+    baton = A + 360 * R.tours * lisse(u); bec = R.bec * (.7 + .3 * Math.sin(u * Math.PI * 6)); charge = .3 + .7 * u;
+    sy = 1 - R.squash * (1 - u) + R.squash * .5 * u; sx = 1 + R.squash * .6 * (1 - u); y = 1.5 * (1 - u) - 2 * Math.sin(u * Math.PI);
+  } else if (t < P.lancer) {                          // il pointe le bâton vers le disque : le sort part
+    const u = sortie((t - P.tour) / R.lancerDuree);
+    bras = -A + (R.lancerAngle + A) * u; baton = A + (VISEE - R.lancerAngle - A) * u; arr = -45 + 60 * u; bec = R.bec; charge = 1;
+    sy = 1 + R.squash * u; sx = 1 - R.squash * .6 * u;
+  } else {                                            // retour en ressort
+    const u = (t - P.lancer) / R.retourDuree, k = ressortRetour(u, R.depassement);
+    bras = R.lancerAngle * (1 - k); baton = (VISEE - R.lancerAngle) * (1 - k); arr = 15 * (1 - k);
+    bec = R.bec * (1 - lisse(u * 1.5)); charge = 1 - lisse(u * 2);
+    sy = 1 + R.squash * (1 - k); sx = 1 - R.squash * .6 * (1 - k);
+  }
+  a.bras.av = deg(bras); a.bras.arr = deg(arr); a.baton = deg(baton); a.bec = deg(bec); a.charge = charge;
+  a.sx *= sx; a.sy *= sy; a.y += y;
+  return a;
+}
+const GESTES = { garde, trotte, incante };
+
+/* ===================== LES ENCHAÎNEMENTS ===================== */
+function suite(segs, t, boucle = true) {
+  const dur = segs.map(([n, d]) => d === null ? dureeIncante() : d);
+  const total = dur.reduce((a, b) => a + b, 0);
+  let u = boucle ? ((t % total) + total) % total : Math.min(t, total - 1e-6);
+  let i = 0; while (i < segs.length - 1 && u >= dur[i]) { u -= dur[i]; i++; }
+  const horloge = (n, tl) => n === 'incante' ? tl : t;
+  let a = GESTES[segs[i][0]](horloge(segs[i][0], u));
+  if (R.transition > 0 && u < R.transition && (boucle || i > 0)) {
+    const j = (i - 1 + segs.length) % segs.length;
+    const aPrec = GESTES[segs[j][0]](horloge(segs[j][0], dur[j] + u));
+    a = melanger(aPrec, a, lisse(u / R.transition));
+  }
+  // l'heure du lancer du sort dans cette suite (pour la boule de feu)
+  let debut = 0, lancer = null;
+  for (let k = 0; k < segs.length; k++) { if (segs[k][0] === 'incante') { lancer = debut + phasesIncante().lancer; break; } debut += dur[k]; }
+  const cycle = boucle ? Math.floor(t / total) * total : 0;
+  return { a, nom: segs[i][0], u, total, lancer: lancer === null ? null : cycle + lancer, tCycle: t - cycle };
+}
+const SEQUENCE = [['garde', .7], ['trotte', .9], ['garde', .35], ['incante', null], ['garde', 2.3]];
+const segsAnim = nom => nom === 'enchaine' ? SEQUENCE : nom === 'incante' ? [['garde', .5], ['incante', null], ['garde', 2]] : [[nom, 3]];
+function avecBallant(segs, t) {
+  const r = suite(segs, t);
+  const y = tt => suite(segs, tt).a.y, d = tt => suite(segs, tt).a.dandine;
+  const dt = .04, lag = .06;
+  const vy = (y(t - lag) - y(t - lag - dt)) / dt, vd = (d(t - lag) - d(t - lag - dt)) / dt;
+  r.a.pli += deg(R.bonnet * R.ressort * clamp(vy / 40 - vd * .5, -1.2, 1.2));
+  r.a.tirette += deg(R.bonnet * 1.3 * R.ressort * clamp(vy / 35 - vd * .7, -1.3, 1.3));
+  r.a.tete += deg(2 * R.ressort * clamp(vy / 60, -1, 1));
+  return r;
+}
+
+/* ===================== LE DESSIN ===================== */
+const ECH_DONALD = 60 * .82 / HAUTEUR.donald;
+const alea = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+function dessinerDonald(g, VUE, a) {
+  const cp = construirePose(a), m = VUE.scale(ECH_DONALD);
+  g.save(); g.setTransform(m); dessinerPerso(g, 'donald', { style: STYLES.D, pose: cp.pose }); g.restore();
+  return { pointe: m.transformPoint({ x: cp.pointe[0], y: cp.pointe[1] }) };
+}
+// Le cercle magique au sol pendant l'incantation : deux anneaux de braise qui
+// tournent en sens contraire, des runes, une lueur.
+function cercle(g, cx, cy, e, charge, t) {
+  if (charge <= 0 || R.cercle <= 0) return;
+  const r = R.cercle * e * (.6 + .4 * sortie(charge));
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'lighter';
+  g.translate(cx, cy); g.scale(1, .32);
+  const d = g.createRadialGradient(0, 0, 0, 0, 0, r * 1.1);
+  d.addColorStop(0, 'rgba(255,150,40,' + .35 * charge + ')'); d.addColorStop(1, 'rgba(255,90,20,0)');
+  g.fillStyle = d; g.beginPath(); g.arc(0, 0, r * 1.1, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = 'rgba(255,190,80,' + .9 * charge + ')'; g.lineWidth = e * 1.2;
+  g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.arc(0, 0, r * .72, 0, Math.PI * 2); g.stroke();
+  g.lineWidth = e * .8;
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2 + t * 1.6, b = a + .18;
+    g.beginPath(); g.moveTo(Math.cos(a) * r * .78, Math.sin(a) * r * .78); g.lineTo(Math.cos(b) * r * .94, Math.sin(b) * r * .94); g.stroke();
+  }
+  for (let i = 0; i < 3; i++) {
+    const a = i / 3 * Math.PI * 2 - t * 2.2;
+    g.beginPath(); g.moveTo(Math.cos(a) * r * .72, Math.sin(a) * r * .72);
+    g.lineTo(Math.cos(a + 2.1) * r * .72, Math.sin(a + 2.1) * r * .72); g.stroke();
+  }
+  g.restore();
+}
+// Les étincelles du bâton pendant l'incantation.
+function scintille(g, p, e, charge, t) {
+  if (charge <= 0) return;
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'lighter';
+  const d = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, e * 6 * charge);
+  d.addColorStop(0, 'rgba(255,240,180,' + .9 * charge + ')'); d.addColorStop(.5, 'rgba(255,140,40,' + .5 * charge + ')'); d.addColorStop(1, 'rgba(255,80,20,0)');
+  g.fillStyle = d; g.beginPath(); g.arc(p.x, p.y, e * 6 * charge, 0, Math.PI * 2); g.fill();
+  for (let i = 0; i < 7; i++) {
+    const a = t * (3 + alea(i) * 3) + i, rr = e * (3 + 4 * alea(i + 9)) * charge;
+    const x = p.x + Math.cos(a) * rr, y = p.y + Math.sin(a) * rr;
+    g.fillStyle = 'rgba(255,230,150,' + .8 * charge + ')'; g.beginPath(); g.arc(x, y, e * .5, 0, Math.PI * 2); g.fill();
+  }
+  g.restore();
+}
+// Une flamme : quelques langues qui montent et vacillent autour d'un point.
+function flammes(g, x, y, r, t, force, graine) {
+  if (force <= 0) return;
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'lighter';
+  const d = g.createRadialGradient(x, y, 0, x, y, r * 2.6);
+  d.addColorStop(0, 'rgba(255,200,90,' + .7 * force + ')'); d.addColorStop(1, 'rgba(255,80,20,0)');
+  g.fillStyle = d; g.beginPath(); g.arc(x, y, r * 2.6, 0, Math.PI * 2); g.fill();
+  for (let i = 0; i < 9; i++) {
+    const cyc = (t * (1.6 + alea(graine + i) * 1.2) + alea(graine + i * 3)) % 1;
+    const fx = x + (alea(graine + i * 7) - .5) * r * 1.8 + Math.sin(t * 9 + i) * r * .15;
+    const fy = y - cyc * r * 2.4, fr = r * (.55 + .4 * alea(i + graine)) * (1 - cyc);
+    const k = force * (1 - cyc);
+    const f = g.createRadialGradient(fx, fy, 0, fx, fy, fr);
+    f.addColorStop(0, 'rgba(255,245,200,' + k + ')'); f.addColorStop(.45, 'rgba(255,150,40,' + k * .8 + ')'); f.addColorStop(1, 'rgba(220,50,20,0)');
+    g.fillStyle = f; g.beginPath(); g.arc(fx, fy, fr, 0, Math.PI * 2); g.fill();
+  }
+  g.restore();
+}
+function disque(g, x, y, r, ang) {
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x, y + r * .7, r, r * .38, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#f4f6fa'; g.beginPath(); g.ellipse(x, y, r, r * .55, 0, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#3f63d8'; g.lineWidth = Math.max(1.5, r * .22); g.stroke();
+  g.strokeStyle = 'rgba(63,99,216,.8)'; g.lineWidth = Math.max(1, r * .12);
+  g.beginPath(); g.moveTo(x + Math.cos(ang) * r * .6, y + Math.sin(ang) * r * .33); g.lineTo(x - Math.cos(ang) * r * .6, y - Math.sin(ang) * r * .33); g.stroke();
+  g.restore();
+}
+function boule(g, x, y, r, t) {
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'lighter';
+  const d = g.createRadialGradient(x, y, 0, x, y, r * 2.2);
+  d.addColorStop(0, 'rgba(255,255,230,1)'); d.addColorStop(.3, 'rgba(255,200,80,.95)'); d.addColorStop(.65, 'rgba(255,110,30,.6)'); d.addColorStop(1, 'rgba(200,40,10,0)');
+  g.fillStyle = d; g.beginPath(); g.arc(x, y, r * 2.2 * (1 + .08 * Math.sin(t * 40)), 0, Math.PI * 2); g.fill();
+  g.restore();
+}
+function eclatFeu(g, x, y, e, k) {
+  if (k <= 0) return;
+  const v = 1 - k;
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'lighter';
+  const r = e * 16 * (.5 + v * 1.4);
+  const d = g.createRadialGradient(x, y, 0, x, y, r);
+  d.addColorStop(0, 'rgba(255,250,220,' + k + ')'); d.addColorStop(.4, 'rgba(255,160,50,' + k * .8 + ')'); d.addColorStop(1, 'rgba(230,60,20,0)');
+  g.fillStyle = d; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = 'rgba(255,210,120,' + k * .9 + ')'; g.lineWidth = e * 1.4 * k;
+  g.beginPath(); g.arc(x, y, e * 10 * (.4 + v * 2), 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = 'rgba(255,220,140,' + k + ')'; g.lineCap = 'round';
+  for (let i = 0; i < R.etincelles; i++) {
+    const a = alea(i * 5) * Math.PI * 2, l0 = e * (3 + v * 20 * (.6 + alea(i))), l1 = l0 + e * 4 * k;
+    g.lineWidth = e * .8 * k;
+    g.beginPath(); g.moveTo(x + Math.cos(a) * l0, y + Math.sin(a) * l0); g.lineTo(x + Math.cos(a) * l1, y + Math.sin(a) * l1); g.stroke();
+  }
+  g.restore();
+}
+// La secousse de l'embrasement, calculée depuis l'horloge seule.
+function secousseSort(t, lancer) {
+  if (lancer === null) return 0;
+  const ti = t - lancer - R.vol;
+  return ti >= 0 && ti < R.arret + .3 ? R.secousse * Math.pow(clamp(1 - (ti - R.arret) / .3), 2) : 0;
+}
+// Où était la pointe du bâton au moment du lancer : la boule part de là,
+// même si le bâton bouge ensuite.
+function pointeAuLancer(segs, lancer, VUE) {
+  if (lancer === null) return null;
+  const cp = construirePose(suite(segs, lancer).a);
+  return VUE.scale(ECH_DONALD).transformPoint({ x: cp.pointe[0], y: cp.pointe[1] });
+}
+// Le sort, du lancer au tir : la boule de feu en arc de la pointe du bâton au
+// disque, l'embrasement (arrêt sur image, secousse, éclat), le disque en
+// flammes, puis le tir. `pointe` et `disqueP` sont en pixels ; `vers` est le
+// point d'arrivée du tir.
+function sort(g, e, t, lancer, pointe, disqueP, vers) {
+  const o = { secousse: 0, embrase: false, tir: null };
+  if (lancer === null) return o;
+  const tl = t - lancer, tImpact = R.vol, tTir = tImpact + R.arret + R.attente;
+  if (tl < 0) return o;
+  if (tl < tImpact) {
+    // la boule de feu, en arc, avec une traînée d'étincelles
+    const pos = u => ({ x: pointe.x + (disqueP.x - pointe.x) * u, y: pointe.y + (disqueP.y - pointe.y) * u - Math.sin(u * Math.PI) * R.arc * e });
+    const u = sortie(tl / R.vol * .9 + .1 * tl / R.vol);
+    for (let i = 1; i <= 10; i++) {
+      const q = pos(clamp(u - i * .035)), k = (1 - i / 11) * R.trainee;
+      if (k > 0) boule(g, q.x, q.y, R.boule * e * .45 * k, t);
+    }
+    const p = pos(u); boule(g, p.x, p.y, R.boule * e * .5, t);
+    return o;
+  }
+  const ti = tl - tImpact;
+  // l'embrasement
+  if (ti < R.arret + .3) {
+    const k = clamp(1 - (ti - R.arret) / .3);
+    eclatFeu(g, disqueP.x, disqueP.y, e * .6, k);
+    o.secousse = R.secousse * k * k;
+  }
+  if (tl < tTir) { o.embrase = true; return o; }
+  // le tir : le disque file en feu vers le but
+  const tt = tl - tTir, u = clamp(tt / .55);
+  if (u >= 1) return o;
+  o.tir = { x: disqueP.x + (vers.x - disqueP.x) * sortie(u), y: disqueP.y + (vers.y - disqueP.y) * sortie(u) };
+  for (let i = 1; i <= 14; i++) {
+    const q = clamp(sortie(u) - i * .02), x = disqueP.x + (vers.x - disqueP.x) * q, y = disqueP.y + (vers.y - disqueP.y) * q;
+    flammes(g, x, y, e * 3.2 * (1 - i / 15) * R.trainee, t + i * .05, .55 * (1 - i / 15) * R.trainee, i * 13);
+  }
+  return o;
+}
+
+/* ----- en grand ----- */
+const cvG = document.getElementById('cvGrand'), gG = cvG.getContext('2d');
+function sceneGrande(t) {
+  const W = cvG.width, H = cvG.height, segs = segsAnim(anim);
+  const r = avecBallant(segs, t), a = r.a;
+  const E = 6.6;
+  gG.setTransform(1, 0, 0, 1, 0, 0);
+  const d = gG.createLinearGradient(0, 0, 0, H); d.addColorStop(0, '#182036'); d.addColorStop(1, '#0b0f1a');
+  gG.fillStyle = d; gG.fillRect(0, 0, W, H);
+  // la secousse se calcule avant de peindre, depuis l'horloge du sort
+  const soraX = W * .74, pied = H - 36;
+  const disqueP = { x: soraX - 34, y: pied - 30 * E * .5 };
+  const sec = secousseSort(t, r.lancer);
+  const sx = Math.sin(t * 91) * sec, sy = Math.cos(t * 77) * sec * .7;
+  gG.save(); gG.translate(sx, sy);
+  gG.strokeStyle = 'rgba(248,200,28,.3)'; gG.lineWidth = 2; gG.beginPath(); gG.moveTo(0, pied); gG.lineTo(W, pied); gG.stroke();
+  gG.restore();
+  const donaldX = W * .32 + sx;
+  const VUE = new DOMMatrix().translate(donaldX, pied + sy).scale(E);
+  gG.fillStyle = 'rgba(0,0,0,.28)'; gG.beginPath(); gG.ellipse(donaldX, pied + sy, 20 * E * (1 + a.y / 30), 2.6 * E, 0, 0, Math.PI * 2); gG.fill();
+  cercle(gG, donaldX, pied + sy, E, a.charge, t);
+  // Sora, qui tient le disque
+  gG.save(); gG.setTransform(new DOMMatrix().translate(soraX + sx, pied + sy).scale(E)); peindreSora(gG); gG.restore();
+  const pos = dessinerDonald(gG, VUE, a);
+  scintille(gG, pos.pointe, E, a.charge, t);
+  const dq = { x: disqueP.x + sx, y: disqueP.y + sy };
+  const depart = pointeAuLancer(segs, r.lancer, VUE) || pos.pointe;
+  const o = sort(gG, E, t, r.lancer, depart, dq, { x: W + 80, y: dq.y - 60 });
+  if (!o.tir) {
+    disque(gG, dq.x, dq.y, E * 4.5, 0);
+    if (o.embrase) flammes(gG, dq.x, dq.y - E, E * 3.6 * R.flammes, t, R.flammes, 5);
+  } else { disque(gG, o.tir.x, o.tir.y, E * 4.5, t * 40); flammes(gG, o.tir.x, o.tir.y - E, E * 3.8 * R.flammes, t, R.flammes, 5); }
+  gG.fillStyle = '#6b7594'; gG.font = '13px Consolas, monospace'; gG.fillText(r.nom, 16, 24);
+}
+
+/* ----- en match : vu de dessus, le but de Sora à gauche ----- */
+const cvM = document.getElementById('cvMatch'), gM = cvM.getContext('2d');
+const EM = 1.6;
+function sceneMatch(t) {
+  const W = cvM.width, H = cvM.height, th = MAPS[0].theme;
+  const segs = SEQUENCE, r = avecBallant(segs, t), a = r.a, u = r.tCycle;
+  gM.setTransform(1, 0, 0, 1, 0, 0);
+  gM.fillStyle = '#0b0f1a'; gM.fillRect(0, 0, W, H);
+  gM.fillStyle = th.floor; gM.fillRect(20, 20, W - 40, H - 40);
+  gM.strokeStyle = th.line; gM.lineWidth = 3; gM.strokeRect(20, 20, W - 40, H - 40);
+  gM.beginPath(); gM.moveTo(W / 2, 20); gM.lineTo(W / 2, H - 20); gM.stroke();
+  gM.fillStyle = 'rgba(63,99,216,.35)'; gM.fillRect(20, 20, 10, H - 40);
+  gM.fillStyle = 'rgba(216,38,44,.35)'; gM.fillRect(W - 30, 20, 10, H - 40);
+  const soraX = 300, soraY = 230;
+  // Donald trottine de sa place d'apparition jusque derrière Sora
+  const kT = lisse(clamp((u - .7) / .9));
+  const donaldX = 150 + (236 - 150) * kT, donaldY = 300 + (258 - 300) * kT;
+  gM.save(); gM.setTransform(new DOMMatrix().translate(soraX, soraY).scale(EM)); peindreSora(gM); gM.restore();
+  const VUE = new DOMMatrix().translate(donaldX, donaldY).scale(EM);
+  cercle(gM, donaldX, donaldY, EM, a.charge, t);
+  const pos = dessinerDonald(gM, VUE, a);
+  scintille(gM, pos.pointe, EM, a.charge, t);
+  const dq = { x: soraX + 14, y: soraY - 26 };
+  const but = { x: W - 34, y: 200 };
+  const depart = pointeAuLancer(segs, r.lancer, VUE) || pos.pointe;
+  const o = sort(gM, EM, t, r.lancer, depart, dq, but);
+  if (!o.tir) {
+    disque(gM, dq.x, dq.y, 7, 0);
+    if (o.embrase) flammes(gM, dq.x, dq.y - 2, 6 * R.flammes, t, R.flammes, 5);
+  } else {
+    disque(gM, o.tir.x, o.tir.y, 7, t * 40); flammes(gM, o.tir.x, o.tir.y - 2, 7 * R.flammes, t, R.flammes, 5);
+    if (Math.hypot(o.tir.x - but.x, o.tir.y - but.y) < 30) {
+      gM.save(); gM.globalCompositeOperation = 'lighter';
+      const d = gM.createRadialGradient(but.x, but.y, 0, but.x, but.y, 70);
+      d.addColorStop(0, 'rgba(255,200,90,.8)'); d.addColorStop(1, 'rgba(255,80,20,0)');
+      gM.fillStyle = d; gM.beginPath(); gM.arc(but.x, but.y, 70, 0, Math.PI * 2); gM.fill(); gM.restore();
+    }
+  }
+}
+
+/* ===================== LE LECTEUR ===================== */
+let anim = 'enchaine', t = 0, joue = true, vitesse = 1, avant = performance.now();
+const curseurT = document.getElementById('temps');
+const dureeAnim = () => suite(segsAnim(anim), 0).total;
+function image(now) {
+  const dt = Math.min(.1, (now - avant) / 1000); avant = now;
+  if (joue) t += dt * vitesse;
+  sceneGrande(t);
+  sceneMatch(t);
+  const d = dureeAnim(), u = t % d;
+  curseurT.value = Math.round(u / d * 1000);
+  document.getElementById('tTxt').textContent = u.toFixed(2) + ' s / ' + d.toFixed(2) + ' s';
+  requestAnimationFrame(image);
+}
+document.querySelectorAll('[data-anim]').forEach(b => b.onclick = () => {
+  anim = b.dataset.anim; t = 0; document.querySelectorAll('[data-anim]').forEach(x => x.classList.toggle('on', x === b));
+});
+document.getElementById('bJouer').onclick = e => { joue = !joue; e.target.textContent = joue ? 'pause' : 'lecture'; };
+document.querySelectorAll('[data-vit]').forEach(b => b.onclick = () => {
+  vitesse = +b.dataset.vit; document.querySelectorAll('[data-vit]').forEach(x => x.classList.toggle('on', x === b));
+});
+curseurT.addEventListener('input', () => { joue = false; document.getElementById('bJouer').textContent = 'lecture'; t = curseurT.value / 1000 * dureeAnim(); });
+
+/* ===================== LES CURSEURS ===================== */
+function construireCurseurs() {
+  const h = document.getElementById('curseurs'); h.innerHTML = '';
+  for (const c of CURSEURS) {
+    if (c.length === 1) { h.insertAdjacentHTML('beforeend', `<div class="groupe">${c[0]}</div>`); continue; }
+    const [cle, nom, min, max, pas, u] = c;
+    const d = document.createElement('div'); d.className = 'curseur';
+    d.innerHTML = `<label>${nom}</label><input type="range" min="${min}" max="${max}" step="${pas}" value="${R[cle]}"><span></span>`;
+    const inp = d.querySelector('input'), sp = d.querySelector('span');
+    const aff = () => { sp.textContent = (cle === 'clignement' || cle === 'tapote') ? (R[cle] ? 'oui' : 'non') : (+R[cle]).toFixed(pas < 1 ? (pas < .01 ? 3 : 2) : 0) + (u ? ' ' + u : ''); };
+    inp.oninput = () => { R[cle] = +inp.value; aff(); garder(); majSortie(); };
+    aff(); h.append(d);
+  }
+}
+function majSortie() {
+  const o = {}; for (const k of Object.keys(DEPART)) o[k] = +(+R[k]).toFixed(3);
+  document.getElementById('sortie').value = JSON.stringify({ trinity: 'donald', reglages: o }, null, 1);
+}
+document.getElementById('bCopier').onclick = async e => {
+  const b = e.currentTarget;
+  try { await navigator.clipboard.writeText(document.getElementById('sortie').value); } catch (err) { document.getElementById('sortie').select(); document.execCommand('copy'); }
+  b.textContent = 'copié !'; b.classList.add('ok'); setTimeout(() => { b.textContent = 'copier mes réglages'; b.classList.remove('ok'); }, 1400);
+};
+document.getElementById('bRaz').onclick = () => { Object.assign(R, DEPART); garder(); construireCurseurs(); majSortie(); };
+
+construireCurseurs(); majSortie();
+requestAnimationFrame(image);
+window.__donald = { R, pause: () => { joue = false; }, rendre: (n, tt) => { anim = n; sceneGrande(tt); return cvG; }, rendreMatch: tt => { sceneMatch(tt); return cvM; }, suite, segsAnim, phasesIncante };
+</script>
+</body>
+</html>
