@@ -46,6 +46,11 @@
   la cheville, et chaque pièce de ton dessin validé suit son os. Même dessin que l'atelier
   (<code>js/render/trinity.js</code>), au pixel près.
   <br><br>
+  <b>Transitions et juice :</b> chaque geste se fond dans le suivant en continuant de bouger ; squash &amp;
+  stretch à chaque pas, à l'armé et à la frappe ; retour de frappe qui dépasse puis se pose ; oreilles,
+  chapeau et tête qui suivent la vitesse du corps avec retard ; à l'impact, arrêt sur image, secousse,
+  anneau de choc, étincelles ; poussière à chaque pose de pied ; clignement des yeux ; disque qui tourne.
+  <br><br>
   Choisis l'animation en haut (garde, course, coup de bouclier, ou l'enchaînement), ralentis-la, règle les
   curseurs, et regarde en bas ce que ça donne en match. Puis <b>« copier mes réglages »</b>.
 </p>
@@ -111,13 +116,17 @@ function peindreSora(g) {
 /* ===================== LES RÉGLAGES ===================== */
 const DEPART = {
   // course
-  cycle: .52, cuisse: 24, genou: 55, pied: 16, bras: 35, rebond: 3, penche: 8, oreilles: 20, chapeau: 8, tete: 4,
+  cycle: .52, cuisse: 24, genou: 55, pied: 16, bras: 35, rebond: 3, penche: 8, tete: 4,
   // garde
   flexion: 3, respiration: 1,
   // coup de bouclier
-  armeDuree: .14, armeAngle: 55, frappeDuree: .08, frappeAngle: 75, retourDuree: .3, torsion: 10, pas: 5, trainee: .8,
+  armeDuree: .14, armeAngle: 55, frappeDuree: .08, frappeAngle: 75, retourDuree: .34, depassement: .35,
+  torsion: 10, pas: 5, trainee: .8,
+  // transitions et juice
+  transition: .2, squash: .07, ressort: 1, oreilles: 22, chapeau: 10,
+  arret: .07, secousse: 6, anneau: 1, etincelles: 10, poussiere: 6, clignement: 1,
 };
-const CLE = 'trinityDingo:v1';
+const CLE = 'trinityDingo:v2';
 const R = { ...DEPART };
 try { Object.assign(R, JSON.parse(localStorage.getItem(CLE) || '{}')); } catch (e) { }
 const garder = () => { try { localStorage.setItem(CLE, JSON.stringify(R)); } catch (e) { } };
@@ -125,14 +134,22 @@ const CURSEURS = [
   ['La course'],
   ['cycle', 'durée d\'un pas', .25, 1, .01, 's'], ['cuisse', 'enjambée', 5, 60, 1, '°'], ['genou', 'genoux hauts', 0, 110, 1, '°'],
   ['pied', 'pied', 0, 45, 1, '°'], ['bras', 'bras qui moulinent', 0, 80, 1, '°'], ['rebond', 'rebond', 0, 10, .1, 'u'],
-  ['penche', 'penché en avant', -5, 25, 1, '°'], ['oreilles', 'oreilles', 0, 50, 1, '°'], ['chapeau', 'chapeau', 0, 25, 1, '°'], ['tete', 'tête', 0, 15, 1, '°'],
+  ['penche', 'penché en avant', -5, 25, 1, '°'], ['tete', 'tête', 0, 15, 1, '°'],
   ['La garde'],
   ['flexion', 'genoux fléchis', 0, 10, .1, 'u'], ['respiration', 'respiration', 0, 3, .05, ''],
   ['Le coup de bouclier'],
   ['armeDuree', 'armé — durée', .04, .5, .01, 's'], ['armeAngle', 'armé — angle', 0, 120, 1, '°'],
   ['frappeDuree', 'frappe — durée', .03, .3, .01, 's'], ['frappeAngle', 'frappe — angle', 0, 140, 1, '°'],
-  ['retourDuree', 'retour', .08, .8, .01, 's'], ['torsion', 'torsion du buste', 0, 30, 1, '°'],
-  ['pas', 'pas en avant', 0, 15, .5, 'u'], ['trainee', 'traînée', 0, 1, .05, ''],
+  ['retourDuree', 'retour', .08, .8, .01, 's'], ['depassement', 'dépassement au retour', 0, 1, .05, ''],
+  ['torsion', 'torsion du buste', 0, 30, 1, '°'], ['pas', 'pas en avant', 0, 15, .5, 'u'], ['trainee', 'traînée', 0, 1, .05, ''],
+  ['Les transitions'],
+  ['transition', 'fondu entre deux gestes', 0, .6, .01, 's'],
+  ['Le juice'],
+  ['squash', 'squash & stretch', 0, .2, .005, ''], ['ressort', 'ballant qui suit le corps', 0, 3, .05, ''],
+  ['oreilles', 'oreilles', 0, 50, 1, '°'], ['chapeau', 'chapeau', 0, 25, 1, '°'],
+  ['arret', 'arrêt sur image à l\'impact', 0, .2, .005, 's'], ['secousse', 'secousse de l\'écran', 0, 20, .5, 'px'],
+  ['anneau', 'anneau de choc', 0, 2, .05, ''], ['etincelles', 'étincelles', 0, 30, 1, ''],
+  ['poussiere', 'poussière des pas', 0, 16, 1, ''], ['clignement', 'clignement des yeux', 0, 1, 1, ''],
 ];
 
 /* ===================== LES OS ===================== */
@@ -146,7 +163,6 @@ const OS = {
 const CUISSE = { arr: ['dingo.pantalonArr', 'dingo.sangleArr', 'dingo.pocheCuisse'], av: ['dingo.pantalonAv', 'dingo.sangleAv'] };
 const MOLLET = { arr: ['dingo.guetreArr', 'dingo.jambeArr', 'dingo.anneauArr'], av: ['dingo.guetreAv', 'dingo.jambeAv', 'dingo.anneauAv'] };
 const PIED = { arr: ['dingo.chaussureArr'], av: ['dingo.chaussureAv'] };
-const HAUT_DU_CORPS = ['dingo.haut', 'dingo.tete', 'dingo.brasAv', 'dingo.brasArr', 'dingo.hanches', 'dingo.ceinture', 'dingo.boucle'];
 const PIV = Object.fromEntries(PIECES.map(p => [p.id, p.pivot]));
 const deg = d => d * Math.PI / 180;
 // Tourner une pièce autour d'une suite d'articulations (de la plus proche à la
@@ -167,205 +183,346 @@ function tournePoint([x, y], rotations) {
   return [x, y];
 }
 function ajoute(pose, id, q) {
-  const o = pose[id] || (pose[id] = { dx: 0, dy: 0, rot: 0 });
-  o.dx += q.dx || 0; o.dy += q.dy || 0; o.rot += q.rot || 0;
+  const o = pose[id] || (pose[id] = { dx: 0, dy: 0, rot: 0, ex: 1, ey: 1 });
+  o.dx += q.dx || 0; o.dy += q.dy || 0; o.rot += q.rot || 0; o.ex *= q.ex || 1; o.ey *= q.ey || 1;
 }
 
-// Une pose complète à partir d'angles simples (en radians) :
-//  jambes { arr: { cuisse, genou, pied }, av: … }, bras { av, arr }, penche,
-//  tete, oreilles, chapeau, et un déplacement du corps entier (x, y).
+/* ===================== LA POSE ===================== */
+// Une pose est un petit objet de nombres : les angles des jambes et des bras,
+// le penché, le ballant, un déplacement et un écrasement du corps. Tout y est
+// NUMÉRIQUE, ce qui permet de fondre deux poses l'une dans l'autre.
+const neutre = () => ({ jambes: { arr: { cuisse: 0, genou: 0, pied: 0 }, av: { cuisse: 0, genou: 0, pied: 0 } }, bras: { av: 0, arr: 0 },
+  penche: 0, tete: 0, oreilles: 0, chapeau: 0, x: 0, y: 0, sx: 1, sy: 1, cligne: 0, impact: 0, frappe: 0 });
+function melanger(a, b, k) {
+  if (typeof a === 'number') return a + (b - a) * k;
+  const o = {};
+  for (const c of Object.keys(a)) o[c] = melanger(a[c], b[c], k);
+  return o;
+}
 function construirePose(a) {
   const pose = {};
   for (const cote of ['arr', 'av']) {
     const j = a.jambes[cote], o = OS[cote];
-    const hanche = [o.hanche, j.cuisse];
-    const genou = [o.genou, j.genou];
-    const cheville = [o.cheville, j.pied];
+    const hanche = [o.hanche, j.cuisse], genou = [o.genou, j.genou], cheville = [o.cheville, j.pied];
     for (const id of CUISSE[cote]) ajoute(pose, id, autour(id, [hanche]));
     for (const id of MOLLET[cote]) ajoute(pose, id, autour(id, [genou, hanche]));
     for (const id of PIED[cote]) ajoute(pose, id, autour(id, [cheville, genou, hanche]));
   }
-  // le haut du corps penche autour de la taille ; les bras tournent d'abord à l'épaule
   const penche = [OS.taille, a.penche];
   ajoute(pose, 'dingo.haut', autour('dingo.haut', [penche]));
   ajoute(pose, 'dingo.tete', autour('dingo.tete', [[PIV['dingo.tete'], a.tete], penche]));
   ajoute(pose, 'dingo.brasAv', autour('dingo.brasAv', [[OS.epauleAv, a.bras.av], penche]));
   ajoute(pose, 'dingo.brasArr', autour('dingo.brasArr', [[OS.epauleArr, a.bras.arr], penche]));
   for (const id of ['dingo.hanches', 'dingo.ceinture', 'dingo.boucle']) ajoute(pose, id, autour(id, [[OS.taille, a.penche * .3]]));
-  // oreilles et chapeau : ils suivent la tête, avec leur propre ballant
   ajoute(pose, 'dingo.oreilleNuque', { rot: a.oreilles });
   ajoute(pose, 'dingo.oreilleMachoire', { rot: a.oreilles * .8 });
   ajoute(pose, 'dingo.chapeauD', { rot: a.chapeau });
-  ajoute(pose, 'dingo', { dx: a.x || 0, dy: a.y || 0 });
-  // où est le bouclier, pour la traînée et l'éclat de la frappe
-  const bouclier = tournePoint([11 + 1.5, -67 + 1], [[OS.epauleAv, a.bras.av], penche]);
-  return { pose, bouclier: [bouclier[0] + (a.x || 0), bouclier[1] + (a.y || 0)] };
+  // clignement : les yeux s'écrasent un instant
+  if (a.cligne > 0) for (const id of ['dingo.oeilG', 'dingo.oeilD']) ajoute(pose, id, { ey: 1 - .88 * a.cligne });
+  // le corps entier : déplacement et squash & stretch, ancrés aux pieds
+  ajoute(pose, 'dingo', { dx: a.x, dy: a.y, ex: a.sx, ey: a.sy });
+  const b = tournePoint([12.5, -66], [[OS.epauleAv, a.bras.av], penche]);
+  const pieds = {};
+  for (const cote of ['arr', 'av']) {
+    const j = a.jambes[cote], o = OS[cote];
+    pieds[cote] = tournePoint([o.cheville[0] + (cote === 'av' ? 8 : -8), -1], [[o.cheville, j.pied], [o.genou, j.genou], [o.hanche, j.cuisse]]);
+  }
+  const monte = ([x, y]) => [x * a.sx + a.x, y * a.sy + a.y];
+  return { pose, bouclier: monte(b), pieds: { arr: monte(pieds.arr), av: monte(pieds.av) } };
 }
 
-/* ===================== LES ANIMATIONS ===================== */
+/* ===================== LES GESTES ===================== */
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const lisse = x => { x = clamp(x); return x * x * (3 - 2 * x); };
 const sortie = x => 1 - Math.pow(1 - clamp(x), 3);
-const neutre = () => ({ jambes: { arr: { cuisse: 0, genou: 0, pied: 0 }, av: { cuisse: 0, genou: 0, pied: 0 } }, bras: { av: 0, arr: 0 },
-  penche: 0, tete: 0, oreilles: 0, chapeau: 0, x: 0, y: 0 });
+// Un retour qui dépasse sa cible puis s'y pose, comme un ressort.
+const ressortRetour = (x, d) => { x = clamp(x); return 1 - Math.pow(1 - x, 2) * Math.cos(x * Math.PI * (1 + d * 1.6)) * (1 - x * .2); };
+const cligne = t => {
+  if (!R.clignement) return 0;
+  const p = (t + 1.3) % 2.9;                    // un clignement toutes les 2,9 s
+  return p < .14 ? Math.sin(p / .14 * Math.PI) : 0;
+};
 function garde(t) {
-  const a = neutre(), r = Math.sin(t * 2.4) * R.respiration;
-  // genoux un peu fléchis, prêt à bondir : les cuisses avancent, les mollets reculent
-  const f = R.flexion;
+  const a = neutre(), r = Math.sin(t * 2.4) * R.respiration, f = R.flexion;
   for (const c of ['arr', 'av']) { a.jambes[c].cuisse = deg(-f * 2.2); a.jambes[c].genou = deg(f * 4.4); a.jambes[c].pied = deg(-f * 2.2); }
-  a.y = f * .9 + r * .3; a.penche = deg(3 + r * .6); a.oreilles = deg(r * 2); a.chapeau = deg(r);
+  a.y = f * .9 + r * .3; a.penche = deg(3 + r * .6);
+  a.sy = 1 + .006 * r; a.sx = 1 - .004 * r;
+  a.cligne = cligne(t);
   return a;
 }
 function course(t) {
   const a = neutre(), phi = t / R.cycle * Math.PI * 2;
   for (const [c, psi] of [['av', 0], ['arr', Math.PI]]) {
-    const s = Math.sin(phi + psi);
-    const j = a.jambes[c];
-    j.cuisse = deg(-R.cuisse * s);                         // en avant quand s > 0
+    const s = Math.sin(phi + psi), j = a.jambes[c];
+    j.cuisse = deg(-R.cuisse * s);
     const releve = Math.pow(.5 + .5 * Math.cos(phi + psi + .7), 2);
-    j.genou = deg(R.genou * releve);                       // le genou plie quand la jambe revient
+    j.genou = deg(R.genou * releve);
     j.pied = deg(-R.pied * s * .6 - R.genou * releve * .35);
   }
   a.bras.av = deg(R.bras * Math.sin(phi));
   a.bras.arr = deg(-R.bras * Math.sin(phi));
-  a.y = -R.rebond * (1 - Math.abs(Math.sin(phi)));
+  // rebond : bas quand les jambes sont écartées (le pied se pose), haut au passage
+  const haut = 1 - Math.abs(Math.sin(phi));
+  a.y = -R.rebond * haut;
+  // squash au contact, stretch en l'air
+  const sq = R.squash * (haut * 2 - 1);
+  a.sy = 1 + sq * .8; a.sx = 1 - sq * .5;
   a.penche = deg(R.penche + 2 * Math.sin(phi * 2));
   a.tete = deg(R.tete * Math.sin(phi * 2 + .6));
-  a.oreilles = deg(R.oreilles * Math.sin(phi * 2 - .9));
-  a.chapeau = deg(R.chapeau * Math.sin(phi * 2 - .5));
+  a.cligne = cligne(t);
   return a;
 }
-const dureeCoup = () => R.armeDuree + R.frappeDuree + R.retourDuree;
+// Le coup de bouclier, avec son ARRÊT SUR IMAGE : au moment de l'impact le
+// temps se fige quelques centièmes, puis repart.
+const dureeCoup = () => R.armeDuree + R.frappeDuree + R.arret + R.retourDuree;
 function coup(t) {
-  const a = garde(t), ta = R.armeDuree, tf = ta + R.frappeDuree, tr = tf + R.retourDuree;
-  let bras = 0, tors = 0, pas = 0, crouch = 0;
-  if (t < ta) { const u = sortie(t / ta); bras = R.armeAngle * u; tors = -R.torsion * .5 * u; crouch = 2 * u; }
-  else if (t < tf) { const u = sortie((t - ta) / R.frappeDuree); bras = R.armeAngle + (-R.frappeAngle - R.armeAngle) * u; tors = -R.torsion * .5 + R.torsion * 1.5 * u; pas = R.pas * u; crouch = 2 * (1 - u); }
-  else if (t < tr) { const u = lisse((t - tf) / R.retourDuree); bras = -R.frappeAngle * (1 - u); tors = R.torsion * (1 - u); pas = R.pas * (1 - u); }
+  const ta = R.armeDuree, tf = ta + R.frappeDuree, ti = tf + R.arret;
+  const a = garde(t);
+  let bras = 0, tors = 0, pas = 0, crouch = 0, sx = 1, sy = 1;
+  if (t < ta) {                                   // armé : il se ramasse
+    const u = sortie(t / ta);
+    bras = R.armeAngle * u; tors = -R.torsion * .5 * u; crouch = 2.5 * u;
+    sy = 1 - R.squash * .9 * u; sx = 1 + R.squash * .6 * u;
+  } else if (t < tf) {                            // frappe : il s'allonge
+    const u = sortie((t - ta) / R.frappeDuree);
+    bras = R.armeAngle + (-R.frappeAngle - R.armeAngle) * u;
+    tors = -R.torsion * .5 + R.torsion * 1.5 * u; pas = R.pas * u; crouch = 2.5 * (1 - u);
+    sy = 1 + R.squash * .8 * u; sx = 1 - R.squash * .5 * u;
+    a.frappe = 1;
+  } else if (t < ti) {                            // arrêt sur image : figé en fin de frappe
+    bras = -R.frappeAngle; tors = R.torsion; pas = R.pas; sy = 1 + R.squash * .8; sx = 1 - R.squash * .5;
+  } else {                                        // retour, avec dépassement
+    const u = (t - ti) / R.retourDuree, k = ressortRetour(u, R.depassement);
+    bras = -R.frappeAngle * (1 - k); tors = R.torsion * (1 - k); pas = R.pas * (1 - lisse(u));
+    sy = 1 + R.squash * .8 * (1 - k); sx = 1 - R.squash * .5 * (1 - k);
+  }
   a.bras.av = deg(bras); a.bras.arr = deg(-bras * .35);
-  a.penche += deg(tors); a.x = pas; a.y += crouch;
-  a.oreilles += deg(-bras * .15); a.chapeau += deg(-bras * .08);
-  // la jambe avant fait le pas
+  a.penche += deg(tors); a.x = pas; a.y += crouch; a.sx *= sx; a.sy *= sy;
   a.jambes.av.cuisse += deg(-pas * 3); a.jambes.av.genou += deg(pas * 2);
-  a.impact = t >= ta && t < tf + .12 ? clamp(1 - (t - ta - R.frappeDuree) / .12) : 0;
-  a.enFrappe = t >= ta && t < tf;
+  a.impact = t >= tf ? clamp(1 - (t - tf) / (R.arret + .16)) : 0;
   return a;
 }
-// L'enchaînement : garde, course vers le haut de la ligne, garde, coup de bouclier.
-const SEQUENCE = [['garde', .8], ['course', 1.56], ['garde', .5], ['coup', null], ['garde', .9]];
-function dureeSeq() { return SEQUENCE.reduce((s, [n, d]) => s + (d === null ? dureeCoup() : d), 0); }
-function etatA(anim, t) {
-  if (anim === 'garde') return { a: garde(t), nom: 'garde' };
-  if (anim === 'course') return { a: course(t), nom: 'course' };
-  if (anim === 'coup') { const tt = t % (dureeCoup() + .6); return { a: tt < dureeCoup() ? coup(tt) : garde(t), nom: 'coup' }; }
-  let u = t % dureeSeq();
-  for (const [n, d0] of SEQUENCE) {
-    const d = d0 === null ? dureeCoup() : d0;
-    if (u < d) return { a: n === 'garde' ? garde(t) : n === 'course' ? course(u) : coup(u), nom: n };
-    u -= d;
+const GESTES = { garde, course, coup };
+
+/* ===================== LES ENCHAÎNEMENTS ===================== */
+// Une suite de gestes [nom, durée]. À chaque changement, le geste précédent
+// CONTINUE de bouger pendant le fondu au lieu de se figer : c'est ce qui rend
+// l'enchaînement souple.
+function suite(segs, t, boucle = true) {
+  const dur = segs.map(([n, d]) => d === null ? dureeCoup() : d);
+  const total = dur.reduce((a, b) => a + b, 0);
+  let u = boucle ? ((t % total) + total) % total : Math.min(t, total - 1e-6);
+  let i = 0; while (i < segs.length - 1 && u >= dur[i]) { u -= dur[i]; i++; }
+  const g = GESTES[segs[i][0]];
+  // la garde et la course ont une horloge continue ; le coup, la sienne
+  const horloge = (n, tl) => n === 'coup' ? tl : t;
+  let a = g(horloge(segs[i][0], u));
+  const debut = t - u;
+  if (R.transition > 0 && u < R.transition && (boucle || i > 0)) {
+    const j = (i - 1 + segs.length) % segs.length;
+    const aPrec = GESTES[segs[j][0]](horloge(segs[j][0], dur[j] + u));
+    a = melanger(aPrec, a, lisse(u / R.transition));
+    a.impact = Math.max(a.impact, aPrec.impact);
   }
-  return { a: garde(t), nom: 'garde' };
+  return { a, nom: segs[i][0], u, i, total, debut };
+}
+const SEQUENCE = [['garde', .8], ['course', 1.56], ['garde', .5], ['coup', null], ['garde', .9]];
+const segsAnim = nom => nom === 'enchaine' ? SEQUENCE : nom === 'coup' ? [['garde', .6], ['coup', null]] : [[nom, 3]];
+// Le ballant : oreilles, chapeau et tête suivent la VITESSE du corps avec un
+// temps de retard. On l'échantillonne dans le passé, donc revoir une image à
+// la ligne de temps donne toujours la même chose.
+function avecBallant(segs, t) {
+  const r = suite(segs, t);
+  const y = tt => suite(segs, tt).a.y, p = tt => suite(segs, tt).a.penche, x = tt => suite(segs, tt).a.x;
+  const dt = .05, lag = .07;
+  const vy = (y(t - lag) - y(t - lag - dt)) / dt;          // unités/s, négatif quand il monte
+  const vp = (p(t - lag) - p(t - lag - dt)) / dt;
+  const vx = (x(t - lag) - x(t - lag - dt)) / dt;
+  const a = r.a;
+  a.oreilles += deg(R.oreilles * R.ressort * clamp(vy / 60 - vp * .6 - vx / 50, -1.2, 1.2)) + deg(R.oreilles * .15 * Math.sin(t * 3));
+  a.chapeau += deg(R.chapeau * R.ressort * clamp(vy / 70 - vp * .8 - vx / 60, -1.2, 1.2));
+  a.tete += deg(3 * R.ressort * clamp(vy / 80, -1, 1));
+  return r;
 }
 
 /* ===================== LE DESSIN ===================== */
 const ECH_DINGO = 60 * 1.3 / HAUTEUR.dingo;   // unités de dessin -> unités de jeu, comme l'atelier
-// une traînée par vue : partagée, elle reliait la grande vue à celle du match
-const TRAINEES = {};
+const alea = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 function dessinerDingo(g, VUE, a) {
-  const { pose, bouclier } = construirePose(a);
-  const m = VUE.scale(ECH_DINGO);
-  g.save(); g.setTransform(m); dessinerPerso(g, 'dingo', { style: STYLES.D, pose }); g.restore();
-  return m.transformPoint({ x: bouclier[0], y: bouclier[1] });
+  const cp = construirePose(a), m = VUE.scale(ECH_DINGO);
+  g.save(); g.setTransform(m); dessinerPerso(g, 'dingo', { style: STYLES.D, pose: cp.pose }); g.restore();
+  const aEcran = ([x, y]) => m.transformPoint({ x, y });
+  return { bouclier: aEcran(cp.bouclier), pieds: { arr: aEcran(cp.pieds.arr), av: aEcran(cp.pieds.av) } };
 }
-function effetsCoup(g, a, pB, rayon, cle) {
-  let traineePts = TRAINEES[cle] || [];
-  if (a.enFrappe && R.trainee > 0) traineePts.push({ x: pB.x, y: pB.y, t: performance.now() });
-  traineePts = TRAINEES[cle] = traineePts.filter(p => performance.now() - p.t < 180);
-  if (traineePts.length > 1 && R.trainee > 0) {
-    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
-    for (let i = 1; i < traineePts.length; i++) {
-      const p0 = traineePts[i - 1], p1 = traineePts[i], v = 1 - (performance.now() - p1.t) / 180;
-      g.strokeStyle = 'rgba(160,210,255,' + (.55 * v * R.trainee) + ')'; g.lineWidth = rayon * 1.6 * v;
-      g.beginPath(); g.moveTo(p0.x, p0.y); g.lineTo(p1.x, p1.y); g.stroke();
+// La poussière des pas : à chaque pose de pied pendant la course, une petite
+// bouffée qui s'étale et s'efface. Calculée depuis l'horloge, pas mémorisée.
+function poussiere(g, VUE, segs, t, echPx) {
+  if (R.poussiere <= 0) return;
+  for (let k = 0; k < 8; k++) {
+    // les poses de pied des 0,5 dernières secondes : un pied par demi-cycle
+    const n = Math.floor(t / (R.cycle / 2)) - k, tc = n * R.cycle / 2;
+    const age = t - tc; if (age < 0 || age > .5) continue;
+    const r = suite(segs, tc); if (r.nom !== 'course') continue;
+    const cote = n % 2 ? 'arr' : 'av';
+    const { pieds } = construirePose(r.a), m = VUE.scale(ECH_DINGO);
+    const p = m.transformPoint({ x: pieds[cote][0], y: -.5 });
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+    for (let i = 0; i < R.poussiere; i++) {
+      const ang = Math.PI + (alea(n * 17 + i) - .5) * 1.6, v = (8 + 14 * alea(n * 31 + i)) * echPx;
+      const x = p.x + Math.cos(ang) * v * age * 2.2, y = p.y - Math.abs(Math.sin(ang)) * v * age * .9 - age * 6 * echPx;
+      const rr = (1.2 + 2 * alea(n * 7 + i)) * echPx * (1 + age * 2.5);
+      g.fillStyle = 'rgba(210,200,180,' + (.45 * (1 - age / .5)) + ')';
+      g.beginPath(); g.arc(x, y, rr, 0, Math.PI * 2); g.fill();
     }
     g.restore();
   }
-  if (a.impact > 0) {
-    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'lighter';
-    const r = rayon * (1.2 + (1 - a.impact) * 1.4);
-    const d = g.createRadialGradient(pB.x, pB.y, 0, pB.x, pB.y, r);
-    d.addColorStop(0, 'rgba(255,255,235,' + a.impact + ')'); d.addColorStop(.4, 'rgba(140,200,255,' + a.impact * .7 + ')'); d.addColorStop(1, 'rgba(80,140,255,0)');
-    g.fillStyle = d; g.beginPath(); g.arc(pB.x, pB.y, r, 0, Math.PI * 2); g.fill();
-    g.restore();
+}
+// L'impact : anneau de choc, étincelles, éclat et reflet sur le bouclier.
+function impact(g, a, pB, echPx) {
+  if (a.impact <= 0) return;
+  const k = a.impact, v = 1 - k;
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'lighter';
+  const r = echPx * 14 * (.6 + v * 1.2);
+  const d = g.createRadialGradient(pB.x, pB.y, 0, pB.x, pB.y, r);
+  d.addColorStop(0, 'rgba(255,255,240,' + k + ')'); d.addColorStop(.4, 'rgba(150,210,255,' + k * .75 + ')'); d.addColorStop(1, 'rgba(80,140,255,0)');
+  g.fillStyle = d; g.beginPath(); g.arc(pB.x, pB.y, r, 0, Math.PI * 2); g.fill();
+  if (R.anneau > 0) {
+    g.strokeStyle = 'rgba(200,230,255,' + k * .9 + ')'; g.lineWidth = echPx * 1.6 * k;
+    g.beginPath(); g.arc(pB.x, pB.y, echPx * 10 * R.anneau * (.4 + v * 2.2), 0, Math.PI * 2); g.stroke();
   }
+  g.strokeStyle = 'rgba(255,240,190,' + k + ')'; g.lineCap = 'round';
+  for (let i = 0; i < R.etincelles; i++) {
+    const ang = -1.1 + (alea(i * 3) - .5) * 2.6, l0 = echPx * (4 + v * 22 * (.6 + alea(i))), l1 = l0 + echPx * 5 * k;
+    g.lineWidth = echPx * .9 * k;
+    g.beginPath(); g.moveTo(pB.x + Math.cos(ang) * l0, pB.y + Math.sin(ang) * l0); g.lineTo(pB.x + Math.cos(ang) * l1, pB.y + Math.sin(ang) * l1); g.stroke();
+  }
+  g.restore();
+}
+// La traînée du bouclier pendant la frappe : quelques positions passées de
+// la même animation, échantillonnées à rebours.
+function trainee(g, VUE, segs, t, echPx) {
+  if (R.trainee <= 0) return;
+  const pts = [];
+  for (let i = 0; i < 8; i++) {
+    const tt = t - i * .012, r = suite(segs, tt);
+    if (!r.a.frappe && !(r.a.impact > .7)) break;
+    const cp = construirePose(r.a), m = VUE.scale(ECH_DINGO);
+    pts.push(m.transformPoint({ x: cp.bouclier[0], y: cp.bouclier[1] }));
+  }
+  if (pts.length < 2) return;
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+  for (let i = 1; i < pts.length; i++) {
+    const v = 1 - i / pts.length;
+    g.strokeStyle = 'rgba(160,210,255,' + (.6 * v * R.trainee) + ')'; g.lineWidth = echPx * 14 * v;
+    g.beginPath(); g.moveTo(pts[i - 1].x, pts[i - 1].y); g.lineTo(pts[i].x, pts[i].y); g.stroke();
+  }
+  g.restore();
+}
+// La secousse : l'écran tremble après l'impact, de moins en moins.
+function secousse(a, t) {
+  if (a.impact <= 0 || R.secousse <= 0) return { x: 0, y: 0 };
+  const f = R.secousse * a.impact * a.impact;
+  return { x: Math.sin(t * 91) * f, y: Math.cos(t * 77) * f * .7 };
+}
+// Un disque qui tourne, avec sa traînée.
+function disque(g, x, y, r, ang, traine) {
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+  if (traine) {
+    g.globalCompositeOperation = 'lighter';
+    for (let i = 1; i <= 6; i++) {
+      g.fillStyle = 'rgba(160,200,255,' + (.16 * (1 - i / 7)) + ')';
+      g.beginPath(); g.ellipse(x - traine.x * i, y - traine.y * i, r, r * .55, 0, 0, Math.PI * 2); g.fill();
+    }
+    g.globalCompositeOperation = 'source-over';
+  }
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x, y + r * .7, r, r * .38, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#f4f6fa'; g.beginPath(); g.ellipse(x, y, r, r * .55, 0, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#3f63d8'; g.lineWidth = Math.max(1.5, r * .22); g.stroke();
+  g.strokeStyle = 'rgba(63,99,216,.8)'; g.lineWidth = Math.max(1, r * .12);
+  g.beginPath(); g.moveTo(x + Math.cos(ang) * r * .6, y + Math.sin(ang) * r * .33); g.lineTo(x - Math.cos(ang) * r * .6, y - Math.sin(ang) * r * .33); g.stroke();
+  g.restore();
 }
 
 /* ----- en grand ----- */
 const cvG = document.getElementById('cvGrand'), gG = cvG.getContext('2d');
 function sceneGrande(t) {
-  const W = cvG.width, H = cvG.height;
+  const W = cvG.width, H = cvG.height, segs = segsAnim(anim);
+  const r = avecBallant(segs, t), a = r.a, sc = secousse(a, t);
   gG.setTransform(1, 0, 0, 1, 0, 0);
   const d = gG.createLinearGradient(0, 0, 0, H); d.addColorStop(0, '#182036'); d.addColorStop(1, '#0b0f1a');
   gG.fillStyle = d; gG.fillRect(0, 0, W, H);
-  gG.strokeStyle = 'rgba(248,200,28,.3)'; gG.lineWidth = 2; gG.beginPath(); gG.moveTo(0, H - 36); gG.lineTo(W, H - 36); gG.stroke();
-  const { a, nom } = etatA(anim, t);
-  const VUE = new DOMMatrix().translate(W * .42, H - 36).scale(6.2);
-  const pB = dessinerDingo(gG, VUE, a);
-  effetsCoup(gG, a, pB, 30, 'grand');
-  gG.fillStyle = '#6b7594'; gG.font = '13px Consolas, monospace'; gG.fillText(nom, 16, 24);
+  const E = 6.2, VUE = new DOMMatrix().translate(W * .42 + sc.x, H - 36 + sc.y).scale(E), echPx = E;
+  gG.strokeStyle = 'rgba(248,200,28,.3)'; gG.lineWidth = 2; gG.beginPath(); gG.moveTo(0, H - 36 + sc.y); gG.lineTo(W, H - 36 + sc.y); gG.stroke();
+  // ombre au sol, qui rétrécit quand il monte
+  gG.fillStyle = 'rgba(0,0,0,.28)'; gG.beginPath(); gG.ellipse(W * .42 + sc.x, H - 36 + sc.y, 26 * E * (1 + a.y / 40), 3.2 * E, 0, 0, Math.PI * 2); gG.fill();
+  poussiere(gG, VUE, segs, t, E * .8);
+  const pos = dessinerDingo(gG, VUE, a);
+  trainee(gG, VUE, segs, t, E * .75);
+  impact(gG, a, pos.bouclier, E);
+  // pour le coup : un disque arrive de la droite et repart vers le haut
+  if (r.nom === 'coup' || (r.nom === 'garde' && anim !== 'garde' && a.impact > 0)) {
+    const ti = R.armeDuree + R.frappeDuree, u = r.nom === 'coup' ? r.u : 99;
+    const cible = pos.bouclier;
+    if (u < ti) { const k = clamp(u / ti); disque(gG, W + 40 - (W + 40 - cible.x - 20) * k, cible.y + 30 * (1 - k), E * 5, u * 30, { x: -12, y: 2 }); }
+    else if (u < ti + R.arret) disque(gG, cible.x + 20, cible.y, E * 5, 0, null);
+    else if (u < ti + R.arret + .5) { const k = sortie((u - ti - R.arret) / .5); disque(gG, cible.x + 20 + (W - cible.x) * k, cible.y - 260 * k, E * 5, u * 40, { x: 18, y: -9 }); }
+  }
+  gG.fillStyle = '#6b7594'; gG.font = '13px Consolas, monospace'; gG.fillText(r.nom, 16, 24);
 }
 
 /* ----- en match : vu de dessus, le but de Sora à gauche ----- */
 const cvM = document.getElementById('cvMatch'), gM = cvM.getContext('2d');
-const TERRAIN = { x0: 40, y0: 40, largeur: 640, hauteur: 340 };      // unités de jeu × 1,6 px
 const EM = 1.6;
+const T_SCENE = 3.2, T_FRAPPE = 1.45;
+// Le scénario du match, en gestes : garde, course vers le disque, garde, coup
+// (calé pour que la frappe tombe sur l'arrivée du disque), garde.
+const segsMatch = () => [['garde', .25], ['course', .9], ['garde', Math.max(.05, T_FRAPPE - R.armeDuree - 1.15)], ['coup', null], ['garde', 5]];
 function sceneMatch(t) {
   const W = cvM.width, H = cvM.height, th = MAPS[0].theme;
+  const u = t % T_SCENE, tour = Math.floor(t / T_SCENE);
+  const segs = segsMatch();
+  const r = (() => { const x = avecBallant(segs, u); return x; })(), a = r.a, sc = secousse(a, t);
   gM.setTransform(1, 0, 0, 1, 0, 0);
   gM.fillStyle = '#0b0f1a'; gM.fillRect(0, 0, W, H);
+  gM.save(); gM.translate(sc.x * .5, sc.y * .5);
   gM.fillStyle = th.floor; gM.fillRect(20, 20, W - 40, H - 40);
   gM.strokeStyle = th.line; gM.lineWidth = 3; gM.strokeRect(20, 20, W - 40, H - 40);
   gM.beginPath(); gM.moveTo(W / 2, 20); gM.lineTo(W / 2, H - 20); gM.stroke();
-  // le but de Sora, à gauche
   gM.fillStyle = 'rgba(63,99,216,.35)'; gM.fillRect(20, 20, 10, H - 40);
-  // Le scénario boucle sur 3 s : un disque part de la droite vers le but, Dingo
-  // glisse sur la ligne pour se placer, frappe, et le disque file vers Sora.
-  const T = 3.2, u = t % T;
-  const soraX = 330, soraY = 250;
-  const ligneX = 78;                       // la ligne où Dingo garde
-  const entreeY = 190 + 170 * ((Math.floor(t / T) * 0.618) % 1);
-  const tFrappe = 1.45;
-  // position du disque
-  let dx, dy, disqueVisible = true;
-  const depart = { x: W - 60, y: entreeY + 60 }, arrivee = { x: ligneX + 18, y: entreeY };
-  if (u < tFrappe) { const k = u / tFrappe; dx = depart.x + (arrivee.x - depart.x) * k; dy = depart.y + (arrivee.y - depart.y) * k; }
-  else if (u < tFrappe + .6) { const k = sortie((u - tFrappe) / .6); dx = arrivee.x + (soraX - arrivee.x) * k; dy = arrivee.y + (soraY - 12 - arrivee.y) * k; }
-  else { disqueVisible = false; }
-  // Dingo : il court vers la hauteur du disque, puis frappe
-  const dingoY0 = 280;
-  const kCourse = clamp((u - .25) / .9), dingoY = dingoY0 + (entreeY + 8 - dingoY0) * lisse(kCourse);
-  let a;
-  if (u < .25) a = garde(t);
-  else if (u < 1.15) a = course(u);
-  else if (u < tFrappe - R.armeDuree) a = garde(t);
-  else if (u < tFrappe - R.armeDuree + dureeCoup()) a = coup(u - (tFrappe - R.armeDuree));
-  else a = garde(t);
-  // Sora, face au jeu
+  gM.restore();
+  const soraX = 330 + sc.x * .5, soraY = 250 + sc.y * .5, ligneX = 78 + sc.x * .5;
+  const entreeY = 190 + 170 * ((tour * .618) % 1);
+  const dingoY0 = 280, kCourse = clamp((u - .25) / .9);
+  const dingoY = dingoY0 + (entreeY + 8 - dingoY0) * lisse(kCourse) + sc.y * .5;
   gM.save(); gM.setTransform(new DOMMatrix().translate(soraX, soraY).scale(EM)); peindreSora(gM); gM.restore();
-  // Dingo (il regarde vers la droite, vers le jeu)
-  const pB = dessinerDingo(gM, new DOMMatrix().translate(ligneX, dingoY).scale(EM), a);
-  effetsCoup(gM, a, pB, 10, 'match');
-  if (disqueVisible) {
-    gM.fillStyle = 'rgba(0,0,0,.25)'; gM.beginPath(); gM.ellipse(dx, dy + 6, 9, 3.5, 0, 0, Math.PI * 2); gM.fill();
-    gM.fillStyle = '#f4f6fa'; gM.beginPath(); gM.ellipse(dx, dy, 9, 5, 0, 0, Math.PI * 2); gM.fill();
-    gM.strokeStyle = '#3f63d8'; gM.lineWidth = 2; gM.stroke();
+  const VUE = new DOMMatrix().translate(ligneX, dingoY).scale(EM);
+  gM.fillStyle = 'rgba(0,0,0,.25)'; gM.beginPath(); gM.ellipse(ligneX, dingoY, 26 * EM, 3 * EM, 0, 0, Math.PI * 2); gM.fill();
+  poussiere(gM, VUE, segs, u, EM * .8);
+  const pos = dessinerDingo(gM, VUE, a);
+  trainee(gM, VUE, segs, u, EM * .75);
+  impact(gM, a, pos.bouclier, EM);
+  // le disque : il arrive, reste collé au bouclier pendant l'arrêt sur image, puis file vers Sora
+  const depart = { x: W - 60, y: entreeY + 60 }, arrivee = { x: ligneX + 18, y: entreeY };
+  const tImpact = T_FRAPPE + R.frappeDuree;
+  if (u < tImpact) { const k = u / tImpact; disque(gM, depart.x + (arrivee.x - depart.x) * k, depart.y + (arrivee.y - depart.y) * k, 9, u * 25, { x: 6, y: -1 }); }
+  else if (u < tImpact + R.arret) disque(gM, arrivee.x, arrivee.y, 9, 0, null);
+  else if (u < tImpact + R.arret + .55) {
+    const k = sortie((u - tImpact - R.arret) / .55);
+    disque(gM, arrivee.x + (soraX - arrivee.x) * k, arrivee.y + (soraY - 12 - arrivee.y) * k, 9, u * 40, { x: -7, y: -2 });
+  } else if (u < tImpact + R.arret + .8) {
+    // Sora le reçoit : un petit éclat doré
+    const k = (u - tImpact - R.arret - .55) / .25;
+    gM.save(); gM.globalCompositeOperation = 'lighter';
+    const d = gM.createRadialGradient(soraX, soraY - 14, 0, soraX, soraY - 14, 30);
+    d.addColorStop(0, 'rgba(255,230,140,' + (1 - k) * .8 + ')'); d.addColorStop(1, 'rgba(255,200,80,0)');
+    gM.fillStyle = d; gM.beginPath(); gM.arc(soraX, soraY - 14, 30, 0, Math.PI * 2); gM.fill(); gM.restore();
   }
 }
 
 /* ===================== LE LECTEUR ===================== */
 let anim = 'enchaine', t = 0, joue = true, vitesse = 1, avant = performance.now();
 const curseurT = document.getElementById('temps');
-const dureeAnim = () => anim === 'enchaine' ? dureeSeq() : anim === 'coup' ? dureeCoup() + .6 : anim === 'course' ? R.cycle * 2 : 3;
+const dureeAnim = () => suite(segsAnim(anim), 0).total;
 function image(now) {
   const dt = Math.min(.1, (now - avant) / 1000); avant = now;
   if (joue) t += dt * vitesse;
@@ -394,7 +551,7 @@ function construireCurseurs() {
     const d = document.createElement('div'); d.className = 'curseur';
     d.innerHTML = `<label>${nom}</label><input type="range" min="${min}" max="${max}" step="${pas}" value="${R[cle]}"><span></span>`;
     const inp = d.querySelector('input'), sp = d.querySelector('span');
-    const aff = () => { sp.textContent = (+R[cle]).toFixed(pas < 1 ? 2 : 0) + (u ? ' ' + u : ''); };
+    const aff = () => { sp.textContent = cle === 'clignement' ? (R[cle] ? 'oui' : 'non') : (+R[cle]).toFixed(pas < 1 ? (pas < .01 ? 3 : 2) : 0) + (u ? ' ' + u : ''); };
     inp.oninput = () => { R[cle] = +inp.value; aff(); garder(); majSortie(); };
     aff(); h.append(d);
   }
@@ -413,7 +570,7 @@ document.getElementById('bRaz').onclick = () => { Object.assign(R, DEPART); gard
 construireCurseurs(); majSortie();
 requestAnimationFrame(image);
 window.__dingo = { R, get t() { return t; }, set t(v) { t = v; }, pause: () => { joue = false; }, choisir: n => document.querySelector(`[data-anim="${n}"]`).click(),
-  rendre: (n, tt) => { anim = n; sceneGrande(tt); return cvG; }, rendreMatch: tt => { sceneMatch(tt); return cvM; } };
+  rendre: (n, tt) => { anim = n; sceneGrande(tt); return cvG; }, rendreMatch: tt => { sceneMatch(tt); return cvM; }, suite, segsAnim };
 </script>
 </body>
 </html>
