@@ -39,7 +39,7 @@
   #droite h3 span{color:var(--pale);font-weight:normal;letter-spacing:.2px;text-transform:none}
 
   /* calques */
-  #calques{border:1px solid var(--edge);border-radius:9px;max-height:300px;overflow:auto;background:#0e1320}
+  #calques{border:1px solid var(--edge);border-radius:9px;max-height:46vh;overflow:auto;background:#0e1320}
   .cq{display:flex;align-items:center;gap:6px;padding:3px 8px;font-size:12px;cursor:pointer;border-bottom:1px solid #151c2e;white-space:nowrap}
   .cq:hover{background:#18203a}
   .cq.on{background:#22305a}
@@ -50,6 +50,11 @@
   .cq .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--doux)}
   .cq .pt{width:7px;height:7px;border-radius:50%;background:var(--or);flex:0 0 auto;visibility:hidden}
   .cq.mod .pt{visibility:visible}
+  .cq .ic{width:14px;flex:0 0 auto;font-size:11px}
+  .cq .nom small{color:var(--pale);font-size:10px}
+  .cq.glisse{opacity:.45}
+  .cq.dropHaut{box-shadow:inset 0 2px 0 var(--or)}
+  .cq.dropBas{box-shadow:inset 0 -2px 0 var(--or)}
 
   /* propriétés */
   .vide{font-size:11.5px;color:var(--pale);line-height:1.6}
@@ -123,7 +128,7 @@
 <main id="corps">
   <section id="scene"><canvas id="toile"></canvas></section>
   <aside id="droite">
-    <h3>Calques <span>l'œil masque, le point doré = retouché</span></h3>
+    <h3>Calques <span>glisse-les pour changer l'ordre · l'œil masque · point doré = retouché</span></h3>
     <div id="calques"></div>
     <h3>Pièce choisie</h3>
     <div id="props"></div>
@@ -190,23 +195,28 @@ function peindreSora(g) {
 
 /* ===================== LES COULEURS (modifiables) ===================== */
 const DI = {
-  noir: '#1d1b22', noirO: '#0b0a0e', museau: '#f3c79c', museauO: '#d39c6c', nez: '#131115', dent: '#fbf8ee',
-  bouche: '#b8303a', chapeau: '#f5b52a', chapeauO: '#cc8616', bande: '#23357a', lunette: '#e0782a', verre: '#f7dcae',
-  moustache: '#141216', pull: '#9ad12e', pullO: '#5f9419', rayure: '#77ad20', gilet: '#3a3c46', giletO: '#23242b',
-  pocheG: '#7b8292', ceinture: '#1b1b20', boucle: '#c9ced8', pantalon: '#f5b925', pantalonO: '#cc8a12',
-  sangle: '#8a5a2a', revers: '#d8841c', chaussure: '#8c6c3e', chaussureO: '#5c4524', embout: '#bcc1ca',
-  anneau: '#ece4bf', gant: '#fafafa', gantO: '#d2d3db', manchette: '#e0892a',
+  noir: '#1d1b22', noirO: '#0b0a0e', museau: '#f3c79c', museauO: '#d39c6c', nez: '#131115', nezReflet: '#6a6670',
+  dent: '#fbf8ee', dentO: '#d8d2c0', bouche: '#6d1a22', langue: '#e56b78',
   oeilBlanc: '#ffffff', oeilOmbre: '#e6e6ee', pupille: '#121216',
+  chapeau: '#f5b52a', chapeauO: '#cc8616', bande: '#23357a', bandeO: '#141f4d',
+  lunette: '#e0782a', lunetteO: '#a84e12', verre: '#f7dcae', meche: '#141216',
+  pull: '#9ad12e', pullO: '#5f9419', rayure: '#77ad20', gilet: '#3a3c46', giletO: '#23242b',
+  pocheG: '#7b8292', pocheGO: '#565c6b', ceinture: '#1b1b20', boucle: '#c9ced8', boucleO: '#8d939f',
+  pantalon: '#f5b925', pantalonO: '#cc8a12', sangle: '#8a5a2a', sangleO: '#5e3b19', revers: '#d8841c', reversO: '#a85c10',
+  manchette: '#e0892a', manchetteO: '#b0601a', manchetteRaie: '#f6f0e4', gant: '#fafafa', gantO: '#d2d3db',
+  chaussure: '#8c6c3e', chaussureO: '#5c4524', semelle: '#3b3a3e', embout: '#bcc1ca', emboutO: '#868c96',
+  anneau: '#ece4bf', anneauO: '#bdb28a',
   bouclierOr: '#f2c23a', bouclierOrO: '#c38d1a', bouclierBleu: '#3f7fe0', bouclierBleuO: '#2a58b0',
   bouclierClair: '#86cdf0', bouclierClairO: '#57a6d2', metal: '#4a4c55', metalO: '#2a2b33', metalReflet: '#aab0bc'
 };
 const DO = {
-  plume: '#f8f8fc', plumeO: '#c3cde2', bec: '#f7b21c', becO: '#cf7f0a', bouche: '#d9452c',
-  veste: '#27399a', vesteO: '#161f5e', cape: '#3f63d8', capeO: '#2645a6', liseréJaune: '#f2c230', liseréClair: '#78d4f4',
-  poche: '#6d5fd8', zip: '#c9ced8', bonnet: '#3866d6', bonnetO: '#2146a4', bande: '#1b2c74', bracelet: '#e3ad26',
-  oeilBlanc: '#ffffff', oeilOmbre: '#d6e4ff', pupille: '#121216',
-  manche: '#2e2320', bague: '#e8ecf2', pommeau: '#e0a020', eclair: '#2f5fd6', eclairO: '#1c3c9a',
-  eclairBord: '#dfe8ff', chapeauMage: '#b07a2a', chapeauMageO: '#74491a'
+  plume: '#f8f8fc', plumeO: '#c3cde2', bec: '#f7b21c', becO: '#cf7f0a', becReflet: '#ffd466',
+  bouche: '#7e2228', langue: '#e8707a', oeilBlanc: '#ffffff', oeilOmbre: '#d6e4ff', pupille: '#121216',
+  veste: '#27399a', vesteO: '#161f5e', cape: '#3f63d8', capeO: '#2645a6', lisereJaune: '#f2c230', lisereClair: '#78d4f4',
+  poche: '#6d5fd8', pocheO: '#4a3fae', zip: '#c9ced8', zipO: '#8d939f',
+  bonnet: '#3866d6', bonnetO: '#2146a4', bande: '#1b2c74', bandeO: '#101a4a', bracelet: '#e3ad26', braceletO: '#a87612',
+  manche: '#2e2320', bague: '#e8ecf2', bagueO: '#aab0bb', pommeau: '#e0a020', pommeauO: '#a86f0e',
+  eclair: '#2f5fd6', eclairO: '#1c3c9a', eclairBord: '#dfe8ff', chapeauMage: '#b07a2a', chapeauMageO: '#74491a'
 };
 const PAL = { dingo: DI, donald: DO };
 const PAL0 = { dingo: { ...DI }, donald: { ...DO } };
@@ -289,65 +299,153 @@ function oeil(g, P, cx, cy, rx, ry, px, py, pr) {
 
 /* ===================== LES PIÈCES ===================== */
 // Chaque pièce se dessine dans le repère de son personnage : pieds en (0, 0),
-// regard vers la droite (+x) comme les sprites du jeu. `pivot` est le point
-// autour duquel elle tourne et grandit (l'épaule pour un bras, le cou pour la
-// tête…) ; sans pivot, c'est le centre de sa boîte. `parent` la fait suivre
-// une autre pièce ou un groupe.
+// regard vers la droite (+x) comme les sprites du jeu. Les pièces sont rangées
+// dans des DOSSIERS par catégorie (tête › chapeau, visage…, haut, bras, bas,
+// pieds). Un dossier est aussi un groupe qu'on peut déplacer, étirer et
+// tourner d'un bloc — autour de son pivot : le cou pour la tête, l'épaule pour
+// un bras. Le bâton et le bouclier sont DANS le dossier du bras qui les tient,
+// donc ils le suivent.
+//
+// L'ordre de déclaration des pièces est leur ordre d'empilement : la première
+// est tout au fond, la dernière devant tout.
 const NOEUDS = [];
-const noeud = o => NOEUDS.push(o);
+const dossier = (perso, parent, id, nom, pivot) => NOEUDS.push({ id, nom, perso, parent, groupe: true, pivot });
+const piece = (perso, parent, id, nom, f, pivot) => NOEUDS.push({ id, nom, perso, parent, f, pivot });
 
-// -------- DINGO --------
-noeud({ id: 'dingo', nom: 'DINGO', perso: 'dingo', groupe: true, pivot: [0, 0] });
-noeud({ id: 'dingo.chaussureArr', nom: 'chaussure arrière', perso: 'dingo', parent: 'dingo', f(g) {
-  part(g, blob([[-5, -8], [-19, -7.5], [-31, -3.5], [-31, 0], [-3, 0]]), DI.chaussure, DI.chaussureO);
-  part(g, blob([[-31, -3.5], [-24, -6.5], [-22, -2], [-24, 0], [-31, 0]]), DI.embout, null); } });
-noeud({ id: 'dingo.jambeArr', nom: 'jambe arrière', perso: 'dingo', parent: 'dingo', pivot: [-9, -32], f(g) {
-  tube(g, [[-9, -32], [-8, -9]], 3.2, DI.noir); part(g, ell(-8, -9, 4.4, 1.9), DI.anneau, null); } });
-noeud({ id: 'dingo.chaussureAv', nom: 'chaussure avant', perso: 'dingo', parent: 'dingo', f(g) {
-  part(g, blob([[4, -8], [20, -8], [33, -3.5], [33, 0], [2, 0]]), DI.chaussure, DI.chaussureO);
-  part(g, blob([[33, -3.5], [26, -7], [24, -2], [26, 0], [33, 0]]), DI.embout, null); } });
-noeud({ id: 'dingo.jambeAv', nom: 'jambe avant', perso: 'dingo', parent: 'dingo', pivot: [9, -32], f(g) {
-  tube(g, [[9, -32], [8, -9]], 3.2, DI.noir); part(g, ell(8, -9, 4.4, 1.9), DI.anneau, null); } });
-noeud({ id: 'dingo.brasArr', nom: 'bras arrière', perso: 'dingo', parent: 'dingo', pivot: [-12, -82], f(g) {
-  tube(g, [[-12, -82], [-20, -72], [-21, -62]], 7.5, DI.pull);
-  part(g, ell(-21, -61, 4.2, 1.9, .1), DI.manchette, null);
-  part(g, ell(-21.5, -56.5, 5.2, 5.6), DI.gant, DI.gantO); } });
-noeud({ id: 'dingo.hanches', nom: 'pantalon — hanches', perso: 'dingo', parent: 'dingo', f(g) {
-  part(g, blob([[-16, -61], [15, -61], [16, -53], [-17, -53]]), DI.pantalon, DI.pantalonO); } });
-noeud({ id: 'dingo.pantalonArr', nom: 'pantalon — jambe arrière', perso: 'dingo', parent: 'dingo', f(g) {
-  part(g, blob([[-15, -58], [-2, -58], [0, -46], [-3, -36], [-6, -31], [-14, -31], [-19, -36], [-20, -48]]), DI.pantalon, DI.pantalonO); } });
-noeud({ id: 'dingo.pantalonAv', nom: 'pantalon — jambe avant', perso: 'dingo', parent: 'dingo', f(g) {
-  part(g, blob([[0, -58], [15, -58], [20, -48], [19, -36], [14, -31], [6, -31], [3, -36], [1, -46]]), DI.pantalon, DI.pantalonO); } });
-noeud({ id: 'dingo.reversArr', nom: 'revers arrière', perso: 'dingo', parent: 'dingo', f(g) { part(g, ell(-10, -31, 7, 3.6), DI.revers, null); } });
-noeud({ id: 'dingo.reversAv', nom: 'revers avant', perso: 'dingo', parent: 'dingo', f(g) { part(g, ell(10, -31, 7, 3.6), DI.revers, null); } });
-noeud({ id: 'dingo.sangleArr', nom: 'sangle arrière', perso: 'dingo', parent: 'dingo', f(g) { part(g, rect(-21, -47, 3.5, 6.5, 1), DI.sangle, null); } });
-noeud({ id: 'dingo.sangleAv', nom: 'sangle avant', perso: 'dingo', parent: 'dingo', f(g) { part(g, rect(17.5, -47, 3.5, 6.5, 1), DI.sangle, null); } });
-noeud({ id: 'dingo.pocheCuisse', nom: 'poche de cuisse', perso: 'dingo', parent: 'dingo', f(g) { part(g, rect(-14, -52, 6, 5, 1), DI.pantalonO, null); } });
-noeud({ id: 'dingo.ceinture', nom: 'ceinture', perso: 'dingo', parent: 'dingo', f(g) { part(g, rect(-17, -63, 33, 4.5, 1.5), DI.ceinture, null); } });
-noeud({ id: 'dingo.boucle', nom: 'boucle', perso: 'dingo', parent: 'dingo', f(g) {
-  part(g, rect(1, -64, 8, 6.5, 1.2), DI.boucle, null); part(g, rect(3, -62.3, 4, 3, .6), DI.ceinture, null); } });
-noeud({ id: 'dingo.pull', nom: 'pull rayé', perso: 'dingo', parent: 'dingo', f(g) {
+/* =============================== DINGO =============================== */
+// Grand échalas : longues jambes noires, pantalon bouffant, pull vert et gilet
+// sombre, long cou, et une tête au museau très long sous un haut chapeau jaune.
+const DINGO_H = 136;
+dossier('dingo', null, 'dingo', 'DINGO', [0, 0]);
+dossier('dingo', 'dingo', 'dingo.brasArr', 'Bras arrière', [-12, -82]);
+dossier('dingo', 'dingo', 'dingo.pieds', 'Pieds');
+dossier('dingo', 'dingo', 'dingo.bas', 'Bas — pantalon et ceinture');
+dossier('dingo', 'dingo', 'dingo.haut', 'Haut — pull et gilet');
+dossier('dingo', 'dingo', 'dingo.tete', 'Tête', [3, -96]);
+dossier('dingo', 'dingo.tete', 'dingo.crane', 'Crâne et oreilles', [5, -106]);
+dossier('dingo', 'dingo.tete', 'dingo.visage', 'Visage', [18, -100]);
+dossier('dingo', 'dingo.tete', 'dingo.chapeauD', 'Chapeau', [5, -114]);
+dossier('dingo', 'dingo', 'dingo.brasAv', 'Bras avant et bouclier', [11, -82]);
+
+// --- bras arrière (tout au fond)
+piece('dingo', 'dingo.brasArr', 'dingo.brasArr.manche', 'manche', g => {
+  tube(g, [[-12, -82], [-20, -72], [-21, -63]], 7.5, DI.pull);
+  ligne(g, [[-17.5, -75], [-19.5, -72.5]], .8, DI.rayure); });
+piece('dingo', 'dingo.brasArr', 'dingo.brasArr.manchette', 'manchette rayée', g => {
+  part(g, ell(-21, -61.5, 4.4, 2.2, .1), DI.manchette, DI.manchetteO);
+  ligne(g, [[-24.6, -61.9], [-17.4, -61.1]], .9, DI.manchetteRaie); });
+piece('dingo', 'dingo.brasArr', 'dingo.brasArr.gant', 'gant', g => {
+  part(g, blob([[-25.5, -58], [-22, -60.5], [-17.5, -58.5], [-17, -54], [-19.5, -51], [-23.5, -51.5], [-26.5, -54.5]]), DI.gant, DI.gantO);
+  ligne(g, [[-22.5, -55], [-22, -52.5]], .6, DI.gantO); });
+// --- l'oreille qui pend sous la mâchoire, côté opposé : derrière tout le haut
+piece('dingo', 'dingo.crane', 'dingo.oreilleMachoire', 'oreille sous la mâchoire', g => {
+  part(g, blob([[11, -101], [15, -98.5], [16, -91], [18.8, -82], [15.8, -80.2], [13.5, -86.5], [11.5, -95]]), DI.noir, DI.noirO); }, [13, -99]);
+// --- pieds
+for (const [cote, s] of [['Arr', -1], ['Av', 1]]) {
+  const x = 8.5 * s;
+  piece('dingo', 'dingo.pieds', 'dingo.jambe' + cote, 'jambe ' + (s < 0 ? 'arrière' : 'avant'), g => {
+    tube(g, [[x, -33], [x - .5 * s, -9]], 3.1, DI.noir); }, [x, -33]);
+  piece('dingo', 'dingo.pieds', 'dingo.anneau' + cote, 'anneau de cheville ' + (s < 0 ? 'arrière' : 'avant'), g => {
+    part(g, ell(x - .5 * s, -9.3, 4.6, 2, 0), DI.anneau, DI.anneauO); });
+}
+piece('dingo', 'dingo.pieds', 'dingo.chaussureArr', 'chaussure arrière', g => {
+  part(g, blob([[-4, -9], [-13, -9.5], [-22, -7], [-31, -4], [-32, 0], [-2.5, 0], [-2, -4]]), DI.chaussure, DI.chaussureO);
+  part(g, rect(-32.5, -1.8, 31, 2.4, 1), DI.semelle, null);
+  part(g, blob([[-32, -4], [-26, -7.5], [-23, -4], [-24.5, -.6], [-32, -.6]]), DI.embout, DI.emboutO);
+  ligne(g, [[-12, -8.8], [-9, -4.5]], .7, DI.chaussureO); });
+piece('dingo', 'dingo.pieds', 'dingo.chaussureAv', 'chaussure avant', g => {
+  part(g, blob([[4, -9], [13, -9.5], [22, -7], [31.5, -4], [33, 0], [2.5, 0], [2, -4]]), DI.chaussure, DI.chaussureO);
+  part(g, rect(1.5, -1.8, 32, 2.4, 1), DI.semelle, null);
+  part(g, blob([[33, -4], [27, -7.5], [24, -4], [25.5, -.6], [33, -.6]]), DI.embout, DI.emboutO);
+  ligne(g, [[12, -8.8], [9, -4.5]], .7, DI.chaussureO); });
+// --- bas
+piece('dingo', 'dingo.bas', 'dingo.hanches', 'hanches', g => {
+  part(g, blob([[-16.5, -62], [15.5, -62], [17, -53], [-17.5, -53]]), DI.pantalon, DI.pantalonO); });
+piece('dingo', 'dingo.bas', 'dingo.pantalonArr', 'jambe de pantalon arrière', g => {
+  part(g, blob([[-16, -58], [-1.5, -58], [.5, -47], [-2, -38], [-5, -32], [-14, -31.5], [-20.5, -36], [-21, -48]]), DI.pantalon, DI.pantalonO);
+  ligne(g, [[-10, -52], [-12, -40]], .7, DI.pantalonO); });
+piece('dingo', 'dingo.bas', 'dingo.pantalonAv', 'jambe de pantalon avant', g => {
+  part(g, blob([[.5, -58], [15, -58], [20.5, -48], [20, -36], [14.5, -31.5], [5.5, -32], [2.5, -38], [1.5, -47]]), DI.pantalon, DI.pantalonO);
+  ligne(g, [[12, -52], [14, -40]], .7, DI.pantalonO); });
+piece('dingo', 'dingo.bas', 'dingo.pocheCuisse', 'poche de cuisse', g => {
+  part(g, rect(-14.5, -51, 6.5, 5.5, 1), DI.pantalonO, null); ligne(g, [[-14, -49.8], [-8.5, -49.8]], .6, DI.boucle); });
+for (const [cote, x] of [['Arr', -21], ['Av', 17.8]]) {
+  piece('dingo', 'dingo.bas', 'dingo.sangle' + cote, 'sangle ' + (cote === 'Arr' ? 'arrière' : 'avant'), g => {
+    part(g, rect(x, -47.5, 3.6, 8, 1), DI.sangle, DI.sangleO);
+    part(g, ell(x + 1.8, -45.5, .8, .8), DI.boucle, null); part(g, ell(x + 1.8, -41.5, .8, .8), DI.boucle, null); });
+}
+for (const [cote, x] of [['Arr', -10], ['Av', 10]]) {
+  piece('dingo', 'dingo.bas', 'dingo.guetre' + cote, 'revers bouffant ' + (cote === 'Arr' ? 'arrière' : 'avant'), g => {
+    part(g, blob([[x - 8, -33], [x, -35.5], [x + 8, -33], [x + 8.2, -28.5], [x, -26.8], [x - 8.2, -28.5]]), DI.revers, DI.reversO);
+    ligne(g, [[x - 6, -31], [x + 6, -31]], .6, DI.reversO); });
+}
+piece('dingo', 'dingo.bas', 'dingo.ceinture', 'ceinture', g => { part(g, rect(-17, -63.5, 33, 4.6, 1.5), DI.ceinture, null); });
+piece('dingo', 'dingo.bas', 'dingo.boucle', 'boucle', g => {
+  part(g, rect(1, -64.6, 8.4, 6.8, 1.2), DI.boucle, DI.boucleO); part(g, rect(3, -62.7, 4.4, 3, .6), DI.ceinture, null); });
+// --- haut
+piece('dingo', 'dingo.haut', 'dingo.pull', 'pull rayé', g => {
   part(g, blob([[-12, -87], [11, -87], [14, -75], [15, -62], [-15, -62], [-14, -75]]), DI.pull, DI.pullO);
-  for (const x of [-11, -7.5, 8, 11.5]) ligne(g, [[x, -85], [x, -64]], .8, DI.rayure); } });
-noeud({ id: 'dingo.giletG', nom: 'gilet — pan gauche', perso: 'dingo', parent: 'dingo', f(g) {
-  part(g, blob([[-10, -86], [-2, -86], [-2, -64], [-11, -66]]), DI.gilet, DI.giletO); } });
-noeud({ id: 'dingo.giletD', nom: 'gilet — pan droit', perso: 'dingo', parent: 'dingo', f(g) {
-  part(g, blob([[3, -86], [10, -86], [11, -66], [3, -64]]), DI.gilet, DI.giletO); } });
-noeud({ id: 'dingo.pochesGilet', nom: 'poches du gilet', perso: 'dingo', parent: 'dingo', f(g) {
-  part(g, rect(-9, -77, 5, 5, 1), DI.pocheG, null); part(g, rect(4.8, -79, 5, 6, 1), DI.pocheG, null); } });
-noeud({ id: 'dingo.fermeture', nom: 'fermeture éclair', perso: 'dingo', parent: 'dingo', f(g) { ligne(g, [[.5, -87], [.5, -64]], 1.2, DI.boucle); } });
-noeud({ id: 'dingo.colRoule', nom: 'col roulé', perso: 'dingo', parent: 'dingo', f(g) {
-  part(g, blob([[-5.5, -90], [6.5, -90], [7.5, -86], [-6.5, -86]]), DI.pull, DI.pullO); } });
-noeud({ id: 'dingo.cou', nom: 'cou', perso: 'dingo', parent: 'dingo', f(g) { tube(g, [[1, -89], [3, -95]], 3.2, DI.noir); } });
-// bras avant, prêt au combat : il présente le bouclier devant le corps
-noeud({ id: 'dingo.brasAv', nom: 'bras avant', perso: 'dingo', parent: 'dingo', pivot: [11, -82], f(g) {
-  tube(g, [[11, -82], [20, -72], [15, -66]], 7.5, DI.pull);
-  part(g, ell(14.5, -65.5, 1.9, 4.2, .3), DI.manchette, null);
-  part(g, ell(12.5, -65, 5.2, 5.6), DI.gant, DI.gantO); } });
+  for (const x of [-12, -8.5, 7.5, 11]) ligne(g, [[x, -85], [x, -64]], .8, DI.rayure); });
+piece('dingo', 'dingo.haut', 'dingo.giletG', 'gilet — pan gauche', g => {
+  part(g, blob([[-10.5, -86.5], [-1.5, -86.5], [-1.5, -64.5], [-11.5, -66.5]]), DI.gilet, DI.giletO); });
+piece('dingo', 'dingo.haut', 'dingo.giletD', 'gilet — pan droit', g => {
+  part(g, blob([[2.5, -86.5], [10.5, -86.5], [11.5, -66.5], [2.5, -64.5]]), DI.gilet, DI.giletO); });
+piece('dingo', 'dingo.haut', 'dingo.pochesGilet', 'poches du gilet', g => {
+  part(g, rect(-9.5, -78, 5.5, 5.5, 1), DI.pocheG, DI.pocheGO); part(g, rect(4.5, -80, 5.5, 6.5, 1), DI.pocheG, DI.pocheGO);
+  part(g, rect(-9, -71, 5, 3.2, .8), DI.pocheG, DI.pocheGO); });
+piece('dingo', 'dingo.haut', 'dingo.fermeture', 'fermeture éclair', g => {
+  ligne(g, [[.5, -87], [.5, -64]], 1.3, DI.boucle);
+  for (let y = -85; y < -65; y += 2.4) ligne(g, [[-.4, y], [1.4, y + 1.2]], .45, DI.pull); });
+piece('dingo', 'dingo.haut', 'dingo.cou', 'cou', g => { tube(g, [[1.5, -89], [3, -97]], 3.2, DI.noir); }, [1.5, -89]);
+piece('dingo', 'dingo.haut', 'dingo.colRoule', 'col roulé', g => {
+  part(g, blob([[-5.5, -91], [6.5, -91], [7.5, -86.5], [-6.5, -86.5]]), DI.pull, DI.pullO);
+  ligne(g, [[-5, -89], [6.5, -89]], .6, DI.rayure); });
+// --- tête : crâne, oreille côté nuque, visage, chapeau
+piece('dingo', 'dingo.crane', 'dingo.crane.dome', 'crâne', g => {
+  part(g, blob([[-5, -101], [-6, -108], [-2, -114], [5, -116.5], [12, -115], [16, -110], [16, -104], [11, -100], [3, -98.5]]), DI.noir, DI.noirO); });
+piece('dingo', 'dingo.crane', 'dingo.oreilleNuque', 'oreille côté nuque', g => {
+  part(g, blob([[-2.5, -107], [-7.5, -103], [-10.5, -94], [-12, -84], [-10, -79.5], [-6.5, -84], [-4.5, -95], [-.5, -103]]), DI.noir, DI.noirO); }, [-3, -105]);
+piece('dingo', 'dingo.visage', 'dingo.machoire', 'mâchoire du bas', g => {
+  part(g, blob([[7, -97], [15, -96.5], [22, -96], [24.5, -94.5], [21.5, -90.8], [14, -89.6], [8, -90.8], [5, -94]]), DI.museau, DI.museauO); }, [7, -96]);
+piece('dingo', 'dingo.visage', 'dingo.bouche', 'intérieur de la bouche', g => {
+  part(g, blob([[8, -96.6], [22, -96.2], [21, -93.6], [14, -92.3], [9, -93.3]]), DI.bouche, null); });
+piece('dingo', 'dingo.visage', 'dingo.langue', 'langue', g => {
+  part(g, blob([[11, -93.9], [18.5, -94.1], [17.5, -92.6], [12.2, -92.5]]), DI.langue, null); });
+piece('dingo', 'dingo.visage', 'dingo.masque', 'masque et museau', g => {
+  part(g, blob([[2, -104], [6, -103.2], [10, -103.6], [15, -104.2], [20, -102.6], [27, -100.6], [32.5, -99.6], [34.5, -97.6], [31.8, -95.8], [24, -96], [16, -96.4], [8, -96.6], [3, -98.6], [1, -101.5]]), DI.museau, DI.museauO); });
+piece('dingo', 'dingo.visage', 'dingo.dents', 'dents', g => {
+  part(g, rect(15.2, -96.8, 2.4, 3.2, .5), DI.dent, DI.dentO); part(g, rect(18, -96.6, 2.4, 3, .5), DI.dent, DI.dentO); });
+piece('dingo', 'dingo.visage', 'dingo.nez', 'nez', g => {
+  part(g, ell(33.8, -99.8, 3.9, 3.1, -.15), DI.nez, null);
+  if (!PIOCHE) { couleur(DI.nezReflet); g.fillStyle = DI.nezReflet; g.beginPath(); g.ellipse(34.8, -101, 1.2, .7, -.3, 0, Math.PI * 2); g.fill(); } });
+piece('dingo', 'dingo.visage', 'dingo.oeilD', 'œil droit (le plus loin)', g => { oeil(g, DI, 12.9, -107.3, 3.3, 5, 14.2, -106, 1.6); });
+piece('dingo', 'dingo.visage', 'dingo.oeilG', 'œil gauche (le plus proche)', g => { oeil(g, DI, 7.2, -107.8, 3.7, 5.4, 8.8, -106.4, 1.8); });
+piece('dingo', 'dingo.chapeauD', 'dingo.chapeau', 'chapeau', g => {
+  // un haut cône au bout arrondi, à peine penché vers l'arrière, comme sur les rendus KH3
+  part(g, blob([[-2, -113], [-1.4, -120], [-.4, -126.5], [1.2, -131.5], [3.6, -134.6], [6.6, -134.2], [8.6, -130.8], [9.8, -125.5], [10.8, -119.5], [12, -113]]), DI.chapeau, DI.chapeauO);
+  ligne(g, [[3, -132], [3.6, -125], [4.4, -118]], .7, DI.chapeauO); }, [5, -114]);
+piece('dingo', 'dingo.chapeauD', 'dingo.bandeChapeau', 'bande du chapeau', g => {
+  part(g, blob([[-3, -115.8], [5, -117.8], [12.5, -116.2], [12.8, -112.5], [5, -114], [-3, -112.3]]), DI.bande, DI.bandeO); });
+piece('dingo', 'dingo.chapeauD', 'dingo.lunettes', "lunettes d'aviateur", g => {
+  ligne(g, [[3, -115.2], [14.5, -114.5]], 1, DI.lunetteO);
+  part(g, ell(7.2, -115.5, 3.4, 3.4), DI.lunette, DI.lunetteO); part(g, ell(7.2, -115.5, 2, 2), DI.verre, null);
+  part(g, ell(12, -115.1, 2.9, 3), DI.lunette, DI.lunetteO); part(g, ell(12, -115.1, 1.7, 1.8), DI.verre, null); });
+piece('dingo', 'dingo.chapeauD', 'dingo.meches', 'mèches', g => {
+  // trois mèches qui jaillissent vers l'avant, au niveau des lunettes
+  ligne(g, [[12.5, -117.5], [16, -121], [19.5, -123.8]], .75, DI.meche);
+  ligne(g, [[13, -116.5], [17.5, -118.2], [22.5, -119]], .75, DI.meche);
+  ligne(g, [[13, -115.3], [18, -115.4], [23, -114.8]], .75, DI.meche); }, [12, -116]);
+// --- bras avant et bouclier (devant tout)
+piece('dingo', 'dingo.brasAv', 'dingo.brasAv.manche', 'manche', g => {
+  tube(g, [[11, -82], [20, -72], [16, -66.5]], 7.5, DI.pull); ligne(g, [[16, -76], [18.5, -73]], .8, DI.rayure); });
+piece('dingo', 'dingo.brasAv', 'dingo.brasAv.manchette', 'manchette rayée', g => {
+  part(g, ell(15, -66, 2.2, 4.4, .35), DI.manchette, DI.manchetteO); });
+piece('dingo', 'dingo.brasAv', 'dingo.brasAv.gant', 'gant', g => {
+  part(g, blob([[9, -69], [13, -70], [15.5, -66], [14, -61.5], [10, -61], [7.5, -64.5]]), DI.gant, DI.gantO); });
 // le bouclier du chevalier : anneau doré, bande bleue, anneau doré, fond bleu
 // clair, et l'emblème tête de Mickey en trois disques de métal cerclés d'or.
 // Vu de trois quarts, il est aplati en largeur.
-noeud({ id: 'dingo.bouclier', nom: 'BOUCLIER', perso: 'dingo', parent: 'dingo.brasAv', pivot: [11, -67], f(g) {
+piece('dingo', 'dingo.brasAv', 'dingo.bouclier', 'BOUCLIER', g => {
   g.save(); g.translate(11, -67); g.scale(.82, 1);
   part(g, ell(0, 0, 15.5, 15.5), DI.bouclierOr, DI.bouclierOrO);
   part(g, ell(0, 0, 13.7, 13.7), DI.bouclierBleu, DI.bouclierBleuO);
@@ -359,95 +457,116 @@ noeud({ id: 'dingo.bouclier', nom: 'BOUCLIER', perso: 'dingo', parent: 'dingo.br
     if (!PIOCHE) { couleur(DI.metalReflet); g.fillStyle = DI.metalReflet; g.globalAlpha = .55;
       g.beginPath(); g.ellipse(x + r * .15, y - r * .3, r * .38, r * .26, 0, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; }
   }
-  g.restore(); } });
-// la tête : un groupe qui tourne et grandit autour du cou
-noeud({ id: 'dingo.tete', nom: 'Tête', perso: 'dingo', groupe: true, parent: 'dingo', pivot: [2, -93] });
-const T_DI = { perso: 'dingo', parent: 'dingo.tete' };
-noeud({ ...T_DI, id: 'dingo.oreilleArr', nom: 'oreille arrière', pivot: [-4, -102], f(g) {
-  part(g, blob([[-4, -104], [-9, -99], [-11, -89], [-9.5, -84], [-7, -90], [-2, -100]]), DI.noir, DI.noirO); } });
-noeud({ ...T_DI, id: 'dingo.crane', nom: 'crâne', f(g) { part(g, ell(2, -101, 9.5, 9), DI.noir, DI.noirO); } });
-noeud({ ...T_DI, id: 'dingo.oreilleAv', nom: 'oreille avant', pivot: [12, -96], f(g) {
-  part(g, blob([[9, -97], [12.5, -92], [12, -83], [14, -80], [15.5, -85], [14, -96]]), DI.noir, DI.noirO); } });
-noeud({ ...T_DI, id: 'dingo.masque', nom: 'masque et museau', f(g) {
-  part(g, blob([[1, -103], [7, -108], [14, -105.5], [23, -100], [29.5, -96], [26, -91.5], [13, -90.5], [3, -91.5], [0, -97]]), DI.museau, DI.museauO); } });
-noeud({ ...T_DI, id: 'dingo.bouche', nom: 'bouche', f(g) { part(g, blob([[6, -92], [18, -91.5], [15, -88], [8, -88.5]]), DI.bouche, null); } });
-noeud({ ...T_DI, id: 'dingo.dents', nom: 'dents', f(g) {
-  part(g, rect(11.5, -91.7, 2.6, 4, .6), DI.dent, null); part(g, rect(14.6, -91.5, 2.6, 3.8, .6), DI.dent, null); } });
-noeud({ ...T_DI, id: 'dingo.nez', nom: 'nez', f(g) { part(g, ell(29, -96.5, 3.6, 3), DI.nez, null); } });
-noeud({ ...T_DI, id: 'dingo.oeilG', nom: 'œil gauche', f(g) { oeil(g, DI, 7, -103.5, 3.2, 4.6, 8.5, -102.6, 1.7); } });
-noeud({ ...T_DI, id: 'dingo.oeilD', nom: 'œil droit', f(g) { oeil(g, DI, 12.5, -103, 2.8, 4.2, 13.8, -102.2, 1.6); } });
-noeud({ ...T_DI, id: 'dingo.chapeau', nom: 'chapeau', pivot: [1, -108], f(g) {
-  part(g, blob([[-8, -108], [-10, -116], [-7, -123], [-13, -131], [-4, -133], [5, -125], [9, -114], [10, -108]]), DI.chapeau, DI.chapeauO); } });
-noeud({ ...T_DI, id: 'dingo.bandeChapeau', nom: 'bande du chapeau', f(g) {
-  part(g, blob([[-9, -109.5], [1, -111.5], [10.5, -109], [10, -106], [1, -107.5], [-9, -106]]), DI.bande, null); } });
-noeud({ ...T_DI, id: 'dingo.lunettes', nom: "lunettes d'aviateur", f(g) {
-  part(g, ell(5, -108.5, 3.1, 3.1), DI.lunette, null); part(g, ell(5, -108.5, 1.8, 1.8), DI.verre, null);
-  part(g, ell(10.2, -108, 2.6, 2.7), DI.lunette, null); part(g, ell(10.2, -108, 1.5, 1.6), DI.verre, null); } });
-noeud({ ...T_DI, id: 'dingo.moustaches', nom: 'moustaches', pivot: [2, -112], f(g) {
-  for (const [a, b] of [[[2, -112], [6, -122]], [[3, -112], [9, -120]], [[1, -112], [2, -123]]]) ligne(g, [a, b], .6, DI.moustache); } });
+  g.restore(); }, [11, -67]);
 
-// -------- DONALD --------
-noeud({ id: 'donald', nom: 'DONALD', perso: 'donald', groupe: true, pivot: [0, 0] });
-noeud({ id: 'donald.queue', nom: 'queue', perso: 'donald', parent: 'donald', pivot: [-19, -40], f(g) {
-  part(g, blob([[-19, -46], [-33, -54], [-29, -45], [-37, -42], [-28, -36], [-18, -33]]), DO.plume, DO.plumeO); } });
-noeud({ id: 'donald.jambeArr', nom: 'jambe arrière', perso: 'donald', parent: 'donald', pivot: [-7, -24], f(g) { tube(g, [[-7, -24], [-9, -5]], 4.2, DO.bec); } });
-noeud({ id: 'donald.patteArr', nom: 'patte arrière', perso: 'donald', parent: 'donald', f(g) {
-  part(g, blob([[-5, -6], [-16, -6], [-27, -3], [-29, 0], [-15, 1.2], [-2, 0]]), DO.bec, DO.becO); } });
-noeud({ id: 'donald.jambeAv', nom: 'jambe avant', perso: 'donald', parent: 'donald', pivot: [6, -24], f(g) { tube(g, [[6, -24], [8, -5]], 4.2, DO.bec); } });
-noeud({ id: 'donald.patteAv', nom: 'patte avant', perso: 'donald', parent: 'donald', f(g) {
-  part(g, blob([[3, -6], [15, -6], [28, -3], [31, 0], [15, 1.2], [0, 0]]), DO.bec, DO.becO); } });
-noeud({ id: 'donald.brasArr', nom: 'bras arrière', perso: 'donald', parent: 'donald', pivot: [-15, -57], f(g) {
-  tube(g, [[-15, -57], [-23, -46]], 7, DO.veste); tube(g, [[-23, -46], [-22, -35]], 5, DO.plume);
-  part(g, ell(-21.5, -33.5, 3.4, 1.6), DO.bracelet, null); part(g, ell(-21.5, -30.5, 4.6, 4.4), DO.plume, DO.plumeO); } });
-noeud({ id: 'donald.corps', nom: 'corps', perso: 'donald', parent: 'donald', f(g) { part(g, ell(-1, -38, 21, 19), DO.plume, DO.plumeO); } });
-noeud({ id: 'donald.veste', nom: 'veste', perso: 'donald', parent: 'donald', f(g) {
-  part(g, blob([[-19, -59], [17, -59], [21, -46], [19, -35], [9, -31], [1, -34], [-8, -31], [-18, -35], [-22, -47]]), DO.veste, DO.vesteO);
-  ligne(g, [[-18, -35], [-8, -31.5], [1, -34.5], [9, -31.5], [19, -35.5]], 1.2, DO.liseréClair); } });
-noeud({ id: 'donald.poches', nom: 'poches', perso: 'donald', parent: 'donald', f(g) {
-  part(g, rect(-15, -47, 8, 7, 1.5), DO.poche, null); part(g, rect(7, -47, 8, 7, 1.5), DO.poche, null); } });
-noeud({ id: 'donald.fermeture', nom: 'fermeture éclair', perso: 'donald', parent: 'donald', f(g) {
-  ligne(g, [[2, -57], [2, -33]], 1.3, DO.zip); part(g, rect(.6, -36, 2.8, 4, .6), DO.zip, null); } });
-noeud({ id: 'donald.cape', nom: 'petite cape', perso: 'donald', parent: 'donald', f(g) {
-  part(g, blob([[-21, -60], [-11, -65], [12, -65], [21, -60], [22, -52], [11, -50.5], [1, -53], [-9, -50.5], [-22, -52]]), DO.cape, DO.capeO);
-  ligne(g, [[-22, -52], [-9, -50.5], [1, -53], [11, -50.5], [22, -52]], 1.3, DO.liseréJaune); } });
-noeud({ id: 'donald.col', nom: 'col', perso: 'donald', parent: 'donald', f(g) {
-  part(g, rect(-6, -66, 13, 3.2, 1.5), DO.bande, null); part(g, rect(-2, -62, 7, 2.4, .8), DO.zip, null); } });
+/* =============================== DONALD =============================== */
+// Corps blanc en poire, grande tête ronde, deux grands yeux collés, long bec,
+// bonnet bleu mou posé en arrière, veste marine et petite cape bordée d'or.
+const DONALD_H = 105;
+dossier('donald', null, 'donald', 'DONALD', [0, 0]);
+dossier('donald', 'donald', 'donald.brasArr', 'Bras arrière', [-15, -57]);
+dossier('donald', 'donald', 'donald.corpsD', 'Corps et queue');
+dossier('donald', 'donald', 'donald.pattes', 'Pattes');
+dossier('donald', 'donald', 'donald.tenue', 'Tenue — veste et cape');
+dossier('donald', 'donald', 'donald.tete', 'Tête', [3, -64]);
+dossier('donald', 'donald.tete', 'donald.craneD', 'Crâne', [4, -80]);
+dossier('donald', 'donald.tete', 'donald.visage', 'Visage', [18, -76]);
+dossier('donald', 'donald.tete', 'donald.bonnetD', 'Bonnet', [4, -95]);
+dossier('donald', 'donald', 'donald.brasAv', 'Bras avant et bâton', [16, -57]);
+
+// --- bras arrière
+piece('donald', 'donald.brasArr', 'donald.brasArr.manche', 'manche', g => { tube(g, [[-15, -57], [-23, -46.5]], 7, DO.veste); });
+piece('donald', 'donald.brasArr', 'donald.brasArr.bras', 'bras', g => { tube(g, [[-23, -46.5], [-22, -36]], 5, DO.plume); });
+piece('donald', 'donald.brasArr', 'donald.brasArr.bracelet', 'bracelet doré', g => {
+  part(g, rect(-25.3, -37.2, 6.8, 3.2, 1.2), DO.bracelet, DO.braceletO); });
+piece('donald', 'donald.brasArr', 'donald.brasArr.main', 'main', g => {
+  part(g, blob([[-26, -33], [-22, -34.5], [-18, -32.5], [-17.5, -28.5], [-20.5, -26], [-24.5, -26.5], [-26.8, -29.5]]), DO.plume, DO.plumeO); });
+// --- corps et queue
+piece('donald', 'donald.corpsD', 'donald.queue', 'queue', g => {
+  part(g, blob([[-18, -47], [-30, -55], [-28, -47.5], [-37, -45], [-29, -40], [-35, -35.5], [-24, -34.5], [-17, -33]]), DO.plume, DO.plumeO); }, [-18, -40]);
+// --- pattes
+for (const [cote, s] of [['Arr', -1], ['Av', 1]]) {
+  piece('donald', 'donald.pattes', 'donald.jambe' + cote, 'jambe ' + (s < 0 ? 'arrière' : 'avant'), g => {
+    tube(g, [[6.5 * s, -25], [8.5 * s, -5]], 4.2, DO.bec); }, [6.5 * s, -25]);
+}
+piece('donald', 'donald.pattes', 'donald.patteArr', 'patte arrière', g => {
+  part(g, blob([[-5.5, -6.5], [-15, -6.5], [-24, -4.5], [-30, -1.8], [-28.5, .6], [-22, .2], [-15, 1.2], [-8, .6], [-2, 0]]), DO.bec, DO.becO);
+  ligne(g, [[-12, -3.5], [-20, -1]], .6, DO.becO); ligne(g, [[-10, -2.5], [-15, .4]], .6, DO.becO); });
+piece('donald', 'donald.pattes', 'donald.patteAv', 'patte avant', g => {
+  part(g, blob([[3.5, -6.5], [14, -6.5], [24, -4.5], [31, -1.8], [30, .6], [23, .2], [15, 1.2], [7, .6], [0, 0]]), DO.bec, DO.becO);
+  ligne(g, [[11, -3.5], [21, -1]], .6, DO.becO); ligne(g, [[9, -2.5], [15, .4]], .6, DO.becO); });
+piece('donald', 'donald.corpsD', 'donald.corps', 'corps', g => {
+  part(g, blob([[-19, -45], [-12, -56], [0, -58], [13, -56], [20, -45], [20, -32], [12, -23], [-1, -20.5], [-14, -23], [-21, -32]]), DO.plume, DO.plumeO); });
+// --- tenue
+piece('donald', 'donald.tenue', 'donald.veste', 'veste', g => {
+  part(g, blob([[-19, -59], [17, -59], [21, -46], [19.5, -37], [9, -33], [1, -35.5], [-8, -33], [-18.5, -37], [-22, -47]]), DO.veste, DO.vesteO); });
+piece('donald', 'donald.tenue', 'donald.lisere', 'liseré bleu clair', g => {
+  ligne(g, [[-18.5, -37], [-8, -33.5], [1, -36], [9, -33.5], [19.5, -37.5]], 1.2, DO.lisereClair);
+  ligne(g, [[-2, -58], [-2.5, -36]], .9, DO.lisereClair); ligne(g, [[6, -58], [6.5, -35]], .9, DO.lisereClair); });
+piece('donald', 'donald.tenue', 'donald.poches', 'poches', g => {
+  part(g, rect(-15.5, -48, 8.5, 7, 1.5), DO.poche, DO.pocheO); part(g, rect(8, -48, 8.5, 7, 1.5), DO.poche, DO.pocheO);
+  ligne(g, [[-15, -46.5], [-7.5, -46.5]], .7, DO.lisereJaune); ligne(g, [[8.5, -46.5], [16, -46.5]], .7, DO.lisereJaune); });
+piece('donald', 'donald.tenue', 'donald.fermeture', 'fermeture éclair', g => {
+  ligne(g, [[2, -57], [2, -35]], 1.3, DO.zip); part(g, rect(.6, -38, 2.8, 4, .6), DO.zip, DO.zipO); });
+piece('donald', 'donald.tenue', 'donald.cape', 'petite cape', g => {
+  part(g, blob([[-21, -60], [-11, -65.5], [12, -65.5], [21, -60], [22.5, -52], [11, -50], [1, -53], [-9, -50], [-22.5, -52]]), DO.cape, DO.capeO); });
+piece('donald', 'donald.tenue', 'donald.bordureCape', 'bordure dorée de la cape', g => {
+  ligne(g, [[-22.5, -52], [-9, -50], [1, -53], [11, -50], [22.5, -52]], 1.4, DO.lisereJaune); });
+piece('donald', 'donald.tenue', 'donald.col', 'col montant', g => {
+  part(g, blob([[-7, -67.5], [8, -67.5], [9, -63], [-8, -63]]), DO.veste, DO.vesteO);
+  ligne(g, [[-7.5, -67.2], [8.5, -67.2]], .9, DO.lisereJaune); });
+piece('donald', 'donald.tenue', 'donald.fermoir', 'fermoir argent', g => {
+  part(g, rect(-1.5, -64, 8, 2.6, .8), DO.zip, DO.zipO); part(g, rect(1.2, -65, 2.6, 4.6, .6), DO.zip, DO.zipO); });
+// --- tête : crâne, visage, bonnet
+piece('donald', 'donald.bonnetD', 'donald.bonnetPli', 'pli qui retombe', g => {
+  part(g, blob([[-7.5, -99], [-16.5, -97], [-21, -89], [-18.5, -82], [-12.5, -84], [-10, -91]]), DO.bonnet, DO.bonnetO); }, [-9, -95]);
+piece('donald', 'donald.craneD', 'donald.crane', 'crâne', g => {
+  part(g, blob([[-11, -79], [-9, -90], [-1, -97], [10, -97], [18, -91], [21, -81], [19, -72], [12, -66], [2, -64], [-7, -68]]), DO.plume, DO.plumeO); });
+piece('donald', 'donald.visage', 'donald.becBas', 'bec du bas', g => {
+  part(g, blob([[10, -70.5], [20, -70], [30, -68.8], [34.5, -66.8], [30.5, -64.8], [19, -65.4], [11, -67.5]]), DO.bec, DO.becO); }, [11, -69]);
+piece('donald', 'donald.visage', 'donald.bouche', 'intérieur du bec', g => {
+  part(g, blob([[12, -71.2], [26, -70.8], [30.5, -69.2], [22, -67.8], [13, -68.8]]), DO.bouche, null); });
+piece('donald', 'donald.visage', 'donald.langue', 'langue', g => {
+  part(g, blob([[15, -69.8], [22.5, -69.5], [20.5, -68.1], [15.8, -68.4]]), DO.langue, null); });
+piece('donald', 'donald.visage', 'donald.becHaut', 'bec du haut', g => {
+  part(g, blob([[6, -75.8], [12, -77.6], [22, -76.6], [32, -74.9], [39.2, -73.8], [41.2, -71.5], [37.5, -70], [26, -70.8], [15, -71.2], [7, -72.6]]), DO.bec, DO.becO);
+  ligne(g, [[14, -75.5], [30, -73.6]], .6, DO.becReflet); }, [8, -74]);
+piece('donald', 'donald.visage', 'donald.oeilD', 'œil droit (le plus loin)', g => { oeil(g, DO, 16, -84.2, 4, 6.6, 17.8, -83.4, 2); });
+piece('donald', 'donald.visage', 'donald.oeilG', 'œil gauche (le plus proche)', g => { oeil(g, DO, 9, -85, 4.6, 7.2, 11.2, -84.2, 2.3); });
+piece('donald', 'donald.bonnetD', 'donald.bonnet', 'bonnet', g => {
+  part(g, blob([[-11, -89], [-8, -99], [1, -104.5], [12, -103.5], [20, -97], [21, -91.5], [10, -93.5], [-2, -92.5]]), DO.bonnet, DO.bonnetO); }, [4, -95]);
+piece('donald', 'donald.bonnetD', 'donald.fermetureBonnet', 'fermeture du bonnet', g => {
+  ligne(g, [[-7, -98.5], [1, -102.3], [11.5, -101.5], [18.5, -96.5]], 1.3, DO.lisereClair);
+  for (const [x, y] of [[-3, -100.6], [2, -102], [7, -102.2], [12, -101.2], [16, -98.6]]) ligne(g, [[x - .6, y - .6], [x + .6, y + .6]], .5, DO.bonnetO); });
+piece('donald', 'donald.bonnetD', 'donald.bandeBonnet', 'bande sur le front', g => {
+  part(g, blob([[-11, -90.5], [-1, -94.6], [11, -95.2], [21, -92.6], [20.6, -89.4], [10, -91.6], [-1, -91], [-10, -87.4]]), DO.bande, DO.bandeO); });
+piece('donald', 'donald.bonnetD', 'donald.tirette', 'tirette', g => {
+  ligne(g, [[-18, -83], [-19, -78.5]], .9, DO.zip); part(g, rect(-21, -79, 4, 5.5, .8), DO.zip, DO.zipO);
+  part(g, rect(-20, -77.8, 2, 2.2, .3), DO.zipO, null); }, [-18, -83]);
+// --- bras avant et bâton (devant tout)
 // le bâton du mage, tenu levé devant lui : manche sombre, bagues blanches,
 // pommeau doré, éclair bleu en zigzag et chapeau de sorcier plié au sommet.
-noeud({ id: 'donald.baton', nom: 'BÂTON', perso: 'donald', parent: 'donald.brasAv', pivot: [36.8, -55], f(g) {
+piece('donald', 'donald.brasAv', 'donald.baton', 'BÂTON', g => {
   g.save(); g.translate(31, -30); g.rotate(.2288);
-  part(g, rect(-1.9, -3.5, 3.8, 4.5, 1.2), DO.pommeau, null);
-  part(g, rect(-1.7, -6, 3.4, 2.4, .6), DO.bague, null);
+  part(g, rect(-1.9, -3.5, 3.8, 4.5, 1.2), DO.pommeau, DO.pommeauO);
+  part(g, rect(-1.7, -6, 3.4, 2.4, .6), DO.bague, DO.bagueO);
   tube(g, [[0, -6], [0, -45]], 2.5, DO.manche);
-  part(g, rect(-1.9, -47.5, 3.8, 2.6, .6), DO.bague, null);
+  part(g, rect(-1.9, -47.5, 3.8, 2.6, .6), DO.bague, DO.bagueO);
   part(g, blob([[-2, -47.5], [3, -47.5], [4.2, -52], [-.6, -54.5], [5, -60], [1, -61], [-4.2, -55], [.6, -52.5]]), DO.eclair, DO.eclairO);
   ligne(g, [[3, -47.5], [4.2, -52], [-.6, -54.5], [5, -60]], .6, DO.eclairBord);
   part(g, ell(1.5, -61, 7.2, 2.2), DO.chapeauMage, DO.chapeauMageO);
   part(g, blob([[-3.5, -61.5], [6.5, -61.5], [4.5, -67], [10, -73], [3.5, -71], [-.5, -66]]), DO.chapeauMage, DO.chapeauMageO);
   part(g, rect(-3.2, -63.4, 9.4, 1.6, .4), DO.manche, null);
-  g.restore(); } });
-// bras avant, levé vers l'avant : il tient le bâton
-noeud({ id: 'donald.brasAv', nom: 'bras avant', perso: 'donald', parent: 'donald', pivot: [16, -57], f(g) {
-  tube(g, [[16, -57], [28, -49]], 7, DO.veste); tube(g, [[28, -49], [35, -54]], 5, DO.plume);
-  part(g, ell(31, -51.5, 1.7, 3.4, -.9), DO.bracelet, null); part(g, ell(36.8, -55, 4.4, 4.4), DO.plume, DO.plumeO); } });
-noeud({ id: 'donald.tete', nom: 'Tête', perso: 'donald', groupe: true, parent: 'donald', pivot: [3, -64] });
-const T_DO = { perso: 'donald', parent: 'donald.tete' };
-noeud({ ...T_DO, id: 'donald.bonnetPli', nom: 'bonnet — pli qui retombe', pivot: [-14, -92], f(g) {
-  part(g, blob([[-12, -98], [-25, -96], [-27, -86], [-21, -81], [-14, -88]]), DO.bonnet, DO.bonnetO); } });
-noeud({ ...T_DO, id: 'donald.crane', nom: 'crâne', f(g) { part(g, ell(4, -78, 17.5, 18), DO.plume, DO.plumeO); } });
-noeud({ ...T_DO, id: 'donald.becBas', nom: 'bec — mandibule du bas', pivot: [10, -64], f(g) {
-  part(g, blob([[9, -67], [27, -65], [33, -62], [22, -59.5], [10, -61.5]]), DO.bec, DO.becO); } });
-noeud({ ...T_DO, id: 'donald.bouche', nom: 'bouche', f(g) { part(g, blob([[12, -66.5], [26, -65.5], [22, -62.5], [13, -63]]), DO.bouche, null); } });
-noeud({ ...T_DO, id: 'donald.becHaut', nom: 'bec — mandibule du haut', pivot: [8, -70], f(g) {
-  part(g, blob([[7, -73], [19, -75], [35, -72], [39, -68], [31, -66], [15, -66.5], [6, -69]]), DO.bec, DO.becO); } });
-noeud({ ...T_DO, id: 'donald.oeilG', nom: 'œil gauche', f(g) { oeil(g, DO, 9.5, -83, 4.4, 6.8, 11.5, -82, 2.3); } });
-noeud({ ...T_DO, id: 'donald.oeilD', nom: 'œil droit', f(g) { oeil(g, DO, 18, -82, 3.8, 6.2, 19.6, -81, 2.1); } });
-noeud({ ...T_DO, id: 'donald.bonnet', nom: 'bonnet', pivot: [4, -92], f(g) {
-  part(g, blob([[-16, -88], [-12, -101], [4, -106], [19, -100], [23, -90], [4, -92]]), DO.bonnet, DO.bonnetO); } });
-noeud({ ...T_DO, id: 'donald.bandeBonnet', nom: 'bande du bonnet', f(g) {
-  part(g, blob([[-15, -88], [-3, -93.5], [13, -93.5], [22, -89], [18, -86], [-12, -85]]), DO.bande, null); } });
-noeud({ ...T_DO, id: 'donald.tirette', nom: 'tirette', pivot: [-22, -82], f(g) {
-  ligne(g, [[-22, -82], [-23, -77]], .9, DO.zip); part(g, rect(-25, -78, 4, 5.5, .8), DO.zip, null); } });
+  g.restore(); }, [36.8, -55]);
+piece('donald', 'donald.brasAv', 'donald.brasAv.manche', 'manche', g => { tube(g, [[16, -57], [28, -49.5]], 7, DO.veste); });
+piece('donald', 'donald.brasAv', 'donald.brasAv.bras', 'bras', g => { tube(g, [[28, -49.5], [34.5, -54]], 5, DO.plume); });
+piece('donald', 'donald.brasAv', 'donald.brasAv.bracelet', 'bracelet doré', g => {
+  g.save(); g.translate(31.2, -51.8); g.rotate(-.6);
+  part(g, rect(-1.7, -3.4, 3.4, 6.8, 1.2), DO.bracelet, DO.braceletO);
+  g.restore(); });
+piece('donald', 'donald.brasAv', 'donald.brasAv.main', 'main', g => {
+  part(g, blob([[33, -60], [37.5, -60.2], [40.5, -56.5], [39.5, -52], [35, -50.5], [32, -53], [32.5, -57]]), DO.plume, DO.plumeO);
+  ligne(g, [[36.5, -58.5], [38.5, -55.5]], .6, DO.plumeO); });
 
 const PAR_ID = Object.fromEntries(NOEUDS.map(n => [n.id, n]));
 const PIECES = NOEUDS.filter(n => !n.groupe);
@@ -551,8 +670,8 @@ function boiteDans(n) {
 // En unités de jeu : Sora au centre (60 de haut), Dingo à gauche, Donald à
 // droite, à la taille « comme dans les jeux » du mockup de design.
 const PLACE = {
-  dingo: new DOMMatrix().translate(-54, 0).scale(60 * 1.3 / 133),
-  donald: new DOMMatrix().translate(46, 0).scale(60 * .82 / 104),
+  dingo: new DOMMatrix().translate(-54, 0).scale(60 * 1.3 / DINGO_H),
+  donald: new DOMMatrix().translate(46, 0).scale(60 * .82 / DONALD_H),
 };
 function monde(n) {
   let m = locale(n);
@@ -776,20 +895,29 @@ function zoomer(k) { UI.auto = false; const c = { x: W / 2, y: H / 2 }, a = vers
 function majZoom() { document.getElementById('zoomTxt').textContent = Math.round(UI.zoom / 4 * 100) + ' %'; }
 
 /* ---------- calques ---------- */
-const plis = new Set();
+// Les dossiers de catégorie sont repliés au départ : on les ouvre d'un clic
+// sur la flèche, et cliquer une pièce sur le dessin ouvre tout son chemin.
+const plis = new Set(NOEUDS.filter(n => n.groupe && n.parent).map(n => n.id));
 function zMax(n) { if (!n.groupe) return ORDRE[n.perso].indexOf(n.id); return Math.max(-1, ...enfants(n).map(zMax)); }
 const modifie = id => { const v = etat[id]; return v.dx || v.dy || v.ex !== 1 || v.ey !== 1 || v.rot; };
+const contientModif = n => modifie(n.id) || !etat[n.id].vis || (n.groupe && enfants(n).some(contientModif));
 function construireCalques() {
-  const h = document.getElementById('calques'); h.innerHTML = '';
+  const h = document.getElementById('calques'), haut = h.scrollTop; h.innerHTML = '';
   const ligneCq = (n, prof) => {
     const d = document.createElement('div');
-    d.className = 'cq' + (n.groupe ? ' grp' : '') + (n.id === choisi ? ' on' : '') + (etat[n.id].vis ? '' : ' cache') + (modifie(n.id) ? ' mod' : '');
+    d.className = 'cq' + (n.groupe ? ' grp' : '') + (n.id === choisi ? ' on' : '') + (etat[n.id].vis ? '' : ' cache') + (contientModif(n) ? ' mod' : '');
+    d.dataset.id = n.id;
     d.style.paddingLeft = (8 + prof * 14) + 'px';
+    const nb = n.groupe ? descendants(n).filter(q => !q.groupe).length : 0;
     d.innerHTML = `<span class="oeil" title="Masquer / afficher">${etat[n.id].vis ? '👁' : '·'}</span>` +
-      `<span class="fl">${n.groupe ? (plis.has(n.id) ? '▸' : '▾') : ''}</span><span class="nom">${n.nom}</span><span class="pt"></span>`;
+      `<span class="fl">${n.groupe ? (plis.has(n.id) ? '▸' : '▾') : ''}</span>` +
+      `<span class="ic">${n.groupe ? '📁' : ''}</span><span class="nom">${n.nom}${n.groupe ? ` <small>${nb}</small>` : ''}</span><span class="pt"></span>`;
     d.querySelector('.oeil').onclick = e => { e.stopPropagation(); changer(() => { etat[n.id].vis = !etat[n.id].vis; }); };
     d.querySelector('.fl').onclick = e => { if (!n.groupe) return; e.stopPropagation(); plis.has(n.id) ? plis.delete(n.id) : plis.add(n.id); construireCalques(); };
-    d.onclick = () => choisir(n.id);
+    d.addEventListener('pointerdown', e => {
+      if (e.button !== 0 || e.target.closest('.oeil, .fl')) return;
+      glisseCq = { id: n.id, y0: e.clientY, actif: false, cible: null };
+    });
     h.append(d);
     if (n.groupe && !plis.has(n.id)) {
       // Comme dans Photoshop : le calque du dessus en haut de la liste.
@@ -797,12 +925,58 @@ function construireCalques() {
     }
   };
   ligneCq(PAR_ID.dingo, 0); ligneCq(PAR_ID.donald, 0);
+  h.scrollTop = haut;
+}
+// GLISSER UN CALQUE dans la liste le fait monter ou descendre dans
+// l'empilement ; glisser un dossier déplace toutes ses pièces d'un bloc. Le
+// calque reste dans son dossier : seul l'ordre de dessin change.
+let glisseCq = null;
+const nettoyerCq = () => document.querySelectorAll('.cq.dropHaut, .cq.dropBas, .cq.glisse').forEach(r => r.classList.remove('dropHaut', 'dropBas', 'glisse'));
+addEventListener('pointermove', e => {
+  if (!glisseCq) return;
+  if (!glisseCq.actif) {
+    if (Math.abs(e.clientY - glisseCq.y0) < 5) return;
+    glisseCq.actif = true;
+    const src = document.querySelector(`.cq[data-id="${glisseCq.id}"]`); if (src) src.classList.add('glisse');
+  }
+  document.querySelectorAll('.cq.dropHaut, .cq.dropBas').forEach(r => r.classList.remove('dropHaut', 'dropBas'));
+  const row = document.elementFromPoint(e.clientX, e.clientY)?.closest('.cq');
+  glisseCq.cible = null;
+  if (row && row.dataset.id !== glisseCq.id) {
+    const r = row.getBoundingClientRect(), dessus = e.clientY < r.top + r.height / 2;
+    row.classList.add(dessus ? 'dropHaut' : 'dropBas');
+    glisseCq.cible = row.dataset.id; glisseCq.dessus = dessus;
+  }
+  // Près des bords, la liste défile toute seule.
+  const lst = document.getElementById('calques'), lr = lst.getBoundingClientRect();
+  if (e.clientY < lr.top + 18) lst.scrollTop -= 8; else if (e.clientY > lr.bottom - 18) lst.scrollTop += 8;
+});
+addEventListener('pointerup', () => {
+  if (!glisseCq) return;
+  const gq = glisseCq; glisseCq = null; nettoyerCq();
+  if (!gq.actif) { choisir(gq.id); return; }
+  if (gq.cible) deposer(gq.id, gq.cible, gq.dessus);
+});
+function blocDe(n) { const ids = new Set([n.id, ...descendants(n).map(d => d.id)]); return ORDRE[n.perso].filter(id => ids.has(id)); }
+function deposer(srcId, cibleId, dessus) {
+  const src = PAR_ID[srcId], cib = PAR_ID[cibleId];
+  if (!src.parent) { toast('Le personnage entier ne se déplace pas dans la liste'); return; }
+  if (src.perso !== cib.perso) { toast('Donald et Dingo gardent chacun leurs calques'); return; }
+  if (descendants(src).some(d => d.id === cib.id)) return;
+  const bloc = blocDe(src), reste = ORDRE[src.perso].filter(id => !bloc.includes(id));
+  const cibBloc = blocDe(cib).filter(id => !bloc.includes(id));
+  if (!bloc.length || !cibBloc.length) return;
+  // Au-dessus dans la liste = devant sur le dessin.
+  const pos = dessus ? reste.indexOf(cibBloc[cibBloc.length - 1]) + 1 : reste.indexOf(cibBloc[0]);
+  changer(() => { ORDRE[src.perso] = [...reste.slice(0, pos), ...bloc, ...reste.slice(pos)]; });
+  toast(src.nom + (dessus ? ' passe devant ' : ' passe derrière ') + cib.nom);
 }
 
 /* ---------- propriétés ---------- */
 let lier = true, curseurs = [];
 function choisir(id) {
   choisi = id;
+  if (id) for (let q = parentDe(PAR_ID[id]); q; q = parentDe(q)) plis.delete(q.id);
   document.getElementById('sNom').textContent = id ? PAR_ID[id].nom : '—';
   construireCalques(); majProps(); majCouleurs(); dessiner();
   const el = document.querySelector('.cq.on'); if (el) el.scrollIntoView({ block: 'nearest' });
@@ -1031,7 +1205,8 @@ function toast(m) { const t = document.getElementById('toast'); t.textContent = 
 new ResizeObserver(() => { caler(); dessiner(); }).observe(document.getElementById('scene'));
 caler();
 majTout();
-window.__atelier = { etat, NOEUDS, PAR_ID, choisir, exporter, importer, poignees, UI, piocher, get choisi() { return choisi; } };
+window.__atelier = { etat, NOEUDS, PAR_ID, choisir, exporter, importer, poignees, UI, piocher, cadrer, dessiner, boiteMonde, deposer,
+  get ORDRE() { return ORDRE; }, get choisi() { return choisi; } };
 </script>
 </body>
 </html>
