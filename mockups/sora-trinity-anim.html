@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Trinity — l'apparition</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0a0c14; --panel:#131826; --panel2:#182036; --edge:#2a3350; --edge2:#44527a; --ink:#eef1f8;
+         --doux:#a7b0c8; --pale:#6b7594; --or:#f8c81c; --bleu:#3f63d8; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;padding:20px 18px 60px}
+  h1{font-size:22px;margin:0 0 6px;font-family:'Archivo Black',sans-serif;letter-spacing:.5px}
+  h1 em{font-style:normal;color:var(--or)}
+  .note{font-size:12.5px;color:var(--doux);max-width:1100px;line-height:1.75;margin:0 0 14px}
+  .note b{color:var(--ink)}
+  .haut{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}
+  .bloc{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:12px}
+  .bloc h3{margin:0 0 8px;font-size:11px;color:var(--or);text-transform:uppercase;letter-spacing:1.3px}
+  canvas{display:block;width:100%;height:auto;border-radius:10px}
+  .lecteur{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .btn{background:var(--panel2);border:1px solid var(--edge);border-radius:8px;padding:6px 11px;font-size:12px;cursor:pointer;color:var(--ink)}
+  .btn:hover{border-color:var(--edge2)}
+  .btn.on{background:#22305a;border-color:var(--bleu)}
+  #temps{flex:1;min-width:200px}
+  #tTxt{font-family:Consolas,monospace;font-size:12px;color:var(--or);min-width:120px;text-align:right}
+  .phases{position:relative;height:18px;margin-top:4px;font-size:10px;color:var(--pale);font-family:Consolas,monospace}
+  .phases span{position:absolute;top:0;white-space:nowrap;transform:translateX(-50%)}
+  .phases span::before{content:'';position:absolute;left:50%;top:-6px;width:1px;height:6px;background:var(--pale)}
+  .curseur{display:grid;grid-template-columns:118px 1fr 52px;gap:7px;align-items:center;font-size:11px;color:var(--doux);margin:5px 0;font-family:Consolas,monospace}
+  .curseur input{width:100%}
+  .curseur span{text-align:right;color:var(--or)}
+  .groupe{font-size:10px;color:var(--pale);letter-spacing:1.2px;margin:12px 0 3px;text-transform:uppercase}
+  textarea{width:100%;min-height:150px;background:#0c101a;color:var(--or);border:1px solid var(--edge);border-radius:8px;font:11px/1.5 Consolas,monospace;padding:8px;margin-top:8px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .btn.ok{background:#1d4a33;border-color:#2f7a52;color:#8ef0b4}
+</style>
+</head>
+<body>
+
+<h1>TRINITY — <em>L'APPARITION ET LE DÉPART</em></h1>
+<p class="note">
+  <b>Tes choix :</b> ils apparaissent dans un <b>éclat de lumière sur place</b>, à côté de Sora, en trait
+  <b>E</b> (liseré lumineux des invoqués), puis se posent en trait <b>D</b> — ton trait validé — en
+  <b>0,6 s</b>. Au bout des <b>5 secondes</b> de l'ultime, <b>l'inverse</b> : ils se rallument en E et se
+  dissolvent en lumière.
+  <br><br>
+  <b>Une chose à la fois : ici, seulement l'apparition et le départ.</b> Entre les deux ils restent
+  debout et respirent ; la course de Dingo et le boost de Donald viendront dans le mockup suivant.
+  Donald et Dingo sont dessinés par <code>js/render/trinity.js</code>, le même dessin que l'atelier,
+  avec tes réglages validés — au pixel près.
+  <br><br>
+  Joue avec la ligne de temps (pause, ralenti ×0,25, glisser pour revoir une image), règle les curseurs,
+  et envoie-moi <b>« copier mes réglages »</b> quand c'est bon.
+</p>
+
+<div class="haut">
+  <div>
+    <div class="bloc">
+      <h3>En grand</h3>
+      <canvas id="cvGrand" width="1100" height="520"></canvas>
+      <div class="lecteur">
+        <button class="btn" id="bJouer">pause</button>
+        <button class="btn" id="bRejouer">rejouer</button>
+        <button class="btn on" data-vit="1">×1</button>
+        <button class="btn" data-vit=".5">×0,5</button>
+        <button class="btn" data-vit=".25">×0,25</button>
+        <input type="range" id="temps" min="0" max="1000" value="0">
+        <span id="tTxt"></span>
+      </div>
+      <div class="phases" id="phases"></div>
+    </div>
+    <div class="bloc" style="margin-top:14px">
+      <h3>À l'échelle du match, à côté de Sora</h3>
+      <canvas id="cvMatch" width="1100" height="300"></canvas>
+    </div>
+  </div>
+  <div class="bloc" id="panneau">
+    <h3>Réglages</h3>
+    <div id="curseurs"></div>
+    <h3 style="margin-top:14px">À m'envoyer</h3>
+    <textarea id="sortie" readonly></textarea>
+    <div class="btns">
+      <button class="btn" id="bCopier">copier mes réglages</button>
+      <button class="btn" id="bRaz">revenir aux valeurs de départ</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { MAPS } from '../js/data/maps.js';
+import { dessinerPerso, styleEntre, STYLES, HAUTEUR } from '../js/render/trinity.js';
+
+/* ===================== SORA (le dessin retenu) ===================== */
+const SORA_PAL = { H:'#8a5a30', h:'#58341a', j:'#b98352', S:'#f5cfa6', s:'#d8a074', E:'#2168dc', W:'#f4f4f6',
+  w:'#c2c5ce', R:'#d8262c', r:'#9c151a', K:'#26262e', k:'#50525e', B:'#3257d4', b:'#1f3794', V:'#dde2ea',
+  v:'#8f96a4', Y:'#f8c81c', y:'#c8920c', N:'#18181d' };
+const SORA = ["...hH.HH.Hh.....","..HHHHHjHHHH....",".hHHHHjHHHHHh...","..hHHHHHHHHh....","..HHHHHHHHHH....",
+  "..HHSHHSHHSH....","..hSSESSSSEh....","..sSSSSSSSSs....","...SSSSSWSS.....","....BKRRKB......",
+  "..WWKRRVRKWW....",".WWWKRRVRKWWW...",".kWKKRRvRKKWk...",".SKKKRRvRKKKS...","..bBBEEwbbbb....",
+  "..RRRRRvEwRw....","...rr....rw.....","...ss....ss.....",".yYNY....YNYy...",".yyYY....YYyy..."];
+function peindreSora(g) {
+  for (let y = 0; y < 20; y++) for (let c = 0; c < 16; c++) {
+    const l = SORA[y][c]; if (l === '.') continue;
+    g.fillStyle = SORA_PAL[l]; g.fillRect((c - 8) * 3, (y - 20) * 3, 3.02, 3.02);
+  }
+}
+
+/* ===================== LES RÉGLAGES ===================== */
+// Tous en secondes ou en unités de jeu (Sora fait 60 de haut).
+const DEPART = {
+  flashOuverture: .12, flashExtinction: .45, flashRayon: 38, flashIntensite: .9, flashRayons: 10,
+  apparition: .06, decalage: .1, pop: 1.08, popDuree: .3, blanchiment: .9, blanchimentDuree: .25,
+  transitionDebut: .25, transitionDuree: .6,
+  presence: 5, respiration: 1,
+  retourE: .35, dissolution: .5, montee: 14, etincelles: 26,
+};
+const CLE = 'trinityAnim:v1';
+const R = { ...DEPART };
+try { Object.assign(R, JSON.parse(localStorage.getItem(CLE) || '{}')); } catch (e) { }
+const garder = () => { try { localStorage.setItem(CLE, JSON.stringify(R)); } catch (e) { } };
+const CURSEURS = [
+  ['L\'éclat de lumière'],
+  ['flashOuverture', 'ouverture', .02, .5, .01, 's'], ['flashExtinction', 'extinction', .1, 1.5, .01, 's'],
+  ['flashRayon', 'taille', 10, 90, 1, 'u'], ['flashIntensite', 'intensité', .2, 1, .01, ''], ['flashRayons', 'rayons', 0, 24, 1, ''],
+  ['L\'apparition'],
+  ['apparition', 'quand ils sortent', 0, .4, .01, 's'], ['decalage', 'Donald après Dingo', 0, .5, .01, 's'],
+  ['pop', 'rebond (taille)', 1, 1.3, .01, '×'], ['popDuree', 'durée du rebond', .05, .8, .01, 's'],
+  ['blanchiment', 'blanc au départ', 0, 1, .01, ''], ['blanchimentDuree', 'durée du blanc', .05, 1, .01, 's'],
+  ['Le passage de E à D'],
+  ['transitionDebut', 'début', 0, 1, .01, 's'], ['transitionDuree', 'durée', .1, 2, .01, 's'],
+  ['Pendant l\'ultime'],
+  ['presence', 'durée totale', 2, 8, .1, 's'], ['respiration', 'respiration', 0, 3, .05, ''],
+  ['Le départ'],
+  ['retourE', 'retour en E', .05, 1, .01, 's'], ['dissolution', 'dissolution', .1, 1.5, .01, 's'],
+  ['montee', 'montée', 0, 40, 1, 'u'], ['etincelles', 'étincelles', 0, 60, 1, ''],
+];
+
+/* ===================== LA LIGNE DE TEMPS ===================== */
+const PAUSE_FIN = 1;
+const duree = () => R.presence + R.retourE + R.dissolution + PAUSE_FIN;
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const lisse = x => { x = clamp(x); return x * x * (3 - 2 * x); };
+const sortie = x => 1 - Math.pow(1 - clamp(x), 3);
+const alea = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+// L'état d'un personnage à l'instant t (secondes depuis le déclenchement).
+function etatPerso(t, retard) {
+  const ta = t - retard;
+  const o = { visible: false, k: 1, blanc: 0, echelle: 1, alpha: 1, montee: 0, etire: 1, dissous: 0 };
+  if (ta < R.apparition) return o;
+  o.visible = true;
+  const tp = ta - R.apparition;
+  // le rebond : il sort un peu petit, dépasse, puis se pose
+  if (tp < R.popDuree) {
+    const u = tp / R.popDuree;
+    o.echelle = u < .55 ? .72 + (R.pop - .72) * sortie(u / .55) : R.pop + (1 - R.pop) * lisse((u - .55) / .45);
+  }
+  o.blanc = R.blanchiment * (1 - sortie(tp / R.blanchimentDuree));
+  // E -> D
+  o.k = 1 - lisse((ta - R.transitionDebut) / R.transitionDuree);
+  // le départ : D -> E, puis dissolution
+  const td = ta - R.presence;
+  if (td > 0) {
+    o.k = Math.max(o.k, lisse(td / R.retourE));
+    const tq = td - R.retourE;
+    if (tq > 0) {
+      const u = clamp(tq / R.dissolution);
+      o.dissous = u; o.alpha = 1 - lisse(u); o.montee = R.montee * sortie(u); o.etire = 1 + .3 * u;
+      o.blanc = Math.max(o.blanc, .7 * lisse(u * 1.4));
+      if (u >= 1) o.visible = false;
+    }
+  }
+  return o;
+}
+
+/* ===================== LE DESSIN D'UNE SCÈNE ===================== */
+const PLACE = {
+  dingo: { x: -54, ech: 60 * 1.3 / HAUTEUR.dingo, h: 60 * 1.3 },
+  donald: { x: 46, ech: 60 * .82 / HAUTEUR.donald, h: 60 * .82 },
+};
+const calques = new Map();
+function calque(w, h, cle) {
+  let c = calques.get(cle);
+  if (!c || c.width !== w || c.height !== h) { c = document.createElement('canvas'); c.width = w; c.height = h; calques.set(cle, c); }
+  const g = c.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h);
+  return { c, g };
+}
+// L'éclat : un disque de lumière blanche et dorée, un anneau qui s'élargit et
+// des rayons qui tournent, centré à mi-hauteur du personnage.
+function eclat(g, VUE, cx, cy, t) {
+  if (t < 0) return;
+  const monte = clamp(t / R.flashOuverture), tombe = t > R.flashOuverture ? clamp((t - R.flashOuverture) / R.flashExtinction) : 0;
+  const force = R.flashIntensite * (t < R.flashOuverture ? sortie(monte) : 1 - lisse(tombe));
+  if (force <= 0) return;
+  const r = R.flashRayon * (.35 + .65 * sortie(monte) + .25 * tombe);
+  g.save(); g.setTransform(VUE); g.globalCompositeOperation = 'lighter';
+  const d = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+  d.addColorStop(0, 'rgba(255,255,240,' + force + ')');
+  d.addColorStop(.35, 'rgba(255,226,120,' + force * .8 + ')');
+  d.addColorStop(1, 'rgba(255,190,60,0)');
+  g.fillStyle = d; g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+  // rayons
+  g.strokeStyle = 'rgba(255,236,160,' + force * .7 + ')'; g.lineCap = 'round';
+  for (let i = 0; i < R.flashRayons; i++) {
+    const a = i / R.flashRayons * Math.PI * 2 + t * 1.8;
+    const r0 = r * .25, r1 = r * (.9 + .35 * alea(i + 3));
+    g.lineWidth = 1.6 + 1.4 * alea(i);
+    g.beginPath(); g.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); g.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); g.stroke();
+  }
+  // anneau
+  const ra = R.flashRayon * (.4 + .7 * sortie(t / (R.flashOuverture + R.flashExtinction)));
+  g.strokeStyle = 'rgba(255,240,190,' + force * .6 + ')'; g.lineWidth = 2;
+  g.beginPath(); g.arc(cx, cy, ra, 0, Math.PI * 2); g.stroke();
+  g.restore();
+}
+function perso(g, VUE, W, H, cle, p, t, retard) {
+  const P = PLACE[p], s = etatPerso(t, retard);
+  const tEclat = t - retard;
+  eclat(g, VUE, P.x, -P.h * .5, tEclat);
+  if (!s.visible) return;
+  // Le personnage est peint à part, pour pouvoir le blanchir et le dissoudre d'un bloc.
+  const { c, g: q } = calque(W, H, cle + p);
+  // la respiration gonfle un peu le personnage depuis ses pieds, sans le faire flotter
+  const respire = 1 + .012 * R.respiration * Math.sin(t * 2.4 + (p === 'donald' ? 1 : 0)) * (1 - s.dissous);
+  q.setTransform(VUE.translate(P.x, -s.montee).scale(s.echelle / s.etire, s.echelle * s.etire * respire).scale(P.ech));
+  dessinerPerso(q, p, { style: styleEntre(s.k) });
+  if (s.blanc > 0) {
+    q.setTransform(1, 0, 0, 1, 0, 0); q.globalCompositeOperation = 'source-atop';
+    q.fillStyle = 'rgba(255,250,228,' + s.blanc + ')'; q.fillRect(0, 0, W, H);
+    q.globalCompositeOperation = 'source-over';
+  }
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = s.alpha; g.drawImage(c, 0, 0); g.restore();
+  // les étincelles de la dissolution : elles montent depuis la silhouette
+  if (s.dissous > 0 && R.etincelles > 0) {
+    g.save(); g.setTransform(VUE); g.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < R.etincelles; i++) {
+      const dep = alea(i * 3 + (p === 'donald' ? 500 : 0)), vie = clamp((s.dissous - dep * .4) / .6);
+      if (vie <= 0 || vie >= 1) continue;
+      const x = P.x + (alea(i * 7 + 1) - .5) * P.h * .55, y0 = -P.h * alea(i * 11 + 2);
+      const y = y0 - vie * (18 + 30 * alea(i * 13 + 3)), a = (1 - vie) * .9;
+      const r = 1.2 + 1.6 * alea(i * 17 + 4);
+      const d = g.createRadialGradient(x, y, 0, x, y, r * 2.4);
+      d.addColorStop(0, 'rgba(255,248,210,' + a + ')'); d.addColorStop(1, 'rgba(255,200,80,0)');
+      g.fillStyle = d; g.beginPath(); g.arc(x, y, r * 2.4, 0, Math.PI * 2); g.fill();
+    }
+    g.restore();
+  }
+}
+function scene(cv, ech, pied, t) {
+  const g = cv.getContext('2d'), W = cv.width, H = cv.height;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = MAPS[0].theme.floor; g.fillRect(0, 0, W, H);
+  g.strokeStyle = MAPS[0].theme.line; g.lineWidth = 2; g.beginPath(); g.moveTo(0, pied + 2); g.lineTo(W, pied + 2); g.stroke();
+  const VUE = new DOMMatrix().translate(W / 2, pied).scale(ech);
+  g.save(); g.setTransform(VUE); peindreSora(g); g.restore();
+  perso(g, VUE, W, H, cv.id, 'dingo', t, 0);
+  perso(g, VUE, W, H, cv.id, 'donald', t, R.decalage);
+}
+
+/* ===================== LE LECTEUR ===================== */
+let t = 0, joue = true, vitesse = 1, avant = performance.now();
+const cvG = document.getElementById('cvGrand'), cvM = document.getElementById('cvMatch');
+const curseurT = document.getElementById('temps');
+function image(now) {
+  const dt = Math.min(.1, (now - avant) / 1000); avant = now;
+  if (joue) { t += dt * vitesse; if (t > duree()) t = 0; }
+  scene(cvG, 4.2, cvG.height - 40, t);
+  scene(cvM, 1.6, cvM.height - 50, t);
+  curseurT.value = Math.round(t / duree() * 1000);
+  document.getElementById('tTxt').textContent = t.toFixed(2) + ' s / ' + duree().toFixed(2) + ' s';
+  requestAnimationFrame(image);
+}
+document.getElementById('bJouer').onclick = e => { joue = !joue; e.target.textContent = joue ? 'pause' : 'lecture'; };
+document.getElementById('bRejouer').onclick = () => { t = 0; joue = true; document.getElementById('bJouer').textContent = 'pause'; };
+document.querySelectorAll('[data-vit]').forEach(b => b.onclick = () => {
+  vitesse = +b.dataset.vit; document.querySelectorAll('[data-vit]').forEach(x => x.classList.toggle('on', x === b));
+});
+curseurT.addEventListener('input', () => { joue = false; document.getElementById('bJouer').textContent = 'lecture'; t = curseurT.value / 1000 * duree(); });
+function majPhases() {
+  const d = duree(), h = document.getElementById('phases');
+  const pts = [[0, 'éclat'], [R.transitionDebut, 'E → D'], [R.presence, 'retour en E'], [R.presence + R.retourE, 'dissolution'], [R.presence + R.retourE + R.dissolution, 'fin']];
+  h.innerHTML = pts.map(([x, n]) => `<span style="left:${x / d * 100}%">${n}</span>`).join('');
+}
+
+/* ===================== LES CURSEURS ===================== */
+function construireCurseurs() {
+  const h = document.getElementById('curseurs'); h.innerHTML = '';
+  for (const c of CURSEURS) {
+    if (c.length === 1) { h.insertAdjacentHTML('beforeend', `<div class="groupe">${c[0]}</div>`); continue; }
+    const [cle, nom, min, max, pas, u] = c;
+    const d = document.createElement('div'); d.className = 'curseur';
+    d.innerHTML = `<label>${nom}</label><input type="range" min="${min}" max="${max}" step="${pas}" value="${R[cle]}"><span></span>`;
+    const inp = d.querySelector('input'), sp = d.querySelector('span');
+    const aff = () => { sp.textContent = (+R[cle]).toFixed(pas < 1 ? 2 : 0) + (u ? ' ' + u : ''); };
+    inp.oninput = () => { R[cle] = +inp.value; aff(); garder(); majSortie(); majPhases(); };
+    aff(); h.append(d);
+  }
+}
+function majSortie() {
+  const o = {};
+  for (const k of Object.keys(DEPART)) o[k] = +(+R[k]).toFixed(3);
+  document.getElementById('sortie').value = JSON.stringify({ trinity: 'apparition', reglages: o }, null, 1);
+}
+document.getElementById('bCopier').onclick = async e => {
+  const b = e.currentTarget;
+  try { await navigator.clipboard.writeText(document.getElementById('sortie').value); } catch (err) { document.getElementById('sortie').select(); document.execCommand('copy'); }
+  b.textContent = 'copié !'; b.classList.add('ok'); setTimeout(() => { b.textContent = 'copier mes réglages'; b.classList.remove('ok'); }, 1400);
+};
+document.getElementById('bRaz').onclick = () => { Object.assign(R, DEPART); garder(); construireCurseurs(); majSortie(); majPhases(); };
+
+construireCurseurs(); majSortie(); majPhases();
+requestAnimationFrame(image);
+window.__anim = { R, etatPerso, get t() { return t; }, set t(v) { t = v; }, pause: () => { joue = false; } };
+</script>
+</body>
+</html>
