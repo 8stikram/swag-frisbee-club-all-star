@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Îles du Destin HD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Un seul thème, sombre, exprès : c'est celui des mockups du projet et celui
+     de la station. Une colonne : l'écran de jeu d'abord, puis les zooms, puis
+     le choix. */
+  :root{
+    --fond:#070c16; --panneau:#0e1626; --bord:#22344f; --encre:#e8f0ff; --doux:#8fa4c4;
+    --cyan:#35e0ff; --or:#ffd23e;
+    --titre:'Archivo Black', 'Arial Black', system-ui, sans-serif;
+    --texte:'Barlow', 'Segoe UI', system-ui, sans-serif;
+    --code:Consolas, 'SFMono-Regular', Menlo, monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--encre);font-family:var(--texte);font-size:15px;line-height:1.55}
+  .page{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:24px 64px;display:grid;gap:28px}
+  header{display:grid;gap:6px}
+  .sur{margin:0;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:var(--cyan)}
+  h1{margin:0;font-family:var(--titre);font-weight:400;font-size:clamp(26px,4.4vw,40px);line-height:1.05;text-wrap:balance}
+  .chapo{margin:0;color:var(--doux);max-width:68ch}
+  h2{margin:0 0 10px;font-family:var(--titre);font-weight:400;font-size:15px;letter-spacing:.6px;color:var(--or)}
+
+  .onglets{display:flex;flex-wrap:wrap;gap:8px}
+  .onglets button{font:600 14px var(--texte);color:var(--doux);background:var(--panneau);border:1px solid var(--bord);
+    border-radius:8px;padding:8px 14px;cursor:pointer}
+  .onglets button[aria-selected="true"]{color:var(--fond);background:var(--cyan);border-color:var(--cyan)}
+  .onglets button:focus-visible,.bascule input:focus-visible+span,.action:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+
+  .ecran{position:relative;border:1px solid var(--bord);border-radius:10px;overflow:hidden;background:#000;
+    aspect-ratio:16/10;max-width:100%;touch-action:manipulation}
+  .ecran canvas#jeu{display:block;width:100%;height:100%;image-rendering:pixelated;cursor:crosshair}
+  #loupe{position:absolute;width:180px;height:180px;border-radius:50%;border:2px solid var(--cyan);pointer-events:none;
+    image-rendering:pixelated;box-shadow:0 6px 24px rgba(0,0,0,.6)}
+  .legende{position:absolute;left:10px;bottom:10px;font:600 12px var(--texte);color:var(--encre);
+    background:rgba(7,12,22,.78);border:1px solid var(--bord);border-radius:6px;padding:3px 8px;pointer-events:none}
+
+  .reglages{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:12px;color:var(--doux);font-size:14px}
+  .bascule{display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+  .bascule input{accent-color:var(--cyan);width:16px;height:16px;margin:0}
+  .action{font:600 14px var(--texte);color:var(--fond);background:var(--or);border:0;border-radius:8px;padding:7px 14px;cursor:pointer}
+
+  .zooms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .zooms figure{margin:0;display:grid;gap:6px;min-width:0}
+  .zooms canvas{width:100%;height:auto;image-rendering:pixelated;border:1px solid var(--bord);border-radius:8px;background:#000}
+  .zooms figcaption{font-size:13px;color:var(--doux)}
+  .zooms figcaption b{color:var(--encre)}
+  .choixZoom{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .choixZoom button{font:500 13px var(--texte);color:var(--doux);background:transparent;border:1px solid var(--bord);border-radius:20px;padding:4px 12px;cursor:pointer}
+  .choixZoom button[aria-pressed="true"]{color:var(--encre);border-color:var(--cyan)}
+
+  .notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .carte{background:var(--panneau);border:1px solid var(--bord);border-radius:10px;padding:14px 16px;min-width:0}
+  .carte ul{margin:0;padding-left:18px;display:grid;gap:5px;color:var(--doux);font-size:14px}
+  .carte li b{color:var(--encre);font-weight:600}
+  .commun{grid-column:1/-1}
+
+  .choix{background:var(--panneau);border:1px solid var(--or);border-radius:10px;padding:16px;display:grid;gap:12px}
+  .choix p{margin:0;color:var(--doux);font-size:14px}
+  .options{display:flex;flex-wrap:wrap;gap:8px}
+  .options label{display:inline-flex;align-items:center;gap:8px;background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px;cursor:pointer}
+  .options input{accent-color:var(--or);margin:0}
+  .choix textarea{width:100%;min-height:64px;resize:vertical;font:15px var(--texte);color:var(--encre);background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px}
+  .copier{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .copier output{flex:1 1 220px;min-width:0;font:600 15px var(--code);color:var(--or);background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px;overflow-wrap:anywhere}
+
+  .zooms.seul{grid-template-columns:minmax(0,1fr);max-width:760px}
+  @media (max-width:720px){
+    .zooms,.notes{grid-template-columns:minmax(0,1fr)}
+    #loupe{width:130px;height:130px}
+  }
+  @media (prefers-reduced-motion:reduce){ .onglets button{transition:none} }
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <p class="sur">Nouvelle map · le terrain de Sora · pixel art HD</p>
+    <h1>Îles du Destin HD</h1>
+    <p class="chapo">La plage de l'île au coucher du soleil, au même niveau de détail que les six autres terrains. Pas de règle de jeu : c'est un décor. Survole l'écran pour la loupe.</p>
+  </header>
+
+  <section aria-label="Écran de jeu">
+    <div class="ecran">
+      <canvas id="jeu" width="960" height="600" aria-label="Aperçu du terrain à la taille du jeu, 960 × 600"></canvas>
+      <canvas id="loupe" width="180" height="180" hidden></canvas>
+      <span class="legende" id="legende">Pixel art HD</span>
+    </div>
+    <div class="reglages">
+      <label class="bascule"><input type="checkbox" id="opt-hud" checked><span>HUD du match</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-persos" checked><span>Yuki et le disque</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-anim" checked><span>Animation</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-loupe" checked><span>Loupe ×3 au survol</span></label>
+      <button class="action" id="but" type="button">Marquer un but</button>
+    </div>
+  </section>
+
+  <section aria-label="Zoom">
+    <h2>Au zoom</h2>
+    <div class="choixZoom" id="zones">
+      <button type="button" aria-pressed="true" data-z="yuki">Yuki sur le sable</button>
+      <button type="button" aria-pressed="false" data-z="horizon">Soleil et île principale</button>
+      <button type="button" aria-pressed="false" data-z="cabane">La cabane</button>
+      <button type="button" aria-pressed="false" data-z="paopu">L'arbre à paopu</button>
+      <button type="button" aria-pressed="false" data-z="cage">Cage en radeau</button>
+      <button type="button" aria-pressed="false" data-z="chateau">Château de sable</button>
+      <button type="button" aria-pressed="false" data-z="lagon">Ponton et barque</button>
+    </div>
+    <div class="zooms seul">
+      <figure><canvas id="z-hd" width="480" height="300"></canvas><figcaption><b>Pixel art HD</b> · zoom ×3 à ×6</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="notes" aria-label="Ce qu'on y voit">
+    <div class="carte">
+      <h2>Ce qu'on y voit</h2>
+      <ul>
+        <li><b>Au fond, le coucher de soleil sur l'océan</b> : un ciel bleu qui passe au rose puis à l'or, des nuages éclairés par en dessous qui glissent lentement, et deux goélands. Le soleil trace un chemin d'or scintillant sur l'eau.</li>
+        <li><b>L'île principale à contre-jour</b>, avec son grand arbre et ses palmiers, et l'îlot à gauche du soleil.</li>
+        <li><b>Un terrain de sable damé bordé de cordes</b> tendues entre des piquets. Le sable a un relief très doux, sans rides pour ne pas ressembler à la Dune, et quelques traces de pas qui vont et viennent.</li>
+        <li><b>Au centre, un anneau de coquillages et de galets</b>, et la couronne de Sora tracée au doigt dans le sable.</li>
+        <li><b>Les cages sont des radeaux</b>, celui que Sora, Riku et Kairi construisent pour quitter l'île : des rondins liés à la corde et un plancher peint turquoise pour les 3 et jaune paopu pour le 5. La peinture s'écaille par endroits.</li>
+        <li><b>À gauche, la cabane sur pilotis</b>, avec son toit de chaume, un pan de toile rouge à la porte et une échelle. En dessous, le tas de rondins du radeau et un rouleau de corde. Plus bas, un cocotier et l'épée de bois de Sora plantée dans le sable.</li>
+        <li><b>À droite, l'arbre à paopu</b>, au tronc couché qui se redresse, avec ses fruits en étoile. Plus bas, des rochers, une mare et une étoile de mer.</li>
+        <li><b>En bas, le lagon</b> : un château de sable avec son drapeau, des traces de pas, une bouteille à la mer qui dérive, le ponton et une barque amarrée, et un crabe qui fait ses allers-retours.</li>
+      </ul>
+    </div>
+    <div class="carte">
+      <h2>Ce qui bouge, lentement</h2>
+      <ul>
+        <li><b>Les vagues</b> montent et redescendent sur les deux rives, avec leur dentelle d'écume et le sable mouillé qui brille derrière.</li>
+        <li><b>Les palmes</b> se balancent, et leur ombre bouge avec elles sur le sable.</li>
+        <li><b>La barque</b> tangue, la bouteille danse sur l'eau, et des ronds se forment autour.</li>
+        <li><b>Les oyats</b> ploient d'un pixel, et le drapeau du château flotte.</li>
+      </ul>
+      <h2 style="margin-top:14px">Les mesures du jeu</h2>
+      <ul>
+        <li><b>Terrain</b> : 820 × 476, comme les autres.</li>
+        <li><b>Cages</b> : 200 de haut et 48 de profondeur, hors du terrain. Zones 3 / 5 / 3.</li>
+        <li><b>Pas de règle propre</b> : on pourra en ajouter une plus tard, par exemple une marée.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="choix" aria-label="Ton avis">
+    <h2>Ton avis</h2>
+    <p>Valide telle quelle, ou écris ce qu'il faut retoucher. Renvoie-moi le code.</p>
+    <div class="options" role="radiogroup" aria-label="Verdict">
+      <label><input type="radio" name="choix" id="choix-ok" value="OK" checked> Valide telle quelle</label>
+      <label><input type="radio" name="choix" id="choix-retouche" value="À RETOUCHER"> À retoucher</label>
+    </div>
+    <label for="remarques" style="font-size:14px;color:var(--doux)">Retouches (facultatif)</label>
+    <textarea id="remarques" placeholder="Ex. : soleil plus haut, plus de palmiers, cages en bambou…"></textarea>
+    <div class="copier">
+      <output id="code">ILES-HD : OK</output>
+      <button class="action" id="copier" type="button">Copier le code</button>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+  import { monterPage } from './_page-map-hd.js';
+  import { creerPixel } from './iles-hd/pixel.js';
+  monterPage({
+    versions: [{ id: 'hd', nom: 'Pixel art HD', image: creerPixel().image }],
+    zones: {
+      yuki: 'yuki', horizon: [334, 0, 192, 120], cabane: [0, 90, 160, 100], paopu: [800, 108, 160, 100],
+      cage: [0, 196, 176, 110], chateau: [96, 520, 128, 80], lagon: [600, 500, 160, 100]
+    },
+    code: () => {
+      const v = document.querySelector('input[name="choix"]:checked').value;
+      const r = document.getElementById('remarques').value.trim();
+      return 'ILES-HD : ' + v + (r ? ' · ' + r : '');
+    }
+  });
+</script>
+</body>
+</html>
