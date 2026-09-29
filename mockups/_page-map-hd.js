@@ -5,7 +5,7 @@
 // de choix.
 //
 // config = {
-//   versions: [{ id, nom, image(t, but) → canvas | null, fond: url | null }],
+//   versions: [{ id, nom, image(t, but, extras) → canvas | null, fond: url | null }],
 //   zones: { cle: [x, y, l, h] | 'yuki' },
 //   code: t => texte du code à renvoyer
 // }
@@ -17,6 +17,13 @@ export function monterPage(config) {
   const loupe = document.getElementById('loupe'), lg = loupe.getContext('2d');
   const spr = canvasYuki();
   const opt = id => document.getElementById(id).checked;
+  // Les réglages propres à un terrain (la tempête de la dune…) : chaque case
+  // marquée data-extra passe son état au rendu.
+  const extras = () => {
+    const e = {};
+    for (const c of document.querySelectorAll('input[data-extra]')) e[c.dataset.extra] = c.checked;
+    return e;
+  };
   const versions = {};
   for (const v of config.versions) {
     versions[v.id] = v;
@@ -37,7 +44,7 @@ export function monterPage(config) {
     if (v.img) {
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
       if (v.img.complete && v.img.naturalWidth) ctx.drawImage(v.img, 0, 0, W, H);
-    } else ctx.drawImage(v.image(t, but), 0, 0);
+    } else ctx.drawImage(v.image(t, but, extras()), 0, 0);
     if (opt('opt-persos')) {
       const etat = choregraphie(t);
       dessinerJoueurs(ctx, etat, spr);
