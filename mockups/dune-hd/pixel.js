@@ -49,13 +49,18 @@ const PAL = new Palette({
   // Os
   b1: '#8a7a64', b2: '#d8cdb8', b3: '#f4ecdc',
   // Tempête
-  tp: '#C9A070'
+  tp: '#C9A070',
+  // Lapis de la coiffe du pharaon, reflets verts des scarabées, argile
+  u1: '#1e2e5a', u2: '#34508e', u3: '#5a7cc0',
+  x1: '#16302c', x2: '#2e7a68', x3: '#6ac0a8',
+  g1: '#9a7658', g2: '#b89070', g3: '#d2ac88'
 });
 const C = PAL.c;
 const CIEL = PAL.sous(['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9']);
 const SABLE = PAL.sous(['z0', 'z1', 'z2', 'z3', 'z4', 'z5', 'z6', 'z7', 'z8', 'z9']);
 const SABLE_ZONES = PAL.sous(['z3', 'z4', 'z5', 'z6', 'z7', 'z8', 'o3', 'o4', 'q2', 'c6', 'c7']);
 const PIERRE = PAL.sous(['p1', 'p2', 'p3', 'p4', 'z3', 'z5']);
+const ARGILE = PAL.sous(['z2', 'z3', 'z4', 'z5', 'g1', 'g2', 'g3', 'z6', 'z7']);
 
 // ---------------------------------------------------------------------------
 // Le sable : un relief de dunes éclairé par le soleil couchant, à droite, et
@@ -80,6 +85,21 @@ function couleurSable(x, y, fonce) {
   r += l; g += l * .9; b += l * .7;
   if (fonce) { r *= .66; g *= .62; b *= .6; }
   return [r, g, b];
+}
+// Le désert autour du terrain : le même sable, plus sombre — c'est ce
+// contraste qui dit où l'on joue —, mais avec son propre relief : de grandes
+// dunes dont le versant tourné vers le soleil couchant (à droite) s'éclaire,
+// et des rides en biais, par plaques, pour ne pas répéter celles du terrain.
+function couleurDehors(x, y) {
+  // Deux octaves seulement, à grande échelle : avec plus de détail, le relief
+  // tachetait tout le pourtour comme un camouflage.
+  const h = x2 => fbm(x2 * .0055 + 7, y * .009, 2, 41);
+  const pente = (h(x + 3) - h(x - 3)) * 60;
+  const ride = Math.sin((x * .45 + y * .8 + Math.sin(y * .04 + x * .015) * 8) * .55 + fbm(x * .03, y * .03, 2, 43) * 4);
+  const plaque = lisse(.45, .7, fbm(x * .009 + 13, y * .013, 3, 45));
+  const crete = lisse(.75, .95, ride), creux = lisse(-.4, -.9, ride);
+  const l = pente * 9 + (h(x) - .5) * 12 + (crete * 8 - creux * 6) * (.25 + plaque * .75);
+  return [146 + l, 110 + l * .85, 72 + l * .65];
 }
 function dansSables(x, y) {
   const r = SABLES.r;
@@ -182,7 +202,7 @@ function peindreFond() {
       }
       t.px[i] = SABLE.tramer(r, g, b, x, y, 2);
     } else {
-      const [r, g, b] = couleurSable(x, y, true);
+      const [r, g, b] = couleurDehors(x, y);
       t.px[i] = SABLE.tramer(r, g, b, x, y, 2);
     }
   }
@@ -234,6 +254,7 @@ function peindreFond() {
     t.pt(x - 1, y - r + 1, C.r4);
     t.hl(x - r + 1, x + r, y + r + 1, C.z2);
   }
+  peindreBordsDune(t);
   // Colonne tombée de chaque côté des cages, gravée.
   for (const x0 of [6, W - 58]) {
     for (let y = CY - 12; y < CY + 12; y++) for (let x = x0; x < x0 + 52; x++) {
@@ -253,9 +274,9 @@ function peindreFond() {
     }
     t.hl(x0 + 2, x0 + 50, CY + 13, C.z2);
   }
-  t.sprite(CRANE, 20, COURT.bottom + 14);
-  // Cactus des coins.
-  for (const [x, y] of [[COURT.left - 46, COURT.top + 56], [COURT.left - 46, COURT.bottom - 96], [COURT.right + 32, COURT.top + 70], [COURT.right + 32, COURT.bottom - 84]]) {
+  t.sprite(CRANE, 6, COURT.bottom - 22);
+  // Cactus des coins, décalés vers le bord pour laisser la place aux obélisques.
+  for (const [x, y] of CACTUS_POS) {
     for (let k = -8; k <= 8; k++) t.modifier(x + 7 + k + 4, y + 19, (c, xx, yy) => PAL.teinter(c, C.z1, .5, xx, yy));
     t.sprite(CACTUS, x, y);
   }
@@ -295,6 +316,317 @@ function peindreFond() {
   }
   LIGNES = marquage();
   FOND = t;
+}
+
+// ---------------------------------------------------------------------------
+// Le bas et les côtés : les abords d'un temple ensablé. Tout est posé hors de
+// l'aire de jeu, fondu dans le sable par des congères et par les longues
+// ombres du couchant — le soleil est bas, à droite, elles filent vers la
+// gauche. Ce qui bouge le fait lentement : herbe sèche, flammes, scarabées,
+// eau de l'oasis, voiles de sable.
+// ---------------------------------------------------------------------------
+const CACTUS_POS = [[2, COURT.top + 20], [4, COURT.bottom - 108], [W - 17, COURT.top + 20], [W - 18, COURT.bottom - 112]];
+const OBELISQUES = [[38, COURT.top + 120], [W - 38, COURT.top + 120]];
+const TORCHES = [[46, COURT.bottom - 20], [W - 46, COURT.bottom - 20]];
+const FUTS = [[134, 596, 12], [300, 597, 16], [664, 596, 10], [806, 597, 14]];
+const TETE = { x: 522, y: 568 };
+const JARRES = [[398, 598], [410, 597]];
+const OASIS = { x: 928, y: 587, rx: 30, ry: 11 };
+const TOUFFES = [];
+for (const [x, y] of [[112, 578], [196, 586], [352, 575], [446, 590], [612, 580], [704, 588], [760, 576], [862, 582],
+  [12, 190], [54, 144], [8, 402], [52, 428], [26, 506], [W - 12, 196], [W - 52, 150], [W - 10, 410], [W - 54, 436], [W - 28, 508]])
+  TOUFFES.push({ x, y, n: 4 + Math.floor(hacher(x, y, 48) * 3), ph: hacher(x, y, 49) * 6.3 });
+const SCARABEES = [
+  { cx: 360, cy: 592, rx: 24, ry: 4, ph: 0 },
+  { cx: 30, cy: 396, rx: 9, ry: 24, ph: 2 },
+  { cx: W - 30, cy: 262, rx: 9, ry: 20, ph: 4 }
+];
+const dehors = (x, y) => x >= 0 && x < W && y >= COURT.top && y < H && !dansTerrain(x, y);
+
+function ombreCouchant(t, x, y, h, demi) {
+  const L = h * 1.1, dy = h * .22;
+  balayerPoly([[x - demi, y], [x + demi, y], [x + demi - L, y + dy], [x - demi - L, y + dy]], (yy, a, b) => {
+    for (let xx = a; xx <= b; xx++) {
+      if (!dehors(xx, yy)) continue;
+      const u = Math.max(0, Math.min(1, (x - xx) / L));
+      t.modifier(xx, yy, (c, x2, y2) => PAL.teinter(c, C.z1, .42 * (1 - u) ** .8, x2, y2));
+    }
+  });
+}
+// Une congère : le sable monte contre l'objet, en fondu.
+function congere(t, cx, cy, rx, ry) {
+  for (let y = Math.floor(cy - ry); y <= cy; y++) for (let x = Math.floor(cx - rx); x <= cx + rx; x++) {
+    const e = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2;
+    if (e > 1 || !dehors(x, y)) continue;
+    t.modifier(x, y, (c, a, b) => PAL.teinter(c, e < .3 ? C.z8 : C.z7, .95 * (1 - e), a, b));
+  }
+}
+// Plaque d'argile craquelée : des écailles de Voronoï, et un bord qui
+// s'effiloche dans le sable au lieu d'y être découpé.
+function argile(t, cx, cy, rx, ry, gr) {
+  const CEL = 9;
+  const germe = (i, j) => [(i + .2 + hacher(i, j, gr) * .6) * CEL, (j + .2 + hacher(i, j, gr + 1) * .6) * CEL];
+  for (let y = Math.floor(cy - ry - 3); y <= cy + ry + 3; y++) for (let x = Math.floor(cx - rx - 3); x <= cx + rx + 3; x++) {
+    if (!dehors(x, y)) continue;
+    const e = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 + (fbm(x * .06, y * .06, 2, gr + 2) - .5) * .6;
+    if (e > 1) continue;
+    if (e > .65 && hacher(x, y, gr + 3) < (e - .65) / .35) continue;
+    const ci = Math.floor(x / CEL), cj = Math.floor(y / CEL);
+    let d1 = Infinity, d2 = Infinity;
+    for (let j = cj - 1; j <= cj + 1; j++) for (let i = ci - 1; i <= ci + 1; i++) {
+      const [gx, gy] = germe(i, j), d = Math.hypot(x + .5 - gx, y + .5 - gy);
+      if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+    }
+    const fente = d2 - d1;
+    let c;
+    if (fente < 1) c = C.z2;
+    else if (fente < 1.8) c = C.z3;
+    else {
+      const v = 158 + (hacher(Math.floor(x / CEL), Math.floor(y / CEL), gr + 4) - .5) * 18 - d1 * 1.4;
+      c = ARGILE.tramer(v * 1.1, v * .86, v * .66, x, y, 2);
+    }
+    t.px[y * W + x] = c;
+  }
+}
+function obelisque(t, x, yBase, h) {
+  ombreCouchant(t, x, yBase + 2, h, 6);
+  congere(t, x - 3, yBase + 4, 16, 4);
+  for (let j = 0; j < 6; j++) for (let i = -10; i <= 10; i++) t.pt(x + i, yBase + j - 2, j === 0 ? C.p4 : j === 5 ? C.p1 : i > 4 ? C.p3 : C.p2);
+  const yTop = yBase - 2 - h;
+  for (let y = yTop; y < yBase - 2; y++) {
+    const k = (yBase - 2 - y) / h, demi = Math.round(6 - k * 2.5);
+    for (let xx = x - demi; xx <= x + demi; xx++) {
+      let c = xx > x ? C.p3 : C.p2;
+      if (xx === x + demi) c = C.p4;
+      if (xx === x - demi) c = C.p1;
+      if (xx === x) c = C.p2;
+      t.pt(xx, y, c);
+    }
+    // Une colonne de hiéroglyphes gravée sur la face au soleil.
+    const gy = (y - yTop) % 8, g = Math.floor((y - yTop) / 8) % 4, gx = x + 2;
+    if (y > yTop + 4 && y < yBase - 8) {
+      if (g === 0 && gy > 0 && gy < 5) t.pt(gx + 1, y, C.p1);
+      if (g === 1 && (gy === 1 || gy === 4)) { t.pt(gx, y, C.p1); t.pt(gx + 2, y, C.p1); }
+      if (g === 2 && gy > 0 && gy < 5) t.pt(gx + (gy & 1), y, C.p1);
+      if (g === 3 && gy === 2) t.hl(gx, gx + 2, y, C.p1);
+    }
+  }
+  for (let j = 0; j < 7; j++) {
+    const demi = Math.round(j * .6 + .5), y = yTop - 7 + j;
+    for (let xx = x - demi; xx <= x + demi; xx++) t.pt(xx, y, xx > x ? C.o4 : xx === x ? C.o3 : C.o2);
+  }
+  t.pt(x, yTop - 8, C.o5);
+}
+function futCasse(t, x, yBase, h) {
+  ombreCouchant(t, x, yBase, h, 7);
+  for (let y = yBase - h; y <= yBase; y++) for (let i = -7; i <= 7; i++) {
+    const casse = yBase - h + Math.round((i + 7) * .35 + hacher(i, x, 47) * 2);
+    if (y < casse) continue;
+    let c = i > -3 ? C.p3 : C.p2;
+    if ((i + 8) % 3 === 0) c = i > 0 ? C.p2 : C.p1;
+    if (i === 7) c = C.p4;
+    if (i === -7) c = C.p1;
+    if (y === casse) c = C.p4;
+    t.pt(x + i, y, c);
+  }
+  congere(t, x - 3, yBase + 1, 12, 4);
+}
+function tetePharaon(t, cx, yHaut) {
+  ombreCouchant(t, cx + 8, H - 1, 26, 18);
+  // Némès rayé or et lapis, les pans qui tombent de chaque côté du visage.
+  for (let y = yHaut; y < H; y++) {
+    const k = y - yHaut;
+    const demi = Math.round(12 + Math.min(k, 14) * .55 + (k > 14 ? (k - 14) * .2 : 0));
+    for (let x = cx - demi; x <= cx + demi; x++) {
+      if (k >= 6 && Math.abs(x - cx) <= 8) continue;
+      const raie = (k + (Math.abs(x - cx) > 10 ? 1 : 0)) % 4 < 2;
+      let c = raie ? C.o3 : C.u2;
+      if (x > cx + demi - 2) c = raie ? C.o4 : C.u3;
+      if (x < cx - demi + 2) c = raie ? C.o2 : C.u1;
+      if (x === cx - demi || x === cx + demi || k === 0) c = C.k;
+      t.pt(x, y, c);
+    }
+  }
+  // Le visage de pierre, éclairé à droite.
+  for (let y = yHaut + 6; y < H; y++) for (let x = cx - 8; x <= cx + 8; x++) t.pt(x, y, x > cx + 2 ? C.p4 : x > cx - 4 ? C.p3 : C.p2);
+  const ye = yHaut + 12;
+  for (const s2 of [-1, 1]) {
+    const ex = cx + s2 * 4;
+    t.hl(ex - 2, ex + 2, ye - 2, C.p1);
+    t.hl(ex - 2, ex + 1, ye, C.k); t.pt(ex + 2 * s2, ye + 1, C.k);
+  }
+  t.vl(cx, ye + 1, ye + 5, C.p2); t.rect(cx - 1, ye + 5, 3, 2, C.p1);
+  t.hl(cx - 3, cx + 3, ye + 9, C.p1); t.hl(cx - 2, cx + 2, ye + 10, C.p2);
+  t.vl(cx, yHaut + 2, yHaut + 5, C.o4); t.pt(cx - 1, yHaut + 2, C.o3); t.pt(cx + 1, yHaut + 2, C.o3);
+  // Le sable l'enterre sous le menton, en congère fondue.
+  for (let y = yHaut + 18; y < H; y++) for (let x = cx - 28; x <= cx + 30; x++) {
+    const dx = (x - cx - 2) / 28, surf = yHaut + 24 + Math.round(dx * dx * 7);
+    if (y < surf) continue;
+    const e = Math.min(1, (y - surf) / 4);
+    t.modifier(x, y, (c, a, b) => PAL.teinter(c, y - surf < 1 ? C.z8 : C.z6, .55 + e * .45, a, b));
+  }
+}
+const JARRE = spriteDe([
+  '.aaaaa.',
+  '..bbc..',
+  '.abbbc.',
+  'abbbbcd',
+  'abbbbcd',
+  'abbbbcd',
+  '.abbbc.',
+  '..abb..',
+  '...a...'
+], { a: C.r1, b: C.r3, c: C.r4, d: C.r2 });
+function jarres(t) {
+  const [[x1, y1], [x2, y2]] = JARRES;
+  ombreCouchant(t, x1 + 3, y1, 9, 4); ombreCouchant(t, x2 + 3, y2, 9, 4);
+  t.sprite(JARRE, x1, y1 - 9); t.sprite(JARRE, x2, y2 - 9);
+  // La troisième, brisée : des tessons épars.
+  for (const [dx, dy, l] of [[20, -2, 3], [24, 0, 2], [18, 1, 2], [27, -3, 2]]) { t.hl(x2 + dx, x2 + dx + l, y2 + dy, C.r3); t.hl(x2 + dx, x2 + dx + l - 1, y2 + dy + 1, C.r2); }
+  congere(t, x1 + 8, y1 + 1, 14, 3);
+}
+function torcheFixe(t, x, yBase) {
+  ombreCouchant(t, x, yBase, 34, 1);
+  congere(t, x - 2, yBase + 1, 7, 3);
+  for (let y = yBase - 34; y <= yBase; y++) { t.pt(x, y, C.a2); t.pt(x + 1, y, C.a1); }
+  t.hl(x - 4, x + 5, yBase - 36, C.o3); t.hl(x - 3, x + 4, yBase - 35, C.o2); t.hl(x - 2, x + 3, yBase - 34, C.o1);
+}
+function oasisFixe(t) {
+  const { x: ox, y: oy, rx, ry } = OASIS;
+  for (let y = oy - ry - 3; y < H; y++) for (let x = ox - rx - 3; x <= ox + rx + 3; x++) {
+    if (!dehors(x, y) || x < COURT.right + 6) continue;
+    const e = ((x - ox) / rx) ** 2 + ((y - oy) / ry) ** 2;
+    if (e > 1.35) continue;
+    if (e > 1) { t.px[y * W + x] = PAL.teinter(t.px[y * W + x], C.z3, .7, x, y); continue; }
+    // L'eau renvoie le ciel du couchant : chaude près de la berge du fond
+    // (l'horizon), violette vers nous.
+    const k = (y - (oy - ry)) / (ry * 2);
+    const stops = [[232, 185, 107], [217, 136, 74], [184, 90, 99], [94, 61, 107]];
+    const f = Math.min(2.999, k * 3), i = Math.floor(f), u = f - i;
+    let [r, g, b] = stops[i].map((v, j) => v + (stops[i + 1][j] - v) * u);
+    if (e > .75) { r *= .8; g *= .8; b *= .85; }
+    t.px[y * W + x] = CIEL.tramer(r, g, b, x, y, 2);
+  }
+}
+function peindreBordsDune(t) {
+  // Plaques de reg : du gravier, par endroits.
+  for (let y = COURT.top; y < H; y++) for (let x = 0; x < W; x++) {
+    if (!dehors(x, y)) continue;
+    if (fbm(x * .02, y * .02, 3, 44) < .66 || hacher(x, y, 46) > .06) continue;
+    const c = [C.z2, C.z4, C.r2, C.p2][Math.floor(hacher(x, y, 47) * 4)];
+    t.pt(x, y, c);
+    if (hacher(x, y, 48) > .6) t.pt(x + 1, y - 1, C.z7);
+  }
+  // Argile craquelée d'un ancien bras d'eau.
+  argile(t, 232, 590, 64, 9, 60);
+  argile(t, 28, 262, 26, 18, 61);
+  argile(t, W - 30, 388, 26, 18, 62);
+  // Trace de serpent dans le sable.
+  for (let x = 598; x < 784; x++) {
+    const y = Math.round(589 + Math.sin(x * .12) * 3 - (x - 598) * .02);
+    t.modifier(x, y, (c, a, b) => PAL.teinter(c, C.z2, .55, a, b));
+    t.modifier(x, y - 1, (c, a, b) => PAL.teinter(c, C.z8, .35, a, b));
+  }
+  oasisFixe(t);
+  for (const [x, y] of OBELISQUES) obelisque(t, x, y, 90);
+  for (const [x, y, h] of FUTS) futCasse(t, x, y, h);
+  tetePharaon(t, TETE.x, TETE.y);
+  jarres(t);
+  for (const [x, y] of TORCHES) torcheFixe(t, x, y);
+}
+
+// Ce qui bouge sur les bords, lentement.
+function animerBordsDune(t, temps) {
+  // Reflet d'or qui glisse le long des pyramidions.
+  for (const [x, y] of OBELISQUES) {
+    const q = (temps / 7) % 1;
+    if (q < .25) {
+      const j = Math.floor(q / .25 * 7), yTop = y - 2 - 90;
+      t.pt(x + Math.round(j * .6 + .5), yTop - 7 + j, C.o5);
+    }
+  }
+  // Touffes d'herbe sèche : chaque brin ploie d'un pixel, sans hâte.
+  for (const tf of TOUFFES) {
+    for (let b = 0; b < tf.n; b++) {
+      const bx = tf.x + b - (tf.n >> 1), h = 3 + ((b * 5 + tf.x) % 5);
+      const dx = Math.round(Math.sin(temps * .8 + tf.ph + b * .5) * h / 6) + (b - tf.n / 2) * .4;
+      for (let k = 0; k < h; k++) {
+        const u = k / h;
+        t.pt(Math.round(bx + dx * u), tf.y - k, u > .7 ? C.a4 : u > .3 ? C.a3 : C.a2);
+      }
+    }
+  }
+  // Torchères : des flammes qui respirent, pas qui clignotent.
+  for (const [x, yBase] of TORCHES) {
+    const r = 30 + Math.sin(temps * 1.1) * 2;
+    for (let y = Math.floor(yBase - 36 - r); y < yBase - 36 + r; y++) for (let xx = Math.floor(x - r); xx < x + r; xx++) {
+      const d = Math.hypot(xx - x, (y - (yBase - 20)) * 1.2);
+      if (d < r && dehors(xx, y)) t.modifier(xx, y, (c, a, b) => PAL.teinter(c, C.s2, .2 * (1 - d / r) ** 1.5, a, b));
+    }
+    for (let k = 0; k < 3; k++) {
+      const fx = x - 2 + k * 2, fh = Math.round(5 + Math.sin(temps * 2.1 + k * 1.3) * 1.5 + Math.sin(temps * 3.3 + k) * .8 + (k === 1 ? 2 : 0));
+      for (let j = 0; j < fh; j++) {
+        const u = j / fh, ox = Math.round(Math.sin(temps * 1.7 + k + j * .3) * u);
+        t.pt(fx + ox, yBase - 37 - j, u < .3 ? C.s3 : u < .6 ? C.s2 : u < .85 ? C.s1 : C.q1);
+        if (u < .5) t.pt(fx + ox + 1, yBase - 37 - j, C.s2);
+      }
+    }
+    for (let k = 0; k < 2; k++) {
+      const q = (temps * .35 + k * .5) % 1;
+      t.pt(Math.round(x + Math.sin(temps * .9 + k * 3) * 3), Math.round(yBase - 44 - q * 22), q < .5 ? C.s3 : C.s1);
+    }
+  }
+  // L'oasis : roseaux et papyrus qui ondulent, reflets qui glissent, un rond
+  // dans l'eau de temps en temps.
+  const { x: ox, y: oy, rx, ry } = OASIS;
+  for (let i = 0; i < 12; i++) {
+    const xr = Math.round(ox - rx + 4 + i * 5 + Math.sin(i * 2.1) * 2);
+    if (xr < COURT.right + 8) continue;
+    const yr = Math.round(oy - ry * Math.sqrt(Math.max(0, 1 - ((xr - ox) / rx) ** 2)) - 1);
+    const h = 6 + (i * 7) % 5, dx = Math.sin(temps * .7 + i) * .8;
+    for (let k = 0; k < h; k++) t.pt(Math.round(xr + dx * k / h), yr - k, k > h - 2 ? C.v3 : C.v1);
+    if (i % 3 === 0) { const tx = Math.round(xr + dx); t.hl(tx - 1, tx + 1, yr - h, C.v2); t.pt(tx, yr - h - 1, C.v3); }
+  }
+  for (let i = 0; i < 9; i++) {
+    const y = oy - ry + 3 + i * 2 + (i % 2);
+    const x = Math.round(ox - 12 + ((i * 11 + temps * 3) % 26) + Math.sin(temps * .6 + i) * 2);
+    if (((x - ox) / rx) ** 2 + ((y - oy) / ry) ** 2 < .8 && x > COURT.right + 8) { t.pt(x, y, C.s3); t.pt(x + 1, y, C.c9); }
+  }
+  const q = (temps / 4.2) % 1;
+  if (q < .6) {
+    const n = Math.floor(temps / 4.2), cx = ox - 8 + hacher(n, 1, 55) * 16, cy = oy - 2 + hacher(n, 2, 55) * 5, r = 1 + q * 9;
+    for (let a = 0; a < Math.PI * 2; a += .15) {
+      const x = Math.round(cx + Math.cos(a) * r * 1.8), y = Math.round(cy + Math.sin(a) * r * .5);
+      if (((x - ox) / rx) ** 2 + ((y - oy) / ry) ** 2 < .9) t.modifier(x, y, (c, a0, b0) => PAL.teinter(c, C.s3, .5 * (1 - q / .6), a0, b0));
+    }
+  }
+  palmier(t, 950, 582, .55, temps, 4.2);
+  // Scarabées qui font leur ronde, lentement, et la trace qu'ils laissent.
+  for (const sc of SCARABEES) {
+    const w = 5 / ((sc.rx + sc.ry) / 2);
+    for (let k = 8; k >= 1; k--) {
+      const a = (temps - k * .45) * w + sc.ph;
+      t.modifier(Math.round(sc.cx + Math.cos(a) * sc.rx), Math.round(sc.cy + Math.sin(a) * sc.ry), (c, a0, b0) => PAL.teinter(c, C.z3, .5 * (1 - k / 9), a0, b0));
+    }
+    const a = temps * w + sc.ph;
+    const x = Math.round(sc.cx + Math.cos(a) * sc.rx), y = Math.round(sc.cy + Math.sin(a) * sc.ry);
+    const pas = Math.floor(temps * 3 + sc.ph) & 1;
+    t.hl(x - 1, x + 1, y - 1, C.x1); t.hl(x - 2, x + 2, y, C.x1); t.hl(x - 1, x + 1, y + 1, C.x1);
+    t.pt(x, y, C.x2); t.pt(x + 1, y - 1, C.x3);
+    t.pt(x - 2 - pas, y - 1, C.z1); t.pt(x + 2 + pas, y + 1, C.z1);
+  }
+  // Voiles de sable que le vent pousse doucement vers la gauche, hors du terrain.
+  for (let i = 0; i < 7; i++) {
+    const y = [576, 585, 594, 150, 470, 120, 520][i];
+    const L = 40 + (i * 13) % 30, per = W + 220;
+    const x0 = ((per - (temps * (11 + i % 3 * 2) + i * 173) % per) % per) - 110;
+    for (let k = 0; k < L; k++) {
+      const x = Math.round(x0 + k), yy = y + Math.round(Math.sin((x + i * 40) * .05) * 1.5);
+      if (!dehors(x, yy)) continue;
+      const env = Math.sin(k / L * Math.PI);
+      t.modifier(x, yy, (c, a, b) => PAL.teinter(c, C.z9, .28 * env, a, b));
+    }
+  }
 }
 
 // Marquage creusé dans le sable : un sillon sombre bordé d'une lèvre claire.
@@ -450,6 +782,8 @@ export function creerPixel() {
         t.ligne(x + Math.cos(a) * l, yy - r - saut + Math.sin(a) * l, x + Math.cos(a + 2.2) * l * .8, yy - r - saut + Math.sin(a + 2.2) * l * .8, k % 3 ? C.a3 : C.a2);
       }
     }
+
+    animerBordsDune(t, temps);
 
     if (but > .02) for (const cote of [1, 2]) {
       const fx = cote === 1 ? COURT.left - 6 : COURT.right - BUT.prof + 6;
