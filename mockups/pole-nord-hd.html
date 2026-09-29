@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pôle Nord HD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Un seul thème, sombre, exprès : c'est celui des mockups du projet et celui
+     de la station. Une colonne : l'écran de jeu d'abord, puis les zooms, puis
+     le choix. */
+  :root{
+    --fond:#070c16; --panneau:#0e1626; --bord:#22344f; --encre:#e8f0ff; --doux:#8fa4c4;
+    --cyan:#35e0ff; --or:#ffd23e;
+    --titre:'Archivo Black', 'Arial Black', system-ui, sans-serif;
+    --texte:'Barlow', 'Segoe UI', system-ui, sans-serif;
+    --code:Consolas, 'SFMono-Regular', Menlo, monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--encre);font-family:var(--texte);font-size:15px;line-height:1.55}
+  .page{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:24px 64px;display:grid;gap:28px}
+  header{display:grid;gap:6px}
+  .sur{margin:0;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:var(--cyan)}
+  h1{margin:0;font-family:var(--titre);font-weight:400;font-size:clamp(26px,4.4vw,40px);line-height:1.05;text-wrap:balance}
+  .chapo{margin:0;color:var(--doux);max-width:68ch}
+  h2{margin:0 0 10px;font-family:var(--titre);font-weight:400;font-size:15px;letter-spacing:.6px;color:var(--or)}
+
+  .onglets{display:flex;flex-wrap:wrap;gap:8px}
+  .onglets button{font:600 14px var(--texte);color:var(--doux);background:var(--panneau);border:1px solid var(--bord);
+    border-radius:8px;padding:8px 14px;cursor:pointer}
+  .onglets button[aria-selected="true"]{color:var(--fond);background:var(--cyan);border-color:var(--cyan)}
+  .onglets button:focus-visible,.bascule input:focus-visible+span,.action:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+
+  .ecran{position:relative;border:1px solid var(--bord);border-radius:10px;overflow:hidden;background:#000;
+    aspect-ratio:16/10;max-width:100%;touch-action:manipulation}
+  .ecran canvas#jeu{display:block;width:100%;height:100%;image-rendering:pixelated;cursor:crosshair}
+  #loupe{position:absolute;width:180px;height:180px;border-radius:50%;border:2px solid var(--cyan);pointer-events:none;
+    image-rendering:pixelated;box-shadow:0 6px 24px rgba(0,0,0,.6)}
+  .legende{position:absolute;left:10px;bottom:10px;font:600 12px var(--texte);color:var(--encre);
+    background:rgba(7,12,22,.78);border:1px solid var(--bord);border-radius:6px;padding:3px 8px;pointer-events:none}
+
+  .reglages{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:12px;color:var(--doux);font-size:14px}
+  .bascule{display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+  .bascule input{accent-color:var(--cyan);width:16px;height:16px;margin:0}
+  .action{font:600 14px var(--texte);color:var(--fond);background:var(--or);border:0;border-radius:8px;padding:7px 14px;cursor:pointer}
+
+  .zooms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .zooms figure{margin:0;display:grid;gap:6px;min-width:0}
+  .zooms canvas{width:100%;height:auto;image-rendering:pixelated;border:1px solid var(--bord);border-radius:8px;background:#000}
+  .zooms figcaption{font-size:13px;color:var(--doux)}
+  .zooms figcaption b{color:var(--encre)}
+  .choixZoom{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .choixZoom button{font:500 13px var(--texte);color:var(--doux);background:transparent;border:1px solid var(--bord);border-radius:20px;padding:4px 12px;cursor:pointer}
+  .choixZoom button[aria-pressed="true"]{color:var(--encre);border-color:var(--cyan)}
+
+  .notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .carte{background:var(--panneau);border:1px solid var(--bord);border-radius:10px;padding:14px 16px;min-width:0}
+  .carte ul{margin:0;padding-left:18px;display:grid;gap:5px;color:var(--doux);font-size:14px}
+  .carte li b{color:var(--encre);font-weight:600}
+  .commun{grid-column:1/-1}
+
+  .choix{background:var(--panneau);border:1px solid var(--or);border-radius:10px;padding:16px;display:grid;gap:12px}
+  .choix p{margin:0;color:var(--doux);font-size:14px}
+  .options{display:flex;flex-wrap:wrap;gap:8px}
+  .options label{display:inline-flex;align-items:center;gap:8px;background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px;cursor:pointer}
+  .options input{accent-color:var(--or);margin:0}
+  .choix textarea{width:100%;min-height:64px;resize:vertical;font:15px var(--texte);color:var(--encre);background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px}
+  .copier{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .copier output{flex:1 1 220px;min-width:0;font:600 15px var(--code);color:var(--or);background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px;overflow-wrap:anywhere}
+
+  @media (max-width:720px){
+    .zooms,.notes{grid-template-columns:minmax(0,1fr)}
+    #loupe{width:130px;height:130px}
+  }
+  @media (prefers-reduced-motion:reduce){ .onglets button{transition:none} }
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <p class="sur">Rework des maps · 4 sur 6 · pixel art HD</p>
+    <h1>Pôle Nord HD</h1>
+    <p class="chapo">La veillée de Noël de Jingle Bells en pixel art HD, avec les pièces choisies sur pole-nord-final : glace givrée, marquage creusé, cages en sucre d’orge, sapins, aurore, lutins, lampions.</p>
+  </header>
+
+  <section aria-label="Écran de jeu">
+    <div class="onglets" role="tablist" aria-label="Version affichée">
+      <button role="tab" id="v-actuelle" aria-selected="false" data-v="actuelle">Actuelle</button>
+      <button role="tab" id="v-hd" aria-selected="true" data-v="hd">Pixel art HD</button>
+    </div>
+    <div class="ecran" style="margin-top:12px">
+      <canvas id="jeu" width="960" height="600" aria-label="Aperçu du terrain à la taille du jeu, 960 × 600"></canvas>
+      <canvas id="loupe" width="180" height="180" hidden></canvas>
+      <span class="legende" id="legende">Pixel art HD</span>
+    </div>
+    <div class="reglages">
+      <label class="bascule"><input type="checkbox" id="opt-hud" checked><span>HUD du match</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-persos" checked><span>Yuki et le disque</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-anim" checked><span>Animation</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-loupe" checked><span>Loupe ×3 au survol</span></label>
+      <button class="action" id="but" type="button">Marquer un but</button>
+    </div>
+  </section>
+
+  <section aria-label="Zooms côte à côte">
+    <h2>Au zoom ×3, au même endroit</h2>
+    <div class="choixZoom" id="zones">
+      <button type="button" aria-pressed="true" data-z="yuki">Yuki sur la glace</button>
+      <button type="button" aria-pressed="false" data-z="sapins">Sapins, lutins et aurore</button>
+      <button type="button" aria-pressed="false" data-z="givre">Givre et rond central</button>
+      <button type="button" aria-pressed="false" data-z="cage">Cage en sucre d’orge</button>
+    </div>
+    <div class="zooms">
+      <figure><canvas id="z-actuelle" width="480" height="300"></canvas><figcaption><b>Actuelle</b> · ce qui est dans le jeu</figcaption></figure>
+      <figure><canvas id="z-hd" width="480" height="300"></canvas><figcaption><b>Pixel art HD</b></figcaption></figure>
+    </div>
+  </section>
+
+  <section class="notes" aria-label="Ce qui change">
+    <div class="carte">
+      <h2>Ce qui change</h2>
+      <ul>
+        <li><b>Glace en pixels</b> : bleutée aux bords, réchauffée au centre par la lumière, avec des rayures de patins et de grandes fougères de givre qui s’arrêtent avant les lignes.</li>
+        <li><b>Sapins dentelés</b>, éclairés à gauche par la lune, neige au bord de chaque étage, guirlandes qui clignotent et étoile d’or au sommet.</li>
+        <li><b>Aurore en rayons verticaux</b>, qui passe derrière les sapins et non devant.</li>
+        <li><b>Lutins en pixels</b> (bonnet à pompon, deux tenues rouge et verte) qui sautillent, plus fort au but.</li>
+        <li><b>Lampions</b> qui vacillent et n’éclairent que la neige à leur pied.</li>
+      </ul>
+    </div>
+    <div class="carte">
+      <h2>Ce qui ne bouge pas</h2>
+      <ul>
+        <li><b>Cages de 200</b>, volets 3 / 5 / 3 en rouge et or, barres de sucre d’orge dont les rayures défilent.</li>
+        <li><b>Marquage creusé</b> : touche en retrait de 6, médiane, ronds de 58 et 13, sillon bleu et lèvre blanche.</li>
+        <li><b>Rouge et blanc rayés seulement aux cages</b>, pourtour éteint, aire de jeu éclairée : les règles de la finition « nuit profonde ».</li>
+        <li><b>Pas de règle de jeu</b> : la glace ne glisse pas, c’est un terrain de décor.</li>
+        <li><b>Rien du décor devant les cages</b> : sapins, lutins et lampions des côtés s’arrêtent avant.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="choix" aria-label="Ton avis">
+    <h2>Ton avis</h2>
+    <p>Valide tel quel, ou écris ce qu'il faut retoucher. Renvoie-moi le code.</p>
+    <div class="options" role="radiogroup" aria-label="Verdict">
+      <label><input type="radio" name="choix" id="choix-ok" value="OK" checked> Valide tel quel</label>
+      <label><input type="radio" name="choix" id="choix-retouche" value="À RETOUCHER"> À retoucher</label>
+    </div>
+    <label for="remarques" style="font-size:14px;color:var(--doux)">Retouches (facultatif)</label>
+    <textarea id="remarques" placeholder="Ex. : plus de neige qui tombe, aurore plus forte…"></textarea>
+    <div class="copier">
+      <output id="code">POLE-NORD-HD : OK</output>
+      <button class="action" id="copier" type="button">Copier le code</button>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+  import { monterPage } from './_page-map-hd.js';
+  import { creerPixel } from './pole-nord-hd/pixel.js';
+  monterPage({
+    versions: [
+      { id: 'actuelle', nom: 'Actuelle', fond: './pole-nord-hd/actuelle.webp' },
+      { id: 'hd', nom: 'Pixel art HD', image: creerPixel().image }
+    ],
+    zones: { yuki: 'yuki', sapins: [240, 0, 240, 150], givre: [360, 240, 240, 150], cage: [0, 200, 180, 112] },
+    code: () => {
+      const v = document.querySelector('input[name="choix"]:checked').value;
+      const r = document.getElementById('remarques').value.trim();
+      return 'POLE-NORD-HD : ' + v + (r ? ' · ' + r : '');
+    }
+  });
+</script>
+</body>
+</html>

@@ -5,7 +5,8 @@ export const cv = $('game');
 // `let` et non `const` : l'écran de choix du terrain a besoin de faire peindre
 // le vrai terrain dans un canvas hors écran, et render.js dessine toujours dans
 // ce `ctx`. C'est une liaison vivante, donc le basculer ici le bascule là-bas.
-// Personne d'autre que render.js ne l'importe — voir viserCanvas().
+// Seuls render.js et les terrains HD qu'il appelle (render/hd/index.js)
+// l'importent — voir viserCanvas().
 export let ctx = cv.getContext('2d');
 const ctxJeu = ctx;
 // Détourne le dessin vers un autre canvas. Appeler sans argument pour revenir
