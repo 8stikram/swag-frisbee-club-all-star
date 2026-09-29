@@ -3,6 +3,7 @@ import { initMatch } from './game/state.js';
 import { frame } from './game/loop.js';
 import { refreshSelect, brancherApercuTerrain } from './ui/menus.js';
 import { peindreTerrain } from './render/render.js';
+import { prechaufferTerrainsHD } from './render/hd/index.js';
 import { lancerIntro } from './ui/intro.js';
 import { brancherDos } from './casino/cartes.js';
 import { equipeDe } from './data/inventaire.js';
@@ -36,6 +37,10 @@ requestAnimationFrame(frame);
 
 // Séquence d'ouverture, jouée une fois avant le menu.
 lancerIntro();
+
+// Les fonds des terrains HD se préparent pendant que le navigateur est au
+// repos, pour que l'écran de choix du terrain ne se fige pas à l'ouverture.
+prechaufferTerrainsHD();
 
 console.log('=== Swag Frisbee Club All Star ===');
 console.log('5 clics sur le titre pour le Mode Admin.');

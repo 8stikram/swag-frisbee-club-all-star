@@ -8,6 +8,7 @@ import { TAU, lerp, clamp, gauss } from '../core/utils.js';
 import { getMap, getMapId, setMapId } from '../data/maps.js';
 import { drawCourtRaccoon, drawBrumeRaccoon } from './terrains/raccoon.js';
 import { drawCourtTemple } from './terrains/temple.js';
+import { dessinerTerrainHD, dessinerNeigeHD } from './hd/index.js';
 import { copieExacte, peindreHorsEcran } from './calques.js';
 import { getSkinId, drawSkinDisc, deformationDisque, tracerContour, teinteDeCharge, chaufferCouleur, avecAlpha } from '../data/skins.js';
 import { LEG_SPRITE, LEG_SPRITE_SCALE, BELL_SPRITE, SIX_ORBES, SIX_DUREE, GUN_SPRITE, RASENGAN, PIRATAGE_DUREE, CHIEN_VIDEO, CHIEN_DUREE, RUEE_N, TIGRE_SPRITE, WT_CHANT, WT_SORTIE, WT_STUN,
@@ -1432,6 +1433,10 @@ export function peindreTerrain(cible, mapId) {
 }
 
 function drawCourt() {
+  // Les six terrains de match sont en pixel art HD (render/hd/). Les peintres
+  // au canevas ci-dessous restent : la salle d'entraînement s'en sert, et ils
+  // servent de repli si un terrain n'a pas encore sa version HD.
+  if (dessinerTerrainHD()) return;
   if (getMap().style === 'raccoon') { drawCourtRaccoon(); return; }
   if (getMap().style === 'temple') { drawCourtTemple(); return; }
   if (getMap().style === 'noel') { drawCourtNoel(); return; }
@@ -3522,8 +3527,9 @@ export function render() {
   if (G.replay) drawReplayOverlay();
   drawTempete();
   // La neige du Pôle Nord, comme la tempête de sable : en espace écran, donc
-  // par-dessus tout, et jamais retournée chez l'invité.
-  drawNeigeNoel();
+  // par-dessus tout, et jamais retournée chez l'invité. Ses flocons sont en
+  // pixels depuis que le terrain l'est.
+  if (!dessinerNeigeHD()) drawNeigeNoel();
   // La brume de Raccoon City, au même endroit et pour la même raison que la
   // tempête : c'est une règle de jeu, elle doit masquer les joueurs et le
   // disque, donc elle passe après eux et en espace écran.
