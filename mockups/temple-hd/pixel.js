@@ -52,7 +52,7 @@ function lumiere(x, y) {
   const dx = x - ox, dy = y - oy, d = Math.hypot(dx, dy), a = Math.atan2(dx, dy);
   let l = 0;
   // Nappe dorée radiale, écrasée.
-  l += 26 * Math.exp(-((dx / 2.2) ** 2 + dy * dy) / (2 * 120 * 120));
+  l += 20 * Math.exp(-((dx / 2.2) ** 2 + dy * dy) / (2 * 120 * 120));
   // Six rayons de gloire qui descendent sur le dallage.
   for (let k = -3; k <= 3; k++) {
     if (!k) continue;
@@ -97,7 +97,7 @@ const CHIFFRES = { 3: spriteChiffre(3, C.p4, C.p4, C.p3, C.n0), 5: spriteChiffre
 
 // La fricadelle dressée : un cylindre d'or, modelé d'une bande claire au
 // tiers, peau grenue, pli de cuisson, bouts plus cuits.
-function fricadelle(t, x, yBas, lg, ht) {
+function fricadelle(t, x, yBas, lg, ht, contour) {
   const r = lg / 2;
   for (let y = yBas - ht; y < yBas; y++) for (let xx = Math.round(x - r); xx <= Math.round(x + r); xx++) {
     const u = (xx - (x - r)) / lg;
@@ -113,7 +113,7 @@ function fricadelle(t, x, yBas, lg, ht) {
     if (Math.abs(xx - pli) < 1) k = .15;
     else if (Math.abs(xx - (pli - 1.5)) < .8) k = Math.min(1, k + .25);
     const c = k > .85 ? C.o4 : k > .6 ? C.o3 : k > .38 ? C.o2 : k > .15 ? C.o1 : C.o0;
-    t.pt(xx, y, c);
+    t.pt(xx, y, contour ? C.n0 : c);
   }
 }
 
@@ -221,18 +221,21 @@ function peindreAbside(t) {
   for (let k = 0; k < 22; k++) {
     const a = Math.PI + k / 21 * Math.PI, L = k % 2 ? 46 : 72;
     balayerPoly([[ox + Math.cos(a - .05) * 12, oy + Math.sin(a - .05) * 12], [ox + Math.cos(a) * L, oy + Math.sin(a) * L], [ox + Math.cos(a + .05) * 12, oy + Math.sin(a + .05) * 12]], (yy, a0, b0) => {
-      for (let x = a0; x <= b0; x++) if (yy >= 0) t.modifier(x, yy, (c, xx, y2) => PAL.teinter(c, C.o4, k % 2 ? .35 : .55, xx, y2));
+      for (let x = a0; x <= b0; x++) if (yy >= 0) t.modifier(x, yy, (c, xx, y2) => PAL.teinter(c, C.o4, k % 2 ? .16 : .28, xx, y2));
     });
   }
+  // Le halo reste discret : trop fort, il noyait l'idole dans sa propre lumière.
   for (let y = 0; y < BANDE; y++) for (let x = CX - 70; x < CX + 70; x++) {
     const d = Math.hypot(x - ox, y - oy);
-    if (d < 70) t.modifier(x, y, (c, xx, yy) => PAL.teinter(c, C.o3, .38 * (1 - d / 70), xx, yy));
+    if (d > 18 && d < 60) t.modifier(x, y, (c, xx, yy) => PAL.teinter(c, C.o3, .2 * (1 - (d - 18) / 42), xx, yy));
   }
   // Socle à trois degrés, idole, ruban rose noué d'or.
   for (let k = 0; k < 3; k++) {
     const w = 46 + (2 - k) * 22, y = SOL_IDOLE - (k + 1) * 7;
     for (let j = 0; j < 7; j++) t.hl(Math.round(CX - w / 2), Math.round(CX + w / 2), y + j, j === 0 ? C.q6 : j === 6 ? C.n1 : j < 3 ? C.q4 : C.q3);
   }
+  // Un liseré sombre autour de l'idole la découpe sur sa gloire.
+  fricadelle(t, CX, SOL_IDOLE - 21, 34, 58, true);
   fricadelle(t, CX, SOL_IDOLE - 21, 30, 56);
   t.rect(CX - 15, SOL_IDOLE - 50, 31, 5, C.p2); t.hl(CX - 15, CX + 15, SOL_IDOLE - 50, C.p3); t.hl(CX - 15, CX + 15, SOL_IDOLE - 46, C.p1);
   balayerDisque(CX + 7, SOL_IDOLE - 48, 3, (y, a, b) => t.hl(a, b, y, C.o4));
@@ -352,25 +355,21 @@ export function creerPixel() {
       for (let i = 0; i < 56; i++) {
         const v = .55 + Math.sin(temps * 2.2 + i * 1.7) * .25 + Math.sin(temps * 5.1 + i) * .2;
         const x = fond + s * Math.round(1 + hacher(i, 1, 21) * hacher(i, 9, 21) * 20), y = BUT.haut + 4 + Math.round(hacher(i, 3, 21) * (GH * 2 - 8));
-        const c = v > .92 ? C.f4 : v > .7 ? C.f3 : v > .45 ? C.f2 : C.f1;
+        const c = v > .8 ? C.f4 : v > .6 ? C.f3 : v > .4 ? C.f2 : C.f1;
         t.rect(Math.min(x, x + s * 2), y, 3, 2, c);
       }
-      // La lueur reste dans le four : elle s'éteint à la bouche. Débordant de
-      // 40 px sur le dallage, elle brouillait la zone de but et le disque qui
-      // y arrive.
+      // La lueur du four et sa pulsation, comme avant ; elle ne déborde plus
+      // que de 12 px sur le dallage (40 avant), là où elle brouillait le but.
       const vv = .85 + Math.sin(temps * 2.2) * .1;
-      for (let y = BUT.haut; y < BUT.bas; y++) for (let x = gx; x < gx + GOAL_D + 6 * (cote === 1 ? 1 : 0); x++) {
-        const xx = cote === 1 ? x : x - 6 * 0;
-        const u = cote === 1 ? (xx - gx) / (GOAL_D + 6) : (gx + GOAL_D - 1 - xx) / (GOAL_D + 6);
+      const PORTEE = 12;
+      for (let y = BUT.haut; y < BUT.bas; y++) for (let x = gx - PORTEE; x < gx + GOAL_D + PORTEE; x++) {
+        const u = cote === 1 ? (x - gx) / (GOAL_D + PORTEE) : (gx + GOAL_D - 1 - x) / (GOAL_D + PORTEE);
         if (u < 0 || u > 1) continue;
-        t.modifier(xx, y, (c, a, b) => PAL.teinter(c, C.f2, .2 * vv * (1 - u) ** 1.6, a, b));
+        t.modifier(x, y, (c, a, b) => PAL.teinter(c, C.f3, .34 * vv * (1 - u) ** 1.3, a, b));
       }
-      if (cote === 2) for (let y = BUT.haut; y < BUT.bas; y++) for (let x = gx - 6; x < gx; x++)
-        t.modifier(x, y, (c, a, b) => PAL.teinter(c, C.f2, .04 * vv, a, b));
-      for (let k = 0; k < 5; k++) {
+      for (let k = 0; k < 12; k++) {
         const q = (temps * .45 + hacher(k, cote, 22)) % 1;
-        if (q > .7) continue;
-        t.pt(Math.round(fond + s * (6 + q * 34)), Math.round(BUT.haut + 10 + hacher(k, cote, 23) * 180 + Math.sin(temps * 3 + k) * 6), q < .35 ? C.f4 : C.f2);
+        t.pt(Math.round(fond + s * (8 + q * 54)), Math.round(BUT.haut + 10 + hacher(k, cote, 23) * 180 + Math.sin(temps * 3 + k) * 6), q < .5 ? C.f4 : C.f3);
       }
       for (const z of ZONES) {
         const sp = CHIFFRES[z.points];

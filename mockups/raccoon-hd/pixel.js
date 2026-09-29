@@ -197,6 +197,7 @@ function peindreFond() {
   // Caniveaux le long du parvis.
   t.rect(0, COURT.top - 9, W, 5, C.b0); t.hl(0, W - 1, COURT.top - 9, C.b4);
   t.rect(0, COURT.bottom + 4, W, 5, C.b0); t.hl(0, W - 1, COURT.bottom + 4, C.b4);
+  peindreBordures(t);
 
   peindrePoste(t);
 
@@ -460,6 +461,169 @@ function peindrePoste(t) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Le bas et les côtés : trottoirs de béton, bordures, lampadaires au sodium,
+// et ce que la nuit a laissé traîner. Tout reste hors de l'aire de jeu.
+// ---------------------------------------------------------------------------
+const TROTTOIR_BAS = COURT.bottom + 12;          // première rangée de dalles
+const TROTTOIR_G = 11, TROTTOIR_D = W - 12;      // bord intérieur des trottoirs latéraux
+// Lampadaires hors champ : on ne voit que leur flaque de lumière orangée.
+const LAMPES = [[190, H + 6, 70], [480, H + 8, 64], [770, H + 6, 70], [-6, 118, 58], [-6, 540, 58], [W + 6, 118, 58], [W + 6, 540, 58]];
+// Où sont posés les accessoires : les silhouettes s'en écartent.
+const ACCESSOIRES = [
+  { k: 'poubelleCouchee', x: 92, y: 588 }, { k: 'bache', x: 236, y: 590 }, { k: 'grille', x: 330, y: COURT.bottom + 9 },
+  { k: 'journaux', x: 404, y: 584 }, { k: 'borne', x: 560, y: 588 }, { k: 'plot', x: 612, y: 592 },
+  { k: 'sacs', x: 690, y: 592, l: 104 }, { k: 'grille', x: 842, y: COURT.bottom + 9 },
+  { k: 'poubelle', x: 50, y: 112 }, { k: 'sacsPoubelle', x: 36, y: 122 }, { k: 'plot', x: 58, y: 546 },
+  { k: 'sacs', x: 898, y: 122, l: 44 }, { k: 'sacs', x: 898, y: 544, l: 44 }, { k: 'caisse', x: 906, y: 104 }
+];
+// Les sacs de sable et les grilles ne gênent personne : les policiers se
+// tiennent justement derrière les sacs.
+const libre = (x, y) => !ACCESSOIRES.some(a => a.k !== 'sacs' && a.k !== 'grille' && Math.abs(a.x + (a.l || 16) / 2 - x) < (a.l || 16) / 2 + 8 && Math.abs(a.y - y) < 14);
+
+function peindreBordures(t) {
+  const beton = (x, y, fonce) => {
+    const dx = Math.floor(x / 24), dy = Math.floor((y - 2) / 10);
+    const joint = x % 24 === 0 || (y - 2) % 10 === 0;
+    const v = 44 + (hacher(dx, dy, 31) - .5) * 12 + (fbm(x * .08, y * .08, 3, 32) - .5) * 14 - fonce;
+    let r = v * .9, g = v * 1.02, b = v * 1.04;
+    if (joint) { r *= .62; g *= .62; b *= .62; }
+    // Fissures : de fines lignes qui courent d'une dalle à l'autre.
+    if (Math.abs(fbm(x * .05, y * .05, 3, 33) - .5) < .012) { r *= .55; g *= .55; b *= .55; }
+    return [r, g, b];
+  };
+  // Trottoir du bas, sa bordure et la crasse qui s'accumule contre elle.
+  for (let y = COURT.bottom + 9; y < H; y++) for (let x = 0; x < W; x++) {
+    let c;
+    if (y === COURT.bottom + 9) c = C.t6;
+    else if (y === COURT.bottom + 10) c = C.t4;
+    else if (y === COURT.bottom + 11) c = C.t1;
+    else { const [r, g, b] = beton(x, y, Math.max(0, 6 - (y - TROTTOIR_BAS)) * 2); c = PIERRE.tramer(r, g, b, x, y, 2); }
+    t.px[y * W + x] = c;
+  }
+  // Trottoirs latéraux.
+  for (let y = COURT.top - 4; y < COURT.bottom + 9; y++) {
+    for (let x = 0; x < W; x++) {
+      if (x > TROTTOIR_G + 2 && x < TROTTOIR_D - 2) continue;
+      let c;
+      if (x === TROTTOIR_G + 1 || x === TROTTOIR_D - 1) c = C.t6;
+      else if (x === TROTTOIR_G + 2 || x === TROTTOIR_D - 2) c = C.t1;
+      else { const [r, g, b] = beton(x, y, 0); c = PIERRE.tramer(r, g, b, x, y, 2); }
+      t.px[y * W + x] = c;
+    }
+  }
+  // Ligne de rive usée et traces de freinage sur les chaussées latérales.
+  for (const x of [58, W - 60]) for (let y = COURT.top + 6; y < COURT.bottom - 4; y++) {
+    if (y > BUT.haut - 20 && y < BUT.bas + 20) continue;
+    if (fbm(x * .1, y * .09, 2, 34) < .38) continue;
+    t.pt(x, y, C.w1); t.pt(x + 1, y, (y & 3) ? C.w1 : C.b5);
+  }
+  for (const [x0, y0, sens] of [[40, 240, 1], [48, 250, 1], [918, 430, -1], [910, 442, -1]]) {
+    for (let k = 0; k < 70; k++) {
+      const x = Math.round(x0 + Math.sin(k * .05) * 10 * sens), y = y0 + k * sens * -1 + (sens < 0 ? 0 : 0);
+      if (y > BUT.haut - 14 && y < BUT.bas + 14) continue;
+      t.modifier(x, y, (c, a, b) => PAL.teinter(c, C.b0, .6, a, b));
+      t.modifier(x + 1, y, (c, a, b) => PAL.teinter(c, C.b0, .35, a, b));
+    }
+  }
+  // Flaques de lumière orangée des lampadaires au sodium.
+  for (const [lx, ly, r] of LAMPES) {
+    for (let y = Math.max(0, ly - r); y < Math.min(H, ly + r); y++) for (let x = Math.max(0, lx - r * 1.4); x < Math.min(W, lx + r * 1.4); x++) {
+      if (dansTerrain(x, y) || y < BANDE) continue;
+      const d = Math.hypot((x - lx) / 1.4, y - ly) / r;
+      if (d < 1) t.modifier(x, y, (c, a, b) => PAL.teinter(c, C.a3, .3 * (1 - d) ** 1.5, a, b));
+    }
+  }
+  // Traînée de sang vers la cage de gauche : quelqu'un a été tiré par là.
+  for (let k = 0; k < 90; k++) {
+    const x = Math.round(26 + k * .35 + Math.sin(k * .2) * 3), y = COURT.bottom - 12 - k;
+    if (hacher(k, 0, 35) > .35) t.pt(x, y, k % 5 ? C.s1 : C.s2);
+    if (hacher(k, 1, 35) > .6) t.pt(x + 1, y, C.s1);
+  }
+  for (const a of ACCESSOIRES) accessoire(t, a);
+}
+
+function accessoire(t, a) {
+  const { x, y } = a;
+  const ombre = (l, h2) => { for (let j = 0; j < h2; j++) for (let i = -1; i <= l; i++) t.modifier(x + i + 2, y + j - 1, (c, xx, yy) => PAL.teinter(c, C.b0, .5, xx, yy)); };
+  if (a.k === 'poubelle' || a.k === 'poubelleCouchee') {
+    const couchee = a.k === 'poubelleCouchee';
+    if (couchee) {
+      ombre(16, 4);
+      for (let j = 0; j < 9; j++) for (let i = 0; i < 15; i++) t.pt(x + i, y - 9 + j, i === 0 || j === 0 || j === 8 ? C.f0 : i % 4 === 0 ? C.f3 : j < 3 ? C.t5 : C.t3);
+      balayerDisque(x + 16, y - 5, 4, (yy, a0, b0) => t.hl(a0, b0, yy, C.f0));
+      balayerDisque(x + 16, y - 5, 3, (yy, a0, b0) => t.hl(a0, b0, yy, C.t1));
+      // Les ordures répandues : sacs noirs, papiers, une canette.
+      for (const [dx, dy, r] of [[22, -3, 4], [28, 1, 3], [20, 3, 3]]) {
+        balayerDisque(x + dx, y + dy, r, (yy, a0, b0) => t.hl(a0, b0, yy, C.f0));
+        balayerDisque(x + dx - 1, y + dy - 1, r - 1, (yy, a0, b0) => t.hl(a0, b0, yy, C.f1));
+        t.pt(x + dx - 1, y + dy - r + 1, C.f3);
+      }
+      for (let k = 0; k < 7; k++) t.rect(x + 18 + Math.round(hacher(k, 1, 40) * 22), y - 4 + Math.round(hacher(k, 2, 40) * 10), 3, 2, k % 2 ? C.p2 : C.p1);
+      t.pt(x + 34, y + 2, C.x2); t.pt(x + 35, y + 2, C.w2);
+    } else {
+      ombre(10, 3);
+      for (let j = 0; j < 15; j++) for (let i = 0; i < 10; i++) t.pt(x + i, y - 15 + j, i === 0 || i === 9 || j === 14 ? C.f0 : j < 2 ? C.t6 : j % 5 === 2 ? C.t2 : i < 3 ? C.t5 : C.t3);
+      t.hl(x - 1, x + 10, y - 16, C.f0); t.hl(x, x + 9, y - 16, C.t4);
+    }
+  } else if (a.k === 'sacsPoubelle') {
+    for (const [dx, dy, r] of [[0, 0, 4], [7, 2, 3], [3, 5, 3]]) {
+      balayerDisque(x + dx, y + dy, r, (yy, a0, b0) => t.hl(a0, b0, yy, C.f0));
+      balayerDisque(x + dx - 1, y + dy - 1, r - 1, (yy, a0, b0) => t.hl(a0, b0, yy, C.f1));
+      t.pt(x + dx - 1, y + dy - r + 1, C.f3);
+    }
+  } else if (a.k === 'bache') {
+    // Le corps sous la bâche, et le sang qui a traversé.
+    for (let k = 0; k < 30; k++) balayerDisque(x + 4 + Math.round(hacher(k, 1, 41) * 26), y + 2 + Math.round(hacher(k, 2, 41) * 5), 2, (yy, a0, b0) => t.hl(a0, b0, yy, C.s1));
+    for (let j = 0; j < 10; j++) for (let i = 0; i < 30; i++) {
+      const dx = (i - 15) / 15, dy = (j - 5) / 5;
+      if (dx * dx + dy * dy * .7 > 1.05) continue;
+      const bosse = Math.sin(i * .35) * .5 + .5;
+      t.pt(x + i, y - 8 + j, dx * dx + dy * dy * .7 > .8 ? C.w1 : j < 3 + bosse * 2 ? C.w2 : C.w1);
+    }
+    t.rect(x + 8, y - 5, 4, 2, C.s2); t.pt(x + 9, y - 3, C.s1);
+  } else if (a.k === 'grille') {
+    t.rect(x, y, 16, 4, C.f0);
+    for (let i = 1; i < 16; i += 2) t.vl(x + i, y + 1, y + 2, C.f3);
+  } else if (a.k === 'journaux') {
+    ombre(11, 3);
+    for (let j = 0; j < 14; j++) for (let i = 0; i < 11; i++) {
+      let c = i === 0 || i === 10 || j === 0 || j === 13 ? C.f0 : C.d5;
+      if (j > 2 && j < 7 && i > 1 && i < 9) c = (i + j) % 3 ? C.p2 : C.p1;
+      if (i === 1 || j === 1) c = c === C.d5 ? C.g4 : c;
+      t.pt(x + i, y - 14 + j, c);
+    }
+    t.hl(x + 2, x + 8, y - 5, C.d4); t.vl(x + 3, y - 1, y, C.f2); t.vl(x + 8, y - 1, y, C.f2);
+  } else if (a.k === 'borne') {
+    ombre(8, 3);
+    // Flaque d'eau qui fuit de la borne.
+    for (let j = 0; j < 7; j++) for (let i = -8; i < 18; i++) if (((i - 5) / 13) ** 2 + ((j - 3) / 3.5) ** 2 < 1) t.pt(x + i, y + j - 1, j === 0 ? C.b6 : C.b4);
+    const L = ['..rrr..', '.rRRrr.', 'rRRrrrr', '.rRrrr.', 'grRrrrg', '.rRrrr.', '.rRrrr.', '.rRrrr.', 'rrrrrrr'];
+    t.sprite(spriteDe(L, { r: C.x2, R: C.x4, g: C.f3 }), x, y - 10);
+  } else if (a.k === 'plot') {
+    // Plot de chantier renversé.
+    for (let i = 0; i < 9; i++) for (let j = 0; j < 5; j++) {
+      const w = 2 + i * .3;
+      if (Math.abs(j - 2) > w) continue;
+      t.pt(x + i, y - 5 + j, i === 3 || i === 6 ? C.w2 : C.a3);
+    }
+    t.rect(x + 9, y - 6, 2, 7, C.f1);
+  } else if (a.k === 'sacs') {
+    // Muret de sacs de sable, deux rangs décalés.
+    for (let rang = 0; rang < 2; rang++) for (let i = 0; i * 9 < a.l - (rang ? 9 : 0); i++) {
+      const sx = x + i * 9 + (rang ? 4 : 0), sy = y - 4 - rang * 4;
+      for (let j = 0; j < 5; j++) for (let k = 0; k < 9; k++) {
+        if ((k === 0 || k === 8) && (j === 0 || j === 4)) continue;
+        t.pt(sx + k, sy + j, k === 0 || k === 8 || j === 4 ? C.o1 : j === 0 ? C.p2 : (k + j) % 5 === 0 ? C.o1 : C.p1);
+      }
+    }
+  } else if (a.k === 'caisse') {
+    ombre(12, 3);
+    for (let j = 0; j < 10; j++) for (let i = 0; i < 12; i++) t.pt(x + i, y - 10 + j, i === 0 || i === 11 || j === 0 || j === 9 ? C.f0 : j === 1 ? C.o3 : (i === 5 || i === 6) ? C.o1 : C.o3);
+    ecrire3x5(t, 'RPD', x + 1, y - 8, C.f0);
+  }
+}
+
 // Marquage peint, usé : touche en retrait de 6, médiane, ronds de 58 et 13.
 function marquage() {
   const px = [];
@@ -483,7 +647,7 @@ function marquage() {
 // Ce qui bouge
 // ---------------------------------------------------------------------------
 const POURTOUR = [];
-for (let x = 16; x < W; x += 34) POURTOUR.push({ x, y: 599, k: 'bas' });
+for (let x = 16; x < W; x += 34) POURTOUR.push({ x: x + Math.round((hacher(x, 3, 88) - .5) * 10), y: 598 - Math.round(hacher(x, 4, 88) * 7), k: 'bas' });
 for (let y = COURT.top + 34; y < COURT.bottom - 6; y += 42) {
   if (y > BUT.haut - 30 && y < BUT.bas + 34) continue;
   POURTOUR.push({ x: 20 + Math.round(hacher(y, 1, 88) * 14), y, k: 'gauche' });
@@ -603,31 +767,61 @@ export function creerPixel() {
         t.modifier(x, y, (c, xx, yy) => PAL.teinter(c, C.l3, but * .5, xx, yy));
     }
 
-    // Zombies à gauche, ceux qui tiennent la ligne à droite.
+    // Flaques de sodium qui respirent doucement (une lampe fatigue).
+    {
+      const [lx, ly, r] = LAMPES[1];
+      const f = .5 + .5 * Math.sin(temps * .7);
+      for (let y = Math.max(BANDE, ly - r); y < Math.min(H, ly + r); y++) for (let x = lx - r; x < lx + r; x++) {
+        const d = Math.hypot((x - lx) / 1.4, y - ly) / r;
+        if (d < 1 && !dansTerrain(x, y)) t.modifier(x, y, (c, a, b) => PAL.teinter(c, C.b0, .25 * f * (1 - d), a, b));
+      }
+    }
+    // Gouttes qui tombent dans la flaque de la borne, en ronds qui s'élargissent.
+    {
+      const b0 = ACCESSOIRES.find(a => a.k === 'borne');
+      const q = (temps * .6) % 1, r = 1 + q * 7;
+      for (let a = 0; a < Math.PI * 2; a += .2) {
+        const x = Math.round(b0.x + 5 + Math.cos(a) * r * 1.6), y = Math.round(b0.y + 2 + Math.sin(a) * r * .6);
+        if (q < .8) t.modifier(x, y, (c, aa, bb) => PAL.teinter(c, C.b7, .6 * (1 - q), aa, bb));
+      }
+    }
+    // Zombies à gauche, ceux qui tiennent la ligne à droite. Tout va lentement :
+    // un pas toutes les secondes, un balancement qui prend son temps.
     POURTOUR.forEach((p, i) => {
-      // Personne ne se tient debout sur une voiture.
+      // Personne ne se tient debout sur une voiture ni sur un accessoire.
       if (VOITURES.some(v => Math.abs(v.x - p.x) < 26 && p.y > v.y - 30 && p.y < v.y + 62)) return;
       const gauche = p.k === 'gauche' || (p.k === 'bas' && p.x < CX);
-      const f = Math.floor(temps * (gauche ? 2 : 3) + i) & 1;
+      if (p.k === 'bas' && !libre(p.x, p.y)) return;
       if (gauche) {
-        if (hacher(i, 5, 90) < .18) return;
+        if (hacher(i, 5, 90) < .24) return;
+        const f = Math.floor(temps * 1.1 + i * .37) & 1;
         const s = ZOMBIES[i % 3][f];
-        const traine = Math.round(Math.sin(temps * 1.3 + i) * 2);
-        t.sprite(s, p.x - 8 + traine, p.y - 32);
+        const traine = Math.round(Math.sin(temps * .45 + i) * 3);
+        const tangue = Math.sin(temps * 1.1 * Math.PI + i) > .5 ? 1 : 0;
+        t.sprite(s, p.x - 8 + traine, p.y - 32 + tangue);
       } else {
-        if (hacher(i, 9, 90) < .5) return;
+        if (hacher(i, 9, 90) < .45) return;
+        const f = Math.floor(temps * .6 + i * .5) & 1;
         t.sprite(FLICS[f], p.x - 9, p.y - 32, true);
-        // Lampe torche : un cône qui balaie vers le terrain.
-        const ang = Math.PI + Math.sin(temps * .8 + i) * .35;
+        // Lampe torche : un cône qui balaie lentement vers le terrain.
+        const ang = Math.PI + Math.sin(temps * .35 + i) * .3 + (p.k === 'bas' ? Math.PI / 2 * .8 : 0);
         const lx = p.x - 8, ly = p.y - 20;
         balayerPoly([[lx, ly], [lx + Math.cos(ang - .22) * 60, ly + Math.sin(ang - .22) * 60], [lx + Math.cos(ang + .22) * 60, ly + Math.sin(ang + .22) * 60]], (yy, a, b) => {
           for (let xx = a; xx <= b; xx++) {
             const d = Math.hypot(xx - lx, yy - ly) / 60;
-            t.modifier(xx, yy, (c, x2, y2) => PAL.teinter(c, C.a6, .22 * (1 - d), x2, y2));
+            t.modifier(xx, yy, (c, x2, y2) => PAL.teinter(c, C.a6, .2 * (1 - d), x2, y2));
           }
         });
       }
     });
+    // Les sacs de sable passent devant les jambes des policiers.
+    for (const a of ACCESSOIRES) if (a.k === 'sacs') accessoire(t, a);
+    // Rubalise jaune tendue devant la ligne, qui ondule à peine.
+    for (let x = 640; x < W; x++) {
+      const u = (x - 640) / 60;
+      const y = Math.round(575 + Math.abs(Math.sin(u * Math.PI)) * 5 + Math.sin(temps * .8 + x * .05) * .8);
+      t.pt(x, y, (x >> 3) % 3 === 0 ? C.f0 : C.j2); t.pt(x, y + 1, C.j1);
+    }
     // Douilles au pied de la ligne.
     for (let i = 0; i < 50; i++) {
       const x = Math.round(CX + hacher(i, 1, 95) * 470), y = Math.round(COURT.top + 20 + hacher(i, 2, 95) * 500);
