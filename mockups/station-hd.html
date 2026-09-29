@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Station orbitale HD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Un seul thème, sombre, exprès : c'est celui des mockups du projet et celui
+     de la station. Une colonne : l'écran de jeu d'abord, puis les zooms, puis
+     le choix. */
+  :root{
+    --fond:#070c16; --panneau:#0e1626; --bord:#22344f; --encre:#e8f0ff; --doux:#8fa4c4;
+    --cyan:#35e0ff; --or:#ffd23e;
+    --titre:'Archivo Black', 'Arial Black', system-ui, sans-serif;
+    --texte:'Barlow', 'Segoe UI', system-ui, sans-serif;
+    --code:Consolas, 'SFMono-Regular', Menlo, monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--encre);font-family:var(--texte);font-size:15px;line-height:1.55}
+  .page{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:24px 64px;display:grid;gap:28px}
+  header{display:grid;gap:6px}
+  .sur{margin:0;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:var(--cyan)}
+  h1{margin:0;font-family:var(--titre);font-weight:400;font-size:clamp(26px,4.4vw,40px);line-height:1.05;text-wrap:balance}
+  .chapo{margin:0;color:var(--doux);max-width:68ch}
+  h2{margin:0 0 10px;font-family:var(--titre);font-weight:400;font-size:15px;letter-spacing:.6px;color:var(--or)}
+
+  .onglets{display:flex;flex-wrap:wrap;gap:8px}
+  .onglets button{font:600 14px var(--texte);color:var(--doux);background:var(--panneau);border:1px solid var(--bord);
+    border-radius:8px;padding:8px 14px;cursor:pointer}
+  .onglets button[aria-selected="true"]{color:var(--fond);background:var(--cyan);border-color:var(--cyan)}
+  .onglets button:focus-visible,.bascule input:focus-visible+span,.action:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+
+  .ecran{position:relative;border:1px solid var(--bord);border-radius:10px;overflow:hidden;background:#000;
+    aspect-ratio:16/10;max-width:100%;touch-action:manipulation}
+  .ecran canvas#jeu{display:block;width:100%;height:100%;image-rendering:pixelated;cursor:crosshair}
+  #loupe{position:absolute;width:180px;height:180px;border-radius:50%;border:2px solid var(--cyan);pointer-events:none;
+    image-rendering:pixelated;box-shadow:0 6px 24px rgba(0,0,0,.6)}
+  .legende{position:absolute;left:10px;bottom:10px;font:600 12px var(--texte);color:var(--encre);
+    background:rgba(7,12,22,.78);border:1px solid var(--bord);border-radius:6px;padding:3px 8px;pointer-events:none}
+
+  .reglages{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:12px;color:var(--doux);font-size:14px}
+  .bascule{display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+  .bascule input{accent-color:var(--cyan);width:16px;height:16px;margin:0}
+  .action{font:600 14px var(--texte);color:var(--fond);background:var(--or);border:0;border-radius:8px;padding:7px 14px;cursor:pointer}
+
+  .zooms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  .zooms figure{margin:0;display:grid;gap:6px;min-width:0}
+  .zooms canvas{width:100%;height:auto;image-rendering:pixelated;border:1px solid var(--bord);border-radius:8px;background:#000}
+  .zooms figcaption{font-size:13px;color:var(--doux)}
+  .zooms figcaption b{color:var(--encre)}
+  .choixZoom{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .choixZoom button{font:500 13px var(--texte);color:var(--doux);background:transparent;border:1px solid var(--bord);border-radius:20px;padding:4px 12px;cursor:pointer}
+  .choixZoom button[aria-pressed="true"]{color:var(--encre);border-color:var(--cyan)}
+
+  .notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .carte{background:var(--panneau);border:1px solid var(--bord);border-radius:10px;padding:14px 16px;min-width:0}
+  .carte ul{margin:0;padding-left:18px;display:grid;gap:5px;color:var(--doux);font-size:14px}
+  .carte li b{color:var(--encre);font-weight:600}
+  .commun{grid-column:1/-1}
+
+  .choix{background:var(--panneau);border:1px solid var(--or);border-radius:10px;padding:16px;display:grid;gap:12px}
+  .choix p{margin:0;color:var(--doux);font-size:14px}
+  .options{display:flex;flex-wrap:wrap;gap:8px}
+  .options label{display:inline-flex;align-items:center;gap:8px;background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px;cursor:pointer}
+  .options input{accent-color:var(--or);margin:0}
+  .copier{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .copier output{flex:1 1 220px;min-width:0;font:600 15px var(--code);color:var(--or);background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px;overflow-wrap:anywhere}
+
+  @media (max-width:720px){
+    .zooms,.notes{grid-template-columns:minmax(0,1fr)}
+    #loupe{width:130px;height:130px}
+  }
+  @media (prefers-reduced-motion:reduce){ .onglets button{transition:none} }
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <p class="sur">Rework des maps · 1 sur 6</p>
+    <h1>Station orbitale HD</h1>
+    <p class="chapo">La même map dessinée deux fois, avec Yuki en 64×80 sur le terrain : <b>A</b> en pixel art, <b>B</b> en vectoriel. Choisis la technique ; elle servira pour les six maps.</p>
+  </header>
+
+  <section aria-label="Écran de jeu">
+    <div class="onglets" role="tablist" aria-label="Version affichée">
+      <button role="tab" id="v-actuelle" aria-selected="false" data-v="actuelle">Actuelle</button>
+      <button role="tab" id="v-pixel" aria-selected="true" data-v="pixel">A · Pixel art HD</button>
+      <button role="tab" id="v-vecto" aria-selected="false" data-v="vecto">B · Vectoriel détaillé</button>
+    </div>
+    <div class="ecran" style="margin-top:12px">
+      <canvas id="jeu" width="960" height="600" aria-label="Aperçu du terrain à la taille du jeu, 960 × 600"></canvas>
+      <canvas id="loupe" width="180" height="180" hidden></canvas>
+      <span class="legende" id="legende">A · Pixel art HD</span>
+    </div>
+    <div class="reglages">
+      <label class="bascule"><input type="checkbox" id="opt-hud" checked><span>HUD du match</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-persos" checked><span>Yuki et le disque</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-anim" checked><span>Animation</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-loupe" checked><span>Loupe ×3 au survol</span></label>
+      <button class="action" id="but" type="button">Marquer un but</button>
+    </div>
+  </section>
+
+  <section aria-label="Zooms côte à côte">
+    <h2>Au zoom ×3, au même endroit</h2>
+    <div class="choixZoom" id="zones">
+      <button type="button" aria-pressed="true" data-z="yuki">Yuki sur la vitre</button>
+      <button type="button" aria-pressed="false" data-z="cage">Cage de gauche</button>
+      <button type="button" aria-pressed="false" data-z="horizon">Horizon et soleil</button>
+      <button type="button" aria-pressed="false" data-z="chassis">Châssis et aile</button>
+    </div>
+    <div class="zooms">
+      <figure><canvas id="z-actuelle" width="480" height="300"></canvas><figcaption><b>Actuelle</b> · ce qui est dans le jeu</figcaption></figure>
+      <figure><canvas id="z-pixel" width="480" height="300"></canvas><figcaption><b>A</b> · pixel art HD</figcaption></figure>
+      <figure><canvas id="z-vecto" width="480" height="300"></canvas><figcaption><b>B</b> · vectoriel détaillé</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="notes" aria-label="Ce qui change">
+    <div class="carte">
+      <h2>A · Pixel art HD</h2>
+      <ul>
+        <li><b>Pas de flou nulle part.</b> Palette de 110 teintes rangées en rampes, dégradés en trame 4×4 comme sur 16 bits.</li>
+        <li><b>Même recette que Yuki.</b> Contours bleu acier plutôt que noirs, ombrage en 4 ou 5 tons, reflets d'un pixel.</li>
+        <li><b>Lueurs en couronnes de pixels</b> un cran plus clairs, au lieu de halos flous.</li>
+        <li><b>Un pixel de décor = un pixel du jeu</b> ; ceux de Yuki font 1,2 px. Le décor est un poil plus fin que les persos et reste derrière eux à l'œil.</li>
+      </ul>
+    </div>
+    <div class="carte">
+      <h2>B · Vectoriel détaillé</h2>
+      <ul>
+        <li><b>La technique d'aujourd'hui</b>, poussée plus loin : dégradés, lueurs floues, bords adoucis.</li>
+        <li><b>Même composition que A</b>, pour ne comparer que la technique.</li>
+        <li><b>Plus doux, plus « illustration »</b>. Le décalage avec les persos en pixels nets reste visible au zoom.</li>
+        <li><b>Plus léger à calculer</b> : moins d'une milliseconde par image, contre environ 6 pour A.</li>
+      </ul>
+    </div>
+    <div class="carte commun">
+      <h2>Commun aux deux</h2>
+      <ul>
+        <li><b>Même terrain de jeu au pixel près</b> : 70–890 × 84–560, cages de 200, volets 3 / 5 / 3 en cyan et or.</li>
+        <li><b>L'arène flotte au-dessus de la face de nuit d'une planète</b>, visible à travers la vitre du terrain, villes allumées comprises. Le soleil se lève sur l'horizon, entre les deux portraits du HUD.</li>
+        <li><b>Châssis en relief</b> : paroi intérieure du rebord du haut et face avant du bas, projecteurs de l'hologramme, bandes lumineuses symétriques, rayures de danger au bord des cages.</li>
+        <li><b>Décor autour</b> : ailes solaires, station mère en anneau qui tourne, satellite, 9 drones-caméras au lieu de 26, navette et étoile filante de temps en temps.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="choix" aria-label="Ton choix">
+    <h2>Ton choix</h2>
+    <p>Coche une version, puis renvoie-moi le code.</p>
+    <div class="options" role="radiogroup" aria-label="Version retenue">
+      <label><input type="radio" name="choix" id="choix-a" value="A" checked> A · Pixel art HD</label>
+      <label><input type="radio" name="choix" id="choix-b" value="B"> B · Vectoriel détaillé</label>
+    </div>
+    <div class="copier">
+      <output id="code">STATION-HD : A</output>
+      <button class="action" id="copier" type="button">Copier le code</button>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+  import { W, H, choregraphie, dessinerJoueurs, dessinerDisque, dessinerHUD, canvasYuki } from './station-hd/scene.js';
+  import { creerPixel } from './station-hd/pixel.js';
+  import { creerVecto } from './station-hd/vecto.js';
+
+  const jeu = document.getElementById('jeu'), g = jeu.getContext('2d');
+  const loupe = document.getElementById('loupe'), lg = loupe.getContext('2d');
+  const spr = canvasYuki();
+  const actuelle = new Image();
+  actuelle.src = './station-hd/actuelle.webp';
+
+  const rendus = { pixel: creerPixel(), vecto: creerVecto() };
+  const NOMS = { actuelle: 'Actuelle', pixel: 'A · Pixel art HD', vecto: 'B · Vectoriel détaillé' };
+  const ZONES = {
+    yuki: [196, 230, 160, 100], cage: [0, 196, 160, 100],
+    horizon: [470, 0, 160, 100], chassis: [0, 40, 160, 100]
+  };
+  let vue = 'pixel', zone = 'yuki', t = 2.3, tBut = null, dernier = performance.now();
+  const opt = id => document.getElementById(id).checked;
+
+  function effetBut() {
+    if (tBut === null) return 0;
+    const k = t - tBut;
+    return k < 0 || k > 1.1 ? 0 : 1 - k / 1.1;
+  }
+  // Une image complète de la version v : terrain, persos, HUD.
+  function composer(v, ctx) {
+    const but = effetBut();
+    if (v === 'actuelle') {
+      ctx.fillStyle = '#020408'; ctx.fillRect(0, 0, W, H);
+      if (actuelle.complete && actuelle.naturalWidth) ctx.drawImage(actuelle, 0, 0, W, H);
+    } else ctx.drawImage(rendus[v].image(t, but), 0, 0);
+    if (opt('opt-persos')) {
+      const etat = choregraphie(t);
+      dessinerJoueurs(ctx, etat, spr);
+      dessinerDisque(ctx, etat, t);
+    }
+    if (opt('opt-hud')) dessinerHUD(ctx, spr, t);
+  }
+
+  const tampons = {};
+  for (const v of ['actuelle', 'pixel', 'vecto']) {
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    tampons[v] = c;
+  }
+  let image = 0;
+  function boucle(maintenant) {
+    const dt = Math.min(.05, (maintenant - dernier) / 1000);
+    dernier = maintenant;
+    if (opt('opt-anim')) t += dt;
+    composer(vue, g);
+    // Les zooms sont repeints une image sur trois : trois rendus complets à
+    // chaque image, c'était du travail pour rien à cette taille.
+    if (image++ % 3 === 0) {
+      let [zx, zy, zl, zh] = ZONES[zone];
+      // Le zoom sur Yuki le suit : il ne tient jamais en place.
+      if (zone === 'yuki') {
+        const p = choregraphie(t).p1;
+        zx = Math.round(p.x - zl / 2); zy = Math.round(p.y - 58);
+      }
+      for (const v of ['actuelle', 'pixel', 'vecto']) {
+        const tc = tampons[v], tg = tc.getContext('2d');
+        if (v === vue) tg.drawImage(jeu, 0, 0); else composer(v, tg);
+        const z = document.getElementById('z-' + v), zg = z.getContext('2d');
+        zg.imageSmoothingEnabled = false;
+        zg.drawImage(tc, zx, zy, zl, zh, 0, 0, z.width, z.height);
+      }
+    }
+    if (!loupe.hidden) peindreLoupe();
+    requestAnimationFrame(boucle);
+  }
+
+  let pointeur = null;
+  function peindreLoupe() {
+    if (!pointeur) return;
+    const r = jeu.getBoundingClientRect();
+    const x = (pointeur.x - r.left) / r.width * W, y = (pointeur.y - r.top) / r.height * H;
+    const taille = loupe.clientWidth, n = taille / 3;
+    loupe.width = taille; loupe.height = taille;
+    lg.imageSmoothingEnabled = false;
+    lg.fillStyle = '#000'; lg.fillRect(0, 0, taille, taille);
+    lg.drawImage(jeu, x - n / 2, y - n / 2, n, n, 0, 0, taille, taille);
+    const ecran = jeu.parentElement.getBoundingClientRect();
+    loupe.style.left = (pointeur.x - ecran.left - taille / 2) + 'px';
+    loupe.style.top = (pointeur.y - ecran.top - taille / 2) + 'px';
+  }
+  jeu.addEventListener('pointermove', e => {
+    pointeur = { x: e.clientX, y: e.clientY };
+    loupe.hidden = !opt('opt-loupe');
+  });
+  jeu.addEventListener('pointerdown', e => {
+    pointeur = { x: e.clientX, y: e.clientY };
+    loupe.hidden = !opt('opt-loupe');
+  });
+  jeu.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') loupe.hidden = true; });
+
+  for (const b of document.querySelectorAll('.onglets button')) {
+    b.addEventListener('click', () => {
+      vue = b.dataset.v;
+      for (const o of document.querySelectorAll('.onglets button')) o.setAttribute('aria-selected', String(o === b));
+      document.getElementById('legende').textContent = NOMS[vue];
+    });
+  }
+  for (const b of document.querySelectorAll('#zones button')) {
+    b.addEventListener('click', () => {
+      zone = b.dataset.z;
+      for (const o of document.querySelectorAll('#zones button')) o.setAttribute('aria-pressed', String(o === b));
+      image = 0;
+    });
+  }
+  document.getElementById('but').addEventListener('click', () => { tBut = t; });
+
+  const code = document.getElementById('code');
+  for (const r of document.querySelectorAll('input[name="choix"]')) {
+    r.addEventListener('change', () => { code.textContent = 'STATION-HD : ' + r.value; });
+  }
+  document.getElementById('copier').addEventListener('click', async e => {
+    const bouton = e.currentTarget;
+    try {
+      await navigator.clipboard.writeText(code.textContent);
+      bouton.textContent = 'Copié';
+    } catch (err) {
+      const sel = getSelection(), plage = document.createRange();
+      plage.selectNodeContents(code); sel.removeAllRanges(); sel.addRange(plage);
+      bouton.textContent = 'Sélectionné, copie-le';
+    }
+    setTimeout(() => { bouton.textContent = 'Copier le code'; }, 1800);
+  });
+
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.getElementById('opt-anim').checked = false;
+  requestAnimationFrame(boucle);
+</script>
+</body>
+</html>
