@@ -321,3 +321,30 @@ export function ecrire3x5(toile, texte, x, y, c) {
   }
 }
 export function largeur3x5(texte) { return texte.length * 4 - 1; }
+
+// Les chiffres des volets de cage, gras, 12×15, avec contour et deux tons :
+// clair sur les deux rangées du haut, foncé sur les deux du bas.
+export const CHIFFRES = {
+  3: ['.##########.', '############', '###......###', '.........###', '.........###', '.........###',
+    '....#######.', '....#######.', '.........###', '.........###', '.........###', '.........###',
+    '###......###', '############', '.##########.'],
+  5: ['############', '############', '###.........', '###.........', '###.........', '###.........',
+    '##########..', '###########.', '.........###', '.........###', '.........###', '.........###',
+    '###......###', '############', '.##########.']
+};
+export function spriteChiffre(n, clair, moyen, fonce, contour) {
+  const L = CHIFFRES[n], h = L.length, l = L[0].length;
+  const lignes = [];
+  for (let y = -1; y <= h; y++) {
+    let s = '';
+    for (let x = -1; x <= l; x++) {
+      const plein = (yy, xx) => yy >= 0 && yy < h && xx >= 0 && xx < l && L[yy][xx] === '#';
+      if (plein(y, x)) s += y < 2 ? 'a' : y > h - 3 ? 'c' : 'b';
+      else if (plein(y - 1, x) || plein(y + 1, x) || plein(y, x - 1) || plein(y, x + 1) ||
+        plein(y - 1, x - 1) || plein(y + 1, x + 1) || plein(y - 1, x + 1) || plein(y + 1, x - 1)) s += 'o';
+      else s += '.';
+    }
+    lignes.push(s);
+  }
+  return spriteDe(lignes, { a: clair, b: moyen, c: fonce, o: contour });
+}

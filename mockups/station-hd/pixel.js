@@ -12,7 +12,7 @@
 // drones et leurs faisceaux, ondes et balayage de l'hologramme, rideaux des
 // cages, fenêtres de l'anneau, reflets des ailes solaires.
 // ---------------------------------------------------------------------------
-import { Toile, Palette, fbm, hacher, lisse, melanger, balayerDisque, balayerEllipse, balayerPoly, spriteDe, ecrire3x5, largeur3x5 } from '../_pixelart.js';
+import { Toile, Palette, fbm, hacher, lisse, melanger, balayerDisque, balayerEllipse, balayerPoly, spriteDe, ecrire3x5, largeur3x5, spriteChiffre } from '../_pixelart.js';
 import {
   W, H, COURT, CX, CY, BUT, ZONES, CHASSIS, MUR, FACE, horizonY, SOLEIL, projeterSol,
   BANDES_H, JOINTS_H, BANDES_V, BALISES, PROJECTEURS, PANNEAUX, ANNEAU, SATELLITE,
@@ -250,30 +250,6 @@ function logement(t, x, y, l, h) {
 // ---------------------------------------------------------------------------
 // 3. Les cages
 // ---------------------------------------------------------------------------
-const CHIFFRES = {
-  3: ['.##########.', '############', '###......###', '.........###', '.........###', '.........###',
-    '....#######.', '....#######.', '.........###', '.........###', '.........###', '.........###',
-    '###......###', '############', '.##########.'],
-  5: ['############', '############', '###.........', '###.........', '###.........', '###.........',
-    '##########..', '###########.', '.........###', '.........###', '.........###', '.........###',
-    '###......###', '############', '.##########.']
-};
-function spriteChiffre(n, clair, moyen, fonce, contour) {
-  const L = CHIFFRES[n], h = L.length, l = L[0].length;
-  const lignes = [];
-  for (let y = -1; y <= h; y++) {
-    let s = '';
-    for (let x = -1; x <= l; x++) {
-      const plein = (yy, xx) => yy >= 0 && yy < h && xx >= 0 && xx < l && L[yy][xx] === '#';
-      if (plein(y, x)) s += y < 2 ? 'a' : y > h - 3 ? 'c' : 'b';
-      else if (plein(y - 1, x) || plein(y + 1, x) || plein(y, x - 1) || plein(y, x + 1) ||
-        plein(y - 1, x - 1) || plein(y + 1, x + 1) || plein(y - 1, x + 1) || plein(y + 1, x - 1)) s += 'o';
-      else s += '.';
-    }
-    lignes.push(s);
-  }
-  return spriteDe(lignes, { a: clair, b: moyen, c: fonce, o: contour });
-}
 const CHIFFRE = {
   3: spriteChiffre(3, C.h6, C.h5, C.h4, C.h1),
   5: spriteChiffre(5, C.o5, C.o4, C.o3, C.o1)
