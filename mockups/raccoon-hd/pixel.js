@@ -30,6 +30,10 @@ const PAL = new Palette({
   // Pierre du poste, briques
   q0: '#161412', q1: '#23211d', q2: '#34312c', q3: '#494540', q4: '#5c5850', q5: '#6e6a60', q6: '#8a8578',
   k1: '#2a1a14', k2: '#3e2820', k3: '#553628', k4: '#6e4634',
+  // La même pierre, refroidie par la nuit teal loin de l'entrée
+  t0: '#161c1e', t1: '#202829', t2: '#2c3638', t3: '#3c4749', t4: '#505b5c', t5: '#687271', t6: '#8a9290',
+  // … et réchauffée près de la porte
+  y1: '#4a3a2c', y2: '#6a5138', y3: '#8e6a44',
   // Fer, vitres
   f0: '#070b0c', f1: '#0c1113', f2: '#171f21', f3: '#2a3638', f4: '#65787a', v1: '#101a1c', v2: '#22383a', v3: '#3c5a5e',
   // Ambre des fenêtres et des lampes
@@ -54,7 +58,7 @@ const PAL = new Palette({
 const C = PAL.c;
 const NUIT = PAL.sous(['n0', 'n1', 'n2', 'n3', 'n4']);
 const BITUME = PAL.sous(['b0', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6']);
-const PIERRE = PAL.sous(['q0', 'q1', 'q2', 'q3', 'q4', 'q5']);
+const PIERRE = PAL.sous(['q0', 'q1', 'q2', 'q3', 'q4', 'q5', 't0', 't1', 't2', 't3', 't4', 't5', 't6', 'y1', 'y2', 'y3']);
 
 // ---------------------------------------------------------------------------
 // Petits outils : une silhouette faite de rectangles, cernée automatiquement.
@@ -125,11 +129,19 @@ function voiture(t, x, y, corps, toitBlanc, brulee) {
 // Le fond fixe
 // ---------------------------------------------------------------------------
 let FOND = null, LIGNES = null;
-const FENETRES = [];
 const CHIFFRES = { 3: spriteChiffre(3, C.l3, C.l2, C.l1, C.f0), 5: spriteChiffre(5, C.l3, C.l2, C.l1, C.f0) };
-const PAVILLON = { x0: 382, x1: 578, haut: 4 };
-const TOUR = { x0: 300, x1: 336 };
-const MAT = 652;
+// La façade retenue au banc (mockups/rpd-station.html, render/terrains/
+// raccoon.js, station()) : ailes à deux niveaux rythmées de pilastres,
+// pavillon d'entrée en saillie, tour d'horloge rentrée à gauche, drapeau et
+// fourgon à droite. Toutes les mesures en découlent de la hauteur ht = 82.
+const HT = 82, H_AILE = Math.round(HT * .82), Y_AILE = BANDE - H_AILE;
+const PAVILLON = { x0: Math.round(CX - HT * 2.65 / 2), x1: Math.round(CX + HT * 2.65 / 2) };
+const ENTREE = { l: Math.round(HT * 2.65 * .42), bas: BANDE, piedArc: BANDE - 22, sommet: BANDE - 42 };
+const TOUR = { x0: Math.round(CX - W * .29), x1: Math.round(CX - W * .29 + HT * .72) };
+const HORLOGE = { x: (TOUR.x0 + TOUR.x1) / 2, y: BANDE - HT * .9, r: 17 };
+const MAT = Math.round(CX + HT * 2.65 * .72);
+const FOURGON = { x: Math.round(CX + HT * 2.65 * .95) - 30, y: BANDE - 25 };
+const PAS = HT * .5;
 
 function peindreFond() {
   const t = new Toile(W, H);
@@ -220,89 +232,231 @@ function peindreFond() {
 }
 
 // La façade du poste, sur les 82 px du haut.
-function peindrePoste(t) {
-  const SOL = BANDE;
-  // Ailes en briques, deux étages de fenêtres, balustrade sur le toit.
-  for (let y = 14; y < SOL - 6; y++) for (let x = 0; x < W; x++) {
-    if (x >= PAVILLON.x0 && x < PAVILLON.x1) continue;
-    const rang = Math.floor((y - 14) / 4), dec = rang % 2 ? 4 : 0;
-    const joint = (y - 14) % 4 === 3 || (x + dec) % 8 === 7;
-    const lum = x < CX ? .9 : 1;
-    t.px[y * W + x] = joint ? C.q1 : hacher(Math.floor((x + dec) / 8), rang, 3) > .7 ? C.k2 : (lum < 1 ? C.k3 : C.k3);
+//
+// La pierre est calculée en couleur continue puis tramée : grise et chaude
+// près de l'entrée, de plus en plus froide (teal) en s'en éloignant — la seule
+// chose qui réchauffe, c'est la lumière qui sort de la porte.
+function pierre(x, y, bloc, grand) {
+  const hB = grand ? 7 : 6, lB = grand ? 16 : 14;
+  const rang = Math.floor(y / hB), dec = rang % 2 ? lB / 2 : 0;
+  const joint = y % hB === hB - 1 || (x + dec) % lB === lB - 1;
+  const var_ = (hacher(Math.floor((x + dec) / lB), rang, bloc) - .5) * 16;
+  const chaud = Math.exp(-Math.abs(x - CX) / 150) * Math.exp(-Math.max(0, BANDE - 20 - y) / 60);
+  let r = 62 + var_, g = 66 + var_, b = 66 + var_;
+  r = r * (1 - chaud) + (r * 1.08 + 6) * chaud; g = g * (1 - chaud) + (g * 1.02 + 3) * chaud; b = b * (1 - chaud) + (b * .92) * chaud;
+  const froid = Math.min(1, Math.abs(x - CX) / 420);
+  r -= 12 * froid; b += 2 * froid;
+  if (joint) { r *= .55; g *= .55; b *= .55; }
+  return [r, g, b];
+}
+function fenetrePx(t, x, y, l, h, cintree, etat) {
+  // Encadrement de pierre claire, appui en saillie, linteau.
+  const arc = cintree ? Math.round(l / 2) : 0;
+  const dedans = (i, j) => {
+    if (i < 0 || i >= l || j < 0 || j >= h) return false;
+    if (!cintree || j >= arc) return true;
+    const dx = i + .5 - l / 2, dy = arc - j - .5;
+    return dx * dx + dy * dy <= (l / 2) * (l / 2);
+  };
+  for (let j = -2; j < h + 2; j++) for (let i = -2; i < l + 2; i++) {
+    if (dedans(i, j)) continue;
+    let pres = false;
+    for (let dj = -2; dj <= 2 && !pres; dj++) for (let di = -2; di <= 2; di++) if (dedans(i + di, j + dj)) { pres = true; break; }
+    if (pres) t.pt(x + i, y + j, j < h / 2 ? C.t5 : C.t4);
   }
-  for (let x = 0; x < W; x++) {
-    if (x >= PAVILLON.x0 && x < PAVILLON.x1) continue;
-    t.pt(x, 10, C.q5); t.pt(x, 11, C.q4); t.pt(x, 12, C.q3); t.pt(x, 13, C.q1);
-    if (x % 6 < 2) for (let y = 5; y < 10; y++) t.pt(x, y, x % 6 === 0 ? C.q4 : C.q2);
-    t.pt(x, 4, C.q5); t.pt(x, 5, C.q3);
-    for (let y = SOL - 6; y < SOL; y++) t.pt(x, y, y === SOL - 6 ? C.q5 : C.q2);
+  t.hl(x - 3, x + l + 2, y + h + 1, C.t6); t.hl(x - 3, x + l + 2, y + h + 2, C.t1);
+  for (let j = 0; j < h; j++) for (let i = 0; i < l; i++) {
+    if (!dedans(i, j)) continue;
+    const mont = i === Math.floor(l / 2) || (!cintree && j === Math.floor(h * .45)) || (cintree && j === arc);
+    let c;
+    if (etat === 'allumee') c = mont ? C.a1 : (j % 4 === 3 && j > arc ? C.a3 : j < h * .3 ? C.a5 : C.a4);
+    else if (etat === 'brisee') c = hacher(i, j, x + y) > .5 + j / h * .4 ? (i + j < 8 ? C.v3 : C.v2) : C.n0;
+    else c = mont ? C.f0 : (i + j * .6 < l * .45 && j > 1 ? (i + j < 5 ? C.v3 : C.v2) : C.v1);
+    t.pt(x + i, y + j, c);
   }
-  // Fenêtres : allumées, éteintes, condamnées, brisées.
-  FENETRES.length = 0;
-  for (let x = 14; x < W - 20; x += 40) {
-    if (x + 18 > PAVILLON.x0 - 6 && x < PAVILLON.x1 + 6) continue;
-    if (x + 18 > TOUR.x0 - 4 && x < TOUR.x1 + 4) continue;
-    for (const y of [20, 46]) {
-      const f = hacher(x, y, 20);
-      const type = f < .3 ? 'allumee' : f < .55 ? 'eteinte' : f < .8 ? 'planches' : 'brisee';
-      FENETRES.push({ x, y, type });
-      t.rect(x - 1, y - 1, 20, 22, C.q1); t.rect(x - 2, y + 20, 22, 2, C.q5);
-      for (let j = 0; j < 20; j++) for (let i = 0; i < 18; i++) {
-        let c;
-        if (type === 'allumee') c = (i === 8 || j === 9) ? C.a1 : j < 3 ? C.a5 : C.a4;
-        else if (type === 'eteinte') c = (i === 8 || j === 9) ? C.f1 : i + j < 12 ? C.v3 : C.v1;
-        else if (type === 'planches') c = (j % 6 < 5) ? ((i + j * 3) % 11 === 0 ? C.o1 : C.o2) : C.f1;
-        else c = hacher(i, j, x) > .55 + j * .02 ? C.v2 : C.f0;
-        t.pt(x + i, y + j, c);
+  if (etat === 'planches') {
+    for (let k = 0; k < 3; k++) {
+      const yy = y + Math.round(h * (.18 + k * .3));
+      for (let i = -3; i < l + 3; i++) for (let dj = 0; dj < 4; dj++) {
+        const yp = yy + dj + Math.round((i - l / 2) * (k === 1 ? .18 : -.12));
+        t.pt(x + i, yp, dj === 0 ? C.o2 : dj === 3 ? C.o1 : (i * 7 + k) % 9 === 0 ? C.o1 : C.o2);
       }
+      t.pt(x - 1, yy + 1, C.f4); t.pt(x + l, yy + 1, C.f4);
     }
   }
-  // Tour de l'horloge.
-  for (let y = 0; y < SOL - 6; y++) for (let x = TOUR.x0; x < TOUR.x1; x++) {
-    const bord = x === TOUR.x0 || x === TOUR.x1 - 1;
-    t.pt(x, y, bord ? C.q1 : x - TOUR.x0 < 5 ? C.q2 : (y % 6 === 5 ? C.q2 : C.q4));
+  if (etat === 'allumee') {
+    // Le halo sur la pierre : une couronne tramée, pas un flou.
+    for (let j = -6; j < h + 6; j++) for (let i = -6; i < l + 6; i++) {
+      if (dedans(i, j)) continue;
+      const d = Math.max(-i, i - l + 1, -j, j - h + 1, 0);
+      if (d > 0 && d < 7) t.modifier(x + i, y + j, (c, xx, yy) => PAL.teinter(c, C.a3, .3 * (1 - d / 7), xx, yy));
+    }
   }
-  const hc = { x: (TOUR.x0 + TOUR.x1) / 2, y: 20 };
-  balayerDisque(hc.x, hc.y, 12, (yy, a, b) => t.hl(a, b, yy, C.q1));
-  balayerDisque(hc.x, hc.y, 11, (yy, a, b) => t.hl(a, b, yy, C.a6));
-  for (let k = 0; k < 12; k++) t.pt(Math.round(hc.x + Math.cos(k / 12 * 6.28) * 9), Math.round(hc.y + Math.sin(k / 12 * 6.28) * 9), C.q2);
-  t.rect(TOUR.x0 + 8, 40, 20, 24, C.f1); t.rect(TOUR.x0 + 10, 42, 16, 20, C.a3);
-  // Pavillon d'entrée : pierre claire, fronton, « R.P.D. », porte cintrée.
-  for (let y = PAVILLON.haut; y < SOL - 6; y++) for (let x = PAVILLON.x0; x < PAVILLON.x1; x++) {
-    const bx = x - PAVILLON.x0, by = y - PAVILLON.haut;
-    let c = by % 8 === 7 || (bx + (Math.floor(by / 8) % 2) * 12) % 24 === 23 ? C.q3 : C.q4;
-    if (by < 6) c = by === 0 ? C.q6 : by < 3 ? C.q5 : C.q3;
-    if (bx < 8 || bx > PAVILLON.x1 - PAVILLON.x0 - 9) c = bx % 8 === 0 || bx % 8 === 7 ? C.q2 : C.q5;
+}
+function balustradePx(t, x0, x1, y) {
+  for (let x = x0; x < x1; x++) {
+    t.pt(x, y, C.t6); t.pt(x, y + 1, C.t4);
+    for (let j = 2; j < 6; j++) t.pt(x, y + j, (x % 5 === 1 || x % 5 === 2) ? (j === 3 ? C.t5 : C.t4) : (x % 5 === 0 ? C.t1 : C.n2));
+    t.pt(x, y + 6, C.t5); t.pt(x, y + 7, C.t2);
+  }
+}
+function peindrePoste(t) {
+  // Ciel : nuit teal, lueur de l'incendie hors champ à gauche, fumées.
+  for (let y = 0; y < Y_AILE; y++) for (let x = 0; x < W; x++) {
+    const feu = Math.exp(-(x * x) / (2 * 260 * 260)) * (y / Y_AILE);
+    const fumee = lisse(.5, .75, fbm(x * .02, y * .08, 3, 70)) * .6;
+    t.pt(x, y, NUIT.tramer(8 + feu * 22 + fumee * 10, 14 + feu * 8 + fumee * 12, 16 + fumee * 12, x, y, 2));
+  }
+  // Ailes.
+  for (let y = Y_AILE; y < BANDE - 3; y++) for (let x = 0; x < W; x++) {
+    const [r, g, b] = pierre(x, y, 101, false);
+    t.pt(x, y, PIERRE.tramer(r, g, b, x, y, 2));
+  }
+  // Bandeau entre les niveaux, socle.
+  const yB = Y_AILE + Math.round(H_AILE * .46);
+  t.hl(0, W - 1, yB, C.t6); t.hl(0, W - 1, yB + 1, C.t4); t.hl(0, W - 1, yB + 2, C.t1);
+  for (let y = BANDE - 5; y < BANDE; y++) t.hl(0, W - 1, y, y === BANDE - 5 ? C.t5 : C.t2);
+  balustradePx(t, 0, W, Y_AILE - 8);
+  // Travées : pilastre, fenêtre d'étage rectangulaire, fenêtre cintrée en bas.
+  for (let x = PAS * .35; x < W; x += PAS) {
+    const xi = Math.round(x);
+    if (xi > PAVILLON.x0 - 22 && xi < PAVILLON.x1 + 16) continue;
+    if (xi > TOUR.x0 - 22 && xi < TOUR.x1 + 6) continue;
+    const i = (x * 7) | 0;
+    const px = Math.round(x - PAS * .16);
+    for (let y = Y_AILE; y < BANDE - 5; y++) { t.pt(px, y, C.t5); t.pt(px + 1, y, C.t4); t.pt(px + 2, y, C.t4); t.pt(px + 3, y, C.t1); }
+    const l = Math.round(PAS * .42);
+    const cloue = hacher(i, 11, 3) > .58, brise = !cloue && hacher(i, 17, 3) > .72;
+    fenetrePx(t, xi, Y_AILE + Math.round(H_AILE * .12), l, Math.round(H_AILE * .3), false,
+      hacher(i + 3, 0, 3) > .62 ? 'allumee' : hacher(i, 23, 3) > .8 ? 'brisee' : 'eteinte');
+    fenetrePx(t, xi, Y_AILE + Math.round(H_AILE * .6) - 2, l, Math.round(H_AILE * .34), true,
+      cloue ? 'planches' : brise ? 'brisee' : hacher(i, 0, 3) > .74 ? 'allumee' : 'eteinte');
+  }
+  // Tour de l'horloge, maçonnée plus gros, chaînes d'angle, bandeaux.
+  for (let y = 0; y < BANDE - 3; y++) for (let x = TOUR.x0; x < TOUR.x1; x++) {
+    let [r, g, b] = pierre(x, y + 3, 401, true);
+    const bx = x - TOUR.x0;
+    if (bx < 6 || bx >= TOUR.x1 - TOUR.x0 - 6) { const k = Math.floor(y / 7) % 2 ? 1.08 : 1.18; r *= k; g *= k; b *= k; }
+    if (bx === TOUR.x1 - TOUR.x0 - 2 || bx === 4) { r *= .6; g *= .6; b *= .6; }
+    t.pt(x, y, PIERRE.tramer(r, g, b, x, y, 2));
+  }
+  for (const yb of [Math.round(BANDE - HT * 1.55 + HT * 1.55 * .62)]) {
+    t.hl(TOUR.x0 - 2, TOUR.x1 + 1, yb, C.t6); t.hl(TOUR.x0 - 2, TOUR.x1 + 1, yb + 1, C.t4); t.hl(TOUR.x0 - 2, TOUR.x1 + 1, yb + 2, C.t1);
+  }
+  const lt = TOUR.x1 - TOUR.x0;
+  fenetrePx(t, TOUR.x0 + Math.round(lt * .3), Math.round(BANDE - HT * .62) + 8, Math.round(lt * .4), 16, true, 'allumee');
+  fenetrePx(t, TOUR.x0 + Math.round(lt * .3), Math.round(BANDE - HT * .32) + 6, Math.round(lt * .4), 16, true, 'eteinte');
+  // Le cadran, éclairé de l'intérieur : de nuit, c'est un disque lumineux.
+  const H0 = HORLOGE;
+  for (let y = Math.floor(H0.y - 40); y < H0.y + 40; y++) for (let x = Math.floor(H0.x - 40); x < H0.x + 40; x++) {
+    const d = Math.hypot(x - H0.x, y - H0.y);
+    if (d > H0.r + 4 && d < 38) t.modifier(x, y, (c, xx, yy) => PAL.teinter(c, C.a4, .32 * (1 - (d - H0.r - 4) / 16), xx, yy));
+  }
+  balayerDisque(Math.round(H0.x), Math.round(H0.y), H0.r + 4, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, (x - H0.x) + (y - H0.y) < -6 ? C.t6 : C.t4); });
+  balayerDisque(Math.round(H0.x), Math.round(H0.y), H0.r + 1, (y, a, b) => t.hl(a, b, y, C.t2));
+  balayerDisque(Math.round(H0.x), Math.round(H0.y), H0.r, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, Math.hypot(x - H0.x, y - H0.y) > H0.r - 3 ? C.a5 : C.a6); });
+  for (let k = 0; k < 12; k++) {
+    const a = k / 12 * Math.PI * 2;
+    const x = Math.round(H0.x + Math.cos(a) * (H0.r - 3)), y = Math.round(H0.y + Math.sin(a) * (H0.r - 3));
+    t.pt(x, y, C.q1); if (k % 3 === 0) { t.pt(x + 1, y, C.q1); t.pt(x, y + 1, C.q1); }
+  }
+  // Les aiguilles arrêtées : la ville s'est arrêtée, l'horloge aussi.
+  for (const [a, L, ep] of [[-.7, .62, 2], [2.5, .42, 2]]) for (let e = 0; e < ep; e++)
+    t.ligne(H0.x + e * .5, H0.y, H0.x + Math.cos(a) * H0.r * L + e * .5, H0.y + Math.sin(a) * H0.r * L, C.q1);
+  // Pavillon d'entrée en saillie, qui porte son ombre sur l'aile de droite.
+  for (let y = 0; y < BANDE - 3; y++) for (let x = PAVILLON.x1; x < PAVILLON.x1 + 8; x++) t.modifier(x, y, (c, xx, yy) => PAL.teinter(c, C.n0, .55, xx, yy));
+  for (let y = 0; y < BANDE - 3; y++) for (let x = PAVILLON.x0; x < PAVILLON.x1; x++) {
+    let [r, g, b] = pierre(x, y, 211, false);
+    const bx = x - PAVILLON.x0, bd = PAVILLON.x1 - 1 - x;
+    if (bx < 11 || bd < 11) { r *= 1.14; g *= 1.12; b *= 1.08; if (bx === 9 || bd === 1) { r *= .6; g *= .6; b *= .6; } }
+    if (y < 3) { r *= 1.2; g *= 1.2; b *= 1.15; }
+    t.pt(x, y, PIERRE.tramer(r, g, b, x, y, 2));
+  }
+  // Halo chaud de l'entrée sur la pierre.
+  const E = ENTREE, ex0 = CX - E.l / 2;
+  for (let y = 0; y < BANDE; y++) for (let x = CX - 110; x < CX + 110; x++) {
+    const d = Math.hypot((x - CX) / 1.3, y - (BANDE - 18));
+    if (d < 85) t.modifier(x, y, (c, xx, yy) => PAL.teinter(c, C.a4, .3 * (1 - d / 85) ** 1.4, xx, yy));
+  }
+  // L'entrée cintrée : lumière chaude, portes vitrées à double battant, imposte
+  // en éventail, claveaux de l'arc.
+  const arcY = x => E.piedArc - (E.piedArc - E.sommet) * (1 - ((x + .5 - CX) / (E.l / 2)) ** 2);
+  for (let x = Math.floor(ex0) - 4; x < ex0 + E.l + 4; x++) for (let y = E.sommet - 5; y < E.bas; y++) {
+    const dedans = x >= ex0 && x < ex0 + E.l && y >= arcY(x);
+    const voussoir = !dedans && x >= ex0 - 4 && x < ex0 + E.l + 4 && y >= arcY(Math.min(Math.max(x, ex0), ex0 + E.l - 1)) - 4 && y < E.piedArc + 2;
+    if (voussoir) { t.pt(x, y, Math.floor(Math.atan2(y - E.piedArc, x - CX) * 9) % 2 ? C.t6 : C.t5); continue; }
+    if (!dedans) continue;
+    const k = (y - E.sommet) / (E.bas - E.sommet);
+    let c = k > .75 ? C.a6 : k > .4 ? C.a5 : C.a4;
+    if (y === E.piedArc) c = C.f1;
+    if (y < E.piedArc) {
+      const ang = Math.atan2(E.piedArc - y, x + .5 - CX);
+      if (Math.abs(((ang / Math.PI) * 5) % 1 - .5) > .44) c = C.f2;
+    } else {
+      if (Math.abs(x + .5 - CX) < 1.2) c = C.f1;
+      const pan = (x - ex0) % (E.l / 4);
+      if (pan < 1) c = C.a2;
+      if (y === Math.round(E.piedArc + (E.bas - E.piedArc) * .45)) c = C.a2;
+    }
     t.pt(x, y, c);
   }
-  // Lettres R.P.D. en police 3×5 grossie trois fois, gravées et éclairées.
-  const txt = 'R.P.D.', larg = largeur3x5(txt) * 3;
-  const tx = Math.round(CX - larg / 2);
-  const tmp = new Toile(larg + 2, 17);
+  // Les lettres : « R.P.D. », taillées à 4 px par point de la police 3×5,
+  // éclairées d'un halo chaud, puis le sous-titre.
+  const txt = 'R.P.D.', larg = largeur3x5(txt) * 4, tx = Math.round(CX - larg / 2), ty = 12;
+  const tmp = new Toile(largeur3x5(txt) + 2, 6);
   ecrire3x5(tmp, txt, 0, 0, 1);
-  for (let j = 0; j < 5; j++) for (let i = 0; i < larg / 3 + 1; i++) {
+  for (let y = ty - 4; y < ty + 24; y++) for (let x = tx - 4; x < tx + larg + 4; x++) {
+    let d = 9;
+    for (let j = 0; j < 5; j++) for (let i = 0; i < tmp.l; i++) if (tmp.px[j * tmp.l + i]) {
+      const dx = Math.max(tx + i * 4 - x, 0, x - (tx + i * 4 + 3)), dy = Math.max(ty + j * 4 - y, 0, y - (ty + j * 4 + 3));
+      d = Math.min(d, Math.max(dx, dy));
+    }
+    if (d > 0 && d < 4) t.modifier(x, y, (c, xx, yy) => PAL.teinter(c, C.a6, .4 * (1 - d / 4), xx, yy));
+  }
+  for (let j = 0; j < 5; j++) for (let i = 0; i < tmp.l; i++) {
     if (!tmp.px[j * tmp.l + i]) continue;
-    for (let dj = 0; dj < 3; dj++) for (let di = 0; di < 3; di++) {
-      t.pt(tx + i * 3 + di + 1, 15 + j * 3 + dj + 1, C.q1);
-      t.pt(tx + i * 3 + di, 15 + j * 3 + dj, dj === 0 ? C.l3 : C.l2);
+    for (let dj = 0; dj < 4; dj++) for (let di = 0; di < 4; di++) {
+      t.pt(tx + i * 4 + di + 1, ty + j * 4 + dj + 1, C.q1);
     }
   }
-  const sous = 'RACCOON POLICE';
-  ecrire3x5(t, sous, Math.round(CX - largeur3x5(sous) / 2), 35, C.l1);
-  const porte = { x0: CX - 20, x1: CX + 20, y0: 46 };
-  for (let y = porte.y0; y < SOL - 6; y++) for (let x = porte.x0; x < porte.x1; x++) {
-    const dy = y - (porte.y0 + 20), dx = x - CX;
-    if (dy < 0 && dx * dx + dy * dy * 1.6 > 400) continue;
-    const bord = Math.abs(dx) > 18 || (dy < 0 && dx * dx + dy * dy * 1.6 > 330);
-    t.pt(x, y, bord ? C.q1 : x === CX || x === CX - 1 ? C.a2 : y > SOL - 12 ? C.a3 : C.a4);
+  for (let j = 0; j < 5; j++) for (let i = 0; i < tmp.l; i++) {
+    if (!tmp.px[j * tmp.l + i]) continue;
+    for (let dj = 0; dj < 4; dj++) for (let di = 0; di < 4; di++) t.pt(tx + i * 4 + di, ty + j * 4 + dj, dj === 0 && j === 0 ? C.l3 : dj === 3 && j === 4 ? C.l1 : C.l3);
   }
-  // Mât et drapeau (le drapeau ondule à chaque image).
-  for (let y = 2; y < SOL - 6; y++) { t.pt(MAT, y, C.f4); t.pt(MAT + 1, y, C.f2); }
-  // Barrières de police le long du trottoir.
-  for (let x = 30; x < W; x += 120) {
+  const sous = 'RACCOON POLICE';
+  ecrire3x5(t, sous, Math.round(CX - largeur3x5(sous) / 2) + 1, 36, C.q1);
+  ecrire3x5(t, sous, Math.round(CX - largeur3x5(sous) / 2), 35, C.l1);
+  // Lanternes de part et d'autre de l'entrée (allumées à chaque image).
+  for (const s2 of [-1, 1]) {
+    const lx = Math.round(CX + s2 * E.l * .78), ly = E.piedArc - 6;
+    t.rect(lx - 1, ly - 7, 3, 4, C.f2);
+  }
+  // Perron à trois marches.
+  for (let k = 0; k < 3; k++) {
+    const el = E.l + 15 + k * 11, y = BANDE - 5 + k * 2;
+    t.hl(Math.round(CX - el / 2), Math.round(CX + el / 2), y, k % 2 ? C.t6 : C.t5);
+    t.hl(Math.round(CX - el / 2), Math.round(CX + el / 2), y + 1, C.t2);
+  }
+  // Mât du drapeau.
+  for (let y = 2; y < BANDE; y++) { t.pt(MAT, y, C.f4); t.pt(MAT + 1, y, C.f2); }
+  t.pt(MAT, 1, C.a5); t.pt(MAT + 1, 1, C.a5);
+  // Le fourgon de police, garé de biais devant l'aile droite.
+  const F = FOURGON;
+  for (let j = 0; j < 22; j++) for (let i = 0; i < 64; i++) {
+    const bord = i === 0 || i === 63 || j === 0 || j === 21;
+    let c = j < 4 ? C.f2 : j < 11 ? (i > 6 && i < 58 && (i - 6) % 13 < 11 ? (i < 20 ? C.v3 : C.v2) : C.q1) : (j > 12 && j < 17 ? C.w2 : C.q1);
+    if (j === 4) c = C.f4;
+    if (bord) c = C.f0;
+    t.pt(F.x + i, F.y + j, c);
+  }
+  ecrire3x5(t, 'POLICE', F.x + 21, F.y + 13, C.e3);
+  for (const wx of [F.x + 12, F.x + 50]) balayerDisque(wx, F.y + 22, 4, (y, a, b) => t.hl(a, b, y, y > F.y + 20 ? C.f0 : C.f2));
+  // Barrières de police le long du trottoir, sauf devant l'entrée et le fourgon.
+  for (let x = 12; x < W; x += 51) {
     if (x > PAVILLON.x0 - 30 && x < PAVILLON.x1) continue;
-    for (let i = 0; i < 30; i++) for (let j = 0; j < 5; j++) t.pt(x + i, SOL - 4 + j, j === 0 || j === 4 ? C.f0 : ((i + j) >> 2) % 2 ? C.j2 : C.f1);
-    for (const px of [x + 2, x + 27]) for (let j = 1; j < 9; j++) t.pt(px, SOL + j, C.f3);
+    if (x > F.x - 34 && x < F.x + 66) continue;
+    for (let i = 0; i < 30; i++) for (let j = 0; j < 5; j++) t.pt(x + i, BANDE - 12 + j, j === 0 || j === 4 ? C.f0 : ((i + j) >> 2) % 2 ? C.j2 : C.f1);
+    for (const px of [x + 2, x + 27]) for (let j = 5; j < 12; j++) t.pt(px, BANDE - 12 + j, C.f3);
   }
 }
 
@@ -351,27 +505,40 @@ export function creerPixel() {
 
   function image(temps, but, extras = {}) {
     t.copier(FOND);
-    // Lampes de part et d'autre de la porte, qui grésillent.
-    const gres = Math.sin(temps * 23) > .92 ? .4 : 1;
-    for (const lx of [CX - 30, CX + 30]) {
-      for (let y = 30; y < 80; y++) for (let x = lx - 18; x <= lx + 18; x++) {
-        const d = Math.hypot(x - lx, (y - 50) * .8);
-        if (d < 18 && y < BANDE) t.modifier(x, y, (c, xx, yy) => PAL.teinter(c, C.a4, .3 * gres * (1 - d / 18), xx, yy));
+    // Entrée et lanternes : la seule source saturée, elle respire.
+    const vE = .74 + Math.sin(temps * 1.6) * .09, gres = Math.sin(temps * 23) > .93 ? .5 : 1;
+    for (const s2 of [-1, 1]) {
+      const lx = Math.round(CX + s2 * ENTREE.l * .78), ly = ENTREE.piedArc - 6;
+      for (let y = ly - 14; y < ly + 14; y++) for (let x = lx - 14; x <= lx + 14; x++) {
+        const d = Math.hypot(x - lx, y - ly);
+        if (d > 4 && d < 14) t.modifier(x, y, (c, xx, yy) => PAL.teinter(c, C.a5, .4 * vE * gres * (1 - d / 14), xx, yy));
       }
-      t.rect(lx - 1, 46, 3, 5, gres > .5 ? C.a6 : C.a3); t.hl(lx - 2, lx + 2, 45, C.f1);
+      balayerPoly([[lx - 3, ly - 3], [lx + 3, ly - 3], [lx + 4, ly + 4], [lx - 4, ly + 4]], (y, a0, b0) => {
+        for (let x = a0; x <= b0; x++) t.pt(x, y, x === a0 || x === b0 ? C.f1 : gres > .6 ? C.a6 : C.a4);
+      });
+      t.hl(lx - 3, lx + 3, ly - 4, C.f1);
     }
-    // Horloge : ses aiguilles tournent (lentement, elle retarde).
-    const hc = { x: (TOUR.x0 + TOUR.x1) / 2, y: 20 };
-    const ah = temps * .02 - 1.2, am = temps * .24;
-    t.ligne(hc.x, hc.y, hc.x + Math.cos(ah) * 5, hc.y + Math.sin(ah) * 5, C.f0);
-    t.ligne(hc.x, hc.y, hc.x + Math.cos(am) * 8, hc.y + Math.sin(am) * 8, C.f0);
-    // Drapeau qui ondule.
-    for (let i = 0; i < 24; i++) for (let j = 0; j < 14; j++) {
-      const ond = Math.round(Math.sin(i * .35 - temps * 4) * 1.5 * (i / 24));
-      let c = Math.floor(j / 2) % 2 ? C.d3 : C.d2;
-      if (i < 10 && j < 8) c = (i + j) % 3 === 0 ? C.d3 : C.d4;
-      if (Math.sin(i * .35 - temps * 4) > .6) c = PAL.teinter(c, C.q1, .4, i, j);
-      t.pt(MAT + 2 + i, 4 + j + ond, c);
+    // Drapeau : treize bandes qui ondulent, la face au vent plus claire.
+    for (let i = 0; i < 33; i++) for (let j = 0; j < 19; j++) {
+      const ond = Math.round(Math.sin(temps * 2.2 + i * .19) * 2.2 * (i / 33));
+      const ombre = Math.sin(temps * 2.2 + i * .19 + 1) > .4;
+      let c = Math.floor(j / 19 * 13) % 2 ? (ombre ? C.w1 : C.d3) : (ombre ? C.d1 : C.d2);
+      if (i < 14 && j < 10) c = (i % 3 === 1 && j % 3 === 1) ? C.d3 : (ombre ? C.e3 : C.d4);
+      t.pt(MAT + 2 + i, 3 + j + ond, c);
+    }
+    // Gyrophares du fourgon.
+    {
+      const vB = Math.max(0, Math.cos(temps * 2.4)), vR = Math.max(0, -Math.cos(temps * 2.4));
+      t.rect(FOURGON.x + 24, FOURGON.y - 3, 16, 3, C.f1);
+      t.rect(FOURGON.x + 25, FOURGON.y - 2, 7, 2, vB > .1 ? C.g4 : C.g1);
+      t.rect(FOURGON.x + 33, FOURGON.y - 2, 6, 2, vR > .1 ? C.x4 : C.x1);
+      for (const [col, val, dx] of [[C.g3, vB, 28], [C.x3, vR, 36]]) {
+        if (val < .1) continue;
+        for (let y = FOURGON.y - 26; y < FOURGON.y + 30; y++) for (let x = FOURGON.x + dx - 40; x < FOURGON.x + dx + 40; x++) {
+          const d = Math.hypot(x - FOURGON.x - dx, (y - FOURGON.y) * 1.3);
+          if (d < 40 && d > 3) t.modifier(x, y, (c, xx, yy) => PAL.teinter(c, col, .22 * val * (1 - d / 40), xx, yy));
+        }
+      }
     }
 
     // Voitures, gyrophares et feu : les trois sources de lumière du bas.

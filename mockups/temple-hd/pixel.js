@@ -352,18 +352,25 @@ export function creerPixel() {
       for (let i = 0; i < 56; i++) {
         const v = .55 + Math.sin(temps * 2.2 + i * 1.7) * .25 + Math.sin(temps * 5.1 + i) * .2;
         const x = fond + s * Math.round(1 + hacher(i, 1, 21) * hacher(i, 9, 21) * 20), y = BUT.haut + 4 + Math.round(hacher(i, 3, 21) * (GH * 2 - 8));
-        const c = v > .8 ? C.f4 : v > .6 ? C.f3 : v > .4 ? C.f2 : C.f1;
+        const c = v > .92 ? C.f4 : v > .7 ? C.f3 : v > .45 ? C.f2 : C.f1;
         t.rect(Math.min(x, x + s * 2), y, 3, 2, c);
       }
+      // La lueur reste dans le four : elle s'éteint à la bouche. Débordant de
+      // 40 px sur le dallage, elle brouillait la zone de but et le disque qui
+      // y arrive.
       const vv = .85 + Math.sin(temps * 2.2) * .1;
-      for (let y = BUT.haut; y < BUT.bas; y++) for (let x = gx - 40; x < gx + GOAL_D + 40; x++) {
-        const u = cote === 1 ? (x - gx) / (GOAL_D + 40) : (gx + GOAL_D - x) / (GOAL_D + 40);
+      for (let y = BUT.haut; y < BUT.bas; y++) for (let x = gx; x < gx + GOAL_D + 6 * (cote === 1 ? 1 : 0); x++) {
+        const xx = cote === 1 ? x : x - 6 * 0;
+        const u = cote === 1 ? (xx - gx) / (GOAL_D + 6) : (gx + GOAL_D - 1 - xx) / (GOAL_D + 6);
         if (u < 0 || u > 1) continue;
-        t.modifier(x, y, (c, a, b) => PAL.teinter(c, C.f3, .34 * vv * (1 - u) ** 1.3, a, b));
+        t.modifier(xx, y, (c, a, b) => PAL.teinter(c, C.f2, .2 * vv * (1 - u) ** 1.6, a, b));
       }
-      for (let k = 0; k < 12; k++) {
+      if (cote === 2) for (let y = BUT.haut; y < BUT.bas; y++) for (let x = gx - 6; x < gx; x++)
+        t.modifier(x, y, (c, a, b) => PAL.teinter(c, C.f2, .04 * vv, a, b));
+      for (let k = 0; k < 5; k++) {
         const q = (temps * .45 + hacher(k, cote, 22)) % 1;
-        t.pt(Math.round(fond + s * (8 + q * 70)), Math.round(BUT.haut + 10 + hacher(k, cote, 23) * 180 + Math.sin(temps * 3 + k) * 6), q < .5 ? C.f4 : C.f3);
+        if (q > .7) continue;
+        t.pt(Math.round(fond + s * (6 + q * 34)), Math.round(BUT.haut + 10 + hacher(k, cote, 23) * 180 + Math.sin(temps * 3 + k) * 6), q < .35 ? C.f4 : C.f2);
       }
       for (const z of ZONES) {
         const sp = CHIFFRES[z.points];
