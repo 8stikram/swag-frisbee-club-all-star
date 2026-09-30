@@ -268,6 +268,81 @@ MAPS.push({
   }
 });
 
+// ================= LES TROIS TERRAINS AJOUTÉS EN PIXEL ART HD =================
+// Leur dessin vit tout entier dans render/hd/ (iles.js, konoha.js, fete.js) :
+// ils n'ont pas de peintre au canevas. Pas de règle de jeu, ce sont des décors.
+// Le thème ne sert qu'à l'écran de choix (fond et liseré) et aux petits
+// effets génériques du jeu ; `floor` dit si le sol est clair (voir solClair).
+MAPS.push({
+  id: 'iles',
+  name: 'ÎLES DU DESTIN',
+  court: { left: 70, right: 890, top: 84, bottom: 560 },
+  goal: { height: 200, depth: 48 },
+  // Turquoise du plancher des radeaux, jaune paopu pour le 5.
+  zones: [
+    { from: -100, to: -26, points: 3, color: '#38a6bb' },
+    { from: -26, to: 26, points: 5, color: '#f2b53c' },
+    { from: 26, to: 100, points: 3, color: '#38a6bb' }
+  ],
+  style: 'hd',
+  theme: {
+    bgInner: '#e59c9a',
+    bgOuter: '#1f3163',
+    floor: '#e2cc9c',          // le sable damé, clair
+    line: 'rgba(216,176,116,.8)',
+    goalFill: 'rgba(56,166,187,.16)',
+    goalStroke: '#946338',
+    crowdColors: ['#f2805a', '#38a6bb', '#f2b53c'],
+    starColor: 'rgba(0,0,0,0)'
+  }
+});
+MAPS.push({
+  id: 'konoha',
+  name: 'KONOHA',
+  court: { left: 70, right: 890, top: 84, bottom: 560 },
+  goal: { height: 200, depth: 48 },
+  // Bleu du bandeau frontal pour les 3, orange Naruto pour le 5.
+  zones: [
+    { from: -100, to: -26, points: 3, color: '#2e6cc0' },
+    { from: -26, to: 26, points: 5, color: '#f07a22' },
+    { from: 26, to: 100, points: 3, color: '#2e6cc0' }
+  ],
+  style: 'hd',
+  theme: {
+    bgInner: '#6fa6e0',
+    bgOuter: '#1e5a2a',
+    floor: '#529638',          // la pelouse
+    line: 'rgba(251,246,230,.85)',
+    goalFill: 'rgba(46,108,192,.16)',
+    goalStroke: '#34703c',
+    crowdColors: ['#f07a22', '#2e6cc0', '#529450'],
+    starColor: 'rgba(0,0,0,0)'
+  }
+});
+MAPS.push({
+  id: 'fete',
+  name: 'FÊTE FORAINE',
+  court: { left: 70, right: 890, top: 84, bottom: 560 },
+  goal: { height: 200, depth: 48 },
+  // Les cibles des stands : bleu et blanc pour les 3, rouge et or pour le 5.
+  zones: [
+    { from: -100, to: -26, points: 3, color: '#2a58b4' },
+    { from: -26, to: 26, points: 5, color: '#cc3040' },
+    { from: 26, to: 100, points: 3, color: '#2a58b4' }
+  ],
+  style: 'hd',
+  theme: {
+    bgInner: '#a44686',
+    bgOuter: '#161436',
+    floor: '#c6a882',          // la piste en lattes peinte
+    line: 'rgba(255,246,238,.85)',
+    goalFill: 'rgba(204,48,64,.16)',
+    goalStroke: '#e8b030',
+    crowdColors: ['#f05a5e', '#ffdc6a', '#8ab8ff', '#ffb2d0'],
+    starColor: 'rgba(0,0,0,0)'
+  }
+});
+
 // Vrai quand le terrain est jouable. Même principe que pour les skins.
 export function mapDebloquee(m) {
   if (!m || !m.verrou) return true;

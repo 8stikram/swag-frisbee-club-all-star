@@ -25,10 +25,13 @@ import { creerPixel as dune } from './dune.js';
 import { creerPixel as poleNord, dessinerNeige } from './pole-nord.js';
 import { creerPixel as raccoon } from './raccoon.js';
 import { creerPixel as temple } from './temple.js';
+import { creerPixel as iles } from './iles.js';
+import { creerPixel as konoha } from './konoha.js';
+import { creerPixel as fete } from './fete.js';
 
 // Identifiants de data/maps.js. La salle d'entraînement ('dojo') n'y est pas :
 // elle est nue exprès, rien n'y doit détourner l'œil.
-const FABRIQUES = { arena: station, stadium, dune, polenord: poleNord, raccoon, temple };
+const FABRIQUES = { arena: station, stadium, dune, polenord: poleNord, raccoon, temple, iles, konoha, fete };
 const PAS = 1 / 30;
 const rendus = new Map();
 
@@ -100,7 +103,7 @@ export function dessinerNeigeHD() {
   return true;
 }
 
-// Prépare les fonds fixes des six terrains quand le navigateur n'a rien
+// Prépare les fonds fixes des terrains quand le navigateur n'a rien
 // d'autre à faire. Chacun coûte quelques centaines de millisecondes la
 // première fois : sans ça, l'écran de choix du terrain se figeait en peignant
 // ses six vignettes d'un coup.
