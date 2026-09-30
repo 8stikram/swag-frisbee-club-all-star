@@ -12,6 +12,12 @@
 // de Raccoon City. Ce sont des règles de jeu, par-dessus les joueurs, dont la
 // lisibilité a été mesurée telle qu'elle est (game/desert.js, game/brume.js).
 //
+// Règle pour chaque terrain, y compris les prochains : les cages sont tirées
+// de l'univers du terrain et ne ressemblent à celles d'aucun autre (radeau et
+// voiles aux Îles du Destin, makimono et shimenawa à Konoha, stands de tir à
+// cibles à la fête foraine…). Les zones 3 / 5 / 3 y restent lisibles d'un coup
+// d'œil, et l'embouchure est toujours marquée.
+//
 // Le décor est recalculé trente fois par seconde au plus, et recopié entre
 // deux images : ce qui y bouge est lent, et c'est la moitié du travail en moins.
 // ---------------------------------------------------------------------------

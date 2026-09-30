@@ -480,24 +480,43 @@ function plaque(t, cx, cy) {
   t.sprite(FEUILLE_GRAVEE, cx - 4, cy - 4);
   for (const x of [cx - 10, cx + 10]) { t.pt(x, cy - 4, C.s1); t.pt(x, cy + 4, C.s1); }
 }
+// Les zones sont trois makimono déroulés, pendus à un mur de bois sombre :
+// rouleaux de bois à embouts dorés, bordure de tissu bleu bandeau (3) ou
+// orange Naruto (5), chiffre à l'encre et sceau rouge.
+const ENCRE = { 3: spriteChiffre(3, C.k, C.k, C.d0, C.m3), 5: spriteChiffre(5, C.k, C.k, C.d0, C.m3) };
+function makimono(t, x0, x1, y0, y1, cinq) {
+  const tissu = cinq ? [C.o1, C.o2, C.o3] : [C.u1, C.u2, C.u3];
+  for (let y = y0 + 4; y < y1 - 4; y++) for (let x = x0 + 1; x <= x1 - 1; x++) {
+    const bx = Math.min(x - x0 - 1, x1 - 1 - x), by = Math.min(y - y0 - 4, y1 - 5 - y);
+    let c;
+    if (bx < 4 || by < 3) c = bx === 0 ? tissu[0] : bx === 1 || by === 0 ? tissu[2] : tissu[1];
+    else c = hacher(x, y, 32) < .06 ? C.m2 : (x + y) % 17 === 0 ? C.m3 : C.m4;
+    t.pt(x, y, c);
+  }
+  for (const [ry, haut] of [[y0, true], [y1 - 5, false]]) {
+    for (let y = ry; y < ry + 5; y++) for (let x = x0 - 2; x <= x1 + 2; x++) {
+      const k = y - ry, bout = x < x0 + 1 || x > x1 - 1;
+      t.pt(x, y, bout ? (k === 0 ? C.j3 : k < 3 ? C.j2 : C.j1) : k === 0 ? C.b5 : k < 3 ? C.b4 : k === 4 ? C.b1 : C.b3);
+    }
+    if (haut) { t.ligne((x0 + x1) / 2 - 6, ry, (x0 + x1) / 2, ry - 4, C.l1); t.ligne((x0 + x1) / 2 + 6, ry, (x0 + x1) / 2, ry - 4, C.l1); t.pt((x0 + x1) / 2, ry - 5, C.j2); }
+  }
+  for (let x = x0 + 1; x <= x1 - 1; x++) t.teinte(x, y1, PAL, C.k, .5);
+  // Le sceau rouge, en bas à droite.
+  const sx = x1 - 10, sy = y1 - 13;
+  for (let y = sy; y < sy + 5; y++) for (let x = sx; x < sx + 5; x++) t.pt(x, y, (x === sx + 2 && y > sy) || (y === sy + 2 && x > sx) ? C.m4 : C.l2);
+}
 function peindreCage(t, cote) {
   const x0 = cote === 1 ? COURT.left - BUT.prof : COURT.right, x1 = x0 + BUT.prof - 1;
-  for (let y = BUT.haut; y < BUT.bas; y++) {
-    const r = y - BUT.haut, j = r % 8;
-    const z = ZONES.find(zz => y < CY + zz.to);
-    for (let x = x0; x <= x1; x++) {
-      if (j === 7) { t.pt(x, y, z.points === 5 ? C.o1 : C.u1); continue; }
-      const ton = j === 0 ? 0 : j >= 5 ? 2 : 1;
-      let c = z.points === 5 ? [C.o3, C.o2, C.o1][ton] : [C.u3, C.u2, C.u1][ton];
-      if (ton === 1 && bruit(x * .2 + r, j, 31) > .8) c = z.points === 5 ? C.o1 : C.u1;
-      t.pt(x, y, c);
-    }
-    if (j === 3) for (const nx of [x0 + 3, x1 - 3]) { t.pt(nx, y, C.s1); t.pt(nx, y - 1, C.s3); }
+  // Le mur de bois sombre, planches verticales.
+  for (let y = BUT.haut; y < BUT.bas; y++) for (let x = x0; x <= x1; x++) {
+    const j = (x - x0) % 8;
+    t.pt(x, y, j === 0 ? C.b0 : j === 1 ? C.b2 : bruit(x * .5, y * .06, 33) > .7 ? C.b0 : C.b1);
   }
-  for (const yz of [CY - 26, CY + 26]) { t.hl(x0, x1, yz - 1, C.q1); t.hl(x0, x1, yz, C.q0); t.hl(x0, x1, yz + 1, C.q3); }
   for (const z of ZONES) {
-    const s = CHIFFRE[z.points];
-    t.sprite(s, Math.round(x0 + BUT.prof / 2 - s.l / 2), Math.round(CY + (z.from + z.to) / 2 - s.h / 2), MIROIR);
+    const y0 = CY + z.from + 3, y1 = CY + z.to - 2;
+    makimono(t, x0 + 5, x1 - 5, y0, y1, z.points === 5);
+    const s = ENCRE[z.points];
+    t.sprite(s, Math.round((x0 + x1) / 2 - s.l / 2 + .5), Math.round((y0 + y1) / 2 - s.h / 2), MIROIR);
   }
   // Le toit de tuiles du dos, vu d'en haut, puis le cadre vert.
   const dos = cote === 1 ? x0 - 10 : x1 + 1;
@@ -518,6 +537,17 @@ function peindreCage(t, cote) {
   const avant = cote === 1 ? x1 + 1 : x0 - 1, arriere = cote === 1 ? dos + 3 : dos + 6;
   for (const y of [BUT.haut - 3, BUT.bas + 2]) { poteauCoiffe(t, avant, y); poteauCoiffe(t, arriere, y); }
   plaque(t, cote === 1 ? x0 + 10 : x1 - 10, BUT.haut - 18);
+  // La shimenawa : une grosse corde de paille tressée tendue devant
+  // l'embouchure, et ses zigzags de papier blanc (shide).
+  const mx = cote === 1 ? COURT.left - 2 : COURT.right - 2;
+  for (let y = BUT.haut - 2; y < BUT.bas + 2; y++) for (let k = 0; k < 5; k++) {
+    const s2 = (y + k * 2) % 6;
+    t.pt(mx + k, y, k === 0 || k === 4 ? C.e2 : s2 < 2 ? C.e5 : s2 < 4 ? C.e4 : C.e3);
+  }
+  for (let y = BUT.haut + 14; y < BUT.bas - 10; y += 26) {
+    const sens = cote === 1 ? 1 : -1, bx = cote === 1 ? mx + 5 : mx - 1;
+    for (let k = 0; k < 12; k++) { const dx = [0, 1, 2, 3, 3, 2, 1, 1, 2, 3, 4, 4][k]; t.pt(bx + sens * dx, y + k, C.m4); t.pt(bx + sens * (dx + 1), y + k, k % 4 === 3 ? C.m2 : C.m4); }
+  }
 }
 // ---------------------------------------------------------------------------
 // Les bords

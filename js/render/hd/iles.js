@@ -340,31 +340,42 @@ function ligature(t, x, y) {
   }
   t.hl(x, x + 7, y + 8, C.a1);
 }
+// Les zones sont les voiles du radeau, tendues dans le cadre de rondins
+// par-dessus un filet de pêche : deux voiles blanches à bande bleue pour les
+// 3, la voile jaune paopu pour le 5. Chiffres bleu nuit, bordés de blanc.
+const VOILE_CHIFFRE = { 3: spriteChiffre(3, C.m1, C.m1, C.m0, C.w), 5: spriteChiffre(5, C.o1, C.o1, C.o1, C.z8) };
+function voile(t, x0, x1, y0, y1, cinq) {
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  for (let y = y0; y < y1; y++) for (let x = x0; x <= x1; x++) {
+    // Le vent gonfle la toile : claire au milieu, plus sombre vers les ralingues.
+    const g = 1 - Math.max(Math.abs(x - cx) / ((x1 - x0) / 2), Math.abs(y - cy) / ((y1 - y0) / 2)) ** 2;
+    let c;
+    if (cinq) c = g > .55 ? C.j3 : g > .2 ? C.j2 : C.j1;
+    else c = g > .55 ? C.w : g > .2 ? C.z8 : C.z6;
+    if (!cinq && (Math.abs(y - y0 - 6) < 2 || Math.abs(y1 - 7 - y) < 2)) c = g > .3 ? C.m3 : C.m2;
+    if (cinq && (y === y0 + 3 || y === y1 - 4)) c = C.o2;
+    if ((x - x0) % 12 === 11 && g < .6) c = cinq ? C.j1 : C.z5;          // coutures
+    if (x === x0 || x === x1 || y === y0 || y === y1 - 1) c = C.a2;
+    t.pt(x, y, c);
+  }
+  // Œillets et cordelettes jusqu'au cadre.
+  for (const [px, py, dx, dy] of [[x0, y0, -3, -3], [x1, y0, 3, -3], [x0, y1 - 1, -3, 3], [x1, y1 - 1, 3, 3]]) {
+    t.pt(px, py, C.b1); t.ligne(px, py, px + dx, py + dy, C.a3);
+  }
+}
 function peindreCage(t, cote) {
   const x0 = cote === 1 ? COURT.left - BUT.prof : COURT.right, x1 = x0 + BUT.prof - 1;
-  for (let y = BUT.haut; y < BUT.bas; y++) {
-    const r = y - BUT.haut, rang = Math.floor(r / 7), j = r % 7;
-    const z = ZONES.find(zz => y < CY + zz.to);
-    for (let x = x0; x <= x1; x++) {
-      if (j === 6) { t.pt(x, y, C.b1); continue; }
-      // La peinture s'écaille : par endroits on voit le bois.
-      const peint = fbm(x * .09 + rang * 3.7, y * .09, 2, 30 + rang) > .33;
-      const ton = j === 0 ? 0 : j >= 4 ? 2 : 1;
-      let c;
-      if (peint) c = z.points === 5 ? [C.j3, C.j2, C.j1][ton] : [C.m5, C.m4, C.m3][ton];
-      else c = [C.b5, C.b4, C.b3][ton];
-      if (!peint && bruit(x * .14 + rang * 11, j * .6, 31) > .7) c = C.b3;
-      t.pt(x, y, c);
-    }
-    if (j === 3) for (const nx of [x0 + 3, x1 - 3]) t.pt(nx, y, C.b1);
-  }
-  // Traverses entre les zones.
-  for (const yz of [CY - 26, CY + 26]) {
-    t.hl(x0, x1, yz - 1, C.b2); t.hl(x0, x1, yz, C.b1); t.hl(x0, x1, yz + 1, C.b3);
+  // Le sable, sous un filet de pêche.
+  for (let y = BUT.haut; y < BUT.bas; y++) for (let x = x0; x <= x1; x++) {
+    const filet = (x + y) % 7 === 0 || (x - y + 700) % 7 === 0;
+    const noeud = (x + y) % 7 === 0 && (x - y + 700) % 7 === 0;
+    t.pt(x, y, noeud ? C.a1 : filet ? C.a2 : hacher(x, y, 33) < .1 ? C.z3 : C.z4);
   }
   for (const z of ZONES) {
-    const s = CHIFFRE[z.points];
-    t.sprite(s, Math.round(x0 + BUT.prof / 2 - s.l / 2), Math.round(CY + (z.from + z.to) / 2 - s.h / 2), MIROIR);
+    const y0 = CY + z.from + 5, y1 = CY + z.to - 4;
+    voile(t, x0 + 5, x1 - 5, y0, y1, z.points === 5);
+    const s = VOILE_CHIFFRE[z.points];
+    t.sprite(s, Math.round((x0 + x1) / 2 - s.l / 2 + .5), Math.round((y0 + y1) / 2 - s.h / 2), MIROIR);
   }
   // Le cadre de rondins : dessus, dessous, et le dos.
   const dos = cote === 1 ? x0 - 6 : x1 + 1;
@@ -372,6 +383,13 @@ function peindreCage(t, cote) {
   rondinH(t, Math.min(x0, dos) - 1, Math.max(x1, dos + 5) + 3 * (cote === 1 ? 1 : 0), BUT.haut - 6);
   rondinH(t, Math.min(x0, dos) - 1 - 3 * (cote === 2 ? 1 : 0), Math.max(x1, dos + 5) + 1, BUT.bas);
   for (const y of [BUT.haut - 7, BUT.bas - 1]) ligature(t, dos - 1, y);
+  // À l'embouchure, une corde tendue et ses flotteurs rouges et blancs.
+  const mx = cote === 1 ? COURT.left : COURT.right - 1;
+  for (let y = BUT.haut; y < BUT.bas; y++) { t.pt(mx, y, (y & 3) < 2 ? C.a4 : C.a2); t.pt(mx + (cote === 1 ? 1 : -1), y, C.a1); }
+  for (let y = BUT.haut + 10; y < BUT.bas - 6; y += 18) {
+    balayerEllipse(mx, y, 3, 4, (yy, a0, b0) => { for (let x = a0; x <= b0; x++) t.pt(x, yy, (Math.floor((yy - y + 4) / 3) % 2 ? C.w : C.o2)); });
+    t.pt(mx - 1, y - 2, C.w);
+  }
 }
 
 // ---------------------------------------------------------------------------
