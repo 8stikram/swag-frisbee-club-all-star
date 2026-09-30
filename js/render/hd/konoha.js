@@ -27,7 +27,7 @@ export const ZONES = [
 ];
 const ROCHER = { x0: 262, x1: 698 };
 // Hashirama, Tobirama, Hiruzen, Minato, Tsunade : les cinq visages, serrés.
-const HOKAGE = [352, 416, 480, 544, 608];
+const HOKAGE = [{ x: 338, y: 40 }, { x: 410, y: 46 }, { x: 480, y: 32 }, { x: 552, y: 46 }, { x: 622, y: 36 }];
 const ANNEAU = 62;
 
 const PAL = new Palette({
@@ -84,11 +84,12 @@ let FOND = null;
 let CIELM = null;           // 1 là où les nuages peuvent passer
 const CHIFFRE = { 3: spriteChiffre(3, C.m4, C.m3, C.m2, C.k), 5: spriteChiffre(5, C.m4, C.m3, C.m2, C.k) };
 
-// Le haut du rocher : sa crête boisée.
+// Le haut du rocher : des crêtes déchiquetées, en pics.
 function haumRocher(x) {
   if (x < ROCHER.x0 || x > ROCHER.x1) return 99;
   const bord = Math.min(x - ROCHER.x0, ROCHER.x1 - x);
-  return Math.round(1 + fbm(x * .05, 0, 2, 3) * 4 + lisse(26, 0, bord) * 24);
+  const pic = Math.abs(((x * .029 + fbm(x * .02, 0, 2, 3) * .6) % 1) - .5) * 2;
+  return Math.round(3 + pic * 12 + fbm(x * .08, 0, 2, 4) * 4 + lisse(30, 0, bord) * 30);
 }
 
 function peindreCiel(t) {
@@ -114,103 +115,109 @@ function peindreCiel(t) {
 // dessinés. Chaque Hokage a sa coiffure et ses marques, creusées dans la
 // pierre : Hashirama, Tobirama, Hiruzen, Minato, Tsunade.
 // ---------------------------------------------------------------------------
-const TETE = { cy: 31, rx: 21, ry: 24 };
+const TETE = { rx: 21, ry: 24 };
 const gs = z => Math.exp(-z * z);
-// Les cheveux : un volume de tête plus large que le visage, découpé par des
-// masques doux — jamais de bord droit, sinon chaque visage paraît encadré.
-function hauteurCheveux(n, u, v) {
-  const au = Math.abs(u);
-  const r = Math.hypot(u / 1.12, (v + .12) / 1.16);
-  const dome = .42 + .5 * Math.sqrt(Math.max(0, 1 - r * r));
-  // Mèches qui rayonnent du sommet du crâne ; raides et verticales pour Hashirama.
-  const meche = n === 0 ? Math.sin(u * 26) * .03 : Math.sin(Math.atan2(v + .35, u) * 16) * .035;
-  const hh = r < 1 ? dome + meche : .58 + meche;
-  const dedans = lisse(1.04, .94, r);
-  const calotte = lisse(-.3 + .32 * u * u, -.46 + .32 * u * u, v);
-  let m = 0, creux = 0;
-  if (n === 0) {
-    // Hashirama : longs cheveux raides, raie au milieu, qui tombent aux épaules.
-    m = Math.max(calotte * dedans, lisse(.66, .78, au) * lisse(1.3, 1.18, au) * lisse(1.6, 1.45, v) * lisse(-.8, -.6, v));
-    creux = .1 * gs(u / .05) * calotte;
-  } else if (n === 1) {
-    // Tobirama : courts, en épis rejetés en arrière.
-    const rs = r - Math.max(0, Math.sin(u * 5 + 1.2)) * .42 * lisse(-.2, -.6, v);
-    m = Math.max(calotte * lisse(1.04, .94, rs), lisse(.78, .86, au) * lisse(-.05, -.2, v) * dedans);
-  } else if (n === 2) {
-    // Hiruzen : le chapeau de Hokage, son large bord.
-    const bordure = lisse(-.44, -.5, v) * lisse(-.74, -.66, v) * lisse(1.36, 1.26, au);
-    const coiffe = lisse(-.48, -.56, v) * lisse(1.1, 1, Math.hypot(u / 1.05, (v + .5) / .8));
-    if (bordure > coiffe) return .88 * bordure + (1 - bordure) * -.5;
-    m = coiffe;
-  } else if (n === 3) {
-    // Minato : des pointes en tous sens, deux longues mèches qui encadrent le visage.
-    const rs = r - Math.max(0, Math.sin(Math.atan2(v + .2, u) * 7)) * .5 * lisse(.1, -.4, v);
-    m = Math.max(calotte * lisse(1.04, .94, rs), lisse(.68, .76, au) * lisse(1.16, 1.06, au) * lisse(.65, .5, v) * lisse(-.85, -.7, v));
-    if (au < .5 && v < -.36 && v > -.56) m = Math.max(m, lisse(0, .4, Math.sin(u * 10)));
-  } else {
-    // Tsunade : frange séparée au milieu, deux couettes basses.
-    m = Math.max(calotte * dedans, lisse(.74, .8, au) * lisse(1.1, 1.02, au) * lisse(.4, .3, v) * lisse(-.75, -.6, v));
-    m = Math.max(m, lisse(.9, .96, au) * lisse(1.3, 1.22, au) * lisse(.28, .36, v) * lisse(1.45, 1.35, v));
-    creux = .1 * gs(u / .05) * calotte;
-  }
-  if (m < .03) return -1;
-  return (hh - creux) * m + (1 - m) * -.4;
+// Une mèche en lame : une arête saillante qui s'amincit jusqu'à la pointe,
+// biseautée sur les deux flancs — c'est ce qui donne les coiffures en
+// feuilles de la sculpture.
+function lame(x, y, bx, by, a, L, lw, hb) {
+  const dx = x - bx, dy = y - by, ca = Math.cos(a), sa = Math.sin(a);
+  const s = dx * ca + dy * sa, d = -dx * sa + dy * ca;
+  if (s < -3 || s > L) return -1;
+  const w = lw * (s < 0 ? 1 : 1 - s / L) + .4;
+  const q = Math.abs(d) / w;
+  if (q > 1) return -1;
+  return hb * (1 - .35 * Math.max(0, s) / L) - q * q * .5;
+}
+const deg = a => a * Math.PI / 180;
+// Les mèches de chacun, en px depuis le centre du visage : [bx, by, angle, longueur, largeur].
+const MECHES = [
+  [],
+  // Tobirama : des épis rejetés vers le haut et l'arrière.
+  [-165, -140, -115, -92, -68, -44, -22].map((a, i) => [0, -8, deg(a), [14, 19, 23, 24, 22, 18, 13][i], 7.5]),
+  // Hiruzen : une couronne de pointes dressées, comme un feuillage.
+  [-150, -126, -106, -90, -74, -54, -30].map((a, i) => [0, -9, deg(a), [13, 21, 27, 30, 27, 21, 13][i], 8]),
+  // Minato : des pointes en étoile tout autour, et deux longues mèches.
+  [-178, -158, -138, -118, -100, -80, -62, -42, -22, -2].map((a, i) => [0, -6, deg(a), 21 + (i % 2) * 5, 6])
+    .concat([[-16, -6, deg(96), 20, 3.5], [16, -6, deg(84), 20, 3.5], [-6, -16, deg(100), 10, 3], [6, -16, deg(80), 10, 3]]),
+  // Tsunade : deux longs pans, raie au milieu.
+  [[-17, -12, deg(92), 40, 7], [17, -12, deg(88), 40, 7], [-11, -18, deg(118), 14, 6], [11, -18, deg(62), 14, 6]]
+];
+function distSeg(px, py, ax, ay, bx, by) {
+  const vx = bx - ax, vy = by - ay, t = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy)));
+  return Math.hypot(px - ax - vx * t, py - ay - vy * t);
 }
 function hauteurTete(n, x, y) {
-  const u = (x - HOKAGE[n]) / TETE.rx, v = (y - TETE.cy) / TETE.ry;
+  const T = HOKAGE[n], dx = x - T.x, dy = y - T.y;
+  const u = dx / TETE.rx, v = dy / TETE.ry, au = Math.abs(u);
   let h = -1;
-  const uj = v > 0 ? u / (1 - .24 * v) : u;
+  const uj = v > 0 ? u / (1 - .26 * v) : u;
   const e = uj * uj + v * v;
-  const au = Math.abs(u);
   if (e < 1) {
     h = .35 + Math.sqrt(1 - e) * .75;
-    h += .09 * gs((v + .3) / .07) * gs(u / .6);                           // arcades
-    h -= .16 * gs((au - .36) / .14) * gs((v + .1) / .08);                 // orbites
+    h += .11 * gs((v + .3) / .07) * gs(u / .6);                           // arcades
+    h -= .18 * gs((au - .36) / .14) * gs((v + .1) / .08);                 // orbites
     h -= .08 * gs((au - .36) / .12) * gs((v + .1) / .025);                // paupières
-    h += .16 * gs(u / .08) * lisse(-.2, -.05, v) * lisse(.34, .22, v);    // arête du nez
+    h += .18 * gs(u / .08) * lisse(-.2, -.05, v) * lisse(.34, .22, v);    // arête du nez
     h += .05 * gs(u / .14) * gs((v - .3) / .04);                          // bout du nez
-    h -= .09 * gs((v - .54) / .035) * gs(u / .28);                        // bouche
-    h += .05 * gs((au - .5) / .16) * gs((v - .12) / .14);                 // pommettes
+    h -= .1 * gs((v - .54) / .035) * gs(u / .28);                         // bouche
+    h += .06 * gs((au - .5) / .16) * gs((v - .12) / .14);                 // pommettes
+    h -= .05 * gs((au - .62) / .05) * lisse(.1, .4, v);                   // mâchoire marquée
     if (n === 1) {
-      // Tobirama : une marque sur chaque joue, une au menton.
+      // Tobirama : ses marques, et la pierre fêlée.
       h -= .12 * gs((au - .44) / .04) * lisse(-.02, .06, v) * lisse(.42, .32, v);
       h -= .12 * gs(u / .04) * lisse(.72, .78, v) * lisse(.98, .9, v);
+      const f = Math.min(distSeg(u, v, .12, -.5, .3, -.05), distSeg(u, v, .3, -.05, .18, .45), distSeg(u, v, -.3, .2, -.5, .6));
+      h -= .1 * gs(f / .025);
     }
     if (n === 2) {
-      // Hiruzen : les rides du front et des joues.
       h -= .06 * gs((v + .4) / .025) * gs(u / .4);
       h -= .06 * gs((au - .3 - (v - .2) * .3) / .03) * lisse(.15, .25, v) * lisse(.6, .5, v);
     }
-    if (n === 4 && au / .07 + Math.abs(v + .36) / .08 < 1) h -= .08;   // le losange de Tsunade
+    if (n === 4 && au / .07 + Math.abs(v + .36) / .08 < 1) h -= .08;
   }
-  const ch = hauteurCheveux(n, u, v);
-  if (ch > h) h = ch;
-  if (n === 2) {
-    // La barbiche de Hiruzen déborde sous le menton.
-    const b = gs(u / .12) * lisse(.8, .9, v) * lisse(1.25, 1.05, v);
-    if (b > .2) h = Math.max(h, .55 + b * .2 + Math.sin(v * 50) * .02);
+  // Le crâne sous les cheveux, pour qu'il n'y ait jamais de trou.
+  const r = Math.hypot(u / 1.06, (v + .1) / 1.1);
+  const calotte = lisse(-.26 + .3 * u * u, -.42 + .3 * u * u, v) * lisse(1.04, .94, r);
+  if (calotte > .03) {
+    let c = .42 + .5 * Math.sqrt(Math.max(0, 1 - r * r));
+    if (n === 0) {
+      // Hashirama : cheveux lisses et le bandeau qui ceint le front.
+      if (v > -.56 && v < -.34) c += .16;
+      c -= .1 * (gs((v + .56) / .03) + gs((v + .34) / .03));
+      c += Math.sin(u * 22 - v * 6) * .02 * (v < -.56 ? 1 : 0);
+    }
+    if (n === 4) c -= .1 * gs(u / .05);
+    h = Math.max(h, c * calotte + (1 - calotte) * -.4);
   }
+  if (n === 0) h = Math.max(h, (lisse(.8, .88, au) * lisse(1.12, 1.04, au) * lisse(.1, -.1, v) * lisse(-.7, -.5, v)) * .8 - .2);
+  for (const [bx, by, a, L, lw] of MECHES[n]) h = Math.max(h, lame(dx, dy, bx, by, a, L, lw, 1.18));
+  if (n === 2) h = Math.max(h, lame(dx, dy, 0, 22, deg(90), 13, 4, .72));   // la barbiche en pointe
   return h;
 }
 function peindreRocher(t) {
   const x0 = ROCHER.x0 - 4, x1 = ROCHER.x1 + 4, Y = 74;
   const Wd = x1 - x0 + 3;
-  const HT = new Float32Array(Wd * Y);
+  const HT = new Float32Array(Wd * Y), TETES = new Uint8Array(Wd * Y);
   for (let y = 0; y < Y; y++) for (let x = x0 - 1; x <= x1 + 1; x++) {
-    let h = .26 + Math.sin(x * .31 + fbm(x * .02, y * .05, 2, 5) * 6) * .045 + fbm(x * .06, y * .08, 3, 8) * .12;
-    for (let n = 0; n < HOKAGE.length; n++) if (Math.abs(x - HOKAGE[n]) < 34) h = Math.max(h, hauteurTete(n, x, y));
+    // La falaise : des pans de roche en biais, fissurés.
+    let h = .24 + Math.abs(Math.sin(x * .09 + y * .05 + fbm(x * .02, y * .04, 2, 5) * 3)) * .08 + fbm(x * .06, y * .08, 3, 8) * .12;
+    h -= .08 * gs((Math.sin(x * .045 - y * .02) * 30 + (x % 97) * .2 - 14) / 1.2) * (fbm(x * .1, y * .1, 1, 9) > .5 ? 1 : 0);
+    for (let n = 0; n < HOKAGE.length; n++) if (Math.abs(x - HOKAGE[n].x) < 42) {
+      const hh = hauteurTete(n, x, y);
+      if (hh > h) { h = hh; TETES[y * Wd + (x - x0 + 1)] = 1; }
+    }
     HT[y * Wd + (x - x0 + 1)] = h;
   }
   const lx = -.55, ly = -.62, lz = .56;
   for (let x = x0; x <= x1; x++) {
     const top = haumRocher(x);
-    if (top > 60) continue;
-    for (let y = Math.max(0, top); y < 72; y++) {
+    for (let y = 0; y < 72; y++) {
       const i = y * Wd + (x - x0 + 1);
+      if (y < top && !(TETES[i] && HT[i] > .3)) continue;
       const gx = (HT[i + 1] - HT[i - 1]) * 9, gy = (HT[Math.min(Y - 1, y + 1) * Wd + (x - x0 + 1)] - HT[Math.max(0, y - 1) * Wd + (x - x0 + 1)]) * 9;
       const nz = 1 / Math.hypot(gx, gy, 1);
       const lum = Math.max(0, -gx * nz * lx - gy * nz * ly + nz * lz);
-      // Ombre portée : la pierre plus haute juste en haut à gauche cache la lumière.
       const devant = HT[Math.max(0, y - 2) * Wd + (x - x0 - 1)] - HT[i];
       const porte = devant > .12 ? .55 : 1;
       const bords = lisse(ROCHER.x0 + 40, ROCHER.x0, x) + lisse(ROCHER.x1 - 40, ROCHER.x1, x);
@@ -218,12 +225,15 @@ function peindreRocher(t) {
       t.px[y * W + x] = ROCHE.tramer(l, l * .86, l * .7, x, y, 2.2);
       if (y < 60) CIELM[y * W + x] = 0;
     }
-    // La crête boisée.
-    const h = 3 + Math.round(fbm(x * .12, 2, 2, 6) * 7);
-    for (let k = 0; k < h; k++) {
-      const y = top - k;
-      t.pt(x, y, k === h - 1 ? C.v4 : k > h - 3 ? C.v3 : k > 1 ? C.v2 : C.v1);
-      if (y >= 0 && y < 60) CIELM[y * W + x] = 0;
+    // Des touffes d'arbres accrochées aux crêtes, par endroits.
+    if (top < 60 && fbm(x * .05, 7, 2, 6) > .55 && HOKAGE.every(T => Math.abs(x - T.x) > 34)) {
+      const h = 2 + Math.round(fbm(x * .15, 2, 2, 6) * 6);
+      for (let k = 0; k < h; k++) {
+        const y = top - k;
+        if (y < 0) continue;
+        t.pt(x, y, k === h - 1 ? C.v4 : k > h - 3 ? C.v3 : C.v2);
+        if (y < 60) CIELM[y * W + x] = 0;
+      }
     }
   }
 }
@@ -310,13 +320,19 @@ function arbreRond(t, cx, cy, r) {
 function peindreVillage(t) {
   tourHokage(t, 236);
   for (const rang of [0, 1]) {
+    if (rang) {
+    // Des bosquets au pied du rocher, comme sur la sculpture.
+      for (let i = 0; i < 16; i++) arbreRond(t, ROCHER.x0 + 14 + i * 27 + Math.floor(hacher(i, 5, 20) * 10), 70 + Math.floor(hacher(i, 6, 20) * 3), 5 + Math.floor(hacher(i, 7, 20) * 3));
+    }
     const base = rang ? 83 : 70;
     let x = rang ? -14 : -30, i = 0;
     while (x < W) {
       const l = 26 + Math.floor(hacher(i, rang, 10) * 26);
-      const devantRocher = !rang && x + l > ROCHER.x0 + 10 && x < ROCHER.x1 - 10;
+      const devantRocher = x + l > ROCHER.x0 + 10 && x < ROCHER.x1 - 10;
+      const basse = rang && devantRocher;
       if (!rang && x < 262 && x + l > 212) { x = 262; continue; }
-      const hm = devantRocher ? 7 + Math.floor(hacher(i, rang, 11) * 3) : (rang ? 9 : 12) + Math.floor(hacher(i, rang, 11) * 8);
+      if (!rang && devantRocher) { x += l; i++; continue; }
+      const hm = basse ? 8 + Math.floor(hacher(i, rang, 11) * 3) : (rang ? 9 : 12) + Math.floor(hacher(i, rang, 11) * 8);
       maison(t, x, base, l, hm, i * 7 + rang * 131, rang === 1);
       if (hacher(i, rang, 17) < .3) arbreRond(t, x + l + 2, base - 6, 5 + Math.floor(hacher(i, rang, 18) * 3));
       x += l + Math.floor(hacher(i, rang, 12) * 6) - 1;
@@ -327,12 +343,12 @@ function peindreVillage(t) {
   const poteaux = [];
   for (let x = 40; x < W; x += 96 + Math.floor(hacher(x, 0, 19) * 20)) poteaux.push(x);
   for (const px of poteaux) {
-    for (let y = 52; y < 84; y++) { t.pt(px, y, C.b1); t.pt(px + 1, y, C.b2); }
-    t.hl(px - 5, px + 6, 55, C.b1); t.hl(px - 4, px + 5, 58, C.b1);
+    for (let y = 62; y < 84; y++) { t.pt(px, y, C.b1); t.pt(px + 1, y, C.b2); }
+    t.hl(px - 5, px + 6, 64, C.b1); t.hl(px - 4, px + 5, 67, C.b1);
   }
-  for (let i = 0; i + 1 < poteaux.length; i++) for (const [dy, s] of [[55, -5], [55, 6], [58, -4]]) {
+  for (let i = 0; i + 1 < poteaux.length; i++) for (const [dy, s] of [[64, -5], [64, 6], [67, -4]]) {
     const a = poteaux[i] + s, b = poteaux[i + 1] + s;
-    for (let x = a; x <= b; x++) { const u = (x - a) / (b - a); t.pt(x, Math.round(dy + 4 * u * (1 - u) * 4), C.k); }
+    for (let x = a; x <= b; x++) { const u = (x - a) / (b - a); t.pt(x, Math.round(dy + 4 * u * (1 - u) * 3), C.k); }
   }
 }
 // ---------------------------------------------------------------------------
@@ -719,24 +735,34 @@ function peindreBords(t) {
   cible(t, 926, 452);
   lanternePierre(t, 928, 548);
   // En bas : la rue, pavée de terre et de pierres plates.
-  // Dalles rectangulaires, joints de terre : un rang tous les 9 px, décalé.
-  for (let y = 566; y < H; y++) {
-    const r = Math.floor((y - 567) / 9), yr = (y - 567) % 9;
-    let bord = -Math.floor(hacher(r, 0, 55) * 20), k = 0;
-    const bords = [];
-    while (bord < W + 30) { bords.push(bord); bord += 14 + Math.floor(hacher(r, k++, 56) * 14); }
-    let j = 0;
-    for (let x = 0; x < W; x++) {
-      while (j + 1 < bords.length && x >= bords[j + 1]) j++;
-      const dx = x - bords[j], larg = bords[j + 1] - bords[j];
-      let c;
-      if (y < 567 || yr >= 7 || dx < 2) c = hacher(x, y, 57) < .2 ? C.e2 : C.e1;
-      else {
-        const clair = hacher(r, j, 58) < .35;
-        c = yr === 0 || dx === 2 ? C.s3 : yr === 6 || dx === larg - 1 ? C.s1 : C.s2;
-        if (c === C.s2 && hacher(x, y, 59) < .06) c = clair ? C.s3 : C.s1;
-      }
-      t.px[y * W + x] = c;
+  // La rue : une bordure de pierres taillées, puis la terre battue, ses
+  // ornières, ses cailloux, et une allée de dalles plates au milieu.
+  for (let y = 566; y < H; y++) for (let x = 0; x < W; x++) {
+    let c;
+    if (y < 572) {
+      const bloc = Math.floor((x + (y > 568 ? 0 : 0)) / 24), dx = (x + 300) % 24;
+      const clair = hacher(bloc, 0, 55) < .4;
+      c = dx === 0 ? C.e0 : y === 566 ? C.s4 : y === 571 ? C.s1 : dx === 1 ? C.s3 : dx === 23 ? C.s1 : clair ? C.s3 : C.s2;
+      if (c === C.s2 && hacher(x, y, 59) < .05) c = C.s1;
+    } else {
+      const n = fbm(x * .03, y * .08, 3, 56);
+      let l = 182 + (n - .5) * 26 - lisse(574, 572, y) * 40;
+      for (const yo of [578, 596]) l -= 22 * gs((y - yo - Math.sin(x * .02) * 1.5) / 1.2);
+      c = TERRE.tramer(l, l * .8, l * .55, x, y, 2.2);
+      if (hacher(x, y, 57) < .012) c = hacher(x, y, 58) < .5 ? C.s2 : C.e1;
+    }
+    t.px[y * W + x] = c;
+  }
+  // L'allée de dalles, posées de biais, un peu irrégulières.
+  for (let i = 0; i < 40; i++) {
+    const cx = 12 + i * 24 + Math.floor(hacher(i, 1, 63) * 6), cy = 587 + Math.floor(hacher(i, 2, 63) * 3) - 1;
+    const rx = 8 + Math.floor(hacher(i, 3, 63) * 3), ry = 4 + Math.floor(hacher(i, 4, 63) * 2);
+    for (let y = cy - ry; y <= cy + ry + 1; y++) for (let x = cx - rx; x <= cx + rx; x++) {
+      const e = Math.abs((x - cx) / rx) ** 3 + Math.abs((y - cy) / ry) ** 3;
+      if (e > 1.15) continue;
+      if (y === cy + ry + 1 || e > 1) { t.teinte(x, y, PAL, C.e0, .4); continue; }
+      const d = (x - cx) / rx + (y - cy) / ry;
+      t.pt(x, y, e > .75 ? (d < 0 ? C.s3 : C.s1) : d < -.9 ? C.s4 : hacher(x, y, 64) < .05 ? C.s1 : C.s2);
     }
   }
   for (let x = 0; x < W; x++) { t.pt(x, 565, C.g1); t.pt(x, 564, hacher(x, 0, 57) < .3 ? C.g5 : C.g3); }
@@ -856,11 +882,13 @@ function clochettes(t, temps) {
 const LANTERNES = [160, 330, 630, 800];
 function lanternes(t, temps) {
   for (const lx of LANTERNES) {
-    for (let y = 566; y < 600; y++) { t.pt(lx, y, C.b1); t.pt(lx + 1, y, C.b2); }
-    t.hl(lx - 6, lx + 7, 566, C.b2);
+    for (let y = 560; y < 594; y++) { t.pt(lx, y, C.b1); t.pt(lx + 1, y, C.b2); }
+    t.hl(lx - 6, lx + 7, 560, C.b2);
+    for (let y = 592; y < 598; y++) for (let x = lx - 3; x <= lx + 4; x++) t.pt(x, y, y === 592 ? C.s3 : x === lx + 4 ? C.s1 : C.s2);
+    for (let x = lx - 3; x <= lx + 5; x++) t.teinte(x, 598, PAL, C.e0, .45);
     const a = Math.sin(temps * .9 + lx) * .12;
-    const cx = Math.round(lx + 6 + Math.sin(a) * 8), cy = 574;
-    t.ligne(lx + 6, 567, cx, cy - 4, C.k);
+    const cx = Math.round(lx + 6 + Math.sin(a) * 8), cy = 570;
+    t.ligne(lx + 6, 561, cx, cy - 4, C.k);
     const lueur = .5 + Math.sin(temps * 1.3 + lx) * .08;
     for (let y = cy - 14; y <= cy + 14; y++) for (let x = cx - 14; x <= cx + 14; x++) {
       const d = Math.hypot(x - cx, (y - cy) * 1.2);
