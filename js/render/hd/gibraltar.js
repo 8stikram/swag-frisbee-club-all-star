@@ -6,13 +6,13 @@
 // et ses vitres orange, la passerelle en treillis qui file jusqu'à la sphère
 // sur pylône et son drapeau Overwatch, le bâtiment bleu du stock de carburant
 // et son rack de réservoirs, la fusée sur son pas de tir dans sa tour de
-// lancement, le grand bâtiment beige, et le drone satellite XR-9 posé sur sa
-// station de recharge orange. Le détroit, la côte africaine au loin, un
-// vaisseau de transport, des goélands.
+// lancement, le grand bâtiment beige, et la station de recharge orange du
+// drone satellite XR-9. Le détroit, la côte africaine au loin, un vaisseau de
+// transport, des goélands.
 //
 // Le terrain est l'aire d'atterrissage de la base : grandes dalles de béton
-// clair, lignes blanches doublées d'un filet orange, emblème Overwatch orange
-// et noir peint au centre. Les cages, propres à cette arène, sont des quais de
+// clair, lignes blanches doublées d'un filet orange, emblème Overwatch
+// (anneau blanc, arc orange, pales blanches) peint sur un disque noir au centre. Les cages, propres à cette arène, sont des quais de
 // chargement à la livrée Overwatch : panneaux blancs à bande orange pour les
 // 3, panneau holographique bleu pour le 5, gyrophares orange, et le bouclier
 // hexagonal bleu des salles de réapparition à l'embouchure.
@@ -21,8 +21,8 @@
 // et ses écrans, Mercy qui le soigne, Genji, Tracer qui fait des blinks, Lúcio
 // en rollers. À droite : Mei et son mur de glace, Reinhardt et son bouclier,
 // Soldat : 76, Ana à genoux derrière son fusil, Zenyatta en lévitation. Les
-// packs de soin flottent sur leur socle. En bas, le convoi roule le long de
-// la route, derrière le garde-corps et la mer.
+// packs de soin flottent sur leur socle. En bas, le payload, le drone XR-9,
+// glisse le long de la route, derrière le garde-corps et la mer.
 //
 // Pas de règle de jeu : c'est un décor.
 // ---------------------------------------------------------------------------
@@ -60,6 +60,8 @@ const PAL = new Palette({
   e0: '#4e3e30', e1: '#7a6450', e2: '#a48c72', e3: '#c8b294', e4: '#e4d4ba',
   // Bleu du bâtiment de stockage
   l0: '#1a2c4c', l1: '#284678', l2: '#3a62a6', l3: '#6890cc',
+  // Coque bronze et réacteurs bleu acier du drone XR-9
+  z1: '#5e4a2c', z2: '#86703e', z3: '#b09a62', a1: '#4a7090', a2: '#7aa2bc', a3: '#b2cfdf',
   // Orange Overwatch
   o0: '#62280a', o1: '#ac4c12', o2: '#ee7a1c', o3: '#ffa04c', o4: '#ffd09c',
   // Bleu holographique
@@ -107,34 +109,49 @@ function ciel(y, x) { if (y >= 0 && y < HORIZON && x >= 0 && x < W) CIELM[y * W 
 // Un pixel du décor du haut : posé, et retiré du masque du ciel.
 function pd(t, x, y, c) { t.pt(x, y, c); ciel(y, x); }
 
-// L'emblème Overwatch : un anneau orange épais, fendu en haut et ouvert en
-// bas, et le chevron noir qui monte vers le centre depuis les deux bords de
-// l'ouverture (fendu lui aussi à sa pointe). `fentes` à faux donne la
-// silhouette pleine, pour un liseré.
-function emblemeOW(t, cx, cy, R, ep, cAnneau, cChevron, cOmbre, fentes = true, epC = .42) {
-  const ouv = .5;                                     // demi-ouverture, en radians, autour du bas
-  const f = fentes && R >= 8 ? Math.max(1, Math.round(R * .045)) : 0;
-  for (let y = Math.floor(cy - R - 1); y <= cy + R + 1; y++) for (let x = Math.floor(cx - R - 1); x <= cx + R + 1; x++) {
-    const dx = x + .5 - cx, dy = y + .5 - cy;
-    const d = Math.hypot(dx, dy), a = Math.atan2(dx, dy);   // 0 = vers le bas
-    if (f && dy < 0 && Math.abs(dx) < f) continue;
-    if (d <= R && d >= R - ep && Math.abs(a) > ouv) t.pt(x, y, cOmbre && dx + dy > R * .9 ? cOmbre : cAnneau);
+// L'emblème Overwatch, fidèle au logo : un anneau blanc épais dont l'arc du
+// haut est orange (séparé par deux fentes en diagonale), et dedans deux pales
+// blanches qui montent en pointe, séparées par une fente verticale, et qui
+// rejoignent l'anneau en bas en diagonale en laissant un triangle vide.
+// Coordonnées réduites : rayon 1, y vers le bas.
+const PALE_OW = [[.04, -.47], [.04, .2], [.5, .62], [.7, .32], [.2, -.085]];
+function dansPoly(u, v, P) {
+  let dedans = false;
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const [xi, yi] = P[i], [xj, yj] = P[j];
+    if ((yi > v) !== (yj > v) && u < (xj - xi) * (v - yi) / (yj - yi) + xi) dedans = !dedans;
   }
-  for (const s of [-1, 1]) {
-    const ax = cx + Math.sin(ouv) * (R - ep / 2) * s, ay = cy + Math.cos(ouv) * (R - ep / 2);
-    const bx = cx, by = cy - R * .2;
-    const L = Math.hypot(bx - ax, by - ay);
-    for (let k = 0; k <= L; k += .5) {
-      const px = Math.round(ax + (bx - ax) * k / L), py = Math.round(ay + (by - ay) * k / L);
-      balayerDisque(px, py, ep * epC, (y, a, b) => { for (let x = a; x <= b; x++) if (!f || Math.abs(x + .5 - cx) >= f) t.pt(x, y, cChevron); });
+  return dedans;
+}
+// 0 : vide, 1 : blanc, 2 : orange.
+function formeOW(u, v) {
+  const d = Math.hypot(u, v);
+  if (d > 1) return 0;
+  if (d >= .71) {
+    for (const s of [-1, 1]) {
+      const a = s * Math.PI / 4;
+      if (Math.abs(u * Math.cos(a) + v * Math.sin(a)) < .04 && u * Math.sin(a) - v * Math.cos(a) > 0) return 0;
     }
+    return Math.abs(Math.atan2(u, -v)) < Math.PI / 4 ? 2 : 1;
+  }
+  return dansPoly(Math.abs(u), v, PALE_OW) ? 1 : 0;
+}
+// Suréchantillonné (quatre points par pixel) pour rester propre en petit.
+function emblemeOW(t, cx, cy, R, cBlanc = C.b6, cOrange = C.o2) {
+  for (let y = Math.floor(cy - R - 1); y <= Math.ceil(cy + R); y++) for (let x = Math.floor(cx - R - 1); x <= Math.ceil(cx + R); x++) {
+    let nb = 0, no = 0;
+    for (const [a, b] of [[.25, .25], [.75, .25], [.25, .75], [.75, .75]]) {
+      const f = formeOW((x + a - cx) / R, (y + b - cy) / R);
+      if (f === 1) nb++; else if (f === 2) no++;
+    }
+    if (nb + no >= 2) { t.pt(x, y, no > nb ? cOrange : cBlanc); ciel(y, x); }
   }
 }
-// Le petit emblème des plaques et des pastilles : disque clair, anneau
-// orange, chevron noir.
+// Le petit emblème des plaques et des pastilles, sur son disque noir.
 function pastilleOW(t, cx, cy, R) {
-  disque(t, cx, cy, R + 1.5, (x, y) => { ciel(y, x); return C.b6; });
-  emblemeOW(t, cx, cy, R, Math.max(1.4, R * .36), C.o2, C.k);
+  for (let y = Math.floor(cy - R - 2); y <= Math.ceil(cy + R + 1); y++) for (let x = Math.floor(cx - R - 2); x <= Math.ceil(cx + R + 1); x++)
+    if (Math.hypot(x + .5 - cx, y + .5 - cy) <= R + 1.4) { t.pt(x, y, C.k); ciel(y, x); }
+  emblemeOW(t, cx, cy, R);
 }
 
 // ---------------------------------------------------------------------------
@@ -270,7 +287,7 @@ function tourComm(t) {
   pd(t, x0 - 3, 2, C.e3); pd(t, x1 + 3, 2, C.e3);
   // La plaque à l'emblème, en haut, et l'inscription WP-G sur le fût.
   for (let y = 3; y < 8; y++) for (let x = x0 + 9; x <= x0 + 19; x++) pd(t, x, y, C.l1);
-  emblemeOW(t, x0 + 14, 5, 2.4, 1.2, C.o3, C.b6);
+  emblemeOW(t, x0 + 14.5, 5.5, 2.6);
   const larg = glyphes3x5('WP-G', () => {});
   glyphes3x5('WP-G', (gx, gy) => pd(t, x0 + 15 - larg / 2 + gx, 30 + gy, C.l1), MIROIR);
   glyphes3x5('COMM', (gx, gy) => { if (hacher(gx, gy, 3) < .9) pd(t, x0 + 15 - larg / 2 + gx, 23 + gy, C.l2); }, MIROIR);
@@ -394,30 +411,23 @@ function batimentBeige(t) {
   for (let y = 18; y < 26; y++) pd(t, 748, y, C.b2);
   parabole(t, 826, 36, 6, 2.4, .5);
 }
-// Le drone satellite XR-9, posé sur sa station de recharge orange.
-function drone(t) {
-  // Plateforme de béton au bord de l'eau.
+// La station de recharge du drone, vide : le drone XR-9 est le payload qui
+// roule en bas. Un disque orange au sol, un cercle bleu « caution », et la
+// borne de recharge à son bord.
+function stationDrone(t) {
   for (let y = 64; y < 76; y++) for (let x = 850; x < W; x++) pd(t, x, y, y === 64 ? C.e4 : y < 67 ? C.e3 : C.e2);
-  const px = 904, py = 70;
-  ellipse(t, px, py, 38, 5, (x, y) => {
-    const d = Math.hypot((x - px) / 38, (y - py) / 5);
-    return d > .92 ? C.o1 : d > .84 ? C.o3 : d > .6 && d < .66 ? C.o1 : C.o2;
+  const px = 902, py = 70;
+  ellipse(t, px, py, 36, 5, (x, y) => {
+    const d = Math.hypot((x - px) / 36, (y - py) / 5);
+    return d > .92 ? C.o1 : d > .84 ? C.o3 : d > .56 && d < .62 ? C.o1 : C.o2;
   });
-  pd(t, px + 30, py + 1, C.l2); pd(t, px + 31, py + 1, C.l2);
-  ombre(t, px + 2, py, 24, 2.5, .5);
-  // L'aile basse, le corps, les deux réacteurs à l'arrière, la dérive.
-  balayerPoly([[896, 65], [918, 65], [926, 69], [900, 69]], (y, a, b) => { for (let x = a; x <= b; x++) pd(t, x, y, y > 67 ? C.b2 : C.b3); });
-  balayerPoly([[880, 65], [889, 59], [922, 58], [926, 61], [924, 66], [884, 67]], (y, a, b) => {
-    for (let x = a; x <= b; x++) pd(t, x, y, y < 61 ? C.b6 : y < 63 ? C.b5 : y < 65 ? C.h2 : C.b1);
-  });
-  for (let x = 890; x < 898; x++) pd(t, x, 60, C.b1);
-  for (const [y0, x0] of [[53, 912], [56, 916]]) for (let y = y0; y < y0 + 5; y++) for (let x = x0; x < x0 + 12; x++) {
-    let c = y === y0 ? C.l3 : y === y0 + 4 ? C.l0 : C.l2;
-    if (x === x0 + 4 || x === x0 + 5) c = y === y0 ? C.y3 : C.y2;
-    if (x === x0 + 11) c = C.o2;
-    pd(t, x, y, c);
-  }
-  balayerPoly([[906, 58], [909, 50], [912, 50], [913, 58]], (y, a, b) => { for (let x = a; x <= b; x++) pd(t, x, y, x < 910 ? C.b5 : C.b3); });
+  // Le grand « W » bleu peint sur le disque, et la pastille « caution ».
+  for (const [x, y] of [[892, 69], [893, 70], [894, 71], [895, 70], [896, 69], [897, 70], [898, 71], [899, 70], [900, 69]]) { pd(t, x, y, C.l1); pd(t, x + 1, y, C.l2); }
+  ellipse(t, 926, 71, 3, 1.2, () => C.l2); pd(t, 926, 71, C.u4);
+  // La borne de recharge : un pylône gris, une barre de lumière bleue.
+  for (let y = 50; y < 70; y++) for (let x = 944; x < 950; x++) pd(t, x, y, y === 50 ? C.b5 : x === 944 ? C.b3 : x === 949 ? C.g1 : (x === 946 || x === 947) && y > 53 && y < 66 ? C.u3 : C.g3);
+  for (let x = 942; x < 952; x++) pd(t, x, 69, C.g1);
+  ombre(t, 950, 70, 6, 1.5, .4);
 }
 function base(t) {
   batimentBleu(t);
@@ -428,7 +438,7 @@ function base(t) {
   citerne(t, 548, 50, 16, 26); citerne(t, 568, 56, 14, 20);
   for (let x = 540; x < 598; x++) { pd(t, x, 68, C.b4); pd(t, x, 69, C.g2); }
   batimentBeige(t);
-  drone(t);
+  stationDrone(t);
   // Le mur d'enceinte de la base, beige à bande orange, qui borde le terrain.
   for (let x = 0; x < W; x++) for (let y = 76; y < 84; y++) {
     let c = y === 76 ? C.e4 : y < 79 ? C.e3 : y < 81 ? C.o2 : y === 81 ? C.o1 : C.e2;
@@ -447,7 +457,7 @@ function enseigne(t) {
   }
   for (let x = x0 - 14; x < x0 + larg + 14; x++) t.teinte(x, y0 + 8, PAL, C.k, .4);
   glyphes3x5(texte, (gx, gy) => t.pt(x0 + gx, y0 + gy, gy === 0 ? C.o4 : C.o3), MIROIR);
-  for (const x of [x0 - 8, x0 + larg + 7]) pastilleOW(t, x, y0 + 2, 3.2);
+  for (const x of [x0 - 8, x0 + larg + 7]) pastilleOW(t, x + .5, y0 + 2.5, 3.2);
 }
 
 // ---------------------------------------------------------------------------
@@ -504,10 +514,12 @@ function peindreLignes(t) {
   for (const [texte, x0, y0] of [['PAD-01', L + 34, B - 34], ['PAD-02', R - 84, T + 22]]) {
     glyphes3x5(texte, (gx, gy) => { for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) { const x = x0 + gx * 2 + a, y = y0 + gy * 2 + b; t.teinte(x, y, PAL, C.b6, hacher(x, y, 31) < .25 ? .3 : .7); } }, MIROIR);
   }
-  // L'emblème Overwatch peint au centre : anneau orange, chevron noir, cernés
-  // de blanc.
-  emblemeOW(t, CX, CY, 46, 15, C.b6, C.b6, null, false, .58);
-  emblemeOW(t, CX, CY, 43, 10, C.o2, C.k, C.o1, true, .62);
+  // L'emblème Overwatch peint au centre, sur un grand disque noir.
+  for (let y = CY - 56; y <= CY + 56; y++) for (let x = CX - 56; x <= CX + 56; x++) {
+    const d = Math.hypot(x + .5 - CX, y + .5 - CY);
+    if (d <= 54) t.pt(x, y, d > 53 ? C.b0 : hacher(x, y, 32) < .04 ? C.b0 : C.k);
+  }
+  emblemeOW(t, CX, CY, 46);
 }
 
 // ---------------------------------------------------------------------------
@@ -549,7 +561,7 @@ function peindreCage(t, cote) {
   // L'emblème sur le mur du fond.
   const ex = dos + 4;
   for (let y = CY - 9; y <= CY + 9; y++) for (let x = ex - 4; x <= ex + 3; x++) t.pt(x, y, C.b6);
-  emblemeOW(t, ex, CY, 3.6, 1.5, C.o2, C.k);
+  pastilleOW(t, ex, CY + .5, 3);
   // Socles des gyrophares, aux coins côté terrain.
   for (const y of [BUT.haut - 4, BUT.bas + 3]) { const gx = cote === 1 ? x1 + 1 : x0 - 1; disque(t, gx, y, 4, (x, yy) => (x - gx) + (yy - y) < -2 ? C.b6 : C.b3); }
 }
@@ -1004,7 +1016,7 @@ function fusee(t, temps) {
   }
   for (const s of [-1, 1]) balayerPoly([[x + s * l / 2, y0 + haut - 14], [x + s * (l / 2 + 7), y0 + haut], [x + s * l / 2, y0 + haut]], (y, a, b) => { for (let xx = a; xx <= b; xx++) if (y < 84) { t.pt(xx, y, s < 0 ? C.b4 : C.b2); ciel(y, xx); } });
   const ly = y0 + Math.round(haut * .36);
-  if (ly < 84) emblemeOW(t, x, ly, 3.4, 1.4, C.o2, C.k);
+  if (ly < 84) pastilleOW(t, x + .5, ly + .5, 3.4);
   // Au repos : bras de la tour accrochés, vapeur qui s'échappe.
   if (vol === 0) {
     for (const yy of [yb - 50, yb - 30]) { t.hl(x + l / 2 + 1, TOUR.x, yy, C.o1); t.hl(x + l / 2 + 1, TOUR.x, yy + 1, C.o2); }
@@ -1024,7 +1036,7 @@ function drapeau(t, temps) {
     }
   }
   const ex = x0 + 10, ey = y0 + 6 + Math.round(Math.sin(temps * 4 - 10 * .45) * .6);
-  emblemeOW(t, ex, ey, 4.2, 1.6, C.o2, C.b6);
+  emblemeOW(t, ex, ey + .5, 4.4);
 }
 function feux(t, temps) {
   // Le feu rouge en haut de la tour de lancement et de la Comm Tower.
@@ -1072,24 +1084,57 @@ function mer(t, temps) {
     t.teinte(x, y, PAL, C.m5, .8 * k); if (MERM[y * W + x + 1]) t.teinte(x + 1, y, PAL, C.m5, .5 * k);
   }
 }
-// Le convoi : il roule lentement sur la route du bas, dans son halo bleu.
-function convoi(t, temps) {
-  const q = (temps / 60) % 2, u = q < 1 ? q : 2 - q;
-  const x = Math.round(140 + u * 680), y = 571;
-  ellipse(t, x, y + 5, 34, 6, (xx, yy) => PAL.teinter(t.lire(xx, yy), C.u3, .25, xx, yy));
-  ombre(t, x, y + 6, 17, 2, .5);
-  for (let yy = y - 6; yy < y + 5; yy++) for (let xx = x - 15; xx <= x + 15; xx++) {
-    const u2 = (xx - x) / 15, v = (yy - y + 6) / 11;
-    if (Math.abs(u2) > .92 && v < .3) continue;
-    let c = v < .15 ? C.b6 : v < .55 ? C.b5 : C.b3;
-    if (v > .45 && v < .6) c = C.o2;
-    t.pt(xx, yy, c);
-  }
-  ellipse(t, x, y - 8, 8, 4, (xx, yy) => yy < y - 8 ? C.u3 : C.u2);
-  t.pt(x - 3, y - 10, C.u4);
-  for (const dx of [-11, 11]) disque(t, x + dx, y + 5, 2.5, () => C.b0);
+// Le payload : le drone satellite XR-9, en lévitation au-dessus de son halo
+// bleu, qui glisse le long de la route du bas. Nez pointu, dessus blanc,
+// coque bronze marquée « XR-9 », verrière, dérive, aile basse, et les deux
+// gros réacteurs bleu acier à l'arrière, panneaux dorés et tuyères orange.
+function payload(t, temps) {
+  const q = (temps / 60) % 2, u = q < 1 ? q : 2 - q, v = u * u * (3 - 2 * u);
+  const x = Math.round(150 + v * 660), y = 574, s = q < 1 ? 1 : -1;
+  const y0 = y + Math.round(Math.sin(temps * 2.4));
+  ellipse(t, x, y + 8, 34, 3.5, (xx, yy) => PAL.teinter(t.lire(xx, yy), C.u3, .4, xx, yy));
+  ombre(t, x, y + 8, 24, 2, .45);
+  const X = lx => x + lx * s;
+  const poly = (pts, f) => balayerPoly(pts.map(([lx, ly]) => [X(lx), y0 + ly]), (yy, a, b) => {
+    for (let xx = a; xx <= b; xx++) { const c = f((xx - x) * s, yy - y0); if (c) t.pt(xx, yy, c); }
+  });
+  // Le réacteur du fond, qui dépasse au-dessus.
+  poly([[-26, -16], [-6, -16], [-6, -12], [-26, -12]], (lx, ly) => ly === -16 ? (lx > -21 && lx < -11 ? C.y2 : C.a2) : lx > -8 ? C.g1 : C.a1);
+  // La coque : dessus blanc, liseré gris, bande bronze, dessous sombre, nez pointu.
+  poly([[-12, -7], [10, -7], [31, 1], [24, 5], [-8, 6], [-12, 3]], (lx, ly) => {
+    if (lx >= 28) return C.b1;
+    if (ly <= -7) return C.b6;
+    if (ly < -1) return ly === -2 || (lx > 16 && ly === -3) ? C.b4 : C.b5;
+    if (ly === -1) return C.b3;
+    if (ly < 5) return ly === 0 ? C.z3 : ly === 4 ? C.z1 : C.z2;
+    return C.b0;
+  });
+  // La verrière, ouverte sur le dessus, et les chevrons gris devant.
+  for (let lx = 10; lx <= 20; lx++) for (let ly = -7; ly <= -5; ly++) t.pt(X(lx), y0 + ly, ly === -7 && (lx === 10 || lx === 20) ? C.b3 : ly === -7 ? C.b1 : lx === 10 || lx === 20 ? C.b2 : C.b0);
+  for (const lx of [2, 5]) { t.pt(X(lx), y0 - 4, C.b3); t.pt(X(lx + 1), y0 - 5, C.b3); t.pt(X(lx + 1), y0 - 3, C.b3); }
+  // La dérive, juste devant les réacteurs.
+  poly([[-4, -7], [0, -16], [3, -16], [5, -7]], (lx, ly) => lx > 2 ? C.b3 : ly < -14 ? C.b6 : lx < 0 ? C.b6 : C.b5);
+  // Le réacteur du premier plan : gros cylindre bleu acier, panneau doré,
+  // entrée d'air sombre devant, tuyère orange derrière.
+  poly([[-28, -12], [-5, -12], [-5, -3], [-28, -3]], (lx, ly) => {
+    const panneau = lx > -22 && lx < -11;
+    if (ly <= -12) return panneau ? C.y3 : C.a3;
+    if (ly === -11 && panneau) return C.y2;
+    if (lx > -7) return lx === -5 ? C.g0 : C.g1;
+    return ly > -5 ? C.a1 : ly < -9 ? C.a3 : C.a2;
+  });
+  for (let ly = -12; ly <= -3; ly++) { t.pt(X(-29), y0 + ly, ly === -12 || ly === -3 ? C.o1 : C.o2); t.pt(X(-28), y0 + ly, C.g1); }
+  const feu = .4 + Math.sin(temps * 13) * .2;
+  for (let ly = -11; ly <= -4; ly++) { t.teinte(X(-30), y0 + ly, PAL, C.o3, feu + .2); t.teinte(X(-31), y0 + ly, PAL, C.o3, feu); }
+  // L'aile basse, bout bronze.
+  poly([[-18, 1], [4, 1], [7, 3], [-20, 3]], (lx, ly) => lx < -16 ? C.z1 : ly === 1 ? C.b6 : ly === 2 ? C.b4 : C.b2);
+  // L'inscription sur la coque bronze, toujours à l'endroit.
+  const larg = glyphes3x5('XR-9', () => {});
+  const tx = Math.min(X(9), X(9 + larg - 1));
+  glyphes3x5('XR-9', (gx, gy) => t.pt(tx + gx, y0 + gy, C.b5), MIROIR);
+  // Les feux de position.
   const clig = (temps * 2 | 0) % 2;
-  t.pt(x - 15, y - 1, clig ? C.u4 : C.u2); t.pt(x + 15, y - 1, clig ? C.u2 : C.u4);
+  t.pt(X(29), y0 + 1, clig ? C.u4 : C.u2); t.pt(X(1), y0 - 16, clig ? C.x2 : C.x1);
 }
 // Le bouclier des salles de réapparition, à l'embouchure : un rideau
 // d'hexagones bleus qui ondule.
@@ -1179,7 +1224,7 @@ export function creerPixel() {
     ana(t, 946, 486, temps);
     zenyatta(t, 922, 546, temps);
     soins(t, temps);
-    convoi(t, temps);
+    payload(t, temps);
     bouclier(t, temps);
     for (const cote of [1, 2]) {
       const fl = cote === 1 ? butG : butD;
