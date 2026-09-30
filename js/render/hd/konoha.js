@@ -25,8 +25,9 @@ export const ZONES = [
   { from: -26, to: 26, points: 5 },
   { from: 26, to: 100, points: 3 }
 ];
-const ROCHER = { x0: 292, x1: 668 };
-const VISAGES = [350, 432, 514, 596];
+const ROCHER = { x0: 262, x1: 698 };
+// Hashirama, Tobirama, Hiruzen, Minato, Tsunade : les cinq visages, serrés.
+const HOKAGE = [352, 416, 480, 544, 608];
 const ANNEAU = 62;
 
 const PAL = new Palette({
@@ -49,6 +50,8 @@ const PAL = new Palette({
   b0: '#2e1c10', b1: '#4e3220', b2: '#70492c', b3: '#946338', b4: '#b8864e', b5: '#d8b074',
   // Laque rouge
   l0: '#4a0e0e', l1: '#8e1c16', l2: '#c0302a', l3: '#e2553c',
+  // Vert de la grande porte
+  q0: '#16301c', q1: '#24502c', q2: '#34703c', q3: '#529450',
   // Bleu bandeau, orange Naruto
   u1: '#1e4e8e', u2: '#2e6cc0', u3: '#5a96e0',
   o1: '#b4501a', o2: '#f07a22', o3: '#ffab4a',
@@ -81,11 +84,11 @@ let FOND = null;
 let CIELM = null;           // 1 là où les nuages peuvent passer
 const CHIFFRE = { 3: spriteChiffre(3, C.m4, C.m3, C.m2, C.k), 5: spriteChiffre(5, C.m4, C.m3, C.m2, C.k) };
 
-// Le haut du rocher : sa crête boisée, et le sommet des toits devant.
+// Le haut du rocher : sa crête boisée.
 function haumRocher(x) {
   if (x < ROCHER.x0 || x > ROCHER.x1) return 99;
   const bord = Math.min(x - ROCHER.x0, ROCHER.x1 - x);
-  return Math.round(3 + fbm(x * .05, 0, 2, 3) * 4 + lisse(18, 0, bord) * 16);
+  return Math.round(1 + fbm(x * .05, 0, 2, 3) * 4 + lisse(26, 0, bord) * 24);
 }
 
 function peindreCiel(t) {
@@ -97,7 +100,7 @@ function peindreCiel(t) {
   }
   // Collines boisées au loin, de part et d'autre du rocher.
   for (let x = 0; x < W; x++) {
-    const top = Math.round(36 + Math.sin(x * .011 + 1) * 5 + fbm(x * .04, 1, 3, 4) * 8);
+    const top = Math.round(34 + Math.sin(x * .011 + 1) * 5 + fbm(x * .04, 1, 3, 4) * 8);
     for (let y = top; y < 62; y++) {
       const c = y === top ? C.v3 : FEUILLAGE.tramer(70 - (y - top) * 1.2, 120 - (y - top) * 2, 80, x, y, 2);
       t.pt(x, y, c); if (y < 60) CIELM[y * W + x] = 0;
@@ -105,134 +108,233 @@ function peindreCiel(t) {
   }
 }
 
-// Le rocher des Hokage : falaise striée, crête boisée, quatre visages taillés.
+// ---------------------------------------------------------------------------
+// Le rocher des Hokage. La falaise et les cinq visages sont un relief : une
+// carte de hauteurs, éclairée par le haut à gauche, plutôt que des traits
+// dessinés. Chaque Hokage a sa coiffure et ses marques, creusées dans la
+// pierre : Hashirama, Tobirama, Hiruzen, Minato, Tsunade.
+// ---------------------------------------------------------------------------
+const TETE = { cy: 31, rx: 21, ry: 24 };
+const gs = z => Math.exp(-z * z);
+// Les cheveux : un volume de tête plus large que le visage, découpé par des
+// masques doux — jamais de bord droit, sinon chaque visage paraît encadré.
+function hauteurCheveux(n, u, v) {
+  const au = Math.abs(u);
+  const r = Math.hypot(u / 1.12, (v + .12) / 1.16);
+  const dome = .42 + .5 * Math.sqrt(Math.max(0, 1 - r * r));
+  // Mèches qui rayonnent du sommet du crâne ; raides et verticales pour Hashirama.
+  const meche = n === 0 ? Math.sin(u * 26) * .03 : Math.sin(Math.atan2(v + .35, u) * 16) * .035;
+  const hh = r < 1 ? dome + meche : .58 + meche;
+  const dedans = lisse(1.04, .94, r);
+  const calotte = lisse(-.3 + .32 * u * u, -.46 + .32 * u * u, v);
+  let m = 0, creux = 0;
+  if (n === 0) {
+    // Hashirama : longs cheveux raides, raie au milieu, qui tombent aux épaules.
+    m = Math.max(calotte * dedans, lisse(.66, .78, au) * lisse(1.3, 1.18, au) * lisse(1.6, 1.45, v) * lisse(-.8, -.6, v));
+    creux = .1 * gs(u / .05) * calotte;
+  } else if (n === 1) {
+    // Tobirama : courts, en épis rejetés en arrière.
+    const rs = r - Math.max(0, Math.sin(u * 5 + 1.2)) * .42 * lisse(-.2, -.6, v);
+    m = Math.max(calotte * lisse(1.04, .94, rs), lisse(.78, .86, au) * lisse(-.05, -.2, v) * dedans);
+  } else if (n === 2) {
+    // Hiruzen : le chapeau de Hokage, son large bord.
+    const bordure = lisse(-.44, -.5, v) * lisse(-.74, -.66, v) * lisse(1.36, 1.26, au);
+    const coiffe = lisse(-.48, -.56, v) * lisse(1.1, 1, Math.hypot(u / 1.05, (v + .5) / .8));
+    if (bordure > coiffe) return .88 * bordure + (1 - bordure) * -.5;
+    m = coiffe;
+  } else if (n === 3) {
+    // Minato : des pointes en tous sens, deux longues mèches qui encadrent le visage.
+    const rs = r - Math.max(0, Math.sin(Math.atan2(v + .2, u) * 7)) * .5 * lisse(.1, -.4, v);
+    m = Math.max(calotte * lisse(1.04, .94, rs), lisse(.68, .76, au) * lisse(1.16, 1.06, au) * lisse(.65, .5, v) * lisse(-.85, -.7, v));
+    if (au < .5 && v < -.36 && v > -.56) m = Math.max(m, lisse(0, .4, Math.sin(u * 10)));
+  } else {
+    // Tsunade : frange séparée au milieu, deux couettes basses.
+    m = Math.max(calotte * dedans, lisse(.74, .8, au) * lisse(1.1, 1.02, au) * lisse(.4, .3, v) * lisse(-.75, -.6, v));
+    m = Math.max(m, lisse(.9, .96, au) * lisse(1.3, 1.22, au) * lisse(.28, .36, v) * lisse(1.45, 1.35, v));
+    creux = .1 * gs(u / .05) * calotte;
+  }
+  if (m < .03) return -1;
+  return (hh - creux) * m + (1 - m) * -.4;
+}
+function hauteurTete(n, x, y) {
+  const u = (x - HOKAGE[n]) / TETE.rx, v = (y - TETE.cy) / TETE.ry;
+  let h = -1;
+  const uj = v > 0 ? u / (1 - .24 * v) : u;
+  const e = uj * uj + v * v;
+  const au = Math.abs(u);
+  if (e < 1) {
+    h = .35 + Math.sqrt(1 - e) * .75;
+    h += .09 * gs((v + .3) / .07) * gs(u / .6);                           // arcades
+    h -= .16 * gs((au - .36) / .14) * gs((v + .1) / .08);                 // orbites
+    h -= .08 * gs((au - .36) / .12) * gs((v + .1) / .025);                // paupières
+    h += .16 * gs(u / .08) * lisse(-.2, -.05, v) * lisse(.34, .22, v);    // arête du nez
+    h += .05 * gs(u / .14) * gs((v - .3) / .04);                          // bout du nez
+    h -= .09 * gs((v - .54) / .035) * gs(u / .28);                        // bouche
+    h += .05 * gs((au - .5) / .16) * gs((v - .12) / .14);                 // pommettes
+    if (n === 1) {
+      // Tobirama : une marque sur chaque joue, une au menton.
+      h -= .12 * gs((au - .44) / .04) * lisse(-.02, .06, v) * lisse(.42, .32, v);
+      h -= .12 * gs(u / .04) * lisse(.72, .78, v) * lisse(.98, .9, v);
+    }
+    if (n === 2) {
+      // Hiruzen : les rides du front et des joues.
+      h -= .06 * gs((v + .4) / .025) * gs(u / .4);
+      h -= .06 * gs((au - .3 - (v - .2) * .3) / .03) * lisse(.15, .25, v) * lisse(.6, .5, v);
+    }
+    if (n === 4 && au / .07 + Math.abs(v + .36) / .08 < 1) h -= .08;   // le losange de Tsunade
+  }
+  const ch = hauteurCheveux(n, u, v);
+  if (ch > h) h = ch;
+  if (n === 2) {
+    // La barbiche de Hiruzen déborde sous le menton.
+    const b = gs(u / .12) * lisse(.8, .9, v) * lisse(1.25, 1.05, v);
+    if (b > .2) h = Math.max(h, .55 + b * .2 + Math.sin(v * 50) * .02);
+  }
+  return h;
+}
 function peindreRocher(t) {
-  for (let x = ROCHER.x0 - 4; x <= ROCHER.x1 + 4; x++) {
+  const x0 = ROCHER.x0 - 4, x1 = ROCHER.x1 + 4, Y = 74;
+  const Wd = x1 - x0 + 3;
+  const HT = new Float32Array(Wd * Y);
+  for (let y = 0; y < Y; y++) for (let x = x0 - 1; x <= x1 + 1; x++) {
+    let h = .26 + Math.sin(x * .31 + fbm(x * .02, y * .05, 2, 5) * 6) * .045 + fbm(x * .06, y * .08, 3, 8) * .12;
+    for (let n = 0; n < HOKAGE.length; n++) if (Math.abs(x - HOKAGE[n]) < 34) h = Math.max(h, hauteurTete(n, x, y));
+    HT[y * Wd + (x - x0 + 1)] = h;
+  }
+  const lx = -.55, ly = -.62, lz = .56;
+  for (let x = x0; x <= x1; x++) {
     const top = haumRocher(x);
     if (top > 60) continue;
-    for (let y = top; y < 70; y++) {
-      const strate = Math.sin(x * .35 + fbm(x * .02, y * .06, 2, 5) * 6) * 10;
-      const ombre = lisse(ROCHER.x0 + 30, ROCHER.x0, x) * 20 + lisse(ROCHER.x1 - 30, ROCHER.x1, x) * 26;
-      const l = 176 + strate - (y - top) * .6 - ombre;
-      t.px[y * W + x] = ROCHE.tramer(l, l * .86, l * .7, x, y, 2);
+    for (let y = Math.max(0, top); y < 72; y++) {
+      const i = y * Wd + (x - x0 + 1);
+      const gx = (HT[i + 1] - HT[i - 1]) * 9, gy = (HT[Math.min(Y - 1, y + 1) * Wd + (x - x0 + 1)] - HT[Math.max(0, y - 1) * Wd + (x - x0 + 1)]) * 9;
+      const nz = 1 / Math.hypot(gx, gy, 1);
+      const lum = Math.max(0, -gx * nz * lx - gy * nz * ly + nz * lz);
+      // Ombre portée : la pierre plus haute juste en haut à gauche cache la lumière.
+      const devant = HT[Math.max(0, y - 2) * Wd + (x - x0 - 1)] - HT[i];
+      const porte = devant > .12 ? .55 : 1;
+      const bords = lisse(ROCHER.x0 + 40, ROCHER.x0, x) + lisse(ROCHER.x1 - 40, ROCHER.x1, x);
+      const l = (46 + lum * 205 * porte + HT[i] * 22) * (1 - bords * .18) - Math.max(0, y - 58) * 1.5;
+      t.px[y * W + x] = ROCHE.tramer(l, l * .86, l * .7, x, y, 2.2);
       if (y < 60) CIELM[y * W + x] = 0;
     }
     // La crête boisée.
-    const h = 3 + Math.round(fbm(x * .12, 2, 2, 6) * 6);
+    const h = 3 + Math.round(fbm(x * .12, 2, 2, 6) * 7);
     for (let k = 0; k < h; k++) {
       const y = top - k;
-      t.pt(x, y, k === h - 1 ? C.v4 : k > h - 3 ? C.v3 : C.v2);
+      t.pt(x, y, k === h - 1 ? C.v4 : k > h - 3 ? C.v3 : k > 1 ? C.v2 : C.v1);
       if (y >= 0 && y < 60) CIELM[y * W + x] = 0;
     }
   }
-  for (let i = 0; i < VISAGES.length; i++) visage(t, VISAGES[i], 7, i);
-}
-// Un visage taillé dans la roche, éclairé par la gauche. Chaque Hokage a sa
-// coiffure ; les traits sont creusés, pas dessinés.
-function visage(t, cx, y0, n) {
-  const rx = 17, ry = 21, cy = y0 + 22;
-  balayerEllipse(cx, cy, rx, ry, (y, a, b) => { for (let x = a; x <= b; x++) {
-    const dx = (x - cx) / rx, dy = (y - cy) / ry;
-    let l = 196 - dx * 34 - Math.max(0, dy) * 20;
-    if (dx * dx + dy * dy > .8) l -= 26;
-    t.pt(x, y, ROCHE.tramer(l, l * .87, l * .72, x, y, 2.5));
-  } });
-  // Coiffure.
-  for (let x = cx - rx - 2; x <= cx + rx + 2; x++) {
-    const u = (x - cx) / (rx + 2);
-    let h;
-    if (n === 0) h = 9 + Math.abs(Math.sin(u * 9)) * 7;                 // en pointes
-    else if (n === 1) h = 11 - u * u * 3;                                  // plate
-    else if (n === 2) h = 12 + (Math.abs(u) > .7 ? 14 : 0);               // longue, qui tombe
-    else h = 8 + Math.max(0, Math.sin(u * 6 + 1)) * 9;                    // en mèches
-    for (let k = 0; k < h; k++) {
-      const y = cy - ry + 2 - Math.round(Math.sqrt(Math.max(0, 1 - u * u)) * 4) + k - 5;
-      const l = 150 - u * 30 - k * 2 + (hacher(x, k, 7 + n) - .5) * 20;
-      t.pt(x, y, ROCHE.tramer(l, l * .86, l * .7, x, y, 2));
-    }
-  }
-  // Sourcils, yeux creusés, nez, bouche.
-  const ye = cy - 2;
-  for (const s of [-1, 1]) {
-    const ex = cx + s * 7;
-    t.hl(ex - 4, ex + 3, ye - 4, C.r1);
-    t.hl(ex - 3, ex + 2, ye, C.r0); t.hl(ex - 2, ex + 1, ye + 1, C.r1);
-    t.hl(ex - 3, ex + 2, ye - 1, C.r2);
-  }
-  for (let y = ye; y < ye + 9; y++) { t.pt(cx + 1, y, C.r2); t.pt(cx + 2, y, C.r1); }
-  t.hl(cx - 2, cx + 3, ye + 9, C.r1);
-  t.hl(cx - 5, cx + 5, ye + 14, C.r0); t.hl(cx - 4, cx + 4, ye + 15, C.r2);
-  // Le menton qui s'enfonce dans la falaise.
-  t.hl(cx - 10, cx + 10, cy + ry, C.r1);
 }
 
-// Les toits du village, en deux rangs, avec leurs réservoirs d'eau ronds.
-function peindreVillage(t) {
-  // La tour du Hokage : un cylindre rouge et son toit.
-  const tx = 262;
-  for (let y = 34; y < 72; y++) for (let x = tx - 18; x <= tx + 18; x++) {
-    const u = (x - tx) / 18;
-    let c = u < -.5 ? C.l3 : u < .3 ? C.l2 : u < .8 ? C.l1 : C.l0;
-    if (y % 12 === 6) c = C.m3;
-    if (y % 12 === 7 || y % 12 === 8) c = (x - tx + 30) % 7 < 3 ? C.k : C.m2;
+// ---------------------------------------------------------------------------
+// Le village, en deux rangs : maisons à colombages, toits de tuiles ou
+// d'ardoise avec leur faîtage, réservoirs d'eau ronds, arbres entre les
+// maisons, poteaux et fils électriques ; la tour du Hokage à gauche.
+// ---------------------------------------------------------------------------
+const FEU = spriteDe(['..#..', '#.#.#', '#.#.#', '..#..', '.#.#.', '#...#'], { '#': C.l1 });
+function tourHokage(t, tx) {
+  for (let y = 22; y < 76; y++) for (let x = tx - 20; x <= tx + 20; x++) {
+    const u = (x - tx) / 20;
+    let c = u < -.6 ? C.l3 : u < .2 ? C.l2 : u < .75 ? C.l1 : C.l0;
+    const r = (y - 22) % 14;
+    if (r === 0) c = C.l0;
+    if (r >= 5 && r <= 8 && (x - tx + 40) % 6 < 3) c = r === 5 ? C.b0 : C.d0;
     t.pt(x, y, c); if (y < 60) CIELM[y * W + x] = 0;
   }
-  for (let y = 26; y < 34; y++) {
-    const demi = 12 + (y - 26) * 1.2;
-    for (let x = Math.round(tx - demi); x <= tx + demi; x++) { t.pt(x, y, y === 33 ? C.l0 : x < tx ? C.l3 : C.l2); if (y < 60) CIELM[y * W + x] = 0; }
+  // Toit en cône aplati, et le disque blanc marqué du feu.
+  for (let y = 12; y < 22; y++) {
+    const demi = 10 + (y - 12) * 1.4;
+    for (let x = Math.round(tx - demi); x <= tx + demi; x++) { t.pt(x, y, y === 21 ? C.l0 : x < tx - 3 ? C.l3 : C.l2); CIELM[y * W + x] = 0; }
   }
-  for (const rang of [0, 1]) {
-    const base = rang ? 82 : 66;
-    let x = rang ? -14 : -30;
-    let i = 0;
-    while (x < W) {
-      const l = 26 + Math.floor(hacher(i, rang, 10) * 24);
-      const devantRocher = !rang && x + l > ROCHER.x0 - 10 && x < ROCHER.x1 + 10;
-      const hm = devantRocher ? 7 + Math.floor(hacher(i, rang, 11) * 3) : (rang ? 9 : 12) + Math.floor(hacher(i, rang, 11) * 7);
-      maison(t, x, base, l, hm, i * 7 + rang * 131);
-      x += l + Math.floor(hacher(i, rang, 12) * 5) - 2;
-      i++;
-    }
-  }
+  t.pt(tx, 11, C.l0); t.pt(tx, 10, C.l1);
+  balayerDisque(tx, 30, 6, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, C.m4); });
+  t.sprite(FEU, tx - 2, 27);
 }
-function maison(t, x0, base, l, hm, id) {
-  const ardoise = hacher(id, 1, 13) < .35;
+function maison(t, x0, base, l, hm, id, porte) {
+  const ardoise = hacher(id, 1, 13) < .38;
   const T = ardoise ? [C.d0, C.d1, C.d2, C.d3] : [C.t0, C.t1, C.t2, C.t3];
+  const creme = hacher(id, 4, 13) < .7;
   const yMur = base - hm;
   for (let y = yMur; y < base; y++) for (let x = x0; x < x0 + l; x++) {
-    let c = x === x0 ? C.m1 : x > x0 + l - 3 ? C.m1 : C.m3;
+    let c = creme ? C.m3 : C.m2;
+    if (x === x0 || x === x0 + l - 1 || (x - x0) % 12 === 0) c = C.b2;       // colombages
+    if (hm > 13 && y === yMur + (hm >> 1)) c = C.b2;
+    if (x > x0 + l - 4 && c !== C.b2) c = C.m1;                              // ombre sur la droite
     if (y === base - 1) c = C.m1;
     t.pt(x, y, c);
   }
-  // Fenêtres.
-  for (let wx = x0 + 4; wx + 4 < x0 + l - 3; wx += 9) {
-    for (let y = yMur + 3; y < yMur + 7; y++) for (let x = wx; x < wx + 4; x++) t.pt(x, y, y === yMur + 3 ? C.b2 : C.d0);
+  // Fenêtres à volets, et une porte au rang de devant.
+  for (let wx = x0 + 3; wx + 5 < x0 + l - 2; wx += 12) for (const wy of hm > 13 ? [yMur + 2, yMur + (hm >> 1) + 2] : [yMur + 2]) {
+    for (let y = wy; y < wy + 4; y++) for (let x = wx; x < wx + 5; x++) t.pt(x, y, y === wy ? C.b3 : x === wx + 2 ? C.b2 : C.d0);
+    t.pt(wx - 1, wy + 1, C.b3); t.pt(wx + 5, wy + 1, C.b3);
   }
-  // Toit en pente douce, tuiles par rangs.
-  const hr = 7;
+  if (porte) { const px = x0 + l - 10; for (let y = base - 7; y < base; y++) for (let x = px; x < px + 5; x++) t.pt(x, y, y === base - 7 ? C.b2 : x === px ? C.b1 : C.b3); }
+  // Toit à deux pans vu de face : rangs de tuiles, faîtage sombre, avant-toit
+  // qui déborde et jette son ombre sur le mur.
+  const hr = 6 + (l > 40 ? 2 : 0);
   for (let k = 0; k < hr; k++) {
     const y = yMur - k - 1;
-    const a = x0 - 3 + Math.round(k * 1.2), b = x0 + l + 2 - Math.round(k * 1.2);
+    const a = x0 - 3 + Math.round(k * 1.3), b = x0 + l + 2 - Math.round(k * 1.3);
     for (let x = a; x <= b; x++) {
-      let c = k === 0 ? T[0] : (x - a) % 4 === 0 ? T[1] : k > hr - 3 ? T[3] : T[2];
-      if (x === a) c = T[0];
-      t.pt(x, y, c); if (y < 60) CIELM[y * W + x] = 0;
-    }
-  }
-  // Un réservoir d'eau rond sur un toit sur trois.
-  if (hacher(id, 2, 14) < .38) {
-    const rx = x0 + 6 + Math.floor(hacher(id, 3, 15) * (l - 16)), ry = yMur - hr - 1;
-    for (let y = ry - 8; y <= ry; y++) for (let x = rx; x < rx + 9; x++) {
-      const u = (x - rx) / 8;
-      let c = u < .3 ? C.s3 : u < .7 ? C.s2 : C.s1;
-      if (y === ry - 5 || y === ry - 2) c = C.s1;
+      let c = k % 2 ? T[2] : T[3];
+      if ((x - a + (k & 1) * 2) % 4 === 0) c = T[1];
+      if (k === 0) c = T[1];
+      if (k === hr - 1) c = T[0];
+      if (x === a || x === b) c = T[0];
       t.pt(x, y, c); if (y >= 0 && y < 60) CIELM[y * W + x] = 0;
     }
-    t.hl(rx - 1, rx + 9, ry - 9, C.s4);
-    t.pt(rx + 2, ry + 1, C.s1); t.pt(rx + 6, ry + 1, C.s1);
+  }
+  for (let x = x0; x < x0 + l; x++) t.teinte(x, yMur, PAL, C.b0, .5);
+  // Un réservoir d'eau rond sur certains toits, sur ses pieds.
+  if (hacher(id, 2, 14) < .4) {
+    const rx = x0 + 5 + Math.floor(hacher(id, 3, 15) * Math.max(1, l - 16)), ry = yMur - hr - 1;
+    for (let y = ry - 9; y <= ry - 2; y++) for (let x = rx; x < rx + 10; x++) {
+      const u = (x - rx) / 9;
+      let c = u < .25 ? C.s3 : u < .7 ? C.s2 : C.s1;
+      if (y === ry - 6 || y === ry - 3) c = C.s1;
+      t.pt(x, y, c); if (y >= 0 && y < 60) CIELM[y * W + x] = 0;
+    }
+    for (let x = rx; x < rx + 10; x++) { t.pt(x, ry - 10, x < rx + 5 ? C.s4 : C.s3); if (ry - 10 >= 0) CIELM[(ry - 10) * W + x] = 0; }
+    for (const px of [rx + 1, rx + 8]) { t.pt(px, ry - 1, C.s1); t.pt(px, ry, C.s1); }
   }
 }
-
+function arbreRond(t, cx, cy, r) {
+  balayerDisque(cx, cy, r, (y, a, b) => { for (let x = a; x <= b; x++) {
+    const l = 130 - (y - cy) / r * 45 - (x - cx) / r * 20 + (hacher(x >> 1, y >> 1, 16) - .5) * 40;
+    t.px[y * W + x] = FEUILLAGE.tramer(l * .55, l, l * .45, x, y, 2);
+    if (y < 60) CIELM[y * W + x] = 0;
+  } });
+}
+function peindreVillage(t) {
+  tourHokage(t, 236);
+  for (const rang of [0, 1]) {
+    const base = rang ? 83 : 70;
+    let x = rang ? -14 : -30, i = 0;
+    while (x < W) {
+      const l = 26 + Math.floor(hacher(i, rang, 10) * 26);
+      const devantRocher = !rang && x + l > ROCHER.x0 + 10 && x < ROCHER.x1 - 10;
+      if (!rang && x < 262 && x + l > 212) { x = 262; continue; }
+      const hm = devantRocher ? 7 + Math.floor(hacher(i, rang, 11) * 3) : (rang ? 9 : 12) + Math.floor(hacher(i, rang, 11) * 8);
+      maison(t, x, base, l, hm, i * 7 + rang * 131, rang === 1);
+      if (hacher(i, rang, 17) < .3) arbreRond(t, x + l + 2, base - 6, 5 + Math.floor(hacher(i, rang, 18) * 3));
+      x += l + Math.floor(hacher(i, rang, 12) * 6) - 1;
+      i++;
+    }
+  }
+  // Poteaux et fils électriques le long de la rue de devant.
+  const poteaux = [];
+  for (let x = 40; x < W; x += 96 + Math.floor(hacher(x, 0, 19) * 20)) poteaux.push(x);
+  for (const px of poteaux) {
+    for (let y = 52; y < 84; y++) { t.pt(px, y, C.b1); t.pt(px + 1, y, C.b2); }
+    t.hl(px - 5, px + 6, 55, C.b1); t.hl(px - 4, px + 5, 58, C.b1);
+  }
+  for (let i = 0; i + 1 < poteaux.length; i++) for (const [dy, s] of [[55, -5], [55, 6], [58, -4]]) {
+    const a = poteaux[i] + s, b = poteaux[i + 1] + s;
+    for (let x = a; x <= b; x++) { const u = (x - a) / (b - a); t.pt(x, Math.round(dy + 4 * u * (1 - u) * 4), C.k); }
+  }
+}
 // ---------------------------------------------------------------------------
 // La pelouse : tondue en bandes, usée jusqu'à la terre devant les cages et au
 // centre, là où l'on court le plus.
@@ -308,18 +410,39 @@ function feuilleKonoha(cx, cy, k) {
 }
 
 // ---------------------------------------------------------------------------
-// Les cages : un cadre de bois laqué rouge, plancher peint bleu bandeau (3)
-// et orange Naruto (5), une plaque de bandeau frontal au dos.
+// Les cages, à la façon de la grande porte de Konoha : cadre de bois peint en
+// vert, poteaux coiffés de petits toits de tuiles, un toit de tuiles le long
+// du dos. Plancher bleu bandeau (3) et orange Naruto (5), cloutés de fer ; une
+// plaque de bandeau frontal gravée de la Feuille au-dessus.
 // ---------------------------------------------------------------------------
 function poutreH(t, xa, xb, y0) {
-  const R = [C.l3, C.l2, C.l2, C.l1, C.l0];
-  for (let x = xa; x <= xb; x++) for (let k = 0; k < 5; k++) t.pt(x, y0 + k, (x === xa || x === xb) ? C.k : R[k]);
-  for (const x of [xa, xb]) for (let k = 0; k < 5; k++) { t.pt(x + (x === xa ? 1 : -1), y0 + k, C.k); }
+  const R = [C.q3, C.q2, C.q2, C.q1, C.q0];
+  for (let x = xa; x <= xb; x++) for (let k = 0; k < 5; k++) t.pt(x, y0 + k, R[k]);
   for (let x = xa - 1; x <= xb + 1; x++) { t.teinte(x, y0 + 5, PAL, C.g0, .45); t.teinte(x, y0 + 6, PAL, C.g0, .2); }
 }
 function poutreV(t, x0, ya, yb) {
-  const R = [C.l0, C.l2, C.l3, C.l2, C.l1];
+  const R = [C.q0, C.q2, C.q3, C.q2, C.q1];
   for (let y = ya; y <= yb; y++) for (let k = 0; k < 5; k++) t.pt(x0 + k, y, R[k]);
+}
+// Poteau vu d'en haut, coiffé d'un petit toit de tuiles en pyramide : quatre
+// pans de tuiles rondes, arêtiers clairs, épi doré au sommet. Les pans du haut
+// et de gauche prennent la lumière.
+function poteauCoiffe(t, cx, cy) {
+  const R = 6;
+  for (let k = -3; k <= R + 3; k++) t.teinte(cx - R + 2 + k, cy + R + 1, PAL, C.g0, .45);
+  for (let y = -R; y <= R; y++) for (let x = -R; x <= R; x++) {
+    const ax = Math.abs(x), ay = Math.abs(y);
+    let c;
+    if (Math.max(ax, ay) === R) c = C.d0;
+    else if (ax === ay) c = (x < 0 && y < 0) || (x < 0) !== (y < 0) ? C.d3 : C.d2;
+    else {
+      const clair = ay > ax ? y < 0 : x < 0;
+      const rang = ay > ax ? x : y;
+      c = (rang + 20) % 2 ? (clair ? C.d3 : C.d2) : (clair ? C.d2 : C.d1);
+    }
+    t.pt(cx + x, cy + y, c);
+  }
+  t.pt(cx, cy, C.j2); t.pt(cx - 1, cy - 1, C.j3);
 }
 const FEUILLE_GRAVEE = spriteDe([
   '......##.',
@@ -333,14 +456,13 @@ const FEUILLE_GRAVEE = spriteDe([
   '##.###...'
 ], { '#': C.s1 });
 function plaque(t, cx, cy) {
+  t.hl(cx - 16, cx + 16, cy, C.u1);
   for (let y = cy - 6; y <= cy + 6; y++) for (let x = cx - 12; x <= cx + 12; x++) {
     const bord = Math.abs(x - cx) === 12 || Math.abs(y - cy) === 6;
-    let c = bord ? C.s1 : x - cx + y - cy < -8 ? C.s4 : y > cy + 3 ? C.s2 : C.s3;
-    t.pt(x, y, c);
+    t.pt(x, y, bord ? C.s1 : x - cx + y - cy < -8 ? C.s4 : y > cy + 3 ? C.s2 : C.s3);
   }
-  // La Feuille gravée, en petit.
   t.sprite(FEUILLE_GRAVEE, cx - 4, cy - 4);
-  t.pt(cx - 12, cy - 6, C.s2); t.pt(cx + 12, cy - 6, C.s2);
+  for (const x of [cx - 10, cx + 10]) { t.pt(x, cy - 4, C.s1); t.pt(x, cy + 4, C.s1); }
 }
 function peindreCage(t, cote) {
   const x0 = cote === 1 ? COURT.left - BUT.prof : COURT.right, x1 = x0 + BUT.prof - 1;
@@ -354,19 +476,33 @@ function peindreCage(t, cote) {
       if (ton === 1 && bruit(x * .2 + r, j, 31) > .8) c = z.points === 5 ? C.o1 : C.u1;
       t.pt(x, y, c);
     }
+    if (j === 3) for (const nx of [x0 + 3, x1 - 3]) { t.pt(nx, y, C.s1); t.pt(nx, y - 1, C.s3); }
   }
-  for (const yz of [CY - 26, CY + 26]) { t.hl(x0, x1, yz - 1, C.l1); t.hl(x0, x1, yz, C.l0); t.hl(x0, x1, yz + 1, C.l2); }
+  for (const yz of [CY - 26, CY + 26]) { t.hl(x0, x1, yz - 1, C.q1); t.hl(x0, x1, yz, C.q0); t.hl(x0, x1, yz + 1, C.q3); }
   for (const z of ZONES) {
     const s = CHIFFRE[z.points];
     t.sprite(s, Math.round(x0 + BUT.prof / 2 - s.l / 2), Math.round(CY + (z.from + z.to) / 2 - s.h / 2), MIROIR);
   }
-  const dos = cote === 1 ? x0 - 5 : x1 + 1;
-  poutreV(t, dos, BUT.haut - 5, BUT.bas + 4);
-  poutreH(t, Math.min(x0, dos) - 2, Math.max(x1, dos + 4) + 2, BUT.haut - 5);
-  poutreH(t, Math.min(x0, dos) - 2, Math.max(x1, dos + 4) + 2, BUT.bas);
-  plaque(t, cote === 1 ? x0 + 4 : x1 - 4, BUT.haut - 14);
+  // Le toit de tuiles du dos, vu d'en haut, puis le cadre vert.
+  const dos = cote === 1 ? x0 - 10 : x1 + 1;
+  // Tuiles rondes : des canaux qui descendent du faîtage (dehors) vers
+  // l'avant-toit (côté cage), chaque tuile éclairée sur son dos.
+  for (let y = BUT.haut - 5; y <= BUT.bas + 4; y++) for (let k = 0; k < 10; k++) {
+    const vers = cote === 1 ? k : 9 - k;
+    const r = (y + 300) % 3;
+    let c = r === 0 ? C.d1 : r === 1 ? C.d3 : C.d2;
+    if (vers === 0) c = C.d3;
+    if (vers === 1) c = C.d2;
+    if (vers === 9) c = C.d0;
+    if (vers > 1 && vers < 9 && vers % 4 === 0 && r !== 0) c = C.d1;
+    t.pt(dos + k, y, c);
+  }
+  poutreH(t, Math.min(x0, dos) - 1, Math.max(x1, dos + 9) + 1, BUT.haut - 5);
+  poutreH(t, Math.min(x0, dos) - 1, Math.max(x1, dos + 9) + 1, BUT.bas);
+  const avant = cote === 1 ? x1 + 1 : x0 - 1, arriere = cote === 1 ? dos + 3 : dos + 6;
+  for (const y of [BUT.haut - 3, BUT.bas + 2]) { poteauCoiffe(t, avant, y); poteauCoiffe(t, arriere, y); }
+  plaque(t, cote === 1 ? x0 + 10 : x1 - 10, BUT.haut - 18);
 }
-
 // ---------------------------------------------------------------------------
 // Les bords
 // ---------------------------------------------------------------------------
@@ -395,59 +531,126 @@ function poteaux(t) {
     for (let k = -2; k < 14; k++) { t.pt(x + k, yb + 1, C.g1); if (k % 3 === 0) t.pt(x + k, yb, C.g4); }
   }
 }
-// L'échoppe Ichiraku : auvent, rideaux, comptoir, tabourets.
+// L'échoppe Ichiraku : toit de tuiles, enseigne, lanternes rouges aux deux
+// coins, noren, Teuchi derrière le comptoir, marmites, bols, tabourets.
 function ichiraku(t) {
-  const x0 = 2, x1 = 66;
-  ombreSol(t, 34, 548, 34, 5, .5);
-  // Fond sombre de l'échoppe et comptoir.
-  for (let y = 456; y < 500; y++) for (let x = x0 + 2; x <= x1 - 2; x++) t.pt(x, y, y < 470 ? C.b0 : C.b1);
-  for (let x = 10; x < 58; x += 12) for (let y = 488; y < 498; y++) t.pt(x, y, y < 490 ? C.m3 : C.b2);
-  for (let y = 500; y < 540; y++) for (let x = x0; x <= x1; x++) {
-    let c = y < 503 ? (y === 500 ? C.b5 : C.b4) : (x - x0) % 8 === 0 ? C.b2 : C.b3;
+  const x0 = 1, x1 = 67;
+  ombreSol(t, 34, 553, 36, 5, .55);
+  // Montants.
+  for (const px of [x0, x1 - 2]) for (let y = 444; y < 552; y++) { t.pt(px, y, C.b1); t.pt(px + 1, y, C.b2); t.pt(px + 2, y, C.b1); }
+  // Intérieur : mur du fond, étagère, marmites.
+  for (let y = 468; y < 502; y++) for (let x = x0 + 3; x <= x1 - 3; x++) t.pt(x, y, y < 476 ? C.b0 : (x & 7) === 0 ? C.b0 : C.b1);
+  t.hl(x0 + 3, x1 - 3, 480, C.b3);
+  for (const [px, c] of [[10, C.l2], [16, C.m3], [22, C.j2], [46, C.m3], [52, C.l2], [58, C.m2]]) { t.pt(px, 478, c); t.pt(px, 479, c); t.pt(px + 1, 479, c); }
+  for (const mx of [8, 48]) for (let y = 488; y < 501; y++) for (let x = mx; x < mx + 12; x++) {
+    const u = (x - mx) / 11;
+    t.pt(x, y, y === 488 ? C.s4 : u < .3 ? C.s3 : u < .75 ? C.s2 : C.s1);
+  }
+  // Teuchi, bandeau et tablier blancs.
+  const tx = 32;
+  for (let y = 482; y < 501; y++) for (let x = tx - 5; x <= tx + 5; x++) {
+    const tete = y < 490 && Math.abs(x - tx) < 4;
+    if (y < 490 && !tete) continue;
+    let c = tete ? (y < 484 ? C.m4 : C.o3) : Math.abs(x - tx) > 3 ? C.m2 : C.m4;
+    if (tete && y === 486 && Math.abs(x - tx) === 2) c = C.k;
+    t.pt(x, y, c);
+  }
+  // Comptoir, bols et baguettes.
+  for (let y = 502; y < 540; y++) for (let x = x0; x <= x1; x++) {
+    let c = y < 506 ? (y === 502 ? C.b5 : C.b4) : (x - x0) % 8 === 0 ? C.b2 : C.b3;
     if (y > 536) c = C.b1;
     t.pt(x, y, c);
   }
+  for (const bx of [14, 50]) {
+    balayerEllipse(bx, 500, 5, 2, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, y < 500 ? C.o3 : C.m4); });
+    t.hl(bx - 4, bx + 4, 502, C.l2); t.hl(bx - 3, bx + 3, 503, C.l1);
+    t.ligne(bx + 2, 497, bx + 7, 493, C.b4);
+  }
   // Tabourets.
-  for (const x of [12, 30, 48]) {
-    for (let y = 540; y < 552; y++) { t.pt(x + 3, y, C.b1); t.pt(x + 4, y, C.b2); }
-    balayerEllipse(x + 3.5, 539, 5, 2, (y, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, y, y < 539 ? C.l3 : C.l1); });
+  for (const x of [9, 25, 41, 57]) {
+    for (let y = 542; y < 553; y++) { t.pt(x, y, C.b1); t.pt(x + 1, y, C.b2); }
+    balayerEllipse(x + .5, 541, 5, 2, (y, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, y, y < 541 ? C.l3 : C.l1); });
   }
-  // Auvent de bois et toit de tuiles.
-  for (let y = 436; y < 456; y++) {
-    const a = x0 - 2 - Math.round((y - 436) * .15), b = x1 + 2 + Math.round((y - 436) * .15);
+  // Toit de tuiles, qui déborde.
+  for (let y = 430; y < 446; y++) {
+    const a = x0 - 1 - Math.round((y - 430) * .2), b = x1 + 1 + Math.round((y - 430) * .2);
     for (let x = a; x <= b; x++) {
-      let c = (y - 436) % 4 === 3 ? C.d0 : (x + (y >> 2)) % 5 === 0 ? C.d1 : C.d2;
-      if (y > 452) c = y === 455 ? C.b0 : C.b2;
+      let c = (y - 430) % 3 === 2 ? C.d0 : (x + ((y - 430) / 3 | 0) * 2) % 5 === 0 ? C.d1 : C.d2;
+      if (y === 430) c = C.d3;
+      if (y > 443) c = y === 445 ? C.b0 : C.b2;
       t.pt(x, y, c);
     }
   }
-  // Les noren : quatre pans de tissu clair, bord bas rouge, signes au pinceau.
+  // L'enseigne sous l'avant-toit.
+  for (let y = 446; y < 453; y++) for (let x = 14; x < 54; x++) t.pt(x, y, y === 446 || y === 452 || x === 14 || x === 53 ? C.b1 : C.b5);
+  for (const sx of [20, 29, 38, 47]) { t.vl(sx, 447, 451, C.l1); t.hl(sx - 1, sx + 2, 449, C.l1); }
+  // Les noren : pans clairs, bord bas rouge, signes au pinceau.
   for (let p = 0; p < 4; p++) {
-    const px = x0 + 3 + p * 16;
-    for (let y = 456; y < 478; y++) for (let x = px; x < px + 14; x++) {
-      let c = y > 473 ? C.l2 : x === px ? C.m1 : C.m4;
+    const px = x0 + 4 + p * 15;
+    for (let y = 453; y < 474; y++) for (let x = px; x < px + 13; x++) {
+      let c = y > 470 ? C.l2 : x === px ? C.m1 : C.m4;
+      if (y > 466 && y <= 470 && (x - px) % 4 === 3) c = C.m2;
       t.pt(x, y, c);
     }
-    const sx = px + 5;
-    t.vl(sx, 460, 468, C.k); t.hl(sx - 2, sx + 3, 462, C.k); t.pt(sx - 2, 466, C.k); t.pt(sx + 3, 467, C.k);
+    const sx = px + 6;
+    t.vl(sx, 457, 465, C.k); t.hl(sx - 3, sx + 3, 459, C.k); t.pt(sx - 3, 463, C.k); t.pt(sx + 3, 464, C.k); t.pt(sx - 2, 462, C.k);
   }
 }
-// Le bois de Konoha à droite : un grand arbre et sa balançoire.
+// Le bois de Konoha à droite : un grand arbre et sa balançoire, tout entiers
+// hors du terrain.
 function peindreArbre(t) {
-  ombreSol(t, 926, 214, 30, 5, .5);
+  ombreSol(t, 930, 214, 26, 5, .5);
   for (let y = 116; y < 214; y++) {
-    const w = 12 + Math.round(lisse(190, 214, y) * 6);
-    const x0 = 936 - (w >> 1);
+    const w = 11 + Math.round(lisse(190, 214, y) * 6);
+    const x0 = 942 - (w >> 1);
     for (let k = 0; k < w; k++) {
       let c = k < 2 ? C.b1 : k < w * .45 ? C.b3 : k < w * .8 ? C.b2 : C.b1;
       if (bruit(k * .6, y * .12, 41) > .72) c = C.b1;
       t.pt(x0 + k, y, c);
     }
   }
-  // La branche où pend la balançoire.
-  for (let x = 890; x <= 932; x++) {
-    const y = 132 + Math.round((932 - x) * .08);
+  for (let x = 896; x <= 938; x++) {
+    const y = 132 + Math.round((938 - x) * .06);
     t.pt(x, y, C.b3); t.pt(x, y + 1, C.b2); t.pt(x, y + 2, C.b1);
+  }
+}
+// Le râtelier d'armes d'entraînement : kunaï pendus, un shuriken, une cible de paille.
+function ratelier(t) {
+  ombreSol(t, 34, 150, 30, 3, .45);
+  for (const px of [6, 60]) for (let y = 112; y < 150; y++) { t.pt(px, y, C.b2); t.pt(px + 1, y, C.b3); t.pt(px + 2, y, C.b1); }
+  for (const by of [118, 134]) { t.hl(6, 62, by, C.b4); t.hl(6, 62, by + 1, C.b2); }
+  for (let i = 0; i < 6; i++) {
+    const x = 13 + i * 8, y = 120;
+    t.pt(x, y, C.s3); t.pt(x + 1, y, C.s1); t.pt(x, y + 1, C.s1);
+    t.vl(x, y + 2, y + 5, C.b0);
+    t.pt(x - 1, y + 6, C.s2); t.pt(x, y + 6, C.s3); t.pt(x + 1, y + 6, C.s1);
+    t.vl(x, y + 7, y + 11, C.s2); t.pt(x, y + 12, C.s1);
+  }
+  for (let i = 0; i < 3; i++) {
+    const sx = 18 + i * 14, sy = 140;
+    for (const [dx, dy] of [[0, -3], [3, 0], [0, 3], [-3, 0], [0, -2], [2, 0], [0, 2], [-2, 0], [1, -1], [-1, 1]]) t.pt(sx + dx, sy + dy, C.s2);
+    t.pt(sx, sy, C.k); t.pt(sx - 1, sy - 1, C.s4);
+  }
+}
+// Une palissade de bambous, le long du bord de l'écran, derrière les cages.
+function bambous(t, x0, ya, yb) {
+  for (let y = ya; y <= yb; y++) for (let k = 0; k < 9; k++) {
+    const tige = Math.floor(k / 3), j = k % 3;
+    const noeud = (y + tige * 5) % 14 === 0;
+    let c = j === 0 ? C.v2 : j === 1 ? C.g6 : C.v3;
+    if (noeud) c = j === 1 ? C.v4 : C.v1;
+    t.pt(x0 + k, y, c);
+  }
+  for (const y of [ya + 16, yb - 16]) for (let k = -1; k < 10; k++) { t.pt(x0 + k, y, C.b1); t.pt(x0 + k, y + 1, C.b3); }
+}
+// Des pas japonais dans l'herbe.
+function pasJaponais(t, pts) {
+  for (const [x, y, r] of pts) {
+    balayerEllipse(x, y + 1, r + 1, r * .55 + 1, (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.teinte(xx, yy, PAL, C.g0, .4); });
+    balayerEllipse(x, y, r, r * .55, (yy, a, b) => { for (let xx = a; xx <= b; xx++) {
+      const d = (xx - x) / r + (yy - y) / (r * .55);
+      t.pt(xx, yy, d < -.6 ? C.s3 : d > .7 ? C.s1 : C.s2);
+    } });
   }
 }
 function feuillage(t, cx, cy, rx, ry, gr) {
@@ -506,13 +709,15 @@ function peindreBords(t) {
     else if (f < .7) { t.pt(x, y, C.y1); t.pt(x + 1, y, C.j2); t.pt(x, y + 1, C.g1); }
     else { t.pt(x, y, C.g5); t.pt(x + 1, y, C.g4); t.pt(x, y + 1, C.g4); t.pt(x + 1, y + 1, C.g2); }
   }
+  bambous(t, 0, 232, 414);
+  bambous(t, 951, 232, 414);
+  pasJaponais(t, [[20, 222, 6], [44, 218, 5], [930, 492, 6], [908, 500, 5], [946, 506, 5], [34, 426, 5]]);
+  ratelier(t);
   poteaux(t);
   ichiraku(t);
   peindreArbre(t);
   cible(t, 926, 452);
   lanternePierre(t, 928, 548);
-  // Un petit rocher et des kunaï d'entraînement oubliés.
-  for (const [x, y] of [[8, 420 + 16], [58, 244 - 30]]) void x, void y;
   // En bas : la rue, pavée de terre et de pierres plates.
   // Dalles rectangulaires, joints de terre : un rang tous les 9 px, décalé.
   for (let y = 566; y < H; y++) {
@@ -549,7 +754,7 @@ function peindreBords(t) {
     t.pt(x - 3, y - 2, C.f1); t.pt(x + 4, y, C.f2); t.pt(x + 1, y - 4, C.f1);
   }
 }
-for (const [x, y] of [[4, 214], [64, 212], [20, 430], [66, 470], [892, 430], [956, 250], [900, 470], [956, 520], [150, 83], [520, 82], [830, 82]])
+for (const [x, y] of [[64, 212], [14, 426], [892, 430], [900, 470], [956, 520], [896, 222], [18, 160], [66, 160]])
   TOUFFES.push({ x, y, n: 4 + Math.floor(hacher(x, y, 60) * 3), ph: hacher(x, y, 61) * 6.3 });
 
 function peindreFond() {
@@ -567,8 +772,9 @@ function peindreFond() {
     const h = 3 + Math.round(fbm(x * .15, 3, 2, 62) * 3);
     for (let k = 0; k < h; k++) t.pt(x, 83 - k - 1, k === h - 1 ? C.v4 : k > 1 ? C.v3 : C.v1);
   }
-  feuillage(t, 918, 108, 44, 32, 70);
-  feuillage(t, 30, 92, 34, 14, 72);
+  feuillage(t, 930, 106, 30, 30, 70);
+  feuillage(t, 12, 94, 16, 12, 72);
+  feuillage(t, 58, 96, 12, 10, 73);
   peindreBords(t);
   peindreLignes(t);
   peindreCage(t, 1);
@@ -630,12 +836,12 @@ function feuilles(t, temps) {
   }
 }
 function balancoire(t, temps) {
-  const a = Math.sin(temps * 1.05) * .14, px = 909, py = 134, L = 56;
+  const a = Math.sin(temps * 1.05) * .14, px = 910, py = 135, L = 54;
   const ax = Math.sin(a), ay = Math.cos(a);
   const sx = px + ax * L, sy = py + ay * L;
   for (let k = 2; k < 12; k++) t.teinte(Math.round(sx - 10 + k * 2), 214, PAL, C.g0, .35);
-  for (const o of [-8, 8]) t.ligne(px + o, py, sx + o, sy, C.m1);
-  for (let x = -10; x <= 10; x++) { t.pt(Math.round(sx + x), Math.round(sy), C.b4); t.pt(Math.round(sx + x), Math.round(sy) + 1, C.b2); }
+  for (const o of [-7, 7]) t.ligne(px + o, py, sx + o, sy, C.m1);
+  for (let x = -9; x <= 9; x++) { t.pt(Math.round(sx + x), Math.round(sy), C.b4); t.pt(Math.round(sx + x), Math.round(sy) + 1, C.b2); }
 }
 function clochettes(t, temps) {
   for (const [bx, ph] of [[33, 0], [39, 1.7]]) {
@@ -664,10 +870,25 @@ function lanternes(t, temps) {
     t.hl(cx - 2, cx + 2, cy - 4, C.k); t.hl(cx - 2, cx + 2, cy + 6, C.k);
   }
 }
+// Les deux lanternes rouges aux coins d'Ichiraku.
+function lanternesIchiraku(t, temps) {
+  for (const lx of [6, 62]) {
+    const cx = Math.round(lx + Math.sin(temps * .9 + lx) * 1), cy = 460;
+    const lueur = .45 + Math.sin(temps * 1.3 + lx) * .06;
+    for (let y = cy - 12; y <= cy + 12; y++) for (let x = cx - 12; x <= cx + 12; x++) {
+      const d = Math.hypot(x - cx, (y - cy) * 1.2);
+      if (d < 12 && x >= 0) t.teinte(x, y, PAL, C.y1, lueur * .4 * (1 - d / 12));
+    }
+    t.pt(lx, 453, C.k);
+    balayerEllipse(cx, cy, 4, 6, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, (y - cy) % 3 === 0 ? C.l1 : x < cx ? C.l3 : C.l2); });
+    t.hl(cx - 2, cx + 2, cy - 6, C.k); t.hl(cx - 2, cx + 2, cy + 6, C.k);
+    t.pt(cx, cy + 7, C.y1);
+  }
+}
 function vapeur(t, temps) {
   for (let i = 0; i < 3; i++) {
     const q = (temps * .35 + i / 3) % 1;
-    const x = Math.round(22 + i * 12 + Math.sin(temps * 1.1 + i * 2) * 2 * q), y = Math.round(486 - q * 20);
+    const x = Math.round([13, 19, 53][i] + Math.sin(temps * 1.1 + i * 2) * 2 * q), y = Math.round(486 - q * 16);
     t.teinte(x, y, PAL, C.m4, .7 * (1 - q)); t.teinte(x + 1, y - 1, PAL, C.m4, .5 * (1 - q));
   }
 }
@@ -684,7 +905,7 @@ function bruissement(t, temps) {
     const cyc = temps * .5 + hacher(i, 1, 95) * 4, n = Math.floor(cyc), ph = cyc - n;
     if (ph > .5) continue;
     const a = hacher(i, n, 96) * Math.PI * 2, r = Math.sqrt(hacher(i, n, 97));
-    const x = Math.round(918 + Math.cos(a) * r * 38), y = Math.round(104 + Math.sin(a) * r * 26);
+    const x = Math.round(930 + Math.cos(a) * r * 26), y = Math.round(104 + Math.sin(a) * r * 24);
     t.teinte(x, y, PAL, C.v5, Math.sin(ph / .5 * Math.PI) * .8);
   }
 }
@@ -715,6 +936,7 @@ export function creerPixel() {
     balancoire(t, temps);
     clochettes(t, temps);
     vapeur(t, temps);
+    lanternesIchiraku(t, temps);
     lanternes(t, temps);
     touffes(t, temps);
     feuilles(t, temps);
