@@ -760,6 +760,9 @@ function badgeVote(pseudo, avatar, mien) {
 
 function renderMapThumbs() {
   const row = $('mapThumbs');
+  // La rangée défile quand il y a beaucoup de terrains : on garde sa position
+  // d'un rafraîchissement à l'autre, et on amène la vignette choisie en vue.
+  const defile = row.scrollLeft;
   row.innerHTML = '';
   // Qui vote pour quoi, en ce moment — seulement si un match en ligne est
   // réellement en cours : hors ligne, il n'y a personne en face à afficher.
@@ -798,6 +801,13 @@ function renderMapThumbs() {
     });
     row.appendChild(el);
   });
+  row.scrollLeft = defile;
+  const choisie = row.children[mapIdx];
+  if (choisie) {
+    const g = choisie.offsetLeft - 12, d = choisie.offsetLeft + choisie.offsetWidth + 12;
+    if (g < row.scrollLeft) row.scrollLeft = g;
+    else if (d > row.scrollLeft + row.clientWidth) row.scrollLeft = d - row.clientWidth;
+  }
 }
 
 export function refreshMaps() {
