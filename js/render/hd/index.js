@@ -15,7 +15,7 @@
 // Règle pour chaque terrain, y compris les prochains : les cages sont tirées
 // de l'univers du terrain et ne ressemblent à celles d'aucun autre (radeau et
 // voiles aux Îles du Destin, makimono et shimenawa à Konoha, stands de tir à
-// cibles à la fête foraine…). Les zones 3 / 5 / 3 y restent lisibles d'un coup
+// cibles à la fête foraine, quais de chargement Overwatch à Gibraltar…). Les zones 3 / 5 / 3 y restent lisibles d'un coup
 // d'œil, et l'embouchure est toujours marquée.
 //
 // Le décor est recalculé trente fois par seconde au plus, et recopié entre
@@ -34,10 +34,11 @@ import { creerPixel as temple } from './temple.js';
 import { creerPixel as iles } from './iles.js';
 import { creerPixel as konoha } from './konoha.js';
 import { creerPixel as fete } from './fete.js';
+import { creerPixel as gibraltar } from './gibraltar.js';
 
 // Identifiants de data/maps.js. La salle d'entraînement ('dojo') n'y est pas :
 // elle est nue exprès, rien n'y doit détourner l'œil.
-const FABRIQUES = { arena: station, stadium, dune, polenord: poleNord, raccoon, temple, iles, konoha, fete };
+const FABRIQUES = { arena: station, stadium, dune, polenord: poleNord, raccoon, temple, iles, konoha, fete, gibraltar };
 const PAS = 1 / 30;
 const rendus = new Map();
 

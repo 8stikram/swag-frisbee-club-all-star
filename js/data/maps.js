@@ -343,6 +343,31 @@ MAPS.push({
   }
 });
 
+MAPS.push({
+  id: 'gibraltar',
+  name: 'OBSERVATOIRE : GIBRALTAR',
+  court: { left: 70, right: 890, top: 84, bottom: 560 },
+  goal: { height: 200, depth: 48 },
+  // Les quais de chargement : orange Overwatch pour les 3, bleu holographique
+  // pour le 5.
+  zones: [
+    { from: -100, to: -26, points: 3, color: '#ee7a1c' },
+    { from: -26, to: 26, points: 5, color: '#32a0e0' },
+    { from: 26, to: 100, points: 3, color: '#ee7a1c' }
+  ],
+  style: 'hd',
+  theme: {
+    bgInner: '#78b4e6',
+    bgOuter: '#14508a',
+    floor: '#c4c0b6',          // le béton clair de l'aire d'atterrissage
+    line: 'rgba(246,247,246,.9)',
+    goalFill: 'rgba(50,160,224,.16)',
+    goalStroke: '#ee7a1c',
+    crowdColors: ['#ee7a1c', '#68d0ff', '#f6f7f6'],
+    starColor: 'rgba(0,0,0,0)'
+  }
+});
+
 // Vrai quand le terrain est jouable. Même principe que pour les skins.
 export function mapDebloquee(m) {
   if (!m || !m.verrou) return true;
