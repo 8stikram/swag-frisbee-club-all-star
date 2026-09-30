@@ -111,6 +111,8 @@
       <button type="button" aria-pressed="false" data-z="capsule">Capsule saïyenne</button>
       <button type="button" aria-pressed="false" data-z="grenouille">Grenouille et détecteur</button>
       <button type="button" aria-pressed="false" data-z="centre">Le cratère central</button>
+      <button type="button" aria-pressed="false" data-z="riviere">Namekiens et rivière</button>
+      <button type="button" aria-pressed="false" data-z="soldat">Soldat assommé</button>
     </div>
     <div class="zooms seul">
       <figure><canvas id="z-hd" width="480" height="300"></canvas><figcaption><b>Pixel art HD</b> · zoom ×2 à ×6</figcaption></figure>
@@ -121,8 +123,8 @@
     <div class="carte">
       <h2>Ce qu'on y voit</h2>
       <ul>
-        <li><b>En haut, le vaisseau de Freezer</b>, posé sur ses pieds au bord de l'eau. On voit sa coque blanche éclairée par les soleils, son dôme, sa ceinture de hublots orangés, ses feux de position et sa rampe ouverte d'où sort la lumière. La nacelle volante de Freezer flotte à côté.</li>
-        <li><b>Le ciel vert de Namek et ses trois soleils</b>, la mer au loin, les pitons rocheux coiffés d'herbe, les arbres Ajissa en boules bleu-vert et quelques maisons-dômes.</li>
+        <li><b>En haut, le vaisseau de Freezer</b>, redessiné plus fidèle. C'est une grosse sphère blanc crème, ombrée de lavande comme dans l'anime, éclairée par les soleils avec un reflet en haut à gauche. Sa ceinture de hublots orangés suit la courbe de la coque, qu'on voit d'un peu au-dessus. On y voit aussi des lignes de panneaux, une rangée d'évents sous le ventre, quatre pieds à vérin et patin, la rampe ouverte et l'ombre du vaisseau sur l'herbe. La nacelle volante de Freezer flotte à côté.</li>
+        <li><b>Le ciel vert de Namek et ses trois soleils.</b> Les pitons rocheux coiffés d'herbe se détachent sur deux plans : ceux du fond sont pâlis par l'air. La mer au loin a ses îlots, et on voit les arbres Ajissa en boules bleu-vert et quelques maisons-dômes.</li>
         <li><b>Le terrain est un plateau de roche beige</b>, un peu verte, avec des strates douces, des fissures fines et quelques cratères de combat. Au centre, le rond est la lèvre d'un cratère d'impact, dont les fissures rayonnent.</li>
         <li><b>Les cages sont propres à Namek</b> : un cadre blanc et arrondi comme les maisons namekiennes, avec des coupoles à hublot aux coins. Chaque zone porte une Dragon Ball sur un socle de pierre blanche, avec son chiffre dessous.
           <ul>
@@ -133,7 +135,7 @@
         </li>
         <li><b>À gauche</b> : une maison-dôme namekienne avec son antenne, des arbres Ajissa, et une capsule saïyenne écrasée dans son cratère, porte ouverte.</li>
         <li><b>À droite</b> : une petite maison-dôme, un grand arbre Ajissa, une grenouille sur son rocher et un détecteur tombé dans l'herbe.</li>
-        <li><b>En bas</b> : la prairie bleu-vert, une mare qui renvoie le ciel, de jeunes Ajissa, des rochers, et le radar à Dragon Balls posé dans l'herbe.</li>
+        <li><b>En bas, la rive d'une rivière turquoise</b>, avec ses galets, ses roseaux et des pas japonais pour traverser. On y trouve deux maisons-dômes et de jeunes Ajissa. Des Namekiens en robe blanche à ceinture bleue sont là : le petit Dende qui salue, un autre qui fait les cent pas au bord de l'eau. Un soldat de Freezer est assommé dans l'herbe, avec des étoiles qui tournent au-dessus de sa tête, et le radar à Dragon Balls est posé à côté.</li>
       </ul>
     </div>
     <div class="carte">
@@ -144,6 +146,7 @@
         <li><b>De loin en loin, une onde de ki</b> traverse l'horizon et éclate, comme un combat au loin.</li>
         <li><b>La barrière de ki</b> crépite à l'entrée des cages, et un éclat passe sur les Dragon Balls.</li>
         <li><b>La grenouille</b> cligne des yeux et saute de temps en temps. Le radar et la lentille du détecteur clignotent.</li>
+        <li><b>La rivière</b> coule, avec des reflets qui filent, et un poisson saute de temps en temps. Dende salue, un Namekien se promène, et le soldat voit toujours des étoiles.</li>
       </ul>
       <h2 style="margin-top:14px">Les mesures du jeu</h2>
       <ul>
@@ -177,7 +180,7 @@
     versions: [{ id: 'hd', nom: 'Pixel art HD', image: creerPixel().image }],
     zones: {
       yuki: 'yuki', vaisseau: [352, 0, 256, 160], cage: [0, 210, 128, 80], maison: [0, 124, 96, 60],
-      capsule: [0, 460, 96, 60], grenouille: [870, 470, 90, 56], centre: [400, 272, 160, 100]
+      capsule: [0, 460, 96, 60], grenouille: [870, 470, 90, 56], centre: [400, 272, 160, 100], riviere: [130, 550, 80, 50], soldat: [640, 550, 128, 50]
     },
     code: () => {
       const v = document.querySelector('input[name="choix"]:checked').value;

@@ -30,7 +30,7 @@ export const ZONES = [
 ];
 const ANNEAU = 62;
 const HORIZON = 58;
-const VAISSEAU = { x: 480, y: 38, rx: 86, ry: 33 };
+const VAISSEAU = { x: 480, y: 34, rx: 80, ry: 44 };
 const SOLEILS = [[300, 14, 9], [640, 10, 6], [686, 22, 5]];
 
 const PAL = new Palette({
@@ -61,6 +61,10 @@ const PAL = new Palette({
   p1: '#54267a', p2: '#8646ae', p3: '#bc8ede',
   // Grenouille
   f1: '#3a6a1e', f2: '#6aa02e', f3: '#a8d04e',
+  // Coque du vaisseau : blanc crème, ombres lavande
+  c0: '#3a3454', c1: '#615a80', c2: '#8a84a8', c3: '#b2acc8', c4: '#d6d2e2', c5: '#ece9ee', c6: '#fdf9ef',
+  // Peau namekienne, ceinture bleue
+  m0: '#2c5620', m1: '#46863a', m2: '#6cae4a', m3: '#9ccc66', b1: '#3858ac', b2: '#6888dc',
   k: '#12181c'
 });
 const C = PAL.c;
@@ -69,7 +73,7 @@ const HERBE = PAL.sous(['g0', 'g1', 'g2', 'g3', 'g4', 'g5']);
 const ROCHE = PAL.sous(['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6']);
 const PLATEAU = PAL.sous(['n0', 'n1', 'n2', 'n3', 'n4', 'n5']);
 const MER = PAL.sous(['w0', 'w1', 'w2', 'w3', 'w4']);
-const COQUE = PAL.sous(['s0', 's1', 's2', 's3', 's4', 's5']);
+const COQUE = PAL.sous(['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6']);
 const AJISSA = PAL.sous(['a0', 'a1', 'a2', 'a3', 'a4']);
 
 const dansTerrain = (x, y) => x >= COURT.left && x < COURT.right && y >= COURT.top && y < COURT.bottom;
@@ -122,7 +126,7 @@ function peindreCiel(t) {
   }
 }
 // Pitons rocheux à sommet plat, coiffés d'herbe, qui s'évasent en champignon.
-function piton(t, x, sommet, base, larg) {
+function piton(t, x, sommet, base, larg, voile = 0) {
   for (let y = sommet; y < base; y++) {
     const k = (y - sommet) / (base - sommet);
     const demi = larg * (k < .12 ? 1.15 - k : .85 + k * .45) + Math.sin(y * .7) * .6;
@@ -130,12 +134,12 @@ function piton(t, x, sommet, base, larg) {
       const u = (xx - x) / demi;
       let c = u < -.5 ? C.r4 : u < .2 ? C.r3 : u < .7 ? C.r2 : C.r1;
       if ((y + Math.round(xx * .3)) % 7 === 0) c = u < 0 ? C.r3 : C.r1;
-      t.pt(xx, y, c); if (y < HORIZON) CIELM[y * W + xx] = 0;
+      t.pt(xx, y, c); if (voile) t.teinte(xx, y, PAL, C.k3, voile); if (y < HORIZON) CIELM[y * W + xx] = 0;
     }
   }
   for (let xx = Math.round(x - larg * 1.15); xx <= x + larg * 1.15; xx++) for (let k = 0; k < 3; k++) {
     const y = sommet - k + (Math.abs(xx - x) > larg ? 1 : 0);
-    t.pt(xx, y, k === 2 ? C.g5 : k === 1 ? C.g4 : C.g3); if (y >= 0 && y < HORIZON) CIELM[y * W + xx] = 0;
+    t.pt(xx, y, k === 2 ? C.g5 : k === 1 ? C.g4 : C.g3); if (voile) t.teinte(xx, y, PAL, C.k3, voile); if (y >= 0 && y < HORIZON) CIELM[y * W + xx] = 0;
   }
 }
 // Arbre Ajissa : tronc fin, boules bleu-vert empilées.
@@ -151,6 +155,12 @@ function ajissa(t, x, yb, h, r) {
   }
 }
 function paysage(t) {
+  // Au loin, des pitons pâlis par l'air, et des îlots sur la mer.
+  for (const [x, s2, l] of [[210, 26, 6], [372, 34, 5], [410, 40, 4], [560, 36, 5], [600, 30, 6], [760, 32, 5], [880, 28, 6]]) piton(t, x, s2, HORIZON + 2, l, .55);
+  for (const [x, l] of [[240, 18], [520, 12], [860, 22]]) for (let xx = x - l; xx <= x + l; xx++) {
+    const h = Math.round(3 * Math.sqrt(Math.max(0, 1 - ((xx - x) / l) ** 2)));
+    for (let k = 0; k < h; k++) t.pt(xx, HORIZON + 4 - k, k === h - 1 ? C.g4 : C.g2);
+  }
   for (const [x, s, b, l] of [[258, 8, 80, 12], [296, 22, 80, 9], [338, 30, 80, 7], [620, 26, 80, 8], [664, 6, 80, 13], [708, 18, 80, 10], [150, 30, 80, 10], [820, 24, 80, 11]]) piton(t, x, s, b, l);
   // Rivage et herbe au pied du vaisseau.
   for (let x = 0; x < W; x++) {
@@ -164,27 +174,84 @@ function paysage(t) {
     t.pt(x - 2, 76, C.k); t.pt(x + 2, 76, C.k);
   }
 }
+// Le vaisseau de Freezer : une grosse sphère blanc crème, ombrée de lavande
+// comme dans l'anime, posée sur quatre pieds. Une ceinture de hublots ronds
+// suit la courbe de la coque (on la voit d'un peu au-dessus), des lignes de
+// panneaux, une rangée d'évents sous le ventre, la rampe ouverte.
+const FENETRES = [];
+function surSphere(u, v) {
+  // Normale d'un point de la face visible, et son éclairage (soleils en haut à gauche).
+  const nz = Math.sqrt(Math.max(0, 1 - u * u - v * v));
+  return Math.max(0, -u * .42 - v * .56 + nz * .71);
+}
+function couleurCoque(lum, x, y) {
+  return COQUE.tramer(92 + lum * 172, 88 + lum * 168, 112 + lum * 142, x, y, 2.6);
+}
+// Un parallèle de la sphère, vu d'un peu au-dessus : une courbe qui plonge
+// vers nous au milieu.
+function parallele(v, theta) {
+  const { x, y, rx, ry } = VAISSEAU, c = Math.sqrt(Math.max(0, 1 - v * v));
+  return [x + rx * c * Math.sin(theta), y + ry * v + ry * .13 * c * Math.cos(theta)];
+}
 function vaisseau(t) {
   const { x, y, rx, ry } = VAISSEAU;
-  // Pieds, posés sur la rive.
-  for (const dx of [-64, -28, 28, 64]) { t.ligne(x + dx * .7, y + 12, x + dx, 80, C.s1); t.ligne(x + dx * .7 + 1, y + 12, x + dx + 1, 80, C.s0); t.hl(x + dx - 3, x + dx + 4, 81, C.s1); }
-  // Coque : une sphère aplatie, éclairée par les soleils du haut à gauche.
-  balayerEllipse(x, y, rx, ry, (yy, a, b) => { for (let xx = a; xx <= b; xx++) {
-    const u = (xx - x) / rx, v = (yy - y) / ry, d = u * u + v * v;
-    let l = 225 - u * 40 - v * 50 - d * 30;
-    if (u < -.2 && v < -.2 && u + v > -1.25) l += 18;
-    t.px[yy * W + xx] = COQUE.tramer(l, l, l * 1.06, xx, yy, 2.4);
-    if (yy < HORIZON) CIELM[yy * W + xx] = 0;
-  } });
-  // Dôme supérieur et arête de la ceinture.
-  balayerEllipse(x, y - ry + 6, 26, 10, (yy, a, b) => { for (let xx = a; xx <= b; xx++) if (yy < y - ry + 8) { t.pt(xx, yy, xx < x - 6 ? C.s5 : xx < x + 8 ? C.s4 : C.s3); CIELM[yy * W + xx] = 0; } });
-  for (let xx = x - rx + 2; xx <= x + rx - 2; xx++) {
-    const u = (xx - x) / rx, yy = Math.round(y + 3 + Math.sqrt(1 - u * u) * 2);
-    t.pt(xx, yy, C.s1); t.pt(xx, yy + 1, C.s3);
+  // Son ombre sur l'herbe.
+  for (let xx = x - rx - 10; xx <= x + rx + 10; xx++) for (let yy = 79; yy < 84; yy++) {
+    const e = ((xx - x) / (rx + 10)) ** 2 + ((yy - 81) / 3) ** 2;
+    if (e < 1) t.teinte(xx, yy, PAL, C.g0, .55 * (1 - e));
   }
-  // La rampe ouverte, lumière qui en sort.
-  balayerPoly([[x - 8, y + ry - 6], [x + 8, y + ry - 6], [x + 12, 80], [x - 12, 80]], (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, yy < y + ry - 3 ? C.y3 : xx === a || xx === b ? C.s1 : C.s3); });
-  for (let yy = y + ry - 12; yy < y + ry - 6; yy++) for (let xx = x - 7; xx <= x + 7; xx++) t.pt(xx, yy, C.y2);
+  // Pieds : jambe coudée, vérin, patin.
+  for (const dx of [-60, -24, 24, 60]) {
+    const hx = x + dx * .78, hy = y + ry * .7, px = x + dx * (Math.abs(dx) > 30 ? 1.08 : 1.02), py = 82;
+    for (let k = 0; k < 3; k++) t.ligne(hx + k - 1, hy, px + k - 1, py - 3, [C.c3, C.c2, C.c0][k]);
+    t.ligne(hx, hy + 4, (hx + px) / 2, (hy + py) / 2, C.c1);
+    balayerEllipse(px, py - 1, 5, 2, (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, yy < py - 1 ? C.c4 : C.c1); });
+  }
+  // La coque.
+  balayerEllipse(x, y, rx, ry, (yy, a, b) => { for (let xx = a; xx <= b; xx++) {
+    const u = (xx - x) / rx, v = (yy - y) / ry;
+    let lum = surSphere(u, v);
+    const spec = Math.hypot(u + .38, v + .46);
+    if (spec < .18) lum = Math.min(1, lum + (.18 - spec) * 2.2);
+    t.px[yy * W + xx] = spec < .07 ? C.c6 : couleurCoque(lum, xx, yy);
+    if (yy >= 0 && yy < HORIZON) CIELM[yy * W + xx] = 0;
+  } });
+  // Lignes de panneaux : deux parallèles en haut, un sous la ceinture.
+  for (const v of [-.62, -.34, .42]) for (let th = -1.5; th <= 1.5; th += .004) {
+    const [px, py] = parallele(v, th), lum = surSphere((px - x) / rx, (py - y) / ry);
+    t.pt(Math.round(px), Math.round(py), lum > .55 ? C.c4 : C.c2);
+  }
+  for (const th of [-1.05, -.52, 0, .52, 1.05]) for (let v = -.9; v < -.36; v += .01) {
+    const [px, py] = parallele(v, th);
+    t.pt(Math.round(px), Math.round(py), surSphere((px - x) / rx, (py - y) / ry) > .55 ? C.c4 : C.c2);
+  }
+  // La ceinture : une bande plus sombre, bordée d'un filet clair au-dessus.
+  for (let th = -1.52; th <= 1.52; th += .003) {
+    for (let v = -.04; v <= .2; v += .012) {
+      const [px, py] = parallele(v, th);
+      const lum = surSphere((px - x) / rx, (py - y) / ry) * .78;
+      t.pt(Math.round(px), Math.round(py), v < 0 ? C.c1 : v > .19 ? C.c0 : couleurCoque(lum, Math.round(px), Math.round(py)));
+    }
+    const [hx, hy] = parallele(-.07, th);
+    t.pt(Math.round(hx), Math.round(hy), surSphere((hx - x) / rx, (hy - y) / ry) > .4 ? C.c6 : C.c3);
+  }
+  // Les hublots, qui s'aplatissent vers les bords.
+  FENETRES.length = 0;
+  for (let i = -6; i <= 6; i++) {
+    const th = i * .205, [wx, wy] = parallele(.08, th), k = Math.cos(th);
+    const rxw = 1.4 + 3.2 * k, ryw = 3.6;
+    FENETRES.push([wx, wy, rxw, ryw, i]);
+    balayerEllipse(wx, wy, rxw + 1, ryw + 1, (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, C.c0); });
+    balayerEllipse(wx, wy, rxw, ryw, (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, yy < wy - 1 ? C.y3 : yy < wy + 2 ? C.y2 : C.y1); });
+  }
+  // Les évents sous le ventre.
+  for (let i = -5; i <= 5; i++) {
+    const [ex, ey] = parallele(.6, i * .25);
+    t.rect(Math.round(ex) - 1, Math.round(ey), 3, 2, C.c0); t.pt(Math.round(ex) - 1, Math.round(ey), C.c1);
+  }
+  // La rampe ouverte : l'intérieur éclairé, le plan incliné jusqu'au sol.
+  for (let yy = y + Math.round(ry * .74); yy < y + Math.round(ry * .9); yy++) for (let xx = x - 9; xx <= x + 9; xx++) t.pt(xx, yy, yy === y + Math.round(ry * .74) ? C.c0 : C.y3);
+  balayerPoly([[x - 9, y + ry * .9], [x + 9, y + ry * .9], [x + 13, 83], [x - 13, 83]], (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, xx === a || xx === b ? C.c1 : (yy & 1) ? C.c4 : C.c3); });
 }
 
 // ---------------------------------------------------------------------------
@@ -339,26 +406,111 @@ function peindreBords(t) {
   // Le détecteur : oreillette et lentille verte.
   t.rect(912, 548, 8, 4, C.s3); t.hl(912, 919, 548, C.s4);
   balayerEllipse(924, 548, 5, 3, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, C.g5); });
-  // En bas : la prairie bleu-vert, des rochers, des fleurs.
-  for (let i = 0; i < 14; i++) {
-    const x = 90 + hacher(i, 1, 40) * 780, y = 572 + hacher(i, 2, 40) * 20, r = 3 + hacher(i, 3, 40) * 5;
-    ombre(t, x + 1, y + r * .6, r + 1, 2, .45);
-    balayerEllipse(x, y, r, r * .7, (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, yy < y ? C.r4 : C.r2); });
-  }
   for (let i = 0; i < 60; i++) {
-    const x = Math.floor(hacher(i, 1, 41) * W), y = 90 + Math.floor(hacher(i, 2, 41) * 506);
+    const x = Math.floor(hacher(i, 1, 41) * W), y = 90 + Math.floor(hacher(i, 2, 41) * 470);
     if (dansTerrain(x - 3, y) || dansTerrain(x + 3, y) || dansCage(x, y)) continue;
     t.pt(x, y, [C.e2, C.p3, C.h3][i % 3]); t.pt(x, y + 1, C.g2);
   }
-  // Une mare en bas, qui renvoie le ciel vert, et de jeunes Ajissa.
-  balayerEllipse(230, 588, 42, 8, (y, a, b) => { for (let x = a; x <= b; x++) { const k = (y - 580) / 16; t.pt(x, y, x === a || x === b ? C.g1 : k < .3 ? C.k3 : k < .6 ? C.w3 : C.w2); } });
-  for (let i = 0; i < 6; i++) t.hl(200 + i * 11, 204 + i * 11, 585 + (i % 3) * 3, C.k5);
-  for (const [x, h, r] of [[120, 14, 4], [330, 12, 4], [470, 16, 5], [760, 13, 4], [860, 15, 5]]) ajissa(t, x, 594, h, r);
   maisonDome(t, 930, 118, 14);
-  // Le radar à Dragon Balls, posé dans l'herbe (son écran clignote).
-  balayerDisque(610, 584, 7, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, Math.hypot(x - 610, y - 584) > 6 ? C.s1 : C.s4); });
-  balayerDisque(610, 584, 4, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, C.g3); });
-  t.rect(609, 575, 3, 3, C.s3);
+  peindreBas(t);
+}
+
+// En bas : la rive d'une rivière turquoise, galets, roseaux, pas japonais de
+// pierre, maisons-dômes, jeunes Ajissa, et le radar posé dans l'herbe. Les
+// Namekiens, le soldat de Freezer assommé et les poissons sont animés.
+function rive(x) { return Math.round(584 + Math.sin(x * .025) * 2 + fbm(x * .04, 0, 2, 44) * 3); }
+function peindreBas(t) {
+  for (let x = 0; x < W; x++) {
+    const r = rive(x);
+    for (let y = r; y < H; y++) {
+      const k = (y - r) / (H - r + 1);
+      const o = Math.sin((y - r) * 1.1 + fbm(x * .02, y * .3, 2, 45) * 5);
+      let c = y === r ? C.w4 : y === r + 1 ? C.w3 : MER.tramer(110 - k * 60 + o * 8, 200 - k * 50 + o * 8, 196 - k * 30 + o * 6, x, y, 2);
+      t.pt(x, y, c);
+    }
+    t.pt(x, r - 1, C.g1);
+    if (hacher(x, 0, 46) < .25) t.pt(x, r - 2, C.r3);
+  }
+  // Pas japonais pour traverser.
+  for (const [x, y] of [[520, 590], [538, 595], [556, 590], [574, 596]]) {
+    balayerEllipse(x, y, 6, 2.5, (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, yy < y ? C.r5 : C.r3); });
+    t.hl(x - 5, x + 5, y + 3, C.w1);
+  }
+  // Roseaux.
+  for (const x0 of [140, 360, 640, 790]) for (let k = 0; k < 6; k++) {
+    const x = x0 + k * 2, h = 5 + (k * 3) % 5, r = rive(x);
+    for (let j = 0; j < h; j++) t.pt(x + (j > h - 2 ? 1 : 0), r - 1 - j, j > h - 2 ? C.t2 : C.g3);
+  }
+  maisonDome(t, 64, 580, 15);
+  maisonDome(t, 896, 580, 13);
+  for (const [x, h, r] of [[300, 14, 4], [470, 16, 5], [838, 13, 4], [214, 12, 4]]) ajissa(t, x, 578, h, r);
+  // Le radar à Dragon Balls, dans l'herbe (son écran clignote, voir radar).
+  balayerDisque(420, 572, 7, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, Math.hypot(x - 420, y - 572) > 6 ? C.s1 : C.s4); });
+  balayerDisque(420, 572, 4, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, C.g3); });
+  t.rect(419, 563, 3, 3, C.s3);
+  ombre(t, 421, 579, 8, 1.5, .4);
+}
+// Un Namekien : peau verte, antennes, robe blanche à ceinture bleue.
+function namekien(t, x, yb, petit, bras) {
+  const s = petit ? 1 : 1.4, hRobe = Math.round(9 * s), hTete = Math.round(6 * s), lr = Math.round(3 * s), lt = Math.round(2 * s);
+  for (let k = -lr; k <= lr; k++) t.teinte(x + k, yb + 1, PAL, C.k, .35);
+  t.hl(x - lr + 1, x - 1, yb, C.t1); t.hl(x + 1, x + lr - 1, yb, C.t1);
+  for (let y = yb - hRobe; y < yb; y++) for (let dx = -lr; dx <= lr; dx++) {
+    const bord = Math.abs(dx) === lr;
+    const ceinture = y >= yb - hRobe + Math.round(3 * s) && y < yb - hRobe + Math.round(3 * s) + (petit ? 1 : 2);
+    t.pt(x + dx, y, ceinture ? (dx < 0 ? C.b2 : C.b1) : bord ? C.h1 : dx < 0 ? C.h3 : C.h2);
+  }
+  const yt = yb - hRobe - hTete;
+  for (let y = yt; y < yb - hRobe; y++) for (let dx = -lt; dx <= lt; dx++) {
+    const coin = Math.abs(dx) === lt && (y === yt || y === yb - hRobe - 1);
+    if (!coin) t.pt(x + dx, y, dx === lt ? C.m0 : dx < 0 ? C.m2 : C.m1);
+  }
+  const ye = yt + Math.round(hTete * .45);
+  t.pt(x - lt - 1, ye - 1, C.m1); t.pt(x - lt - 2, ye - 2, C.m2); t.pt(x + lt + 1, ye - 1, C.m0); t.pt(x + lt + 2, ye - 2, C.m1);   // oreilles pointues
+  t.pt(x - 1, ye, C.k); t.pt(x + 1, ye, C.k);
+  for (const e of [-1, 1]) { t.pt(x + e, yt - 1, C.m1); t.pt(x + e * 2, yt - 2, C.m1); t.pt(x + e * 2, yt - 3, C.m2); }        // antennes
+  const yb2 = yb - hRobe + 2;
+  t.vl(x - lr - 1, yb2, yb2 + Math.round(3 * s), C.m1);
+  if (bras) { t.pt(x + lr + 1, yb2 - 1, C.m1); t.pt(x + lr + 2, yb2 - 2 + (bras > 0 ? 0 : 1), C.m1); t.pt(x + lr + 2 + (bras > 0 ? 1 : 0), yb2 - 4, C.m2); t.pt(x + lr + 2 + (bras > 0 ? 1 : 0), yb2 - 3, C.m1); }
+  else t.vl(x + lr + 1, yb2, yb2 + Math.round(3 * s), C.m0);
+}
+function villageois(t, temps) {
+  namekien(t, 170, 578, false, 0);
+  namekien(t, 190, 580, true, Math.sin(temps * 6) > 0 ? 1 : -1);            // Dende, qui salue
+  namekien(t, 780, 578, false, 0);
+  // Un troisième fait les cent pas au bord de l'eau.
+  const q = (temps * .06) % 2, x = Math.round(640 + (q < 1 ? q : 2 - q) * 90);
+  namekien(t, x, 579, false, 0);
+}
+// Un soldat de Freezer, assommé dans l'herbe, qui voit des étoiles.
+function soldat(t, temps) {
+  const x = 700, y = 572;
+  ombre(t, x + 6, y + 4, 12, 2, .4);
+  t.rect(x - 4, y, 9, 4, C.h3); t.hl(x - 4, x + 4, y, C.h2);                 // cuirasse
+  t.rect(x - 6, y - 1, 3, 3, C.y2); t.rect(x + 5, y - 1, 3, 3, C.y2);        // épaulettes
+  t.rect(x + 5, y + 1, 10, 3, C.p1); t.hl(x + 5, x + 14, y + 1, C.p2);       // jambes
+  t.rect(x + 14, y + 1, 3, 3, C.h3);                                          // bottes
+  balayerDisque(x - 8, y + 2, 3, (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, C.t2); });
+  t.pt(x - 10, y + 1, C.g5); t.pt(x - 11, y + 1, C.g4);                     // détecteur
+  for (let i = 0; i < 3; i++) {
+    const a = temps * 3 + i * 2.1;
+    t.pt(Math.round(x - 8 + Math.cos(a) * 6), Math.round(y - 5 + Math.sin(a) * 2), C.e2);
+  }
+}
+function riviere(t, temps) {
+  // Des reflets qui filent avec le courant.
+  for (let i = 0; i < 26; i++) {
+    const x = Math.round(((hacher(i, 1, 94) * W + temps * (10 + hacher(i, 2, 94) * 8)) % W));
+    const y = rive(x) + 3 + Math.floor(hacher(i, 3, 94) * (H - rive(x) - 4));
+    t.hl(x, x + 3, y, C.w4);
+  }
+  // Un poisson saute de temps en temps.
+  const n = Math.floor(temps / 5), q = (temps % 5) / 5;
+  if (q < .16) {
+    const k = q / .16, x0 = 200 + hacher(n, 1, 95) * 600, x = Math.round(x0 + k * 16), y = Math.round(592 - Math.sin(k * Math.PI) * 12);
+    t.rect(x - 2, y, 5, 2, C.p2); t.pt(x + 3, y, C.p3); t.pt(x - 3, y - 1, C.p1); t.pt(x - 3, y + 2, C.p1);
+    if (k < .15 || k > .85) for (const dx of [-3, 3]) t.pt(Math.round(x0 + (k > .5 ? 16 : 0)) + dx, 594, C.w4);
+  }
 }
 
 function peindreFond() {
@@ -396,16 +548,20 @@ function nuages(t, temps) {
 }
 // Les hublots du vaisseau, qui s'allument en vague, et ses feux de position.
 function hublots(t, temps) {
-  const { x, y, rx } = VAISSEAU;
-  for (let i = 0; i < 13; i++) {
-    const u = (i - 6) / 6.6, hx = Math.round(x + u * rx * .88), hy = Math.round(y - 4 + Math.sqrt(1 - u * u) * 2);
-    const on = .6 + Math.sin(temps * 2 - i * .5) * .4;
-    balayerDisque(hx, hy, 2.6, (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, Math.hypot(xx - hx, yy - hy) > 2 ? C.s1 : on > .8 ? C.y4 : on > .45 ? C.y3 : C.y2); });
+  const { x, y, ry } = VAISSEAU;
+  for (const [wx, wy, rxw, ryw, i] of FENETRES) {
+    const on = .55 + Math.sin(temps * 1.8 - i * .45) * .45;
+    balayerEllipse(wx, wy, rxw, ryw, (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, yy < wy - 1 ? (on > .7 ? C.y4 : C.y3) : yy < wy + 2 ? (on > .5 ? C.y3 : C.y2) : C.y1); });
+    if (on > .85) t.teinte(Math.round(wx), Math.round(wy - ryw - 1), PAL, C.y4, .4);
   }
-  for (const [dx, ph] of [[-rx + 4, 0], [rx - 4, 1.5]]) if (Math.sin(temps * 3 + ph) > .4) { t.pt(x + dx, y + 2, C.x2); t.teinte(x + dx - 1, y + 2, PAL, C.x2, .5); t.teinte(x + dx + 1, y + 2, PAL, C.x2, .5); }
+  // Feux de position rouges au bout de la ceinture.
+  for (const [th, ph] of [[-1.42, 0], [1.42, 1.5]]) if (Math.sin(temps * 3 + ph) > .3) {
+    const [fx, fy] = parallele(.08, th);
+    t.pt(Math.round(fx), Math.round(fy), C.x2); t.teinte(Math.round(fx) - 1, Math.round(fy), PAL, C.x2, .5); t.teinte(Math.round(fx) + 1, Math.round(fy), PAL, C.x2, .5);
+  }
   // La lumière de la rampe respire.
   const k = .3 + Math.sin(temps * 1.5) * .12;
-  for (let yy = y + VAISSEAU.ry - 2; yy < 84; yy++) for (let xx = x - 16; xx <= x + 16; xx++) t.teinte(xx, yy, PAL, C.y3, k * (1 - Math.abs(xx - x) / 17));
+  for (let yy = Math.round(y + ry * .9); yy < 84; yy++) for (let xx = x - 18; xx <= x + 18; xx++) t.teinte(xx, yy, PAL, C.y3, k * (1 - Math.abs(xx - x) / 19));
 }
 // La nacelle volante de Freezer, qui flotte à côté du vaisseau.
 function nacelle(t, temps) {
@@ -466,8 +622,8 @@ function grenouille(t, temps) {
   for (const dx of [-3, 2]) { t.rect(x + dx, y - 2, 2, 2, C.f3); t.pt(x + dx + 1, y - 1, cligne ? C.f2 : C.k); }
 }
 function radar(t, temps) {
-  if (Math.sin(temps * 4) > 0) { t.pt(611, 583, C.e3); t.pt(608, 586, C.e2); }
-  t.pt(610, 584, C.x2);
+  if (Math.sin(temps * 4) > 0) { t.pt(421, 571, C.e3); t.pt(418, 574, C.e2); }
+  t.pt(420, 572, C.x2);
 }
 function lentille(t, temps) {
   if (Math.sin(temps * 2.3) > .6) t.teinte(923, 547, PAL, C.e3, .8);
@@ -501,6 +657,9 @@ export function creerPixel() {
     ajissaVent(t, temps);
     grenouille(t, temps);
     radar(t, temps);
+    riviere(t, temps);
+    villageois(t, temps);
+    soldat(t, temps);
     lentille(t, temps);
     eclatsBoules(t, temps);
     barriereKi(t, temps);
