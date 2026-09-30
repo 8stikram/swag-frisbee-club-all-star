@@ -81,9 +81,9 @@
 <body>
 <main class="page">
   <header>
-    <p class="sur">Nouvelle map · Overwatch · pixel art HD</p>
+    <p class="sur">Retouche · Overwatch · pixel art HD</p>
     <h1>Observatoire : Gibraltar HD</h1>
-    <p class="chapo">La base Overwatch de Gibraltar en plein soleil méditerranéen, avec le rocher, la fusée sur son pas de tir, et Winston, Tracer et Mei sur les côtés. Pas de règle de jeu : c'est un décor. Survole l'écran pour la loupe.</p>
+    <p class="chapo">La base Overwatch de Gibraltar en plein soleil méditerranéen, avec le rocher, la Comm Tower WP-G, la sphère et son drapeau, la fusée, le drone XR-9, et cinq héros de chaque côté. Pas de règle de jeu : c'est un décor. Survole l'écran pour la loupe.</p>
   </header>
 
   <section aria-label="Écran de jeu">
@@ -105,14 +105,17 @@
     <h2>Au zoom</h2>
     <div class="choixZoom" id="zones">
       <button type="button" aria-pressed="true" data-z="yuki">Yuki sur l'aire</button>
-      <button type="button" aria-pressed="false" data-z="rocher">Le rocher et la base</button>
+      <button type="button" aria-pressed="false" data-z="tour">La Comm Tower WP-G</button>
+      <button type="button" aria-pressed="false" data-z="sphere">La sphère et le drapeau</button>
+      <button type="button" aria-pressed="false" data-z="bleu">Le stock de carburant</button>
       <button type="button" aria-pressed="false" data-z="fusee">La fusée</button>
-      <button type="button" aria-pressed="false" data-z="winston">Winston</button>
-      <button type="button" aria-pressed="false" data-z="tracer">Tracer</button>
-      <button type="button" aria-pressed="false" data-z="mei">Mei et Snowball</button>
+      <button type="button" aria-pressed="false" data-z="drone">Le drone XR-9</button>
+      <button type="button" aria-pressed="false" data-z="gh">Winston et Mercy</button>
+      <button type="button" aria-pressed="false" data-z="gb">Genji, Tracer, Lúcio</button>
+      <button type="button" aria-pressed="false" data-z="dh">Mei et Reinhardt</button>
+      <button type="button" aria-pressed="false" data-z="db">Soldat : 76, Ana, Zenyatta</button>
       <button type="button" aria-pressed="false" data-z="cage">Quai de chargement</button>
       <button type="button" aria-pressed="false" data-z="centre">L'emblème</button>
-      <button type="button" aria-pressed="false" data-z="convoi">Le convoi</button>
     </div>
     <div class="zooms seul">
       <figure><canvas id="z-hd" width="480" height="300"></canvas><figcaption><b>Pixel art HD</b> · zoom ×2 à ×6</figcaption></figure>
@@ -123,10 +126,18 @@
     <div class="carte">
       <h2>Ce qu'on y voit</h2>
       <ul>
-        <li><b>Le rocher de Gibraltar</b>, avec sa falaise de calcaire à pic, sa crête et sa végétation. La base Overwatch s'accroche à son pied : bâtiments blancs à bande orange, vitres bleues, emblème, paraboles, antenne sur la crête.</li>
-        <li><b>La fusée</b> blanche à coiffe orange et emblème Overwatch, sur son pas de tir au bord de l'eau, tenue par les bras de sa tour de lancement. Autour, la mer, la côte espagnole au loin et le soleil.</li>
+        <li><b>Le haut refait pour faire Gibraltar</b>, fini les petits bâtiments blancs à vitres bleues :
+          <ul>
+            <li>Le rocher de Gibraltar en calcaire ocre, sa falaise nord à pic et les meurtrières des galeries, sa crête et le maquis.</li>
+            <li>La <b>Comm Tower WP-G</b> beige, ses vitres orange éclairées, ses ailerons, sa plaque à l'emblème et son inscription.</li>
+            <li>La <b>passerelle en treillis</b> et ses veilleuses bleues, un fanion bleu qui pend, jusqu'à la <b>sphère sur pylône</b> et son mât avec le <b>drapeau Overwatch</b> noir.</li>
+            <li>Le <b>bâtiment bleu du stock de carburant</b> « WP-G », son treillis sur le toit, sa porte éclairée et son rack de réservoirs.</li>
+            <li>La <b>fusée</b> dans sa tour de lancement, des citernes, une parabole sur la crête, le <b>grand bâtiment beige</b> aux vitres orange et, au bout, le <b>drone satellite XR-9</b> sur sa station de recharge orange.</li>
+            <li>Au loin, la côte espagnole et le djebel Musa, côté Afrique.</li>
+          </ul>
+        </li>
         <li><b>L'enseigne « WATCHPOINT : GIBRALTAR »</b> sur le mur d'enceinte de la base, qui borde le terrain.</li>
-        <li><b>Le terrain est l'aire d'atterrissage</b> : grandes dalles de béton clair, traces de pneus, grilles d'évacuation. Les lignes blanches sont doublées d'un filet orange, avec des équerres orange aux coins. Devant chaque cage, une aire de chargement en tirets jaunes, et des pochoirs « PAD-01 » et « PAD-02 ». L'emblème Overwatch est peint au centre.</li>
+        <li><b>Le terrain est l'aire d'atterrissage</b> : grandes dalles de béton clair, traces de pneus, grilles d'évacuation. Les lignes blanches sont doublées d'un filet orange, avec des équerres orange aux coins. Devant chaque cage, une aire de chargement en tirets jaunes, et des pochoirs « PAD-01 » et « PAD-02 ». L'emblème Overwatch est peint au centre, <b>anneau orange et chevron noir</b>, cernés de blanc.</li>
         <li><b>Les cages sont des quais de chargement Overwatch</b> : piliers blindés blancs à bande orange, sol en caillebotis, emblème au fond.
           <ul>
             <li>Zones à 3 : un panneau blanc à bandes orange, chiffre noir.</li>
@@ -134,18 +145,25 @@
             <li>Aux coins, des gyrophares orange. À l'embouchure, le bouclier hexagonal bleu des salles de réapparition.</li>
           </ul>
         </li>
-        <li><b>À gauche</b> :
+        <li><b>À gauche, cinq héros</b> :
           <ul>
-            <li>Le coin de <b>Winston</b> : sa console, ses écrans holographiques, son pneu, des peaux de banane. Lui-même en armure blanche, lunettes sur le nez, avec son pot de beurre de cacahuète.</li>
-            <li>Plus bas, <b>Tracer</b>, avec ses lunettes orange, son blouson, son accélérateur chronal bleu et ses jambières orange, entre des caisses et un pack de soin.</li>
+            <li><b>Winston</b> devant sa console et ses écrans, avec son pneu et son pot de beurre de cacahuète.</li>
+            <li><b>Mercy</b>, en blanc et or, avec ses ailes dorées, son halo et son bâton.</li>
+            <li><b>Genji</b> en armure argent, avec ses filets vert néon, sa visière et son katana.</li>
+            <li><b>Tracer</b>, avec ses lunettes orange et son accélérateur chronal.</li>
+            <li><b>Lúcio</b> en rollers, avec ses dreadlocks et son amplificateur.</li>
           </ul>
         </li>
-        <li><b>À droite</b> :
+        <li><b>À droite, cinq héros</b> :
           <ul>
-            <li><b>Mei</b> en parka bleue, avec son chignon et son crayon, ses lunettes et <b>Snowball</b>, près de son mur de glace, dans le givre.</li>
-            <li>Plus bas, une grande parabole, des caisses et un pack de soin.</li>
+            <li><b>Mei</b> et <b>Snowball</b>, près de son mur de glace.</li>
+            <li><b>Reinhardt</b> en armure d'acier, avec son lion doré, et son marteau posé devant lui.</li>
+            <li><b>Soldat : 76</b>, avec sa veste bleue à rayure blanche et rouge, sa visière rouge et son fusil à impulsions.</li>
+            <li><b>Ana</b> à genoux, sous sa capuche bleue, derrière son fusil biotique.</li>
+            <li><b>Zenyatta</b> en lévitation, en tailleur, et ses huit orbes.</li>
           </ul>
         </li>
+        <li><b>Les packs de soin</b>, comme dans le jeu : un boîtier beige au cœur bleu à croix rouge, qui flotte au-dessus d'un socle bleu lumineux.</li>
         <li><b>En bas</b> : la route de la base, le garde-corps à poteaux orange avec des goélands posés dessus, et la mer.</li>
       </ul>
     </div>
@@ -153,10 +171,11 @@
       <h2>Ce qui bouge</h2>
       <ul>
         <li><b>La fusée</b> lâche de la vapeur, et toutes les 45 secondes elle décolle dans sa fumée.</li>
-        <li><b>Tracer fait des blinks</b> d'un point à l'autre avec sa traînée bleue. <b>Winston</b> respire, cligne derrière ses lunettes et mange son beurre de cacahuète. <b>Mei</b> salue, et <b>Snowball</b> tourne autour d'elle.</li>
+        <li><b>Les héros</b> : Tracer fait des blinks. Mercy flotte et soigne Winston d'un rayon doré. Winston mange son beurre de cacahuète. Genji lance des shurikens, et sort de temps en temps la Lame du dragon. Lúcio fait des allers-retours dans son aura verte ou jaune. Mei salue, et Snowball tourne autour d'elle. Reinhardt lève son bouclier. Soldat : 76 pose son champ biotique. Ana tire une fléchette. Zenyatta flotte, et ses orbes tournent.</li>
+        <li><b>Le drapeau</b> flotte au vent, et les feux des tours clignotent.</li>
         <li><b>Le convoi</b> roule sur la route du bas, dans son halo bleu.</li>
         <li><b>Un vaisseau de transport</b> passe dans le ciel, des goélands volent, et la mer scintille.</li>
-        <li><b>Les paraboles</b> balaient le ciel, les écrans de Winston défilent, les packs de soin tournent et luisent.</li>
+        <li><b>Les écrans de Winston</b> défilent, et les packs de soin tournent au-dessus de leur socle.</li>
         <li><b>Le bouclier hexagonal</b> ondule à l'entrée des cages, et les gyrophares clignotent.</li>
       </ul>
       <h2 style="margin-top:14px">Les mesures du jeu</h2>
@@ -190,8 +209,9 @@
   monterPage({
     versions: [{ id: 'hd', nom: 'Pixel art HD', image: creerPixel().image }],
     zones: {
-      yuki: 'yuki', rocher: [232, 0, 320, 200], fusee: [580, 0, 128, 80], winston: [0, 84, 80, 50], tracer: [0, 440, 80, 50],
-      mei: [880, 110, 80, 50], cage: [0, 210, 128, 80], centre: [400, 272, 160, 100], convoi: [100, 552, 96, 60]
+      yuki: 'yuki', tour: [200, 0, 128, 80], sphere: [340, 0, 128, 80], bleu: [20, 4, 160, 100], fusee: [580, 0, 128, 80],
+      drone: [840, 20, 120, 75], gh: [0, 110, 154, 96], gb: [0, 456, 154, 96], dh: [806, 116, 154, 96], db: [806, 456, 154, 96],
+      cage: [0, 210, 128, 80], centre: [400, 272, 160, 100]
     },
     code: () => {
       const v = document.querySelector('input[name="choix"]:checked').value;
