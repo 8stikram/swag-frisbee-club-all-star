@@ -223,9 +223,6 @@ function peindreLignes(t) {
 }
 
 // ---------------------------------------------------------------------------
-// Les cages : montants en sucre d'orge, plancher de scène peint, cadre
-// d'ampoules (allumées en chenille, voir plus bas).
-// ---------------------------------------------------------------------------
 function sucreOrge(t, x0, y0, l, h) {
   for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + l; x++) {
     const bande = Math.floor((x - x0 + y - y0) / 4) % 2;
@@ -233,32 +230,55 @@ function sucreOrge(t, x0, y0, l, h) {
     t.pt(x, y, bordA ? C.w3 : bordB ? C.o0 : bande ? C.o2 : C.w2);
   }
 }
+// Les cages : des stands de jeu forains. Au fond, la toile rayée rouge et
+// crème d'une tente ; dessus, trois grandes cibles peintes sur des panneaux
+// de bois cerclés d'or — bleues et blanches pour les 3, rouge et or étoilée
+// pour le 5. Un cadre doré bordé d'ampoules (animées) les entoure, une rangée
+// d'ampoules au sol marque l'embouchure, et des poteaux dorés à fanion
+// tiennent les coins.
+function cible(t, cx, cy, rx, ry, cinq) {
+  for (let y = Math.floor(cy - ry); y <= cy + ry; y++) for (let x = Math.floor(cx - rx); x <= cx + rx; x++) {
+    const d = Math.hypot((x - cx) / rx, (y - cy) / ry);
+    if (d > 1) continue;
+    const anneau = Math.floor(d * 5);
+    let c = cinq ? [C.y3, C.o2, C.y2, C.o2, C.y3][anneau] : [C.w3, C.u2, C.w3, C.u2, C.w2][anneau];
+    if (d > .93) c = cinq ? C.y1 : C.u1;
+    if ((x - cx) / rx + (y - cy) / ry < -1.1 && d > .8) c = C.w3;
+    t.pt(x, y, c);
+  }
+}
 function peindreCage(t, cote) {
   const x0 = cote === 1 ? COURT.left - BUT.prof : COURT.right, x1 = x0 + BUT.prof - 1;
-  for (let y = BUT.haut; y < BUT.bas; y++) {
-    const z = ZONES.find(zz => y < CY + zz.to), j = (y - BUT.haut) % 8;
-    for (let x = x0; x <= x1; x++) {
-      let c;
-      if (z.points === 5) c = j === 7 ? C.y1 : j === 0 ? C.y3 : C.y2;
-      else c = j === 7 ? C.u1 : j === 0 ? C.u3 : C.u2;
-      // Petites étoiles peintes sur les planches bleues.
-      if (z.points === 3 && hacher(Math.floor(x / 6), Math.floor(y / 6), 40 + cote) < .12 && x % 6 === 3 && y % 6 === 3) c = C.w3;
-      t.pt(x, y, c);
-    }
+  // La toile rayée de la tente, en fond.
+  for (let y = BUT.haut; y < BUT.bas; y++) for (let x = x0; x <= x1; x++) {
+    const b = Math.floor((x - x0) / 6) % 2;
+    t.pt(x, y, b ? ((x - x0) % 6 === 5 ? C.w1 : C.w2) : ((x - x0) % 6 === 5 ? C.o1 : C.o2));
   }
-  for (const yz of [CY - 26, CY + 26]) { t.hl(x0, x1, yz - 1, C.y1); t.hl(x0, x1, yz, C.k); t.hl(x0, x1, yz + 1, C.y2); }
+  // Trois panneaux de bois cerclés d'or, chacun sa cible.
   for (const z of ZONES) {
+    const y0 = CY + z.from + 3, y1 = CY + z.to - 3, cinq = z.points === 5;
+    for (let y = y0; y < y1; y++) for (let x = x0 + 3; x <= x1 - 3; x++) {
+      const bord = y === y0 || y === y1 - 1 || x === x0 + 3 || x === x1 - 3;
+      const bord2 = y === y0 + 1 || y === y1 - 2 || x === x0 + 4 || x === x1 - 4;
+      t.pt(x, y, bord ? C.y1 : bord2 ? C.y3 : (x - x0) % 8 === 0 ? C.b1 : C.b2);
+    }
+    for (let x = x0 + 3; x <= x1 - 2; x++) t.teinte(x, y1, PAL, C.k, .5);
+    const cy = (y0 + y1) / 2;
+    cible(t, (x0 + x1) / 2, cy, 18, Math.min(18, (y1 - y0) / 2 - 4), cinq);
+    // Clous dorés aux coins du panneau.
+    for (const [px, py] of [[x0 + 6, y0 + 3], [x1 - 6, y0 + 3], [x0 + 6, y1 - 4], [x1 - 6, y1 - 4]]) t.pt(px, py, C.y4);
     const s = CHIFFRE[z.points];
-    t.sprite(s, Math.round(x0 + BUT.prof / 2 - s.l / 2), Math.round(CY + (z.from + z.to) / 2 - s.h / 2), MIROIR);
+    t.sprite(s, Math.round((x0 + x1) / 2 - s.l / 2 + .5), Math.round(cy - s.h / 2), MIROIR);
   }
+  // Le cadre doré, sur trois côtés.
   const dos = cote === 1 ? x0 - 6 : x1 + 1;
-  sucreOrge(t, dos, BUT.haut - 6, 6, 212);
-  sucreOrge(t, Math.min(x0, dos), BUT.haut - 6, BUT.prof + 6, 6);
-  sucreOrge(t, Math.min(x0, dos), BUT.bas, BUT.prof + 6, 6);
+  const or = k => [C.y1, C.y3, C.y4, C.y3, C.y2, C.y1][k];
+  for (let y = BUT.haut - 6; y <= BUT.bas + 5; y++) for (let k = 0; k < 6; k++) t.pt(dos + k, y, or(k));
+  for (const y0 of [BUT.haut - 6, BUT.bas]) for (let y = y0; y < y0 + 6; y++) for (let x = Math.min(x0, dos); x <= Math.max(x1, dos + 5); x++) t.pt(x, y, or(y - y0));
   for (let x = Math.min(x0, dos) - 1; x <= Math.max(x1, dos + 5) + 1; x++) t.teinte(x, BUT.bas + 6, PAL, C.k, .45);
-  // Boules dorées aux coins.
-  for (const [bx, by] of [[cote === 1 ? x1 + 1 : x0 - 1, BUT.haut - 3], [cote === 1 ? x1 + 1 : x0 - 1, BUT.bas + 3], [dos + 3, BUT.haut - 3], [dos + 3, BUT.bas + 3]])
-    balayerDisque(bx, by, 4, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, (x - bx) + (y - by) < -3 ? C.y4 : (x - bx) + (y - by) > 3 ? C.y1 : C.y2); });
+  // Poteaux dorés des coins, boule et fanion (le fanion flotte, voir plus bas).
+  for (const [px, py] of [[cote === 1 ? x1 + 1 : x0 - 1, BUT.haut - 3], [cote === 1 ? x1 + 1 : x0 - 1, BUT.bas + 3], [dos + 3, BUT.haut - 3], [dos + 3, BUT.bas + 3]])
+    balayerDisque(px, py, 5, (y, a, b) => { for (let x = a; x <= b; x++) { const d = (x - px) + (y - py); t.pt(x, y, d < -4 ? C.y4 : d > 4 ? C.y1 : Math.hypot(x - px, y - py) > 4.2 ? C.y1 : C.y2); } });
 }
 
 // ---------------------------------------------------------------------------
@@ -779,13 +799,28 @@ function guirlandes(t, temps) {
 }
 function amp_cages(t, temps) {
   for (const cote of [1, 2]) {
-    const x0 = cote === 1 ? COURT.left - BUT.prof : COURT.right;
-    const dos = cote === 1 ? x0 - 6 : x0 + BUT.prof;
+    const x0 = cote === 1 ? COURT.left - BUT.prof : COURT.right, x1 = x0 + BUT.prof - 1;
+    const dos = cote === 1 ? x0 - 6 : x1 + 1;
+    const xa = Math.min(x0, dos), xb = Math.max(x1, dos + 5);
     let i = 0;
-    for (let x = Math.min(x0, dos) + 3; x < Math.min(x0, dos) + BUT.prof + 4; x += 7, i++) {
-      for (const y of [BUT.haut - 3, BUT.bas + 3]) ampoule(t, x, y, C.y3, (i + Math.floor(temps * 5)) % 3 === 0 ? 1 : .4);
+    const ch = k => (k + Math.floor(temps * 6)) % 3 === 0 ? 1 : .35;
+    // Ampoules du cadre, en chenille tout autour.
+    for (let x = xa + 3; x < xb - 1; x += 6, i++) { ampoule(t, x, BUT.haut - 3, AMPOULES[i % 5], ch(i)); ampoule(t, x, BUT.bas + 3, AMPOULES[i % 5], ch(i + 1)); }
+    for (let y = BUT.haut + 5; y < BUT.bas - 2; y += 7, i++) ampoule(t, dos + 3, y, AMPOULES[i % 5], ch(i));
+    // L'embouchure : une rangée d'ampoules posées au sol, qui clignotent
+    // ensemble, pour qu'on voie d'un coup où commence la cage.
+    const mx = cote === 1 ? COURT.left + 1 : COURT.right - 2;
+    const on = Math.sin(temps * 4) > -.3;
+    for (let y = BUT.haut + 4; y < BUT.bas - 2; y += 6) ampoule(t, mx, y, C.y3, on ? 1 : .45);
+    // Les fanions des poteaux.
+    for (const [px, py] of [[cote === 1 ? x1 + 1 : x0 - 1, BUT.haut - 3], [cote === 1 ? x1 + 1 : x0 - 1, BUT.bas + 3], [dos + 3, BUT.haut - 3], [dos + 3, BUT.bas + 3]]) {
+      t.vl(px, py - 16, py - 5, C.y1);
+      const c = py < CY ? C.o2 : C.u3;
+      for (let k = 0; k < 8; k++) {
+        const o = Math.round(Math.sin(temps * 3 - k * .6 + px) * (k / 8) * 1.4), h = 5 - Math.floor(k * .6);
+        for (let j = 0; j < h; j++) t.pt(px + 1 + k, py - 16 + j + o, j === 0 ? C.w3 : c);
+      }
     }
-    for (let y = BUT.haut + 4; y < BUT.bas; y += 8, i++) ampoule(t, dos + 3, y, C.y3, (i + Math.floor(temps * 5)) % 3 === 0 ? 1 : .4);
   }
 }
 function manege(t, temps) {
