@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Junkertown HD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Un seul thème, sombre, exprès : c'est celui des mockups du projet et celui
+     de la station. Une colonne : l'écran de jeu d'abord, puis les zooms, puis
+     le choix. */
+  :root{
+    --fond:#070c16; --panneau:#0e1626; --bord:#22344f; --encre:#e8f0ff; --doux:#8fa4c4;
+    --cyan:#35e0ff; --or:#ffd23e;
+    --titre:'Archivo Black', 'Arial Black', system-ui, sans-serif;
+    --texte:'Barlow', 'Segoe UI', system-ui, sans-serif;
+    --code:Consolas, 'SFMono-Regular', Menlo, monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--encre);font-family:var(--texte);font-size:15px;line-height:1.55}
+  .page{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:24px 64px;display:grid;gap:28px}
+  header{display:grid;gap:6px}
+  .sur{margin:0;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:var(--cyan)}
+  h1{margin:0;font-family:var(--titre);font-weight:400;font-size:clamp(26px,4.4vw,40px);line-height:1.05;text-wrap:balance}
+  .chapo{margin:0;color:var(--doux);max-width:68ch}
+  h2{margin:0 0 10px;font-family:var(--titre);font-weight:400;font-size:15px;letter-spacing:.6px;color:var(--or)}
+
+  .onglets{display:flex;flex-wrap:wrap;gap:8px}
+  .onglets button{font:600 14px var(--texte);color:var(--doux);background:var(--panneau);border:1px solid var(--bord);
+    border-radius:8px;padding:8px 14px;cursor:pointer}
+  .onglets button[aria-selected="true"]{color:var(--fond);background:var(--cyan);border-color:var(--cyan)}
+  .onglets button:focus-visible,.bascule input:focus-visible+span,.action:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+
+  .ecran{position:relative;border:1px solid var(--bord);border-radius:10px;overflow:hidden;background:#000;
+    aspect-ratio:16/10;max-width:100%;touch-action:manipulation}
+  .ecran canvas#jeu{display:block;width:100%;height:100%;image-rendering:pixelated;cursor:crosshair}
+  #loupe{position:absolute;width:180px;height:180px;border-radius:50%;border:2px solid var(--cyan);pointer-events:none;
+    image-rendering:pixelated;box-shadow:0 6px 24px rgba(0,0,0,.6)}
+  .legende{position:absolute;left:10px;bottom:10px;font:600 12px var(--texte);color:var(--encre);
+    background:rgba(7,12,22,.78);border:1px solid var(--bord);border-radius:6px;padding:3px 8px;pointer-events:none}
+
+  .reglages{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:12px;color:var(--doux);font-size:14px}
+  .bascule{display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+  .bascule input{accent-color:var(--cyan);width:16px;height:16px;margin:0}
+  .action{font:600 14px var(--texte);color:var(--fond);background:var(--or);border:0;border-radius:8px;padding:7px 14px;cursor:pointer}
+
+  .zooms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .zooms figure{margin:0;display:grid;gap:6px;min-width:0}
+  .zooms canvas{width:100%;height:auto;image-rendering:pixelated;border:1px solid var(--bord);border-radius:8px;background:#000}
+  .zooms figcaption{font-size:13px;color:var(--doux)}
+  .zooms figcaption b{color:var(--encre)}
+  .choixZoom{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .choixZoom button{font:500 13px var(--texte);color:var(--doux);background:transparent;border:1px solid var(--bord);border-radius:20px;padding:4px 12px;cursor:pointer}
+  .choixZoom button[aria-pressed="true"]{color:var(--encre);border-color:var(--cyan)}
+
+  .notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .carte{background:var(--panneau);border:1px solid var(--bord);border-radius:10px;padding:14px 16px;min-width:0}
+  .carte ul{margin:0;padding-left:18px;display:grid;gap:5px;color:var(--doux);font-size:14px}
+  .carte li b{color:var(--encre);font-weight:600}
+  .commun{grid-column:1/-1}
+
+  .choix{background:var(--panneau);border:1px solid var(--or);border-radius:10px;padding:16px;display:grid;gap:12px}
+  .choix p{margin:0;color:var(--doux);font-size:14px}
+  .options{display:flex;flex-wrap:wrap;gap:8px}
+  .options label{display:inline-flex;align-items:center;gap:8px;background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px;cursor:pointer}
+  .options input{accent-color:var(--or);margin:0}
+  .choix textarea{width:100%;min-height:64px;resize:vertical;font:15px var(--texte);color:var(--encre);background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px}
+  .copier{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .copier output{flex:1 1 220px;min-width:0;font:600 15px var(--code);color:var(--or);background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px;overflow-wrap:anywhere}
+
+  .zooms.seul{grid-template-columns:minmax(0,1fr);max-width:760px}
+  @media (max-width:720px){
+    .zooms,.notes{grid-template-columns:minmax(0,1fr)}
+    #loupe{width:130px;height:130px}
+  }
+  @media (prefers-reduced-motion:reduce){ .onglets button{transition:none} }
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <p class="sur">Nouvelle map · le terrain de Chopper · pixel art HD</p>
+    <h1>Junkertown HD</h1>
+    <p class="chapo">L'arène de ferraille de Junkertown, en plein midi dans l'outback. Pas de règle de jeu : c'est un décor. Survole l'écran pour la loupe.</p>
+  </header>
+
+  <section aria-label="Écran de jeu">
+    <div class="ecran">
+      <canvas id="jeu" width="960" height="600" aria-label="Aperçu du terrain à la taille du jeu, 960 × 600"></canvas>
+      <canvas id="loupe" width="180" height="180" hidden></canvas>
+      <span class="legende" id="legende">Pixel art HD</span>
+    </div>
+    <div class="reglages">
+      <label class="bascule"><input type="checkbox" id="opt-hud" checked><span>HUD du match</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-persos" checked><span>Yuki et le disque</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-anim" checked><span>Animation</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-loupe" checked><span>Loupe ×3 au survol</span></label>
+      <button class="action" id="but" type="button">Marquer un but</button>
+    </div>
+  </section>
+
+  <section aria-label="Zoom">
+    <h2>Au zoom</h2>
+    <div class="choixZoom" id="zones">
+      <button type="button" aria-pressed="true" data-z="yuki">Yuki sur les tôles</button>
+      <button type="button" aria-pressed="false" data-z="mur">Le mur et l'enseigne</button>
+      <button type="button" aria-pressed="false" data-z="grue">Grue et crochet</button>
+      <button type="button" aria-pressed="false" data-z="moto">La moto de Chopper</button>
+      <button type="button" aria-pressed="false" data-z="centre">Le crâne couronné</button>
+      <button type="button" aria-pressed="false" data-z="epave">Épave et groupe électrogène</button>
+      <button type="button" aria-pressed="false" data-z="feu">Ferraille et feu de pneus</button>
+    </div>
+    <div class="zooms seul">
+      <figure><canvas id="z-hd" width="480" height="300"></canvas><figcaption><b>Pixel art HD</b> · zoom ×2 à ×6</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="notes" aria-label="Ce qu'on y voit">
+    <div class="carte">
+      <h2>Ce qu'on y voit</h2>
+      <ul>
+        <li><b>Au fond, le grand mur de tôle ondulée</b>, fait de panneaux dépareillés (acier, rouille, turquoise écaillé) et rivetés, avec l'enseigne JUNKERTOWN en lettres de tôle jaune soudées de travers. Le ciel est blanc de chaleur et les mesas rouges se dressent au loin.</li>
+        <li><b>Derrière le mur</b> : une éolienne de ferme, des cheminées qui fument, une grue jaune et son crochet, et des gyrophares orange.</li>
+        <li><b>Le terrain est un plancher de tôles d'acier rivetées</b>, un peu rouillées et tachées d'huile, rayées, avec de la poussière rouge vers les bords. Les lignes sont peintes en jaune et usées, et la bordure est en bandes de danger jaunes et noires.</li>
+        <li><b>Au centre, au pochoir</b> : le crâne couronné de la reine de Junkertown.</li>
+        <li><b>Les cages</b> sont des cadres de poutrelles d'acier, avec des montants rayés jaune et noir. Le plancher est en tôle larmée peinte en turquoise pour les 3 et en jaune pour le 5.</li>
+        <li><b>À gauche</b> : des caisses de bois, une pile de pneus, des bidons, une épave de voiture sur parpaings et un groupe électrogène.</li>
+        <li><b>À droite</b> : la moto de Chopper, deux tas de ferraille, des bidons et un feu de pneus.</li>
+        <li><b>En bas</b> : un grillage surmonté de barbelés, et derrière, des pneus abandonnés.</li>
+      </ul>
+    </div>
+    <div class="carte">
+      <h2>Ce qui bouge, lentement</h2>
+      <ul>
+        <li><b>Le crochet</b> se balance au bout de la grue, et la roue de l'éolienne tourne.</li>
+        <li><b>La fumée</b> monte des cheminées et du feu de pneus, où les flammes dansent.</li>
+        <li><b>Le groupe électrogène</b> crache des étincelles, et les gyrophares clignotent.</li>
+        <li><b>Les broussailles sèches</b> ploient au vent.</li>
+      </ul>
+      <h2 style="margin-top:14px">Les mesures du jeu</h2>
+      <ul>
+        <li><b>Terrain</b> : 820 × 476, comme les autres.</li>
+        <li><b>Cages</b> : 200 de haut et 48 de profondeur, hors du terrain. Zones 3 / 5 / 3.</li>
+        <li><b>Pas de règle propre</b> : on pourra en ajouter une plus tard.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="choix" aria-label="Ton avis">
+    <h2>Ton avis</h2>
+    <p>Valide telle quelle, ou écris ce qu'il faut retoucher. Renvoie-moi le code.</p>
+    <div class="options" role="radiogroup" aria-label="Verdict">
+      <label><input type="radio" name="choix" id="choix-ok" value="OK" checked> Valide telle quelle</label>
+      <label><input type="radio" name="choix" id="choix-retouche" value="À RETOUCHER"> À retoucher</label>
+    </div>
+    <label for="remarques" style="font-size:14px;color:var(--doux)">Retouches (facultatif)</label>
+    <textarea id="remarques" placeholder="Ex. : moins de rouille, plus de ferraille, un trône pour la reine…"></textarea>
+    <div class="copier">
+      <output id="code">JUNKERTOWN-HD : OK</output>
+      <button class="action" id="copier" type="button">Copier le code</button>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+  import { monterPage } from './_page-map-hd.js';
+  import { creerPixel } from './junkertown-hd/pixel.js';
+  monterPage({
+    versions: [{ id: 'hd', nom: 'Pixel art HD', image: creerPixel().image }],
+    zones: {
+      yuki: 'yuki', mur: [320, 0, 320, 200], grue: [560, 0, 160, 100], moto: [820, 100, 140, 88],
+      centre: [400, 272, 160, 100], epave: [0, 440, 128, 80], feu: [830, 450, 128, 80]
+    },
+    code: () => {
+      const v = document.querySelector('input[name="choix"]:checked').value;
+      const r = document.getElementById('remarques').value.trim();
+      return 'JUNKERTOWN-HD : ' + v + (r ? ' · ' + r : '');
+    }
+  });
+</script>
+</body>
+</html>
