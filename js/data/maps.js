@@ -357,9 +357,9 @@ MAPS.push({
   ],
   style: 'hd',
   theme: {
-    bgInner: '#78b4e6',
-    bgOuter: '#14508a',
-    floor: '#c4c0b6',          // le béton clair de l'aire d'atterrissage
+    bgInner: '#e8845c',        // le couchant sur le détroit
+    bgOuter: '#28265e',
+    floor: '#c7beb0',          // le béton clair de l'aire d'atterrissage
     line: 'rgba(246,247,246,.9)',
     goalFill: 'rgba(50,160,224,.16)',
     goalStroke: '#ee7a1c',

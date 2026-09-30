@@ -40,12 +40,13 @@ const HORIZON = 54;
 const FUSEE = { x: 628, base: 74, haut: 70, l: 16 };
 const TOUR = { x: 650 };
 const SPHERE = { x: 414, y: 38, r: 11 };
+const SOLEIL = { x: 898, y: 48, r: 11 };
 
 const PAL = new Palette({
-  // Ciel méditerranéen
-  k0: '#2f7cc8', k1: '#4e98dc', k2: '#78b4e6', k3: '#a8d0ee', k4: '#d6eaf6', w: '#ffffff',
-  // Mer
-  m0: '#0c3664', m1: '#14508a', m2: '#206eac', m3: '#3890ca', m4: '#78bee4', m5: '#c2e4f4',
+  // Ciel du couchant : indigo, violet, rose, orange, or, et le cœur du soleil
+  k0: '#28265e', k1: '#563a80', k2: '#a4527c', k3: '#e8845c', k4: '#ffbe72', w: '#fff2cc',
+  // Mer au couchant : bleu violet profond, reflets roses et dorés
+  m0: '#1e2150', m1: '#343470', m2: '#5a4a8c', m3: '#9a6490', m4: '#e0906e', m5: '#ffd488',
   // Calcaire ocre du rocher
   r0: '#5a4632', r1: '#806848', r2: '#a88a62', r3: '#c8aa80', r4: '#e0c8a2', r5: '#f0e0c4',
   // Végétation
@@ -55,7 +56,7 @@ const PAL = new Palette({
   // Acier bleuté (l'armure de Reinhardt, les pylônes)
   g0: '#22282f', g1: '#3a434d', g2: '#56606b', g3: '#78838e', g4: '#a2acb5',
   // Béton du terrain
-  q0: '#86827a', q1: '#9c988e', q2: '#b2aea4', q3: '#c4c0b6', q4: '#d4d0c6',
+  q0: '#877e76', q1: '#9e958a', q2: '#b4ab9e', q3: '#c7beb0', q4: '#d7cfc2', q5: '#e5ded2',
   // Beige des bâtiments de la base
   e0: '#4e3e30', e1: '#7a6450', e2: '#a48c72', e3: '#c8b294', e4: '#e4d4ba',
   // Bleu du bâtiment de stockage
@@ -84,7 +85,7 @@ const C = PAL.c;
 const CIEL = PAL.sous(['k0', 'k1', 'k2', 'k3', 'k4', 'w']);
 const MER = PAL.sous(['m0', 'm1', 'm2', 'm3', 'm4', 'm5']);
 const CALCAIRE = PAL.sous(['r0', 'r1', 'r2', 'r3', 'r4', 'r5']);
-const BETON = PAL.sous(['q0', 'q1', 'q2', 'q3', 'q4', 'b5']);
+const BETON = PAL.sous(['q0', 'q1', 'q2', 'q3', 'q4', 'q5']);
 const BLANC = PAL.sous(['b1', 'b2', 'b3', 'b4', 'b5', 'b6']);
 const EAU = new Set([C.m0, C.m1, C.m2, C.m3, C.m4, C.m5]);
 
@@ -137,14 +138,27 @@ function formeOW(u, v) {
   return dansPoly(Math.abs(u), v, PALE_OW) ? 1 : 0;
 }
 // Suréchantillonné (quatre points par pixel) pour rester propre en petit.
-function emblemeOW(t, cx, cy, R, cBlanc = C.b6, cOrange = C.o2) {
-  for (let y = Math.floor(cy - R - 1); y <= Math.ceil(cy + R); y++) for (let x = Math.floor(cx - R - 1); x <= Math.ceil(cx + R); x++) {
+// `cContour` : un liseré d'un pixel autour de la peinture, et la peinture un
+// peu usée (pour l'emblème peint au sol).
+function emblemeOW(t, cx, cy, R, cBlanc = C.b6, cOrange = C.o2, cContour = 0) {
+  const x0 = Math.floor(cx - R - 2), y0 = Math.floor(cy - R - 2), n = Math.ceil(2 * R + 5);
+  const m = new Uint8Array(n * n);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
     let nb = 0, no = 0;
     for (const [a, b] of [[.25, .25], [.75, .25], [.25, .75], [.75, .75]]) {
-      const f = formeOW((x + a - cx) / R, (y + b - cy) / R);
+      const f = formeOW((x0 + i + a - cx) / R, (y0 + j + b - cy) / R);
       if (f === 1) nb++; else if (f === 2) no++;
     }
-    if (nb + no >= 2) { t.pt(x, y, no > nb ? cOrange : cBlanc); ciel(y, x); }
+    if (nb + no >= 2) m[j * n + i] = no > nb ? 2 : 1;
+  }
+  const M = (i, j) => i >= 0 && j >= 0 && i < n && j < n ? m[j * n + i] : 0;
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const x = x0 + i, y = y0 + j, v = m[j * n + i];
+    if (v) {
+      let c = v === 2 ? cOrange : cBlanc;
+      if (cContour && hacher(x, y, 33) < .06) c = v === 2 ? C.o1 : C.b4;
+      t.pt(x, y, c); ciel(y, x);
+    } else if (cContour && (M(i - 1, j) || M(i + 1, j) || M(i, j - 1) || M(i, j + 1))) t.pt(x, y, cContour);
   }
 }
 // Le petit emblème des plaques et des pastilles, sur son disque noir.
@@ -158,28 +172,65 @@ function pastilleOW(t, cx, cy, R) {
 // Le fond : ciel, détroit, rocher, base, fusée
 // ---------------------------------------------------------------------------
 function peindreCiel(t) {
+  // Le dégradé du couchant, de l'indigo au zénith à l'or sur l'horizon, et le
+  // halo du soleil qui se couche sur la mer, à droite.
+  const STOPS = [[0, 40, 38, 96], [14, 86, 56, 128], [30, 178, 88, 122], [44, 238, 136, 90], [54, 255, 196, 120]];
+  const degrade = y => {
+    let i = 0; while (i < STOPS.length - 2 && y > STOPS[i + 1][0]) i++;
+    const [ya, ...a] = STOPS[i], [yb, ...b] = STOPS[i + 1], k = Math.min(1, Math.max(0, (y - ya) / (yb - ya)));
+    return a.map((v, n) => v + (b[n] - v) * k);
+  };
+  const halo = (x, y) => Math.exp(-(((x - SOLEIL.x) / 170) ** 2 + ((y - SOLEIL.y) / 46) ** 2));
+  // Traînées de nuages, éclairées par en dessous.
+  const BANDES = [[9, 3, 300, 720], [17, 3.5, 0, 280], [26, 2.5, 520, 960], [33, 2, 640, 900], [21, 2, 760, 960]];
+  const dens = (x, y) => {
+    let d = 0;
+    BANDES.forEach(([yc, e, x0, x1], i) => {
+      const w = Math.exp(-(((y - yc) / e) ** 2)) * lisse(x0, x0 + 60, x) * lisse(x1, x1 - 60, x);
+      if (w > .01) d = Math.max(d, fbm(x * .014 + i * 7, y * .3, 3, 71 + i) * w * 1.6);
+    });
+    return d;
+  };
   for (let y = 0; y < HORIZON; y++) for (let x = 0; x < W; x++) {
-    const k = y / HORIZON;
-    let r = 50 + k * 170, g = 126 + k * 110, b = 204 + k * 44;
-    const d = Math.hypot(x - 780, (y + 6) * 1.5), halo = Math.exp(-d * d / (2 * 120 * 120));
-    r += 60 * halo; g += 50 * halo; b += 20 * halo;
-    t.px[y * W + x] = CIEL.tramer(r, g, b, x, y, 1.8);
+    let [r, g, b] = degrade(y);
+    const h = halo(x, y);
+    r += 30 * h; g += 50 * h; b += 20 * h;
+    let c = CIEL.tramer(r, g, b, x, y, 1.8);
+    const d = dens(x, y);
+    if (d > .42) {
+      const pres = halo(x, y) > .35;
+      c = dens(x, y + 1) <= .42 ? (pres ? C.k4 : C.k3) : d > .6 ? (pres ? C.k2 : C.k1) : (pres ? C.k3 : C.k2);
+    }
+    t.px[y * W + x] = c;
     CIELM[y * W + x] = 1;
   }
-  disque(t, 780, 4, 9, (x, y) => Math.hypot(x - 780, y - 4) > 7.5 ? C.k4 : C.w);
-  // La mer du détroit.
-  for (let y = HORIZON; y < 84; y++) for (let x = 0; x < W; x++) {
-    const k = (y - HORIZON) / 30, o = Math.sin((y - HORIZON) * 1.4 + fbm(x * .03, y * .2, 2, 5) * 4) * 8;
-    t.px[y * W + x] = MER.tramer(40 + k * 10 + o, 112 + k * 20 + o, 184 + k * 10 + o, x, y, 1.8);
+  // Le soleil, posé sur l'horizon, rayé de deux bandes de brume.
+  for (let y = SOLEIL.y - SOLEIL.r; y < HORIZON; y++) for (let x = SOLEIL.x - SOLEIL.r; x <= SOLEIL.x + SOLEIL.r; x++) {
+    const d = Math.hypot(x + .5 - SOLEIL.x, y + .5 - SOLEIL.y);
+    if (d > SOLEIL.r) continue;
+    t.pt(x, y, y === 50 || y === 52 ? C.k4 : d > SOLEIL.r - 1.5 ? C.k4 : C.w);
   }
-  // Les côtes au loin, dans la brume : l'Espagne à gauche, et à droite le
+  // La mer du détroit : le ciel s'y reflète, et le chemin doré du soleil.
+  for (let y = HORIZON; y < 84; y++) for (let x = 0; x < W; x++) {
+    const k = (y - HORIZON) / 22, o = Math.sin((y - HORIZON) * 1.4 + fbm(x * .03, y * .2, 2, 5) * 4) * 10;
+    let r = 196 - k * 130 + o, g = 110 - k * 56 + o, b = 120 + o * .6;
+    const large = 5 + (y - HORIZON) * 1.4, dx = Math.abs(x - SOLEIL.x);
+    if (dx < large && Math.sin(y * 2.1 + x * .5 + fbm(x * .1, y * .5, 2, 6) * 5) > .1) { const f = 1 - dx / large; r += 90 * f; g += 90 * f; b += 10 * f; }
+    t.px[y * W + x] = MER.tramer(r, g, b, x, y, 1.8);
+  }
+  // Les côtes au loin, silhouettes violettes : l'Espagne à gauche, et le
   // djebel Musa, la montagne africaine qui fait face au rocher.
   for (let x = 0; x < W; x++) {
     let h = 2 + Math.sin(x * .02) * 1.5 + fbm(x * .04, 1, 2, 6) * 3;
     h += 9 * Math.exp(-(((x - 90) / 70) ** 2)) + 5 * Math.exp(-(((x - 180) / 40) ** 2));
-    h += 16 * Math.exp(-(((x - 830) / 46) ** 2)) + 8 * Math.exp(-(((x - 900) / 40) ** 2)) + 5 * Math.exp(-(((x - 760) / 30) ** 2));
+    h += 16 * Math.exp(-(((x - 790) / 42) ** 2)) + 6 * Math.exp(-(((x - 730) / 30) ** 2));
     h = Math.round(h);
-    for (let k = 0; k < h; k++) { const y = HORIZON - 1 - k; t.pt(x, y, k === h - 1 ? C.k3 : k > h - 5 && hacher(x, y, 7) < .5 ? C.k3 : C.k2); CIELM[y * W + x] = 0; }
+    for (let k = 0; k < h; k++) {
+      const y = HORIZON - 1 - k;
+      const lueur = halo(x, y) > .5;
+      t.pt(x, y, k === h - 1 ? (lueur ? C.k3 : C.k2) : k > h - 4 && hacher(x, y, 7) < .5 ? C.k2 : C.k1);
+      CIELM[y * W + x] = 0;
+    }
   }
 }
 // Le rocher de Gibraltar vu de la baie : falaise nord à pic à gauche, crête
@@ -465,14 +516,23 @@ function enseigne(t) {
 // ---------------------------------------------------------------------------
 const DALLE = { l: 82, h: 68 };
 function peindreAire(t) {
+  const { left: L, right: R, top: T, bottom: B } = COURT;
   for (let y = 84; y < H; y++) for (let x = 0; x < W; x++) {
     if (dansTerrain(x, y)) {
-      const i = Math.floor((x - COURT.left) / DALLE.l), j = Math.floor((y - COURT.top) / DALLE.h);
-      const dx = (x - COURT.left) % DALLE.l, dy = (y - COURT.top) % DALLE.h;
-      const n = fbm(x * .03, y * .03, 2, 20);
-      let l = 196 + (hacher(i, j, 21) - .5) * 10 + (n - .5) * 8;
-      let c = BETON.tramer(l, l * .98, l * .93, x, y, 3.2);
-      if (dx === 0 || dy === 0) c = C.q1; else if (dx === 1 || dy === 1) c = C.q4;
+      const i = Math.floor((x - L) / DALLE.l), j = Math.floor((y - T) / DALLE.h);
+      const dx = (x - L) % DALLE.l, dy = (y - T) % DALLE.h;
+      // Le béton : chaque dalle a son ton, un léger nuage, les coups de
+      // taloche en longues traînées, et les granulats qui affleurent.
+      const n = fbm(x * .03, y * .03, 2, 20), taloche = fbm(x * .008, y * .16, 2, 24);
+      const l = 194 + (hacher(i, j, 21) - .5) * 12 + (n - .5) * 10 + (taloche - .5) * 8;
+      let c = BETON.tramer(l, l * .97, l * .91, x, y, 3.2);
+      const g = hacher(x, y, 25);
+      if (g < .014) c = C.q1; else if (g < .026) c = C.q5;
+      // Les joints : une rainure sombre, l'arête éclairée de la dalle
+      // suivante, l'arête d'en face dans l'ombre.
+      if (dx === 0 || dy === 0) c = C.q0;
+      else if (dx === 1 || dy === 1) c = C.q5;
+      else if (dx === DALLE.l - 1 || dy === DALLE.h - 1) c = C.q1;
       t.px[y * W + x] = c;
     } else {
       // Autour : l'asphalte sombre des allées de la base.
@@ -480,14 +540,48 @@ function peindreAire(t) {
       t.px[y * W + x] = BLANC.tramer(l, l, l * 1.04, x, y, 2);
     }
   }
+  // Fissures fines, qui partent en zigzag et se ramifient parfois.
+  const fissure = (x, y, a, len, graine) => {
+    for (let s2 = 0; s2 < len; s2++) {
+      a += (hacher(graine, s2, 41) - .5) * .9;
+      x += Math.cos(a); y += Math.sin(a);
+      const px = Math.round(x), py = Math.round(y);
+      if (!dansTerrain(px, py)) return;
+      t.pt(px, py, hacher(px, py, 39) < .3 ? C.q2 : C.q1); t.teinte(px, py + 1, PAL, C.q5, .4);
+      if (hacher(graine, s2, 42) < .06 && len > 10) fissure(x, y, a + (hacher(graine, s2, 43) < .5 ? 1 : -1), 5 + hacher(graine, s2, 44) * 8, graine * 7 + s2);
+    }
+  };
+  for (let k = 0; k < 18; k++) fissure(L + 8 + hacher(k, 1, 40) * (R - L - 16), T + 8 + hacher(k, 2, 40) * (B - T - 16), hacher(k, 3, 40) * 6.28, 14 + hacher(k, 4, 40) * 34, k + 1);
+  // Taches d'huile et de carburant, et des plaques plus claires, délavées.
+  for (let k = 0; k < 9; k++) {
+    const cx = L + 30 + hacher(k, 5, 45) * (R - L - 60), cy = T + 30 + hacher(k, 6, 45) * (B - T - 60), r = 5 + hacher(k, 7, 45) * 9;
+    const huile = k < 5;
+    for (let y = Math.floor(cy - r * 1.6); y <= cy + r * 1.6; y++) for (let x = Math.floor(cx - r * 1.6); x <= cx + r * 1.6; x++) {
+      const d = Math.hypot((x - cx) / r, (y - cy) / (r * .7)) + (fbm(x * .15, y * .15, 2, 46 + k) - .5) * .8;
+      if (d < 1) t.teinte(x, y, PAL, huile ? C.q0 : C.q5, huile ? (d < .5 ? .6 : .35) : .35);
+    }
+  }
   // Traces de pneus, discrètes.
-  for (const [x0, y0, a] of [[180, 140, .3], [640, 470, -.25], [300, 470, .1]]) for (let s = 0; s < 120; s++) for (const o of [-5, 5]) {
-    const x = Math.round(x0 + Math.cos(a) * s - Math.sin(a) * o), y = Math.round(y0 + Math.sin(a) * s + Math.cos(a) * o + Math.sin(s * .04) * 3);
-    if (dansTerrain(x, y)) t.teinte(x, y, PAL, C.q0, .28 * lisse(0, 30, s) * lisse(120, 80, s));
+  for (const [x0, y0, a] of [[180, 140, .3], [640, 470, -.25], [300, 470, .1]]) for (let s2 = 0; s2 < 120; s2++) for (const o of [-5, 5]) {
+    const x = Math.round(x0 + Math.cos(a) * s2 - Math.sin(a) * o), y = Math.round(y0 + Math.sin(a) * s2 + Math.cos(a) * o + Math.sin(s2 * .04) * 3);
+    if (dansTerrain(x, y)) t.teinte(x, y, PAL, C.q0, .28 * lisse(0, 30, s2) * lisse(120, 80, s2));
+  }
+  // Le sable que le vent pousse contre les bords de l'aire.
+  for (let y = T; y < B; y++) for (let x = L; x < R; x++) {
+    const bord = Math.min(x - L, R - 1 - x, y - T, B - 1 - y);
+    if (bord > 14) continue;
+    const k = (1 - bord / 14) * fbm(x * .06, y * .06, 2, 47);
+    if (k > .3 && hacher(x, y, 48) < k * .8) t.pt(x, y, hacher(x, y, 49) < .5 ? C.e3 : C.e2);
+  }
+  // Les points d'arrimage, aux croisements des joints : un anneau d'acier.
+  for (let x = L + DALLE.l; x < R; x += DALLE.l) for (let y = T + DALLE.h; y < B; y += DALLE.h) {
+    if (Math.hypot(x - CX, y - CY) < 70) continue;
+    disque(t, x, y, 2.6, (xx, yy) => { const d = Math.hypot(xx - x, yy - y); return d < 1 ? C.b0 : (xx - x) + (yy - y) < -1 ? C.b4 : d > 2 ? C.b1 : C.b2; });
+    t.teinte(x + 2, y + 3, PAL, C.o0, .4); t.teinte(x + 2, y + 4, PAL, C.o0, .25);
   }
   // Grilles d'évacuation le long des bords.
-  for (let x = COURT.left + 41; x < COURT.right; x += 164) for (const y of [COURT.top + 8, COURT.bottom - 12]) {
-    for (let yy = y; yy < y + 4; yy++) for (let xx = x - 8; xx < x + 8; xx++) t.pt(xx, yy, (xx & 1) ? C.b1 : C.b3);
+  for (let x = L + 41; x < R; x += 164) for (const y of [T + 8, B - 12]) {
+    for (let yy = y - 1; yy < y + 5; yy++) for (let xx = x - 9; xx < x + 9; xx++) t.pt(xx, yy, yy === y - 1 || yy === y + 4 || xx === x - 9 || xx === x + 8 ? C.b2 : (xx & 1) ? C.b0 : C.b2);
   }
 }
 function peindreLignes(t) {
@@ -514,12 +608,8 @@ function peindreLignes(t) {
   for (const [texte, x0, y0] of [['PAD-01', L + 34, B - 34], ['PAD-02', R - 84, T + 22]]) {
     glyphes3x5(texte, (gx, gy) => { for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) { const x = x0 + gx * 2 + a, y = y0 + gy * 2 + b; t.teinte(x, y, PAL, C.b6, hacher(x, y, 31) < .25 ? .3 : .7); } }, MIROIR);
   }
-  // L'emblème Overwatch peint au centre, sur un grand disque noir.
-  for (let y = CY - 56; y <= CY + 56; y++) for (let x = CX - 56; x <= CX + 56; x++) {
-    const d = Math.hypot(x + .5 - CX, y + .5 - CY);
-    if (d <= 54) t.pt(x, y, d > 53 ? C.b0 : hacher(x, y, 32) < .04 ? C.b0 : C.k);
-  }
-  emblemeOW(t, CX, CY, 46);
+  // L'emblème Overwatch peint au centre, à même le béton.
+  emblemeOW(t, CX, CY, 46, C.b6, C.o2, C.q1);
 }
 
 // ---------------------------------------------------------------------------
@@ -617,7 +707,7 @@ function peindreBords(t) {
     let c;
     if (y < 580) c = y === 563 ? C.b3 : (x % 24 < 12 && y === 571) ? C.b5 : BLANC.tramer(92, 92, 96, x, y, 2);
     else if (y < 585) c = y === 580 ? C.b6 : y === 581 ? C.b4 : y === 584 ? C.b2 : C.b5;
-    else { const o = Math.sin((y - 585) * 1.6 + fbm(x * .03, y * .3, 2, 23) * 4) * 10; c = MER.tramer(40 + o, 110 + o, 180 + o, x, y, 1.8); }
+    else { const o = Math.sin((y - 585) * 1.6 + fbm(x * .03, y * .3, 2, 23) * 4) * 12; const f = Math.exp(-(((x - SOLEIL.x) / 140) ** 2)); c = MER.tramer(70 + o + 90 * f, 58 + o + 50 * f, 128 + o * .6, x, y, 1.8); }
     t.px[y * W + x] = c;
   }
   for (let x = 12; x < W; x += 36) for (let y = 578; y < 586; y++) { t.pt(x, y, C.o1); t.pt(x + 1, y, C.o2); }
@@ -1053,21 +1143,27 @@ function derriere(t, x0, y0, x1, y1) {
 }
 function vaisseauTransport(t, temps) {
   const q = (temps % 24) / 24;
-  if (q > .45) return;
-  const x = Math.round(-60 + q / .45 * (W + 120)), y = Math.round(22 + Math.sin(q * 20) * 2);
-  // Un vaisseau de transport Overwatch : carlingue blanche, ailes, réacteurs bleus.
-  t.rect(x - 12, y, 24, 5, C.b5); t.hl(x - 12, x + 11, y, C.b6); t.hl(x - 12, x + 11, y + 4, C.b2);
-  t.rect(x + 8, y + 1, 6, 3, C.u1); t.pt(x + 13, y + 1, C.u3);
-  balayerPoly([[x - 6, y + 2], [x + 4, y + 2], [x - 2, y + 9], [x - 10, y + 9]], (yy, a, b) => t.hl(a, b, yy, C.b3));
-  t.hl(x - 12, x - 10, y + 2, C.o2);
-  for (const dx of [-14, -16]) t.teinte(x + dx, y + 2, PAL, C.u3, .7);
-  derriere(t, x - 17, y - 1, x + 14, y + 10);
+  if (q > .5) return;
+  const x = Math.round(-80 + q / .5 * (W + 160)), y = Math.round(16 + Math.sin(q * 20) * 2);
+  // Un vaisseau de transport Overwatch : carlingue blanche à bande orange,
+  // verrière bleue, grande aile, dérive, réacteurs bleus.
+  balayerPoly([[x - 24, y + 1], [x + 16, y + 1], [x + 24, y + 5], [x + 16, y + 9], [x - 24, y + 9]], (yy, a, b) => {
+    for (let xx = a; xx <= b; xx++) t.pt(xx, yy, yy <= y + 1 ? C.b6 : yy < y + 5 ? C.b5 : yy < y + 8 ? C.b4 : C.b2);
+  });
+  for (let xx = x - 24; xx < x + 14; xx++) t.pt(xx, y + 5, xx < x - 14 ? C.o2 : C.b3);
+  balayerPoly([[x + 12, y + 2], [x + 17, y + 2], [x + 22, y + 5], [x + 12, y + 5]], (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, yy === y + 2 ? C.u3 : C.u1); });
+  balayerPoly([[x - 24, y + 1], [x - 17, y + 1], [x - 21, y - 7], [x - 25, y - 7]], (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, xx < a + 2 ? C.b6 : C.b4); });
+  balayerPoly([[x - 10, y + 6], [x + 8, y + 6], [x - 4, y + 16], [x - 20, y + 16]], (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, yy === y + 6 ? C.b5 : yy > y + 14 ? C.b2 : C.b3); });
+  for (let yy = y + 2; yy <= y + 8; yy++) { t.pt(x - 25, yy, C.g1); t.teinte(x - 27, yy, PAL, C.u3, .8); t.teinte(x - 29, yy, PAL, C.u3, .5); t.teinte(x - 31, yy, PAL, C.u3, .25); }
+  const clig = (temps * 2 | 0) % 2;
+  t.pt(x - 23, y - 7, clig ? C.x2 : C.x1);
+  derriere(t, x - 32, y - 8, x + 25, y + 17);
 }
 function goelands(t, temps) {
   for (let i = 0; i < 3; i++) {
     const per = W + 80, x = Math.round(((temps * (12 + i * 4) + i * 330) % per) - 40), y = Math.round(10 + i * 11 + Math.sin(temps * .5 + i) * 3);
     const b = (temps * 1.2 + i) % 2.4 < .4;
-    t.pt(x - 3, y - (b ? 2 : 0), C.b1); t.pt(x - 2, y - (b ? 1 : 0), C.b1); t.pt(x - 1, y, C.w); t.pt(x, y, C.w); t.pt(x + 1, y, C.w); t.pt(x + 2, y - (b ? 1 : 0), C.b1); t.pt(x + 3, y - (b ? 2 : 0), C.b1);
+    t.pt(x - 3, y - (b ? 2 : 0), C.k0); t.pt(x - 2, y - (b ? 1 : 0), C.k0); t.pt(x - 1, y, C.b0); t.pt(x, y, C.b0); t.pt(x + 1, y, C.b0); t.pt(x + 2, y - (b ? 1 : 0), C.k0); t.pt(x + 3, y - (b ? 2 : 0), C.k0);
     derriere(t, x - 3, y - 2, x + 3, y);
   }
   // Deux goélands posés sur le garde-corps.
@@ -1090,51 +1186,78 @@ function mer(t, temps) {
 // gros réacteurs bleu acier à l'arrière, panneaux dorés et tuyères orange.
 function payload(t, temps) {
   const q = (temps / 60) % 2, u = q < 1 ? q : 2 - q, v = u * u * (3 - 2 * u);
-  const x = Math.round(150 + v * 660), y = 574, s = q < 1 ? 1 : -1;
+  const x = Math.round(170 + v * 620), y = 578, s = q < 1 ? 1 : -1;
   const y0 = y + Math.round(Math.sin(temps * 2.4));
-  ellipse(t, x, y + 8, 34, 3.5, (xx, yy) => PAL.teinter(t.lire(xx, yy), C.u3, .4, xx, yy));
-  ombre(t, x, y + 8, 24, 2, .45);
+  ellipse(t, x, y + 12, 54, 4, (xx, yy) => PAL.teinter(t.lire(xx, yy), C.u3, .45, xx, yy));
+  ombre(t, x, y + 12, 38, 2.5, .45);
   const X = lx => x + lx * s;
+  const P = (lx, ly, c) => t.pt(X(lx), y0 + ly, c);
   const poly = (pts, f) => balayerPoly(pts.map(([lx, ly]) => [X(lx), y0 + ly]), (yy, a, b) => {
     for (let xx = a; xx <= b; xx++) { const c = f((xx - x) * s, yy - y0); if (c) t.pt(xx, yy, c); }
   });
   // Le réacteur du fond, qui dépasse au-dessus.
-  poly([[-26, -16], [-6, -16], [-6, -12], [-26, -12]], (lx, ly) => ly === -16 ? (lx > -21 && lx < -11 ? C.y2 : C.a2) : lx > -8 ? C.g1 : C.a1);
-  // La coque : dessus blanc, liseré gris, bande bronze, dessous sombre, nez pointu.
-  poly([[-12, -7], [10, -7], [31, 1], [24, 5], [-8, 6], [-12, 3]], (lx, ly) => {
-    if (lx >= 28) return C.b1;
-    if (ly <= -7) return C.b6;
-    if (ly < -1) return ly === -2 || (lx > 16 && ly === -3) ? C.b4 : C.b5;
-    if (ly === -1) return C.b3;
-    if (ly < 5) return ly === 0 ? C.z3 : ly === 4 ? C.z1 : C.z2;
-    return C.b0;
+  poly([[-42, -26], [-12, -26], [-12, -19], [-42, -19]], (lx, ly) => {
+    if (ly === -26) return lx > -35 && lx < -17 ? C.y2 : C.a2;
+    return lx > -15 ? C.g1 : ly === -25 ? C.a2 : C.a1;
   });
-  // La verrière, ouverte sur le dessus, et les chevrons gris devant.
-  for (let lx = 10; lx <= 20; lx++) for (let ly = -7; ly <= -5; ly++) t.pt(X(lx), y0 + ly, ly === -7 && (lx === 10 || lx === 20) ? C.b3 : ly === -7 ? C.b1 : lx === 10 || lx === 20 ? C.b2 : C.b0);
-  for (const lx of [2, 5]) { t.pt(X(lx), y0 - 4, C.b3); t.pt(X(lx + 1), y0 - 5, C.b3); t.pt(X(lx + 1), y0 - 3, C.b3); }
+  // La coque.
+  const dessus = lx => lx < 16 ? -11 : -11 + (lx - 16) * 12 / 34;
+  poly([[-19, -11], [16, -11], [50, 1], [40, 8], [-13, 10], [-19, 5]], (lx, ly) => {
+    if (lx >= 47) return C.b0;
+    if (lx >= 44) return C.b1;
+    if (ly <= Math.floor(dessus(lx))) return C.b6;
+    if (ly < -3) {
+      if (lx % 14 === 0 && ly > -10) return C.b3;
+      if (ly === -10 && lx > -10 && lx < 14) return C.b6;
+      return ly >= -5 ? C.b4 : C.b5;
+    }
+    if (ly === -3) return C.b3;
+    if (ly === -2) return C.b2;
+    if (ly < 7) {
+      if (ly === -1) return C.z3;
+      if (ly === 6 || (lx % 12 === 0 && lx < 40)) return C.z1;
+      const h = hacher(lx + 60, ly + 20, 50);
+      return h < .1 ? C.z1 : h < .18 ? C.z3 : C.z2;
+    }
+    return ly < 9 ? C.b1 : C.b0;
+  });
+  // La trappe ouverte sur le dessus, à l'avant, et son bloc gris.
+  for (let lx = 20; lx <= 33; lx++) {
+    const h0 = Math.floor(dessus(lx)) + 2;
+    for (let k = 0; k < 3; k++) P(lx, h0 + k, lx === 20 || lx === 33 ? C.b3 : k === 0 ? C.b2 : lx > 23 && lx < 30 && k === 1 ? C.b2 : C.b0);
+  }
+  // Les chevrons gris peints sur le dessus.
+  for (const l0 of [2, 7]) for (let k = 0; k < 3; k++) { P(l0 + k, -9 + k, C.b3); P(l0 + k, -5 - k, C.b3); }
   // La dérive, juste devant les réacteurs.
-  poly([[-4, -7], [0, -16], [3, -16], [5, -7]], (lx, ly) => lx > 2 ? C.b3 : ly < -14 ? C.b6 : lx < 0 ? C.b6 : C.b5);
-  // Le réacteur du premier plan : gros cylindre bleu acier, panneau doré,
-  // entrée d'air sombre devant, tuyère orange derrière.
-  poly([[-28, -12], [-5, -12], [-5, -3], [-28, -3]], (lx, ly) => {
-    const panneau = lx > -22 && lx < -11;
-    if (ly <= -12) return panneau ? C.y3 : C.a3;
-    if (ly === -11 && panneau) return C.y2;
-    if (lx > -7) return lx === -5 ? C.g0 : C.g1;
-    return ly > -5 ? C.a1 : ly < -9 ? C.a3 : C.a2;
+  poly([[-7, -11], [-1, -27], [4, -27], [8, -11]], (lx, ly) => {
+    const av = -1 - (ly + 27) * 6 / 16, ar = 4 + (ly + 27) * 4 / 16;
+    return lx >= ar - 1 ? C.b3 : lx <= av + 1 ? C.b6 : ly < -24 ? C.b6 : C.b5;
   });
-  for (let ly = -12; ly <= -3; ly++) { t.pt(X(-29), y0 + ly, ly === -12 || ly === -3 ? C.o1 : C.o2); t.pt(X(-28), y0 + ly, C.g1); }
-  const feu = .4 + Math.sin(temps * 13) * .2;
-  for (let ly = -11; ly <= -4; ly++) { t.teinte(X(-30), y0 + ly, PAL, C.o3, feu + .2); t.teinte(X(-31), y0 + ly, PAL, C.o3, feu); }
+  // Le réacteur du premier plan : blanc à l'avant, bleu acier à l'arrière,
+  // panneau doré dessus, entrée d'air sombre, tuyère orange.
+  poly([[-45, -18], [-44, -19], [-9, -19], [-8, -18], [-8, -5], [-9, -4], [-44, -4], [-45, -5]], (lx, ly) => {
+    const panneau = lx > -36 && lx < -15;
+    if (ly <= -19) return panneau ? C.y3 : lx > -24 ? C.b6 : C.a3;
+    if (panneau && ly <= -17) return ly === -18 ? C.y2 : C.y1;
+    if (lx > -12) return (ly & 1) ? C.g1 : C.g0;
+    if (lx === -24) return C.g2;
+    if (ly === -4) return C.g1;
+    if (lx > -24) return ly < -14 ? C.b6 : ly < -8 ? C.b5 : ly < -5 ? C.b4 : C.b3;
+    return ly < -14 ? C.a3 : ly < -8 ? C.a2 : C.a1;
+  });
+  for (let ly = -18; ly <= -5; ly++) { P(-47, ly, ly === -18 || ly === -5 ? C.o1 : C.o2); P(-46, ly, ly === -18 || ly === -5 ? C.o1 : C.o3); }
+  const feu = .45 + Math.sin(temps * 13) * .2;
+  for (let ly = -16; ly <= -7; ly++) for (let k = 0; k < 5; k++) t.teinte(X(-48 - k), y0 + ly, PAL, C.o3, (feu + .2) * (1 - k / 5));
   // L'aile basse, bout bronze.
-  poly([[-18, 1], [4, 1], [7, 3], [-20, 3]], (lx, ly) => lx < -16 ? C.z1 : ly === 1 ? C.b6 : ly === 2 ? C.b4 : C.b2);
+  poly([[-32, 0], [6, 0], [12, 5], [-36, 5]], (lx, ly) => lx < -30 ? C.z1 : ly === 0 ? C.b6 : ly < 3 ? C.b5 : ly === 3 ? C.b4 : C.b2);
   // L'inscription sur la coque bronze, toujours à l'endroit.
   const larg = glyphes3x5('XR-9', () => {});
-  const tx = Math.min(X(9), X(9 + larg - 1));
+  const tx = Math.min(X(18), X(18 + larg - 1));
   glyphes3x5('XR-9', (gx, gy) => t.pt(tx + gx, y0 + gy, C.b5), MIROIR);
-  // Les feux de position.
+  // Feux de position et patins de lévitation.
   const clig = (temps * 2 | 0) % 2;
-  t.pt(X(29), y0 + 1, clig ? C.u4 : C.u2); t.pt(X(1), y0 - 16, clig ? C.x2 : C.x1);
+  P(49, 1, clig ? C.u4 : C.u2); P(1, -27, clig ? C.x2 : C.x1);
+  for (const lx of [-6, 28]) { P(lx, 10, C.u3); P(lx + 1, 10, C.u4); P(lx + 2, 10, C.u3); t.teinte(X(lx + 1), y0 + 11, PAL, C.u4, .7); }
 }
 // Le bouclier des salles de réapparition, à l'embouchure : un rideau
 // d'hexagones bleus qui ondule.
