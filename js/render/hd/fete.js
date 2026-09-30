@@ -281,19 +281,92 @@ function stand(t, x0, y0, l, h, c1) {
   }
   auvent(t, x0 - 2, y0, l + 4, c1);
 }
-function barbeAPapa(t) {
-  stand(t, 2, 112, 64, 92, C.p2);
-  // Enseigne : un nuage rose.
-  for (const [dx, r] of [[16, 8], [28, 11], [42, 9], [52, 6]]) balayerDisque(dx, 106, r, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, y < 102 ? C.p4 : C.p3); });
-  // La machine à barbe à papa, sa cuve argentée.
-  balayerEllipse(34, 170, 14, 6, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, y < 168 ? C.m3 : C.m2); });
-  balayerEllipse(34, 166, 10, 3, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, C.p4); });
-  // Bâtons de barbe à papa derrière le comptoir.
-  for (let i = 0; i < 5; i++) {
-    const x = 12 + i * 11;
-    t.vl(x, 142, 152, C.w2);
-    balayerDisque(x, 137, 5, (y, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, y, (xx - x) + (y - 137) < -2 ? C.p4 : i % 2 ? C.p3 : C.u4); });
+// Une baraque foraine : enseigne de bois bordée d'ampoules (animées, voir
+// marquises), lambrequin rayé à festons, poteaux en sucre d'orge, intérieur
+// éclairé par une rampe, comptoir peint à étoiles.
+const ENSEIGNES = [];
+function baraque(t, x0, y0, l, h, c1, c0, icone) {
+  ombre(t, x0 + l / 2, y0 + h + 1, l / 2 + 3, 3.5, .55);
+  const eh = 16, ly = y0 + eh, iy = ly + 10, cy = y0 + h - 18;
+  // Enseigne.
+  for (let y = y0; y < y0 + eh; y++) for (let x = x0 + 3; x < x0 + l - 3; x++) {
+    const bord = y === y0 || y === y0 + eh - 1 || x === x0 + 3 || x === x0 + l - 4;
+    const cadre = y === y0 + 1 || y === y0 + eh - 2 || x === x0 + 4 || x === x0 + l - 5;
+    t.pt(x, y, bord ? C.b1 : cadre ? C.y2 : y < y0 + 4 ? c1 : c0);
   }
+  ENSEIGNES.push([x0 + 3, y0, l - 6, eh]);
+  icone(t, x0 + l / 2, y0 + eh / 2);
+  // Intérieur éclairé : rampe de lampes, mur du fond en planches.
+  for (let y = ly + 8; y < cy; y++) for (let x = x0 + 3; x < x0 + l - 3; x++) {
+    const k = (y - ly - 8) / Math.max(1, cy - ly - 8);
+    let c = y === ly + 8 ? C.y4 : k < .12 ? C.y3 : k < .3 ? C.b4 : (x - x0) % 7 === 0 ? C.b1 : k < .6 ? C.b3 : C.b2;
+    t.pt(x, y, c);
+  }
+  // Comptoir : plateau et façade peinte, liseré d'or, petites étoiles.
+  for (let y = cy; y < y0 + h; y++) for (let x = x0 + 1; x < x0 + l - 1; x++) {
+    let c = y < cy + 2 ? (y === cy ? C.b4 : C.b3) : y === cy + 3 || y === y0 + h - 2 ? C.y2 : y === y0 + h - 1 ? C.b1 : c0;
+    if (y > cy + 4 && y < y0 + h - 3 && (x + (y - cy) * 3) % 13 === 0 && (y - cy) % 5 === 2) c = C.y3;
+    t.pt(x, y, c);
+  }
+  // Poteaux en sucre d'orge.
+  for (const px of [x0, x0 + l - 3]) for (let y = ly; y < y0 + h; y++) for (let k = 0; k < 3; k++) t.pt(px + k, y, ((y + k) >> 1) % 2 ? C.o2 : C.w3);
+  // Lambrequin rayé et ses festons.
+  for (let y = ly; y < ly + 8; y++) for (let x = x0 - 2; x < x0 + l + 2; x++) t.pt(x, y, y === ly ? C.y2 : Math.floor((x - x0 + 20) / 6) % 2 ? C.w2 : c1);
+  for (let x = x0 - 2; x < x0 + l + 2; x++) {
+    const f = (x - x0 + 20) % 6, rang = Math.floor((x - x0 + 20) / 6) % 2 ? C.w1 : c0;
+    const creux = Math.round(2.4 * Math.sin((f + .5) / 6 * Math.PI));
+    for (let k = 0; k < creux; k++) t.pt(x, ly + 8 + k, rang);
+  }
+}
+// Un vendeur derrière le comptoir : tablier, calot.
+function vendeur(t, x, yb, tablier, calot) {
+  for (let y = yb - 18; y < yb; y++) for (let dx = -4; dx <= 4; dx++) {
+    const tete = y < yb - 12;
+    if (tete && Math.abs(dx) > 2) continue;
+    let c = tete ? (y < yb - 16 ? calot : C.b4) : Math.abs(dx) > 2 ? C.w2 : tablier;
+    if (tete && y === yb - 14 && Math.abs(dx) === 1) c = C.k;
+    t.pt(x + dx, y, c);
+  }
+}
+function nuageRose(t, cx, cy, r) {
+  for (const [dx, dy, rr] of [[-r * .5, 0, r * .6], [0, -r * .3, r * .7], [r * .5, 0, r * .6]])
+    balayerDisque(Math.round(cx + dx), Math.round(cy + dy), rr, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, y < cy - r * .3 ? C.p4 : C.p3); });
+}
+function barbeAPapa(t) {
+  baraque(t, 2, 94, 64, 118, C.p3, C.p2, (t2, cx, cy) => { nuageRose(t2, cx - 10, cy + 1, 6); nuageRose(t2, cx + 10, cy + 1, 6); t2.vl(cx - 10, cy + 3, cy + 6, C.w3); t2.vl(cx + 10, cy + 3, cy + 6, C.w3); nuageRose(t2, cx, cy, 7); });
+  vendeur(t, 20, 186, C.p3, C.p2);
+  // La machine : sa cuve argentée (le nuage qui tourne est animé).
+  balayerEllipse(44, 180, 13, 5, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, y < 178 ? C.m3 : y < 182 ? C.m2 : C.m1); });
+  // Barbes à papa en présentoir sur le comptoir.
+  for (let i = 0; i < 6; i++) {
+    const x = 9 + i * 10;
+    t.vl(x, 188, 193, C.w3);
+    nuageRose(t, x, 184, 4);
+    if (i % 2) t.teinte(x, 183, PAL, C.u4, .8);
+  }
+  // Ardoise des prix.
+  for (let y = 130; y < 146; y++) for (let x = 46; x < 62; x++) t.pt(x, y, x === 46 || x === 61 || y === 130 || y === 145 ? C.b2 : C.k);
+  for (const y of [134, 138, 142]) { t.hl(48, 53, y, C.w2); t.hl(56, 59, y, C.y3); }
+}
+function ours(t, x, y, c) {
+  balayerDisque(x, y + 5, 4, (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, c); });
+  balayerDisque(x, y, 3, (yy, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, yy, c); });
+  t.pt(x - 3, y - 2, c); t.pt(x + 3, y - 2, c); t.pt(x - 1, y, C.k); t.pt(x + 1, y, C.k); t.pt(x, y + 1, C.w3);
+  t.pt(x, y + 5, C.w2);
+}
+function tirFixe(t) {
+  baraque(t, 2, 426, 64, 128, C.o3, C.o2, (t2, cx, cy) => {
+    balayerDisque(cx, cy, 6, (y, a, b) => { for (let x = a; x <= b; x++) { const d = Math.hypot(x - cx, y - cy); t2.pt(x, y, d < 1.6 ? C.o2 : d < 3.2 ? C.w3 : d < 4.8 ? C.o2 : C.w3); } });
+    for (const s of [-1, 1]) { t2.hl(cx + s * 9 - 4, cx + s * 9 + 4, cy, C.m1); t2.hl(cx + s * 9 - 4, cx + s * 9 - 1, cy + 1, C.b2); }
+  });
+  // Les gros lots : des ours en peluche pendus sous le lambrequin.
+  for (let i = 0; i < 5; i++) ours(t, 11 + i * 11, 464, [C.p3, C.u4, C.y3, C.t3, C.b4][i]);
+  // Cibles au fond.
+  for (let i = 0; i < 4; i++) balayerDisque(12 + i * 14, 486, 4, (y, a, b) => { for (let x = a; x <= b; x++) { const d = Math.hypot(x - 12 - i * 14, y - 486); t.pt(x, y, d < 1.5 ? C.o2 : d < 3 ? C.w3 : C.o2); } });
+  // Le rail des canards (ils défilent, voir canards).
+  t.hl(4, 63, 506, C.m2); t.hl(4, 63, 507, C.m1);
+  // Carabines sur le comptoir.
+  for (const x of [10, 38]) { t.hl(x, x + 16, 535, C.m3); t.hl(x, x + 16, 536, C.m1); t.hl(x, x + 6, 537, C.b2); t.pt(x + 6, 538, C.b1); }
 }
 function manegeFixe(t) {
   const { x, y } = MANEGE;
@@ -307,19 +380,6 @@ function manegeFixe(t) {
   for (let xx = x - 35; xx <= x + 35; xx++) { t.pt(xx, y - 4, C.y2); t.pt(xx, y - 3, Math.floor((xx - x + 60) / 6) % 2 ? C.w1 : C.t1); }
   for (let yy = y - 27; yy < y - 20; yy++) t.pt(x, yy, C.y2);
   t.vl(x, y - 3, y + 30, C.y2);
-}
-function tirFixe(t) {
-  stand(t, 2, 434, 64, 116, C.o2);
-  // Peluches accrochées en haut, cibles au fond.
-  for (let i = 0; i < 5; i++) {
-    const x = 10 + i * 11, c = [C.p3, C.u4, C.y3, C.t3, C.o3][i];
-    balayerDisque(x, 452, 3, (y, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, y, c); });
-    t.pt(x - 2, 449, c); t.pt(x + 2, 449, c); t.pt(x - 1, 452, C.k); t.pt(x + 1, 452, C.k);
-  }
-  for (let i = 0; i < 4; i++) balayerDisque(14 + i * 14, 468, 4, (y, a, b) => { for (let x = a; x <= b; x++) { const d = Math.hypot(x - 14 - i * 14, y - 468); t.pt(x, y, d < 1.5 ? C.o2 : d < 3 ? C.w3 : C.o2); } });
-  // Les deux carabines posées sur le comptoir.
-  for (const x of [14, 42]) { t.hl(x, x + 14, 532, C.m3); t.hl(x, x + 14, 533, C.m1); t.hl(x, x + 5, 534, C.b2); }
-  for (let i = 0; i < 3; i++) balayerDisque(18 + i * 16, 508, 5, (y, a, b) => { for (let x = a; x <= b; x++) { const d = Math.hypot(x - 18 - i * 16, y - 508); t.pt(x, y, d < 1.5 ? C.y3 : d < 3.5 ? C.w3 : C.u2); } });
 }
 function popcorn(t, x0, yb) {
   ombre(t, x0 + 14, yb + 1, 16, 3, .5);
@@ -335,6 +395,69 @@ function reverbere(t, x, yb) {
   balayerDisque(x, yb - 43, 3, (y, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, y, C.y4); });
   for (let y = yb - 52; y < yb - 34; y++) for (let xx = x - 9; xx <= x + 9; xx++) { const d = Math.hypot(xx - x, y - yb + 43); if (d < 9 && d > 3) t.teinte(xx, y, PAL, C.y3, .35 * (1 - d / 9)); }
 }
+// L'avenue piétonne du bas : grandes dalles claires, une bordure de pavés
+// sombres, une marelle à la craie, des bacs à fleurs, un banc et son couple,
+// le glacier sous son parasol, les chariots de pop-corn, des réverbères où
+// sont noués des ballons, une poubelle et des tickets tombés.
+function avenue(t) {
+  for (let y = 563; y < H; y++) {
+    const rang = Math.floor((y - 567) / 10), dec = rang % 2 ? 10 : 0;
+    for (let x = 0; x < W; x++) {
+      let c;
+      if (y < 567) c = y === 563 ? C.s1 : ((x + (y & 1) * 3) % 6 === 0 ? C.s1 : C.s3);
+      else {
+        const px = (x + dec) % 20, py = (y - 567) % 10;
+        const v = 150 + (hacher(Math.floor((x + dec) / 20), rang, 90) - .5) * 20;
+        c = px === 0 || py === 0 ? C.s3 : py === 1 ? PAVE.proche(v + 14, (v + 14) * .92, (v + 14) * .9) : PAVE.proche(v, v * .9, v * .88);
+      }
+      t.px[y * W + x] = c;
+    }
+  }
+  // Marelle à la craie.
+  const case_ = (x, y, n) => {
+    for (let k = 0; k < 11; k++) { t.pt(x + k, y, C.w3); t.pt(x + k, y + 10, C.w3); }
+    for (let k = 0; k <= 10; k++) { t.pt(x, y + k, C.w3); t.pt(x + 10, y + k, C.w3); }
+    t.pt(x + 5, y + 4, C.w2); t.pt(x + 5, y + 6, C.w2); t.pt(x + 4 + (n & 1), y + 5, C.w2);
+  };
+  case_(160, 578, 1); case_(170, 578, 2); case_(180, 573, 3); case_(180, 583, 4); case_(190, 578, 5); case_(200, 573, 6); case_(200, 583, 7); case_(210, 578, 8);
+  balayerEllipse(226, 583, 6, 5, (y, a, b) => { t.pt(a, y, C.w3); t.pt(b, y, C.w3); });
+  // Bacs à fleurs.
+  for (const bx of [250, 540, 742]) {
+    ombre(t, bx + 14, 598, 16, 2, .5);
+    for (let y = 588; y < 598; y++) for (let x = bx; x < bx + 28; x++) t.pt(x, y, y === 588 ? C.b4 : (x - bx) % 7 === 0 ? C.b1 : C.b2);
+    for (let i = 0; i < 16; i++) {
+      const fx = bx + 2 + hacher(i, bx, 91) * 24, fy = 580 + hacher(i, bx, 92) * 8;
+      t.pt(Math.round(fx), Math.round(fy) + 2, C.g1); t.pt(Math.round(fx), Math.round(fy) + 1, C.g2);
+      const c = [C.o3, C.y3, C.p3, C.u4, C.w3][i % 5];
+      t.pt(Math.round(fx), Math.round(fy), c); t.pt(Math.round(fx) + 1, Math.round(fy), c);
+    }
+  }
+  // Un banc, et un couple assis qui partage une barbe à papa.
+  ombre(t, 452, 598, 22, 2, .5);
+  for (let x = 432; x < 472; x++) { t.pt(x, 586, C.b4); t.pt(x, 587, C.b3); t.pt(x, 592, C.b3); t.pt(x, 593, C.b2); }
+  for (const px of [434, 469]) for (let y = 586; y < 599; y++) t.pt(px, y, C.m1);
+  for (const [px, hb, cb] of [[446, C.u3, C.k], [458, C.o3, C.b1]]) {
+    t.rect(px - 2, 574, 5, 4, C.b4); t.hl(px - 2, px + 2, 574, cb);
+    t.rect(px - 3, 578, 7, 8, hb); t.rect(px - 3, 586, 7, 2, C.u1); t.vl(px - 2, 588, 596, C.u1); t.vl(px + 2, 588, 596, C.u1);
+  }
+  t.vl(452, 578, 582, C.w3); nuageRose(t, 452, 574, 4);
+  // Le glacier : chariot et parasol rayé.
+  ombre(t, 628, 598, 18, 2, .5);
+  for (let y = 580; y < 594; y++) for (let x = 614; x < 642; x++) t.pt(x, y, y < 582 ? C.w3 : (x - 614) % 7 === 0 ? C.t1 : C.t2);
+  for (const wx of [618, 638]) balayerDisque(wx, 595, 3, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, C.k); });
+  for (let y = 560; y < 580; y++) t.pt(628, y, C.m2);
+  for (let y = 554; y < 562; y++) { const d = (y - 554) * 2.4 + 2; for (let x = Math.round(628 - d); x <= 628 + d; x++) t.pt(x, y, Math.floor((x - 628 + 30) / 5) % 2 ? C.w3 : C.p2); }
+  for (const [x, c] of [[618, C.p3], [624, C.y3], [630, C.t3], [636, C.b3]]) { balayerDisque(x, 577, 2, (y, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, y, c); }); t.pt(x, 579, C.b4); }
+  // Chariots de pop-corn, réverbères aux ballons, poubelle, tickets.
+  popcorn(t, 96, 598);
+  popcorn(t, 836, 598);
+  for (const x of [320, 700]) {
+    reverbere(t, x, 598);
+    for (const [dx, c] of [[-4, C.o3], [3, C.u4], [0, C.y3]]) { t.ligne(x, 580, x + dx, 566 - Math.abs(dx), C.w1); balayerEllipse(x + dx, 562 - Math.abs(dx), 3, 4, (y, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, y, (xx - x - dx) + (y - 562) < -2 ? C.w3 : c); }); }
+  }
+  for (let y = 584; y < 598; y++) for (let x = 386; x < 396; x++) t.pt(x, y, x === 386 ? C.m1 : x === 395 ? C.m1 : y === 584 ? C.m3 : (x & 1) ? C.m2 : C.m1);
+  for (const [x, y] of [[372, 594], [560, 596], [150, 596], [880, 594], [690, 596]]) { t.rect(x, y, 5, 3, C.o3); t.pt(x + 1, y + 1, C.w3); }
+}
 function peindreBords(t) {
   barbeAPapa(t);
   manegeFixe(t);
@@ -343,11 +466,9 @@ function peindreBords(t) {
   ombre(t, 930, 548, 16, 3, .5);
   for (let y = 520; y < 546; y++) for (let x = 918; x < 942; x++) t.pt(x, y, y < 524 ? C.u3 : (x - 918) % 6 === 0 ? C.u1 : C.u2);
   for (const wx of [922, 938]) balayerDisque(wx, 546, 3, (y, a, b) => { for (let x = a; x <= b; x++) t.pt(x, y, C.k); });
-  // En bas : pop-corn, réverbères, poubelle, tickets tombés.
-  popcorn(t, 110, 598);
-  popcorn(t, 820, 598);
-  for (const x of [300, 660]) reverbere(t, x, 598);
-  for (const [x, y] of [[392, 580], [570, 588], [150, 572], [880, 572]]) { t.rect(x, y, 5, 3, C.o3); t.pt(x + 1, y + 1, C.w3); }
+  avenue(t);
+  // Le vendeur de ballons, à côté de son chariot.
+  vendeur(t, 950, 548, C.u3, C.o2);
   // À droite, entre le manège et la cage, et au-dessus des ballons : un
   // stand de pommes d'amour et une boîte à forces (le marteau).
   stand(t, 896, 196 - 8, 60, 22, C.t2);
@@ -510,7 +631,7 @@ function projecteursSol(t, temps) {
 // devant les stands du fond, certains avec un ballon ou une barbe à papa.
 const VISITEURS = [];
 for (let i = 0; i < 26; i++) VISITEURS.push({
-  y: i < 18 ? 584 + (i % 3) * 6 : 82,
+  y: i < 18 ? 586 + (i % 3) * 5 : 82,
   v: (8 + hacher(i, 1, 70) * 10) * (hacher(i, 2, 70) < .5 ? 1 : -1),
   x0: hacher(i, 3, 70) * 1000,
   peau: [C.b4, C.b3, C.w2, C.b2][Math.floor(hacher(i, 4, 70) * 4)],
@@ -521,7 +642,23 @@ for (let i = 0; i < 26; i++) VISITEURS.push({
   petit: i >= 18
 });
 VISITEURS.sort((a, b) => a.y - b.y);
+// La mascotte : un gros ours en costume qui se promène et salue.
+function mascotte(t, temps) {
+  const per = W + 80, x = Math.round(((temps * 9 + 300) % per) - 40), yb = 598;
+  const pas = Math.floor(temps * 4) & 1, salut = Math.sin(temps * 5) > 0;
+  for (let k = -6; k <= 6; k++) t.teinte(x + k, yb + 1, PAL, C.k, .4);
+  t.rect(x - 6, yb - 20, 13, 14, C.b3); t.rect(x - 4, yb - 16, 9, 8, C.b4);
+  t.rect(x - 5 + (pas ? -1 : 0), yb - 6, 4, 6, C.b2); t.rect(x + 2 + (pas ? 0 : 1), yb - 6, 4, 6, C.b2);
+  balayerDisque(x, yb - 27, 7, (y, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, y, C.b3); });
+  for (const e of [-1, 1]) balayerDisque(x + e * 6, yb - 33, 2.5, (y, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, y, C.b2); });
+  balayerEllipse(x, yb - 24, 3, 2, (y, a, b) => { for (let xx = a; xx <= b; xx++) t.pt(xx, y, C.b4); });
+  t.pt(x - 3, yb - 29, C.k); t.pt(x + 3, yb - 29, C.k); t.pt(x, yb - 25, C.k);
+  t.hl(x - 3, x + 3, yb - 20, C.o2); t.pt(x, yb - 19, C.y3);                        // nœud papillon
+  t.rect(x - 9, yb - 18, 3, 8, C.b3);
+  if (salut) t.rect(x + 7, yb - 28, 3, 9, C.b3); else t.rect(x + 7, yb - 18, 3, 8, C.b3);
+}
 function visiteurs(t, temps) {
+  mascotte(t, temps);
   for (const p of VISITEURS) {
     const per = W + 40, x = Math.round((((p.x0 + temps * p.v) % per) + per) % per - 20);
     const pas = Math.floor(temps * 6 + p.x0) & 1, s = p.petit ? 0.7 : 1.5;
@@ -557,10 +694,20 @@ function confettisTombants(t, temps) {
     if (tour === 0) t.hl(xr, xr + 2, yr, c); else if (tour === 1) { t.pt(xr, yr, c); t.pt(xr + 1, yr + 1, c); } else t.vl(xr + 1, yr, yr + 1, c);
   }
 }
+function machineBarbe(t, temps) {
+  for (let i = 0; i < 7; i++) {
+    const a = temps * 2.2 + i / 7 * Math.PI * 2;
+    const x = 44 + Math.cos(a) * 9, y = 173 + Math.sin(a) * 2.5 - (i % 2);
+    balayerDisque(Math.round(x), Math.round(y), 2.4, (yy, a0, b0) => { for (let xx = a0; xx <= b0; xx++) t.pt(xx, yy, Math.sin(a) < 0 ? C.p4 : C.p3); });
+  }
+}
 function marquises(t, temps) {
-  const bords = [[2, 112, 64], [2, 434, 64], [896, 188, 60]];
   let i = 0;
-  for (const [x0, y0, l] of bords) for (let x = x0; x < x0 + l; x += 5, i++) ampoule(t, x, y0 - 1, AMPOULES[i % 5], (i + Math.floor(temps * 6)) % 3 === 0 ? 1 : .35);
+  for (const [x0, y0, l, h] of ENSEIGNES) {
+    for (let x = x0 + 2; x < x0 + l - 1; x += 4, i++) { const on = (i + Math.floor(temps * 6)) % 3 === 0; ampoule(t, x, y0, AMPOULES[i % 5], on ? 1 : .35); ampoule(t, x, y0 + h - 1, AMPOULES[(i + 2) % 5], !on ? 1 : .35); }
+    for (let y = y0 + 4; y < y0 + h - 3; y += 4, i++) { ampoule(t, x0, y, C.y3, (i + Math.floor(temps * 6)) % 3 === 0 ? 1 : .4); ampoule(t, x0 + l - 1, y, C.y3, (i + Math.floor(temps * 6)) % 3 === 1 ? 1 : .4); }
+  }
+  for (let x = 898; x < 956; x += 5, i++) ampoule(t, x, 187, AMPOULES[i % 5], (i + Math.floor(temps * 6)) % 3 === 0 ? 1 : .35);
 }
 
 // ---------------------------------------------------------------------------
@@ -665,7 +812,7 @@ function manege(t, temps) {
 }
 function canards(t, temps) {
   for (let i = 0; i < 4; i++) {
-    const x = 6 + ((temps * 10 + i * 16) % 58), y = 490;
+    const x = 5 + ((temps * 10 + i * 15) % 56), y = 501;
     t.rect(Math.round(x), y, 6, 4, C.y3); t.rect(Math.round(x) + 4, y - 3, 3, 3, C.y3); t.pt(Math.round(x) + 7, y - 2, C.o2); t.pt(Math.round(x) + 5, y - 2, C.k);
   }
 }
@@ -719,6 +866,7 @@ export function creerPixel() {
     fanions(t, temps);
     amp_cages(t, temps);
     marquises(t, temps);
+    machineBarbe(t, temps);
     manege(t, temps);
     canards(t, temps);
     ballons(t, temps);
