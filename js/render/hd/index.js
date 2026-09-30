@@ -12,6 +12,12 @@
 // de Raccoon City. Ce sont des règles de jeu, par-dessus les joueurs, dont la
 // lisibilité a été mesurée telle qu'elle est (game/desert.js, game/brume.js).
 //
+// Règle pour chaque terrain, y compris les prochains : les cages sont tirées
+// de l'univers du terrain et ne ressemblent à celles d'aucun autre (radeau et
+// voiles aux Îles du Destin, makimono et shimenawa à Konoha, stands de tir à
+// cibles à la fête foraine…). Les zones 3 / 5 / 3 y restent lisibles d'un coup
+// d'œil, et l'embouchure est toujours marquée.
+//
 // Le décor est recalculé trente fois par seconde au plus, et recopié entre
 // deux images : ce qui y bouge est lent, et c'est la moitié du travail en moins.
 // ---------------------------------------------------------------------------
@@ -25,10 +31,13 @@ import { creerPixel as dune } from './dune.js';
 import { creerPixel as poleNord, dessinerNeige } from './pole-nord.js';
 import { creerPixel as raccoon } from './raccoon.js';
 import { creerPixel as temple } from './temple.js';
+import { creerPixel as iles } from './iles.js';
+import { creerPixel as konoha } from './konoha.js';
+import { creerPixel as fete } from './fete.js';
 
 // Identifiants de data/maps.js. La salle d'entraînement ('dojo') n'y est pas :
 // elle est nue exprès, rien n'y doit détourner l'œil.
-const FABRIQUES = { arena: station, stadium, dune, polenord: poleNord, raccoon, temple };
+const FABRIQUES = { arena: station, stadium, dune, polenord: poleNord, raccoon, temple, iles, konoha, fete };
 const PAS = 1 / 30;
 const rendus = new Map();
 
@@ -100,7 +109,7 @@ export function dessinerNeigeHD() {
   return true;
 }
 
-// Prépare les fonds fixes des six terrains quand le navigateur n'a rien
+// Prépare les fonds fixes des terrains quand le navigateur n'a rien
 // d'autre à faire. Chacun coûte quelques centaines de millisecondes la
 // première fois : sans ça, l'écran de choix du terrain se figeait en peignant
 // ses six vignettes d'un coup.

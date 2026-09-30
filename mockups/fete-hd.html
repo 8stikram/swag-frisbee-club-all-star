@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fête foraine HD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Un seul thème, sombre, exprès : c'est celui des mockups du projet et celui
+     de la station. Une colonne : l'écran de jeu d'abord, puis les zooms, puis
+     le choix. */
+  :root{
+    --fond:#070c16; --panneau:#0e1626; --bord:#22344f; --encre:#e8f0ff; --doux:#8fa4c4;
+    --cyan:#35e0ff; --or:#ffd23e;
+    --titre:'Archivo Black', 'Arial Black', system-ui, sans-serif;
+    --texte:'Barlow', 'Segoe UI', system-ui, sans-serif;
+    --code:Consolas, 'SFMono-Regular', Menlo, monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--encre);font-family:var(--texte);font-size:15px;line-height:1.55}
+  .page{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:24px 64px;display:grid;gap:28px}
+  header{display:grid;gap:6px}
+  .sur{margin:0;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:var(--cyan)}
+  h1{margin:0;font-family:var(--titre);font-weight:400;font-size:clamp(26px,4.4vw,40px);line-height:1.05;text-wrap:balance}
+  .chapo{margin:0;color:var(--doux);max-width:68ch}
+  h2{margin:0 0 10px;font-family:var(--titre);font-weight:400;font-size:15px;letter-spacing:.6px;color:var(--or)}
+
+  .onglets{display:flex;flex-wrap:wrap;gap:8px}
+  .onglets button{font:600 14px var(--texte);color:var(--doux);background:var(--panneau);border:1px solid var(--bord);
+    border-radius:8px;padding:8px 14px;cursor:pointer}
+  .onglets button[aria-selected="true"]{color:var(--fond);background:var(--cyan);border-color:var(--cyan)}
+  .onglets button:focus-visible,.bascule input:focus-visible+span,.action:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+
+  .ecran{position:relative;border:1px solid var(--bord);border-radius:10px;overflow:hidden;background:#000;
+    aspect-ratio:16/10;max-width:100%;touch-action:manipulation}
+  .ecran canvas#jeu{display:block;width:100%;height:100%;image-rendering:pixelated;cursor:crosshair}
+  #loupe{position:absolute;width:180px;height:180px;border-radius:50%;border:2px solid var(--cyan);pointer-events:none;
+    image-rendering:pixelated;box-shadow:0 6px 24px rgba(0,0,0,.6)}
+  .legende{position:absolute;left:10px;bottom:10px;font:600 12px var(--texte);color:var(--encre);
+    background:rgba(7,12,22,.78);border:1px solid var(--bord);border-radius:6px;padding:3px 8px;pointer-events:none}
+
+  .reglages{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:12px;color:var(--doux);font-size:14px}
+  .bascule{display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+  .bascule input{accent-color:var(--cyan);width:16px;height:16px;margin:0}
+  .action{font:600 14px var(--texte);color:var(--fond);background:var(--or);border:0;border-radius:8px;padding:7px 14px;cursor:pointer}
+
+  .zooms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .zooms figure{margin:0;display:grid;gap:6px;min-width:0}
+  .zooms canvas{width:100%;height:auto;image-rendering:pixelated;border:1px solid var(--bord);border-radius:8px;background:#000}
+  .zooms figcaption{font-size:13px;color:var(--doux)}
+  .zooms figcaption b{color:var(--encre)}
+  .choixZoom{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .choixZoom button{font:500 13px var(--texte);color:var(--doux);background:transparent;border:1px solid var(--bord);border-radius:20px;padding:4px 12px;cursor:pointer}
+  .choixZoom button[aria-pressed="true"]{color:var(--encre);border-color:var(--cyan)}
+
+  .notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .carte{background:var(--panneau);border:1px solid var(--bord);border-radius:10px;padding:14px 16px;min-width:0}
+  .carte ul{margin:0;padding-left:18px;display:grid;gap:5px;color:var(--doux);font-size:14px}
+  .carte li b{color:var(--encre);font-weight:600}
+  .commun{grid-column:1/-1}
+
+  .choix{background:var(--panneau);border:1px solid var(--or);border-radius:10px;padding:16px;display:grid;gap:12px}
+  .choix p{margin:0;color:var(--doux);font-size:14px}
+  .options{display:flex;flex-wrap:wrap;gap:8px}
+  .options label{display:inline-flex;align-items:center;gap:8px;background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px;cursor:pointer}
+  .options input{accent-color:var(--or);margin:0}
+  .choix textarea{width:100%;min-height:64px;resize:vertical;font:15px var(--texte);color:var(--encre);background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px}
+  .copier{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .copier output{flex:1 1 220px;min-width:0;font:600 15px var(--code);color:var(--or);background:var(--fond);border:1px solid var(--bord);border-radius:8px;padding:8px 12px;overflow-wrap:anywhere}
+
+  .zooms.seul{grid-template-columns:minmax(0,1fr);max-width:760px}
+  @media (max-width:720px){
+    .zooms,.notes{grid-template-columns:minmax(0,1fr)}
+    #loupe{width:130px;height:130px}
+  }
+  @media (prefers-reduced-motion:reduce){ .onglets button{transition:none} }
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <p class="sur">Nouvelle map · sans perso attitré · pixel art HD</p>
+    <h1>Fête foraine HD</h1>
+    <p class="chapo">Une piste en plein cœur d'une fête foraine, à l'heure bleue, au milieu des feux d'artifice. Pas de règle de jeu : c'est un décor. Survole l'écran pour la loupe.</p>
+  </header>
+
+  <section aria-label="Écran de jeu">
+    <div class="ecran">
+      <canvas id="jeu" width="960" height="600" aria-label="Aperçu du terrain à la taille du jeu, 960 × 600"></canvas>
+      <canvas id="loupe" width="180" height="180" hidden></canvas>
+      <span class="legende" id="legende">Pixel art HD</span>
+    </div>
+    <div class="reglages">
+      <label class="bascule"><input type="checkbox" id="opt-hud" checked><span>HUD du match</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-persos" checked><span>Yuki et le disque</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-anim" checked><span>Animation</span></label>
+      <label class="bascule"><input type="checkbox" id="opt-loupe" checked><span>Loupe ×3 au survol</span></label>
+      <button class="action" id="but" type="button">Marquer un but</button>
+    </div>
+  </section>
+
+  <section aria-label="Zoom">
+    <h2>Au zoom</h2>
+    <div class="choixZoom" id="zones">
+      <button type="button" aria-pressed="true" data-z="yuki">Yuki sur les pavés</button>
+      <button type="button" aria-pressed="false" data-z="roue">Grande roue et chapiteau</button>
+      <button type="button" aria-pressed="false" data-z="russes">Montagnes russes</button>
+      <button type="button" aria-pressed="false" data-z="barbe">Barbe à papa</button>
+      <button type="button" aria-pressed="false" data-z="manege">Le manège</button>
+      <button type="button" aria-pressed="false" data-z="tir">Tir aux canards</button>
+      <button type="button" aria-pressed="false" data-z="ballons">Ballons et force</button>
+    </div>
+    <div class="zooms seul">
+      <figure><canvas id="z-hd" width="480" height="300"></canvas><figcaption><b>Pixel art HD</b> · zoom ×2 à ×6</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="notes" aria-label="Ce qu'on y voit">
+    <div class="carte">
+      <h2>Ce qu'on y voit</h2>
+      <ul>
+        <li><b>Le ciel de l'heure bleue</b>, de l'indigo au rose, avec des étoiles. <b>Des feux d'artifice en rafale</b> y éclatent et crépitent, et trois projecteurs de couleur le balaient.</li>
+        <li><b>Les manèges du fond</b> : la grande roue et ses nacelles, le chapiteau rayé rouge et blanc, la tour de chute bardée d'ampoules, les montagnes russes illuminées, les chaises volantes et une rangée de stands éclairés.</li>
+        <li><b>Le terrain est une piste en lattes de bois</b>, peinte d'un grand soleil à rayons saumon et beige, comme le sol d'un chapiteau. Au centre, une étoile de cirque rouge bordée d'or, entourée d'une couronne d'ampoules. Des confettis et des serpentins traînent partout.</li>
+        <li><b>Des fanions de toutes les couleurs</b> et des guirlandes d'ampoules sont tendus en haut et en bas du terrain.</li>
+        <li><b>Les cages sont des stands de jeu forains.</b> Au fond, la toile rayée rouge et crème d'une tente. Devant, trois panneaux de bois cerclés d'or, chacun avec sa grande cible peinte : bleue et blanche pour les 3, rouge et or pour le 5. Un cadre doré bordé d'ampoules en chenille les entoure. Une rangée d'ampoules posées au sol marque l'embouchure, et aux coins, des poteaux dorés portent des fanions.</li>
+        <li><b>À gauche, deux vraies baraques foraines</b>, chacune avec son enseigne en bois bordée d'ampoules, un lambrequin rayé à festons, des poteaux en sucre d'orge, un intérieur éclairé et un comptoir peint à étoiles. À la barbe à papa, un vendeur, la machine où tourne le nuage rose, l'ardoise des prix et les barbes à papa en présentoir. Au tir, des ours en peluche pendus, des cibles, le rail des canards et les carabines.</li>
+        <li><b>À droite</b> : le manège de chevaux de bois, les pommes d'amour, le marteau de force et le vendeur de ballons.</li>
+        <li><b>En bas, l'avenue piétonne</b>, en grandes dalles claires. On y trouve une marelle à la craie, des bacs à fleurs, un banc où un couple partage une barbe à papa, le glacier sous son parasol, les chariots de pop-corn, des réverbères où sont noués des ballons et des tickets tombés. La foule s'y promène, avec la mascotte, un gros ours en costume qui salue. De petits promeneurs passent aussi devant les stands du fond.</li>
+      </ul>
+    </div>
+    <div class="carte">
+      <h2>Ce qui bouge</h2>
+      <ul>
+        <li><b>Les feux d'artifice</b> éclatent sans arrêt et les projecteurs balaient le ciel.</li>
+        <li><b>La grande roue</b> tourne, <b>la tour de chute</b> monte lentement puis tombe d'un coup, <b>les chaises volantes</b> tournent et le train des montagnes russes passe.</li>
+        <li><b>Toutes les ampoules</b> clignotent en chenille : la grande roue, les rails, les cages, les stands, la couronne du centre.</li>
+        <li><b>Des confettis</b> tombent du ciel en virevoltant, et les fanions flottent.</li>
+        <li><b>Les chevaux de bois</b> tournent, les canards défilent, un ballon s'échappe de temps en temps, et les visiteurs se promènent.</li>
+      </ul>
+      <h2 style="margin-top:14px">Les mesures du jeu</h2>
+      <ul>
+        <li><b>Terrain</b> : 820 × 476, comme les autres.</li>
+        <li><b>Cages</b> : 200 de haut et 48 de profondeur, hors du terrain. Zones 3 / 5 / 3.</li>
+        <li><b>Pas de règle propre</b> : on pourra en ajouter une plus tard.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="choix" aria-label="Ton avis">
+    <h2>Ton avis</h2>
+    <p>Valide telle quelle, ou écris ce qu'il faut retoucher. Renvoie-moi le code.</p>
+    <div class="options" role="radiogroup" aria-label="Verdict">
+      <label><input type="radio" name="choix" id="choix-ok" value="OK" checked> Valide telle quelle</label>
+      <label><input type="radio" name="choix" id="choix-retouche" value="À RETOUCHER"> À retoucher</label>
+    </div>
+    <label for="remarques" style="font-size:14px;color:var(--doux)">Retouches (facultatif)</label>
+    <textarea id="remarques" placeholder="Ex. : plus de manèges, ciel plus sombre, autre centre…"></textarea>
+    <div class="copier">
+      <output id="code">FETE-HD : OK</output>
+      <button class="action" id="copier" type="button">Copier le code</button>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+  import { monterPage } from './_page-map-hd.js';
+  import { creerPixel } from './fete-hd/pixel.js';
+  monterPage({
+    versions: [{ id: 'hd', nom: 'Pixel art HD', image: creerPixel().image }],
+    zones: {
+      yuki: 'yuki', roue: [240, 0, 224, 140], russes: [510, 0, 224, 140], barbe: [0, 90, 128, 80],
+      manege: [850, 110, 110, 69], tir: [0, 440, 128, 80], ballons: [860, 420, 100, 62]
+    },
+    code: () => {
+      const v = document.querySelector('input[name="choix"]:checked').value;
+      const r = document.getElementById('remarques').value.trim();
+      return 'FETE-HD : ' + v + (r ? ' · ' + r : '');
+    }
+  });
+</script>
+</body>
+</html>
